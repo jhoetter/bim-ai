@@ -29,6 +29,9 @@ const report: ConstructabilityReport = {
       elementIds: ['room-1'],
       discipline: 'architecture',
       recommendation: 'Connect the room through doors to an exit door.',
+      rootCauseGroupId: 'egress:room-1',
+      suppressibility: 'non_suppressible',
+      audienceText: { ui: 'Room needs a valid egress path.' },
     },
     {
       ruleId: 'furniture_wall_hard_clash',
@@ -37,6 +40,9 @@ const report: ConstructabilityReport = {
       elementIds: ['shelf-1', 'wall-1'],
       discipline: 'coordination',
       recommendation: 'Move the object clear of the wall.',
+      priorityRank: 120,
+      rootCauseGroupId: 'physical_coordination:shelf-1::wall-1',
+      suppressibility: 'ignorable',
     },
   ],
   issues: [
@@ -82,6 +88,10 @@ describe('ConstructabilityReportPanel', () => {
 
     fireEvent.change(screen.getByLabelText(/Group/), { target: { value: 'rule' } });
     expect(screen.getByText('furniture_wall_hard_clash (1)')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/Group/), { target: { value: 'rootCause' } });
+    expect(screen.getByText('physical_coordination:shelf-1::wall-1 (1)')).toBeTruthy();
+    expect(screen.getByText('ignorable')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/Group/), { target: { value: 'rule' } });
 
     fireEvent.click(screen.getAllByText('Isolate')[0]);
     expect(onIsolate).toHaveBeenCalledWith(['shelf-1', 'wall-1']);

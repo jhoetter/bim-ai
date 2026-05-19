@@ -269,13 +269,33 @@ export async function fetchBuildingPresets(): Promise<string[]> {
 
 export type ConstructabilityFinding = {
   ruleId: string;
+  title?: string;
   severity: string;
   message: string;
   elementIds: string[];
   discipline?: string;
   blockingClass?: string;
+  layerOwner?: string;
+  suppressibility?: 'ignorable' | 'review_required' | 'non_suppressible' | string;
+  tolerancePolicy?: {
+    requiresOwner?: boolean;
+    requiresExpiry?: boolean;
+    requiresEvidence?: boolean;
+  };
+  profileMembership?: string[];
+  audienceText?: {
+    ui?: string;
+    agent?: string;
+    docs?: string;
+  };
+  rootCauseGroupId?: string;
+  rootCauseGroup?: {
+    id?: string;
+    family?: string;
+  };
   priority?: string;
   priorityRank?: number;
+  priorityPolicy?: Record<string, unknown>;
   recommendation?: string;
   viewpointRef?: string;
   evidenceRefs?: Array<Record<string, unknown>>;
@@ -318,6 +338,10 @@ export type ConstructabilityIssue = {
     elementIds: string[];
     reason: string;
     expiresRevision?: number | null;
+    owner?: string | null;
+    evidenceRefs?: Array<Record<string, unknown>>;
+    reviewClassification?: string | null;
+    policy?: Record<string, unknown>;
   };
 };
 
@@ -334,9 +358,16 @@ export type ConstructabilityReport = {
     priorityCounts?: Record<string, number>;
     ruleCounts: Record<string, number>;
     statusCounts: Record<string, number>;
+    rootCauseGroupCount?: number;
   };
+  profilePreset?: Record<string, unknown>;
+  availableProfilePresets?: Array<Record<string, unknown>>;
   findings: ConstructabilityFinding[];
+  rootCauseGroups?: Array<Record<string, unknown>>;
   issues: ConstructabilityIssue[];
+  suppressionAudit?: Record<string, unknown>;
+  reviewWorkflow?: Record<string, unknown>;
+  learningCorpus?: Record<string, unknown>;
 };
 
 export async function fetchConstructabilityReport(

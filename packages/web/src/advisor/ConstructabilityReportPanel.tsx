@@ -3,7 +3,7 @@ import { Icons } from '@bim-ai/ui';
 
 import type { ConstructabilityFinding, ConstructabilityReport } from '../lib/api';
 
-type GroupBy = 'severity' | 'rule' | 'discipline';
+type GroupBy = 'severity' | 'rule' | 'discipline' | 'rootCause';
 
 export type ConstructabilityFindingGroup = {
   key: string;
@@ -20,9 +20,11 @@ export function groupConstructabilityFindings(
     const key =
       groupBy === 'rule'
         ? finding.ruleId
-        : groupBy === 'discipline'
-          ? finding.discipline || 'unassigned'
-          : finding.severity || 'unknown';
+        : groupBy === 'rootCause'
+          ? finding.rootCauseGroupId || finding.rootCauseGroup?.family || 'ungrouped'
+          : groupBy === 'discipline'
+            ? finding.discipline || 'unassigned'
+            : finding.severity || 'unknown';
     groups.set(key, [...(groups.get(key) ?? []), finding]);
   }
   return Array.from(groups.entries())
@@ -32,6 +34,7 @@ export function groupConstructabilityFindings(
       label: `${key} (${groupedFindings.length})`,
       findings: groupedFindings.sort(
         (a, b) =>
+          (a.priorityRank ?? 9999) - (b.priorityRank ?? 9999) ||
           a.ruleId.localeCompare(b.ruleId) ||
           (a.message || '').localeCompare(b.message || '') ||
           a.elementIds.join(',').localeCompare(b.elementIds.join(',')),
@@ -113,8 +116,13 @@ export function ConstructabilityReportPanel(props: {
                           {finding.discipline}
                         </span>
                       ) : null}
+                      {finding.suppressibility ? (
+                        <span className="rounded bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted">
+                          {finding.suppressibility}
+                        </span>
+                      ) : null}
                     </div>
-                    <p>{finding.message}</p>
+                    <p>{finding.audienceText?.ui || finding.message}</p>
                     {finding.recommendation ? (
                       <p className="text-[11px] text-muted">{finding.recommendation}</p>
                     ) : null}
@@ -169,6 +177,7 @@ function Toolbar(props: {
           <option value="severity">Severity</option>
           <option value="rule">Rule</option>
           <option value="discipline">Discipline</option>
+          <option value="rootCause">Root cause</option>
         </select>
       </label>
       <button

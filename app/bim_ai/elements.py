@@ -2379,6 +2379,9 @@ class ConstructabilitySuppressionElem(BaseModel):
     reason: str
     active: bool = True
     expires_revision: int | None = Field(default=None, alias="expiresRevision")
+    owner: str | None = None
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    review_classification: str | None = Field(default=None, alias="reviewClassification")
 
 
 ConstructabilityIssueStatus = Literal[
@@ -2413,6 +2416,9 @@ class ConstructabilityIssueElem(BaseModel):
     assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
     resolution_comment: str | None = Field(default=None, alias="resolutionComment")
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    review_classification: str | None = Field(default=None, alias="reviewClassification")
+    review_owner: str | None = Field(default=None, alias="reviewOwner")
+    review_note: str | None = Field(default=None, alias="reviewNote")
 
 
 class ConstructionPackageElem(BaseModel):

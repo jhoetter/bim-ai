@@ -4,6 +4,15 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from bim_ai.advisor_policy_registry import (
+    learning_corpus_contract_payload,
+    profile_preset,
+    profile_presets_payload,
+    review_workflow_payload,
+    rule_policy,
+    rule_policy_payload,
+    suppression_policy_decision,
+)
 from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
@@ -191,9 +200,7 @@ def build_constructability_report(
         option_locks=option_locks,
         design_option_sets=design_option_sets,
     )
-    changed_ids = tuple(
-        str(element_id) for element_id in changed_element_ids if element_id
-    )
+    changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
     incremental_eligibility = advisor_incremental_diagnostic_eligibility_v1(
         scoped_elements,
         changed_element_ids=changed_ids,
@@ -220,9 +227,7 @@ def build_constructability_report(
         profiler.measure(
             check_id="constructability.clearance",
             layer="constructability",
-            run=lambda: constructability_clearance_violations(
-                scoped_elements, profile=profile
-            ),
+            run=lambda: constructability_clearance_violations(scoped_elements, profile=profile),
             impacted_element_count=impacted_count,
             incremental_eligible=incremental_eligible,
         )
@@ -263,19 +268,37 @@ def build_constructability_report(
     ]
     participant_bboxes = _participant_bboxes(scoped_elements)
     all_findings = [
-        _finding_with_actionability(finding, participant_bboxes=participant_bboxes)
+        _finding_with_actionability(finding, participant_bboxes=participant_bboxes, profile=profile)
         for finding in all_findings
     ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
     suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
+    invalid_suppressions: list[dict[str, Any]] = []
     for finding in all_findings:
         suppression = _matching_suppression(finding, suppressions)
         if suppression is None:
             active_findings.append(finding)
             continue
+        decision = suppression_policy_decision(finding, suppression)
+        if not decision["allowed"]:
+            invalid_suppressions.append(
+                {
+                    "suppressionId": suppression.get("id"),
+                    "ruleId": finding.get("ruleId"),
+                    "elementIds": finding.get("elementIds") or [],
+                    "reason": decision["reason"],
+                    "missing": decision["missing"],
+                    "policy": decision["policy"],
+                }
+            )
+            active_findings.append(finding)
+            continue
         fingerprint = fingerprint_violation(finding)
-        suppressed_by_fingerprint[fingerprint] = suppression
+        suppressed_by_fingerprint[fingerprint] = {
+            **suppression,
+            "policy": decision["policy"],
+        }
 
     issues = reconcile_findings(
         [*_persisted_issue_records(scoped_elements), *previous_issues],
@@ -289,9 +312,8 @@ def build_constructability_report(
         issue["status"] = "suppressed"
         issue["suppression"] = suppression
 
-    severity_counts = Counter(
-        str(f.get("severity") or "unknown") for f in active_findings
-    )
+    groups = _root_cause_groups(active_findings)
+    severity_counts = Counter(str(f.get("severity") or "unknown") for f in active_findings)
     rule_counts = Counter(str(f.get("ruleId") or "unknown") for f in active_findings)
     status_counts = Counter(str(i.get("status") or "unknown") for i in issues)
 
@@ -299,6 +321,8 @@ def build_constructability_report(
         "format": "constructabilityReport_v1",
         "revision": revision,
         "profile": profile,
+        "profilePreset": profile_preset(profile),
+        "availableProfilePresets": profile_presets_payload(),
         "scope": constructability_scope_descriptor(
             phase_filter=phase_filter,
             option_locks=option_locks,
@@ -311,13 +335,12 @@ def build_constructability_report(
             "severityCounts": dict(sorted(severity_counts.items())),
             "priorityCounts": dict(
                 sorted(
-                    Counter(
-                        str(f.get("priority") or "unknown") for f in active_findings
-                    ).items()
+                    Counter(str(f.get("priority") or "unknown") for f in active_findings).items()
                 )
             ),
             "ruleCounts": dict(sorted(rule_counts.items())),
             "statusCounts": dict(sorted(status_counts.items())),
+            "rootCauseGroupCount": len(groups),
         },
         "findings": sorted(
             active_findings,
@@ -328,6 +351,7 @@ def build_constructability_report(
                 tuple(str(eid) for eid in f.get("elementIds") or []),
             ),
         ),
+        "rootCauseGroups": groups,
         "issues": sorted(
             issues,
             key=lambda i: (
@@ -337,13 +361,18 @@ def build_constructability_report(
                 str(i.get("fingerprint") or ""),
             ),
         ),
+        "suppressionAudit": {
+            "schemaVersion": "advisor.suppression-audit.v1",
+            "records": suppressions,
+            "invalidRecords": invalid_suppressions,
+        },
+        "reviewWorkflow": review_workflow_payload(),
+        "learningCorpus": learning_corpus_contract_payload(),
         "profiling": profiler.payload(),
     }
 
 
-def _model_integrity_constructability_violations(
-    elements: dict[str, Element]
-) -> list[Violation]:
+def _model_integrity_constructability_violations(elements: dict[str, Element]) -> list[Violation]:
     violations = [
         _integrity_finding_to_violation(finding)
         for finding in check_model_integrity_invariants(elements)
@@ -419,9 +448,7 @@ def build_constructability_summary_v1(
             "proxyUnsupported": len(unsupported),
         },
         "openIssueIds": [str(issue.get("fingerprint")) for issue in open_issues],
-        "openErrorIssueIds": [
-            str(issue.get("fingerprint")) for issue in open_error_issues
-        ],
+        "openErrorIssueIds": [str(issue.get("fingerprint")) for issue in open_error_issues],
     }
 
 
@@ -436,6 +463,19 @@ def _finding_dict(violation: Violation, *, profile: str) -> dict[str, Any]:
     data["recommendation"] = RECOMMENDATION_BY_RULE_ID.get(
         violation.rule_id,
         "Inspect the affected elements and resolve the constructability condition.",
+    )
+    data["profile"] = profile
+    policy = rule_policy_payload(violation.rule_id)
+    data.update(
+        {
+            "title": policy["title"],
+            "layerOwner": policy["layerOwner"],
+            "suppressibility": policy["suppressibility"],
+            "tolerancePolicy": policy["tolerancePolicy"],
+            "profileMembership": policy["profileMembership"],
+            "audienceText": policy["audienceText"],
+            "rulePolicy": policy,
+        }
     )
     return data
 
@@ -453,12 +493,17 @@ def _finding_with_actionability(
     finding: Mapping[str, Any],
     *,
     participant_bboxes: Mapping[str, AABB],
+    profile: str,
 ) -> dict[str, Any]:
     data = dict(finding)
+    data.setdefault("profile", profile)
+    _apply_rule_policy_fields(data)
     priority = _priority_for_finding(data)
-    priority_rank = _priority_rank(priority, data)
+    priority_policy = _priority_policy(priority, data)
+    priority_rank = int(priority_policy["rank"])
     data["priority"] = priority
     data["priorityRank"] = priority_rank
+    data["priorityPolicy"] = priority_policy
 
     viewpoint = _viewpoint_action_for_finding(data, participant_bboxes)
     if viewpoint is None:
@@ -476,9 +521,7 @@ def _finding_with_actionability(
         "command": viewpoint["command"],
     }
     data["viewpointRef"] = viewpoint["viewpointId"]
-    data["evidenceRefs"] = [
-        {"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}
-    ]
+    data["evidenceRefs"] = [{"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}]
     data["safeCommandHints"] = [safe_command_hint]
     data["actionability"] = {
         "priority": priority,
@@ -491,6 +534,18 @@ def _finding_with_actionability(
     return data
 
 
+def _apply_rule_policy_fields(data: dict[str, Any]) -> None:
+    rule_id = str(data.get("ruleId") or data.get("rule_id") or "")
+    policy = rule_policy_payload(rule_id)
+    data.setdefault("title", policy["title"])
+    data.setdefault("layerOwner", policy["layerOwner"])
+    data.setdefault("suppressibility", policy["suppressibility"])
+    data.setdefault("tolerancePolicy", policy["tolerancePolicy"])
+    data.setdefault("profileMembership", policy["profileMembership"])
+    data.setdefault("audienceText", policy["audienceText"])
+    data.setdefault("rulePolicy", policy)
+
+
 def _priority_for_finding(finding: Mapping[str, Any]) -> str:
     explicit = str(finding.get("priority") or "").strip().upper()
     if explicit in PRIORITY_RANK_BY_TOKEN:
@@ -500,6 +555,10 @@ def _priority_for_finding(finding: Mapping[str, Any]) -> str:
 
 
 def _priority_rank(priority: str, finding: Mapping[str, Any]) -> int:
+    return int(_priority_policy(priority, finding)["rank"])
+
+
+def _priority_policy(priority: str, finding: Mapping[str, Any]) -> dict[str, Any]:
     base = PRIORITY_RANK_BY_TOKEN.get(priority, PRIORITY_RANK_BY_TOKEN["P1"])
     severity_rank = _severity_sort_rank(str(finding.get("severity") or ""))
     blocking_class = str(finding.get("blockingClass") or "")
@@ -509,7 +568,26 @@ def _priority_rank(priority: str, finding: Mapping[str, Any]) -> int:
         "domain_integrity": 2,
         "metadata": 3,
     }.get(blocking_class, 4)
-    return base * 100 + severity_rank * 10 + blocking_class_bias
+    policy = rule_policy(str(finding.get("ruleId") or ""))
+    active_profile = str(finding.get("profile") or "")
+    profile_relevance_rank = 0 if active_profile in policy.profile_membership else 4
+    rank = (
+        base * 100
+        + severity_rank * 20
+        + policy.dependency_rank * 3
+        + policy.visible_impact_rank * 2
+        + profile_relevance_rank
+        + blocking_class_bias
+    )
+    return {
+        "rank": rank,
+        "severityRank": severity_rank,
+        "blockingClassRank": blocking_class_bias,
+        "dependencyRank": policy.dependency_rank,
+        "visibleImpactRank": policy.visible_impact_rank,
+        "profileRelevanceRank": profile_relevance_rank,
+        "profileId": active_profile or None,
+    }
 
 
 def _severity_sort_rank(severity: str) -> int:
@@ -595,11 +673,15 @@ def _suppression_records(
             {
                 "id": str(element.id),
                 "ruleId": getattr(element, "rule_id", None),
-                "elementIds": sorted(
-                    str(eid) for eid in getattr(element, "element_ids", [])
-                ),
+                "elementIds": sorted(str(eid) for eid in getattr(element, "element_ids", [])),
                 "reason": str(element.reason),
                 "expiresRevision": expires_revision,
+                "owner": getattr(element, "owner", None),
+                "evidenceRefs": [
+                    ref.model_dump(by_alias=True, exclude_none=True)
+                    for ref in getattr(element, "evidence_refs", [])
+                ],
+                "reviewClassification": getattr(element, "review_classification", None),
             }
         )
     records.sort(
@@ -636,3 +718,88 @@ def _matching_suppression(
             continue
         return suppression
     return None
+
+
+def _root_cause_groups(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for finding in findings:
+        group_id = _root_cause_group_id(finding)
+        finding["rootCauseGroupId"] = group_id
+        finding["rootCauseGroup"] = {
+            "id": group_id,
+            "family": rule_policy(str(finding.get("ruleId") or "")).root_cause_family,
+        }
+        buckets.setdefault(group_id, []).append(finding)
+
+    groups: list[dict[str, Any]] = []
+    for group_id, rows in buckets.items():
+        rows_sorted = sorted(
+            rows,
+            key=lambda row: (
+                int(row.get("priorityRank") or 99),
+                _severity_sort_rank(str(row.get("severity") or "")),
+                str(row.get("ruleId") or ""),
+            ),
+        )
+        primary = rows_sorted[0]
+        element_ids = sorted(
+            {str(element_id) for row in rows for element_id in row.get("elementIds") or []}
+        )
+        severity = min(
+            (str(row.get("severity") or "") for row in rows),
+            key=_severity_sort_rank,
+            default="warning",
+        )
+        family = rule_policy(str(primary.get("ruleId") or "")).root_cause_family
+        groups.append(
+            {
+                "id": group_id,
+                "family": family,
+                "primaryRuleId": primary.get("ruleId"),
+                "severity": severity,
+                "priority": primary.get("priority"),
+                "priorityRank": primary.get("priorityRank"),
+                "findingCount": len(rows),
+                "elementIds": element_ids,
+                "findingRefs": [
+                    {
+                        "ruleId": row.get("ruleId"),
+                        "elementIds": row.get("elementIds") or [],
+                    }
+                    for row in rows_sorted
+                ],
+                "rootCauseSummary": _root_cause_summary(family, element_ids),
+            }
+        )
+    return sorted(
+        groups,
+        key=lambda group: (
+            int(group.get("priorityRank") or 99),
+            str(group.get("family") or ""),
+            str(group.get("id") or ""),
+        ),
+    )
+
+
+def _root_cause_group_id(finding: Mapping[str, Any]) -> str:
+    policy = rule_policy(str(finding.get("ruleId") or ""))
+    element_ids = sorted(str(eid) for eid in finding.get("elementIds") or [])
+    if policy.root_cause_family in {
+        "physical_coordination",
+        "duplicate_geometry",
+        "mep_penetration",
+        "clearance",
+    }:
+        element_key = "::".join(element_ids)
+    elif element_ids:
+        element_key = element_ids[0]
+    else:
+        element_key = str(finding.get("ruleId") or "unknown")
+    return f"{policy.root_cause_family}:{element_key}"
+
+
+def _root_cause_summary(family: str, element_ids: list[str]) -> str:
+    label = family.replace("_", " ")
+    if not element_ids:
+        return f"{label} finding without element target"
+    return f"{label} affecting {', '.join(element_ids[:4])}"

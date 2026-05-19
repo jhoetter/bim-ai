@@ -11,11 +11,7 @@ import math
 from collections import Counter
 from typing import Any
 
-from bim_ai.constraints_core import (
-    annotate_violation_blocking_classes,
-    annotate_violation_disciplines,
-)
-from bim_ai.constructability_advisories import constructability_advisory_violations
+from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
 from bim_ai.elements import (
     ElevationViewElem,
@@ -1127,27 +1123,42 @@ def qa_advisor(model_id: str, doc: Document, request: dict[str, Any]) -> dict[st
 
     profile = str(request.get("profile") or "authoring_default")
     limit = min(int(request.get("limit") or 100), 500)
-    violations = constructability_advisory_violations(doc.elements, profile=profile)
-    violations = annotate_violation_disciplines(annotate_violation_blocking_classes(violations))
+    report = build_constructability_report(
+        doc.elements,
+        revision=doc.revision,
+        profile=profile,
+        design_option_sets=doc.design_option_sets,
+    )
+    findings = list(report["findings"])
     severity = request.get("severity")
     if severity:
-        violations = [v for v in violations if v.severity == severity]
+        findings = [f for f in findings if f.get("severity") == severity]
     element_ids = set(request.get("elementIds") or [])
     if element_ids:
-        violations = [v for v in violations if element_ids.intersection(v.element_ids)]
-    findings = [v.model_dump(by_alias=True, exclude_none=True) for v in violations[:limit]]
-    counts = Counter(v.severity for v in violations)
+        findings = [
+            f
+            for f in findings
+            if element_ids.intersection(str(eid) for eid in f.get("elementIds") or [])
+        ]
+    counts = Counter(str(f.get("severity") or "unknown") for f in findings)
+    returned_findings = findings[:limit]
     return success_envelope(
         model_id,
         doc,
         {
             "format": "qaAdvisor_v1",
             "profile": profile,
-            "findings": findings,
+            "findings": returned_findings,
+            "rootCauseGroups": report.get("rootCauseGroups", []),
+            "profilePreset": report.get("profilePreset"),
+            "suppressionAudit": report.get("suppressionAudit"),
+            "reviewWorkflow": report.get("reviewWorkflow"),
+            "learningCorpus": report.get("learningCorpus"),
             "summary": {
-                "findingCount": len(violations),
-                "returnedCount": len(findings),
+                "findingCount": len(findings),
+                "returnedCount": len(returned_findings),
                 "severityCounts": dict(sorted(counts.items())),
+                "rootCauseGroupCount": report["summary"].get("rootCauseGroupCount", 0),
             },
             "limitations": [
                 "M2-G qa.advisor is read-only and wraps constructability advisory checks only.",

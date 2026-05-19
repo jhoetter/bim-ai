@@ -4014,6 +4014,23 @@ export type Violation = {
 
   /** When set (by constraints), Advisor can filter rows by discipline perspective */
   discipline?: string | null;
+
+  priority?: string | null;
+
+  priorityRank?: number | null;
+
+  rootCauseGroupId?: string | null;
+
+  rootCauseGroup?: {
+    id?: string;
+    family?: string;
+  } | null;
+
+  audienceText?: {
+    ui?: string;
+    agent?: string;
+    docs?: string;
+  } | null;
 };
 
 export type DesignOptionProvenance = {

@@ -13,7 +13,7 @@ import {
 } from './advisorViolationContext';
 import { filterViolationsForPerspective } from './perspectiveFilter';
 
-type AdvisorGroupBy = 'severity' | 'category' | 'view' | 'element';
+type AdvisorGroupBy = 'severity' | 'category' | 'view' | 'element' | 'rootCause';
 
 type AdvisorGroup = {
   key: string;
@@ -66,6 +66,11 @@ function formatElementGroup(v: Violation): string {
   return `${v.elementIds![0]} (+${v.elementIds!.length - 1})`;
 }
 
+function formatRootCauseGroup(v: Violation): string {
+  const family = v.rootCauseGroup?.family ?? v.rootCauseGroupId?.split(':')[0] ?? 'general';
+  return family.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function groupRank(groupBy: AdvisorGroupBy, key: string): number {
   if (groupBy === 'severity') {
     if (key === 'error') return 0;
@@ -98,7 +103,9 @@ function groupViolations(
           ? formatRuleCategory(violation.ruleId)
           : groupBy === 'view'
             ? formatViewGroup(violation)
-            : formatElementGroup(violation);
+            : groupBy === 'rootCause'
+              ? formatRootCauseGroup(violation)
+              : formatElementGroup(violation);
     const existing = buckets.get(key);
     if (existing) {
       existing.items.push(violation);
@@ -177,6 +184,7 @@ export function AdvisorPanel(props: {
         ? summarizeQuickFixCommand(v.quickFixCommand as Record<string, unknown>)
         : null;
     const ctx = translatedContextForRuleId(v.ruleId, t);
+    const audienceText = v.audienceText?.ui?.trim();
     const title = t(`violation.title.${v.ruleId}`, {
       defaultValue: humanizeRuleId(v.ruleId),
     });
@@ -202,7 +210,7 @@ export function AdvisorPanel(props: {
         <div className="mt-1 font-medium">{title}</div>
         <div className="mt-0.5 text-[10px] text-muted">{v.message}</div>
 
-        <p className="mt-1 text-[10px] text-muted">{ctx}</p>
+        <p className="mt-1 text-[10px] text-muted">{audienceText || ctx}</p>
 
         {(v.elementIds?.length ?? 0) > 0 ? (
           <div className="mt-1 text-[10px]">
@@ -303,6 +311,7 @@ export function AdvisorPanel(props: {
             <option value="category">Category</option>
             <option value="view">View</option>
             <option value="element">Element</option>
+            <option value="rootCause">Root cause</option>
           </select>
         </label>
 

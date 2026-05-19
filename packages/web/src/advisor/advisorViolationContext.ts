@@ -236,6 +236,9 @@ const SEVERITY_RANK: Record<Violation['severity'], number> = {
 
 export function sortViolationsDeterministic(violations: Violation[]): Violation[] {
   return [...violations].sort((a, b) => {
+    const pa = typeof a.priorityRank === 'number' ? a.priorityRank : 9999;
+    const pb = typeof b.priorityRank === 'number' ? b.priorityRank : 9999;
+    if (pa !== pb) return pa - pb;
     const ra = SEVERITY_RANK[a.severity] ?? 99;
     const rb = SEVERITY_RANK[b.severity] ?? 99;
     if (ra !== rb) return ra - rb;

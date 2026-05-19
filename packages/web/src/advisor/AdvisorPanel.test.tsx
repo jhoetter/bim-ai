@@ -16,6 +16,10 @@ const violations: Violation[] = [
     message: 'Physical clash detected.',
     elementIds: ['wall-1'],
     blocking: true,
+    priorityRank: 10,
+    rootCauseGroupId: 'physical_coordination:wall-1',
+    rootCauseGroup: { id: 'physical_coordination:wall-1', family: 'physical_coordination' },
+    audienceText: { ui: 'Resolve the physical clash.' },
     quickFixCommand: { type: 'tag_element', elementId: 'wall-1', key: 'clashStatus', value: 'ok' },
   },
   {
@@ -23,12 +27,14 @@ const violations: Violation[] = [
     severity: 'warning',
     message: 'Schedule viewport is missing.',
     elementIds: ['sheet-a101'],
+    rootCauseGroupId: 'documentation:sheet-a101',
   },
   {
     ruleId: 'room_finish_metadata_hint',
     severity: 'info',
     message: 'Room finish metadata missing.',
     elementIds: ['room-2'],
+    rootCauseGroupId: 'metadata_requirement:room-2',
   },
 ];
 
@@ -59,6 +65,10 @@ describe('AdvisorPanel', () => {
     fireEvent.change(getByLabelText('Advisor group by'), { target: { value: 'element' } });
     expect(getByTestId('advisor-group-wall-1').textContent).toContain('wall-1');
     expect(getByTestId('advisor-group-room-2').textContent).toContain('room-2');
+    fireEvent.change(getByLabelText('Advisor group by'), { target: { value: 'rootCause' } });
+    expect(getByTestId('advisor-group-physical-coordination').textContent).toContain(
+      'Physical Coordination',
+    );
   });
 
   it('supports ignore and restore workflow while preserving apply and navigate actions', () => {

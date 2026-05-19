@@ -397,7 +397,7 @@ fresh end-to-end screenshot regeneration are still outside this worker slice.
 | `BIR-U05` | P1       | Partial     | Add false-positive review workflow.       | Users/agents can classify a finding as rule defect, accepted tolerance, profile mismatch, or model defect with evidence.                                        |
 | `BIR-U06` | P2       | Partial     | Add Advisor learning corpus.              | Confirmed true/false findings become fixtures for rule tuning and regression prevention.                                                                        |
 
-W16-D evidence, 2026-05-19: `app/bim_ai/advisor_rule_registry.py` adds
+W16-D evidence, 2026-05-19: `app/bim_ai/advisor_policy_registry.py` adds
 machine-readable rule policy metadata for suppressibility
 (`ignorable`/`review_required`/`non_suppressible`), owner/expiry/evidence
 tolerance requirements, profile presets, audience-specific text, false-positive

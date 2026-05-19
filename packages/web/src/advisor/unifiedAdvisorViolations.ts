@@ -16,7 +16,7 @@ export function constructabilityFindingToViolation(finding: ConstructabilityFind
   const severity = normalizeSeverity(finding.severity);
   const recommendation = finding.recommendation?.trim();
   const quickFixCommand = firstContextOnlyCommandHint(finding);
-  return {
+  const violation: Violation = {
     ruleId: finding.ruleId,
     severity,
     message: recommendation
@@ -27,6 +27,12 @@ export function constructabilityFindingToViolation(finding: ConstructabilityFind
     blocking: severity === 'error',
     ...(quickFixCommand ? { quickFixCommand } : {}),
   };
+  if (finding.priority) violation.priority = finding.priority;
+  if (finding.priorityRank !== undefined) violation.priorityRank = finding.priorityRank;
+  if (finding.rootCauseGroupId) violation.rootCauseGroupId = finding.rootCauseGroupId;
+  if (finding.rootCauseGroup) violation.rootCauseGroup = finding.rootCauseGroup;
+  if (finding.audienceText) violation.audienceText = finding.audienceText;
+  return violation;
 }
 
 export function mergeAdvisorViolations(
