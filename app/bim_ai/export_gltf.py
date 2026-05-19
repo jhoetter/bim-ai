@@ -212,6 +212,16 @@ def _gltf_manifest_extension(gltf: dict[str, Any]) -> dict[str, Any] | None:
     return manifest if isinstance(manifest, dict) else None
 
 
+def _gltf_semantic_expectation_rows(manifest: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(manifest, dict):
+        return []
+    payload = manifest.get("gltfSemanticExpectation_v1")
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("elements")
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
 def _gltf_accessor_is_position(accessor: dict[str, Any]) -> bool:
     return (
         accessor.get("componentType") == 5126
@@ -240,12 +250,15 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
     node_counts: dict[str, int] = {}
     node_ids: dict[str, list[str]] = {}
     invalid_mesh_nodes: list[str] = []
+    extras_by_element_id: dict[str, dict[str, Any]] = {}
     for node in geometry_nodes:
         kind, elem_id = _gltf_node_kind_and_element_id(node)
         if kind:
             node_counts[kind] = node_counts.get(kind, 0) + 1
             if elem_id:
                 node_ids.setdefault(kind, []).append(elem_id)
+                extras = node.get("extras") if isinstance(node.get("extras"), dict) else {}
+                extras_by_element_id[elem_id] = dict(extras)
         mesh_ix = node.get("mesh")
         if not isinstance(mesh_ix, int) or mesh_ix < 0 or mesh_ix >= len(meshes):
             invalid_mesh_nodes.append(str(node.get("name") or elem_id or mesh_ix))
@@ -382,6 +395,65 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
             }
         )
 
+    semantic_expectations = _gltf_semantic_expectation_rows(manifest)
+    semantic_rows: list[dict[str, Any]] = []
+    material_fallback_count = 0
+    type_fallback_count = 0
+    for expected in semantic_expectations:
+        elem_id = str(expected.get("elementId") or "").strip()
+        if not elem_id:
+            continue
+        extras = extras_by_element_id.get(elem_id)
+        expected_type = expected.get("expectedTypeId")
+        expected_material = expected.get("expectedMaterialKey")
+        expected_visual = expected.get("visualMaterialKind")
+        row = {
+            "elementId": elem_id,
+            "kind": expected.get("kind"),
+            "status": "matched",
+            "expectedTypeId": expected_type,
+            "readbackTypeId": None,
+            "expectedMaterialKey": expected_material,
+            "readbackMaterialKey": None,
+            "visualMaterialKind": expected_visual,
+            "materialFallback": bool(expected.get("materialFallback")),
+            "typeFallback": bool(expected.get("typeFallback")),
+        }
+        if row["materialFallback"]:
+            material_fallback_count += 1
+        if row["typeFallback"]:
+            type_fallback_count += 1
+        if extras is None:
+            row["status"] = "missing_node_semantics"
+            findings.append(
+                {
+                    "code": "gltf_semantic_node_missing",
+                    "severity": "error",
+                    "elementId": elem_id,
+                }
+            )
+        else:
+            row["readbackTypeId"] = extras.get("bimAiTypeId")
+            row["readbackMaterialKey"] = extras.get("bimAiMaterialKey")
+            if (
+                row["readbackTypeId"] != expected_type
+                or row["readbackMaterialKey"] != expected_material
+                or extras.get("bimAiVisualMaterialKind") != expected_visual
+            ):
+                row["status"] = "semantic_drift"
+                findings.append(
+                    {
+                        "code": "gltf_semantic_type_material_drift",
+                        "severity": "error",
+                        "elementId": elem_id,
+                        "expectedTypeId": expected_type,
+                        "readbackTypeId": row["readbackTypeId"],
+                        "expectedMaterialKey": expected_material,
+                        "readbackMaterialKey": row["readbackMaterialKey"],
+                    }
+                )
+        semantic_rows.append(row)
+
     buffer_byte_length = 0
     if buffers and isinstance(buffers[0], dict):
         try:
@@ -399,6 +471,11 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
         "indexAccessorCount": index_accessor_count,
         "indexCount": index_count,
         "bufferByteLength": buffer_byte_length,
+        "semanticExpectationCount": len(semantic_expectations),
+        "semanticFallbackCounts": {
+            "material": material_fallback_count,
+            "type": type_fallback_count,
+        },
         "findingCodes": [f["code"] for f in findings],
     }
     return {
@@ -418,6 +495,14 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
         "indexAccessorCount": index_accessor_count,
         "indexCount": index_count,
         "bufferByteLength": buffer_byte_length,
+        "semanticReadback": {
+            "format": "gltfSemanticReadback_v1",
+            "expectationCount": len(semantic_expectations),
+            "checkedElementCount": len(semantic_rows),
+            "materialFallbackCount": material_fallback_count,
+            "typeFallbackCount": type_fallback_count,
+            "rows": semantic_rows,
+        },
         "findings": findings,
         "gltfJsonReadbackFidelityDigestSha256": _sha256_hex(digest_source),
     }
@@ -748,6 +833,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
     roof_unsup_summary = roof_geometry_unsupported_shape_summary_v0(doc)
     saved_3d_clip = collect_saved_3d_view_clip_evidence_v1(doc)
+    gltf_semantics = gltf_semantic_expectation_v1(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if _document_has_gable_roof_mesh(doc):
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -809,6 +895,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["roofGeometryUnsupportedShapeSummary_v0"] = roof_unsup_summary
     if saved_3d_clip:
         base["saved3dViewClipEvidence_v1"] = saved_3d_clip
+    if gltf_semantics:
+        base["gltfSemanticExpectation_v1"] = gltf_semantics
     base["gltfExportManifestClosure_v1"] = build_gltf_export_manifest_closure_v1(mesh_enc, base)
     return base
 
@@ -1185,6 +1273,51 @@ def _visual_geom_entry_sort_key(
     return ("roof", gv.elem_id)
 
 
+def _source_type_id(elem: Any) -> str | None:
+    for attr in ("wall_type_id", "floor_type_id", "roof_type_id", "family_type_id"):
+        raw = getattr(elem, attr, None)
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+    return None
+
+
+def _source_material_key(elem: Any) -> str | None:
+    for attr in ("material_key", "default_material_key"):
+        raw = getattr(elem, attr, None)
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+    slots = getattr(elem, "material_slots", None)
+    if isinstance(slots, dict):
+        for key in sorted(slots):
+            raw = slots.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+    return None
+
+
+def _gltf_semantic_expectation_for_node(
+    doc: Document,
+    *,
+    elem_id: str,
+    geom_kind: str,
+    visual_material_kind: str,
+) -> dict[str, Any] | None:
+    elem = doc.elements.get(elem_id)
+    if elem is None:
+        return None
+    type_id = _source_type_id(elem)
+    material_key = _source_material_key(elem)
+    return {
+        "elementId": elem_id,
+        "kind": geom_kind,
+        "expectedTypeId": type_id,
+        "expectedMaterialKey": material_key,
+        "visualMaterialKind": visual_material_kind,
+        "typeFallback": type_id is not None,
+        "materialFallback": material_key is not None,
+    }
+
+
 def _collect_visual_geom_entries(
     doc: Document,
 ) -> list[tuple[Literal["box", "gable", "site_pad"], Any]]:
@@ -1197,6 +1330,64 @@ def _collect_visual_geom_entries(
         entries.append(("site_pad", sp))
     entries.sort(key=_visual_geom_entry_sort_key)
     return entries
+
+
+def gltf_semantic_expectation_v1(doc: Document) -> dict[str, Any] | None:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for tag, payload in _collect_visual_geom_entries(doc):
+        if tag == "box":
+            gb = cast(_GeomBox, payload)
+            row = _gltf_semantic_expectation_for_node(
+                doc,
+                elem_id=gb.elem_id,
+                geom_kind=gb.kind,
+                visual_material_kind=gb.kind,
+            )
+        elif tag == "site_pad":
+            sp = cast(_SitePadVisual, payload)
+            row = _gltf_semantic_expectation_for_node(
+                doc,
+                elem_id=sp.elem_id,
+                geom_kind="site",
+                visual_material_kind="site",
+            )
+        else:
+            gv = cast(_GableRoofVisual, payload)
+            row = _gltf_semantic_expectation_for_node(
+                doc,
+                elem_id=gv.elem_id,
+                geom_kind="roof",
+                visual_material_kind="roof",
+            )
+        if row is None or row["elementId"] in seen:
+            continue
+        seen.add(row["elementId"])
+        rows.append(row)
+    if not rows:
+        return None
+    fallback_rows = [r for r in rows if r["typeFallback"] or r["materialFallback"]]
+    return {
+        "format": "gltfSemanticExpectation_v1",
+        "elementCount": len(rows),
+        "fallbackCount": len(fallback_rows),
+        "fallbackRows": fallback_rows,
+        "elements": rows,
+    }
+
+
+def _merge_gltf_node_semantic_extras(
+    extras: dict[str, Any],
+    expected: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if expected is None:
+        return extras
+    extras["bimAiTypeId"] = expected.get("expectedTypeId")
+    extras["bimAiMaterialKey"] = expected.get("expectedMaterialKey")
+    extras["bimAiVisualMaterialKind"] = expected.get("visualMaterialKind")
+    extras["bimAiTypeFallback"] = bool(expected.get("typeFallback"))
+    extras["bimAiMaterialFallback"] = bool(expected.get("materialFallback"))
+    return extras
 
 
 def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
@@ -1439,6 +1630,12 @@ def _category_materials_gltf() -> list[dict[str, Any]]:
 
 def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], bytes]:
     mf_payload = export_manifest_extension_payload(doc)
+    semantic_rows = (mf_payload.get("gltfSemanticExpectation_v1") or {}).get("elements") or []
+    semantic_by_id = {
+        str(row.get("elementId")): row
+        for row in semantic_rows
+        if isinstance(row, dict) and row.get("elementId")
+    }
 
     meshes: list[dict[str, Any]] = []
     nodes: list[dict[str, Any]] = []
@@ -1487,7 +1684,10 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
             yaw = gb.yaw
             trans_t = (float(gb.translation[0]), float(gb.translation[1]), float(gb.translation[2]))
             mat_kind = gb.kind
-            extras = {"bimAiEncoding": mf_payload["meshEncoding"], "elementId": gb.elem_id}
+            extras = _merge_gltf_node_semantic_extras(
+                {"bimAiEncoding": mf_payload["meshEncoding"], "elementId": gb.elem_id},
+                semantic_by_id.get(gb.elem_id),
+            )
         elif tag == "site_pad":
             sp = cast(_SitePadVisual, payload)
             vbytes = sp.interleaved
@@ -1511,6 +1711,7 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
                 "elementId": sp.elem_id,
                 "bimAiSemantic": "site_pad",
             }
+            extras = _merge_gltf_node_semantic_extras(extras, semantic_by_id.get(sp.elem_id))
         else:
             gv = cast(_GableRoofVisual, payload)
             vbytes, vcount = _gable_roof_interleaved_world_m(gv)
@@ -1533,6 +1734,7 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
                 "elementId": gv.elem_id,
                 "bimAiRoofGeometryMode": "gable_pitched_rectangle",
             }
+            extras = _merge_gltf_node_semantic_extras(extras, semantic_by_id.get(gv.elem_id))
             if roof_ev is not None:
                 extras["bimAiRoofGeometryEvidence_v1"] = roof_ev
 

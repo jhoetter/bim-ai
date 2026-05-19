@@ -665,6 +665,74 @@ def _check_render_bundles(
     return checks
 
 
+def _manifest_coverage_summary(
+    *,
+    schedule_checks: list[dict[str, Any]],
+    sheet_checks: list[dict[str, Any]],
+    render_bundle_checks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    unsupported_schedules = [
+        row
+        for row in schedule_checks
+        if row.get("status") == "unsupported_schedule_category"
+    ]
+    missing_schedules = [row for row in schedule_checks if row.get("status") == "missing_schedule"]
+    schedule_row_mismatches = [row for row in schedule_checks if row.get("status") == "row_mismatch"]
+    stale_schedule_digests = [
+        row
+        for row in schedule_checks
+        if row.get("documentationEvidenceStatus") in {"stale_digest", "missing_digest"}
+    ]
+    sheet_gaps = [
+        row
+        for row in sheet_checks
+        if row.get("status") != "matched" or row.get("missingViewportEvidenceIds")
+    ]
+    viewport_gaps = [
+        vp
+        for row in sheet_checks
+        for vp in row.get("viewports", [])
+        if isinstance(vp, dict)
+        and (
+            not vp.get("resolvesViewRef")
+            or vp.get("scaleStatus") == "missing"
+            or vp.get("viewportEvidenceStatus") == "missing_viewport_evidence"
+        )
+    ]
+    render_gaps = [row for row in render_bundle_checks if row.get("status") != "matched"]
+    return {
+        "format": "scheduleSheetManifestCoverage_v1",
+        "ok": not (
+            unsupported_schedules
+            or missing_schedules
+            or schedule_row_mismatches
+            or stale_schedule_digests
+            or sheet_gaps
+            or viewport_gaps
+            or render_gaps
+        ),
+        "requiredScheduleCategories": list(REQUIRED_EXCHANGE_SCHEDULE_CATEGORIES),
+        "supportedScheduleCategories": sorted(SUPPORTED_SCHEDULE_CATEGORIES),
+        "unsupportedScheduleCategoryCount": len(unsupported_schedules),
+        "missingRequiredScheduleCount": len(missing_schedules),
+        "scheduleRowMismatchCount": len(schedule_row_mismatches),
+        "staleScheduleDigestCount": len(stale_schedule_digests),
+        "sheetEvidenceGapCount": len(sheet_gaps),
+        "viewportCoverageGapCount": len(viewport_gaps),
+        "renderBundleCoverageGapCount": len(render_gaps),
+        "unsupportedScheduleCategories": sorted(
+            {
+                str(row.get("category") or "")
+                for row in unsupported_schedules
+                if row.get("category")
+            }
+        ),
+        "missingRequiredScheduleCategories": sorted(
+            {str(row.get("category") or "") for row in missing_schedules if row.get("category")}
+        ),
+    }
+
+
 def build_schedule_sheet_exchange_evidence_v1(
     doc: Document,
     *,
@@ -715,6 +783,11 @@ def build_schedule_sheet_exchange_evidence_v1(
         documentation_export_evidence=doc_export_evidence,
         findings=findings,
     )
+    manifest_coverage = _manifest_coverage_summary(
+        schedule_checks=schedule_checks,
+        sheet_checks=sheet_checks,
+        render_bundle_checks=render_bundle_checks,
+    )
 
     findings.sort(
         key=lambda r: (
@@ -733,7 +806,9 @@ def build_schedule_sheet_exchange_evidence_v1(
             "sheetCheckCount": len(sheet_checks),
             "renderBundleCheckCount": len(render_bundle_checks),
             "findingCount": len(findings),
+            "manifestCoverageOk": manifest_coverage["ok"],
         },
+        "manifestCoverage": manifest_coverage,
         "scheduleChecks": schedule_checks,
         "sheetViewChecks": sheet_checks,
         "renderBundleChecks": render_bundle_checks,
@@ -745,6 +820,7 @@ def build_schedule_sheet_exchange_evidence_v1(
             "scheduleChecks": schedule_checks,
             "sheetViewChecks": sheet_checks,
             "renderBundleChecks": render_bundle_checks,
+            "manifestCoverage": manifest_coverage,
             "findings": findings,
         }
     )

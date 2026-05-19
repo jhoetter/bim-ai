@@ -183,6 +183,9 @@ def test_schedule_sheet_exchange_evidence_clean_with_current_packets() -> None:
     assert evidence["status"] == "clean"
     assert evidence["pass"] is True
     assert evidence["summary"]["findingCount"] == 0
+    assert evidence["summary"]["manifestCoverageOk"] is True
+    assert evidence["manifestCoverage"]["format"] == "scheduleSheetManifestCoverage_v1"
+    assert evidence["manifestCoverage"]["ok"] is True
     by_category = {row["category"]: row for row in evidence["scheduleChecks"]}
     assert by_category["room"]["status"] == "matched"
     assert by_category["door"]["status"] == "matched"
@@ -283,6 +286,11 @@ def test_schedule_exchange_evidence_exposes_unsupported_categories_and_missing_s
         row for row in evidence["scheduleChecks"] if row["scheduleId"] == "sch-custom"
     )
     assert unsupported["status"] == "unsupported_schedule_category"
+    assert evidence["manifestCoverage"]["ok"] is False
+    assert evidence["manifestCoverage"]["unsupportedScheduleCategories"] == [
+        "unsupported_exchange_category"
+    ]
+    assert "room" in evidence["manifestCoverage"]["missingRequiredScheduleCategories"]
     missing_room = next(
         row
         for row in evidence["scheduleChecks"]

@@ -160,7 +160,7 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
     from bim_ai.dxf_import import (
         collect_dxf_layers,
         dxf_source_metadata,
-        parse_dxf_to_linework_with_scale,
+        parse_dxf_to_linework_with_diagnostics,
     )
 
     path = Path(source_path)
@@ -173,7 +173,7 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
         }
     try:
         unit_override = command.get("unitOverride", link.unit_override)
-        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+        linework, unit_scale_to_mm, dxf_import_readback = parse_dxf_to_linework_with_diagnostics(
             path,
             unit_override=unit_override,
         )
@@ -196,6 +196,7 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
             **dxf_source_metadata(path),
             "unitOverride": unit_override,
             "unitScaleToMm": unit_scale_to_mm,
+            "dxfImportReadbackContract_v1": dxf_import_readback,
         },
         "reloadStatus": "ok",
         "lastReloadMessage": f"Reloaded from {path}",

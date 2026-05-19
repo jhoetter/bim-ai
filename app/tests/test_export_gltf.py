@@ -161,6 +161,55 @@ def test_document_to_gltf_embeds_json_readback_fidelity_evidence() -> None:
     assert len(readback["gltfJsonReadbackFidelityDigestSha256"]) == 64
 
 
+def test_gltf_readback_preserves_type_and_material_fallback_semantics() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "wt-a": WallTypeElem(
+                kind="wall_type",
+                id="wt-a",
+                name="Partition",
+                layers=[
+                    WallTypeLayer(
+                        thicknessMm=200,
+                        function="structure",
+                        materialKey="mat-brick",
+                    )
+                ],
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                wallTypeId="wt-a",
+                materialKey="mat-brick",
+            ),
+        },
+    )
+
+    gltf = document_to_gltf(doc)
+    manifest = gltf["extensions"]["BIM_AI_exportManifest_v0"]
+    expectation = manifest["gltfSemanticExpectation_v1"]
+    readback = manifest["gltfJsonReadbackFidelity_v1"]["semanticReadback"]
+
+    assert expectation["fallbackCount"] == 1
+    assert expectation["fallbackRows"][0]["expectedTypeId"] == "wt-a"
+    assert expectation["fallbackRows"][0]["expectedMaterialKey"] == "mat-brick"
+    assert readback["typeFallbackCount"] == 1
+    assert readback["materialFallbackCount"] == 1
+    assert readback["rows"][0]["status"] == "matched"
+    wall_node = next(n for n in gltf["nodes"] if n["name"] == "wall:w-a")
+    assert wall_node["extras"]["bimAiTypeId"] == "wt-a"
+    assert wall_node["extras"]["bimAiMaterialKey"] == "mat-brick"
+    assert wall_node["extras"]["bimAiVisualMaterialKind"] == "wall"
+
+
 def test_gltf_json_readback_fidelity_detects_mesh_node_drift() -> None:
     doc = Document(
         revision=1,

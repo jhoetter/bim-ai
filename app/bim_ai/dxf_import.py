@@ -21,6 +21,8 @@ from typing import Any
 import ezdxf
 from ezdxf import colors as ezdxf_colors
 
+from bim_ai.site_georeferencing_integrity import import_diagnostic_report_v1
+
 # DXF $INSUNITS code → millimetre conversion factor.
 # Reference: https://ezdxf.readthedocs.io/en/stable/concepts/units.html
 # 0 = unitless; treat as mm so existing mm-authored files pass through.
@@ -75,6 +77,8 @@ _SKIPPED_DXF_TYPES: set[str] = {
     "IMAGE",
     "WIPEOUT",
 }
+
+_SUPPORTED_DXF_TYPES: set[str] = {"LINE", "LWPOLYLINE", "POLYLINE", "ARC", "CIRCLE"}
 
 
 def _scale_factor_from_insunits(insunits: Any) -> float:
@@ -156,6 +160,13 @@ def _entity_layer_meta(entity: Any, doc: Any) -> dict[str, str]:
         "layerName": layer_name,
         **({"layerColor": color} if color else {}),
     }
+
+
+def _entity_layer_name(entity: Any) -> str:
+    try:
+        return str(getattr(entity.dxf, "layer", "") or "0")
+    except AttributeError:
+        return "0"
 
 
 def _line_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any]:
@@ -264,33 +275,164 @@ def parse_dxf_to_linework_with_scale(
     caller's import-time unit override. 3D-only entities, hatches,
     dimensions, text, and blocks are skipped silently.
     """
+    linework, scale, _diagnostics = parse_dxf_to_linework_with_diagnostics(
+        path,
+        unit_override=unit_override,
+    )
+    return linework, scale
+
+
+def parse_dxf_to_linework_with_diagnostics(
+    path: Path,
+    unit_override: Any = None,
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Parse DXF linework and return deterministic import/readback diagnostics."""
+
     doc = ezdxf.readfile(str(path))
     scale = _effective_scale_factor(doc, unit_override)
 
     linework: list[dict[str, Any]] = []
+    parsed_counts: dict[str, int] = {}
+    skipped_counts: dict[str, int] = {}
+    skipped_rows: list[dict[str, Any]] = []
+
+    def record_parsed(kind: str) -> None:
+        parsed_counts[kind] = parsed_counts.get(kind, 0) + 1
+
+    def record_skipped(entity: Any, dxftype: str, reason: str) -> None:
+        layer_name = _entity_layer_name(entity)
+        skipped_counts[dxftype] = skipped_counts.get(dxftype, 0) + 1
+        skipped_rows.append(
+            {
+                "sourceEntityType": dxftype,
+                "layerName": layer_name,
+                "reasonCode": reason,
+            }
+        )
+
     for entity in doc.modelspace():
         dxftype = entity.dxftype()
         try:
             if dxftype == "LINE":
                 linework.append(_line_to_prim(entity, scale, doc))
+                record_parsed("line")
             elif dxftype == "LWPOLYLINE":
                 linework.append(_lwpolyline_to_prim(entity, scale, doc))
+                record_parsed("polyline")
             elif dxftype == "POLYLINE":
                 prim = _polyline_to_prim(entity, scale, doc)
                 if prim is not None:
                     linework.append(prim)
+                    record_parsed("polyline")
+                else:
+                    record_skipped(entity, dxftype, "unsupported_3d_polyline")
             elif dxftype == "ARC":
                 arc = _arc_to_prim(entity, scale, doc)
                 if math.isfinite(arc["radiusMm"]) and arc["radiusMm"] > 0:
                     linework.append(arc)
+                    record_parsed("arc")
+                else:
+                    record_skipped(entity, dxftype, "invalid_arc_radius")
             elif dxftype == "CIRCLE":
                 circle = _circle_to_prim(entity, scale, doc)
                 if math.isfinite(circle["radiusMm"]) and circle["radiusMm"] > 0:
                     linework.append(circle)
+                    record_parsed("arc")
+                else:
+                    record_skipped(entity, dxftype, "invalid_circle_radius")
+            elif dxftype in _SKIPPED_DXF_TYPES:
+                record_skipped(entity, dxftype, "unsupported_entity_type")
+            elif dxftype not in _SUPPORTED_DXF_TYPES:
+                record_skipped(entity, dxftype, "unsupported_entity_type")
         except (AttributeError, ValueError):
-            continue
+            record_skipped(entity, dxftype, "parse_error")
 
-    return linework, scale
+    diagnostics = build_dxf_import_readback_contract_v1(
+        path=path,
+        unit_override=unit_override,
+        unit_scale_to_mm=scale,
+        linework=linework,
+        parsed_counts=parsed_counts,
+        skipped_rows=skipped_rows,
+        skipped_counts=skipped_counts,
+    )
+    return linework, scale, diagnostics
+
+
+def build_dxf_import_readback_contract_v1(
+    *,
+    path: Path,
+    unit_override: Any = None,
+    unit_scale_to_mm: float,
+    linework: list[dict[str, Any]],
+    parsed_counts: dict[str, int],
+    skipped_rows: list[dict[str, Any]],
+    skipped_counts: dict[str, int],
+) -> dict[str, Any]:
+    """Machine-readable DXF import/readback contract for exchange gates."""
+
+    import_rows: list[dict[str, Any]] = []
+    for source_type in sorted(skipped_counts):
+        affected_layers = sorted(
+            {
+                str(row.get("layerName") or "0")
+                for row in skipped_rows
+                if row.get("sourceEntityType") == source_type
+            }
+        )
+        import_rows.append(
+            {
+                "code": "dxf.unsupported_entity_skipped",
+                "category": "unsupported_product",
+                "severity": "warning",
+                "message": f"DXF {source_type} entities are not mapped to BIM linework.",
+                "sourceCategory": source_type,
+                "mappedCategory": "dxf_linework",
+                "mappingSupported": False,
+                "fallbackCategory": "skipped",
+                "expected": "supported 2D LINE/LWPOLYLINE/POLYLINE/ARC/CIRCLE",
+                "actual": source_type,
+                "elementIds": [f"layer:{layer}" for layer in affected_layers],
+            }
+        )
+    if unit_scale_to_mm != 1.0 or unit_override not in (None, "", "source", "auto", "insunits"):
+        import_rows.append(
+            {
+                "code": "dxf.unit_normalization",
+                "category": "unit_normalization",
+                "severity": "info",
+                "message": "DXF coordinates were normalized to millimetres.",
+                "expected": "host model millimetres",
+                "actual": f"unitScaleToMm={unit_scale_to_mm}",
+            }
+        )
+
+    import_contract = import_diagnostic_report_v1(
+        import_rows,
+        operation_id=f"dxf-import:{path.name}",
+        source_name=path.name,
+    )
+    return {
+        "format": "dxfImportReadbackContract_v1",
+        "sourceFormat": "dxf",
+        "sourceName": path.name,
+        "unitOverride": unit_override,
+        "unitScaleToMm": unit_scale_to_mm,
+        "parsedPrimitiveCount": len(linework),
+        "parsedPrimitiveCountsByKind": dict(sorted(parsed_counts.items())),
+        "unsupportedSkippedCount": len(skipped_rows),
+        "unsupportedSkippedCountsByEntityType": dict(sorted(skipped_counts.items())),
+        "unsupportedSkippedEntities": sorted(
+            skipped_rows,
+            key=lambda row: (
+                str(row.get("sourceEntityType") or ""),
+                str(row.get("layerName") or ""),
+                str(row.get("reasonCode") or ""),
+            ),
+        ),
+        "importDiagnosticContract_v1": import_contract,
+        "ok": import_contract["ok"],
+    }
 
 
 def parse_dxf_to_linework(path: Path, unit_override: Any = None) -> list[dict[str, Any]]:

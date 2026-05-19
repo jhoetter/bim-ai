@@ -110,6 +110,50 @@ def test_parse_dxf_skips_3d_entities(tmp_path: Path) -> None:
     assert linework[0]["kind"] == "line"
 
 
+def test_parse_dxf_readback_contract_exposes_unsupported_skips(tmp_path: Path) -> None:
+    from bim_ai.dxf_import import parse_dxf_to_linework_with_diagnostics
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 1
+    doc.layers.new("A-3D", dxfattribs={"color": 4})
+    msp = doc.modelspace()
+    msp.add_3dface(
+        [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 1.0), (0.0, 1.0, 1.0)],
+        dxfattribs={"layer": "A-3D"},
+    )
+    msp.add_line((0.0, 0.0), (1.0, 0.0))
+    path = tmp_path / "diagnostics.dxf"
+    doc.saveas(str(path))
+
+    linework, unit_scale, contract = parse_dxf_to_linework_with_diagnostics(path)
+
+    assert len(linework) == 1
+    assert unit_scale == 25.4
+    assert contract["format"] == "dxfImportReadbackContract_v1"
+    assert contract["parsedPrimitiveCountsByKind"] == {"line": 1}
+    assert contract["unsupportedSkippedCountsByEntityType"] == {"3DFACE": 1}
+    assert contract["unsupportedSkippedEntities"] == [
+        {
+            "sourceEntityType": "3DFACE",
+            "layerName": "A-3D",
+            "reasonCode": "unsupported_entity_type",
+        }
+    ]
+    import_contract = contract["importDiagnosticContract_v1"]
+    assert import_contract["format"] == "importDiagnosticContract_v1"
+    assert import_contract["summary"]["categoryCounts"]["unsupported_product"] == 1
+    assert import_contract["summary"]["categoryCounts"]["unit_normalization"] == 1
+    unsupported = next(
+        row for row in import_contract["diagnostics"] if row["category"] == "unsupported_product"
+    )
+    assert unsupported["mapping"] == {
+        "sourceCategory": "3DFACE",
+        "mappedCategory": "dxf_linework",
+        "mappingSupported": False,
+        "fallbackCategory": "skipped",
+    }
+
+
 def test_parse_dxf_units_scaling(tmp_path: Path) -> None:
     """``$INSUNITS=1`` (inches) converts coordinates to millimetres."""
 

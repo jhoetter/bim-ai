@@ -1929,7 +1929,7 @@ async def import_dxf(
     from bim_ai.dxf_import import (
         collect_dxf_layers,
         dxf_source_metadata,
-        parse_dxf_to_linework_with_scale,
+        parse_dxf_to_linework_with_diagnostics,
     )
 
     host_row = await load_model_row(session, host_id)
@@ -1943,7 +1943,7 @@ async def import_dxf(
         )
 
     try:
-        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+        linework, unit_scale_to_mm, dxf_import_readback = parse_dxf_to_linework_with_diagnostics(
             dxf_path,
             unit_override=body.unit_override,
         )
@@ -1977,6 +1977,7 @@ async def import_dxf(
             **dxf_source_metadata(dxf_path),
             "unitOverride": body.unit_override,
             "unitScaleToMm": unit_scale_to_mm,
+            "dxfImportReadbackContract_v1": dxf_import_readback,
         },
         "reloadStatus": "ok",
         "lastReloadMessage": f"Loaded from {dxf_path}",
@@ -2029,6 +2030,7 @@ async def import_dxf(
     return {
         "linkedElementId": link_element_id,
         "lineworkCount": len(linework),
+        "dxfImportReadbackContract_v1": dxf_import_readback,
     }
 
 
@@ -2058,7 +2060,7 @@ async def upload_dxf_file(
     import tempfile
     from pathlib import Path as _Path
 
-    from bim_ai.dxf_import import collect_dxf_layers, parse_dxf_to_linework_with_scale
+    from bim_ai.dxf_import import collect_dxf_layers, parse_dxf_to_linework_with_diagnostics
 
     host_row = await load_model_row(session, host_id)
     if host_row is None:
@@ -2079,7 +2081,7 @@ async def upload_dxf_file(
         tmp_path = tmp.name
 
     try:
-        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+        linework, unit_scale_to_mm, dxf_import_readback = parse_dxf_to_linework_with_diagnostics(
             _Path(tmp_path),
             unit_override=unitOverride,
         )
@@ -2113,6 +2115,7 @@ async def upload_dxf_file(
             "sizeBytes": len(content),
             "unitOverride": unitOverride,
             "unitScaleToMm": unit_scale_to_mm,
+            "dxfImportReadbackContract_v1": dxf_import_readback,
         },
         "reloadStatus": "embedded",
         "lastReloadMessage": "Embedded CAD import has no reloadable source path",
@@ -2163,7 +2166,11 @@ async def upload_dxf_file(
     except Exception:
         pass
 
-    return {"linkDxfId": link_element_id, "name": display_name}
+    return {
+        "linkDxfId": link_element_id,
+        "name": display_name,
+        "dxfImportReadbackContract_v1": dxf_import_readback,
+    }
 
 
 @api_router.post("/material-assets/validate-upload")
