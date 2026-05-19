@@ -104,5 +104,11 @@ def test_target_house_ground_service_rooms_are_floor_contained() -> None:
         if finding.get("code") == "BIR-D06-FLOOR"
         and target_room_ids.intersection(finding.get("elementIds") or [])
     ]
+    containment_findings = [
+        finding
+        for finding in report["findings"]
+        if str(finding.get("ruleId") or "").startswith("room_containment")
+    ]
 
     assert target_findings == []
+    assert containment_findings == []

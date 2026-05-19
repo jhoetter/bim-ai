@@ -1,0 +1,367 @@
+{
+  "format": "p0IntegrityFixtureCorpus_v1",
+  "fixtureClasses": {
+    "minimal_synthetic": {
+      "description": "Small hand-authored models that isolate one deterministic integrity rule family.",
+      "auditable": true
+    },
+    "target_house_regression": {
+      "description": "Reduced target-house-1 symptoms that must continue to fail until the modeled defect is fixed.",
+      "auditable": true
+    },
+    "benchmark_seed": {
+      "description": "Larger deterministic benchmark seeds used for acceptance and performance-neutral regression checks.",
+      "auditable": true
+    },
+    "import_export_roundtrip": {
+      "description": "Fixtures that compare source model topology with exported/imported evidence.",
+      "auditable": true
+    },
+    "performance_stress": {
+      "description": "Large bounded cases used only for runtime and incremental-diagnostics behavior.",
+      "auditable": true
+    },
+    "disposable_local_evidence_rehearsal": {
+      "description": "Local throwaway seed/evidence rehearsal data that must not become canonical fixture evidence.",
+      "auditable": true
+    },
+    "user_realistic_sketch": {
+      "description": "Sketch-derived cases that preserve realistic customer ambiguity while declaring expected rule outcomes.",
+      "auditable": true
+    }
+  },
+  "cases": [
+    {
+      "id": "valid_minimal_room_contained",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room outline lies fully within the only floor slab on its level.",
+      "trackerItems": ["BIR-D03", "BIR-O01"],
+      "rulesUnderTest": ["room_containment_detached_island", "room_containment_outside_floor_slab"],
+      "expectedFindings": [],
+      "absentRuleIds": ["room_containment_detached_island", "room_containment_outside_floor_slab"],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "room-1": {
+          "kind": "room",
+          "id": "room-1",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 500, "yMm": 500 },
+            { "xMm": 2500, "yMm": 500 },
+            { "xMm": 2500, "yMm": 2500 },
+            { "xMm": 500, "yMm": 2500 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "room_overlap_outside_slab",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room partly overlaps the floor slab and partly hangs outside it without extension intent.",
+      "trackerItems": ["BIR-D03", "BIR-O01"],
+      "rulesUnderTest": ["room_containment_outside_floor_slab"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_containment_outside_floor_slab",
+          "elementIds": ["floor-1", "room-overlap"]
+        }
+      ],
+      "absentRuleIds": ["room_containment_detached_island"],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "room-overlap": {
+          "kind": "room",
+          "id": "room-overlap",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 4200, "yMm": 1000 },
+            { "xMm": 5600, "yMm": 1000 },
+            { "xMm": 5600, "yMm": 3000 },
+            { "xMm": 4200, "yMm": 3000 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "room_detached_island",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room is fully detached from every floor slab on its level.",
+      "trackerItems": ["BIR-D03", "BIR-O01"],
+      "rulesUnderTest": ["room_containment_detached_island"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_containment_detached_island",
+          "elementIds": ["floor-1", "room-detached"]
+        }
+      ],
+      "absentRuleIds": ["room_containment_outside_floor_slab"],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "room-detached": {
+          "kind": "room",
+          "id": "room-detached",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 6500, "yMm": 500 },
+            { "xMm": 8000, "yMm": 500 },
+            { "xMm": 8000, "yMm": 2000 },
+            { "xMm": 6500, "yMm": 2000 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "intentional_loggia_room_extension",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Partly exterior loggia room intentionally extends from the floor envelope.",
+      "trackerItems": ["BIR-D03", "BIR-O01"],
+      "rulesUnderTest": ["room_containment_detached_island", "room_containment_outside_floor_slab"],
+      "expectedFindings": [],
+      "absentRuleIds": ["room_containment_detached_island", "room_containment_outside_floor_slab"],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "room-loggia": {
+          "kind": "room",
+          "id": "room-loggia",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 4200, "yMm": 1000 },
+            { "xMm": 5600, "yMm": 1000 },
+            { "xMm": 5600, "yMm": 3000 },
+            { "xMm": 4200, "yMm": 3000 }
+          ],
+          "props": { "containmentIntent": "intentional_level_extension" }
+        }
+      }
+    },
+    {
+      "id": "missing_hosted_door",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Wall-hosted door references a missing wall.",
+      "trackerItems": ["BIR-C01", "BIR-O01"],
+      "rulesUnderTest": ["hosted_opening_missing_host", "hosted_render_proxy_orphan"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_opening_missing_host",
+          "elementIds": ["door-missing"]
+        },
+        {
+          "ruleId": "hosted_render_proxy_orphan",
+          "elementIds": ["door-missing", "missing-wall"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "door-missing": {
+          "kind": "door",
+          "id": "door-missing",
+          "wallId": "missing-wall",
+          "alongT": 0.5,
+          "widthMm": 900
+        }
+      }
+    },
+    {
+      "id": "target_house_detached_access_wall",
+      "fixtureClass": "target_house_regression",
+      "description": "Reduced target-house detached access-wall/access-door symptom.",
+      "trackerItems": ["BIR-C01", "BIR-C02", "BIR-C05", "BIR-O02"],
+      "rulesUnderTest": [
+        "hosted_opening_helper_host",
+        "hosted_opening_host_outside_floor_envelope",
+        "physical_access_proxy_leakage"
+      ],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_opening_helper_host",
+          "elementIds": [
+            "access-door-hf-room-gf-bath-laundry",
+            "access-wall-hf-room-gf-bath-laundry"
+          ]
+        },
+        {
+          "ruleId": "hosted_opening_host_outside_floor_envelope",
+          "elementIds": [
+            "access-door-hf-room-gf-bath-laundry",
+            "access-wall-hf-room-gf-bath-laundry"
+          ]
+        },
+        {
+          "ruleId": "physical_access_proxy_leakage",
+          "elementIds": [
+            "access-door-hf-room-gf-bath-laundry",
+            "access-wall-hf-room-gf-bath-laundry"
+          ]
+        },
+        {
+          "ruleId": "physical_access_proxy_leakage",
+          "elementIds": ["access-wall-hf-room-gf-bath-laundry"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "hf-lvl-ground": {
+          "kind": "level",
+          "id": "hf-lvl-ground",
+          "name": "Ground",
+          "elevationMm": 0
+        },
+        "ground-base-floor": {
+          "kind": "floor",
+          "id": "ground-base-floor",
+          "levelId": "hf-lvl-ground",
+          "boundaryMm": [
+            { "xMm": 1000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 7000 },
+            { "xMm": 1000, "yMm": 7000 }
+          ]
+        },
+        "access-wall-hf-room-gf-bath-laundry": {
+          "kind": "wall",
+          "id": "access-wall-hf-room-gf-bath-laundry",
+          "name": "Bath / Laundry access control wall",
+          "levelId": "hf-lvl-ground",
+          "start": { "xMm": 7600, "yMm": 1300 },
+          "end": { "xMm": 7600, "yMm": 1900 },
+          "thicknessMm": 90,
+          "heightMm": 2400,
+          "wallTypeId": "wt-internal",
+          "materialKey": "gypsum_board",
+          "loadBearing": false,
+          "structuralRole": "non_load_bearing",
+          "analyticalParticipation": false
+        },
+        "access-door-hf-room-gf-bath-laundry": {
+          "kind": "door",
+          "id": "access-door-hf-room-gf-bath-laundry",
+          "name": "Bath / Laundry access door",
+          "wallId": "access-wall-hf-room-gf-bath-laundry",
+          "alongT": 0.5,
+          "widthMm": 500,
+          "familyTypeId": "ft-pocket-door-standard"
+        }
+      }
+    },
+    {
+      "id": "target_house_roof_cut_outside_host",
+      "fixtureClass": "target_house_regression",
+      "description": "Reduced roof court cut footprint extends beyond the host roof footprint.",
+      "trackerItems": ["BIR-F01", "BIR-O02"],
+      "rulesUnderTest": ["bir_f01_roof_opening_outside_host_footprint"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f01_roof_opening_outside_host_footprint",
+          "elementIds": ["roof-1", "roof-cut-outside"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-2": { "kind": "level", "id": "lvl-2", "name": "Upper", "elevationMm": 3000 },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-2",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 5000 },
+            { "xMm": 0, "yMm": 5000 }
+          ],
+          "overhangMm": 0
+        },
+        "roof-cut-outside": {
+          "kind": "roof_opening",
+          "id": "roof-cut-outside",
+          "hostRoofId": "roof-1",
+          "boundaryMm": [
+            { "xMm": 5500, "yMm": 1000 },
+            { "xMm": 7600, "yMm": 1000 },
+            { "xMm": 7600, "yMm": 3000 },
+            { "xMm": 5500, "yMm": 3000 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "target_house_roof_cut_inside_host",
+      "fixtureClass": "target_house_regression",
+      "description": "Reduced roof court cut footprint remains inside the host roof footprint.",
+      "trackerItems": ["BIR-F01", "BIR-O02"],
+      "rulesUnderTest": ["bir_f01_roof_opening_outside_host_footprint"],
+      "expectedFindings": [],
+      "absentRuleIds": ["bir_f01_roof_opening_outside_host_footprint"],
+      "elements": {
+        "lvl-2": { "kind": "level", "id": "lvl-2", "name": "Upper", "elevationMm": 3000 },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-2",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 5000 },
+            { "xMm": 0, "yMm": 5000 }
+          ],
+          "overhangMm": 0
+        },
+        "roof-cut-inside": {
+          "kind": "roof_opening",
+          "id": "roof-cut-inside",
+          "hostRoofId": "roof-1",
+          "boundaryMm": [
+            { "xMm": 2500, "yMm": 1000 },
+            { "xMm": 4500, "yMm": 1000 },
+            { "xMm": 4500, "yMm": 3000 },
+            { "xMm": 2500, "yMm": 3000 }
+          ]
+        }
+      }
+    }
+  ]
+}

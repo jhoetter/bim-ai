@@ -120,7 +120,7 @@ def test_clean_small_house_room_graph_has_no_findings_and_stable_payload() -> No
 
     smoke = room_access_integrity_smoke_v1(list(_small_house().values()))
     assert smoke["ok"] is True
-    assert smoke["trackedItems"] == ["BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"]
+    assert smoke["trackedItems"] == ["BIR-D03", "BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"]
     assert smoke["findings"] == []
 
 

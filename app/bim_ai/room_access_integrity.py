@@ -48,6 +48,7 @@ DEFAULT_REQUIRED_ROOM_SCHEDULE_FIELDS: tuple[str, ...] = (
 ACCESS_TOLERANCE_MM = 400.0
 TOPOLOGY_TOLERANCE_MM = 400.0
 TOPOLOGY_GAP_TOLERANCE_MM = 100.0
+ROOM_CONTAINMENT_TOLERANCE_MM = 25.0
 
 
 def check_room_access_integrity(
@@ -129,7 +130,7 @@ def room_access_integrity_smoke_v1(
         counts[finding.severity] = counts.get(finding.severity, 0) + 1
     return {
         "format": "roomAccessIntegritySmoke_v1",
-        "trackedItems": ["BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"],
+        "trackedItems": ["BIR-D03", "BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"],
         "ok": counts.get("error", 0) == 0,
         "findingCount": len(findings),
         "countsBySeverity": dict(sorted(counts.items())),
@@ -497,6 +498,15 @@ def _room_floor_topology_findings(
         candidate_floor_ids = sorted(floor_ids_by_level.get(level_id, []))
         if not candidate_floor_ids:
             continue
+        containment_finding = _room_floor_containment_finding(
+            room_id,
+            room,
+            polygon,
+            candidate_floor_ids,
+            floor_polygons,
+        )
+        if containment_finding is not None:
+            findings.append(containment_finding)
         centroid = _centroid(polygon)
         if any(
             _point_in_or_near_polygon(centroid, floor_polygons[floor_id], TOPOLOGY_TOLERANCE_MM)
@@ -516,6 +526,117 @@ def _room_floor_topology_findings(
             )
         )
     return findings
+
+
+def _room_floor_containment_finding(
+    room_id: str,
+    room: Any,
+    polygon: list[tuple[float, float]],
+    candidate_floor_ids: list[str],
+    floor_polygons: Mapping[str, list[tuple[float, float]]],
+) -> RoomAccessFinding | None:
+    valid_floor_ids = [floor_id for floor_id in candidate_floor_ids if floor_id in floor_polygons]
+    if not valid_floor_ids:
+        return None
+
+    samples = _polygon_containment_samples(polygon)
+    if not samples:
+        return None
+
+    outside_samples = [
+        point
+        for point in samples
+        if not any(
+            _point_in_or_near_polygon(
+                point,
+                floor_polygons[floor_id],
+                ROOM_CONTAINMENT_TOLERANCE_MM,
+            )
+            for floor_id in valid_floor_ids
+        )
+    ]
+    if not outside_samples:
+        return None
+
+    contained_count = len(samples) - len(outside_samples)
+    if contained_count == 0:
+        return _finding(
+            "room_containment_detached_island",
+            "BIR-D03-DETACHED",
+            "error",
+            "P0",
+            "Room outline is detached from every floor boundary on its level.",
+            (room_id, *candidate_floor_ids),
+            "Move the room onto the level floor plate or create an explicit floor/envelope for the detached area.",
+            evidence={
+                "sampleCount": len(samples),
+                "outsideSampleCount": len(outside_samples),
+                "floorIds": candidate_floor_ids,
+            },
+        )
+
+    if _room_has_intentional_floor_extension(room):
+        return None
+
+    return _finding(
+        "room_containment_outside_floor_slab",
+        "BIR-D03-SLAB",
+        "error",
+        "P0",
+        "Room outline overlaps outside the level floor slab without explicit extension intent.",
+        (room_id, *candidate_floor_ids),
+        "Revise the room outline to stay within the floor plate, add the missing slab/envelope, or mark the exterior/loggia/terrace extension intent explicitly.",
+        evidence={
+            "sampleCount": len(samples),
+            "outsideSampleCount": len(outside_samples),
+            "floorIds": candidate_floor_ids,
+        },
+    )
+
+
+def _polygon_containment_samples(
+    polygon: list[tuple[float, float]],
+) -> list[tuple[float, float]]:
+    if len(polygon) < 3:
+        return []
+    samples = list(polygon)
+    samples.extend(
+        ((start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
+        for start, end in _polygon_segments(polygon)
+    )
+    samples.append(_centroid(polygon))
+    return samples
+
+
+def _room_has_intentional_floor_extension(room: Any) -> bool:
+    props = _props(room)
+    if _truthy_prop(
+        props,
+        "allowOutsideFloor",
+        "intentionalFloorExtension",
+        "extendsBeyondFloor",
+        "allowDetached",
+    ):
+        return True
+    for field in (
+        "containmentIntent",
+        "roomContainmentIntent",
+        "floorExtensionIntent",
+        "exteriorSpaceType",
+        "spaceType",
+    ):
+        value = _read(room, field, _snake(field))
+        if isinstance(value, str) and value.strip().lower() in {
+            "intentional_extension",
+            "intentional_level_extension",
+            "exterior_extension",
+            "loggia",
+            "terrace",
+            "roof_terrace",
+            "balcony",
+        }:
+            return True
+    return False
 
 
 def _room_wall_topology_findings(
