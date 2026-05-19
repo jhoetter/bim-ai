@@ -120,6 +120,10 @@ def test_host_wall_outside_level_floor_envelope_is_reported() -> None:
 
     assert any(v.rule_id == "hosted_opening_host_outside_floor_envelope" for v in violations)
     assert any(v.rule_id == "physical_wall_outside_envelope" for v in violations)
+    outside_wall = next(v for v in violations if v.rule_id == "physical_wall_outside_envelope")
+    assert {"kind": "move_into_floor_envelope", "safety": "needs_user_intent"} in outside_wall.model_dump(
+        by_alias=True
+    )["safeFixHints"]
 
 
 def test_detached_intent_allows_outside_support_context() -> None:
@@ -224,6 +228,15 @@ def test_wall_opening_head_height_and_overlap_are_reported() -> None:
     assert "hosted_opening_missing_semantic_cut" in rule_ids
     assert "hosted_opening_overlap" in rule_ids
 
+    semantic_cut = next(
+        v
+        for v in hosted_opening_integrity_violations(_doc(wall, tall, overlapping))
+        if v.rule_id == "hosted_opening_missing_semantic_cut"
+    )
+    assert {"kind": "create_missing_wall_opening", "safety": "review_required"} in semantic_cut.model_dump(
+        by_alias=True
+    )["safeFixHints"]
+
 
 def test_opening_conflict_graph_is_deterministic_for_overlap_and_clearance() -> None:
     wall = _wall()
@@ -310,7 +323,9 @@ def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy(
     assert unsupported_payload["hostIds"] == ["floor-1"]
     assert unsupported_payload["trackerItems"] == ["BIR-C07", "BIR-C08"]
     assert unsupported_payload["recommendation"]
-    assert unsupported_payload["safeFixHints"]
+    assert {"kind": "set_compatible_family_host", "safety": "needs_user_intent"} in unsupported_payload[
+        "safeFixHints"
+    ]
 
 
 def test_direct_family_host_support_field_is_classified() -> None:
@@ -572,6 +587,13 @@ def test_physical_support_context_flags_assets_floors_stairs_and_railings() -> N
     assert "physical_stair_without_floor_landings" in rule_ids
     assert "physical_railing_missing_host_context" in rule_ids
     assert all(violation.quick_fix_command for violation in violations)
+    stair_violation = next(
+        v for v in violations if v.rule_id == "physical_stair_without_floor_landings"
+    )
+    assert {
+        "kind": "create_missing_support_or_rehost",
+        "safety": "review_required",
+    } in stair_violation.model_dump(by_alias=True)["safeFixHints"]
 
 
 def test_valid_non_wall_support_contexts_pass() -> None:

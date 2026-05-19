@@ -212,8 +212,9 @@ _AGENT_TYPE_ALTERNATIVES: dict[str, tuple[str, ...]] = {
     "createFloor": ("floorTypeId", "materialKey"),
     "createRoof": ("roofTypeId", "materialKey"),
     "createStair": ("materialSlots", "subKind"),
-    "createRailing": ("hostedStairId", "hostFloorId", "hostWallId"),
+    "createRailing": ("hostedStairId", "hostFloorId", "hostWallId", "hostEdgeId"),
     "PlaceAsset": ("hostElementId", "placementSupport"),
+    "placeFamilyInstance": ("levelId", "hostElementId", "hostViewId"),
 }
 
 _VALID_AGENT_ROLES = {"physical", "analysis"}
@@ -250,6 +251,20 @@ def _agent_authoring_preflight_violations(cmds_raw: list[dict[str, Any]]) -> lis
                     quick_fix_command=_agent_context_hint(command, missing),
                     discipline="coordination",
                     blocking_class="authoring_validation",
+                    trackerItems=["BIR-B06"],
+                    recommendation=(
+                        "Provide explicit level/host/type/material context and an intended "
+                        "physical or analysis role before an agent-authored command can mutate "
+                        "the BIM model."
+                    ),
+                    affectedElementIds=[element_id],
+                    safeFixHints=[
+                        {
+                            "kind": "complete_agent_authoring_context",
+                            "safety": "required_before_commit",
+                            "required": sorted(dict.fromkeys(missing)),
+                        }
+                    ],
                 )
             )
     return violations

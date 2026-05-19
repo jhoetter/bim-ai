@@ -127,13 +127,13 @@ _TRACKER_ITEMS_BY_RULE_ID = {
     "hosted_render_proxy_orphan": ["BIR-C08"],
     "hosted_void_cut_orphan": ["BIR-C04", "BIR-C08"],
     "physical_access_proxy_leakage": ["BIR-B03", "BIR-C05", "BIR-C08"],
-    "physical_floor_outside_support_context": ["BIR-B02"],
-    "physical_floor_invalid_support_context": ["BIR-B02"],
-    "physical_stair_without_floor_landings": ["BIR-B02"],
-    "physical_railing_missing_host_context": ["BIR-B02"],
-    "physical_railing_invalid_host_context": ["BIR-B02"],
+    "physical_floor_outside_support_context": ["BIR-B02", "BIR-E02"],
+    "physical_floor_invalid_support_context": ["BIR-B02", "BIR-E02"],
+    "physical_stair_without_floor_landings": ["BIR-B02", "BIR-E05"],
+    "physical_railing_missing_host_context": ["BIR-B02", "BIR-E03"],
+    "physical_railing_invalid_host_context": ["BIR-B02", "BIR-E03"],
     "model_integrity_asset_placement_floating": ["BIR-B02", "BIR-V04"],
-    "model_integrity_asset_placement_circulation_overlap": ["BIR-B02", "BIR-V04"],
+    "model_integrity_asset_placement_circulation_overlap": ["BIR-B02", "BIR-E05", "BIR-V04"],
 }
 
 _RECOMMENDATION_BY_RULE_ID = {
@@ -844,14 +844,36 @@ def _safe_fix_hints_for_rule(
         "hosted_void_cut_orphan",
     }:
         hints.append({"kind": "rehost_or_delete", "safety": "needs_user_intent"})
+        if rule_id.startswith("hosted_opening_"):
+            hints.append({"kind": "set_valid_host_wall", "safety": "needs_user_intent"})
+        elif rule_id.startswith("hosted_family_"):
+            hints.append({"kind": "set_compatible_family_host", "safety": "needs_user_intent"})
     elif rule_id == "hosted_opening_missing_semantic_cut":
         hints.append({"kind": "restore_host_cut_or_mark_nonphysical", "safety": "review_required"})
+        hints.append({"kind": "create_missing_wall_opening", "safety": "review_required"})
     elif rule_id == "hosted_opening_overlap":
         hints.append({"kind": "resize_reposition_or_merge_openings", "safety": "review_required"})
     elif rule_id == "hosted_opening_outside_usable_span":
         hints.append({"kind": "resize_or_reposition_opening", "safety": "review_required"})
+    elif rule_id in {
+        "physical_wall_outside_envelope",
+        "hosted_opening_host_outside_floor_envelope",
+    }:
+        hints.append({"kind": "move_into_floor_envelope", "safety": "needs_user_intent"})
+        hints.append({"kind": "create_missing_support_or_mark_detached", "safety": "review_required"})
     elif rule_id == "physical_access_proxy_leakage":
         hints.append({"kind": "convert_to_analysis_or_delete_helper", "safety": "review_required"})
+    elif rule_id in {
+        "physical_floor_outside_support_context",
+        "physical_floor_invalid_support_context",
+        "physical_stair_without_floor_landings",
+        "physical_railing_missing_host_context",
+        "physical_railing_invalid_host_context",
+        "model_integrity_asset_placement_floating",
+        "model_integrity_asset_placement_circulation_overlap",
+    }:
+        hints.append({"kind": "create_missing_support_or_rehost", "safety": "review_required"})
+        hints.append({"kind": "mark_intentional_detached", "safety": "needs_user_intent"})
     return hints
 
 

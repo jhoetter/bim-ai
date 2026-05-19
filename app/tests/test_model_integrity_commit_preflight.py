@@ -284,6 +284,63 @@ def test_agent_authored_command_requires_explicit_context() -> None:
         "physicalRole",
         "wallTypeId/materialKey",
     }
+    payload = violation.model_dump(by_alias=True)
+    assert payload["trackerItems"] == ["BIR-B06"]
+    assert payload["safeFixHints"] == [
+        {
+            "kind": "complete_agent_authoring_context",
+            "safety": "required_before_commit",
+            "required": ["physicalRole", "wallTypeId/materialKey"],
+        }
+    ]
+
+
+def test_agent_authored_family_instance_requires_explicit_support_context() -> None:
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(
+        _base_doc(),
+        [
+            {
+                "type": "placeFamilyInstance",
+                "id": "agent-family",
+                "source": "agent",
+                "familyTypeId": "ft-generic",
+                "positionMm": {"xMm": 2500, "yMm": 2500},
+                "physicalRole": "physical",
+            }
+        ],
+    )
+
+    assert not ok
+    assert new_doc is None
+    assert code == "authoring_validation_error"
+    violation = violations[0]
+    assert violation.rule_id == "agent_authoring_explicit_context_required"
+    assert violation.quick_fix_command is not None
+    assert violation.quick_fix_command["required"] == ["levelId/hostElementId/hostViewId"]
+
+
+def test_agent_authored_command_rejects_invalid_physical_role_aliases() -> None:
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(
+        _base_doc(),
+        [
+            {
+                "type": "createWall",
+                "id": "agent-wall",
+                "agentTrace": {"sourceCommandId": "cmd-1"},
+                "levelId": "lvl-1",
+                "start": {"xMm": 1200, "yMm": 1300},
+                "end": {"xMm": 2400, "yMm": 1300},
+                "materialKey": "gypsum_board",
+                "physicalRole": "draft",
+            }
+        ],
+    )
+
+    assert not ok
+    assert new_doc is None
+    assert code == "authoring_validation_error"
+    assert violations[0].quick_fix_command is not None
+    assert violations[0].quick_fix_command["required"] == ["physicalRole=physical|analysis"]
 
 
 def test_agent_authored_asset_requires_explicit_placement_support() -> None:
