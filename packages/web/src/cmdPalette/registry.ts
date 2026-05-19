@@ -250,7 +250,13 @@ function matchesSourceKind(entry: PaletteEntry, sourceKind: PaletteSourceKind | 
 }
 
 export function registerCommand(entry: PaletteEntry): void {
-  _registry.push(withCapabilityMetadata(entry));
+  const registered = withCapabilityMetadata(entry);
+  const existingIndex = _registry.findIndex((candidate) => candidate.id === registered.id);
+  if (existingIndex >= 0) {
+    _registry[existingIndex] = registered;
+    return;
+  }
+  _registry.push(registered);
 }
 
 /** Exposed only for tests — do not call in production code. */

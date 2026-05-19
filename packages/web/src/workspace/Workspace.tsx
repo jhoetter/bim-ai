@@ -1347,6 +1347,7 @@ export function Workspace(): JSX.Element {
       }
       runAfterLoadingPaint(() => {
         let pendingPlanCamera: ViewportSnapshot['planCamera'] | undefined;
+        let incomingTab: ViewTab | undefined;
 
         setTabsState((s) => {
           if (s.activeId === id) return s;
@@ -1380,25 +1381,7 @@ export function Workspace(): JSX.Element {
           const next = activateTab(snapshotted, id);
           const t = next.tabs.find((x) => x.id === id);
           if (!t) return next;
-          // Keep the store's active plan state in sync with the active tab's target.
-          if (t.kind === 'plan' && t.targetId) {
-            const target = useBimStore.getState().elementsById[t.targetId];
-            if (target?.kind === 'plan_view') {
-              activatePlanView(target.id);
-            } else if (target?.kind === 'level') {
-              activatePlanView(undefined);
-              setActiveLevelId(target.id);
-            }
-          }
-          // Restore the incoming tab's 3D camera, if it has one.
-          const restored = t.viewportState?.orbitCameraPoseMm;
-          if (restored?.eyeMm && restored.targetMm) {
-            useBimStore.getState().setOrbitCameraFromViewpointMm({
-              position: restored.eyeMm,
-              target: restored.targetMm,
-              up: { xMm: 0, yMm: 1, zMm: 0 },
-            });
-          }
+          incomingTab = t;
           // Capture the incoming plan camera for post-setState apply (plan-to-plan case).
           if (t.kind === 'plan') {
             pendingPlanCamera = t.viewportState?.planCamera;
@@ -1411,11 +1394,32 @@ export function Workspace(): JSX.Element {
         if (pendingPlanCamera) {
           planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
         }
+        // Keep external store state in sync after the React state updater has
+        // returned; updating Zustand inside the updater trips React's
+        // setState-during-render warning for subscribed children.
+        if (incomingTab?.kind === 'plan' && incomingTab.targetId) {
+          const target = elementsById[incomingTab.targetId];
+          if (target?.kind === 'plan_view') {
+            activatePlanView(target.id);
+          } else if (target?.kind === 'level') {
+            activatePlanView(undefined);
+            setActiveLevelId(target.id);
+          }
+        }
+        const restored = incomingTab?.viewportState?.orbitCameraPoseMm;
+        if (restored?.eyeMm && restored.targetMm) {
+          useBimStore.getState().setOrbitCameraFromViewpointMm({
+            position: restored.eyeMm,
+            target: restored.targetMm,
+            up: { xMm: 0, yMm: 1, zMm: 0 },
+          });
+        }
       }, compositionState.activeId);
     },
     [
       activatePlanView,
       compositionState.activeId,
+      elementsById,
       markCompositionLoading,
       runAfterLoadingPaint,
       setActiveLevelId,
@@ -4014,7 +4018,7 @@ export function Workspace(): JSX.Element {
 
   /* ── Debug: selected element dump (dev only) ─────────────────────── */
   useEffect(() => {
-    if (!import.meta.env.DEV || !selectedId) return;
+    if (!import.meta.env.DEV || import.meta.env.MODE === 'test' || !selectedId) return;
     const el = elementsById[selectedId];
     if (el) console.debug('[bim] selected element:', el);
   }, [selectedId, elementsById]);
@@ -5209,13 +5213,13 @@ export function Workspace(): JSX.Element {
         ? temporaryVisibility
         : null;
     const activatePaneForControls = (): void => {
+      setMode(paneMode);
+      if (paneTab?.kind === '3d') setViewerMode('orbit_3d');
+      else if (paneTab?.kind) setViewerMode('plan_canvas');
       setPaneLayout((layout) => focusPane(layout, node.id));
       if (paneTab?.id && paneTab.id !== tabsState.activeId) {
         handleTabActivate(paneTab.id);
       }
-      setMode(paneMode);
-      if (paneTab?.kind === '3d') setViewerMode('orbit_3d');
-      else if (paneTab?.kind) setViewerMode('plan_canvas');
     };
     const handlePaneModeChange = (next: WorkspaceMode): void => {
       activatePaneForControls();
@@ -5230,15 +5234,15 @@ export function Workspace(): JSX.Element {
       setPaneLayout((layout) => focusPane(assignTabToPane(layout, node.id, tabId), node.id));
     };
     const handlePaneToolSelect = (id: ToolId): void => {
-      activatePaneForControls();
       const tool = canonicalPlanToolForMode(id, paneMode);
       if (!tool) return;
+      setPlanTool(tool);
+      activatePaneForControls();
       const def = toolRegistry[id];
       if (def && !def.modes.includes(paneMode) && def.modes.includes('plan')) {
         handlePaneModeChange('plan');
       }
       setPanePlanTool(node.id, tool);
-      setPlanTool(tool);
     };
     const runInPaneContext =
       (handler: (() => void) | undefined): (() => void) =>
@@ -6059,7 +6063,7 @@ export function Workspace(): JSX.Element {
         />
       ) : null}
       {appSettingsOpen ? <AppSettingsPanel onClose={() => setAppSettingsOpen(false)} /> : null}
-      <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
+      {vvDialogOpen ? <VVDialog open={vvDialogOpen} onClose={closeVVDialog} /> : null}
       {advisorOpen ? (
         <div
           data-testid="advisor-dialog-backdrop"

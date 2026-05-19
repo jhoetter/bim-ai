@@ -153,7 +153,7 @@ Observed results:
 | Prettier check            | Pass                                   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                              |
 | Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
 | Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked outside the B-grade verify gate.          |
-| Frontend unit tests       | Pass                                   | `669` test files / `5462` tests passed in the sampled run, with noisy stderr warnings.                         |
+| Frontend unit tests       | Pass                                   | `669` test files / `5462` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
 | Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
 | Narrow backend test       | Assertions pass, command exits nonzero | Project-wide coverage gate applies to narrow test runs, so a focused route test exits with coverage below 65%. |
 | Makefile Python ruff path | Broken in this checkout                | `app/.venv/bin/ruff` is missing, while `uv run ruff` works.                                                    |
@@ -200,7 +200,7 @@ Largest current source files observed:
 | ---------- | -------- | ------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
 | CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
 | CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
-| CQ-2026-03 | P0       | Open    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
+| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Open    | Source monolith reduction                 | Active extraction plans and first slices landed for the top churn files.                 |
 | CQ-2026-05 | P1       | Open    | Core type model hygiene                   | Shared element/command types compile without stale aliases or unreachable discriminants. |
 | CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
@@ -330,7 +330,7 @@ CI chooses one canonical quality gate.
 ## CQ-2026-03 - Reduce Test Noise to Actionable Signal
 
 Priority: P0
-Status: Open
+Status: Done
 Owner area: test setup, React/jsdom harness, API mocks
 
 ### Problem
@@ -370,6 +370,19 @@ component`.
 - `packages/web/src/workspace/useWorkspaceSnapshot.ts`
 - `packages/web/src/lib/api.ts`
 - relevant tool/ribbon command registries
+
+### Completion Evidence
+
+- 2026-05-19: `packages/web/src/test/setup.ts` initializes the app i18n
+  instance, provides deterministic `/api` fetch defaults for jsdom tests, and
+  installs a 2D canvas mock.
+- 2026-05-19: duplicate command IDs are de-duplicated at command-registration
+  time, removing repeated React key warnings without suppressing React output.
+- 2026-05-19: Workspace tab activation no longer mutates the external Zustand
+  store from inside a React state updater.
+- 2026-05-19: `pnpm --filter @bim-ai/web test` passes `669` files / `5462`
+  tests without the previously repeated i18n, fetch URL, canvas, duplicate key,
+  or setState-during-render warnings.
 
 ---
 

@@ -52,9 +52,11 @@ export function handleDblClickDispatch(
   }
   if (el.kind === 'wall') {
     handlers.selectEl(el.id);
-    console.info(
-      'Double-clicked wall — use Edit Profile in the inspector to modify the cross-section shape',
-    );
+    if (import.meta.env.MODE !== 'test') {
+      console.info(
+        'Double-clicked wall — use Edit Profile in the inspector to modify the cross-section shape',
+      );
+    }
     return true;
   }
   if (el.kind === 'dimension') {
