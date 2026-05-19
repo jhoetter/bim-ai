@@ -841,6 +841,28 @@ user-approved tolerances with owner, evidence, and expiry. No wave may mark M8
 complete while geometry diagnostic errors or unchecked semantic visual rows
 remain.
 
+### Wave 13: Live Readiness, Seed Hygiene, And Platform Rule Depth
+
+Goal: close the remaining target-house readiness blockers that are not already
+covered by clean offline evidence, while moving the broader platform tracker out
+of target-house-specific closure.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, and update the tracker/evidence rows for completed
+items.
+
+| Agent | Ownership                                             | Primary items                              |
+| ----- | ----------------------------------------------------- | ------------------------------------------ |
+| W13-A | Live browser responsiveness harness and WebSocket evidence | `BIR-N07`, `BIR-N11`, `BIR-L02`, `BIR-L03` |
+| W13-B | Seed library/database hygiene and disposable artifact purge | `BIR-N03`, `BIR-W01`, `BIR-W03`, `BIR-O04` |
+| W13-C | Advisor rule coverage for room/opening/topology edge cases | `BIR-D04`, `BIR-D05`, `BIR-D06`, `BIR-U01` |
+| W13-D | Renderer diagnostic coverage for target-house-critical kinds | `BIR-I02`, `BIR-I03`, `BIR-I04`, `BIR-J06` |
+| W13-E | CLI/MCP/methodology loop evidence for agents consuming Advisor output | `BIR-H01`, `BIR-H02`, `BIR-M07`, `BIR-T02` |
+
+Exit: `target-house-final-package.mjs --require-ready` either passes or is
+blocked only by tracker rows outside target-house/live-readiness scope; no worker
+may mark a row Done without linked implementation evidence and tests/proof hooks.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
