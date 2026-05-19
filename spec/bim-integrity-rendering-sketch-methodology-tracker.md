@@ -1110,6 +1110,30 @@ golden evidence proving the previously observed suspicious states are covered:
 asset-on-stair, floating/detached physical objects, building/toposolid
 misplacement, and renderer unsupported/fallback elements.
 
+### Wave 18 - Platform Contracts And Domain Completion
+
+Goal: move from case-specific hardening toward platform-grade BIM guarantees:
+rules must be discoverable and consistently surfaced, hosted openings must have
+conflict/dependency graphs, room access/egress must be a reliable graph, domain
+profiles must cover structure/MEP/fire/accessibility metadata, and multi-agent
+transactions must be preflighted, reversible, and auditable.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+prove behavior through deterministic fixtures. Do not add subjective visual
+judgement to the normal Advisor; use deterministic authored/model facts.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W18-A | Rule taxonomy, severity policy, documentation generator, and UI/CLI/API rule parity metadata. | `BIR-A02`, `BIR-A04`, `BIR-A05`, `BIR-A07`, `BIR-H01`, `BIR-H02` |
+| W18-B | Hosted opening conflict/dependency graph, hosted family support classification, and orphan proxy detection. | `BIR-C04`, `BIR-C06`, `BIR-C07`, `BIR-C08`, `BIR-B01` |
+| W18-C | Room boundary strictness, real-door access, room containment, egress, accessibility, and schedule completeness. | `BIR-D01`, `BIR-D02`, `BIR-D03`, `BIR-D04`, `BIR-D05`, `BIR-D06`, `BIR-D07` |
+| W18-D | Structure-lite, MEP-lite, fire/accessibility/code profiles, and material/type consistency. | `BIR-G01`, `BIR-G02`, `BIR-G03`, `BIR-G04`, `BIR-G05`, `BIR-G06`, `BIR-G07`, `BIR-V01`, `BIR-V02` |
+| W18-E | Transactions, undo/redo, collaboration, provenance links to commands, and safe agent remediation. | `BIR-Q01`, `BIR-Q02`, `BIR-Q03`, `BIR-Q04`, `BIR-Q05`, `BIR-Q06`, `BIR-Q07`, `BIR-Q08`, `BIR-T02`, `BIR-H04` |
+
+Exit: all workers leave machine-readable evidence rows, tracker audit passes,
+and no new product Advisor rule depends on subjective sketch likeness.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
