@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from bim_ai.document import Document
-from bim_ai.elements import FrameElem, LevelElem, PlanViewElem, RoomElem, SheetElem, WallElem
+from bim_ai.elements import (
+    FrameElem,
+    LevelElem,
+    PlanViewElem,
+    RailingElem,
+    RoomElem,
+    SheetElem,
+    WallElem,
+)
 from bim_ai.engine import try_commit_bundle
 from bim_ai.export_documentation_evidence import (
     DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1,
@@ -231,10 +239,14 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         "viewTemplateCount": 1,
         "revisionCloudCount": 1,
         "pdfArtifactCount": 1,
+        "printRasterPngArtifactCount": 1,
         "ifcArtifactCount": 1,
         "gltfArtifactCount": 1,
         "glbArtifactCount": 1,
-        "externalExportMarkerCount": 14,
+        "documentationExportParityRowCount": 6,
+        "documentationExportUnsupportedRowCount": 1,
+        "documentationExportDroppedRowCount": 0,
+        "externalExportMarkerCount": 15,
     }
     assert len(evidence["evidenceDigestSha256"]) == 64
     assert evidence["artifactClosure_v1"]["format"] == "documentationExportArtifactClosure_v1"
@@ -246,6 +258,7 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     assert sheet_row["viewportCount"] == 2
     assert sheet_row["listingLineCount"] >= 2
     assert {artifact["kind"] for artifact in sheet_row["artifacts"]} == {
+        "sheet_png",
         "sheet_pdf",
         "sheet_svg",
     }
@@ -303,6 +316,35 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         "pathInArchive": "model.glb",
     }
 
+    documentation_unsupported = evidence["documentationExportUnsupportedSkipped_v1"]
+    assert documentation_unsupported["format"] == "documentationExportUnsupportedSkipped_v1"
+    assert documentation_unsupported["summary"]["unsupportedRowCount"] == 1
+    assert documentation_unsupported["rows"] == [
+        {
+            "artifactId": "sheet:A101:png",
+            "documentationExportKind": "sheet_png",
+            "rowType": "unsupported_renderer",
+            "sourceExportFormat": "documentation",
+            "elementKind": "sheet",
+            "feature": "full-sheet-raster",
+            "reasonCode": "unsupported_full_raster_renderer_unavailable",
+            "count": 1,
+            "elementIds": [],
+            "trackerItems": ["BIR-K01", "BIR-R05", "BIR-K06"],
+        }
+    ]
+    parity = evidence["documentationExportParity_v1"]
+    assert parity["format"] == "documentationExportParity_v1"
+    assert parity["status"] == "warn"
+    assert parity["pass"] is True
+    parity_rows = {row["scopeId"]: row for row in parity["rows"]}
+    assert parity_rows["sheet:A101:svg"]["digestsMatch"] is True
+    assert parity_rows["sheet:A101:pdf"]["digestBasis"] == "viewport-listing-parity"
+    assert parity_rows["sheet:A101:png"]["status"] == "warn"
+    assert parity_rows["sheet:A101:png"]["unsupportedFeatures"] == [
+        "unsupported_full_raster_renderer_unavailable"
+    ]
+
     exports_by_kind = {row["kind"]: row for row in evidence["modelExports"]}
     assert {"ifc", "gltf", "glb"} <= set(exports_by_kind)
     assert exports_by_kind["ifc"]["href"].endswith("/exports/model.ifc")
@@ -340,6 +382,7 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     marker_ids = {row["markerId"] for row in evidence["externalExportMarkers_v1"]["markers"]}
     assert {
         "sheet:A101:pdf",
+        "sheet:A101:png",
         "model:ifc",
         "model:gltf",
         "model:glb",
@@ -395,3 +438,50 @@ def test_documentation_export_ifc_optional_backend_manifest_is_stable(monkeypatc
     assert ifc_a["optionalBackendManifest_v1"]["reason"] == "ifcopenshell_not_installed"
     assert ifc_a["digestSha256"] == ifc_b["digestSha256"]
     assert evidence_a["artifactClosure_v1"]["pass"] is True
+
+
+def test_documentation_exports_reveal_pdf_like_unsupported_geometry_rows() -> None:
+    doc = Document(
+        revision=2,
+        elements={
+            "lvl-0": LevelElem(kind="level", id="lvl-0", name="Ground", elevationMm=0),
+            "plan": PlanViewElem(kind="plan_view", id="plan", name="Plan", levelId="lvl-0"),
+            "rail": RailingElem(
+                kind="railing",
+                id="rail",
+                pathMm=[{"xMm": 0, "yMm": 0}, {"xMm": 3000, "yMm": 0}],
+            ),
+            "sheet": SheetElem(
+                kind="sheet",
+                id="A101",
+                name="A101",
+                viewportsMm=[
+                    {
+                        "viewportId": "vp-plan",
+                        "viewRef": "plan:plan",
+                        "widthMm": 120,
+                        "heightMm": 80,
+                        "scale": 100,
+                    }
+                ],
+            ),
+        },
+    )
+
+    evidence = build_documentation_export_production_evidence_v1(doc)
+    manifest = evidence["documentationExportUnsupportedSkipped_v1"]
+    by_artifact = {
+        row["artifactId"]: row
+        for row in manifest["rows"]
+        if row["reasonCode"] == "gltf_railing_geometry_unsupported"
+    }
+
+    assert {"sheet:A101:svg", "sheet:A101:pdf", "sheet:A101:png"} <= set(by_artifact)
+    assert by_artifact["sheet:A101:pdf"]["elementIds"] == ["rail"]
+    parity_rows = {row["scopeId"]: row for row in evidence["documentationExportParity_v1"]["rows"]}
+    assert "gltf_railing_geometry_unsupported" in parity_rows["sheet:A101:pdf"][
+        "listedUnsupportedFeatures"
+    ]
+    assert "gltf_railing_geometry_unsupported" in parity_rows["render:gltf-pbr"][
+        "listedUnsupportedFeatures"
+    ]

@@ -28,6 +28,7 @@ from bim_ai.elements import (
 )
 from bim_ai.exp.pptx_export import build_pptx_bundle
 from bim_ai.exp.render_export import build_export_bundle
+from bim_ai.export_feature_contract import build_export_manifest_feature_diagnostics_v1
 from bim_ai.export_gltf import (
     build_visual_export_manifest,
     document_to_glb_bytes,
@@ -42,14 +43,20 @@ from bim_ai.export_ifc import (
 from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import (
+    FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
     SHEET_EXPORT_PDF_MIME_TYPE,
+    SHEET_EXPORT_PNG_MIME_TYPE,
     SHEET_EXPORT_SVG_MIME_TYPE,
+    SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+    sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_elem_to_svg,
     sheet_svg_utf8_sha256,
     sheet_viewport_export_listing_lines,
 )
 
 DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1 = "documentationExportProductionEvidence_v1"
+DOCUMENTATION_EXPORT_PARITY_V1 = "documentationExportParity_v1"
+DOCUMENTATION_EXPORT_UNSUPPORTED_SKIPPED_V1 = "documentationExportUnsupportedSkipped_v1"
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -110,6 +117,7 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
     ):
         svg_text = sheet_elem_to_svg(doc, sh)
         pdf_bytes = sheet_elem_to_pdf_bytes(doc, sh)
+        png_bytes = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_text)
         listing_lines = sheet_viewport_export_listing_lines(doc, sh)
         listing_digest = _sha256_bytes("\n".join(listing_lines).encode("utf-8"))
         artifacts = [
@@ -131,6 +139,17 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
                 "byteLength": len(pdf_bytes),
                 "digestSha256": _sha256_bytes(pdf_bytes),
             },
+            {
+                "artifactId": f"sheet:{sh.id}:png",
+                "kind": "sheet_png",
+                "artifactName": "sheet-print-raster.png",
+                "mimeType": SHEET_EXPORT_PNG_MIME_TYPE,
+                "href": _export_href(model_id, "sheet-print-raster.png", sheet_id=sh.id),
+                "byteLength": len(png_bytes),
+                "digestSha256": _sha256_bytes(png_bytes),
+                "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+                "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+            },
         ]
         for artifact in artifacts:
             artifact.update(
@@ -150,6 +169,243 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
             }
         )
     return rows
+
+
+def _geometry_feature_codes(rows: list[dict[str, Any]]) -> list[str]:
+    codes: list[str] = []
+    for row in rows:
+        reason = str(row.get("reasonCode") or "").strip()
+        feature = str(row.get("feature") or "").strip()
+        if reason:
+            codes.append(reason)
+        elif feature:
+            codes.append(feature)
+    return sorted(set(codes))
+
+
+def _geometry_manifest_rows_for_artifact(
+    *,
+    artifact_id: str,
+    artifact_kind: str,
+    source_rows: list[dict[str, Any]],
+    row_type: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in source_rows:
+        reason = str(row.get("reasonCode") or "").strip()
+        rows.append(
+            {
+                "artifactId": artifact_id,
+                "documentationExportKind": artifact_kind,
+                "rowType": row_type,
+                "sourceExportFormat": row.get("exportFormat"),
+                "elementKind": row.get("elementKind"),
+                "feature": row.get("feature"),
+                "reasonCode": reason,
+                "count": int(row.get("count") or 0),
+                "elementIds": list(row.get("elementIds") or []),
+                "trackerItems": list(row.get("trackerItems") or ["BIR-K01", "BIR-R05"]),
+            }
+        )
+    return rows
+
+
+def _documentation_export_unsupported_skipped_manifest_v1(
+    *,
+    doc: Document,
+    sheet_rows: list[dict[str, Any]],
+    render_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    source = build_export_manifest_feature_diagnostics_v1(
+        doc,
+        export_format="gltf",
+    )["exportGeometryUnsupportedSkipped_v1"]
+    unsupported_source = [
+        row
+        for row in source.get("unsupportedRows") or []
+        if isinstance(row, dict) and row.get("feature") != "document-kind"
+    ]
+    skipped_source = [row for row in source.get("skippedRows") or [] if isinstance(row, dict)]
+    rows: list[dict[str, Any]] = []
+
+    doc_artifacts: list[tuple[str, str]] = []
+    for sheet in sheet_rows:
+        for artifact in sheet.get("artifacts") or []:
+            if not isinstance(artifact, dict):
+                continue
+            kind = str(artifact.get("kind") or "")
+            if kind in {"sheet_svg", "sheet_pdf", "sheet_png"}:
+                doc_artifacts.append((str(artifact.get("artifactId") or ""), kind))
+    for render in render_rows:
+        fmt = str(render.get("format") or "")
+        if fmt:
+            doc_artifacts.append((f"render:{fmt}", "render_bundle"))
+
+    for artifact_id, artifact_kind in doc_artifacts:
+        rows.extend(
+            _geometry_manifest_rows_for_artifact(
+                artifact_id=artifact_id,
+                artifact_kind=artifact_kind,
+                source_rows=unsupported_source,
+                row_type="unsupported_geometry",
+            )
+        )
+        rows.extend(
+            _geometry_manifest_rows_for_artifact(
+                artifact_id=artifact_id,
+                artifact_kind=artifact_kind,
+                source_rows=skipped_source,
+                row_type="skipped_or_dropped_geometry",
+            )
+        )
+        if artifact_kind == "sheet_png":
+            rows.append(
+                {
+                    "artifactId": artifact_id,
+                    "documentationExportKind": artifact_kind,
+                    "rowType": "unsupported_renderer",
+                    "sourceExportFormat": "documentation",
+                    "elementKind": "sheet",
+                    "feature": "full-sheet-raster",
+                    "reasonCode": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+                    "count": 1,
+                    "elementIds": [],
+                    "trackerItems": ["BIR-K01", "BIR-R05", "BIR-K06"],
+                }
+            )
+
+    rows.sort(
+        key=lambda row: (
+            str(row.get("artifactId") or ""),
+            str(row.get("rowType") or ""),
+            str(row.get("elementKind") or ""),
+            str(row.get("reasonCode") or ""),
+        )
+    )
+    return {
+        "format": DOCUMENTATION_EXPORT_UNSUPPORTED_SKIPPED_V1,
+        "rows": rows,
+        "summary": {
+            "rowCount": len(rows),
+            "unsupportedRowCount": sum(
+                1
+                for row in rows
+                if row.get("rowType") in {"unsupported_geometry", "unsupported_renderer"}
+            ),
+            "skippedOrDroppedRowCount": sum(
+                1 for row in rows if row.get("rowType") == "skipped_or_dropped_geometry"
+            ),
+            "affectedElementCount": sum(int(row.get("count") or 0) for row in rows),
+        },
+        "digestSha256": _sha256_json(rows),
+    }
+
+
+def _documentation_export_parity_v1(
+    *,
+    sheet_rows: list[dict[str, Any]],
+    render_rows: list[dict[str, Any]],
+    unsupported_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    unsupported_by_artifact: dict[str, list[dict[str, Any]]] = {}
+    dropped_by_artifact: dict[str, list[dict[str, Any]]] = {}
+    for row in unsupported_manifest.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        artifact_id = str(row.get("artifactId") or "")
+        if not artifact_id:
+            continue
+        if row.get("rowType") == "skipped_or_dropped_geometry":
+            dropped_by_artifact.setdefault(artifact_id, []).append(row)
+        else:
+            unsupported_by_artifact.setdefault(artifact_id, []).append(row)
+
+    parity_rows: list[dict[str, Any]] = []
+    for sheet in sheet_rows:
+        saved_view_digest = str(sheet.get("exportListingDigestSha256") or "")
+        for artifact in sheet.get("artifacts") or []:
+            if not isinstance(artifact, dict):
+                continue
+            artifact_id = str(artifact.get("artifactId") or "")
+            kind = str(artifact.get("kind") or "")
+            if kind not in {"sheet_svg", "sheet_pdf", "sheet_png"}:
+                continue
+            unsupported = _geometry_feature_codes(unsupported_by_artifact.get(artifact_id, []))
+            dropped = _geometry_feature_codes(dropped_by_artifact.get(artifact_id, []))
+            export_digest = (
+                str(artifact.get("digestSha256") or "")
+                if kind == "sheet_png"
+                else saved_view_digest
+            )
+            parity_rows.append(
+                {
+                    "scopeId": artifact_id,
+                    "exportType": kind,
+                    "sheetId": sheet.get("sheetId"),
+                    "savedViewDigest": saved_view_digest,
+                    "exportDigest": export_digest,
+                    "digestBasis": (
+                        "viewport-listing-vs-print-surrogate"
+                        if kind == "sheet_png"
+                        else "viewport-listing-parity"
+                    ),
+                    "digestsMatch": saved_view_digest == export_digest,
+                    "unsupportedFeatures": unsupported,
+                    "listedUnsupportedFeatures": unsupported,
+                    "droppedVisualGeometry": dropped,
+                    "listedDroppedVisualGeometry": dropped,
+                    "modelInvalidFeatures": [],
+                    "status": "warn" if saved_view_digest != export_digest else "pass",
+                }
+            )
+
+    for row in render_rows:
+        fmt = str(row.get("format") or "")
+        if not fmt:
+            continue
+        artifact_id = f"render:{fmt}"
+        unsupported = _geometry_feature_codes(unsupported_by_artifact.get(artifact_id, []))
+        dropped = _geometry_feature_codes(dropped_by_artifact.get(artifact_id, []))
+        digest = str(row.get("bundleDigestSha256") or "")
+        parity_rows.append(
+            {
+                "scopeId": artifact_id,
+                "exportType": "render_bundle",
+                "savedViewDigest": digest,
+                "exportDigest": digest,
+                "digestBasis": "stable-render-bundle",
+                "digestsMatch": True,
+                "unsupportedFeatures": unsupported,
+                "listedUnsupportedFeatures": unsupported,
+                "droppedVisualGeometry": dropped,
+                "listedDroppedVisualGeometry": dropped,
+                "modelInvalidFeatures": [],
+                "status": "pass",
+            }
+        )
+
+    parity_rows.sort(key=lambda row: str(row.get("scopeId") or ""))
+    fail_count = sum(1 for row in parity_rows if row.get("status") == "fail")
+    warn_count = sum(1 for row in parity_rows if row.get("status") == "warn")
+    return {
+        "format": DOCUMENTATION_EXPORT_PARITY_V1,
+        "rows": parity_rows,
+        "summary": {
+            "rowCount": len(parity_rows),
+            "passRowCount": sum(1 for row in parity_rows if row.get("status") == "pass"),
+            "warnRowCount": warn_count,
+            "failRowCount": fail_count,
+            "unsupportedFeatureCount": sum(
+                len(row.get("unsupportedFeatures") or []) for row in parity_rows
+            ),
+            "droppedVisualGeometryCount": sum(
+                len(row.get("droppedVisualGeometry") or []) for row in parity_rows
+            ),
+        },
+        "status": "fail" if fail_count else "warn" if warn_count else "clean",
+        "pass": fail_count == 0,
+        "digestSha256": _sha256_json(parity_rows),
+    }
 
 
 def _schedule_rows(doc: Document) -> list[dict[str, Any]]:
@@ -482,6 +738,18 @@ def build_documentation_export_production_evidence_v1(
     branded_exports = _branded_export_rows(doc, model_id)
     advanced_documentation = _advanced_documentation_rows(doc)
     render_exports = _render_export_rows(doc, model_id)
+    documentation_export_unsupported_skipped = (
+        _documentation_export_unsupported_skipped_manifest_v1(
+            doc=doc,
+            sheet_rows=sheets,
+            render_rows=render_exports,
+        )
+    )
+    documentation_export_parity = _documentation_export_parity_v1(
+        sheet_rows=sheets,
+        render_rows=render_exports,
+        unsupported_manifest=documentation_export_unsupported_skipped,
+    )
     all_artifacts = [a for sheet in sheets for a in sheet["artifacts"]] + model_exports
     marker_rows = [
         {
@@ -571,9 +839,21 @@ def build_documentation_export_production_evidence_v1(
             for artifact in all_artifacts
             if artifact.get("mimeType") == SHEET_EXPORT_PDF_MIME_TYPE
         ),
+        "printRasterPngArtifactCount": sum(
+            1
+            for artifact in all_artifacts
+            if artifact.get("mimeType") == SHEET_EXPORT_PNG_MIME_TYPE
+        ),
         "ifcArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "ifc"),
         "gltfArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "gltf"),
         "glbArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "glb"),
+        "documentationExportParityRowCount": documentation_export_parity["summary"]["rowCount"],
+        "documentationExportUnsupportedRowCount": documentation_export_unsupported_skipped[
+            "summary"
+        ]["unsupportedRowCount"],
+        "documentationExportDroppedRowCount": documentation_export_unsupported_skipped["summary"][
+            "skippedOrDroppedRowCount"
+        ],
         "externalExportMarkerCount": len(marker_rows),
     }
     artifact_closure_rows = [
@@ -607,6 +887,8 @@ def build_documentation_export_production_evidence_v1(
         "advancedDocumentation": advanced_documentation,
         "renderExports": render_exports,
         "modelExports": model_exports,
+        "documentationExportUnsupportedSkipped_v1": documentation_export_unsupported_skipped,
+        "documentationExportParity_v1": documentation_export_parity,
         "artifactClosure_v1": {
             "format": "documentationExportArtifactClosure_v1",
             "status": "clean-or-explicit-optional-backend"

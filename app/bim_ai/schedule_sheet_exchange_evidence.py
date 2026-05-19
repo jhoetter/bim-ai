@@ -209,6 +209,23 @@ def _render_rows_by_format(evidence: dict[str, Any] | None) -> dict[str, dict[st
     return out
 
 
+def _documentation_parity_rows_by_scope(
+    evidence: dict[str, Any] | None,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(evidence, dict):
+        return {}
+    parity = evidence.get("documentationExportParity_v1")
+    if not isinstance(parity, dict):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for row in parity.get("rows") or []:
+        if isinstance(row, dict):
+            scope_id = str(row.get("scopeId") or "").strip()
+            if scope_id:
+                out[scope_id] = row
+    return out
+
+
 def _extract_deterministic_sheet_rows(
     *,
     evidence_packet: dict[str, Any] | None,
@@ -665,11 +682,76 @@ def _check_render_bundles(
     return checks
 
 
+def _expected_documentation_export_parity_scopes(doc: Document) -> list[str]:
+    scopes: list[str] = []
+    for sh in sorted(
+        (e for e in doc.elements.values() if isinstance(e, SheetElem)), key=lambda s: s.id
+    ):
+        scopes.extend([f"sheet:{sh.id}:pdf", f"sheet:{sh.id}:png", f"sheet:{sh.id}:svg"])
+    scopes.extend(f"render:{fmt}" for fmt in REQUIRED_RENDER_BUNDLE_FORMATS)
+    return sorted(scopes)
+
+
+def _check_documentation_export_parity(
+    doc: Document,
+    *,
+    documentation_export_evidence: dict[str, Any] | None,
+    findings: list[dict[str, Any]],
+) -> dict[str, Any]:
+    expected_scopes = _expected_documentation_export_parity_scopes(doc)
+    rows_by_scope = _documentation_parity_rows_by_scope(documentation_export_evidence)
+    missing_scopes = [scope for scope in expected_scopes if scope not in rows_by_scope]
+    failing_scopes = sorted(
+        scope for scope, row in rows_by_scope.items() if row.get("status") == "fail"
+    )
+    warning_scopes = sorted(
+        scope
+        for scope, row in rows_by_scope.items()
+        if row.get("status") == "warn" and scope in expected_scopes
+    )
+
+    if missing_scopes:
+        _finding(
+            findings,
+            code="documentation_export_parity_row_missing",
+            target={"scopeIds": missing_scopes},
+            detail="Documentation export evidence lacks expected sheet/render parity rows.",
+        )
+    if failing_scopes:
+        _finding(
+            findings,
+            code="documentation_export_parity_failed",
+            target={"scopeIds": failing_scopes},
+            severity="error",
+            detail="Documentation export parity rows report failing digest or geometry evidence.",
+        )
+
+    status = "matched"
+    if failing_scopes:
+        status = "failed"
+    elif missing_scopes:
+        status = "missing_rows"
+    elif warning_scopes:
+        status = "matched_with_explicit_warnings"
+
+    return {
+        "format": "documentationExportParityCoverage_v1",
+        "status": status,
+        "ok": not missing_scopes and not failing_scopes,
+        "expectedScopeCount": len(expected_scopes),
+        "observedScopeCount": len([scope for scope in expected_scopes if scope in rows_by_scope]),
+        "missingScopeIds": missing_scopes,
+        "failingScopeIds": failing_scopes,
+        "warningScopeIds": warning_scopes,
+    }
+
+
 def _manifest_coverage_summary(
     *,
     schedule_checks: list[dict[str, Any]],
     sheet_checks: list[dict[str, Any]],
     render_bundle_checks: list[dict[str, Any]],
+    documentation_export_parity_check: dict[str, Any],
 ) -> dict[str, Any]:
     unsupported_schedules = [
         row
@@ -700,6 +782,9 @@ def _manifest_coverage_summary(
         )
     ]
     render_gaps = [row for row in render_bundle_checks if row.get("status") != "matched"]
+    documentation_export_parity_gaps = (
+        [] if documentation_export_parity_check.get("ok") else [documentation_export_parity_check]
+    )
     return {
         "format": "scheduleSheetManifestCoverage_v1",
         "ok": not (
@@ -710,6 +795,7 @@ def _manifest_coverage_summary(
             or sheet_gaps
             or viewport_gaps
             or render_gaps
+            or documentation_export_parity_gaps
         ),
         "requiredScheduleCategories": list(REQUIRED_EXCHANGE_SCHEDULE_CATEGORIES),
         "supportedScheduleCategories": sorted(SUPPORTED_SCHEDULE_CATEGORIES),
@@ -720,6 +806,10 @@ def _manifest_coverage_summary(
         "sheetEvidenceGapCount": len(sheet_gaps),
         "viewportCoverageGapCount": len(viewport_gaps),
         "renderBundleCoverageGapCount": len(render_gaps),
+        "documentationExportParityGapCount": len(documentation_export_parity_gaps),
+        "documentationExportParityWarningCount": len(
+            documentation_export_parity_check.get("warningScopeIds") or []
+        ),
         "unsupportedScheduleCategories": sorted(
             {
                 str(row.get("category") or "")
@@ -783,10 +873,16 @@ def build_schedule_sheet_exchange_evidence_v1(
         documentation_export_evidence=doc_export_evidence,
         findings=findings,
     )
+    documentation_export_parity_check = _check_documentation_export_parity(
+        doc,
+        documentation_export_evidence=doc_export_evidence,
+        findings=findings,
+    )
     manifest_coverage = _manifest_coverage_summary(
         schedule_checks=schedule_checks,
         sheet_checks=sheet_checks,
         render_bundle_checks=render_bundle_checks,
+        documentation_export_parity_check=documentation_export_parity_check,
     )
 
     findings.sort(
@@ -812,6 +908,7 @@ def build_schedule_sheet_exchange_evidence_v1(
         "scheduleChecks": schedule_checks,
         "sheetViewChecks": sheet_checks,
         "renderBundleChecks": render_bundle_checks,
+        "documentationExportParityCheck": documentation_export_parity_check,
         "findings": findings,
     }
     body["exchangeEvidenceDigestSha256"] = _sha256_json(
@@ -820,6 +917,7 @@ def build_schedule_sheet_exchange_evidence_v1(
             "scheduleChecks": schedule_checks,
             "sheetViewChecks": sheet_checks,
             "renderBundleChecks": render_bundle_checks,
+            "documentationExportParityCheck": documentation_export_parity_check,
             "manifestCoverage": manifest_coverage,
             "findings": findings,
         }

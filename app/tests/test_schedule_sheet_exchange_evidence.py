@@ -186,6 +186,10 @@ def test_schedule_sheet_exchange_evidence_clean_with_current_packets() -> None:
     assert evidence["summary"]["manifestCoverageOk"] is True
     assert evidence["manifestCoverage"]["format"] == "scheduleSheetManifestCoverage_v1"
     assert evidence["manifestCoverage"]["ok"] is True
+    assert evidence["manifestCoverage"]["documentationExportParityGapCount"] == 0
+    assert evidence["manifestCoverage"]["documentationExportParityWarningCount"] == 1
+    assert evidence["documentationExportParityCheck"]["status"] == "matched_with_explicit_warnings"
+    assert evidence["documentationExportParityCheck"]["warningScopeIds"] == ["sheet:sheet:png"]
     by_category = {row["category"]: row for row in evidence["scheduleChecks"]}
     assert by_category["room"]["status"] == "matched"
     assert by_category["door"]["status"] == "matched"
@@ -195,6 +199,19 @@ def test_schedule_sheet_exchange_evidence_clean_with_current_packets() -> None:
     assert evidence["sheetViewChecks"][0]["status"] == "matched"
     assert {row["status"] for row in evidence["renderBundleChecks"]} == {"matched"}
     assert len(evidence["exchangeEvidenceDigestSha256"]) == 64
+
+
+def test_schedule_sheet_exchange_evidence_blocks_missing_documentation_export_parity() -> None:
+    doc = _base_exchange_doc()
+
+    evidence = build_schedule_sheet_exchange_evidence_v1(doc)
+
+    assert "documentation_export_parity_row_missing" in {
+        row["code"] for row in evidence["findings"]
+    }
+    assert evidence["documentationExportParityCheck"]["status"] == "missing_rows"
+    assert "sheet:sheet:pdf" in evidence["documentationExportParityCheck"]["missingScopeIds"]
+    assert evidence["manifestCoverage"]["documentationExportParityGapCount"] == 1
 
 
 def test_schedule_exchange_evidence_exposes_missing_filtered_rows_and_stale_packets() -> None:

@@ -343,6 +343,46 @@ describe('evaluateSheetViewportFidelityContract', () => {
       },
     });
   });
+
+  it('fails when a sheet viewport scale diverges from the referenced view scale', () => {
+    const scaledPlan = { ...planView, scale: 100 } as Element;
+    const sheet: Element = {
+      kind: 'sheet',
+      id: 'sheet-a101',
+      name: 'A101',
+      viewportsMm: [
+        {
+          viewportId: 'vp-plan',
+          viewRef: 'plan:pv-ground',
+          label: 'Ground floor plan',
+          scale: '1:50',
+          cropMinMm: { xMm: 0, yMm: 0 },
+          cropMaxMm: { xMm: 1000, yMm: 1000 },
+          widthMm: 18000,
+          heightMm: 12000,
+          discipline: 'architecture',
+          graphicsMode: 'hidden_line',
+        },
+      ],
+    } as Element;
+
+    const result = evaluateSheetViewportFidelityContract({
+      elementsById: { 'sheet-a101': sheet, 'pv-ground': scaledPlan },
+      sheetId: 'sheet-a101',
+      evidenceHints: [{ viewportId: 'vp-plan', planProjectionSegment: 'planPrim[wall=4]' }],
+    });
+
+    expect(result.status).toBe('fail');
+    expect(result.rows[0].checks.scalePreserved).toBe(false);
+    expect(result.issues[0]).toMatchObject({
+      id: 'sheet_viewport_scalePreserved',
+      elementId: 'vp-plan',
+      evidence: {
+        sheetId: 'sheet-a101',
+        viewportId: 'vp-plan',
+      },
+    });
+  });
 });
 
 describe('evaluateAnnotationDimensionIntegrityContract', () => {
@@ -497,6 +537,20 @@ describe('evaluateDocumentationExportParityContract', () => {
 });
 
 describe('evaluateTwoDGoldenFixtureReadinessContract', () => {
+  it('passes the default Wave 22-C 2D documentation fixture corpus', () => {
+    const result = evaluateTwoDGoldenFixtureReadinessContract({
+      fixtures: TWO_D_DOCUMENTATION_GOLDEN_FIXTURES,
+    });
+
+    expect(result.status).toBe('pass');
+    expect(result.rows.map((row) => row.scopeId)).toEqual([
+      'elevation',
+      'plan',
+      'section',
+      'sheet',
+    ]);
+  });
+
   it('passes when plan, section, elevation, and sheet goldens cover required 2D features', () => {
     const allFeatures = [
       'hosted_openings',

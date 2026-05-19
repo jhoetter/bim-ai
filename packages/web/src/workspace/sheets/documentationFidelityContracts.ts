@@ -397,8 +397,7 @@ export function evaluateSheetViewportFidelityContract(
       viewRefResolved: Boolean(parsed && parsed.kind !== 'unknown' && refElement),
       positiveExtent:
         positiveNumber(vp.widthMm ?? vp.width_mm) && positiveNumber(vp.heightMm ?? vp.height_mm),
-      scalePreserved:
-        isSchedule || Boolean(String(vp.scale ?? vp.scaleDenom ?? vp.scale_denom ?? '').trim()),
+      scalePreserved: viewportScalePreserved(vp, refElement, isSchedule),
       cropPreserved: isSchedule || (isPlainObject(cropMin) && isPlainObject(cropMax)),
       disciplineOrLensPreserved: Boolean(
         String(
@@ -1059,6 +1058,33 @@ function viewportEvidenceLinked(
   if (kind === 'section') return Boolean(String(hint.sectionDocumentationSegment ?? '').trim());
   if (kind === 'schedule') return Boolean(String(hint.scheduleDocumentationSegment ?? '').trim());
   return Boolean(String(hint.evidenceHref ?? '').trim());
+}
+
+function viewportScalePreserved(
+  vp: Record<string, unknown>,
+  refElement: Element | undefined,
+  isSchedule: boolean,
+): boolean {
+  if (isSchedule) return true;
+  const viewportScale = vp.scale ?? vp.scaleDenom ?? vp.scale_denom;
+  const viewportToken = normalizedScaleToken(viewportScale);
+  if (!viewportToken) return false;
+  const refToken = normalizedScaleToken((refElement as Record<string, unknown> | undefined)?.scale);
+  return !refToken || viewportToken === refToken;
+}
+
+function normalizedScaleToken(value: unknown): string {
+  const raw = String(value ?? '')
+    .trim()
+    .toLowerCase();
+  if (!raw) return '';
+  const scaleMatch = /^1\s*:\s*(\d+(?:\.\d+)?)$/.exec(raw);
+  if (scaleMatch) return Number(scaleMatch[1]).toString();
+  const namedMatch = /^scale[_-](\d+(?:\.\d+)?)$/.exec(raw);
+  if (namedMatch) return Number(namedMatch[1]).toString();
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric.toString();
+  return raw;
 }
 
 function isAnnotationOrDimensionKind(kind: string): boolean {
