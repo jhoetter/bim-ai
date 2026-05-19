@@ -43,7 +43,7 @@ from bim_ai.constructability_scope import (
     constructability_scope_descriptor,
     scope_constructability_elements,
 )
-from bim_ai.domain_integrity import check_domain_integrity_profiled
+from bim_ai.domain_integrity import DOMAIN_INTEGRITY_SCOPE, check_domain_integrity_profiled
 from bim_ai.elements import Element
 from bim_ai.model_integrity import (
     ModelIntegrityFinding,
@@ -364,6 +364,7 @@ def build_constructability_report(
             option_locks=option_locks,
             design_option_sets=design_option_sets,
         ),
+        "domainIntegrityScope_v1": DOMAIN_INTEGRITY_SCOPE,
         "summary": {
             "findingCount": len(active_findings),
             "issueCount": len(issues),

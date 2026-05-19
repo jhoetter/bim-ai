@@ -364,6 +364,14 @@ export type ConstructabilityReport = {
   };
   profilePreset?: Record<string, unknown>;
   availableProfilePresets?: Array<Record<string, unknown>>;
+  domainIntegrityScope_v1?: {
+    sourceScopes?: {
+      structure_mep_lite?: {
+        certification?: string;
+        engineeringDisclaimer?: string;
+      };
+    };
+  };
   findings: ConstructabilityFinding[];
   rootCauseGroups?: Array<Record<string, unknown>>;
   issues: ConstructabilityIssue[];

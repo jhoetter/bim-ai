@@ -60,6 +60,17 @@ async function readPayloadOrStdin(pathArg) {
   return slurpStdin();
 }
 
+async function readJsonFlagPayload(value, flagName) {
+  if (!value) return null;
+  const raw = value.trim().startsWith('{') ? value : await fs.readFile(value, 'utf8');
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`${flagName} must be JSON or a path to a JSON file: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 function commandsFromBundleJson(blob) {
   if (Array.isArray(blob)) return blob;
   if (blob && typeof blob === 'object' && Array.isArray(blob.commands)) return blob.commands;
@@ -1404,9 +1415,18 @@ function buildGeneratedBundle({ toolId, commands, parentRevision, assumptions = 
   return bundle;
 }
 
-async function runGeneratedBundle(modelId, userId, bundle, mode, jsonOnly) {
+async function runGeneratedBundle(
+  modelId,
+  userId,
+  bundle,
+  mode,
+  jsonOnly,
+  { actorKind = null, dryRunEvidence = null } = {},
+) {
   const endpoint = `/api/models/${encodeURIComponent(modelId)}/bundles`;
   const body = { bundle, mode, userId };
+  if (actorKind) body.actorKind = actorKind;
+  if (dryRunEvidence) body.dryRunEvidence = dryRunEvidence;
   if (jsonOnly) {
     console.log(JSON.stringify({ ok: true, endpoint: `POST ${endpoint}`, body }, null, 2));
     return;
@@ -1433,6 +1453,8 @@ function bundleFromBlob(blob, parentRevision, toolId) {
 async function cmdModelBundle(modelId, userId, sub, args) {
   let fileArg;
   let parentRevision;
+  let actorKind;
+  let dryRunEvidenceArg;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if ((arg === '--parent-revision' || arg === '--base') && args[i + 1]) {
@@ -1441,6 +1463,14 @@ async function cmdModelBundle(modelId, userId, sub, args) {
       parentRevision = parseNumber(arg.slice('--parent-revision='.length), '--parent-revision');
     } else if (arg.startsWith('--base=')) {
       parentRevision = parseNumber(arg.slice('--base='.length), '--base');
+    } else if (arg === '--actor-kind' && args[i + 1]) {
+      actorKind = args[++i];
+    } else if (arg.startsWith('--actor-kind=')) {
+      actorKind = arg.slice('--actor-kind='.length);
+    } else if (arg === '--dry-run-evidence' && args[i + 1]) {
+      dryRunEvidenceArg = args[++i];
+    } else if (arg.startsWith('--dry-run-evidence=')) {
+      dryRunEvidenceArg = arg.slice('--dry-run-evidence='.length);
     } else if (arg === '-' || !arg.startsWith('-')) {
       fileArg = fileArg ?? arg;
     }
@@ -1459,12 +1489,14 @@ async function cmdModelBundle(modelId, userId, sub, args) {
     parentRevision,
     sub === 'commit-bundle' ? 'model.commit_bundle' : 'model.dry_run',
   );
+  const dryRunEvidence = await readJsonFlagPayload(dryRunEvidenceArg, '--dry-run-evidence');
   await runGeneratedBundle(
     modelId,
     userId,
     bundle,
     sub === 'commit-bundle' ? 'commit' : 'dry_run',
     false,
+    { actorKind, dryRunEvidence },
   );
 }
 
@@ -4259,6 +4291,7 @@ function visualEvidenceContractFromIr(ir, snap, outDir) {
 function constructabilitySummary(report) {
   const body = report?.body && typeof report.body === 'object' ? report.body : {};
   const summary = body.summary && typeof body.summary === 'object' ? body.summary : {};
+  const structureScope = body.domainIntegrityScope_v1?.sourceScopes?.structure_mep_lite ?? {};
   const severityCounts =
     summary.severityCounts && typeof summary.severityCounts === 'object'
       ? summary.severityCounts
@@ -4267,6 +4300,8 @@ function constructabilitySummary(report) {
     ok: !!report?.ok,
     status: report?.status ?? null,
     profile: body.profile ?? body.profileId ?? null,
+    certification: structureScope.certification ?? null,
+    engineeringDisclaimer: structureScope.engineeringDisclaimer ?? null,
     severityCounts,
     total:
       Number(severityCounts.error ?? 0) +
@@ -4277,6 +4312,7 @@ function constructabilitySummary(report) {
 
 function constructabilityFindingRows(report) {
   const body = report?.body && typeof report.body === 'object' ? report.body : {};
+  const structureScope = body.domainIntegrityScope_v1?.sourceScopes?.structure_mep_lite ?? {};
   const candidates = [
     ...(Array.isArray(body.findings) ? body.findings : []),
     ...(Array.isArray(body.advisories) ? body.advisories : []),
@@ -4294,6 +4330,8 @@ function constructabilityFindingRows(report) {
         count: row.count ?? 1,
         elementIds: row.elementIds ?? row.elements ?? [],
         messages: [row.message ?? row.title ?? row.description].filter(Boolean),
+        certification: structureScope.certification ?? null,
+        engineeringDisclaimer: structureScope.engineeringDisclaimer ?? null,
         disposition: severity === 'info' ? 'reviewed' : 'unclassified',
         phaseRationale: '',
         toleranceEvidence: '',
@@ -5396,9 +5434,10 @@ Commands:
   schema                              GET /api/schema (commands + presets ids)
   presets                             summarize schema + building presets
   model show|summary                  Model-scoped snapshot/summary aliases.
-  model dry-run <bundle|-> [--parent-revision <rev>]
+  model dry-run <bundle|-> [--parent-revision <rev>] [--actor-kind human|agent|mcp-client|ci]
                                       MCP-M2-H: submit cmd-v3 bundle to /bundles in dry_run mode.
-  model commit-bundle <bundle|-> [--parent-revision <rev>]
+  model commit-bundle <bundle|-> [--parent-revision <rev>] [--actor-kind human|agent|mcp-client|ci]
+                     [--dry-run-evidence <json-or-path>]
                                       MCP-M2-H: submit cmd-v3 bundle to /bundles in commit mode.
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
   advisor [--output json] [--severity info|warning|error]
@@ -5431,6 +5470,8 @@ Commands:
                                        Default: --dry-run (agent safety — force explicit --commit).
                                        [--tolerate <advisory-class>]... explicit override(s)
                                        [--assumptions <file>] load assumptions from JSON file
+                                       [--actor-kind human|agent|mcp-client|ci]
+                                       [--dry-run-evidence <json-or-path>] replay dry-run evidence on commit
                                        Exit: 0 ok, 2 revision_conflict, 3 assumption_log_*
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
@@ -6482,6 +6523,8 @@ async function main() {
       const tolerances = [];
       let assumptionsFile;
       let fileArg;
+      let actorKind;
+      let dryRunEvidenceArg;
 
       for (let i = 0; i < rest.length; i++) {
         const a = rest[i];
@@ -6495,6 +6538,14 @@ async function main() {
           tolerances.push({ advisoryClass: rest[++i], reason: 'cli-tolerate' });
         } else if (a === '--assumptions' && rest[i + 1]) {
           assumptionsFile = rest[++i];
+        } else if (a === '--actor-kind' && rest[i + 1]) {
+          actorKind = rest[++i];
+        } else if (a.startsWith('--actor-kind=')) {
+          actorKind = a.slice('--actor-kind='.length);
+        } else if (a === '--dry-run-evidence' && rest[i + 1]) {
+          dryRunEvidenceArg = rest[++i];
+        } else if (a.startsWith('--dry-run-evidence=')) {
+          dryRunEvidenceArg = a.slice('--dry-run-evidence='.length);
         } else if (!a.startsWith('-')) {
           fileArg = a;
         }
@@ -6539,12 +6590,16 @@ async function main() {
         const aRaw = await fs.readFile(assumptionsFile, 'utf8');
         bundle.assumptions = JSON.parse(aRaw);
       }
+      const dryRunEvidence = await readJsonFlagPayload(dryRunEvidenceArg, '--dry-run-evidence');
 
       const url = `${base}/api/models/${encodeURIComponent(modelId)}/bundles`;
+      const body = { bundle, mode, userId };
+      if (actorKind) body.actorKind = actorKind;
+      if (dryRunEvidence) body.dryRunEvidence = dryRunEvidence;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ bundle, mode, userId }),
+        body: JSON.stringify(body),
       });
       const text = await res.text();
       let json;

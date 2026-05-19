@@ -130,7 +130,17 @@ test('model dry-run and commit-bundle submit cmd-v3 bundles to transaction endpo
   const env = { BIM_AI_BASE_URL: base, BIM_AI_MODEL_ID: 'model-1', BIM_AI_USER_ID: 'agent-1' };
   const dry = await runCli(['model', 'dry-run', '-', '--parent-revision', '7'], env, bundleJson);
   const commit = await runCli(
-    ['model', 'commit-bundle', '-', '--parent-revision', '7'],
+    [
+      'model',
+      'commit-bundle',
+      '-',
+      '--parent-revision',
+      '7',
+      '--actor-kind',
+      'agent',
+      '--dry-run-evidence',
+      '{"schemaVersion":"dryRunEvidence_v1","parentRevision":7,"commandDigestSha256":"digest","ok":true}',
+    ],
     env,
     bundleJson,
   );
@@ -144,6 +154,8 @@ test('model dry-run and commit-bundle submit cmd-v3 bundles to transaction endpo
   assert.equal(requests[0].body.bundle.parentRevision, 7);
   assert.equal(requests[1].body.mode, 'commit');
   assert.equal(requests[1].body.userId, 'agent-1');
+  assert.equal(requests[1].body.actorKind, 'agent');
+  assert.equal(requests[1].body.dryRunEvidence.schemaVersion, 'dryRunEvidence_v1');
 });
 
 test('query elements filters snapshot and emits geometry summaries', async () => {

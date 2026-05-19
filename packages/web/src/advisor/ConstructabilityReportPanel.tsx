@@ -60,6 +60,8 @@ export function ConstructabilityReportPanel(props: {
     () => groupConstructabilityFindings(props.report?.findings ?? [], groupBy),
     [props.report, groupBy],
   );
+  const structureMepScope =
+    props.report?.domainIntegrityScope_v1?.sourceScopes?.structure_mep_lite ?? null;
 
   if (!props.report) {
     return (
@@ -97,6 +99,12 @@ export function ConstructabilityReportPanel(props: {
         <Metric label="Suppressed" value={props.report.summary.suppressedFindingCount ?? 0} />
         <Metric label="Profile" value={props.report.profile} />
       </div>
+      {structureMepScope?.engineeringDisclaimer ? (
+        <div className="rounded border border-border bg-surface p-2 text-[11px] text-muted">
+          <span className="font-mono">{structureMepScope.certification}</span>
+          <span className="ml-2">{structureMepScope.engineeringDisclaimer}</span>
+        </div>
+      ) : null}
 
       {groups.length ? (
         <div className="max-h-[52vh] overflow-auto rounded border border-border">

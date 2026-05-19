@@ -67,6 +67,9 @@ def test_constructability_report_filters_and_reconciles_findings() -> None:
     assert report["format"] == "constructabilityReport_v1"
     assert report["revision"] == 7
     assert report["summary"]["findingCount"] >= 1
+    structure_scope = report["domainIntegrityScope_v1"]["sourceScopes"]["structure_mep_lite"]
+    assert structure_scope["certification"] == "not_certified_structural_engineering"
+    assert "certified structural engineering" in structure_scope["engineeringDisclaimer"]
     assert report["summary"]["ruleCounts"]["furniture_wall_hard_clash"] == 1
     finding = next(
         row for row in report["findings"] if row["ruleId"] == "furniture_wall_hard_clash"

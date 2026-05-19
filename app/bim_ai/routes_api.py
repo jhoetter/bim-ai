@@ -133,6 +133,12 @@ from bim_ai.query_resolve import (
     resolve_wall_by_line,
     success_envelope,
 )
+from bim_ai.renderer_diagnostic_persistence import (
+    append_renderer_diagnostic_packet,
+    latest_renderer_diagnostic_packet_for_evidence,
+    normalize_renderer_diagnostic_packet,
+    renderer_diagnostic_packet_embedding,
+)
 from bim_ai.room_color_scheme_override_evidence import (
     build_room_color_scheme_override_evidence_v1,
     roomColourSchemeLegendEvidence_v1,
@@ -202,6 +208,13 @@ api_router.include_router(sketch_product_router)
 
 def _get_job_queue() -> JobQueue:
     return get_queue()
+
+
+class RendererDiagnosticPacketPersistBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    packet: dict[str, Any]
+    user_id: str | None = Field(default="local-dev", alias="userId")
 
 
 # ---------------------------------------------------------------------------
@@ -987,6 +1000,14 @@ async def evidence_package(
         "warning": sum(1 for x in viols if x.get("severity") == "warning"),
         "info": sum(1 for x in viols if x.get("severity") == "info"),
     }
+    payload["rendererDiagnosticPacket_v1"] = latest_renderer_diagnostic_packet_for_evidence(
+        row.document,
+        model_revision=doc.revision,
+    )
+    payload["rendererDiagnosticPacketEmbedding_v1"] = renderer_diagnostic_packet_embedding(
+        row.document,
+        model_revision=doc.revision,
+    )
     payload["semanticDigestSha256"] = evidence_package_semantic_digest_sha256(payload)
     digest = str(payload["semanticDigestSha256"])
     payload["semanticDigestPrefix16"] = digest[:16]
@@ -1141,6 +1162,45 @@ async def evidence_package(
     payload["sheetProductionBaseline_v1"] = sheetProductionEvidenceBaseline_v1(doc)
     payload["evidencePackageDigestInvariants_v1"] = evidence_package_digest_invariants_v1(payload)
     return payload
+
+
+@api_router.post("/models/{model_id}/renderer-diagnostics")
+async def persist_renderer_diagnostics(
+    model_id: UUID,
+    body: RendererDiagnosticPacketPersistBody,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    packet_revision = body.packet.get("modelRevision")
+    if packet_revision is not None and str(packet_revision) != str(doc.revision):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": "renderer_diagnostic_packet_revision_conflict",
+                "currentRevision": doc.revision,
+                "packetRevision": packet_revision,
+            },
+        )
+    packet = normalize_renderer_diagnostic_packet(
+        body.packet,
+        model_id=str(model_id),
+        model_revision=doc.revision,
+    )
+    row.document = append_renderer_diagnostic_packet(row.document, packet)  # type: ignore[assignment]
+    await session.commit()
+    return {
+        "ok": True,
+        "modelId": str(model_id),
+        "revision": doc.revision,
+        "rendererDiagnosticPacket_v1": packet,
+        "rendererDiagnosticPacketEmbedding_v1": renderer_diagnostic_packet_embedding(
+            row.document,
+            model_revision=doc.revision,
+        ),
+    }
 
 
 @api_router.get("/models/{model_id}/room-derivation-candidates")

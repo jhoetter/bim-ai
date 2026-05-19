@@ -2185,6 +2185,8 @@ DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
         "v1CloseoutReadinessManifest_v1",
         "agentBriefAcceptanceReadout_v1",
         "prdAdvisorMatrix_v1",
+        "rendererDiagnosticPacket_v1",
+        "rendererDiagnosticPacketEmbedding_v1",
     }
 )
 # Internal alias kept for backward-compatible internal references.

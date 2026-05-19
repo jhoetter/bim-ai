@@ -21,6 +21,15 @@ const report: ConstructabilityReport = {
     ruleCounts: { furniture_wall_hard_clash: 1, room_without_egress_path: 1 },
     statusCounts: { active: 1 },
   },
+  domainIntegrityScope_v1: {
+    sourceScopes: {
+      structure_mep_lite: {
+        certification: 'not_certified_structural_engineering',
+        engineeringDisclaimer:
+          'These are deterministic structure-lite and MEP-lite constructability integrity checks. They do not perform certified structural engineering, code compliance, sizing, load calculation, or life-safety review.',
+      },
+    },
+  },
   findings: [
     {
       ruleId: 'room_without_egress_path',
@@ -84,6 +93,8 @@ describe('ConstructabilityReportPanel', () => {
     );
 
     expect(screen.getByText('construction_readiness')).toBeTruthy();
+    expect(screen.getByText('not_certified_structural_engineering')).toBeTruthy();
+    expect(screen.getByText(/do not perform certified structural engineering/)).toBeTruthy();
     expect(screen.getByText('warning (2)')).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText(/Group/), { target: { value: 'rule' } });
