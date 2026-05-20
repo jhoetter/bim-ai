@@ -178,7 +178,6 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,980      | Project browser shell near the cap; should be watched for new feature growth.                     |
 | `app/bim_ai/elements.py`                                    | 3,958      | Element model aggregator after extracted primitive geometry, evidence, and shared literal types.   |
 | `packages/web/src/viewport/meshBuilders.ts`                 | 3,950      | Mesh builder collection after prior helper extractions; near-cap growth should trigger another split. |
 | `packages/cli/cli.mjs`                                      | 3,921      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
@@ -192,6 +191,7 @@ Largest current source files observed:
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
 | `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                             |
+| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,549      | Project browser shell after extracted family rows and section/context-menu primitives.             |
 | `app/bim_ai/commands.py`                                    | 3,507      | Command schema aggregator after extracted site, output, and MEP command families.                 |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                           |
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
@@ -1380,6 +1380,11 @@ Initial thresholds can be advisory before becoming blocking:
   `app/bim_ai/commands_output.py`, and `app/bim_ai/commands_mep.py`, reducing
   `commands.py` to `3,507` local lines with focused command-schema tests and
   ruff passing.
+- 2026-05-20: a Project Browser extraction moved family type rows/context
+  menus and shared section/context-menu primitives into
+  `ProjectBrowserFamiliesGroup.tsx` and `ProjectBrowserSections.tsx`, reducing
+  `ProjectBrowser.tsx` to `3,549` local lines with focused browser tests,
+  web typecheck, and focused ESLint passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
