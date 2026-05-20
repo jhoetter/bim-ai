@@ -199,7 +199,7 @@ describe('createToposolidFromDxf — §12.2.2', () => {
     ].join('');
     // parseDxfContours processes each section separately — test that it handles it gracefully
     // At minimum the element should have kind toposolid
-    const elem = createToposolidFromDxf(LWPOLYLINE_DXF, null);
+    const elem = createToposolidFromDxf(multiContour, null);
     expect(elem.kind).toBe('toposolid');
   });
 });

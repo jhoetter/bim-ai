@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { initialSplitWallState, reduceSplitWall, type SplitWallState } from './toolGrammar';
+import { initialSplitWallState, reduceSplitWall } from './toolGrammar';
 
 describe('split wall grammar — §3.3.6', () => {
   it('activate moves to active phase', () => {

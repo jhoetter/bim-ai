@@ -2,7 +2,7 @@ import type { Element } from '@bim-ai/core';
 
 import { getBuiltInWallType, resolveWallAssemblyExposedLayers } from '../families/wallTypeCatalog';
 import { topLayerIndex, wallTypeExteriorLayerIndex } from './hostMaterialLayerTargets';
-import { resolveMaterial, type MaterialPbrSpec } from './materials';
+import { resolveMaterial } from './materials';
 
 export type MaterialAuthoritySource =
   | 'face-override'

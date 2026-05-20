@@ -147,7 +147,7 @@ describe('<AppearanceAssetBrowserDialog />', () => {
   it('uses a distinct Replace action for appearance assets', () => {
     const material = listMaterials()[0]!;
     const onReplace = vi.fn();
-    const { getByLabelText, getByTestId, getByText } = render(
+    const { getByLabelText, getByTestId } = render(
       <AppearanceAssetBrowserDialog onReplace={onReplace} onClose={vi.fn()} />,
     );
 

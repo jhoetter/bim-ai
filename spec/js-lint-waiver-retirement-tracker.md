@@ -68,3 +68,7 @@ Rule budgets:
   callbacks, and hook return values. The lint budget moved to `223` errors /
   `134` warnings / `81` files; `@typescript-eslint/no-unused-vars` moved from
   `114` to `104`.
+- 2026-05-20: removed another mechanical unused-variable batch across small
+  tests, viewport helpers, workspace overlays, and right-rail modules. The lint
+  budget moved to `223` errors / `112` warnings / `66` files;
+  `@typescript-eslint/no-unused-vars` moved from `104` to `82`.

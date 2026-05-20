@@ -266,7 +266,6 @@ function familyInstanceSiblingTypes(
     );
 }
 
-type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
 type MaterialEditableInstance = Extract<
   Element,
   {
@@ -388,8 +387,6 @@ export function WorkspaceRightRail({
   const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
-  const violations = useBimStore((s) => s.violations);
-  const modelId = useBimStore((s) => s.modelId);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
   const storeLensMode = useBimStore((s) => s.lensMode);
   const lensMode = lensModeProp ?? storeLensMode;

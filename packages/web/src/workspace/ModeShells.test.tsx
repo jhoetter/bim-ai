@@ -1,14 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import { ScheduleModeShell, SectionModeShell, SheetModeShell } from './ModeShells';
-import { useBimStore } from '../state/store';
-import i18n from '../i18n';
-
-function renderWithI18n(ui: React.ReactElement) {
-  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
-}
 
 vi.mock('./sheets', () => ({
   SheetCanvas: ({

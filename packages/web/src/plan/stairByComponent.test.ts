@@ -16,7 +16,6 @@ import {
 const pt1 = { xMm: 0, yMm: 0 };
 const pt2 = { xMm: 3000, yMm: 0 };
 const pt3 = { xMm: 3000, yMm: 1200 };
-const pt4 = { xMm: 0, yMm: 1200 };
 
 describe('reduceStairRun — §8.6.2', () => {
   it('starts in idle state', () => {

@@ -361,7 +361,6 @@ export function SectionViewportSvg(props: {
   const stairStroke = 2 * strokeScale;
   const datumStroke = 1.5 * strokeScale;
   const levelLineStroke = 1.1 * strokeScale;
-  const wallStroke = 3 * strokeScale;
   const roofStroke = 3 * strokeScale;
   const winStroke = 1 * strokeScale;
   const doorStroke = 1.75 * strokeScale;

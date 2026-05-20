@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
-type Pt2D = { xMm: number; yMm: number };
-
 /**
  * §2.4.2: builds a profiled edge skirt around the floor slab perimeter.
  * The edgeProfileMm points define the cross-section in (outward, downward) space:

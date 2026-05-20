@@ -63,7 +63,6 @@ type NullableStringSetter = Dispatch<SetStateAction<string | null>>;
 type SemanticCommand = (cmd: Record<string, unknown>) => void | Promise<void>;
 type DxfExportOptions = { levelId?: string; units: 'mm' | 'm' };
 type AdvisorCounts = { error: number; warning: number; info: number };
-type JobCounts = { queued: number; running: number; errored: number };
 type SheetPage = { id: string; name: string };
 type LibraryDiscipline = 'arch' | 'struct' | 'mep' | 'all';
 
@@ -221,7 +220,7 @@ export function WorkspaceOverlays({
   userDisplayName,
   activeLevelId,
   activePlanViewId,
-  activeWorkspaceId,
+  activeWorkspaceId: _activeWorkspaceId,
   selectedId,
   selectedIds,
   projectNameRef,
@@ -368,9 +367,6 @@ export function WorkspaceOverlays({
     activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view'
       ? (elementsById[activePlanViewId] as Extract<Element, { kind: 'plan_view' }>)
       : null;
-  const selectedElement = selectedId
-    ? (elementsById[selectedId] as Element | undefined)
-    : undefined;
   const assetEntries = Object.values(elementsById)
     .filter((e) => (e as { kind: string }).kind === 'asset_library_entry')
     .map((e) => {

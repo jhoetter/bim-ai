@@ -369,6 +369,9 @@ CI chooses one canonical quality gate.
   `spec/js-lint-waiver-retirement-tracker.md`; cleared all fatal ESLint
   findings and one mechanical unused-variable slice, then ratcheted
   `pnpm js-lint:budget` to `223` errors / `134` warnings / `81` files.
+- 2026-05-20: continued the mechanical unused-variable slice across small
+  frontend tests and helpers; `pnpm js-lint:budget` is now ratcheted to `223`
+  errors / `112` warnings / `66` files.
 
 ---
 

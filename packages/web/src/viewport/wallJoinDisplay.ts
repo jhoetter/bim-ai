@@ -48,7 +48,7 @@ function addPoint(point: PlanPoint, vec: PlanVec, scale: number): PlanPoint {
   };
 }
 
-function wallCenterlineOffsetMm(wall: WallElem, normal: PlanVec): number {
+function wallCenterlineOffsetMm(wall: WallElem): number {
   if (wall.wallTypeId) return 0;
   return (wall.thicknessMm ?? 200) * locationLineOffsetFrac(wall.locationLine);
 }
@@ -57,7 +57,7 @@ function displayCenterPoint(wall: WallElem, endpoint: WallEndpoint, normal: Plan
   return addPoint(
     endpoint === 'start' ? wall.start : wall.end,
     normal,
-    wallCenterlineOffsetMm(wall, normal),
+    wallCenterlineOffsetMm(wall),
   );
 }
 
@@ -403,7 +403,6 @@ export function wall3dXJoinCleanupFootprintsMm(
         .flatMap((candidate) => {
           const candidateDirection = wallDirection(candidate);
           if (!candidateDirection) return [];
-          const candidateNormal = wallNormal(candidateDirection);
           const candidateHalfThickMm = Math.max(
             25,
             (candidate.thicknessMm ?? wall.thicknessMm ?? 200) / 2,

@@ -3,7 +3,6 @@ import type { LensMode } from '@bim-ai/core';
 import { LENS_ORDER, lensLabel } from '../lensUx';
 
 const LENS_CYCLE = LENS_ORDER;
-type LensCycleMode = (typeof LENS_CYCLE)[number];
 
 const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',

@@ -22,38 +22,6 @@ function makeProjectBasePoint(
   } as Extract<Element, { kind: 'project_base_point' }>;
 }
 
-// Minimal north-arrow plan symbol builder mirroring the implementation in symbology.ts
-function buildNorthArrowGroup(el: Extract<Element, { kind: 'annotation_symbol' }>): THREE.Group {
-  const grp = new THREE.Group();
-  grp.userData.bimPickId = el.id;
-  const cx = ux(el.positionMm.xMm);
-  const cz = uz(el.positionMm.yMm);
-  const rot = (((el.rotationDeg ?? 0) * Math.PI) / 180) as number;
-  const Y = PLAN_Y + 0.005;
-  const len = 0.5;
-  const tip = new THREE.Vector3(cx + Math.sin(rot) * len, Y, cz - Math.cos(rot) * len);
-  const base = new THREE.Vector3(cx, Y, cz);
-  const shaftGeo = new THREE.BufferGeometry().setFromPoints([base, tip]);
-  grp.add(
-    new THREE.Line(shaftGeo, new THREE.LineBasicMaterial({ color: '#000000', linewidth: 2 })),
-  );
-  const headLen = 0.1;
-  const headAngle = Math.PI / 6;
-  const leftHead = new THREE.Vector3(
-    tip.x - Math.sin(rot + headAngle) * headLen,
-    Y,
-    tip.z + Math.cos(rot + headAngle) * headLen,
-  );
-  const rightHead = new THREE.Vector3(
-    tip.x - Math.sin(rot - headAngle) * headLen,
-    Y,
-    tip.z + Math.cos(rot - headAngle) * headLen,
-  );
-  const headGeo = new THREE.BufferGeometry().setFromPoints([leftHead, tip, rightHead]);
-  grp.add(new THREE.Line(headGeo, new THREE.LineBasicMaterial({ color: '#000000' })));
-  return grp;
-}
-
 // Minimal base point plan symbol builder (mirroring what symbology.ts builds)
 function buildBasePointGroup(el: Extract<Element, { kind: 'project_base_point' }>): THREE.Group {
   const grp = new THREE.Group();

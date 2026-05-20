@@ -137,7 +137,6 @@ function fromElementRenderFeatureStatus(
   return status.diagnosticCodes.map((code) => {
     const feature = elementStatusFeature(code);
     const issueClass = elementStatusIssueClass(code, status);
-    const unsupported = issueClass === 'renderer-unsupported';
     const fallback = code.endsWith('.fallback') || code.endsWith('_fallback');
     return createRendererDiagnostic({
       ruleId: code.replaceAll('.', '_'),

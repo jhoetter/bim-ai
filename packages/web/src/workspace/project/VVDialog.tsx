@@ -6,7 +6,6 @@ import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { Element, VGFilter, VGFilterRule } from '@bim-ai/core';
 import { useBimStore } from '../../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../../state/store';
-import type { ViewFilter } from '../../state/storeTypes';
 import { applyCommand } from '../../lib/api';
 import { dxfViewOverrideKey } from '../../plan/dxfUnderlay';
 

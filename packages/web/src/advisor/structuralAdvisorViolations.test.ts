@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Element } from '@bim-ai/core';
-
 import { validationIssuesToViolations } from './structuralAdvisorViolations';
 import type { ValidationIssue } from '../plan/structuralValidation';
 
