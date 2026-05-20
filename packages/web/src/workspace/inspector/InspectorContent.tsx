@@ -46,6 +46,9 @@ import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSec
 import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
 import { AnnotationTagInspectorSection } from './annotationTagInspectorSections';
 import { SpotAnnotationInspectorSection } from './spotAnnotationInspectorSections';
+import { InteriorElevationMarkerInspectorSection } from './interiorElevationMarkerInspectorSection';
+import { ModelingActionInspectorSection } from './modelingActionInspectorSections';
+import { ViewReferenceInspectorSection } from './viewReferenceInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -3668,31 +3671,9 @@ export function InspectorPropertiesFor(
       );
     }
     case 'viewpoint':
-      return (
-        <div>
-          <FieldRow label={f('name')} value={el.name} />
-          <FieldRow label={f('id')} value={el.id} mono />
-        </div>
-      );
     case 'elevation_view':
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Direction" value={el.direction} />
-          {el.customAngleDeg != null ? (
-            <FieldRow label="Angle" value={`${el.customAngleDeg}°`} />
-          ) : null}
-          {el.scale != null ? <FieldRow label={f('scale')} value={`1:${el.scale}`} /> : null}
-          {el.planDetailLevel ? <FieldRow label="Detail Level" value={el.planDetailLevel} /> : null}
-        </div>
-      );
     case 'callout':
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label={f('name')} value={el.name} />
-          <FieldRow label="Parent Sheet" value={resolveElName(el.parentSheetId, elementsById)} />
-          <FieldRow label="Outline Vertices" value={String(el.outlineMm.length)} mono />
-        </div>
-      );
+      return <ViewReferenceInspectorSection el={el} elementsById={elementsById} fieldLabel={f} />;
     case 'family_type':
       return (
         <div className="flex flex-col gap-2">
@@ -4334,80 +4315,12 @@ export function InspectorPropertiesFor(
       );
     }
     case 'interior_elevation_marker': {
-      const { onPropertyChange: iemPropChange } = options ?? {};
-      const levels = Object.values(elementsById).filter(
-        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
-      );
-      const allQuadrants = ['N', 'S', 'E', 'W'] as const;
-      const activeQs: ('N' | 'S' | 'E' | 'W')[] = el.activeQuadrants ?? ['N', 'S', 'E', 'W'];
       return (
-        <div className="flex flex-col gap-2">
-          <FieldRow
-            label="Position"
-            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
-            mono
-          />
-          {iemPropChange ? (
-            <div className="flex items-center gap-2 py-0.5">
-              <span className="text-xs text-muted w-28 shrink-0">Level</span>
-              <select
-                className="rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                value={el.levelId}
-                data-testid="inspector-iel-level"
-                onChange={(e) => iemPropChange('levelId', e.currentTarget.value)}
-              >
-                {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id}>
-                    {lvl.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <FieldRow label="Level" value={el.levelId} mono />
-          )}
-          {iemPropChange ? (
-            <div className="flex items-center gap-2 py-0.5">
-              <span className="text-xs text-muted w-28 shrink-0">Radius (mm)</span>
-              <input
-                type="number"
-                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                defaultValue={el.radiusMm ?? 3000}
-                key={`${el.id}-radius`}
-                step={100}
-                aria-label="Elevation marker radius in millimetres"
-                data-testid="inspector-iel-radius"
-                onBlur={(e) => {
-                  const v = Number(e.currentTarget.value);
-                  if (!isNaN(v) && v > 0) iemPropChange('radiusMm', v);
-                }}
-              />
-            </div>
-          ) : (
-            <FieldRow label="Radius (mm)" value={String(el.radiusMm ?? 3000)} mono />
-          )}
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Quadrants</span>
-            <div className="flex gap-2" data-testid="inspector-iel-quadrants">
-              {allQuadrants.map((q) => (
-                <label key={q} className="flex items-center gap-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={activeQs.includes(q)}
-                    onChange={(e) => {
-                      if (!iemPropChange) return;
-                      const next = e.currentTarget.checked
-                        ? [...activeQs, q]
-                        : activeQs.filter((x) => x !== q);
-                      iemPropChange('activeQuadrants', next);
-                    }}
-                  />
-                  {q}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
+        <InteriorElevationMarkerInspectorSection
+          el={el}
+          elementsById={elementsById}
+          onPropertyChange={options?.onPropertyChange}
+        />
       );
     }
     case 'spot_elevation':
@@ -4433,47 +4346,7 @@ export function InspectorPropertiesFor(
     case 'mass_box':
     case 'mass_extrusion':
     case 'mass_revolution': {
-      return (
-        <div className="flex flex-col gap-2">
-          {el.kind === 'mass_box' && (
-            <>
-              <FieldRow label="Width (mm)" value={String(el.widthMm)} />
-              <FieldRow label="Depth (mm)" value={String(el.depthMm)} />
-              <FieldRow label="Height (mm)" value={String(el.heightMm)} />
-            </>
-          )}
-          {el.kind === 'mass_extrusion' && (
-            <FieldRow label="Height (mm)" value={String(el.heightMm)} />
-          )}
-          <div className="border-t border-border pt-1">
-            <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Generate from Mass
-            </div>
-            <div className="flex flex-col gap-1 pt-0.5">
-              <button
-                type="button"
-                data-testid="mass-gen-floors-btn"
-                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground text-left"
-                onClick={() =>
-                  onDispatchCommand?.({ type: 'generate_floors_from_mass', massId: el.id })
-                }
-              >
-                Generate Floors by Level
-              </button>
-              <button
-                type="button"
-                data-testid="mass-apply-curtain-btn"
-                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground text-left"
-                onClick={() =>
-                  onDispatchCommand?.({ type: 'apply_curtain_to_mass', massId: el.id })
-                }
-              >
-                Apply Curtain System
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+      return <ModelingActionInspectorSection el={el} onDispatchCommand={onDispatchCommand} />;
     }
     case 'placed_tag':
     case 'material_tag': {
@@ -4486,19 +4359,7 @@ export function InspectorPropertiesFor(
       );
     }
     case 'detail_group': {
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Members" value={String(el.memberIds?.length ?? 0)} />
-          <button
-            type="button"
-            data-testid="inspector-group-edit"
-            className="rounded border border-border bg-surface-strong px-2 py-1 text-xs hover:bg-accent-soft self-start"
-            onClick={() => onDispatchCommand?.({ type: 'editGroup', groupDefinitionId: el.id })}
-          >
-            Edit Group
-          </button>
-        </div>
-      );
+      return <ModelingActionInspectorSection el={el} onDispatchCommand={onDispatchCommand} />;
     }
     case 'project_base_point': {
       return (

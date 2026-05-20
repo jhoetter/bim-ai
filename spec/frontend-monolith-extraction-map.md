@@ -72,6 +72,12 @@ Target modules:
   tag, and material tag rows.
 - `workspace/inspector/spotAnnotationInspectorSections.tsx`: spot elevation,
   coordinate, slope, and slope annotation rows.
+- `workspace/inspector/interiorElevationMarkerInspectorSection.tsx`: interior
+  elevation marker level, radius, and quadrant rows.
+- `workspace/inspector/modelingActionInspectorSections.tsx`: mass generation
+  actions and detail group edit rows.
+- `workspace/inspector/viewReferenceInspectorSections.tsx`: viewpoint,
+  elevation view, and callout read-only rows.
 - `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
   equipment, fixture, terminal, and opening request rows.
 - `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
@@ -94,6 +100,9 @@ First landed slice:
 - `workspace/inspector/siteTerrainInspectorSections.tsx`
 - `workspace/inspector/annotationTagInspectorSections.tsx`
 - `workspace/inspector/spotAnnotationInspectorSections.tsx`
+- `workspace/inspector/interiorElevationMarkerInspectorSection.tsx`
+- `workspace/inspector/modelingActionInspectorSections.tsx`
+- `workspace/inspector/viewReferenceInspectorSections.tsx`
 
 ## Workspace.tsx
 

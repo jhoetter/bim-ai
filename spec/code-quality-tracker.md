@@ -533,6 +533,15 @@ impact of small changes.
   slope, and slope annotation rows into
   `workspace/inspector/spotAnnotationInspectorSections.tsx`, reducing the local
   file to about `6,133` lines.
+- 2026-05-20: the next InspectorContent slice moved interior elevation marker
+  level/radius/quadrant rows into
+  `workspace/inspector/interiorElevationMarkerInspectorSection.tsx`.
+- 2026-05-20: the next InspectorContent slice moved mass generation actions and
+  detail-group edit rows into `workspace/inspector/modelingActionInspectorSections.tsx`.
+- 2026-05-20: the same closeout moved viewpoint, elevation view, and callout rows
+  into `workspace/inspector/viewReferenceInspectorSections.tsx`.
+- 2026-05-20: the `GFR-2026-01` closeout brought `InspectorContent.tsx` below
+  the local `6,000` LOC target at `5,996` lines.
 
 ---
 
