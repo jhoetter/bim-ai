@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
-from bim_ai.db import SessionMaker
+from bim_ai.db import SessionMaker, engine
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
 from bim_ai.main import app as real_app
@@ -90,9 +90,10 @@ def test_real_postgres_schema_session_bundle_activity_and_comments() -> None:
     project_id = uuid4()
     model_id = uuid4()
 
-    with TestClient(real_app) as client:
-        asyncio.run(_seed_model(project_id, model_id))
-        try:
+    asyncio.run(_seed_model(project_id, model_id))
+    asyncio.run(engine.dispose())
+    try:
+        with TestClient(real_app) as client:
             committed = client.post(
                 f"/api/models/{model_id}/commands/bundle",
                 json=_bundle(1, "db-level", "cq17-db-real-path"),
@@ -120,5 +121,7 @@ def test_real_postgres_schema_session_bundle_activity_and_comments() -> None:
             comments = client.get(f"/api/models/{model_id}/comments")
             assert comments.status_code == 200
             assert comments.json()["comments"][0]["body"] == "DB-backed real path comment"
-        finally:
-            asyncio.run(_cleanup_model(project_id, model_id))
+    finally:
+        asyncio.run(engine.dispose())
+        asyncio.run(_cleanup_model(project_id, model_id))
+        asyncio.run(engine.dispose())
