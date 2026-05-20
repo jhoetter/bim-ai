@@ -349,6 +349,10 @@ CI chooses one canonical quality gate.
   `PlanCanvasStatusOverlays`. Targeted ESLint is green for those files, and the
   global web lint backlog moved from `286` errors / `161` warnings to `273`
   errors / `159` warnings.
+- 2026-05-20: reduced another focused lint slice by typing DXF/family/work-plane
+  test fixtures and the family-parameter constraint helper. Targeted ESLint,
+  web typecheck, and focused tests pass; the global web lint backlog moved to
+  `240` errors / `158` warnings.
 
 ---
 
@@ -1056,6 +1060,9 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   parameter formulas. `pnpm --filter @bim-ai/web typecheck` passes, and
   `pnpm quality:report -- --json` reports `10` frontend hotspot files / `88`
   total matches, below the configured `18` files / `106` matches budget.
+- 2026-05-20: typed the family-parameter constraint helper and related focused
+  fixtures. `pnpm quality:report -- --json` now reports `9` frontend hotspot
+  files / `86` total matches.
 
 ---
 

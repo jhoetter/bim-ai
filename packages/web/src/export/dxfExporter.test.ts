@@ -169,7 +169,7 @@ describe('exportToDxf', () => {
 });
 
 describe('DXF export structural elements — §12.4.3', () => {
-  const level = { id: 'L1', kind: 'level', name: 'Ground', elevationMm: 0 };
+  const level = { id: 'L1', kind: 'level', name: 'Ground', elevationMm: 0 } as Element;
 
   it('exports column as S-COLS rectangle', () => {
     const col = {
@@ -179,8 +179,8 @@ describe('DXF export structural elements — §12.4.3', () => {
       positionMm: { xMm: 5000, yMm: 5000 },
       widthMm: 400,
       depthMm: 400,
-    };
-    const result = exportToDxf({ [col.id]: col as any, [level.id]: level as any }, {});
+    } as unknown as Element;
+    const result = exportToDxf({ [col.id]: col, [level.id]: level }, {});
     expect(result[0]?.dxfContent).toContain('S-COLS');
   });
 
@@ -191,8 +191,8 @@ describe('DXF export structural elements — §12.4.3', () => {
       levelId: 'L1',
       startMm: { xMm: 0, yMm: 0 },
       endMm: { xMm: 6000, yMm: 0 },
-    };
-    const result = exportToDxf({ [beam.id]: beam as any, [level.id]: level as any }, {});
+    } as unknown as Element;
+    const result = exportToDxf({ [beam.id]: beam, [level.id]: level }, {});
     expect(result[0]?.dxfContent).toContain('S-BEAM');
   });
 
@@ -207,8 +207,8 @@ describe('DXF export structural elements — §12.4.3', () => {
         { xMm: 5000, yMm: 4000 },
         { xMm: 0, yMm: 4000 },
       ],
-    };
-    const result = exportToDxf({ [floor.id]: floor as any, [level.id]: level as any }, {});
+    } as unknown as Element;
+    const result = exportToDxf({ [floor.id]: floor, [level.id]: level }, {});
     expect(result[0]?.dxfContent).toContain('A-FLOR');
   });
 
@@ -220,8 +220,8 @@ describe('DXF export structural elements — §12.4.3', () => {
       startMm: { xMm: 0, yMm: 0 },
       endMm: { xMm: 3000, yMm: 0 },
       runWidthMm: 1200,
-    };
-    const result = exportToDxf({ [stair.id]: stair as any, [level.id]: level as any }, {});
+    } as unknown as Element;
+    const result = exportToDxf({ [stair.id]: stair, [level.id]: level }, {});
     expect(result[0]?.dxfContent).toContain('A-FLOR-STRS');
   });
 });

@@ -22,9 +22,8 @@ export function evaluateFamilyParameterFormula(
     expr = expr.replace(new RegExp(`\\b${name}\\b`, 'g'), String(value));
   }
   // Safety: only allow digits, operators, parens, dots, spaces
-  if (!/^[\d\s\+\-\*\/\(\)\.]+$/.test(expr)) return NaN;
+  if (!/^[0-9\s+*/().-]+$/.test(expr)) return NaN;
   try {
-    // eslint-disable-next-line no-new-func
     const result = Function(`"use strict"; return (${expr})`)();
     return typeof result === 'number' ? result : NaN;
   } catch {
@@ -95,8 +94,8 @@ export function applyFamilyConstraints(
     const valueMm = paramValues[constraint.paramName];
     if (valueMm === undefined) continue;
 
-    const plane1 = updated[constraint.refPlaneId1] as any;
-    const plane2 = updated[constraint.refPlaneId2] as any;
+    const plane1 = updated[constraint.refPlaneId1] as Element & { xMm?: number; yMm?: number };
+    const plane2 = updated[constraint.refPlaneId2] as Element & { xMm?: number; yMm?: number };
     if (!plane1 || !plane2) continue;
 
     // Move plane2's position so distance from plane1 equals valueMm
@@ -104,13 +103,13 @@ export function applyFamilyConstraints(
       const newX = (plane1.xMm ?? 0) + valueMm;
       updated = {
         ...updated,
-        [plane2.id]: { ...plane2, xMm: newX },
+        [plane2.id]: { ...plane2, xMm: newX } as unknown as Element,
       };
     } else {
       const newY = (plane1.yMm ?? 0) + valueMm;
       updated = {
         ...updated,
-        [plane2.id]: { ...plane2, yMm: newY },
+        [plane2.id]: { ...plane2, yMm: newY } as unknown as Element,
       };
     }
   }

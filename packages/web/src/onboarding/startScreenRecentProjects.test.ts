@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROJECT_TEMPLATES } from './projectTemplates';
+import { PROJECT_TEMPLATES, type ProjectTemplateCommand } from './projectTemplates';
 
 describe('Start screen — §1.5', () => {
   it('has at least 4 project templates', () => {
@@ -14,9 +14,12 @@ describe('Start screen — §1.5', () => {
 
   it('vereinfacht template has EG and OG levels', () => {
     const t = PROJECT_TEMPLATES.find((t) => t.id === 'vereinfacht');
-    const levelCmds = (t?.commands ?? []).filter((c: any) => c.type === 'createLevel');
-    expect(levelCmds.some((c: any) => c.name === 'EG')).toBe(true);
-    expect(levelCmds.some((c: any) => c.name === 'OG')).toBe(true);
+    const levelCmds = (t?.commands ?? []).filter(
+      (c): c is Extract<ProjectTemplateCommand, { type: 'createLevel' }> =>
+        c.type === 'createLevel',
+    );
+    expect(levelCmds.some((c) => c.name === 'EG')).toBe(true);
+    expect(levelCmds.some((c) => c.name === 'OG')).toBe(true);
   });
 
   it('recentProjectIds deduplicates on prepend', () => {

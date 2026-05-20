@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 
 describe('Work plane face orientation — §7.3.2 §7.3.3', () => {
   it('SetWorkPlaneFaceCmd has correct shape', () => {
@@ -8,7 +9,7 @@ describe('Work plane face orientation — §7.3.2 §7.3.3', () => {
   });
 
   it('work_plane element has required fields', () => {
-    const wp: any = {
+    const wp: Extract<Element, { kind: 'work_plane' }> = {
       kind: 'work_plane',
       id: 'wp-01',
       name: 'Stair Wall Plane',
@@ -28,7 +29,7 @@ describe('Work plane face orientation — §7.3.2 §7.3.3', () => {
   });
 
   it('horizontal floor has normalDeg = 0', () => {
-    const floor: any = { kind: 'floor', angleDeg: 0 };
+    const floor: { kind: 'floor'; angleDeg: number } = { kind: 'floor', angleDeg: 0 };
     const normalDeg = floor.kind === 'floor' ? 0 : ((floor.angleDeg ?? 0) + 90) % 360;
     expect(normalDeg).toBe(0);
   });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { FamilyReferencePlaneElement } from '@bim-ai/core';
 
 describe('Family reference plane — §15.1.3', () => {
   it('AddFamilyReferencePlaneCmd has correct shape', () => {
@@ -15,7 +16,7 @@ describe('Family reference plane — §15.1.3', () => {
   });
 
   it('reference plane has correct element shape', () => {
-    const frp: any = {
+    const frp: FamilyReferencePlaneElement = {
       kind: 'family_reference_plane',
       id: 'frp1',
       familyId: 'fam1',
@@ -35,17 +36,26 @@ describe('Family reference plane — §15.1.3', () => {
   });
 
   it('offsetMm defaults to 0', () => {
-    const frp: any = { kind: 'family_reference_plane', offsetMm: 0 };
+    const frp: Pick<FamilyReferencePlaneElement, 'kind' | 'offsetMm'> = {
+      kind: 'family_reference_plane',
+      offsetMm: 0,
+    };
     expect(frp.offsetMm).toBe(0);
   });
 
   it('isReference defaults to true', () => {
-    const frp: any = { kind: 'family_reference_plane', isReference: true };
+    const frp: Pick<FamilyReferencePlaneElement, 'kind' | 'isReference'> = {
+      kind: 'family_reference_plane',
+      isReference: true,
+    };
     expect(frp.isReference).toBe(true);
   });
 
   it('z axis means horizontal reference plane', () => {
-    const frp: any = { axis: 'z', offsetMm: 500 };
+    const frp: Pick<FamilyReferencePlaneElement, 'axis' | 'offsetMm'> = {
+      axis: 'z',
+      offsetMm: 500,
+    };
     const label = frp.axis === 'z' ? 'horizontal' : 'vertical';
     expect(label).toBe('horizontal');
   });
