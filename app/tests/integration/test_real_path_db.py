@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
-from bim_ai.db import SessionMaker, engine
+from bim_ai.db import SessionMaker, engine, init_db_schema
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
 from bim_ai.main import app as real_app
@@ -90,6 +90,8 @@ def test_real_postgres_schema_session_bundle_activity_and_comments() -> None:
     project_id = uuid4()
     model_id = uuid4()
 
+    asyncio.run(init_db_schema())
+    asyncio.run(engine.dispose())
     asyncio.run(_seed_model(project_id, model_id))
     asyncio.run(engine.dispose())
     try:
