@@ -237,3 +237,9 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   `packages/web/src/plan/usePlanProjectionWireSync.ts`. Local `wc -l` now
   reports `PlanCanvas.tsx` at `7,450` lines. Focused PlanCanvas and wire
   primitive tests pass; `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: the next `GFR-2026-14` slice moved snap-line syncing, tool-exit
+  readout resets, query/wall cleanup, component ghost cleanup, and context-menu
+  outside-click effects into
+  `packages/web/src/plan/usePlanCanvasToolCleanupEffects.ts`. Local `wc -l` now
+  reports `PlanCanvas.tsx` at `7,408` lines. Focused PlanCanvas tests pass;
+  `pnpm --filter @bim-ai/web typecheck` passes.

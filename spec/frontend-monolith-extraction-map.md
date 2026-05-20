@@ -43,6 +43,8 @@ Target modules:
   dimension derivation.
 - `plan/usePlanProjectionWireSync.ts`: server plan-projection wire fetch/reset
   synchronization.
+- `plan/usePlanCanvasToolCleanupEffects.ts`: tool-exit cleanup effects for
+  readouts, query state, wall hints, component ghost, and context menus.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -81,6 +83,7 @@ First landed slices:
 - `plan/planCanvasComponentPreview.ts`
 - `plan/planCanvasSelectionState.ts`
 - `plan/usePlanProjectionWireSync.ts`
+- `plan/usePlanCanvasToolCleanupEffects.ts`
 
 ## InspectorContent.tsx
 

@@ -200,6 +200,7 @@ import {
 } from './planCanvasComponentPreview';
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
 import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
+import { usePlanCanvasToolCleanupEffects } from './usePlanCanvasToolCleanupEffects';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -7036,73 +7037,30 @@ export function PlanCanvas({
     setPlanTool,
   ]);
 
-  // EDT-05 — keep the snap-line ref in sync with the active level so
-  // the per-pointer-move handler can read it without a closure rebuild.
-  useEffect(() => {
-    lastSnapLinesRef.current = snapLines;
-  }, [snapLines]);
-
-  useEffect(() => {
-    if (planTool !== 'measure') setMeasureReadout(null);
-  }, [planTool]);
-
-  useEffect(() => {
-    if (planTool !== 'measure-angle') {
-      measureAngleStateRef.current = initialMeasureAngleState();
-      setMeasureAngleReadout(null);
-    }
-  }, [planTool]);
-
-  useEffect(() => {
-    if (planTool !== 'measure-arc') {
-      measureArcStateRef.current = initialMeasureArcState();
-      setMeasureArcReadout(null);
-    }
-  }, [planTool]);
-
-  useEffect(() => {
-    if (planTool !== 'wall') setWallPickLineHint(null);
-  }, [planTool]);
-
-  useEffect(() => {
-    if (planTool !== 'wall') setWallDraftNotice(null);
-  }, [planTool]);
-
-  useEffect(() => {
-    if (planTool !== 'query') {
-      setDxfQueryHover(null);
-      setDxfQueryDialog(null);
-    }
-  }, [planTool]);
-
-  // F-115 — reset pending component rotation when leaving the component tool;
-  // also remove any lingering ghost preview from the scene.
-  useEffect(() => {
-    if (planTool !== 'component') {
-      setPendingComponentRotationDeg(0);
-      const grp = rootRef.current;
-      if (grp && componentGhostRef.current) {
-        grp.remove(componentGhostRef.current);
-        componentGhostRef.current = null;
-      }
-    }
-  }, [planTool]);
-
-  // F-014 — close the Unhide in View context menu on any outside mousedown.
-  useEffect(() => {
-    if (!unhideContextMenu) return;
-    const close = () => setUnhideContextMenu(null);
-    window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
-  }, [unhideContextMenu]);
-
-  // F-040 — close the wall-join Allow/Disallow context menu on any outside mousedown.
-  useEffect(() => {
-    if (!wallJoinCtxMenu) return;
-    const close = () => setWallJoinCtxMenu(null);
-    window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
-  }, [wallJoinCtxMenu]);
+  const resetComponentRotation = useCallback(() => setPendingComponentRotationDeg(0), []);
+  const closeUnhideContextMenu = useCallback(() => setUnhideContextMenu(null), []);
+  const closeWallJoinContextMenu = useCallback(() => setWallJoinCtxMenu(null), []);
+  usePlanCanvasToolCleanupEffects({
+    planTool,
+    snapLines,
+    lastSnapLinesRef,
+    measureAngleStateRef,
+    measureArcStateRef,
+    setMeasureReadout,
+    setMeasureAngleReadout,
+    setMeasureArcReadout,
+    setWallPickLineHint,
+    setWallDraftNotice,
+    setDxfQueryHover,
+    setDxfQueryDialog,
+    onResetComponentRotation: resetComponentRotation,
+    rootRef,
+    componentGhostRef,
+    unhideContextMenu,
+    closeUnhideContextMenu,
+    wallJoinContextMenu: wallJoinCtxMenu,
+    closeWallJoinContextMenu,
+  });
 
   // EDT-01 — grip pointer-down: capture starting world position so
   // onMove can compute a stable delta.
