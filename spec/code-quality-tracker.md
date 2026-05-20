@@ -467,6 +467,10 @@ impact of small changes.
   material override rows, generic material assignment rows, or type-derived
   material helpers; these moved to
   `workspace/inspector/materialInspectorSections.tsx`.
+- 2026-05-20: `InspectorContent.tsx` no longer owns stair assembly rows or
+  shaft side-wall action state; these moved to
+  `workspace/inspector/stairAssemblyInspector.tsx` and
+  `workspace/inspector/shaftInspectorSections.tsx`.
 - 2026-05-19: focused tests cover the extracted plan camera and nearest-wall
   helpers.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns snap-override keyboard sequence
