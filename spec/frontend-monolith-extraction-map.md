@@ -62,6 +62,8 @@ Target modules:
   dimensions, sheets, views, and view templates.
 - `workspace/inspector/detailDocumentationInspectorSections.tsx`: detail line,
   filled region, and detail arc documentation rows.
+- `workspace/inspector/decalInspectorSection.tsx`: decal preview and property
+  rows.
 - `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
   equipment, fixture, terminal, and opening request rows.
 - `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
@@ -79,6 +81,7 @@ First landed slice:
 - `workspace/inspector/mepInspectorSections.tsx`
 - `workspace/inspector/linkInspectorSections.tsx`
 - `workspace/inspector/detailDocumentationInspectorSections.tsx`
+- `workspace/inspector/decalInspectorSection.tsx`
 
 ## Workspace.tsx
 

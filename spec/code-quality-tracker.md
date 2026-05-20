@@ -512,6 +512,9 @@ impact of small changes.
   or detail arc inspector rows; these moved to
   `workspace/inspector/detailDocumentationInspectorSections.tsx`, reducing the
   inspector file to about `6,760` lines.
+- 2026-05-20: `InspectorContent.tsx` no longer owns decal preview and property
+  rows; these moved to `workspace/inspector/decalInspectorSection.tsx`, reducing
+  the inspector file to about `6,680` lines.
 
 ---
 
