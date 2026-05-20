@@ -178,15 +178,15 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/cli/cli.mjs`                                      | 3,921      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 3,914      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules. |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 3,857      | Inspector switchboard after extracted wall/floor, phase/type/wall-part/text/dimension, and specialist element sections. |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,814      | Family editor state shell after extracted workbench and properties panel modules.                  |
 | `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,807      | Workspace side rail remains large but below the current cap.                                      |
 | `packages/web/src/Viewport.tsx`                             | 3,802      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                 |
-| `app/bim_ai/routes_api.py`                                  | 3,763      | API route aggregator after extracted query/resolve/QA and presentation routes.                    |
-| `packages/web/src/viewport/meshBuilders.ts`                 | 3,728      | Mesh builder collection after extracted family/detail, balcony, and structural builder modules.   |
+| `app/bim_ai/routes_api.py`                                  | 3,776      | API route aggregator after extracted query/resolve/QA and presentation routes.                    |
+| `packages/web/src/viewport/meshBuilders.ts`                 | 3,724      | Mesh builder collection after extracted family/detail, balcony, and structural builder modules.   |
+| `packages/cli/cli.mjs`                                      | 3,722      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `app/bim_ai/elements.py`                                    | 3,714      | Element model aggregator after extracted primitive, MEP, evidence, and shared literal types.      |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
@@ -1391,9 +1391,12 @@ Initial thresholds can be advisory before becoming blocking:
   and ruff passing.
 - 2026-05-20: a viewport mesh-builder extraction moved balcony rendering and
   structural column/beam/connection rendering into `meshBuilders.balcony.ts`
-  and `meshBuilders.structural.ts`, reducing `meshBuilders.ts` to `3,728`
+  and `meshBuilders.structural.ts`, reducing `meshBuilders.ts` to `3,724`
   local lines with full web typecheck, focused viewport ESLint, and focused
   mesh tests passing.
+- 2026-05-20: a CLI extraction moved the MEP command family into
+  `packages/cli/lib/mep-commands.mjs`, reducing `packages/cli/cli.mjs` to
+  `3,722` local lines with `node --check` and CLI MCP parity tests passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
