@@ -123,6 +123,7 @@ A-territory target:
 | GFR-2026-47 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract dimension inspector sections                               | Inspector below `4,900` LOC with focused tests green.       |
 | GFR-2026-48 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract composition tab action handlers                            | Workspace below `5,000` LOC with focused tests green.       |
 | GFR-2026-49 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract camera orientation sync hook                               | Viewport below `5,110` LOC with focused tests green.        |
+| GFR-2026-50 | P1       | Done   | `packages/core/src/index.ts`                                | Extract late model contract types                                  | Core index below `4,000` LOC with core/web typechecks green. |
 
 ## Progress Log
 
@@ -548,3 +549,8 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   reports `packages/web/src/Viewport.tsx` at `5,101` lines. Focused
   viewport orientation tests pass (`11 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-50` is Done. The slice moved late model contracts,
+  command contracts, presentation/export contracts, and collaboration-adjacent
+  aliases into `packages/core/src/modelContracts.ts`. Local `wc -l` reports
+  `packages/core/src/index.ts` at `3,386` lines. `pnpm --filter @bim-ai/core
+  typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
