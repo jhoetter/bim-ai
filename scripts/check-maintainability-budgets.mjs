@@ -80,7 +80,12 @@ function buildBudgetGate() {
   }
 
   const config = report.maintainability.budgetConfig;
-  if (!config.targetBlockingDate || config.ownershipCount === 0 || !config.hasComplexityBudgets) {
+  if (
+    !config.targetBlockingDate ||
+    config.ownershipCount === 0 ||
+    !config.hasComplexityBudgets ||
+    !config.hasSourceGrowthBudgets
+  ) {
     failures.push({
       code: 'budget_config_incomplete',
       rows: [
@@ -88,6 +93,34 @@ function buildBudgetGate() {
           path: config.path,
           targetBlockingDate: config.targetBlockingDate,
           hasComplexityBudgets: config.hasComplexityBudgets,
+          hasSourceGrowthBudgets: config.hasSourceGrowthBudgets,
+        },
+      ],
+    });
+  }
+
+  if (report.maintainability.sourceGrowthOverBudget) {
+    failures.push({
+      code: 'largest_source_file_over_budget',
+      rows: [
+        {
+          ...report.maintainability.largestSourceFile,
+          maxLines: report.maintainability.sourceGrowthBudget.maxLargestSourceLines,
+        },
+      ],
+    });
+  }
+
+  if (report.typeSafety.overBudget) {
+    failures.push({
+      code: 'type_escape_budget_over_limit',
+      rows: [
+        {
+          path: 'packages/web/src',
+          hotspotFiles: report.typeSafety.nonTestHotspotFileCount,
+          maxHotspotFiles: report.typeSafety.budget.frontendNonTestHotspotFiles,
+          hotspots: report.typeSafety.totalNonTestHotspots,
+          maxHotspots: report.typeSafety.budget.frontendTotalNonTestHotspots,
         },
       ],
     });
@@ -102,6 +135,11 @@ function buildBudgetGate() {
       changedOverBudgetCount: changedOverBudget.length,
       blockingWithoutDispositionCount: blockingWithoutDisposition.length,
       unownedOverBudgetCount: unownedOverBudget.length,
+      typeEscapeHotspotFiles: report.typeSafety.nonTestHotspotFileCount,
+      typeEscapeTotalHotspots: report.typeSafety.totalNonTestHotspots,
+      largestSourceFileLines: report.maintainability.largestSourceFile?.lines ?? 0,
+      largestSourceFileBudget:
+        report.maintainability.sourceGrowthBudget?.maxLargestSourceLines ?? null,
       failureCount: failures.length,
     },
     failures,

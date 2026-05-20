@@ -347,6 +347,8 @@ function loadBudgetConfig() {
       fileSizeBudgets: DEFAULT_FILE_BUDGETS,
       complexityBudgets: null,
       typeEscapeBudgets: null,
+      sourceGrowthBudgets: null,
+      jsLintBudgets: null,
       ownership: [],
       generatedArtifactPolicy: null,
     };
@@ -359,6 +361,8 @@ function loadBudgetConfig() {
     fileSizeBudgets: parsed.fileSizeBudgets ?? DEFAULT_FILE_BUDGETS,
     complexityBudgets: parsed.complexityBudgets ?? null,
     typeEscapeBudgets: parsed.typeEscapeBudgets ?? null,
+    sourceGrowthBudgets: parsed.sourceGrowthBudgets ?? null,
+    jsLintBudgets: parsed.jsLintBudgets ?? null,
     ownership: Array.isArray(parsed.ownership) ? parsed.ownership : [],
     generatedArtifactPolicy: parsed.generatedArtifactPolicy ?? null,
   };
@@ -651,6 +655,9 @@ function computeGrade({
   uiQualityBudgets,
   realPathCoverage,
   typeEscapeBudgets,
+  sourceGrowthBudgets,
+  largestSourceFile,
+  jsLintBudgets,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -664,6 +671,10 @@ function computeGrade({
   const hasStrictGate = Boolean(scripts.root['verify:strict']);
   const hasSecurityHygiene = Boolean(securityGates.hygieneScript);
   const hasMaintainabilityBudgetGate = Boolean(scripts.root['maintainability:budgets']);
+  const hasJsLintBudgetGate = Boolean(scripts.root['js-lint:budget']);
+  const strictIncludesJsLintBudget = Boolean(
+    scripts.root['verify:strict']?.includes('js-lint:budget'),
+  );
 
   let score = 7.5;
   const blockersToNextGrade = [];
@@ -680,6 +691,9 @@ function computeGrade({
   }
   if (!hasMaintainabilityBudgetGate) {
     blockersToNextGrade.push('maintainability budget gate is not wired into package scripts');
+  }
+  if (!hasJsLintBudgetGate || !strictIncludesJsLintBudget || !jsLintBudgets) {
+    blockersToNextGrade.push('JavaScript lint budget gate is not wired into strict verification');
   }
   if (!hasSecurityHygiene || !securityGates.ciRunsJsAudit || !securityGates.ciRunsPythonAudit) {
     blockersToNextGrade.push('security hygiene and dependency audit gates are not fully wired');
@@ -720,6 +734,14 @@ function computeGrade({
   if (typeEscapesOverBudget) {
     blockersToNextGrade.push(
       `${typeEscapes.length} frontend source file(s) / ${totalTypeEscapeMatches} total type escape hotspot(s) exceed the configured budget`,
+    );
+  }
+  if (
+    sourceGrowthBudgets?.maxLargestSourceLines &&
+    largestSourceFile?.lines > sourceGrowthBudgets.maxLargestSourceLines
+  ) {
+    blockersToNextGrade.push(
+      `largest source file ${largestSourceFile.path} has ${largestSourceFile.lines} lines and exceeds the ${sourceGrowthBudgets.maxLargestSourceLines} line growth cap`,
     );
   }
   if (p0Open.length > 0)
@@ -779,6 +801,7 @@ function buildReport() {
   const frontendTestEnvironments = frontendTestEnvironmentSummary(scripts);
   const uiQualityBudgets = uiQualityBudgetSummary(scripts);
   const realPathCoverage = realPathCoverageSummary(scripts);
+  const largestSourceFile = sourceRows.find((row) => !row.generated) ?? null;
   const grade = computeGrade({
     tracker,
     waivers,
@@ -793,6 +816,9 @@ function buildReport() {
     uiQualityBudgets,
     realPathCoverage,
     typeEscapeBudgets: budgetConfig.typeEscapeBudgets,
+    sourceGrowthBudgets: budgetConfig.sourceGrowthBudgets,
+    largestSourceFile,
+    jsLintBudgets: budgetConfig.jsLintBudgets,
   });
 
   const report = {
@@ -819,6 +845,7 @@ function buildReport() {
         qualityReport: scripts.root['quality:report'] ?? null,
         qualityWaivers: scripts.root['quality:waivers'] ?? null,
         maintainabilityBudgets: scripts.root['maintainability:budgets'] ?? null,
+        jsLintBudget: scripts.root['js-lint:budget'] ?? null,
         contractParity: scripts.root['contract:parity'] ?? null,
         securityHygiene: scripts.root['security:hygiene'] ?? null,
         uiQualityBudgets: scripts.root['ui:quality-budgets'] ?? null,
@@ -838,8 +865,22 @@ function buildReport() {
         targetBlockingDate: budgetConfig.targetBlockingDate,
         ownershipCount: budgetConfig.ownership.length,
         hasComplexityBudgets: Boolean(budgetConfig.complexityBudgets),
+        hasSourceGrowthBudgets: Boolean(budgetConfig.sourceGrowthBudgets),
+        hasJsLintBudgets: Boolean(budgetConfig.jsLintBudgets),
       },
       budgets: budgetConfig.fileSizeBudgets,
+      sourceGrowthBudget: budgetConfig.sourceGrowthBudgets ?? null,
+      largestSourceFile: largestSourceFile
+        ? {
+            path: largestSourceFile.path,
+            kind: largestSourceFile.kind,
+            lines: largestSourceFile.lines,
+            generated: largestSourceFile.generated,
+          }
+        : null,
+      sourceGrowthOverBudget:
+        Boolean(budgetConfig.sourceGrowthBudgets?.maxLargestSourceLines && largestSourceFile) &&
+        largestSourceFile.lines > budgetConfig.sourceGrowthBudgets.maxLargestSourceLines,
       largestFiles: sourceRows.slice(0, 25).map(({ path, kind, lines, generated }) => ({
         path,
         kind,
@@ -867,6 +908,11 @@ function buildReport() {
           typeEscapes.reduce((sum, row) => sum + row.count, 0) >
             budgetConfig.typeEscapeBudgets.frontendTotalNonTestHotspots),
       topHotspots: typeEscapes.slice(0, 25),
+    },
+    jsLint: {
+      budget: budgetConfig.jsLintBudgets ?? null,
+      script: scripts.root['js-lint:budget'] ?? null,
+      strictIncludesBudget: Boolean(scripts.root['verify:strict']?.includes('js-lint:budget')),
     },
     repositoryHygiene: {
       trackedArtifactCount: artifacts.length,
@@ -978,6 +1024,9 @@ function renderMarkdown(report) {
     `| UI quality budgets | ${report.gates.uiQualityBudgets.configured ? 'configured' : 'missing'} | strict: ${report.gates.uiQualityBudgets.strictIncludesBudget ? 'yes' : 'no'}, CI: ${report.gates.uiQualityBudgets.ciRunsPolicy ? 'yes' : 'no'} |`,
   );
   lines.push(
+    `| JS lint budget | ${report.jsLint.budget ? 'configured' : 'missing'} | strict: ${report.jsLint.strictIncludesBudget ? 'yes' : 'no'} |`,
+  );
+  lines.push(
     `| Real-path smoke | ${report.gates.realPathCoverage.ciRunsRealPath ? 'configured' : 'missing'} | app: ${report.gates.realPathCoverage.importsRealApp ? 'yes' : 'no'}, websocket: ${report.gates.realPathCoverage.coversWebsocket ? 'yes' : 'no'} |`,
   );
   lines.push('');
@@ -989,6 +1038,11 @@ function renderMarkdown(report) {
   lines.push(
     `Budget config: \`${report.maintainability.budgetConfig.path}\`; target blocking date: ${report.maintainability.budgetConfig.targetBlockingDate ?? 'n/a'}.`,
   );
+  if (report.maintainability.sourceGrowthBudget && report.maintainability.largestSourceFile) {
+    lines.push(
+      `Largest source cap: ${report.maintainability.largestSourceFile.lines}/${report.maintainability.sourceGrowthBudget.maxLargestSourceLines} lines in \`${report.maintainability.largestSourceFile.path}\`; status: ${report.maintainability.sourceGrowthOverBudget ? 'over budget' : 'within budget'}.`,
+    );
+  }
   lines.push('');
   lines.push('| Lines | Kind | Severity | Owner | Trackers | Waivers | Path |');
   lines.push('| ----- | ---- | -------- | ----- | -------- | ------- | ---- |');
@@ -1016,6 +1070,16 @@ function renderMarkdown(report) {
     lines.push(`| ${row.count} | ${escapeCell(row.path)} |`);
   }
   if (report.typeSafety.topHotspots.length === 0) lines.push('| 0 | - |');
+  lines.push('');
+  lines.push('## JavaScript Lint Budget');
+  lines.push('');
+  if (report.jsLint.budget) {
+    lines.push(
+      `Budget: ${report.jsLint.budget.maxErrorCount} errors / ${report.jsLint.budget.maxWarningCount} warnings / ${report.jsLint.budget.maxAffectedFileCount} affected files; strict gate: ${report.jsLint.strictIncludesBudget ? 'yes' : 'no'}.`,
+    );
+  } else {
+    lines.push('Budget: missing.');
+  }
   lines.push('');
   lines.push('## Repository Hygiene');
   lines.push('');

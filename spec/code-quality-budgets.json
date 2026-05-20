@@ -36,10 +36,35 @@
     }
   },
   "typeEscapeBudgets": {
-    "frontendNonTestHotspotFiles": 18,
-    "frontendTotalNonTestHotspots": 106,
+    "frontendNonTestHotspotFiles": 5,
+    "frontendTotalNonTestHotspots": 71,
     "owner": "frontend-quality",
     "trackerId": "CQ-2026-10",
+    "targetReductionDate": "2026-06-30"
+  },
+  "sourceGrowthBudgets": {
+    "maxLargestSourceLines": 3950,
+    "owner": "quality-tooling",
+    "trackerId": "CQ-2026-13",
+    "targetReductionDate": "2026-06-30"
+  },
+  "jsLintBudgets": {
+    "scope": "@bim-ai/web/src",
+    "maxErrorCount": 223,
+    "maxWarningCount": 154,
+    "maxAffectedFileCount": 84,
+    "maxFatalCount": 9,
+    "maxRuleCounts": {
+      "@typescript-eslint/no-explicit-any": 154,
+      "@typescript-eslint/no-unused-vars": 114,
+      "bim-ai/no-hex-in-chrome": 64,
+      "react-hooks/exhaustive-deps": 31,
+      "fatal": 9,
+      "@typescript-eslint/ban-ts-comment": 4,
+      "react/no-danger": 1
+    },
+    "owner": "frontend-quality",
+    "trackerId": "CQ-2026-02",
     "targetReductionDate": "2026-06-30"
   },
   "ownership": [
