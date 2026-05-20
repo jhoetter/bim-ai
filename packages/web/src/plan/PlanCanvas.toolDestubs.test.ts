@@ -20,6 +20,7 @@ const readSource = (filename: string) => readFileSync(path.join(__dirname, filen
 const SRC = readSource('PlanCanvas.tsx');
 const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
 const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
+const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
 
 describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('removes every "stub:" console.warn from PlanCanvas.tsx', () => {
@@ -89,7 +90,7 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toContain('pickFloorBoundaryEdgeForWall(');
     expect(SRC).toContain('pickDxfLineForWall(');
     expect(SRC).toContain('createWallFromPickedLineCommand(');
-    expect(SRC).toContain('data-testid="wall-pick-line-preview"');
+    expect(WALL_DRAFT_OVERLAYS_SRC).toContain('data-testid="wall-pick-line-preview"');
   });
 
   it('blocks wall commit outside an enabled crop region with explicit user warning', () => {
@@ -97,7 +98,7 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
       /shouldBlockWallCommitOutsideCrop\(\s*activeCropState,\s*pathStart,\s*pathEnd\s*\)/,
     );
     expect(SRC).toMatch(/setWallDraftNotice\(\s*WALL_CROP_BLOCK_MESSAGE\s*\)/);
-    expect(SRC).toContain('data-testid="wall-draft-notice"');
+    expect(WALL_DRAFT_OVERLAYS_SRC).toContain('data-testid="wall-draft-notice"');
   });
 
   it('re-arms wall loop continuation through deterministic helper state', () => {

@@ -27,6 +27,8 @@ Target modules:
 - `plan/PlanCanvasAuthoringOverlays.tsx`: reveal-hidden chip, annotation text
   entry, cut-plane dialog, and subdivision palette wrapper.
 - `plan/PlanCanvasRoomColorLegend.tsx`: room-scheme legend rows.
+- `plan/PlanCanvasWallDraftOverlays.tsx`: wall coordinate HUD, pick-line
+  preview, placement HUD, draft notice, and snap label.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -55,6 +57,7 @@ First landed slices:
 - `plan/PlanCanvasWorkflowOverlays.tsx`
 - `plan/PlanCanvasAuthoringOverlays.tsx`
 - `plan/PlanCanvasRoomColorLegend.tsx`
+- `plan/PlanCanvasWallDraftOverlays.tsx`
 
 ## InspectorContent.tsx
 

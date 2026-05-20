@@ -188,6 +188,7 @@ import { PlanCanvasStatusOverlays } from './PlanCanvasStatusOverlays';
 import { PlanCanvasWorkflowOverlays } from './PlanCanvasWorkflowOverlays';
 import { PlanCanvasAuthoringOverlays } from './PlanCanvasAuthoringOverlays';
 import { PlanCanvasRoomColorLegend } from './PlanCanvasRoomColorLegend';
+import { PlanCanvasWallDraftOverlays } from './PlanCanvasWallDraftOverlays';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -7693,83 +7694,24 @@ export function PlanCanvas({
           </button>
         </div>
       )}
-      <div className="pointer-events-none absolute right-3 bottom-14 z-10 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur">
-        {hudMm
-          ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
-          : '—'}
-      </div>
-      {wallPickLineHint
-        ? (() => {
-            const start = worldToScreen(wallPickLineHint.start);
-            const end = worldToScreen(wallPickLineHint.end);
-            return (
-              <svg
-                data-testid="wall-pick-line-preview"
-                className="pointer-events-none absolute inset-0 z-10"
-                aria-hidden="true"
-              >
-                <line
-                  x1={start.pxX}
-                  y1={start.pxY}
-                  x2={end.pxX}
-                  y2={end.pxY}
-                  stroke="rgba(37, 99, 235, 0.95)"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  strokeDasharray="8 5"
-                />
-                <circle cx={start.pxX} cy={start.pxY} r={5} fill="rgba(37, 99, 235, 0.95)" />
-                <circle
-                  cx={end.pxX}
-                  cy={end.pxY}
-                  r={6}
-                  fill="white"
-                  stroke="rgba(37, 99, 235, 0.95)"
-                  strokeWidth={2}
-                />
-              </svg>
-            );
-          })()
-        : null}
-      {planTool === 'wall' && hudMm ? (
-        <div className="pointer-events-none absolute left-3 bottom-14 z-10 max-w-[min(360px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-1.5 text-[10px] text-foreground shadow-elev-1 backdrop-blur">
-          <div className="font-semibold">Wall placement</div>
-          <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-muted">
-            <span>
-              {draftRef.current?.kind === 'wall'
-                ? 'Pick endpoint'
-                : wallPickLineHint
-                  ? `Click to use ${wallPickLineHint.sourceLabel}`
-                  : 'Pick start point or existing boundary line'}
-            </span>
-            <span>line {wallLocationLine.replace(/-/g, ' ')}</span>
-            <span>offset {wallDrawOffsetMm} mm</span>
-            <span>radius {wallDrawRadiusMm ?? 0} mm</span>
-            <span>height {wallDrawHeightMm} mm</span>
-            <span>
-              type{' '}
-              {activeWallTypeId && elementsByIdRaw[activeWallTypeId]?.kind === 'wall_type'
-                ? (elementsByIdRaw[activeWallTypeId] as Extract<Element, { kind: 'wall_type' }>)
-                    .name
-                : 'Default'}
-            </span>
-          </div>
-          <div className="mt-0.5 text-[9px] text-muted">Tab cycles location line · Esc cancels</div>
-          {wallDraftNotice ? (
-            <div
-              data-testid="wall-draft-notice"
-              className="mt-1 rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-1 text-[9px] text-amber-200"
-            >
-              {wallDraftNotice}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {snapLabel && (
-        <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 rounded border border-border bg-surface/90 px-2 py-0.5 font-mono text-[10px] text-foreground backdrop-blur">
-          {snapLabel}
-        </div>
-      )}
+      <PlanCanvasWallDraftOverlays
+        hudMm={hudMm ?? null}
+        worldToScreen={worldToScreen}
+        wallPickLineHint={wallPickLineHint}
+        planTool={planTool}
+        wallDraftActive={draftRef.current?.kind === 'wall'}
+        wallLocationLine={wallLocationLine}
+        wallDrawOffsetMm={wallDrawOffsetMm}
+        wallDrawRadiusMm={wallDrawRadiusMm}
+        wallDrawHeightMm={wallDrawHeightMm}
+        activeWallTypeName={
+          activeWallTypeId && elementsByIdRaw[activeWallTypeId]?.kind === 'wall_type'
+            ? (elementsByIdRaw[activeWallTypeId] as Extract<Element, { kind: 'wall_type' }>).name
+            : 'Default'
+        }
+        wallDraftNotice={wallDraftNotice}
+        snapLabel={snapLabel}
+      />
       <PlanCanvasRoomColorLegend planPresentation={planPresentation} rows={roomColorLegend} />
       {/* §13.1.3 — color fill legend panel overlay */}
       <ColorSchemeLegend
