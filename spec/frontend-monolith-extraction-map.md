@@ -13,6 +13,8 @@ snapping, draft previews, command dispatch, selection, and rendering assembly.
 
 Target modules:
 
+- `plan/planCanvasHelpers.tsx`: token lookup, placement preview glyphs, draft
+  shape typing, and small plan formatting helpers.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -31,6 +33,7 @@ First landed slices:
 - `plan/interaction/planCameraMath.ts`
 - `plan/selection/nearestWall.ts`
 - `plan/interaction/snapOverrideShortcuts.ts`
+- `plan/planCanvasHelpers.tsx`
 
 ## InspectorContent.tsx
 

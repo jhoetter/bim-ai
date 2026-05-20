@@ -484,6 +484,10 @@ impact of small changes.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns snap-override keyboard sequence
   resolution; `plan/interaction/snapOverrideShortcuts.ts` owns the pure state
   transition and has focused tests.
+- 2026-05-20: `PlanCanvas.tsx` no longer owns token lookup, placement preview
+  glyphs, draft shape typing, grid-label heuristics, or elevation formatting;
+  these moved to `plan/planCanvasHelpers.tsx`, reducing the plan canvas file
+  from `9,315` to `9,227` lines.
 
 ---
 
