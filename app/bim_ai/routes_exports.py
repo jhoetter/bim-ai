@@ -494,7 +494,7 @@ async def import_bcf_topics_json(
 
     await session.commit()
 
-    delta = compute_delta_wire(doc_before, new_doc)
+    delta = compute_delta_wire(doc_before, new_doc, violations=violations)
 
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
@@ -506,7 +506,7 @@ async def import_bcf_topics_json(
 
     elems_out = wire_doc["elements"]
 
-    viols_wire = violations_wire(new_doc.elements)
+    viols_wire = delta["violations"]
 
     return {
         "ok": True,

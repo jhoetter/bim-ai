@@ -33,7 +33,6 @@ from bim_ai.routes_deps import (
     document_to_wire,
     get_hub,
     load_model_row,
-    violations_wire,
 )
 from bim_ai.sketch_pick_walls import (
     rebuild_picked_walls_lines,
@@ -558,7 +557,7 @@ async def finish_sketch_session(
     row.revision = new_doc.revision
     await session.commit()
 
-    delta = compute_delta_wire(doc_before, new_doc)
+    delta = compute_delta_wire(doc_before, new_doc, violations=last_violations)
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
     await hub.publish(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
@@ -587,12 +586,10 @@ async def finish_sketch_session(
         "modelId": str(model_uuid),
         "revision": new_doc.revision,
         "elements": wire_doc["elements"],
-        "violations": violations_wire(new_doc.elements),
+        "violations": delta["violations"],
         "appliedCommand": last_cmd,
         "appliedCommands": cmds,
         "clientOpId": body.client_op_id,
         "delta": delta,
     }
-    # Drop noise from the response when last_violations is the default empty list.
-    _ = last_violations
     return response

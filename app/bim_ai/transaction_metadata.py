@@ -5,7 +5,6 @@ import json
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.engine import compute_delta_wire
 
 TRANSACTION_METADATA_SCHEMA_VERSION = "txn-v1.0"
 
@@ -89,9 +88,12 @@ def build_transaction_metadata(
     assumption_entries = [_wire_assumption(a) for a in assumptions or []]
     assumption_keys = sorted(k for k in (_assumption_key(a) for a in assumption_entries) if k)
     changed_ids = changed_element_ids(doc_before, new_doc)
-    delta = compute_delta_wire(doc_before, new_doc)
-    element_patch_ids = sorted(str(k) for k in delta.get("elements", {}).keys())
-    removed_ids = sorted(str(x) for x in delta.get("removedIds", []))
+    element_patch_ids = [
+        eid
+        for eid in changed_ids
+        if eid in new_doc.elements and doc_before.elements.get(eid) != new_doc.elements.get(eid)
+    ]
+    removed_ids = sorted(str(eid) for eid in doc_before.elements.keys() - new_doc.elements.keys())
     command_types = [str(c.get("type", "")) for c in commands if isinstance(c, dict)]
     route = str(workflow.get("route")) if workflow and workflow.get("route") else None
     digest = bundle_digest or command_bundle_digest(

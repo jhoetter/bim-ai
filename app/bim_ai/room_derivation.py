@@ -530,45 +530,50 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
         if lid not in _inset_cache:
             _inset_cache[lid] = _room_area_inset_mm_for_level(doc, lid)
         inset_mm = _inset_cache[lid]
-        for quad in itertools.combinations(seglist, 4):
-            qs = quad_closes_rectangle(quad)
-            if not qs:
-                continue
-            original_bbox = dict(qs.get("bboxMm") or {})
-            qs["levelId"] = lid
-            qs["levelName"] = lvl_names.get(lid, lid)
-            if lid not in _volume_height_cache:
-                _volume_height_cache[lid] = _room_volume_height_mm_for_level(doc, lid)
-            if lid not in _volume_inset_cache:
-                _volume_inset_cache[lid] = (
-                    _avg_wall_half_thickness_mm_for_level(doc, lid)
-                    if _volume_basis == "core_faces"
-                    else 0.0
+        hsegs = [s for s in seglist if s[0] == "h"]
+        vsegs = [s for s in seglist if s[0] == "v"]
+        for h_pair in itertools.combinations(hsegs, 2):
+            for v_pair in itertools.combinations(vsegs, 2):
+                qs = quad_closes_rectangle((h_pair[0], h_pair[1], v_pair[0], v_pair[1]))
+                if not qs:
+                    continue
+                original_bbox = dict(qs.get("bboxMm") or {})
+                qs["levelId"] = lid
+                qs["levelName"] = lvl_names.get(lid, lid)
+                if lid not in _volume_height_cache:
+                    _volume_height_cache[lid] = _room_volume_height_mm_for_level(doc, lid)
+                if lid not in _volume_inset_cache:
+                    _volume_inset_cache[lid] = (
+                        _avg_wall_half_thickness_mm_for_level(doc, lid)
+                        if _volume_basis == "core_faces"
+                        else 0.0
+                    )
+                volume_area_m2 = _bbox_area_m2_with_inset(original_bbox, _volume_inset_cache[lid])
+                qs["volumeComputedAt"] = _volume_basis
+                qs["volumeAreaInsetMm"] = round(_volume_inset_cache[lid], 4)
+                qs["approxVolumeM3"] = round(
+                    volume_area_m2 * (_volume_height_cache[lid] / 1000.0),
+                    4,
                 )
-            volume_area_m2 = _bbox_area_m2_with_inset(original_bbox, _volume_inset_cache[lid])
-            qs["volumeComputedAt"] = _volume_basis
-            qs["volumeAreaInsetMm"] = round(_volume_inset_cache[lid], 4)
-            qs["approxVolumeM3"] = round(
-                volume_area_m2 * (_volume_height_cache[lid] / 1000.0),
-                4,
-            )
-            if inset_mm > 0.0:
-                bbox = qs.get("bboxMm") or {}
-                mn = bbox.get("min") or {}
-                mx = bbox.get("max") or {}
-                x_lo = float(mn.get("x") or 0) + inset_mm
-                y_lo = float(mn.get("y") or 0) + inset_mm
-                x_hi = float(mx.get("x") or 0) - inset_mm
-                y_hi = float(mx.get("y") or 0) - inset_mm
-                qs["bboxMm"] = {
-                    "min": {"x": x_lo, "y": y_lo},
-                    "max": {"x": x_hi, "y": y_hi},
-                }
-                area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
-                qs["approxAreaM2"] = round(area_m2, 4)
-                qs["roomAreaComputationBasis"] = _area_basis
-                qs["roomAreaInsetMm"] = round(inset_mm, 4)
-            candidates.append(qs)
+                if inset_mm > 0.0:
+                    bbox = qs.get("bboxMm") or {}
+                    mn = bbox.get("min") or {}
+                    mx = bbox.get("max") or {}
+                    x_lo = float(mn.get("x") or 0) + inset_mm
+                    y_lo = float(mn.get("y") or 0) + inset_mm
+                    x_hi = float(mx.get("x") or 0) - inset_mm
+                    y_hi = float(mx.get("y") or 0) - inset_mm
+                    qs["bboxMm"] = {
+                        "min": {"x": x_lo, "y": y_lo},
+                        "max": {"x": x_hi, "y": y_hi},
+                    }
+                    area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(
+                        0.0, (y_hi - y_lo) / 1000.0
+                    )
+                    qs["approxAreaM2"] = round(area_m2, 4)
+                    qs["roomAreaComputationBasis"] = _area_basis
+                    qs["roomAreaInsetMm"] = round(inset_mm, 4)
+                candidates.append(qs)
 
     def _sig(cand: dict[str, Any]) -> tuple:
         b = cand.get("bboxMm") or {}

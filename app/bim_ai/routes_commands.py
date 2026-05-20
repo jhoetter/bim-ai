@@ -385,7 +385,7 @@ async def _commit_doc_and_broadcast(
     await hub.publish(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
 
     elems_out = wire_doc["elements"]
-    viols_wire = violations_wire(new_doc.elements)
+    viols_wire = delta["violations"]
 
     return {
         "ok": True,
@@ -564,7 +564,9 @@ async def apply_command(
     await _validate_link_model_command_against_db(session, model_id, command_for_commit)
 
     doc_before = clone_document(baseline_doc)
-    parent_revision = body.parent_revision if body.parent_revision is not None else doc_before.revision
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else doc_before.revision
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=doc_before.revision,
         parent_revision=parent_revision,
@@ -624,7 +626,7 @@ async def apply_command(
     row.revision = new_doc.revision
     await session.commit()
 
-    delta = compute_delta_wire(doc_before, new_doc)
+    delta = compute_delta_wire(doc_before, new_doc, violations=violations)
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
 
@@ -634,7 +636,7 @@ async def apply_command(
     )
 
     elems_out = wire_doc["elements"]
-    viols_wire = violations_wire(new_doc.elements)
+    viols_wire = delta["violations"]
 
     payload: dict[str, Any] = {
         "ok": True,
@@ -676,7 +678,9 @@ async def dry_run_command(
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
     command_for_commit = _expand_link_reload_command(baseline_doc, body.command)
-    parent_revision = body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=baseline_doc.revision,
         parent_revision=parent_revision,
@@ -767,7 +771,9 @@ async def apply_command_bundle(
             single_command=False,
         )
     doc_before = clone_document(baseline_doc)
-    parent_revision = body.parent_revision if body.parent_revision is not None else doc_before.revision
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else doc_before.revision
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=doc_before.revision,
         parent_revision=parent_revision,
@@ -843,7 +849,7 @@ async def apply_command_bundle(
 
     await session.commit()
 
-    delta = compute_delta_wire(doc_before, new_doc)
+    delta = compute_delta_wire(doc_before, new_doc, violations=violations)
 
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
@@ -855,7 +861,7 @@ async def apply_command_bundle(
 
     elems_out = wire_doc["elements"]
 
-    viols_wire = violations_wire(new_doc.elements)
+    viols_wire = delta["violations"]
 
     payload: dict[str, Any] = {
         "ok": True,
@@ -906,7 +912,9 @@ async def dry_run_command_bundle(
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
     commands_for_commit = [_expand_link_reload_command(baseline_doc, c) for c in body.commands]
-    parent_revision = body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=baseline_doc.revision,
         parent_revision=parent_revision,

@@ -1618,7 +1618,10 @@ def evaluate(
             )
 
     parity_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
-    parity_rows = collect_schedule_sheet_export_parity_rows_for_doc(parity_doc)
+    parity_rows = collect_schedule_sheet_export_parity_rows_for_doc(
+        parity_doc,
+        room_boundary_derivation=rb,
+    )
     parity_token_to_rule = {
         _PARITY_CSV_DIVERGES: _PARITY_ADV_CSV_DIVERGES,
         _PARITY_JSON_DIVERGES: _PARITY_ADV_JSON_DIVERGES,

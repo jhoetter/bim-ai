@@ -716,7 +716,12 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
     return None
 
 
-def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
+def derive_schedule_table(
+    doc: Document,
+    schedule_id: str,
+    *,
+    room_boundary_derivation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     sch = doc.elements.get(schedule_id)
     if not isinstance(sch, ScheduleElem):
         raise ValueError(f"schedule id '{schedule_id}' not found or not a schedule")
@@ -1979,7 +1984,11 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         out["energyHandoff"] = build_energy_handoff_payload(doc)
     if cat in {"room", "finish"}:
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
-        rb = compute_room_boundary_derivation(doc)
+        rb = (
+            room_boundary_derivation
+            if room_boundary_derivation is not None
+            else compute_room_boundary_derivation(doc)
+        )
         vacant_m2, vacant_n = vacant_derived_metrics_for_authority(
             rb, allowed_level_ids=lvl_allow, authority="authoritative"
         )

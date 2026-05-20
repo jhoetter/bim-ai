@@ -108,6 +108,25 @@ def _classify_parity(
     return PARITY_ALIGNED
 
 
+def _schedule_needs_room_boundary_derivation(sch: ScheduleElem) -> bool:
+    filt = dict(sch.filters or {})
+    cat = str(
+        filt.get("category")
+        or filt.get("Category")
+        or sch.category
+        or ""
+    ).lower()
+    if not cat:
+        name = str(sch.name or "").lower()
+        if "finish" in name:
+            cat = "finish"
+        elif "room" in name:
+            cat = "room"
+        else:
+            cat = "room"
+    return cat in {"room", "finish"}
+
+
 def build_schedule_sheet_export_parity_row(
     doc: Document,
     sch: ScheduleElem,
@@ -217,11 +236,16 @@ def build_schedule_sheet_export_parity_evidence_v1_for_schedule(
 
 
 def build_schedule_sheet_export_parity_evidence_v1_for_sheet(
-    doc: Document, sh: SheetElem
+    doc: Document,
+    sh: SheetElem,
+    *,
+    room_boundary_derivation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the parity payload for all schedules placed on *sh* (sheet manifest embed)."""
     # Local import — see build_schedule_sheet_export_parity_row for cycle rationale.
     from bim_ai.schedule_derivation import derive_schedule_table
+
+    room_boundary_ready = room_boundary_derivation is not None
 
     placed_schedule_ids: list[str] = []
     seen: set[str] = set()
@@ -250,8 +274,20 @@ def build_schedule_sheet_export_parity_evidence_v1_for_sheet(
         sch = doc.elements.get(sid)
         if not isinstance(sch, ScheduleElem):
             continue
+        cached_room_boundary = None
+        if _schedule_needs_room_boundary_derivation(sch):
+            if not room_boundary_ready:
+                from bim_ai.room_derivation import compute_room_boundary_derivation
+
+                room_boundary_derivation = compute_room_boundary_derivation(doc)
+                room_boundary_ready = True
+            cached_room_boundary = room_boundary_derivation
         try:
-            payload = derive_schedule_table(doc, sid)
+            payload = derive_schedule_table(
+                doc,
+                sid,
+                room_boundary_derivation=cached_room_boundary,
+            )
         except (ValueError, TypeError, KeyError):
             continue
         row = build_schedule_sheet_export_parity_row(doc, sch, payload=payload)
@@ -269,9 +305,13 @@ def build_schedule_sheet_export_parity_evidence_v1_for_sheet(
 
 def collect_schedule_sheet_export_parity_rows_for_doc(
     doc: Document,
+    *,
+    room_boundary_derivation: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Whole-doc parity rows (used by the constraint advisor)."""
     from bim_ai.schedule_derivation import derive_schedule_table
+
+    room_boundary_ready = room_boundary_derivation is not None
 
     schedules: list[ScheduleElem] = sorted(
         (e for e in doc.elements.values() if isinstance(e, ScheduleElem)),
@@ -281,8 +321,20 @@ def collect_schedule_sheet_export_parity_rows_for_doc(
     for sch in schedules:
         if not (sch.sheet_id or "").strip():
             continue
+        cached_room_boundary = None
+        if _schedule_needs_room_boundary_derivation(sch):
+            if not room_boundary_ready:
+                from bim_ai.room_derivation import compute_room_boundary_derivation
+
+                room_boundary_derivation = compute_room_boundary_derivation(doc)
+                room_boundary_ready = True
+            cached_room_boundary = room_boundary_derivation
         try:
-            payload = derive_schedule_table(doc, sch.id)
+            payload = derive_schedule_table(
+                doc,
+                sch.id,
+                room_boundary_derivation=cached_room_boundary,
+            )
         except (ValueError, TypeError, KeyError):
             continue
         rows.append(build_schedule_sheet_export_parity_row(doc, sch, payload=payload))
