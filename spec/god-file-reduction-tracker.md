@@ -121,6 +121,7 @@ A-territory target:
 | GFR-2026-45 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract viewport command dispatch adapters                         | Viewport below `5,160` LOC with focused tests green.        |
 | GFR-2026-46 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract context-menu command and zoom actions                       | PlanCanvas below `5,200` LOC with focused tests green.      |
 | GFR-2026-47 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract dimension inspector sections                               | Inspector below `4,900` LOC with focused tests green.       |
+| GFR-2026-48 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract composition tab action handlers                            | Workspace below `5,000` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -533,4 +534,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   Local `wc -l` reports
   `packages/web/src/workspace/inspector/InspectorContent.tsx` at `4,891`
   lines. Focused inspector tests pass (`51 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-48` is Done. The slice moved composition activate,
+  create, close, reorder, and rename handlers into
+  `packages/web/src/workspace/useWorkspaceCompositionActions.ts`. Local
+  `wc -l` reports `packages/web/src/workspace/Workspace.tsx` at `4,981`
+  lines. Focused workspace tests pass (`61 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
