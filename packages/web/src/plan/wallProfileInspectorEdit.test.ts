@@ -6,9 +6,9 @@ describe('Wall profile inspector editor — §3.5.5', () => {
       type: 'updateWallProfile' as const,
       wallId: 'w1',
       profilePoints: [
-        { xMm: 0, yMm: 0 },
-        { xMm: 200, yMm: 0 },
-        { xMm: 200, yMm: 300 },
+        { xPct: 0, yPct: 0 },
+        { xPct: 1, yPct: 0 },
+        { xPct: 1, yPct: 1 },
       ],
     };
     expect(cmd.type).toBe('updateWallProfile');
@@ -17,8 +17,8 @@ describe('Wall profile inspector editor — §3.5.5', () => {
 
   it('profile requires at least 3 points to activate custom mesh', () => {
     const twoPoints = [
-      { xMm: 0, yMm: 0 },
-      { xMm: 200, yMm: 0 },
+      { xPct: 0, yPct: 0 },
+      { xPct: 1, yPct: 0 },
     ];
     const valid = twoPoints.length >= 3;
     expect(valid).toBe(false);

@@ -39,9 +39,9 @@ Latest ratcheted budget after JSL-2026-05:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 4              |
+| Errors         | 3              |
 | Warnings       | 0              |
-| Affected files | 4              |
+| Affected files | 3              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -53,7 +53,7 @@ Rule budgets:
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 0              |
 | `fatal`                              | 0              |
-| `@typescript-eslint/ban-ts-comment`  | 4              |
+| `@typescript-eslint/ban-ts-comment`  | 3              |
 | `react/no-danger`                    | 0              |
 
 ## Workpackages
@@ -153,3 +153,9 @@ Rule budgets:
   dependencies in the extracted viewport orchestration effects. The lint budget
   moved to `4` errors / `0` warnings / `4` files;
   `react-hooks/exhaustive-deps` moved from `18` to `0`.
+- 2026-05-20: removed `@ts-nocheck` from
+  `workspace/inspector/wallFloorInspectorSections.tsx` by typing the floor
+  boundary edit option, using a resolved floor element lookup, and aligning the
+  wall profile editor with the percent-based wall model and command contract.
+  The lint budget moved to `3` errors / `0` warnings / `3` files;
+  `@typescript-eslint/ban-ts-comment` moved from `4` to `3`.

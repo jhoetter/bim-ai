@@ -419,6 +419,11 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
   camera, renderer, overlays, outlines, walk controls, and scene graph effects;
   `pnpm js-lint:budget` is now ratcheted to `4` errors / `0` warnings /
   `4` files, with `react-hooks/exhaustive-deps` locked at `0`.
+- 2026-05-20: removed `@ts-nocheck` from the wall/floor inspector section by
+  typing the floor boundary edit option and correcting wall profile editing to
+  the model's percent-based profile points; `pnpm js-lint:budget` is now
+  ratcheted to `3` errors / `0` warnings / `3` files, with
+  `@typescript-eslint/ban-ts-comment` down to `3`.
 
 ---
 

@@ -50,9 +50,9 @@
   },
   "jsLintBudgets": {
     "scope": "@bim-ai/web/src",
-    "maxErrorCount": 4,
+    "maxErrorCount": 3,
     "maxWarningCount": 0,
-    "maxAffectedFileCount": 4,
+    "maxAffectedFileCount": 3,
     "maxFatalCount": 0,
     "maxRuleCounts": {
       "@typescript-eslint/no-explicit-any": 0,
@@ -60,7 +60,7 @@
       "bim-ai/no-hex-in-chrome": 0,
       "react-hooks/exhaustive-deps": 0,
       "fatal": 0,
-      "@typescript-eslint/ban-ts-comment": 4,
+      "@typescript-eslint/ban-ts-comment": 3,
       "react/no-danger": 0
     },
     "owner": "frontend-quality",

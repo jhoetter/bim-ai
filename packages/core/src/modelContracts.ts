@@ -1292,7 +1292,7 @@ export type UpdateWallProfileCmd = {
   type: 'updateWallProfile';
   wallId: string;
   /** New profile points. Pass null or [] to reset to rectangular. */
-  profilePoints: { xMm: number; yMm: number }[] | null;
+  profilePoints: { xPct: number; yPct: number }[] | null;
 };
 
 // ---------------------------------------------------------------------------

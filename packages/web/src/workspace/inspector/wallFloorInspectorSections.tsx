@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { JSX } from 'react';
 import type { TFunction } from 'i18next';
 import type { DisciplineTag, Element } from '@bim-ai/core';
@@ -22,6 +21,7 @@ const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
 type InspectorCommandHandler = (cmd: Record<string, unknown>) => void;
 type InspectorSectionOptions = {
   elementsById?: Record<string, Element>;
+  onEditBoundary?: (floor: Extract<Element, { kind: 'floor' }>) => void;
   onPropertyChange?: (property: string, value: unknown) => void;
 };
 type WallFloorInspectorArgs = {
@@ -36,9 +36,10 @@ type WallFloorInspectorArgs = {
   onEditCurtainGrid?: (wallId: string) => void;
   onDispatchCommand?: InspectorCommandHandler;
 };
+type WallProfilePoint = NonNullable<Extract<Element, { kind: 'wall' }>['profilePoints']>[number];
 type MmPoint = { xMm: number; yMm: number };
 type WallProfileInspectorElement = Extract<Element, { kind: 'wall' }> & {
-  profilePoints?: MmPoint[];
+  profilePoints?: WallProfilePoint[];
   cutBy?: string[];
 };
 type FloorSlopePointDraft = MmPoint & {
@@ -273,8 +274,8 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
                 >
                   {(() => {
                     const pts = (el as WallProfileInspectorElement).profilePoints ?? [];
-                    const xs = pts.map((p) => p.xMm);
-                    const ys = pts.map((p) => p.yMm);
+                    const xs = pts.map((p) => p.xPct);
+                    const ys = pts.map((p) => p.yPct);
                     const minX = Math.min(...xs);
                     const maxX = Math.max(...xs);
                     const minY = Math.min(...ys);
@@ -285,7 +286,7 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
                       pts
                         .map(
                           (p, i) =>
-                            `${i === 0 ? 'M' : 'L'} ${5 + (p.xMm - minX) * scaleX} ${55 - (p.yMm - minY) * scaleY}`,
+                            `${i === 0 ? 'M' : 'L'} ${5 + (p.xPct - minX) * scaleX} ${55 - (p.yPct - minY) * scaleY}`,
                         )
                         .join(' ') + ' Z';
                     return (
@@ -301,7 +302,7 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
               )}
               {/* Point list */}
               {((el as WallProfileInspectorElement).profilePoints ?? []).map(
-                (pt: MmPoint, i: number) => (
+                (pt: WallProfilePoint, i: number) => (
                   <div
                     key={i}
                     style={{
@@ -317,10 +318,10 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
                     <input
                       data-testid={`wall-profile-pt-x-${i}`}
                       type="number"
-                      value={pt.xMm}
+                      value={pt.xPct}
                       onChange={(e) => {
                         const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
-                        pts[i] = { ...pts[i], xMm: Number(e.target.value) };
+                        pts[i] = { ...pts[i]!, xPct: Number(e.target.value) };
                         onDispatchCommand?.({
                           type: 'updateWallProfile',
                           wallId: el.id,
@@ -339,10 +340,10 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
                     <input
                       data-testid={`wall-profile-pt-y-${i}`}
                       type="number"
-                      value={pt.yMm}
+                      value={pt.yPct}
                       onChange={(e) => {
                         const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
-                        pts[i] = { ...pts[i], yMm: Number(e.target.value) };
+                        pts[i] = { ...pts[i]!, yPct: Number(e.target.value) };
                         onDispatchCommand?.({
                           type: 'updateWallProfile',
                           wallId: el.id,
@@ -367,7 +368,7 @@ export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element 
                   data-testid="wall-profile-add-point"
                   onClick={() => {
                     const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
-                    pts.push({ xMm: 0, yMm: 0 });
+                    pts.push({ xPct: 0, yPct: 0 });
                     onDispatchCommand?.({
                       type: 'updateWallProfile',
                       wallId: el.id,
@@ -768,6 +769,7 @@ export function FloorInspectorSection(args: WallFloorInspectorArgs): JSX.Element
     case 'floor': {
       const { elementsById: floorElementsById = {}, onPropertyChange: floorOnPropertyChange } =
         options ?? {};
+      const resolvedElementsById = elementsById ?? floorElementsById;
       const floorType = el.floorTypeId ? floorElementsById[el.floorTypeId] : undefined;
       const floorTypeMaterialKey =
         floorType?.kind === 'floor_type'
@@ -778,7 +780,7 @@ export function FloorInspectorSection(args: WallFloorInspectorArgs): JSX.Element
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
           <FieldRow label={f('structureThickness')} value={fmtMm(el.structureThicknessMm)} />
           <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
-          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, resolvedElementsById)} />
           <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
           {options?.onEditBoundary ? (
             <div
@@ -1004,7 +1006,7 @@ export function FloorInspectorSection(args: WallFloorInspectorArgs): JSX.Element
           <FaceMaterialOverridesSection
             elementId={el.id}
             overrides={el.faceMaterialOverrides}
-            elementsById={elementsById}
+            elementsById={resolvedElementsById}
             onDispatchCommand={onDispatchCommand}
           />
           <details>
