@@ -506,6 +506,9 @@ impact of small changes.
   inspector block; these moved to `workspace/inspector/inspectorRows.tsx` and
   `workspace/inspector/mepInspectorSections.tsx`, reducing the inspector file
   to `6,885` lines.
+- 2026-05-20: `InspectorContent.tsx` no longer owns DXF link work-plane and
+  display rows; these moved to `workspace/inspector/linkInspectorSections.tsx`,
+  reducing the inspector file to `6,846` lines.
 
 ---
 

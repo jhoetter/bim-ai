@@ -75,6 +75,7 @@ First landed slice:
 - `workspace/inspector/familyInspectorSections.tsx`
 - `workspace/inspector/inspectorRows.tsx`
 - `workspace/inspector/mepInspectorSections.tsx`
+- `workspace/inspector/linkInspectorSections.tsx`
 
 ## Workspace.tsx
 
