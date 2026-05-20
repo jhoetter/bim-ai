@@ -998,6 +998,8 @@ class CreateStairCmd(BaseModel):
     monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
     floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm")
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
+    allow_detached: bool = Field(default=False, alias="allowDetached")
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> CreateStairCmd:

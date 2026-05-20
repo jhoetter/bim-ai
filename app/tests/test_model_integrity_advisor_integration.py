@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
@@ -87,6 +89,8 @@ def test_constructability_report_includes_model_integrity_findings() -> None:
 def test_target_house_ground_service_rooms_are_floor_contained() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     bundle_path = repo_root / "seed-artifacts" / "target-house-1" / "bundle.json"
+    if not bundle_path.is_file():
+        pytest.skip("target-house-1 seed artifact not present")
     bundle_payload = json.loads(bundle_path.read_text(encoding="utf-8"))
     bundle = CommandBundle.model_validate({**bundle_payload, "parentRevision": 1})
 

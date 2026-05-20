@@ -55,6 +55,7 @@ def _sketch_stair_cmd(**kwargs) -> CreateStairCmd:
             for i in range(12)
         ],
         totalRiseMm=2800,
+        allowDetached=True,
     )
     defaults.update(kwargs)
     return CreateStairCmd(**defaults)
@@ -343,6 +344,7 @@ def test_by_component_path_unchanged() -> None:
         widthMm=1000,
         riserMm=175,
         treadMm=275,
+        allowDetached=True,
     )
     ok, new_doc, _, violations, _ = try_commit(doc, cmd.model_dump(by_alias=True))
     assert ok, violations

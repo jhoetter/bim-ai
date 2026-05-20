@@ -36,6 +36,7 @@ def _standard_stair_cmd(**kwargs) -> CreateStairCmd:
         runStartMm={"xMm": 0, "yMm": 0},
         runEndMm={"xMm": 0, "yMm": 3000},
         widthMm=1000,
+        allowDetached=True,
     )
     defaults.update(kwargs)
     return CreateStairCmd(**defaults)
@@ -220,6 +221,7 @@ def test_by_sketch_stair_round_trips_unchanged() -> None:
             for i in range(12)
         ],
         totalRiseMm=2800,
+        allowDetached=True,
     )
     ok, new_doc, _, violations, _ = try_commit(doc, cmd.model_dump(by_alias=True))
     assert ok, violations

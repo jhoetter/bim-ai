@@ -236,6 +236,11 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 monolithic_material=cmd.monolithic_material,
                 floating_tread_depth_mm=cmd.floating_tread_depth_mm,
                 floating_host_wall_id=cmd.floating_host_wall_id,
+                props={
+                    **(cmd.props or {}),
+                    **({"allowDetached": True} if cmd.allow_detached else {}),
+                }
+                or None,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("stair", "arch"),
             )
 

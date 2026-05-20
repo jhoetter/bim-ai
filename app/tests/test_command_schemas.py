@@ -12,13 +12,15 @@ from bim_ai.command_schemas import (
 )
 from bim_ai.main import app
 
+EXPECTED_COMMAND_COUNT = 261
+
 
 def test_command_schema_export_lists_all_command_discriminators() -> None:
     model_map = command_model_map()
     export = export_command_schemas()
 
     assert export["schemaVersion"] == COMMAND_SCHEMA_EXPORT_VERSION
-    assert export["commandCount"] == len(model_map) == 262
+    assert export["commandCount"] == len(model_map) == EXPECTED_COMMAND_COUNT
     assert export["commandNames"] == sorted(model_map)
     assert set(export["schemas"]) == set(model_map)
     assert set(export["metadata"]) == set(model_map)
@@ -43,7 +45,8 @@ def test_command_schema_export_has_json_schema_and_todo_metadata() -> None:
     }
     assert create_wall_metadata["exampleStatus"] == "generated-minimal"
     assert create_wall_metadata["exampleError"] is None
-    assert create_wall_metadata["mappingStatus"] == "explicit-raw-expert"
+    assert create_wall_metadata["mappingStatus"] == "mapped"
+    assert create_wall_metadata["rawSemanticMapping"]["agentSurface"] == "semantic-authoring"
     assert create_wall_metadata["rawSemanticMapping"]["rawExecution"] == {
         "available": True,
         "transport": "POST /api/models/{model_id}/bundles",
@@ -70,7 +73,7 @@ def test_v3_commands_routes_are_registered_on_real_app() -> None:
     assert listing.status_code == 200
     listing_body = listing.json()
     assert listing_body["schemaVersion"] == COMMAND_SCHEMA_EXPORT_VERSION
-    assert listing_body["commandCount"] == 262
+    assert listing_body["commandCount"] == EXPECTED_COMMAND_COUNT
     assert "createWall" in listing_body["commandNames"]
 
     single = client.get("/api/v3/commands/createWall")

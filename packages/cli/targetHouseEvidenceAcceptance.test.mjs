@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,73 +13,85 @@ import {
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '../..');
 const EVIDENCE_DIR = 'seed-artifacts/target-house-1/evidence/live-run-current';
+const TARGET_HOUSE_MANIFEST = path.join(ROOT_DIR, 'seed-artifacts/target-house-1/manifest.json');
+const TARGET_HOUSE_SEED_SKIP = existsSync(TARGET_HOUSE_MANIFEST)
+  ? false
+  : 'target-house-1 seed artifact not present';
 
-test('validates target-house visual evidence views deterministically', async () => {
-  const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
-  const report = await buildTargetHouseEvidenceAcceptanceReport({
-    rootDir: ROOT_DIR,
-    evidenceDir: EVIDENCE_DIR,
-    pack,
-  });
+test(
+  'validates target-house visual evidence views deterministically',
+  { skip: TARGET_HOUSE_SEED_SKIP },
+  async () => {
+    const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
+    const report = await buildTargetHouseEvidenceAcceptanceReport({
+      rootDir: ROOT_DIR,
+      evidenceDir: EVIDENCE_DIR,
+      pack,
+    });
 
-  assert.equal(report.schemaVersion, TARGET_HOUSE_EVIDENCE_ACCEPTANCE_SCHEMA_VERSION);
-  assert.equal(report.targetId, 'target-house-1');
-  assert.equal(report.summary.requiredViewCount, 8);
+    assert.equal(report.schemaVersion, TARGET_HOUSE_EVIDENCE_ACCEPTANCE_SCHEMA_VERSION);
+    assert.equal(report.targetId, 'target-house-1');
+    assert.equal(report.summary.requiredViewCount, 8);
 
-  const main = report.visualRows.find((row) => row.viewId === 'main_front_left');
-  assert.equal(main.status, 'pass');
-  assert.equal(main.savedViewpointPresent, true);
-  assert.equal(main.screenshot.width, 776);
-  assert.equal(main.screenshot.height, 563);
-  assert.match(main.screenshot.sha256, /^sha256:[a-f0-9]{64}$/);
+    const main = report.visualRows.find((row) => row.viewId === 'main_front_left');
+    assert.equal(main.status, 'pass');
+    assert.equal(main.savedViewpointPresent, true);
+    assert.equal(main.screenshot.width, 776);
+    assert.equal(main.screenshot.height, 563);
+    assert.match(main.screenshot.sha256, /^sha256:[a-f0-9]{64}$/);
 
-  const loggia = report.visualRows.find((row) => row.viewId === 'front_loggia');
-  assert.equal(loggia.status, 'pass');
-  assert.equal(loggia.savedViewpointPresent, true);
-  assert.equal(loggia.screenshot.path, `${EVIDENCE_DIR}/screenshots/front_loggia.png`);
-  assert.equal(loggia.screenshot.width, 776);
-  assert.equal(loggia.screenshot.height, 563);
-  assert.match(loggia.screenshot.sha256, /^sha256:[a-f0-9]{64}$/);
-  assert.equal(report.summary.visualPassCount, 8);
-  assert.equal(report.summary.visualFailCount, 0);
-  assert.equal(report.summary.visualOk, true);
-});
+    const loggia = report.visualRows.find((row) => row.viewId === 'front_loggia');
+    assert.equal(loggia.status, 'pass');
+    assert.equal(loggia.savedViewpointPresent, true);
+    assert.equal(loggia.screenshot.path, `${EVIDENCE_DIR}/screenshots/front_loggia.png`);
+    assert.equal(loggia.screenshot.width, 776);
+    assert.equal(loggia.screenshot.height, 563);
+    assert.match(loggia.screenshot.sha256, /^sha256:[a-f0-9]{64}$/);
+    assert.equal(report.summary.visualPassCount, 8);
+    assert.equal(report.summary.visualFailCount, 0);
+    assert.equal(report.summary.visualOk, true);
+  },
+);
 
-test('validates current target-house BIM data quality as passing structured evidence', async () => {
-  const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
-  const report = await buildTargetHouseEvidenceAcceptanceReport({
-    rootDir: ROOT_DIR,
-    evidenceDir: EVIDENCE_DIR,
-    pack,
-  });
+test(
+  'validates current target-house BIM data quality as passing structured evidence',
+  { skip: TARGET_HOUSE_SEED_SKIP },
+  async () => {
+    const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
+    const report = await buildTargetHouseEvidenceAcceptanceReport({
+      rootDir: ROOT_DIR,
+      evidenceDir: EVIDENCE_DIR,
+      pack,
+    });
 
-  assert.equal(report.summary.dataQualityOk, true);
-  assert.equal(report.summary.dataQualityFailCount, 0);
+    assert.equal(report.summary.dataQualityOk, true);
+    assert.equal(report.summary.dataQualityFailCount, 0);
 
-  const rooms = report.dataQualityRows.find((row) => row.id === 'rooms_spaces');
-  assert.equal(rooms.status, 'pass');
-  assert.equal(rooms.actual, 13);
-  assert.equal(rooms.expected, 13);
+    const rooms = report.dataQualityRows.find((row) => row.id === 'rooms_spaces');
+    assert.equal(rooms.status, 'pass');
+    assert.equal(rooms.actual, 13);
+    assert.equal(rooms.expected, 13);
 
-  const schedules = report.dataQualityRows.find((row) => row.id === 'schedules');
-  assert.equal(schedules.status, 'pass');
-  assert.equal(schedules.actual, 3);
+    const schedules = report.dataQualityRows.find((row) => row.id === 'schedules');
+    assert.equal(schedules.status, 'pass');
+    assert.equal(schedules.actual, 3);
 
-  const exports = report.dataQualityRows.find((row) => row.id === 'export_manifests');
-  assert.equal(exports.status, 'pass');
-  assert.deepEqual(
-    exports.requiredChecks.map((check) => [check.id, check.status]),
-    [
-      ['ifc_manifest_available', 200],
-      ['gltf_manifest_available', 200],
-      ['project_hierarchy', 'pass'],
-      ['entity_classes', 'pass'],
-      ['spaces', 'pass'],
-      ['material_layers', 'pass'],
-      ['classifications', 'pass'],
-    ],
-  );
-});
+    const exports = report.dataQualityRows.find((row) => row.id === 'export_manifests');
+    assert.equal(exports.status, 'pass');
+    assert.deepEqual(
+      exports.requiredChecks.map((check) => [check.id, check.status]),
+      [
+        ['ifc_manifest_available', 200],
+        ['gltf_manifest_available', 200],
+        ['project_hierarchy', 'pass'],
+        ['entity_classes', 'pass'],
+        ['spaces', 'pass'],
+        ['material_layers', 'pass'],
+        ['classifications', 'pass'],
+      ],
+    );
+  },
+);
 
 test('rejects screenshot manifest rows that do not declare evidence-local artifacts', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'target-house-evidence-acceptance-'));
@@ -109,12 +122,7 @@ test('rejects screenshot manifest rows that do not declare evidence-local artifa
         captures: [
           {
             viewId: 'front_loggia',
-            screenshotPath: path.join(
-              ROOT_DIR,
-              EVIDENCE_DIR,
-              'screenshots',
-              'front_loggia.png',
-            ),
+            screenshotPath: path.join(ROOT_DIR, EVIDENCE_DIR, 'screenshots', 'front_loggia.png'),
           },
         ],
       },

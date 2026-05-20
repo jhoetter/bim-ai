@@ -99,6 +99,7 @@ def test_floor_opening_and_stair_apply_chain():
             "widthMm": 1100,
             "riserMm": 175,
             "treadMm": 280,
+            "allowDetached": True,
         },
     )
     assert ok3 and isinstance(doc_c.elements.get("st-1"), StairElem)

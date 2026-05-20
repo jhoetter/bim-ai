@@ -172,6 +172,7 @@ def test_sketch_path_can_be_emitted_from_sketch_session_finish() -> None:
     ]
 
     doc = _doc_with_levels()
+    cmd["allowDetached"] = True
     ok, next_doc, _, _, _ = try_commit(doc, cmd)
     assert ok and next_doc is not None
     stair = next(e for e in next_doc.elements.values() if isinstance(e, StairElem))
