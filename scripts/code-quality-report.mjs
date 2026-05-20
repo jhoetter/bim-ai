@@ -240,6 +240,7 @@ function loadBudgetConfig() {
       targetBlockingDate: null,
       fileSizeBudgets: DEFAULT_FILE_BUDGETS,
       complexityBudgets: null,
+      typeEscapeBudgets: null,
       ownership: [],
       generatedArtifactPolicy: null,
     };
@@ -251,6 +252,7 @@ function loadBudgetConfig() {
     targetBlockingDate: parsed.targetBlockingDate ?? null,
     fileSizeBudgets: parsed.fileSizeBudgets ?? DEFAULT_FILE_BUDGETS,
     complexityBudgets: parsed.complexityBudgets ?? null,
+    typeEscapeBudgets: parsed.typeEscapeBudgets ?? null,
     ownership: Array.isArray(parsed.ownership) ? parsed.ownership : [],
     generatedArtifactPolicy: parsed.generatedArtifactPolicy ?? null,
   };
@@ -542,6 +544,7 @@ function computeGrade({
   contractParity,
   uiQualityBudgets,
   realPathCoverage,
+  typeEscapeBudgets,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -603,9 +606,14 @@ function computeGrade({
       `${artifacts.length} tracked local/generated artifact row(s) need disposition`,
     );
   }
-  if (typeEscapes.length > 0) {
+  const totalTypeEscapeMatches = typeEscapes.reduce((sum, row) => sum + row.count, 0);
+  const typeEscapeFileBudget = typeEscapeBudgets?.frontendNonTestHotspotFiles ?? 0;
+  const typeEscapeTotalBudget = typeEscapeBudgets?.frontendTotalNonTestHotspots ?? 0;
+  const typeEscapesOverBudget =
+    typeEscapes.length > typeEscapeFileBudget || totalTypeEscapeMatches > typeEscapeTotalBudget;
+  if (typeEscapesOverBudget) {
     blockersToNextGrade.push(
-      `${typeEscapes.length} frontend source file(s) contain type escape hotspots`,
+      `${typeEscapes.length} frontend source file(s) / ${totalTypeEscapeMatches} total type escape hotspot(s) exceed the configured budget`,
     );
   }
   if (p0Open.length > 0)
@@ -678,6 +686,7 @@ function buildReport() {
     contractParity,
     uiQualityBudgets,
     realPathCoverage,
+    typeEscapeBudgets: budgetConfig.typeEscapeBudgets,
   });
 
   return {
@@ -743,8 +752,14 @@ function buildReport() {
     },
     typeSafety: {
       frontendEscapePattern: FRONTEND_TYPE_ESCAPE_RE.source,
+      budget: budgetConfig.typeEscapeBudgets ?? null,
       nonTestHotspotFileCount: typeEscapes.length,
       totalNonTestHotspots: typeEscapes.reduce((sum, row) => sum + row.count, 0),
+      overBudget:
+        Boolean(budgetConfig.typeEscapeBudgets) &&
+        (typeEscapes.length > budgetConfig.typeEscapeBudgets.frontendNonTestHotspotFiles ||
+          typeEscapes.reduce((sum, row) => sum + row.count, 0) >
+            budgetConfig.typeEscapeBudgets.frontendTotalNonTestHotspots),
       topHotspots: typeEscapes.slice(0, 25),
     },
     repositoryHygiene: {
@@ -859,6 +874,11 @@ function renderMarkdown(report) {
   lines.push(
     `Non-test frontend files with escapes: ${report.typeSafety.nonTestHotspotFileCount}; total matches: ${report.typeSafety.totalNonTestHotspots}.`,
   );
+  if (report.typeSafety.budget) {
+    lines.push(
+      `Budget: ${report.typeSafety.budget.frontendNonTestHotspotFiles} files / ${report.typeSafety.budget.frontendTotalNonTestHotspots} matches; status: ${report.typeSafety.overBudget ? 'over budget' : 'within budget'}.`,
+    );
+  }
   lines.push('');
   lines.push('| Count | Path |');
   lines.push('| ----- | ---- |');

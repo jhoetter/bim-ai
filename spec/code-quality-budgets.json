@@ -35,6 +35,13 @@
       "blocking": 500
     }
   },
+  "typeEscapeBudgets": {
+    "frontendNonTestHotspotFiles": 18,
+    "frontendTotalNonTestHotspots": 106,
+    "owner": "frontend-quality",
+    "trackerId": "CQ-2026-10",
+    "targetReductionDate": "2026-06-30"
+  },
   "ownership": [
     {
       "pattern": "packages/web/src/plan/**",

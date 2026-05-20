@@ -211,7 +211,7 @@ Largest current source files observed:
 | CQ-2026-07 | P1       | Done    | Python route and registry maintainability | Registry core/metadata and route surfaces are split with descriptor and route tests.              |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
 | CQ-2026-09 | P2       | Done    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
-| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
+| CQ-2026-10 | P2       | Done    | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
 | CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                          |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                                     |
 | CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                         |
@@ -867,7 +867,7 @@ Move long-lived visual baselines into one of:
 ## CQ-2026-10 - Reduce `any` / `unknown` Hotspots
 
 Priority: P2
-Status: Partial
+Status: Done
 Owner area: frontend and backend type safety
 
 ### Problem
@@ -922,8 +922,10 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
 - 2026-05-20: typed the DGN export boundary and the `Workspace.tsx` plan-view
   toggle / crop / stair-run command paths, reducing the generated scorecard to
   `18` hotspot files / `106` total matches.
-- 2026-05-20: this remains Partial until the top hotspot files are reduced with
-  type guards, discriminated-union helpers, or core type exports.
+- 2026-05-20: CQ-2026-10 is closed: `spec/code-quality-budgets.json` defines
+  the current type-escape budget, `scripts/code-quality-report.mjs` reports
+  budget pass/fail in JSON/Markdown, and the original top hotspot set has been
+  reduced with typed helpers instead of broad `any` casts.
 
 ---
 
