@@ -919,6 +919,9 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   broad casts in `plan/symbology.ts` and `cmdPalette/defaultCommands.ts` with
   typed plan-view, shaft, cuttable-selection, and legacy wall endpoint helpers.
   The generated scorecard now reports `19` hotspot files / `120` total matches.
+- 2026-05-20: typed the DGN export boundary and the `Workspace.tsx` plan-view
+  toggle / crop / stair-run command paths, reducing the generated scorecard to
+  `18` hotspot files / `106` total matches.
 - 2026-05-20: this remains Partial until the top hotspot files are reduced with
   type guards, discriminated-union helpers, or core type exports.
 

@@ -5,6 +5,7 @@
  */
 
 import { exportToDxf } from './dxfExporter';
+import type { Element } from '@bim-ai/core';
 
 export interface DgnExportOptions {
   /** Level IDs to export (all if omitted). */
@@ -18,7 +19,7 @@ export interface DgnExportOptions {
  * Returns a string suitable for saving as .dgn / .dxf.
  */
 export function exportSceneToDgn(
-  elementsById: Record<string, any>,
+  elementsById: Record<string, Element>,
   levels: { id: string; name: string; elevationMm: number }[],
   options: DgnExportOptions = {},
 ): string {

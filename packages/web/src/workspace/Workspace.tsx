@@ -436,6 +436,20 @@ const EMPTY_JOBS_COUNTS = {
 } as const;
 
 type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+type LevelElement = Extract<Element, { kind: 'level' }>;
+type PlanViewElement = Extract<Element, { kind: 'plan_view' }>;
+type PlanViewCropRegion = NonNullable<PlanViewElement['cropRegionMm']>;
+type EditableStairRun = {
+  runIndex: number;
+  riserCount: number;
+  runWidthMm: number;
+};
+type EditableStairElement = Extract<Element, { kind: 'stair' }> & {
+  runs?: EditableStairRun[];
+  riserCount?: number;
+  runWidthMm?: number;
+  editStairActive?: boolean;
+};
 type MaterialEditableInstance = Extract<
   Element,
   {
@@ -1541,9 +1555,9 @@ export function Workspace(): JSX.Element {
   const handleExportDgn = useCallback(() => {
     const { elementsById } = useBimStore.getState();
     const levels = Object.values(elementsById)
-      .filter((e): e is any => e.kind === 'level')
+      .filter((e): e is LevelElement => e.kind === 'level')
       .sort((a, b) => a.elevationMm - b.elevationMm);
-    const content = exportSceneToDgn(elementsById as any, levels as any);
+    const content = exportSceneToDgn(elementsById, levels);
     const blob = new Blob([content], { type: 'application/dgn' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1673,7 +1687,7 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({
           elementsById: {
             ...cur,
-            [view.id]: { ...view, showConstraints: !(view as any).showConstraints },
+            [view.id]: { ...view, showConstraints: !(view.showConstraints ?? false) },
           },
         });
         return;
@@ -1691,11 +1705,11 @@ export function Workspace(): JSX.Element {
               underlayLevelId:
                 (cmd.underlayLevelId as string | null | undefined) !== undefined
                   ? (cmd.underlayLevelId as string | null)
-                  : (view as any).underlayLevelId,
+                  : view.underlayLevelId,
               showUnderlay:
                 (cmd.showUnderlay as boolean | undefined) !== undefined
                   ? (cmd.showUnderlay as boolean)
-                  : !(view as any).showUnderlay,
+                  : !(view.showUnderlay ?? false),
             },
           },
         });
@@ -1709,7 +1723,7 @@ export function Workspace(): JSX.Element {
           useBimStore.setState({
             elementsById: {
               ...cur,
-              [pv.id]: { ...pv, cropRegionMm: cmd.cropRegionMm as any },
+              [pv.id]: { ...pv, cropRegionMm: cmd.cropRegionMm as PlanViewCropRegion },
             },
           });
         }
@@ -1838,15 +1852,16 @@ export function Workspace(): JSX.Element {
         const current = useBimStore.getState().elementsById;
         const stair = current[cmd.stairId as string];
         if (stair?.kind === 'stair') {
-          const existingRuns: any[] = (stair as any).runs ?? [
+          const editableStair = stair as EditableStairElement;
+          const existingRuns: EditableStairRun[] = editableStair.runs ?? [
             {
               runIndex: 0,
-              riserCount: (stair as any).riserCount ?? 10,
-              runWidthMm: (stair as any).runWidthMm ?? 1200,
+              riserCount: editableStair.riserCount ?? 10,
+              runWidthMm: editableStair.runWidthMm ?? 1200,
             },
           ];
           const runIndex = cmd.runIndex as number;
-          const existing = existingRuns.find((r: any) => r.runIndex === runIndex) ?? {
+          const existing = existingRuns.find((r) => r.runIndex === runIndex) ?? {
             runIndex,
             riserCount: 10,
             runWidthMm: 1200,
@@ -1854,15 +1869,15 @@ export function Workspace(): JSX.Element {
           const updated = { ...existing };
           if (cmd.riserCount !== undefined) updated.riserCount = cmd.riserCount as number;
           if (cmd.runWidthMm !== undefined) updated.runWidthMm = cmd.runWidthMm as number;
-          const idx = existingRuns.findIndex((r: any) => r.runIndex === runIndex);
+          const idx = existingRuns.findIndex((r) => r.runIndex === runIndex);
           const nextRuns =
             idx >= 0
-              ? existingRuns.map((r: any, i: number) => (i === idx ? updated : r))
+              ? existingRuns.map((r, i) => (i === idx ? updated : r))
               : [...existingRuns, updated];
           useBimStore.setState({
             elementsById: {
               ...current,
-              [stair.id]: { ...stair, runs: nextRuns } as Element,
+              [stair.id]: { ...stair, runs: nextRuns } as unknown as Element,
             },
           });
         }
