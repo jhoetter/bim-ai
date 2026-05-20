@@ -130,12 +130,11 @@ import { detectCeilingBoundary } from './ceilingAutoDetect';
 import { detectFloorBoundaryFromWalls } from './detectFloorBoundaryFromWalls';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
-import type { Element, LensMode, ViewLensMode } from '@bim-ai/core';
+import type { Element } from '@bim-ai/core';
 
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
-import { lensFilterFromMode, resolveLensFilter } from '../viewport/useLensFilter';
 import {
   collectCenterAnchors,
   collectSnapLines,
@@ -148,7 +147,6 @@ import {
 } from './snapEngine';
 import {
   classifyPointerStart,
-  draftingPaintFor,
   PlanCamera,
   SnapEngine,
   type SnapCandidate,
@@ -204,19 +202,10 @@ import { usePlanCanvasToolCleanupEffects } from './usePlanCanvasToolCleanupEffec
 import { usePlanCanvasCameraControls } from './usePlanCanvasCameraControls';
 import { usePlanCanvasSceneLifecycle } from './usePlanCanvasSceneLifecycle';
 import {
-  renderAreaPlanOverlays,
-  applyCropRegionVisibility,
-  clearColumnAtGridsOverlay,
-  renderDetailComponents,
-  renderColumnAtGridsOverlay,
-  renderCropRegionOverlay,
-  renderDraftGrid,
-  renderDxfUnderlays,
-  renderMaskingRegions,
-  renderNeighborhoodMasses,
-  renderPlacedTags,
-  renderPlanRegionOverlays,
-} from './planCanvasRenderPasses';
+  usePlanCanvasRenderPasses,
+  type PlanCanvasDraftingPaint,
+} from './usePlanCanvasRenderPasses';
+import { clearColumnAtGridsOverlay, renderColumnAtGridsOverlay } from './planCanvasRenderPasses';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -233,7 +222,6 @@ import {
   resolvePlanViewDisplay,
   type PlanSemanticKind,
 } from './planProjection';
-import { rebuildPlanMeshes } from './symbology';
 import {
   applyCropHandleDrag,
   cropDragCommands,
@@ -256,12 +244,6 @@ import {
   selectDxfUnderlaysForLevel,
   type DxfPrimitiveQueryHit,
 } from './dxfUnderlay';
-import {
-  buildDriftBadgeCanvas,
-  driftBadgeTooltip,
-  elementBadgeAnchorMm,
-  selectDriftedElements,
-} from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import type { WallContextMenuCommand } from '../workspace/viewport/WallContextMenu';
 import { createSimilarPayload } from './createSimilar';
@@ -487,7 +469,7 @@ export function PlanCanvas({
     direction: 'left-to-right' | 'right-to-left' | null;
   }>({ active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null });
   const spaceDownRef = useRef(false);
-  const draftingRef = useRef<ReturnType<typeof draftingPaintFor> | null>(null);
+  const draftingRef = useRef<PlanCanvasDraftingPaint | null>(null);
   const lastPlotScaleRef = useRef<number>(0);
   const lastAutoFitLevelRef = useRef<string | null>(null);
   const snapEngineRef = useRef(new SnapEngine());
@@ -982,242 +964,17 @@ export function PlanCanvas({
     grp.rotation.y = (angleDeg * Math.PI) / 180;
   }, [activePlanViewId, elementsById]);
 
-  useEffect(() => {
-    const grp = rootRef.current;
-    if (!grp) return;
-
-    // B01 — compute plot scale and resolve drafting paint for this zoom level
-    const worldHalfMm = camRef.current.half * 1000;
-    const plotScale = worldHalfMm / 500;
-    draftingRef.current = draftingPaintFor(plotScale);
-    lastPlotScaleRef.current = plotScale;
-
-    renderNeighborhoodMasses(grp, elementsById, activePlanViewId, showNeighborhoodMasses);
-
-    // F-014: in reveal-hidden mode, force the client-side path so we can tint
-    // hidden elements magenta. The wire path (server projection) excludes hidden
-    // elements at generation time and cannot show them.
-    const wirePrimitives = modelId && !revealHiddenMode ? planProjectionPrimitives : null;
-
-    // F-102: build filtered elementsById for per-element hide. In normal mode, remove
-    // individually-hidden elements before passing to rebuildPlanMeshes. In reveal mode,
-    // pass all elements (including hidden ones) so they appear, then tint them magenta below.
-    const elementsByIdForRender =
-      !revealHiddenMode && display.hiddenElementIds.size > 0
-        ? Object.fromEntries(
-            Object.entries(elementsById).filter(([id]) => !display.hiddenElementIds.has(id)),
-          )
-        : elementsById;
-
-    const activePvForPhase = activePlanViewId ? elementsById[activePlanViewId] : null;
-    const viewPhaseId =
-      activePvForPhase?.kind === 'plan_view' ? (activePvForPhase.phaseId ?? null) : null;
-    const phaseFilterMode =
-      activePvForPhase?.kind === 'plan_view'
-        ? ((activePvForPhase.phaseFilterMode ?? null) as
-            | 'new_construction'
-            | 'demolition'
-            | 'existing'
-            | 'as_built'
-            | null)
-        : null;
-
-    rebuildPlanMeshes(grp, elementsByIdForRender, {
-      activeLevelId: displayLevelId || undefined,
-      activeViewId: activePlanViewId || undefined,
-      selectedId,
-      presentation: display.presentation,
-      hiddenSemanticKinds: revealHiddenMode ? new Set<string>() : display.hiddenSemanticKinds,
-      revealHiddenKinds: revealHiddenMode ? display.hiddenSemanticKinds : undefined,
-      wirePrimitives,
-      planGraphicHints: mergedGraphicHints,
-      planAnnotationHints: mergedAnnotationHints,
-      planTagFontScales,
-      plotScale,
-      lineWeights: thinLinesEnabled
-        ? {
-            cutMajor: 1,
-            cutMinor: 1,
-            projMajor: 1,
-            projMinor: 1,
-            witness: 1,
-            gridMajor: draftingRef.current.lineWeights.gridMajor !== null ? 1 : null,
-            gridMinor: draftingRef.current.lineWeights.gridMinor !== null ? 1 : null,
-          }
-        : draftingRef.current.lineWeights,
-      viewPhaseId,
-      phaseFilterMode,
-      groupRegistry,
-      groupEditModeDefinitionId,
-      joinedPairs,
-      lineworkOverrides:
-        activePvForPhase?.kind === 'plan_view'
-          ? (activePvForPhase.lineworkOverrides ?? null)
-          : null,
-    });
-
-    // F-102: in reveal mode, tint individually-hidden elements magenta so users can
-    // see and right-click them to unhide (same magenta as category-hidden reveal).
-    if (revealHiddenMode && display.hiddenElementIds.size > 0) {
-      for (const child of grp.children) {
-        const pickId = (child.userData as { bimPickId?: string }).bimPickId;
-        if (pickId && display.hiddenElementIds.has(pickId)) {
-          child.traverse((node) => {
-            const mesh = node as THREE.Mesh | THREE.Line;
-            if (!(mesh instanceof THREE.Mesh) && !(mesh instanceof THREE.Line)) return;
-            if (!mesh.material) return;
-            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            mesh.material = mats.map((m: THREE.Material) => {
-              const c = m.clone();
-              if ('color' in c) (c as unknown as { color: THREE.Color }).color.setHex(0xff00ff);
-              (c as unknown as { transparent: boolean; opacity: number }).transparent = true;
-              (c as unknown as { transparent: boolean; opacity: number }).opacity = 0.55;
-              return c;
-            });
-          });
-        }
-      }
-    }
-
-    // B01 — apply hatch visibility per scale (no-op until hatch meshes are added)
-    for (const ch of grp.children) {
-      if (typeof (ch.userData as { hatchKind?: string }).hatchKind === 'string') {
-        ch.visible = draftingRef.current.visibleHatches.some(
-          (h) => h.kind === (ch.userData as { hatchKind: string }).hatchKind,
-        );
-      }
-    }
-
-    // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
-    {
-      const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
-      const filter =
-        lensMode && lensMode !== 'all'
-          ? lensFilterFromMode(lensMode as LensMode)
-          : resolveLensFilter(
-              planView && 'defaultLens' in planView
-                ? (planView as { defaultLens?: ViewLensMode })
-                : null,
-            );
-      if (lensMode !== 'all' || (planView && 'defaultLens' in planView)) {
-        const witnessColor = readPlanToken('--draft-witness', '#64748b');
-        const witnessThree = new THREE.Color(witnessColor);
-        grp.traverse((ch) => {
-          const pickId = (ch.userData as { bimPickId?: string }).bimPickId;
-          if (typeof pickId !== 'string') return;
-          const el = elementsById[pickId];
-          if (!el) return;
-          const isGhost = filter(el) === 'ghost';
-          if (ch instanceof THREE.Mesh) {
-            const mat = ch.material as THREE.Material | THREE.Material[];
-            const applyGhost = (m: THREE.Material) => {
-              m.transparent = true;
-              m.opacity = isGhost ? 0.25 : 1.0;
-              const anyMat = m as THREE.Material & { color?: THREE.Color };
-              if (isGhost && anyMat.color instanceof THREE.Color) {
-                anyMat.color.copy(witnessThree);
-              }
-            };
-            if (Array.isArray(mat)) mat.forEach(applyGhost);
-            else applyGhost(mat);
-          }
-        });
-      }
-    }
-
-    renderDraftGrid(
-      grp,
-      camRef.current.half,
-      draftGridVisible,
-      draftingRef.current?.lineWeights ?? { gridMajor: 1, gridMinor: null },
-    );
-
-    renderDxfUnderlays(
-      grp,
-      elementsById,
-      displayLevelId || activeLevelResolvedId,
-      activePlanViewId,
-    );
-
-    renderMaskingRegions(grp, elementsById, activePlanViewId);
-
-    renderPlanRegionOverlays(grp, elementsById, displayLevelId || activeLevelResolvedId);
-
-    renderAreaPlanOverlays(
-      grp,
-      elementsById,
-      activePlanViewId,
-      display.hiddenSemanticKinds,
-      display.hiddenElementIds,
-      revealHiddenMode,
-    );
-
-    // FED-03 — render drift badges (yellow triangles) for elements whose
-    // `monitorSource` has flipped to drifted. Sit above the wire-driven
-    // meshes so the badge sticks to its anchor when the user pans/zooms.
-    for (let i = grp.children.length - 1; i >= 0; i--) {
-      const ch = grp.children[i]!;
-      if ((ch.userData as { driftBadge?: unknown }).driftBadge) grp.remove(ch);
-    }
-    const driftedElems = selectDriftedElements(elementsById);
-    for (const elem of driftedElems) {
-      // Skip drifted elements whose plan-position can't be derived (e.g.
-      // a `level` row — the inspector banner remains the entry point).
-      const anchor = elementBadgeAnchorMm(elem);
-      if (!anchor) continue;
-      const badgeTexture = new THREE.CanvasTexture(buildDriftBadgeCanvas(64));
-      badgeTexture.minFilter = THREE.LinearFilter;
-      const sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: badgeTexture, transparent: true, depthTest: false }),
-      );
-      // 0.32m on plan ≈ 16px at the canonical zoom level.
-      sprite.scale.set(0.32, 0.32, 1);
-      sprite.position.set(anchor.xMm / 1000, SLICE_Y + 0.02, anchor.yMm / 1000);
-      sprite.userData.driftBadge = true;
-      sprite.userData.bimPickId = elem.id;
-      sprite.userData.driftTooltip = driftBadgeTooltip(elem);
-      grp.add(sprite);
-    }
-
-    renderDetailComponents(
-      grp,
-      elementsById,
-      activePlanViewId,
-      display.hiddenSemanticKinds,
-      display.hiddenElementIds,
-      revealHiddenMode,
-    );
-
-    renderPlacedTags(
-      grp,
-      elementsById,
-      activePlanViewId,
-      display.hiddenSemanticKinds,
-      display.hiddenElementIds,
-      revealHiddenMode,
-    );
-
-    renderCropRegionOverlay(
-      grp,
-      cropOverlayRef,
-      activeCropState,
-      cropDragRef.current?.currentBounds,
-      camRef.current.half,
-    );
-
-    // PLN-02 — when cropEnabled, fade meshes whose source element falls
-    // entirely outside the crop. We hide rather than remove so the rebuild
-    // is incremental; rooms / dimensions are kept visible because they are
-    // the most useful context, but per-element visibility uses the
-    // pickId→element lookup below.
-    applyCropRegionVisibility(grp, activeCropState, elementsById);
-  }, [
+  usePlanCanvasRenderPasses({
+    rootRef,
+    camRef,
+    draftingRef,
+    lastPlotScaleRef,
+    cropOverlayRef,
+    cropDragRef,
     mergedGraphicHints,
     mergedAnnotationHints,
     planTagFontScales,
-    display.presentation,
-    display.hiddenElementIds,
-    display.hiddenSemanticKinds,
+    display,
     displayLevelId,
     elementsById,
     geomEpoch,
@@ -1236,8 +993,9 @@ export function PlanCanvas({
     draftGridVisible,
     lensMode,
     groupRegistry,
+    groupEditModeDefinitionId,
     joinedPairs,
-  ]);
+  });
 
   // Column-at-grids: highlight selected grids + show intersection preview dots
   useEffect(() => {
