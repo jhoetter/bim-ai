@@ -116,6 +116,7 @@ A-territory target:
 | GFR-2026-40 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract text annotation inspector sections                         | Inspector below `5,150` LOC with focused tests green.       |
 | GFR-2026-41 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract reference/property/area/plan-region boundary clicks         | PlanCanvas below `5,250` LOC with focused tests green.      |
 | GFR-2026-42 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract view-cube and saved-orientation handlers                   | Viewport below `5,250` LOC with focused tests green.        |
+| GFR-2026-43 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract sheet, schedule, and section palette actions                | Workspace below `5,150` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -497,4 +498,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/viewport/useViewportViewCubeHandlers.ts`. Local `wc -l`
   reports `packages/web/src/Viewport.tsx` at `5,233` lines. Focused view-cube
   and saved-3D tests pass (`26 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-43` is Done. The slice moved sheet, schedule, section,
+  and command-palette navigation actions into
+  `packages/web/src/workspace/useWorkspacePaletteActions.ts`. Local `wc -l`
+  reports `packages/web/src/workspace/Workspace.tsx` at `5,110` lines.
+  Focused workspace/sheet tests pass (`94 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
