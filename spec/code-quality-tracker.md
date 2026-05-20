@@ -539,6 +539,14 @@ a public re-export facade:
 - 2026-05-20: `packages/core/src/type-tests/buildingBaseElementTypes.ts`
   compiles as a fixture proving the extracted base building element types still
   belong to the exported `Element` union.
+- 2026-05-20: `packages/core/src/elements/family.ts` owns the family element
+  slice for family types, placed instances, editor solids, nested components,
+  reference planes, family definitions, parameters, and constraints.
+- 2026-05-20: `packages/core/src/type-tests/familyElementTypes.ts` compiles as
+  a fixture proving the extracted family element types still belong to the
+  exported `Element` union.
+- 2026-05-20: `packages/core/src/index.ts` reduced from `5,666` to `5,484`
+  lines while preserving `@bim-ai/core` public re-exports.
 - 2026-05-20: `spec/core-type-extraction-map.md` documents the remaining core
   type slices and guardrails.
 - 2026-05-20: `pnpm --filter @bim-ai/core typecheck` and
