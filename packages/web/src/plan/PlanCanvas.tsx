@@ -228,6 +228,7 @@ import { areaPlanPlacementContext, findAreaPlacementBoundary } from './areaPlace
 import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite, tagLeaderLineThree } from './planElementMeshBuilders';
+import { createPlanTextSprite } from './planTextSprites';
 import {
   dxfViewOverrideKey,
   hiddenDxfLayerNamesForView,
@@ -1686,26 +1687,21 @@ export function PlanCanvas({
           sline.userData.bimPickId = a.id;
           grp.add(sline);
         }
-        // Centroid tag — canvas-texture sprite with "name · X.XX m²".
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 64;
-        const ctx2 = canvas.getContext('2d');
-        if (ctx2) {
-          ctx2.fillStyle = areaBoundaryReveal ? '#ff00ff' : '#d2363b';
-          ctx2.font = '28px sans-serif';
-          ctx2.textBaseline = 'middle';
-          ctx2.textAlign = 'center';
-          ctx2.fillText(a.tagLabel, 128, 32);
-        }
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.minFilter = THREE.LinearFilter;
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-        sprite.scale.set(2.4, 0.6, 1);
-        sprite.position.set(a.centroidMm.xMm / 1000, SLICE_Y + 0.012, a.centroidMm.yMm / 1000);
-        sprite.userData.areaElement = true;
-        sprite.userData.bimPickId = a.id;
-        grp.add(sprite);
+        grp.add(
+          createPlanTextSprite({
+            text: a.tagLabel,
+            color: areaBoundaryReveal ? '#ff00ff' : '#d2363b',
+            textX: 128,
+            textAlign: 'center',
+            scaleX: 2.4,
+            scaleY: 0.6,
+            xMm: a.centroidMm.xMm,
+            yMm: a.centroidMm.yMm,
+            sliceY: SLICE_Y + 0.012,
+            pickId: a.id,
+            userData: { areaElement: true },
+          }),
+        );
       }
     }
 
@@ -1862,28 +1858,26 @@ export function PlanCanvas({
         } else if (p.kind === 'material_tag') {
           // ANN-12 — material tag with optional leader line and tag box
           const labelText = p.textOverride ?? 'Material';
-          const ac = document.createElement('canvas');
-          ac.width = 256;
-          ac.height = 64;
-          const ac2 = ac.getContext('2d');
-          if (ac2) {
-            // Draw box frame around label
-            ac2.strokeStyle = p.colour;
-            ac2.lineWidth = 2;
-            ac2.strokeRect(1, 1, 254, 62);
-            ac2.fillStyle = p.colour;
-            ac2.font = '26px sans-serif';
-            ac2.textBaseline = 'middle';
-            ac2.fillText(labelText, 8, 32);
-          }
-          const aTex = new THREE.CanvasTexture(ac);
-          aTex.minFilter = THREE.LinearFilter;
-          const aS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aTex, transparent: true }));
-          aS.scale.set(0.3 * (256 / 64), 0.3, 1);
-          aS.position.set(p.positionMm.xMm / 1000, SLICE_Y + 0.01, p.positionMm.yMm / 1000);
-          aS.userData.detailComponent = true;
-          aS.userData.bimPickId = p.id;
-          grp.add(aS);
+          grp.add(
+            createPlanTextSprite({
+              text: labelText,
+              color: p.colour,
+              font: '26px sans-serif',
+              textX: 8,
+              scaleX: 0.3 * (256 / 64),
+              scaleY: 0.3,
+              xMm: p.positionMm.xMm,
+              yMm: p.positionMm.yMm,
+              sliceY: SLICE_Y + 0.01,
+              pickId: p.id,
+              userData: { detailComponent: true },
+              drawBeforeText: (ctx) => {
+                ctx.strokeStyle = p.colour;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(1, 1, 254, 62);
+              },
+            }),
+          );
           // Draw leader line from tag position to leaderEndMm (if set)
           if (p.leaderEndMm) {
             const leader = tagLeaderLineThree(p.leaderEndMm, p.positionMm, SLICE_Y + 0.002);
@@ -1904,25 +1898,20 @@ export function PlanCanvas({
                 : p.kind === 'spot_slope'
                   ? `${p.slopePct.toFixed(1)}%`
                   : p.symbolType;
-          const ac = document.createElement('canvas');
-          ac.width = 256;
-          ac.height = 64;
-          const ac2 = ac.getContext('2d');
-          if (ac2) {
-            ac2.fillStyle = p.colour;
-            ac2.font = '28px sans-serif';
-            ac2.textBaseline = 'middle';
-            ac2.fillText(lt, 4, 32);
-          }
-          const aTex = new THREE.CanvasTexture(ac);
-          aTex.minFilter = THREE.LinearFilter;
-          const aS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aTex, transparent: true }));
-          aS.scale.set(0.3 * (256 / 64), 0.3, 1);
           const aPos = 'positionMm' in p ? p.positionMm : { xMm: 0, yMm: 0 };
-          aS.position.set(aPos.xMm / 1000, SLICE_Y + 0.01, aPos.yMm / 1000);
-          aS.userData.detailComponent = true;
-          aS.userData.bimPickId = p.id;
-          grp.add(aS);
+          grp.add(
+            createPlanTextSprite({
+              text: lt,
+              color: p.colour,
+              scaleX: 0.3 * (256 / 64),
+              scaleY: 0.3,
+              xMm: aPos.xMm,
+              yMm: aPos.yMm,
+              sliceY: SLICE_Y + 0.01,
+              pickId: p.id,
+              userData: { detailComponent: true },
+            }),
+          );
         } else if (p.kind === 'radial_dimension' || p.kind === 'diameter_dimension') {
           const rMat = new THREE.LineBasicMaterial({ color: p.colour });
           const rLine = new THREE.Line(
@@ -1940,28 +1929,20 @@ export function PlanCanvas({
           const rMm = Math.sqrt(dx * dx + dy * dy);
           const rLbl =
             p.kind === 'diameter_dimension' ? `ø${(rMm * 2).toFixed(0)}` : `R${rMm.toFixed(0)}`;
-          const rC = document.createElement('canvas');
-          rC.width = 192;
-          rC.height = 64;
-          const rCtx = rC.getContext('2d');
-          if (rCtx) {
-            rCtx.fillStyle = p.colour;
-            rCtx.font = '28px sans-serif';
-            rCtx.textBaseline = 'middle';
-            rCtx.fillText(rLbl, 4, 32);
-          }
-          const rTex = new THREE.CanvasTexture(rC);
-          rTex.minFilter = THREE.LinearFilter;
-          const rS = new THREE.Sprite(new THREE.SpriteMaterial({ map: rTex, transparent: true }));
-          rS.scale.set(0.25 * (192 / 64), 0.25, 1);
-          rS.position.set(
-            (p.arcPointMm.xMm + p.centerMm.xMm) / 2 / 1000,
-            SLICE_Y + 0.01,
-            (p.arcPointMm.yMm + p.centerMm.yMm) / 2 / 1000,
+          grp.add(
+            createPlanTextSprite({
+              text: rLbl,
+              color: p.colour,
+              width: 192,
+              scaleX: 0.25 * (192 / 64),
+              scaleY: 0.25,
+              xMm: (p.arcPointMm.xMm + p.centerMm.xMm) / 2,
+              yMm: (p.arcPointMm.yMm + p.centerMm.yMm) / 2,
+              sliceY: SLICE_Y + 0.01,
+              pickId: p.id,
+              userData: { detailComponent: true },
+            }),
           );
-          rS.userData.detailComponent = true;
-          rS.userData.bimPickId = p.id;
-          grp.add(rS);
         } else if (p.kind === 'arc_length_dimension') {
           const aldOffsetMm = p.offsetMm ?? 200;
           const aldInnerRadM = p.radiusMm / 1000;
@@ -2019,28 +2000,20 @@ export function PlanCanvas({
           // Text label at midpoint of dimension arc
           const aldMidRad = THREE.MathUtils.degToRad((p.startAngleDeg + p.endAngleDeg) / 2);
           const arcLen = ((Math.abs(p.endAngleDeg - p.startAngleDeg) * Math.PI) / 180) * p.radiusMm;
-          const aLC = document.createElement('canvas');
-          aLC.width = 192;
-          aLC.height = 64;
-          const aLCtx = aLC.getContext('2d');
-          if (aLCtx) {
-            aLCtx.fillStyle = aldColour;
-            aLCtx.font = '28px sans-serif';
-            aLCtx.textBaseline = 'middle';
-            aLCtx.fillText(`arc ${arcLen.toFixed(0)}`, 4, 32);
-          }
-          const aLTex = new THREE.CanvasTexture(aLC);
-          aLTex.minFilter = THREE.LinearFilter;
-          const aLS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aLTex, transparent: true }));
-          aLS.scale.set(0.25 * (192 / 64), 0.25, 1);
-          aLS.position.set(
-            aldCx + Math.cos(aldMidRad) * aldDimRadM,
-            SLICE_Y + 0.015,
-            aldCz + Math.sin(aldMidRad) * aldDimRadM,
+          grp.add(
+            createPlanTextSprite({
+              text: `arc ${arcLen.toFixed(0)}`,
+              color: aldColour,
+              width: 192,
+              scaleX: 0.25 * (192 / 64),
+              scaleY: 0.25,
+              xMm: (aldCx + Math.cos(aldMidRad) * aldDimRadM) * 1000,
+              yMm: (aldCz + Math.sin(aldMidRad) * aldDimRadM) * 1000,
+              sliceY: SLICE_Y + 0.015,
+              pickId: p.id,
+              userData: { detailComponent: true },
+            }),
           );
-          aLS.userData.detailComponent = true;
-          aLS.userData.bimPickId = p.id;
-          grp.add(aLS);
         } else if (p.kind === 'angular_dimension') {
           const angM = new THREE.LineBasicMaterial({ color: p.colour });
           [
@@ -2065,32 +2038,22 @@ export function PlanCanvas({
           const aA = Math.atan2(p.rayAMm.yMm - p.vertexMm.yMm, p.rayAMm.xMm - p.vertexMm.xMm);
           const aB = Math.atan2(p.rayBMm.yMm - p.vertexMm.yMm, p.rayBMm.xMm - p.vertexMm.xMm);
           const angDeg = Math.abs(((aB - aA) * 180) / Math.PI);
-          const angC = document.createElement('canvas');
-          angC.width = 192;
-          angC.height = 64;
-          const angCtx = angC.getContext('2d');
-          if (angCtx) {
-            angCtx.fillStyle = p.colour;
-            angCtx.font = '28px sans-serif';
-            angCtx.textBaseline = 'middle';
-            angCtx.fillText(`${angDeg.toFixed(1)}°`, 4, 32);
-          }
-          const angTex = new THREE.CanvasTexture(angC);
-          angTex.minFilter = THREE.LinearFilter;
-          const angS = new THREE.Sprite(
-            new THREE.SpriteMaterial({ map: angTex, transparent: true }),
-          );
           const mA = (aA + aB) / 2,
             aR = p.arcRadiusMm / 1000;
-          angS.scale.set(0.25 * (192 / 64), 0.25, 1);
-          angS.position.set(
-            p.vertexMm.xMm / 1000 + aR * Math.cos(mA),
-            SLICE_Y + 0.01,
-            p.vertexMm.yMm / 1000 + aR * Math.sin(mA),
+          grp.add(
+            createPlanTextSprite({
+              text: `${angDeg.toFixed(1)}°`,
+              color: p.colour,
+              width: 192,
+              scaleX: 0.25 * (192 / 64),
+              scaleY: 0.25,
+              xMm: p.vertexMm.xMm + p.arcRadiusMm * Math.cos(mA),
+              yMm: p.vertexMm.yMm + p.arcRadiusMm * Math.sin(mA),
+              sliceY: SLICE_Y + 0.01,
+              pickId: p.id,
+              userData: { detailComponent: true },
+            }),
           );
-          angS.userData.detailComponent = true;
-          angS.userData.bimPickId = p.id;
-          grp.add(angS);
         } else if (p.kind === 'leader_text') {
           const ltMat = new THREE.LineBasicMaterial({ color: p.colour });
           const ltPts: THREE.Vector3[] = [];
@@ -2107,26 +2070,19 @@ export function PlanCanvas({
           ltLine.userData.detailComponent = true;
           ltLine.userData.bimPickId = p.id;
           grp.add(ltLine);
-          const ltC = document.createElement('canvas');
-          ltC.width = 256;
-          ltC.height = 64;
-          const ltCtx = ltC.getContext('2d');
-          if (ltCtx) {
-            ltCtx.fillStyle = p.colour;
-            ltCtx.font = '28px sans-serif';
-            ltCtx.textBaseline = 'middle';
-            ltCtx.fillText(p.content, 4, 32);
-          }
-          const ltTex = new THREE.CanvasTexture(ltC);
-          ltTex.minFilter = THREE.LinearFilter;
-          const ltSprite = new THREE.Sprite(
-            new THREE.SpriteMaterial({ map: ltTex, transparent: true }),
+          grp.add(
+            createPlanTextSprite({
+              text: p.content,
+              color: p.colour,
+              scaleX: 0.3 * (256 / 64),
+              scaleY: 0.3,
+              xMm: p.textMm.xMm,
+              yMm: p.textMm.yMm,
+              sliceY: SLICE_Y + 0.01,
+              pickId: p.id,
+              userData: { detailComponent: true },
+            }),
           );
-          ltSprite.scale.set(0.3 * (256 / 64), 0.3, 1);
-          ltSprite.position.set(p.textMm.xMm / 1000, SLICE_Y + 0.01, p.textMm.yMm / 1000);
-          ltSprite.userData.detailComponent = true;
-          ltSprite.userData.bimPickId = p.id;
-          grp.add(ltSprite);
         } else if (p.kind === 'revision_cloud' && p.boundaryMm.length >= 2) {
           const rcL = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints(

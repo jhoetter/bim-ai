@@ -494,6 +494,9 @@ impact of small changes.
   pointer event behavior.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns selection marquee preview mesh
   construction or disposal; these moved to `plan/marqueeSelectionPreview.ts`.
+- 2026-05-20: `PlanCanvas.tsx` no longer owns repeated canvas-texture label
+  sprite construction for plan annotation labels; this moved to
+  `plan/planTextSprites.ts`, reducing the plan canvas file to `9,056` lines.
 
 ---
 
@@ -970,6 +973,9 @@ Initial thresholds can be advisory before becoming blocking:
   budget disposition alongside waivers, reports tracker IDs in the
   maintainability table, and adds ownership rows for top frontend hotspots that
   were previously unowned.
+- 2026-05-20: another PlanCanvas extraction slice moved repeated annotation
+  label sprite canvas setup into `plan/planTextSprites.ts`; this keeps the file
+  trending downward under its CQ-2026-04/CQ-2026-13 owner disposition.
 
 ---
 
