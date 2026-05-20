@@ -31,7 +31,6 @@ import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
-import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
 import {
   applyCommand,
   ApiHttpError,
@@ -174,6 +173,18 @@ import {
 } from './WorkspaceAppShellSlots';
 import { WorkspaceOverlays } from './WorkspaceOverlays';
 import { canonicalPlanToolForMode, mapComments, planToolToToolId } from './workspaceUtils';
+import {
+  disciplineScopeNote,
+  EMPTY_JOBS_COUNTS,
+  firstMmVector,
+  formatStatusMm,
+  lensForWorkspace,
+  libraryDisciplineFromLens,
+  slugToken,
+  splitViewTabLabel,
+  summarizeJobsCounts,
+} from './workspacePresentation';
+import { materializeOptimisticHostedOpening } from './semanticCommands/optimisticHostedOpening';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { usePresenceStore } from '../presenceStore';
 import {
@@ -191,132 +202,6 @@ import {
   generateCurtainWallsFromMass,
 } from '../tools/massGenerateBim';
 import type { MassNewElem } from '../tools/massToFloors';
-
-function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 'all' {
-  if (lens === 'architecture') return 'arch';
-  if (lens === 'structure') return 'struct';
-  if (lens === 'mep') return 'mep';
-  return 'all';
-}
-
-function finiteNumber(value: unknown, fallback: number): number {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : fallback;
-}
-
-function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, finiteNumber(value, fallback)));
-}
-
-function optionalString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined;
-}
-
-function materializeOptimisticHostedOpening(
-  cmd: Record<string, unknown>,
-  elementsById: Record<string, Element>,
-): { command: Record<string, unknown>; element: Element } | null {
-  if (
-    cmd.type !== 'insertDoorOnWall' &&
-    cmd.type !== 'insertWindowOnWall' &&
-    cmd.type !== 'createWallOpening'
-  ) {
-    return null;
-  }
-
-  const hostWallId =
-    cmd.type === 'createWallOpening' ? optionalString(cmd.hostWallId) : optionalString(cmd.wallId);
-  if (!hostWallId) return null;
-  const host = elementsById[hostWallId];
-  if (!host || host.kind !== 'wall' || !isPhysicalHostedOpeningWall(host)) return null;
-
-  const id = optionalString(cmd.id) ?? crypto.randomUUID();
-  if (elementsById[id]) return null;
-  const command = { ...cmd, id };
-
-  if (cmd.type === 'insertDoorOnWall') {
-    return {
-      command,
-      element: {
-        kind: 'door',
-        id,
-        name: optionalString(cmd.name) ?? 'Door',
-        wallId: hostWallId,
-        alongT: clampNumber(cmd.alongT, 0.5, 0, 1),
-        widthMm: Math.max(1, finiteNumber(cmd.widthMm, 900)),
-        ...(optionalString(cmd.familyTypeId)
-          ? { familyTypeId: optionalString(cmd.familyTypeId) }
-          : {}),
-        discipline: 'arch',
-      },
-    };
-  }
-
-  if (cmd.type === 'insertWindowOnWall') {
-    return {
-      command,
-      element: {
-        kind: 'window',
-        id,
-        name: optionalString(cmd.name) ?? 'Window',
-        wallId: hostWallId,
-        alongT: clampNumber(cmd.alongT, 0.5, 0, 1),
-        widthMm: Math.max(1, finiteNumber(cmd.widthMm, 1200)),
-        sillHeightMm: Math.max(0, finiteNumber(cmd.sillHeightMm, 900)),
-        heightMm: Math.max(1, finiteNumber(cmd.heightMm, 1500)),
-        ...(optionalString(cmd.familyTypeId)
-          ? { familyTypeId: optionalString(cmd.familyTypeId) }
-          : {}),
-        discipline: 'arch',
-      },
-    };
-  }
-
-  const alongTStart = clampNumber(cmd.alongTStart, 0.45, 0, 1);
-  const alongTEnd = clampNumber(cmd.alongTEnd, 0.55, 0, 1);
-  const sillHeightMm = Math.max(0, finiteNumber(cmd.sillHeightMm, 200));
-  const headHeightMm = Math.max(0, finiteNumber(cmd.headHeightMm, 2400));
-  if (alongTStart >= alongTEnd || headHeightMm <= sillHeightMm || headHeightMm > host.heightMm) {
-    return null;
-  }
-
-  return {
-    command,
-    element: {
-      kind: 'wall_opening',
-      id,
-      name: optionalString(cmd.name) ?? 'Wall opening',
-      hostWallId,
-      alongTStart,
-      alongTEnd,
-      sillHeightMm,
-      headHeightMm,
-      discipline: 'arch',
-    },
-  };
-}
-
-function lensForWorkspace(id: WorkspaceId): LensMode {
-  if (id === 'arch') return 'architecture';
-  if (id === 'struct') return 'structure';
-  if (id === 'mep') return 'mep';
-  return 'all';
-}
-
-function splitViewTabLabel(
-  label: string,
-  fallbackViewType?: string,
-): { viewType: string; viewName?: string } {
-  const separator = ' · ';
-  const separatorIndex = label.indexOf(separator);
-  if (separatorIndex === -1) {
-    return fallbackViewType ? { viewType: fallbackViewType, viewName: label } : { viewType: label };
-  }
-  return {
-    viewType: label.slice(0, separatorIndex),
-    viewName: label.slice(separatorIndex + separator.length),
-  };
-}
 
 function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHifiProps> {
   switch (kind) {
@@ -336,26 +221,6 @@ function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHif
   }
 }
 
-function disciplineScopeNote(
-  activeWorkspaceId: WorkspaceId,
-  selected: Element | undefined,
-): string | null {
-  const expected =
-    activeWorkspaceId === 'struct'
-      ? 'structure'
-      : activeWorkspaceId === 'mep'
-        ? 'mep'
-        : activeWorkspaceId === 'arch'
-          ? 'architecture'
-          : null;
-  const actual =
-    selected && 'discipline' in selected && typeof selected.discipline === 'string'
-      ? selected.discipline
-      : null;
-  if (!expected || !actual || expected === actual) return null;
-  return 'This element is outside the active discipline scope; the comment will post with a scope note.';
-}
-
 /**
  * Workspace — composition root for the §11–§17 chrome.
  *
@@ -370,16 +235,6 @@ function disciplineScopeNote(
 type RailOverride = 'open' | 'collapsed' | null;
 
 const PANE_SECONDARY_SIDEBAR_WIDTH = 'min(248px, 34%)';
-
-function formatStatusMm(mm: number): string {
-  return `${(mm / 1000).toFixed(1)} m`;
-}
-
-const EMPTY_JOBS_COUNTS = {
-  queued: 0,
-  running: 0,
-  errored: 0,
-} as const;
 
 type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
 type LevelElement = Extract<Element, { kind: 'level' }>;
@@ -513,39 +368,6 @@ function materialSlotTargetLabel(
       ? element.name
       : target.elementId;
   return `${name} · ${target.label}`;
-}
-
-function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
-  const counts = { ...EMPTY_JOBS_COUNTS };
-  for (const row of rows) {
-    const status =
-      row && typeof row === 'object' && 'status' in row
-        ? String((row as { status?: unknown }).status ?? '')
-        : '';
-    if (status === 'queued') counts.queued += 1;
-    else if (status === 'running') counts.running += 1;
-    else if (status === 'errored') counts.errored += 1;
-  }
-  return counts;
-}
-
-function slugToken(label: string): string {
-  const slug = label
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug || 'item';
-}
-
-function firstMmVector(value: unknown): { xMm: number; yMm: number; zMm: number } | undefined {
-  if (!value || typeof value !== 'object') return undefined;
-  const row = value as Record<string, unknown>;
-  const xMm = Number(row.xMm);
-  const yMm = Number(row.yMm);
-  const zMm = Number(row.zMm);
-  if (!Number.isFinite(xMm) || !Number.isFinite(yMm) || !Number.isFinite(zMm)) return undefined;
-  return { xMm, yMm, zMm };
 }
 
 function shouldPlaceCatalogFamilyAsAsset(placement: ExternalCatalogPlacement): boolean {
