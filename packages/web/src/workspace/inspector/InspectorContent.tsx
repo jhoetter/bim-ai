@@ -40,6 +40,7 @@ import { StairAssemblySection } from './stairAssemblyInspector';
 import { FieldRow, fmtMm } from './inspectorRows';
 import { LinkDxfInspectorSection } from './linkInspectorSections';
 import { MepInspectorSection, fmtMepRecord } from './mepInspectorSections';
+import { DetailDocumentationInspectorSection } from './detailDocumentationInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -5133,99 +5134,11 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'detail_line': {
-      const { onPropertyChange: dlPropChange } = options ?? {};
-      const dlEl = el as Extract<Element, { kind: 'detail_line' }>;
-      return (
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 text-xs">
-            Line Weight (px)
-            <input
-              type="number"
-              data-testid="inspector-detail-line-weight"
-              className="w-20 bg-surface border border-border rounded px-1 py-0.5"
-              value={dlEl.lineWeightPx ?? 1}
-              onChange={(e) => dlPropChange?.('lineWeightPx', +e.target.value)}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            Color
-            <input
-              type="color"
-              data-testid="inspector-detail-line-color"
-              value={dlEl.colorHex ?? '#000000'}
-              onChange={(e) => dlPropChange?.('colorHex', e.target.value)}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            Style
-            <select
-              data-testid="inspector-detail-line-style"
-              className="bg-surface border border-border rounded px-1 py-0.5"
-              value={dlEl.lineStyle ?? 'solid'}
-              onChange={(e) => dlPropChange?.('lineStyle', e.target.value)}
-            >
-              <option value="solid">Solid</option>
-              <option value="dashed">Dashed</option>
-              <option value="dotted">Dotted</option>
-            </select>
-          </label>
-          <span data-testid="inspector-detail-line-points" className="text-xs text-muted">
-            {(dlEl.pointsMm ?? []).length} points
-          </span>
-        </div>
-      );
-    }
-    case 'detail_filled_region': {
-      const { onPropertyChange: dfrPropChange } = options ?? {};
-      const dfrEl = el as Extract<Element, { kind: 'detail_filled_region' }>;
-      return (
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 text-xs">
-            Fill Pattern
-            <select
-              data-testid="inspector-detail-filled-region-pattern"
-              className="bg-surface border border-border rounded px-1 py-0.5"
-              value={dfrEl.fillPattern ?? 'solid'}
-              onChange={(e) => dfrPropChange?.('fillPattern', e.target.value)}
-            >
-              <option value="solid">Solid</option>
-              <option value="hatch-45">Hatch 45°</option>
-              <option value="hatch-90">Hatch 90°</option>
-              <option value="cross">Cross</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            Color
-            <input
-              type="color"
-              data-testid="inspector-detail-filled-region-color"
-              value={dfrEl.colorHex ?? '#cccccc'}
-              onChange={(e) => dfrPropChange?.('colorHex', e.target.value)}
-            />
-          </label>
-          <span data-testid="inspector-detail-filled-region-points" className="text-xs text-muted">
-            {(dfrEl.perimeterMm ?? []).length} points
-          </span>
-        </div>
-      );
-    }
+    case 'detail_line':
+    case 'detail_filled_region':
     case 'detail_arc': {
-      const darcEl = el as Extract<Element, { kind: 'detail_arc' }>;
       return (
-        <div className="flex flex-col gap-2">
-          <FieldRow
-            label="Center"
-            value={`(${Math.round(darcEl.centerMm.xMm)}, ${Math.round(darcEl.centerMm.yMm)}) mm`}
-            mono
-          />
-          <FieldRow label="Radius" value={`${Math.round(darcEl.radiusMm)} mm`} mono />
-          <FieldRow
-            label="Angles"
-            value={`${darcEl.startAngleDeg}° → ${darcEl.endAngleDeg}°`}
-            mono
-          />
-        </div>
+        <DetailDocumentationInspectorSection el={el} onPropertyChange={options?.onPropertyChange} />
       );
     }
     case 'shaft': {

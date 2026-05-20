@@ -172,14 +172,14 @@ Code scale snapshot:
 
 Largest current source files observed:
 
-| File                                                        | Approx LOC | Concern                                    |
-| ----------------------------------------------------------- | ---------- | ------------------------------------------ |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 9.3k       | High-churn plan interaction monolith.      |
-| `packages/web/src/workspace/Workspace.tsx`                  | 6.7k       | Shell/workflow orchestration monolith.     |
-| `packages/core/src/index.ts`                                | 5.7k       | Central type and command registry surface. |
-| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.           |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.6k       | Inspector rendering and editing monolith.  |
-| `packages/web/src/Viewport.tsx`                             | 6.1k       | 3D viewport orchestration monolith.        |
+| File                                                        | Approx LOC | Concern                                   |
+| ----------------------------------------------------------- | ---------- | ----------------------------------------- |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 9.0k       | High-churn plan interaction monolith.     |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 6.8k       | Inspector rendering and editing monolith. |
+| `packages/cli/cli.mjs`                                      | 6.8k       | CLI command and evidence orchestration.   |
+| `packages/web/src/workspace/Workspace.tsx`                  | 6.6k       | Shell/workflow orchestration monolith.    |
+| `app/bim_ai/api/registry.py`                                | 6.3k       | Central API descriptor registry.          |
+| `packages/web/src/Viewport.tsx`                             | 6.2k       | 3D viewport orchestration monolith.       |
 
 ## Status Model
 
@@ -508,6 +508,10 @@ impact of small changes.
 - 2026-05-20: `InspectorContent.tsx` no longer owns DXF link work-plane and
   display rows; these moved to `workspace/inspector/linkInspectorSections.tsx`,
   reducing the inspector file to `6,846` lines.
+- 2026-05-20: `InspectorContent.tsx` no longer owns detail line, filled region,
+  or detail arc inspector rows; these moved to
+  `workspace/inspector/detailDocumentationInspectorSections.tsx`, reducing the
+  inspector file to about `6,760` lines.
 
 ---
 
