@@ -12,6 +12,7 @@
     "test": "vitest run src",
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test e2e/cockpit-smoke.spec.ts",
+    "test:e2e:real-backend": "playwright test --config playwright.real-backend.config.ts",
     "test:e2e:install": "playwright install chromium",
     "evidence:target-house-live": "node scripts/target-house-live-responsiveness.mjs"
   },

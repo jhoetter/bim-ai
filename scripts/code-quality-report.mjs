@@ -365,6 +365,7 @@ function packageScripts() {
       testEnvPolicy: /^test-env-policy:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
       testPyRealPath: /^test-py-real-path:/m.test(makefile),
+      testWebRealPath: /^test-web-real-path:/m.test(makefile),
       codeQualityReport: /^code-quality-report:/m.test(makefile),
     },
   };
@@ -443,11 +444,36 @@ function realPathCoverageSummary(scripts) {
     ? readText('.github/workflows/ci.yml')
     : '';
   const testPath = 'app/tests/integration/test_real_path_smoke.py';
+  const dbTestPath = 'app/tests/integration/test_real_path_db.py';
+  const frontendProxyPath = 'packages/web/e2e/real-backend-proxy.spec.ts';
   const testText = existsSync(join(REPO_ROOT, testPath)) ? readText(testPath) : '';
+  const dbTestText = existsSync(join(REPO_ROOT, dbTestPath)) ? readText(dbTestPath) : '';
+  const frontendProxyText = existsSync(join(REPO_ROOT, frontendProxyPath))
+    ? readText(frontendProxyPath)
+    : '';
+  const frontendProxyConfigPath = 'packages/web/playwright.real-backend.config.ts';
+  const frontendProxyConfig = existsSync(join(REPO_ROOT, frontendProxyConfigPath))
+    ? readText(frontendProxyConfigPath)
+    : '';
   return {
     testPath,
     testExists: Boolean(testText),
+    dbTestPath,
+    dbTestExists: Boolean(dbTestText),
+    dbTestUsesRealSessionMaker: dbTestText.includes('from bim_ai.db import SessionMaker'),
+    dbTestCoversSchemaStartup: dbTestText.includes('with TestClient(real_app)'),
+    dbTestCoversBundleActivityComments:
+      dbTestText.includes('/commands/bundle') &&
+      dbTestText.includes('/activity') &&
+      dbTestText.includes('/comments'),
     makeTarget: scripts.make.testPyRealPath,
+    webMakeTarget: scripts.make.testWebRealPath,
+    frontendProxyPath,
+    frontendProxyExists: Boolean(frontendProxyText),
+    frontendProxyUsesBrowserFetch: frontendProxyText.includes("fetch('/api/health'"),
+    frontendProxyStartsRealBackend: frontendProxyConfig.includes('uvicorn bim_ai.main:app'),
+    frontendProxyUsesViteProxy:
+      frontendProxyConfig.includes('API_PORT') && !frontendProxyConfig.includes('PREVIEW_NO_PROXY'),
     ciRunsRealPath: ci.includes('test-py-real-path'),
     importsRealApp: testText.includes('from bim_ai.main import app as real_app'),
     coversBundleRoute: testText.includes('/commands/bundle'),

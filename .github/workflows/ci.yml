@@ -156,6 +156,20 @@ jobs:
   python:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bimai
+          POSTGRES_PASSWORD: bimai
+          POSTGRES_DB: bimai
+        ports:
+          - 5545:5432
+        options: >-
+          --health-cmd="pg_isready -U bimai -d bimai"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     defaults:
       run:
         working-directory: app
@@ -188,6 +202,9 @@ jobs:
 
       - name: Real-path smoke lane
         run: cd .. && make test-py-real-path
+        env:
+          BIM_AI_RUN_DB_REAL_PATH: '1'
+          DATABASE_URL: postgresql+asyncpg://bimai:bimai@127.0.0.1:5545/bimai
 
       - name: TST-V3-01 refinement reliability gate
         run: cd .. && make verify-refinement-reliability

@@ -218,7 +218,7 @@ Largest current source files observed:
 | CQ-2026-14 | P1       | Done    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.           |
 | CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.                 |
 | CQ-2026-16 | P1       | Done    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                         |
-| CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                          |
+| CQ-2026-17 | P1       | Done    | Real-path integration coverage            | Real app, DB, websocket, and browser proxy smoke tests exercise deployed paths.                   |
 | CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.                  |
 | CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.                    |
 | CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.                  |
@@ -603,7 +603,7 @@ a public re-export facade:
 ## CQ-2026-06 - Strengthen Runtime Data Coercion Boundaries
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: frontend state/API boundary
 
 ### Problem
@@ -1303,8 +1303,21 @@ quality story, not only a future hardening aspiration.
 - 2026-05-20: CI now runs `make test-py-real-path` in the Python job, and the
   generated code-quality scorecard reports whether the real-app, bundle-route,
   stale-revision, activity/comment, and websocket checks are present and wired.
-  This remains Partial until DB-backed schema/session coverage and frontend
-  proxy-to-backend browser coverage are added.
+- 2026-05-20: added `packages/web/playwright.real-backend.config.ts` and
+  `packages/web/e2e/real-backend-proxy.spec.ts`, an automated browser smoke that
+  starts the real FastAPI app, starts Vite with its `/api` proxy, and verifies
+  browser-origin `fetch('/api/health')` reaches the backend through the proxy.
+  The lane is exposed as `pnpm test:e2e:real-backend` and `make
+test-web-real-path`, and the code-quality scorecard reports its wiring.
+- 2026-05-20: added `app/tests/integration/test_real_path_db.py`, a
+  DB-backed Postgres integration smoke that runs the real FastAPI lifespan,
+  creates the schema/session path, commits a bundle, rejects a stale revision,
+  and reads activity/comments through public routes. CI now provides a Postgres
+  service and runs it via `make test-py-real-path` with
+  `BIM_AI_RUN_DB_REAL_PATH=1`; local focused runs keep it marked/skippable.
+- 2026-05-20: CQ-2026-17 is closed: backend real-app route/websocket coverage,
+  DB-backed schema/session coverage, and browser-origin Vite-proxy-to-FastAPI
+  coverage are all automated and visible in `scripts/code-quality-report.mjs`.
 
 ---
 

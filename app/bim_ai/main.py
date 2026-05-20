@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from uuid import UUID
 
@@ -18,7 +19,8 @@ from bim_ai.routes_api import api_router, websocket_loop
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db_schema()
+    if os.getenv("BIM_AI_SKIP_DB_INIT") != "1":
+        await init_db_schema()
     app.state.hub = Hub()
 
     async def _broadcast_job_update(job: Job) -> None:

@@ -25,7 +25,7 @@ SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root 
 
 .PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
-	test test-py test-py-full test-py-focused test-py-real-path test-js format format-check python-format-check lint lint-js lint-py architecture \
+test test-py test-py-full test-py-focused test-py-real-path test-web-real-path test-js format format-check python-format-check lint lint-js lint-py architecture \
 	quality-waivers maintainability-budgets ui-quality-budgets security-hygiene test-env-policy code-quality-report typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
@@ -38,6 +38,7 @@ help:
 	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
 	@echo "  test-py-focused — focused backend tests without coverage; pass PYTEST_ARGS=tests/path.py"
 	@echo "  test-py-real-path — marked backend real-path smoke tests without coverage"
+	@echo "  test-web-real-path — Playwright browser smoke through Vite proxy to real FastAPI health route"
 	@echo "  quality-waivers — validate expiring machine-readable quality waivers"
 	@echo "  maintainability-budgets — enforce file-size ownership and disposition budgets"
 	@echo "  ui-quality-budgets — enforce UI smoke, visual, and bundle-size budgets"
@@ -132,7 +133,10 @@ test-py-focused:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest $(PYTEST_ARGS) -q --no-cov
 
 test-py-real-path:
-	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/integration/test_real_path_smoke.py -q --no-cov -m integration
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/integration/test_real_path_smoke.py tests/integration/test_real_path_db.py -q --no-cov -m integration
+
+test-web-real-path:
+	$(PNPM) --filter @bim-ai/web test:e2e:real-backend
 
 test-js:
 	$(PNPM) -w turbo test
