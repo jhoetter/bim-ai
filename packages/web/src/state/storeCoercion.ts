@@ -3,6 +3,7 @@ import { coerceCheckpointRetentionLimit } from './backupRetention';
 import { coerceAssetElement } from './coercion/assetElements';
 import { coerceCoordinationElement } from './coercion/coordinationElements';
 import { coerceLinkElement } from './coercion/linkElements';
+import { coerceProjectReferenceElement } from './coercion/projectReferenceElements';
 import { coerceSiteElement } from './coercion/siteElements';
 import {
   coerceLoop as coerceWireLoop,
@@ -1830,112 +1831,11 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
-  if (kind === 'reference_plane') {
-    const rawLevelId = raw.levelId ?? raw.level_id;
-    if (rawLevelId != null && String(rawLevelId).length > 0) {
-      // KRN-05: project-scope reference plane (level-anchored).
-      const start = (raw.startMm ?? raw.start_mm ?? raw.start) as
-        | Record<string, unknown>
-        | undefined;
-      const end = (raw.endMm ?? raw.end_mm ?? raw.end) as Record<string, unknown> | undefined;
-      const out: Record<string, unknown> = {
-        kind: 'reference_plane',
-        id,
-        levelId: String(rawLevelId),
-        startMm: {
-          xMm: Number(start?.xMm ?? start?.x_mm ?? 0),
-          yMm: Number(start?.yMm ?? start?.y_mm ?? 0),
-        },
-        endMm: {
-          xMm: Number(end?.xMm ?? end?.x_mm ?? 0),
-          yMm: Number(end?.yMm ?? end?.y_mm ?? 0),
-        },
-      };
-      if (typeof raw.name === 'string' && raw.name) out.name = raw.name;
-      if (raw.isWorkPlane != null || raw.is_work_plane != null) {
-        out.isWorkPlane = Boolean(raw.isWorkPlane ?? raw.is_work_plane);
-      }
-      if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
-      return out as Element;
-    }
-    return {
-      kind: 'reference_plane',
-      id,
-      name,
-      familyEditorId: String(raw.familyEditorId ?? raw.family_editor_id ?? ''),
-      isVertical: Boolean(raw.isVertical ?? raw.is_vertical),
-      offsetMm: Number(raw.offsetMm ?? raw.offset_mm ?? 0),
-      ...(raw.isSymmetryRef != null || raw.is_symmetry_ref != null
-        ? { isSymmetryRef: Boolean(raw.isSymmetryRef ?? raw.is_symmetry_ref) }
-        : {}),
-    };
-  }
-
-  if (kind === 'property_line') {
-    const start = (raw.startMm ?? raw.start_mm ?? raw.start) as Record<string, unknown> | undefined;
-    const end = (raw.endMm ?? raw.end_mm ?? raw.end) as Record<string, unknown> | undefined;
-    const cls = raw.classification;
-    const validCls =
-      cls === 'street' || cls === 'rear' || cls === 'side' || cls === 'other' ? cls : undefined;
-    const out: Record<string, unknown> = {
-      kind: 'property_line',
-      id,
-      startMm: {
-        xMm: Number(start?.xMm ?? start?.x_mm ?? 0),
-        yMm: Number(start?.yMm ?? start?.y_mm ?? 0),
-      },
-      endMm: {
-        xMm: Number(end?.xMm ?? end?.x_mm ?? 0),
-        yMm: Number(end?.yMm ?? end?.y_mm ?? 0),
-      },
-    };
-    if (typeof raw.name === 'string' && raw.name) out.name = raw.name;
-    if (raw.setbackMm != null || raw.setback_mm != null) {
-      out.setbackMm = Number(raw.setbackMm ?? raw.setback_mm);
-    }
-    if (validCls) out.classification = validCls;
-    if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
-    return out as Element;
-  }
-
-  if (kind === 'selection_set') {
-    const rulesRaw = raw.filterRules ?? raw.filter_rules ?? [];
-    const filterRules = Array.isArray(rulesRaw)
-      ? rulesRaw
-          .filter((r): r is Record<string, unknown> => r != null && typeof r === 'object')
-          .map((r) => ({
-            field: (['category', 'level', 'typeName'].includes(r.field as string)
-              ? r.field
-              : 'category') as 'category' | 'level' | 'typeName',
-            operator: (r.operator === 'contains' ? 'contains' : 'equals') as 'equals' | 'contains',
-            value: String(r.value ?? ''),
-          }))
-      : [];
-    return { kind: 'selection_set', id, name, filterRules };
-  }
+  const projectReferenceElement = coerceProjectReferenceElement(id, name, raw as WireRecord);
+  if (projectReferenceElement) return projectReferenceElement;
 
   const linkElement = coerceLinkElement(id, name, raw as WireRecord);
   if (linkElement) return linkElement;
-
-  if (kind === 'project_base_point') {
-    return {
-      kind: 'project_base_point',
-      id,
-      positionMm: coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
-      angleToTrueNorthDeg: Number(raw.angleToTrueNorthDeg ?? raw.angle_to_true_north_deg ?? 0),
-      clipped: Boolean(raw.clipped ?? false),
-    };
-  }
-
-  if (kind === 'survey_point') {
-    return {
-      kind: 'survey_point',
-      id,
-      positionMm: coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
-      sharedElevationMm: Number(raw.sharedElevationMm ?? raw.shared_elevation_mm ?? 0),
-      clipped: Boolean(raw.clipped ?? false),
-    };
-  }
 
   const assetElement = coerceAssetElement(id, name, raw as WireRecord);
   if (assetElement) return assetElement;

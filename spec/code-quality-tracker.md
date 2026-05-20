@@ -642,6 +642,10 @@ more defensive `as any` logic.
   `packages/web/src/state/coercion/coordinationElements.ts`, preserving
   snake_case result/link-chain compatibility while removing another domain from
   `storeCoercion.ts`.
+- 2026-05-20: extracted project-reference wire coercion into
+  `packages/web/src/state/coercion/projectReferenceElements.ts` for project and
+  family reference planes, property lines, selection sets, project base points,
+  and survey points.
 - 2026-05-20: added focused site coercion coverage in
   `packages/web/src/state/coercion/siteElements.test.ts` for camelCase input,
   snake_case input, invalid numeric defaulting, toposolid height/grid data,
@@ -657,8 +661,12 @@ more defensive `as any` logic.
 - 2026-05-20: added focused coordination coercion coverage in
   `packages/web/src/state/coercion/coordinationElements.test.ts` for clash-test
   id lists, result defaults, and link-chain snake_case input.
+- 2026-05-20: added focused project-reference coercion coverage in
+  `packages/web/src/state/coercion/projectReferenceElements.test.ts` for
+  reference planes, property lines, selection rules, and shared coordinate
+  points across snake_case/camelCase payloads.
 - 2026-05-20: `packages/web/src/state/storeCoercion.ts` reduced from `2,290`
-  to `1,954` lines while keeping `coerceElement` as the stable public entry
+  to `1,854` lines while keeping `coerceElement` as the stable public entry
   point.
 - 2026-05-20: verification passed:
   `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/siteElements.test.ts src/state/store.test.ts`,
