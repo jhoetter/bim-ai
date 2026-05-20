@@ -216,7 +216,7 @@ Largest current source files observed:
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                             |
 | CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
 | CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
-| CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
+| CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
 | CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
 | CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
 | CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
@@ -1064,7 +1064,7 @@ Start with parity checks before full generation:
 ## CQ-2026-15 - Enforce Feature and Layer Dependency Boundaries
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: ESLint, architecture scripts, package boundaries
 
 ### Problem
@@ -1110,9 +1110,11 @@ can import across layers in ways that make extraction harder.
 - 2026-05-20: `scripts/check-architecture.mjs` now consumes those rules and
   fails `pnpm architecture` when a new source import crosses a disallowed
   feature/layer boundary without an explicit allowed exception.
-- 2026-05-20: this remains Partial until deeper workspace/plan shell
-  exceptions are migrated into shared modules and backend route/domain
-  boundaries are broadened beyond the first blocking route imports.
+- 2026-05-20: boundary coverage now includes command palette to rendering
+  entrypoints, viewport to plan entrypoints, inspector to app/rendering
+  entrypoints, pure plan helpers to UI/state, backend API descriptors to route
+  modules, and backend domain helpers to both route and API descriptor modules.
+  `pnpm architecture` is the blocking gate for these rules.
 
 ---
 

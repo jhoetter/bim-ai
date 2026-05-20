@@ -18,12 +18,40 @@
       "reason": "Command palette metadata should not reach into workspace shell internals."
     },
     {
+      "id": "web-cmd-palette-no-rendering-entrypoints",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/cmdPalette/**"],
+      "disallow": ["packages/web/src/plan/PlanCanvas.tsx", "packages/web/src/Viewport.tsx"],
+      "allow": [],
+      "reason": "Command palette metadata must stay declarative and not import rendering entrypoints."
+    },
+    {
       "id": "web-viewport-no-workspace-shell",
       "owner": "CQ-2026-15",
       "source": ["packages/web/src/viewport/**"],
       "disallow": ["packages/web/src/workspace/**"],
       "allow": [],
       "reason": "3D rendering modules should stay independent from workspace chrome."
+    },
+    {
+      "id": "web-viewport-no-plan-entrypoint",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/viewport/**"],
+      "disallow": ["packages/web/src/plan/PlanCanvas.tsx"],
+      "allow": [],
+      "reason": "3D viewport helpers may share geometry contracts, not import the plan canvas entrypoint."
+    },
+    {
+      "id": "web-inspector-no-rendering-entrypoints",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/workspace/inspector/**"],
+      "disallow": [
+        "packages/web/src/plan/PlanCanvas.tsx",
+        "packages/web/src/Viewport.tsx",
+        "packages/web/src/workspace/Workspace.tsx"
+      ],
+      "allow": [],
+      "reason": "Inspector renderers should stay property/editor focused and not import app or rendering entrypoints."
     },
     {
       "id": "web-pure-plan-helpers-no-ui-shell",
@@ -48,6 +76,14 @@
       "disallow": ["app/bim_ai/routes_api.py"],
       "allow": [],
       "reason": "Backend command/domain helpers must stay independent from route handlers."
+    },
+    {
+      "id": "backend-domain-no-api-descriptor-import",
+      "owner": "CQ-2026-15",
+      "source": ["app/bim_ai/cmd/**", "app/bim_ai/site/**", "app/bim_ai/skb/**"],
+      "disallow": ["app/bim_ai/api/**"],
+      "allow": [],
+      "reason": "Backend command/domain helpers should not depend on API descriptor registry modules."
     }
   ]
 }
