@@ -391,6 +391,29 @@ function frontendGateSummary(scripts) {
   };
 }
 
+function contractParitySummary(scripts) {
+  const result = spawnSync('node', ['scripts/check-contract-parity.mjs', '--json'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  let report = null;
+  try {
+    report = result.stdout ? JSON.parse(result.stdout) : null;
+  } catch {
+    report = null;
+  }
+  return {
+    configured: Boolean(scripts.root['contract:parity']),
+    ok: result.status === 0 && report?.ok === true,
+    apiDescriptorCount: report?.apiDescriptorCount ?? null,
+    cliToolIdCount: report?.cliToolIdCount ?? null,
+    baselineMissingDescriptorCount: report?.baselineMissingDescriptorCount ?? null,
+    missingDescriptorCount: report?.missingDescriptors?.length ?? null,
+    staleBaselineCount: report?.staleBaseline?.length ?? null,
+    unusedBaselineCount: report?.unusedBaseline?.length ?? null,
+  };
+}
+
 function securityGateSummary(scripts) {
   const ci = existsSync(join(REPO_ROOT, '.github/workflows/ci.yml'))
     ? readText('.github/workflows/ci.yml')
@@ -441,6 +464,7 @@ function computeGrade({
   scripts,
   securityGates,
   frontendTestEnvironments,
+  contractParity,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -476,6 +500,9 @@ function computeGrade({
   }
   if (!frontendTestEnvironments.policyScript || !frontendTestEnvironments.strictIncludesPolicy) {
     blockersToNextGrade.push('frontend jsdom/browser test environment policy is not fully wired');
+  }
+  if (!contractParity.configured || !contractParity.ok) {
+    blockersToNextGrade.push('contract parity gate is not green or not wired');
   }
   if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
@@ -545,6 +572,7 @@ function buildReport() {
   const tracker = trackerRows();
   const backendCoverage = backendCoverageSummary();
   const frontendGates = frontendGateSummary(scripts);
+  const contractParity = contractParitySummary(scripts);
   const securityGates = securityGateSummary(scripts);
   const frontendTestEnvironments = frontendTestEnvironmentSummary(scripts);
   const grade = computeGrade({
@@ -557,6 +585,7 @@ function buildReport() {
     scripts,
     securityGates,
     frontendTestEnvironments,
+    contractParity,
   });
 
   return {
@@ -583,10 +612,12 @@ function buildReport() {
         qualityReport: scripts.root['quality:report'] ?? null,
         qualityWaivers: scripts.root['quality:waivers'] ?? null,
         maintainabilityBudgets: scripts.root['maintainability:budgets'] ?? null,
+        contractParity: scripts.root['contract:parity'] ?? null,
         securityHygiene: scripts.root['security:hygiene'] ?? null,
         architecture: scripts.root.architecture ?? null,
       },
       make: scripts.make,
+      contractParity,
       security: securityGates,
       frontendTestEnvironments,
     },
@@ -687,6 +718,9 @@ function renderMarkdown(report) {
   );
   lines.push(
     `| Maintainability budgets | ${report.gates.rootScripts.maintainabilityBudgets ? 'configured' : 'missing'} | make: ${report.gates.make.maintainabilityBudgets ? 'yes' : 'no'} |`,
+  );
+  lines.push(
+    `| Contract parity | ${report.gates.contractParity.ok ? 'pass' : 'fail'} | API descriptors: ${report.gates.contractParity.apiDescriptorCount ?? 'n/a'}, CLI tool IDs: ${report.gates.contractParity.cliToolIdCount ?? 'n/a'}, tracked gaps: ${report.gates.contractParity.baselineMissingDescriptorCount ?? 'n/a'} |`,
   );
   lines.push(
     `| Security hygiene | ${report.gates.security.hygieneScript ? 'configured' : 'missing'} | strict: ${report.gates.security.strictIncludesHygiene ? 'yes' : 'no'}, CI: ${report.gates.security.ciRunsHygiene ? 'yes' : 'no'} |`,
