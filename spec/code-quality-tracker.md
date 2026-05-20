@@ -389,6 +389,11 @@ CI chooses one canonical quality gate.
 - 2026-05-20: finished the remaining test-side explicit-`any` cleanup;
   `pnpm js-lint:budget` is now ratcheted to `76` errors / `30` warnings /
   `10` files, with `@typescript-eslint/no-explicit-any` down to `71`.
+- 2026-05-20: removed small non-test type escapes in plan keyboard aux,
+  viewport scene effects, and inspector readouts; `pnpm js-lint:budget` is now
+  ratcheted to `63` errors / `30` warnings / `9` files, with
+  `@typescript-eslint/no-explicit-any` down to `58`, and the non-test
+  type-escape budget is down to `2` files / `58` matches.
 
 ---
 

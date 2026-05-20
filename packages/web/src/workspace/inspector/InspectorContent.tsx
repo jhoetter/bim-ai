@@ -36,6 +36,27 @@ import { AnnotationTagInspectorSection } from './annotationTagInspectorSections'
 
 const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
 const DEFAULT_MASKING_REGION_FILL = `#${'ffffff'}`;
+
+type StairEditRunDraft = {
+  runIndex: number;
+  riserCount?: number;
+  runWidthMm?: number;
+};
+type StairEditInspectorElement = Extract<Element, { kind: 'stair' }> & {
+  editStairActive?: boolean;
+  runs?: StairEditRunDraft[];
+  riserCount?: number;
+  runWidthMm?: number;
+};
+type ColumnInspectorElement = Extract<Element, { kind: 'column' }> & {
+  isNonStructural?: boolean;
+};
+type CuttableInspectorElement = Element & {
+  cutBy?: string[];
+};
+type ShaftInspectorElement = Extract<Element, { kind: 'shaft' }> & {
+  cutFloorIds?: string[];
+};
 import { SpotAnnotationInspectorSection } from './spotAnnotationInspectorSections';
 import { InteriorElevationMarkerInspectorSection } from './interiorElevationMarkerInspectorSection';
 import { ModelingActionInspectorSection } from './modelingActionInspectorSections';
@@ -748,18 +769,18 @@ export function InspectorPropertiesFor(
           ) : null}
           {/* §8.6.4 stair edit mode panel */}
           <div style={{ marginTop: 8, borderTop: '1px solid var(--color-border)', paddingTop: 8 }}>
-            {(el as any).editStairActive ? (
+            {(el as StairEditInspectorElement).editStairActive ? (
               <>
                 <strong data-testid="inspector-stair-edit-mode-active">Edit Mode</strong>
                 {(
-                  (el as any).runs ?? [
+                  (el as StairEditInspectorElement).runs ?? [
                     {
                       runIndex: 0,
-                      riserCount: (el as any).riserCount ?? 10,
-                      runWidthMm: (el as any).runWidthMm ?? 1200,
+                      riserCount: (el as StairEditInspectorElement).riserCount ?? 10,
+                      runWidthMm: (el as StairEditInspectorElement).runWidthMm ?? 1200,
                     },
                   ]
-                ).map((run: any) => (
+                ).map((run: StairEditRunDraft) => (
                   <div
                     key={run.runIndex}
                     data-testid={`inspector-stair-run-${run.runIndex}`}
@@ -827,7 +848,7 @@ export function InspectorPropertiesFor(
           <StairAssemblySection
             stairId={el.id}
             elementsById={elementsById}
-            onSemanticCommand={onDispatchCommand as any}
+            onSemanticCommand={onDispatchCommand}
           />
         </div>
       );
@@ -993,7 +1014,7 @@ export function InspectorPropertiesFor(
             <input
               data-testid="inspector-column-non-structural"
               type="checkbox"
-              checked={(el as any).isNonStructural ?? false}
+              checked={(el as ColumnInspectorElement).isNonStructural ?? false}
               onChange={() =>
                 onSemanticCommand?.({ type: 'toggleColumnStructural', columnId: el.id })
               }
@@ -1153,16 +1174,16 @@ export function InspectorPropertiesFor(
             </div>
           </div>
           {/* Cut geometry readout */}
-          {(el as any).cutBy?.length > 0 && (
+          {((el as CuttableInspectorElement).cutBy?.length ?? 0) > 0 && (
             <details style={{ marginTop: 8 }}>
               <summary
                 data-testid="inspector-cut-by-summary"
                 style={{ cursor: 'pointer', fontSize: 12 }}
               >
-                Cut By ({(el as any).cutBy.length})
+                Cut By ({(el as CuttableInspectorElement).cutBy?.length ?? 0})
               </summary>
               <div style={{ marginTop: 4 }}>
-                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                {((el as CuttableInspectorElement).cutBy ?? []).map((cutterId, i) => (
                   <div
                     key={cutterId}
                     style={{
@@ -2540,7 +2561,7 @@ export function InspectorPropertiesFor(
             Apply Shaft Cut
           </button>
           <span data-testid="inspector-shaft-cut-floor-count" className="text-xs text-muted">
-            Cuts {((el as any).cutFloorIds ?? []).length} floor(s)
+            Cuts {((el as ShaftInspectorElement).cutFloorIds ?? []).length} floor(s)
           </span>
           <ShaftSideWallsButton shaft={el} onDispatchCommand={onDispatchCommand} />
         </div>

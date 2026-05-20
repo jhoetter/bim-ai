@@ -13,7 +13,7 @@ type DoorElem = Extract<Element, { kind: 'door' }>;
 type WindowElem = Extract<Element, { kind: 'window' }>;
 type WallOpeningElem = Extract<Element, { kind: 'wall_opening' }>;
 
-export function useViewportSceneEffects(args: any): void {
+export function useViewportSceneEffects(args: Record<string, unknown>): void {
   const {
     activeLensMode,
     activeLevelId,

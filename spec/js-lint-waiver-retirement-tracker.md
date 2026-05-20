@@ -39,16 +39,16 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 76             |
+| Errors         | 63             |
 | Warnings       | 30             |
-| Affected files | 10             |
+| Affected files | 9              |
 | Fatal findings | 0              |
 
 Rule budgets:
 
 | Rule                                 | Current budget |
 | ------------------------------------ | -------------- |
-| `@typescript-eslint/no-explicit-any` | 71             |
+| `@typescript-eslint/no-explicit-any` | 58             |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
@@ -119,3 +119,9 @@ Rule budgets:
   lint budget moved to `76` errors / `30` warnings / `10` files;
   `@typescript-eslint/no-explicit-any` moved from `99` to `71`, matching the
   non-test type-escape budget surface.
+- 2026-05-20: removed small non-test type escapes in plan keyboard aux handlers,
+  viewport scene effects, and inspector stair/column/cut readouts. The lint
+  budget moved to `63` errors / `30` warnings / `9` files;
+  `@typescript-eslint/no-explicit-any` moved from `71` to `58`, and the
+  machine-readable non-test type-escape budget moved to `2` files / `58`
+  matches.

@@ -4,7 +4,7 @@ import type { Element, FamilyDefinition } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 
-export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, any>) {
+export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown>) {
   const {
     activateElevationView,
     activatePlanView,
