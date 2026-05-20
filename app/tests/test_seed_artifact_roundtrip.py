@@ -14,6 +14,8 @@ from bim_ai.elements import LevelElem, ProjectBasePointElem
 from bim_ai.room_access_integrity import check_room_access_integrity
 from scripts import seed
 from scripts.seed import (
+    EMPTY_SEED_MODEL_ID,
+    EMPTY_SEED_MODEL_SLUG,
     SEED_PROJECT_ID,
     _load_artifact,
     _materialize,
@@ -161,6 +163,64 @@ def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> Non
     assert calls.index(("clear_project", SEED_PROJECT_ID)) < calls.index(
         ("delete_model", _load_artifact(artifact_dir).model_id)
     )
+
+
+def test_seed_without_artifacts_creates_empty_dev_model(monkeypatch, tmp_path: Path) -> None:
+    calls: list[tuple[str, UUID]] = []
+    added: list[object] = []
+
+    async def init_db_schema_stub() -> None:
+        calls.append(("init", SEED_PROJECT_ID))
+
+    async def clear_legacy_seed_stub(session) -> int:
+        calls.append(("clear_legacy", SEED_PROJECT_ID))
+        return 0
+
+    async def clear_project_stub(session, project_id: UUID) -> int:
+        calls.append(("clear_project", project_id))
+        return 0
+
+    async def purge_disposable_projects_stub(session) -> int:
+        calls.append(("purge_disposable", SEED_PROJECT_ID))
+        return 0
+
+    async def delete_model_records_stub(session, model_ids) -> None:
+        calls.append(("delete_model", model_ids[0]))
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, model, record_id):
+            return None
+
+        def add(self, row) -> None:
+            added.append(row)
+
+        async def commit(self) -> None:
+            calls.append(("commit", SEED_PROJECT_ID))
+
+    monkeypatch.setattr(seed, "init_db_schema", init_db_schema_stub)
+    monkeypatch.setattr(seed, "_clear_legacy_seed", clear_legacy_seed_stub)
+    monkeypatch.setattr(seed, "_clear_project", clear_project_stub)
+    monkeypatch.setattr(seed, "_purge_disposable_projects", purge_disposable_projects_stub)
+    monkeypatch.setattr(seed, "_delete_model_records", delete_model_records_stub)
+    monkeypatch.setattr(seed, "SessionMaker", lambda: FakeSession())
+
+    asyncio.run(seed_async(name=None, root=tmp_path, clear_only=False))
+
+    model_rows = [row for row in added if getattr(row, "slug", None) == EMPTY_SEED_MODEL_SLUG]
+    assert len(model_rows) == 1
+    assert model_rows[0].id == EMPTY_SEED_MODEL_ID
+    assert model_rows[0].project_id == SEED_PROJECT_ID
+    assert model_rows[0].revision == 1
+    assert "internal_origin" in model_rows[0].document["elements"]
+    assert "elevation-north" in model_rows[0].document["elements"]
+    assert ("delete_model", EMPTY_SEED_MODEL_ID) in calls
+    assert calls[-1] == ("commit", SEED_PROJECT_ID)
 
 
 def test_seed_purge_removes_disposable_local_evidence_projects(monkeypatch) -> None:

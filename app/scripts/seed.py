@@ -24,7 +24,13 @@ from sqlalchemy import delete, select
 
 from bim_ai.db import SessionMaker, init_db_schema
 from bim_ai.document import Document
-from bim_ai.engine import try_commit_bundle
+from bim_ai.engine import (
+    ensure_cardinal_elevation_views,
+    ensure_internal_origin,
+    ensure_seed_hatches,
+    ensure_sun_settings,
+    try_commit_bundle,
+)
 from bim_ai.seed_library import (
     SEED_PROJECT_ID,
     SEED_PROJECT_SLUG,
@@ -47,6 +53,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_ARTIFACT_ROOT = REPO_ROOT / "seed-artifacts"
 LEGACY_DEMO_PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:project:demo")
 LEGACY_DEMO_MODEL_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:model:demo-main")
+EMPTY_SEED_MODEL_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:seed-model:empty")
+EMPTY_SEED_MODEL_SLUG = "empty"
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 
 
@@ -156,6 +164,15 @@ def document_wire(doc: Document) -> dict[str, Any]:
     }
 
 
+def _empty_seed_document() -> Document:
+    doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    ensure_internal_origin(doc)
+    ensure_cardinal_elevation_views(doc)
+    ensure_sun_settings(doc)
+    ensure_seed_hatches(doc)
+    return doc
+
+
 def _materialize(artifact: SeedArtifact) -> tuple[Document, dict[str, Any]]:
     commands = _bundle_commands(artifact.bundle_path)
     empty_doc = Document(revision=0, elements={})
@@ -218,6 +235,17 @@ async def _purge_disposable_projects(session: Any) -> int:
     return removed
 
 
+async def _ensure_seed_project(session: Any) -> None:
+    if await session.get(ProjectRecord, SEED_PROJECT_ID) is None:
+        session.add(
+            ProjectRecord(
+                id=SEED_PROJECT_ID,
+                slug=SEED_PROJECT_SLUG,
+                title=SEED_PROJECT_TITLE,
+            )
+        )
+
+
 def _intro_comment(artifact: SeedArtifact, now: datetime) -> CommentRecord | None:
     comment = artifact.manifest.get("entryComment")
     if comment is False:
@@ -263,20 +291,26 @@ async def seed_async(name: str | None, root: Path, clear_only: bool) -> None:
             return
 
         await _clear_project(session, SEED_PROJECT_ID)
+        await _ensure_seed_project(session)
 
         if not materialized:
-            await session.commit()
-            print(f"seed: no seed artifacts found at {root}; seed project is empty")
-            return
-
-        if await session.get(ProjectRecord, SEED_PROJECT_ID) is None:
+            empty_doc = _empty_seed_document()
+            await _delete_model_records(session, [EMPTY_SEED_MODEL_ID])
             session.add(
-                ProjectRecord(
-                    id=SEED_PROJECT_ID,
-                    slug=SEED_PROJECT_SLUG,
-                    title=SEED_PROJECT_TITLE,
+                ModelRecord(
+                    id=EMPTY_SEED_MODEL_ID,
+                    project_id=SEED_PROJECT_ID,
+                    slug=EMPTY_SEED_MODEL_SLUG,
+                    revision=empty_doc.revision,
+                    document=document_wire(empty_doc),
                 )
             )
+            await session.commit()
+            print(
+                f"seed: no seed artifacts found at {root}; "
+                f"loaded empty seed model {EMPTY_SEED_MODEL_ID}"
+            )
+            return
 
         now = datetime.now(UTC)
         seeded: list[str] = []

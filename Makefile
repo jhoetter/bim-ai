@@ -32,7 +32,7 @@ help:
 	@echo "bim-ai Makefile"
 	@echo "  install   — pnpm + Python venv"
 	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
-	@echo "  seed      — load seed-artifacts/*; pass name=<seed-name> to load one"
+	@echo "  seed      — load seed-artifacts/* or an empty dev model; pass name=<seed-name> to load one"
 	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
 	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
