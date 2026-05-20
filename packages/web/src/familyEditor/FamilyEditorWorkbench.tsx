@@ -71,6 +71,10 @@ import {
 } from './FamilyEditorPropertiesPanels';
 
 type Template = AuthoredFamilyTemplate;
+type SizedFamilyExtrusion = FamilyExtrusion & {
+  widthMm?: number;
+  heightMm?: number;
+};
 
 type RefPlane = FamilySketchRefPlane & {
   id: string;
@@ -2172,7 +2176,7 @@ export function FamilyEditorWorkbench({
             borderBottom: '1px solid #444',
           }}
         >
-          <span style={{ fontSize: 11, color: '#aaa' }}>Category:</span>
+          <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>Category:</span>
           <select
             data-testid="family-editor-category-select"
             value={familyCategoryKey}
@@ -3152,14 +3156,15 @@ export function FamilyEditorWorkbench({
             ))}
             {familyWindowFrameForms.map((form, i) => (
               <li key={form.id} data-testid={`family-window-frame-form-${i}`}>
-                Window Frame {i + 1} — {(form as any).widthMm ?? 900}×
-                {(form as any).heightMm ?? 1200}mm, frame={form.frameInnerWidthMm ?? 50}mm
+                Window Frame {i + 1} — {(form as SizedFamilyExtrusion).widthMm ?? 900}×
+                {(form as SizedFamilyExtrusion).heightMm ?? 1200}mm, frame=
+                {form.frameInnerWidthMm ?? 50}mm
               </li>
             ))}
             {familyGlazingForms.map((form, i) => (
               <li key={form.id} data-testid={`family-glazing-form-${i}`}>
-                Glazing Panel {i + 1} — {(form as any).widthMm ?? 800}×
-                {(form as any).heightMm ?? 1100}mm
+                Glazing Panel {i + 1} — {(form as SizedFamilyExtrusion).widthMm ?? 800}×
+                {(form as SizedFamilyExtrusion).heightMm ?? 1100}mm
               </li>
             ))}
           </ul>

@@ -356,6 +356,10 @@ CI chooses one canonical quality gate.
 - 2026-05-20: typed the stack-dimension and section-level datum helpers.
   Targeted ESLint, web typecheck, and focused tests pass; the global web lint
   backlog moved to `233` errors / `158` warnings.
+- 2026-05-20: typed the remaining family editor workbench summary rows and
+  replaced the local category label hex literal with a design token. Targeted
+  ESLint, web typecheck, and the focused family editor workbench test pass; the
+  global web lint backlog moved to `228` errors / `158` warnings.
 
 ---
 
@@ -1069,6 +1073,9 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
 - 2026-05-20: typed the stack-dimension and section-level datum helpers.
   `pnpm quality:report -- --json` now reports `7` frontend hotspot files /
   `79` total matches.
+- 2026-05-20: typed the remaining family editor workbench summary rows.
+  `pnpm quality:report -- --json` now reports `6` frontend hotspot files /
+  `75` total matches.
 
 ---
 
