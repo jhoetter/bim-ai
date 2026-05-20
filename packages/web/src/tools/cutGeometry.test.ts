@@ -10,7 +10,7 @@ describe('reduceCutGeometry — §3.3.4', () => {
   it('transitions to picking-host on first pick', () => {
     const { next } = reduceCutGeometry({ phase: 'idle' }, { kind: 'pick', elementId: 'col1' });
     expect(next.phase).toBe('picking-host');
-    expect((next as any).cutterId).toBe('col1');
+    expect((next as Extract<typeof next, { phase: 'picking-host' }>).cutterId).toBe('col1');
   });
 
   it('emits commitCutGeometry on second pick', () => {

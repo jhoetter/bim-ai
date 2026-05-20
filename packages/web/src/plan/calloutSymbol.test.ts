@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+type CalloutViewFixture = {
+  kind: 'plan_view';
+  planViewSubtype: 'callout';
+  calloutBoundaryMm: { xMm: number; yMm: number; widthMm: number; heightMm: number };
+};
+
 describe('Callout reference symbol — §6.4.1', () => {
   it('callout view has planViewSubtype callout', () => {
-    const view: any = {
+    const view: CalloutViewFixture = {
       kind: 'plan_view',
       planViewSubtype: 'callout',
       calloutBoundaryMm: { xMm: 0, yMm: 0, widthMm: 1000, heightMm: 1000 },

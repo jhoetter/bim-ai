@@ -39,16 +39,16 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 104            |
+| Errors         | 76             |
 | Warnings       | 30             |
-| Affected files | 29             |
+| Affected files | 10             |
 | Fatal findings | 0              |
 
 Rule budgets:
 
 | Rule                                 | Current budget |
 | ------------------------------------ | -------------- |
-| `@typescript-eslint/no-explicit-any` | 99             |
+| `@typescript-eslint/no-explicit-any` | 71             |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
@@ -113,3 +113,9 @@ Rule budgets:
   errors / `30` warnings / `29` files; `@typescript-eslint/no-explicit-any`
   moved from `154` to `99`. Non-test type-escape budgets are unchanged for this
   slice and remain part of JSL-2026-04.
+- 2026-05-20: finished the remaining test-side explicit-`any` cleanup across
+  floor slope, project browser, section level, split view, family/category,
+  callout/opening, stair, terrace, stack dimension, and cut-geometry tests. The
+  lint budget moved to `76` errors / `30` warnings / `10` files;
+  `@typescript-eslint/no-explicit-any` moved from `99` to `71`, matching the
+  non-test type-escape budget surface.

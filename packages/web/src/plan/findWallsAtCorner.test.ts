@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 import { findWallsAtCorner } from './findWallsAtCorner';
 
-const elementsById: any = {
+const elementsById = {
   w1: { id: 'w1', kind: 'wall', start: { xMm: 0, yMm: 0 }, end: { xMm: 5000, yMm: 0 } },
   w2: { id: 'w2', kind: 'wall', start: { xMm: 5000, yMm: 0 }, end: { xMm: 5000, yMm: 3000 } },
   w3: { id: 'w3', kind: 'wall', start: { xMm: 0, yMm: 0 }, end: { xMm: 0, yMm: 3000 } },
   f1: { id: 'f1', kind: 'floor', boundaryMm: [] },
-};
+} as unknown as Record<string, Element>;
 
 describe('findWallsAtCorner — §3.5.5', () => {
   it('finds walls at the origin corner', () => {

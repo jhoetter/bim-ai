@@ -28,7 +28,7 @@ describe('Project browser view templates subtree — §1.6.11', () => {
   });
 
   it('use count calculation filters by viewTemplateId', () => {
-    const elements: any[] = [
+    const elements: Array<{ kind: 'plan_view'; id: string; viewTemplateId: string }> = [
       { kind: 'plan_view', id: 'pv1', viewTemplateId: 'vt1' },
       { kind: 'plan_view', id: 'pv2', viewTemplateId: 'vt1' },
       { kind: 'plan_view', id: 'pv3', viewTemplateId: 'vt2' },

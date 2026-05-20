@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
+import type { Element } from '@bim-ai/core';
 import { ProjectBrowserV3 } from './ProjectBrowser';
 
 afterEach(() => {
   cleanup();
 });
 
-function makeProps(elements: any[] = []) {
+function makeProps(elements: Array<Record<string, unknown>> = []) {
   return {
-    elements,
+    elements: elements as unknown as Element[],
     activeViewId: null as string | null,
     onActivateView: () => {},
     onRenameView: () => {},

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 import { extractLevelData, buildLevelLineSvg } from './sectionLevelLines';
 
-const elementsById: any = {
+const elementsById = {
   l1: { id: 'l1', kind: 'level', name: 'EG', elevationMm: 0 },
   l2: { id: 'l2', kind: 'level', name: 'OG1', elevationMm: 3200 },
   l3: { id: 'l3', kind: 'level', name: 'OG2', elevationMm: 6400 },
   w1: { id: 'w1', kind: 'wall', levelId: 'l1' },
-};
+} as unknown as Record<string, Element>;
 
 describe('sectionLevelLines — §6.1.6', () => {
   it('extracts levels from elementsById sorted by elevation', () => {
@@ -22,7 +23,9 @@ describe('sectionLevelLines — §6.1.6', () => {
   });
 
   it('returns empty array for no levels', () => {
-    const levels = extractLevelData({ w1: { id: 'w1', kind: 'wall' } as any });
+    const levels = extractLevelData({
+      w1: { id: 'w1', kind: 'wall' } as unknown as Element,
+    });
     expect(levels).toHaveLength(0);
   });
 

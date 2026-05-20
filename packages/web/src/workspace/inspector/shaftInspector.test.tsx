@@ -57,16 +57,14 @@ describe('shaft inspector — §2.5.1', () => {
 
   it('shows cut floor count', () => {
     const shaftWithCuts = { ...SHAFT, cutFloorIds: ['floor-1', 'floor-2'] };
-    const { getByTestId } = render(
-      InspectorPropertiesFor(shaftWithCuts as any, t, { elementsById }),
-    );
+    const { getByTestId } = render(InspectorPropertiesFor(shaftWithCuts, t, { elementsById }));
     const span = getByTestId('inspector-shaft-cut-floor-count');
     expect(span.textContent).toContain('2');
   });
 
   it('shows 0 cut floors when cutFloorIds is empty', () => {
     const shaftNoCuts = { ...SHAFT, cutFloorIds: undefined };
-    const { getByTestId } = render(InspectorPropertiesFor(shaftNoCuts as any, t, { elementsById }));
+    const { getByTestId } = render(InspectorPropertiesFor(shaftNoCuts, t, { elementsById }));
     const span = getByTestId('inspector-shaft-cut-floor-count');
     expect(span.textContent).toContain('0');
   });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+type QuickAccessStateFixture = { quickAccessItems: string[] };
+
 describe('Quick access toolbar — §1.6.3', () => {
   it('AddToQuickAccessCmd has correct shape', () => {
     const cmd = { type: 'addToQuickAccess' as const, commandId: 'view.help-search' };
@@ -14,7 +16,7 @@ describe('Quick access toolbar — §1.6.3', () => {
   });
 
   it('quickAccessItems defaults to empty array', () => {
-    const state: any = { quickAccessItems: [] };
+    const state: QuickAccessStateFixture = { quickAccessItems: [] };
     expect(state.quickAccessItems.length).toBe(0);
   });
 

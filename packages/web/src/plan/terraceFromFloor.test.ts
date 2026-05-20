@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { FloorElem } from '@bim-ai/core';
 import { buildTerraceRailing } from './terraceFromFloor';
 
 describe('terraceFromFloor — §2.9.1', () => {
-  const floor: any = {
+  const floor = {
     id: 'f1',
     kind: 'floor',
     levelId: 'L1',
@@ -13,7 +14,7 @@ describe('terraceFromFloor — §2.9.1', () => {
       { xMm: 0, yMm: 4000 },
     ],
     thicknessMm: 200,
-  };
+  } as unknown as FloorElem;
 
   it('returns null for floor with no boundary', () => {
     expect(buildTerraceRailing({ ...floor, boundaryMm: [] }, 1100)).toBeNull();

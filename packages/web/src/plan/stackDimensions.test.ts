@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 import { stackDimensions } from './stackDimensions';
 
-function makeDim(id: string, isVertical: boolean, offsetMm: number): any {
-  return { kind: 'permanent_dimension', id, isVertical, offsetMm };
+function makeDim(
+  id: string,
+  isVertical: boolean,
+  offsetMm: number,
+): Extract<Element, { kind: 'permanent_dimension' }> {
+  return { kind: 'permanent_dimension', id, isVertical, offsetMm } as unknown as Extract<
+    Element,
+    { kind: 'permanent_dimension' }
+  >;
 }
 
 describe('stackDimensions — §4.2.6', () => {

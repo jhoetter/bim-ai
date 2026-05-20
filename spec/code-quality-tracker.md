@@ -386,6 +386,9 @@ CI chooses one canonical quality gate.
 - 2026-05-20: typed fixture-only `any` usage across focused frontend tests;
   `pnpm js-lint:budget` is now ratcheted to `104` errors / `30` warnings /
   `29` files, with `@typescript-eslint/no-explicit-any` down to `99`.
+- 2026-05-20: finished the remaining test-side explicit-`any` cleanup;
+  `pnpm js-lint:budget` is now ratcheted to `76` errors / `30` warnings /
+  `10` files, with `@typescript-eslint/no-explicit-any` down to `71`.
 
 ---
 

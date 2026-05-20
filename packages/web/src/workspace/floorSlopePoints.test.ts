@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { useBimStore } from '../state/store';
-import type { FloorSlopePoint } from '@bim-ai/core';
+import type { FloorElem, FloorSlopePoint } from '@bim-ai/core';
 
 type FloorElemPartial = {
   id: string;
@@ -82,9 +82,9 @@ beforeEach(() => {
 describe('Floor slope points — §3.4.2', () => {
   it('addFloorSlopePoint adds a point to the floor', () => {
     simulateAddFloorSlopePoint('f1', { id: 'sp1', xMm: 1000, yMm: 2000, elevationOffsetMm: -50 });
-    const floor = useBimStore.getState().elementsById['f1'] as any;
+    const floor = useBimStore.getState().elementsById['f1'] as FloorElemPartial;
     expect(floor.slopePoints).toHaveLength(1);
-    expect(floor.slopePoints[0].id).toBe('sp1');
+    expect(floor.slopePoints?.[0]?.id).toBe('sp1');
   });
 
   it('removeFloorSlopePoint removes by id', () => {
@@ -101,7 +101,7 @@ describe('Floor slope points — §3.4.2', () => {
       },
     });
     simulateRemoveFloorSlopePoint('f1', 'sp1');
-    const floor = useBimStore.getState().elementsById['f1'] as any;
+    const floor = useBimStore.getState().elementsById['f1'] as FloorElemPartial;
     expect(floor.slopePoints).toHaveLength(0);
   });
 
@@ -119,18 +119,18 @@ describe('Floor slope points — §3.4.2', () => {
       },
     });
     simulateUpdateFloorSlopePoint('f1', 'sp1', -100);
-    const floor = useBimStore.getState().elementsById['f1'] as any;
-    expect(floor.slopePoints[0].elevationOffsetMm).toBe(-100);
+    const floor = useBimStore.getState().elementsById['f1'] as FloorElemPartial;
+    expect(floor.slopePoints?.[0]?.elevationOffsetMm).toBe(-100);
   });
 
   it('floor starts with no slopePoints', () => {
-    const floor = useBimStore.getState().elementsById['f1'] as any;
+    const floor = useBimStore.getState().elementsById['f1'] as FloorElemPartial;
     expect(floor.slopePoints ?? []).toHaveLength(0);
   });
 
   it('floorSlopePointsPlanThree returns null for floor with no points', async () => {
     const { floorSlopePointsPlanThree } = await import('../plan/floorSlopePlanThree');
-    const floor: any = { id: 'f1', kind: 'floor', slopePoints: [] };
+    const floor = { id: 'f1', kind: 'floor', slopePoints: [] } as unknown as FloorElem;
     expect(floorSlopePointsPlanThree(floor)).toBeNull();
   });
 });

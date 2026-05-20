@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 import { getStairComponents } from './stairComponentList';
 
-const elementsById: any = {
+const elementsById = {
   s1: { id: 's1', kind: 'stair', levelId: 'L1' },
   sr1: {
     id: 'sr1',
@@ -38,7 +39,7 @@ const elementsById: any = {
     startMm: { xMm: 0, yMm: 0 },
     endMm: { xMm: 0, yMm: 1500 },
   },
-};
+} as unknown as Record<string, Element>;
 
 describe('getStairComponents — §8.6.2', () => {
   it('returns runs belonging to stairId', () => {

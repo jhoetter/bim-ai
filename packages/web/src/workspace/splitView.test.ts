@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+type SplitViewStateFixture = { splitViewEnabled: boolean };
+
 describe('Split plan/3D view — §1.6.12', () => {
   it('ToggleSplitViewCmd has correct type', () => {
     const cmd = { type: 'toggleSplitView' as const };
@@ -7,12 +9,12 @@ describe('Split plan/3D view — §1.6.12', () => {
   });
 
   it('splitViewEnabled defaults to false', () => {
-    const state: any = { splitViewEnabled: false };
+    const state: SplitViewStateFixture = { splitViewEnabled: false };
     expect(state.splitViewEnabled).toBe(false);
   });
 
   it('toggle flips splitViewEnabled', () => {
-    const state: any = { splitViewEnabled: false };
+    const state: SplitViewStateFixture = { splitViewEnabled: false };
     const next = !state.splitViewEnabled;
     expect(next).toBe(true);
   });

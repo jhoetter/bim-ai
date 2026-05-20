@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+type FamilyOpeningCutFixture = {
+  kind: 'family_opening_cut';
+  id: string;
+  familyId: string;
+  widthMm: number;
+  heightMm: number;
+  sillOffsetMm: number;
+};
+
 describe('FamilyOpeningCut — §15.1.3', () => {
   it('SetFamilyOpeningCutCmd has correct shape', () => {
     const cmd = {
@@ -21,7 +30,7 @@ describe('FamilyOpeningCut — §15.1.3', () => {
   });
 
   it('family_opening_cut element has required fields', () => {
-    const el: any = {
+    const el: FamilyOpeningCutFixture = {
       kind: 'family_opening_cut',
       id: 'oc-01',
       familyId: 'fam-01',

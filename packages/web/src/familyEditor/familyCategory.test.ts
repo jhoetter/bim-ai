@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { FAMILY_CATEGORIES } from './familyCategories';
 
+type FamilyDefinitionFixture = { kind: 'family_definition'; id: string; categoryKey?: string };
+
 describe('Family category assignment — §15.1.2', () => {
   it('FAMILY_CATEGORIES has expected entries', () => {
     const keys = FAMILY_CATEGORIES.map((c) => c.key);
@@ -17,7 +19,7 @@ describe('Family category assignment — §15.1.2', () => {
   });
 
   it('categoryKey defaults to undefined (uncategorized)', () => {
-    const el: any = { kind: 'family_definition', id: 'fam-01' };
+    const el: FamilyDefinitionFixture = { kind: 'family_definition', id: 'fam-01' };
     expect(el.categoryKey).toBeUndefined();
   });
 

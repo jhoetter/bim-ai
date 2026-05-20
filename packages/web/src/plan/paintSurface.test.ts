@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+type PaintableFixture = { kind: string; id: string; faceOverrides?: Record<string, string> };
+
 describe('PaintFace / UnpaintFace — §3.3.7', () => {
   it('PaintFaceCmd has correct shape', () => {
     const cmd = {
@@ -32,7 +34,7 @@ describe('PaintFace / UnpaintFace — §3.3.7', () => {
   });
 
   it('faceOverrides is optional — undefined means no overrides', () => {
-    const el: any = { kind: 'wall', id: 'w1' };
+    const el: PaintableFixture = { kind: 'wall', id: 'w1' };
     expect(el.faceOverrides ?? {}).toEqual({});
   });
 });

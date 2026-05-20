@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+type FloorFixture = {
+  id: string;
+  kind: 'floor';
+  thicknessMm: number;
+  subFloorThicknessMm?: number;
+};
+
 describe('subFloorThickness — §3.4.2', () => {
   it('SetSubFloorThicknessCmd has correct shape', () => {
     const cmd = { type: 'setSubFloorThickness' as const, floorId: 'f1', subFloorThicknessMm: 200 };
@@ -14,12 +21,17 @@ describe('subFloorThickness — §3.4.2', () => {
   });
 
   it('subFloorThicknessMm field is optional on floor element', () => {
-    const floor: any = { id: 'f1', kind: 'floor', thicknessMm: 250 };
+    const floor: FloorFixture = { id: 'f1', kind: 'floor', thicknessMm: 250 };
     expect(floor.subFloorThicknessMm).toBeUndefined();
   });
 
   it('can set subFloorThicknessMm on floor element', () => {
-    const floor: any = { id: 'f1', kind: 'floor', thicknessMm: 250, subFloorThicknessMm: 300 };
+    const floor: FloorFixture = {
+      id: 'f1',
+      kind: 'floor',
+      thicknessMm: 250,
+      subFloorThicknessMm: 300,
+    };
     expect(floor.subFloorThicknessMm).toBe(300);
   });
 });
