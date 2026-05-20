@@ -202,6 +202,7 @@ import {
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
+import { useViewportCameraOrientation } from './viewport/useViewportCameraOrientation';
 import { useViewportCommandHandlers } from './viewport/useViewportCommandHandlers';
 import { useViewportOverlayControls } from './viewport/useViewportOverlayControls';
 import { useViewportViewCubeHandlers } from './viewport/useViewportViewCubeHandlers';
@@ -243,9 +244,6 @@ type Props = {
 type DoorElem = Extract<Element, { kind: 'door' }>;
 type WindowElem = Extract<Element, { kind: 'window' }>;
 type WallOpeningElem = Extract<Element, { kind: 'wall_opening' }>;
-
-const ORBIT_ORIENTATION_UI_SYNC_DELAY_MS = 120;
-const ORBIT_ORIENTATION_EPSILON = 1e-4;
 
 export function Viewport({
   wsConnected,
@@ -335,10 +333,8 @@ export function Viewport({
     }) => void;
   } | null>(null);
 
-  const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
-  const [currentElevation, setCurrentElevation] = useState(0.45);
-  const currentOrientationRef = useRef({ azimuth: Math.PI / 4, elevation: 0.45 });
-  const pendingOrientationSyncRef = useRef<number | null>(null);
+  const { currentAzimuth, currentElevation, syncCameraOrientationState } =
+    useViewportCameraOrientation();
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
@@ -360,51 +356,6 @@ export function Viewport({
   const sectionBoxHandleGroupRef = useRef<THREE.Group | null>(null);
   const sectionBoxPrevActiveRef = useRef(false);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
-
-  const commitCameraOrientationState = useCallback((azimuth: number, elevation: number): void => {
-    setCurrentAzimuth((prev) =>
-      Math.abs(prev - azimuth) > ORBIT_ORIENTATION_EPSILON ? azimuth : prev,
-    );
-    setCurrentElevation((prev) =>
-      Math.abs(prev - elevation) > ORBIT_ORIENTATION_EPSILON ? elevation : prev,
-    );
-  }, []);
-
-  const syncCameraOrientationState = useCallback(
-    (
-      snap: Pick<ReturnType<CameraRig['snapshot']>, 'azimuth' | 'elevation'>,
-      mode: 'defer' | 'immediate' = 'defer',
-    ): void => {
-      currentOrientationRef.current = {
-        azimuth: snap.azimuth,
-        elevation: snap.elevation,
-      };
-      if (mode === 'immediate') {
-        if (pendingOrientationSyncRef.current !== null) {
-          window.clearTimeout(pendingOrientationSyncRef.current);
-          pendingOrientationSyncRef.current = null;
-        }
-        commitCameraOrientationState(snap.azimuth, snap.elevation);
-        return;
-      }
-      if (pendingOrientationSyncRef.current !== null) return;
-      pendingOrientationSyncRef.current = window.setTimeout(() => {
-        pendingOrientationSyncRef.current = null;
-        const orientation = currentOrientationRef.current;
-        commitCameraOrientationState(orientation.azimuth, orientation.elevation);
-      }, ORBIT_ORIENTATION_UI_SYNC_DELAY_MS);
-    },
-    [commitCameraOrientationState],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (pendingOrientationSyncRef.current !== null) {
-        window.clearTimeout(pendingOrientationSyncRef.current);
-        pendingOrientationSyncRef.current = null;
-      }
-    };
-  }, []);
 
   const elementsById = useBimStore((s) => s.elementsById);
   // ANN-02: ref-copy so the 3D contextmenu listener (registered once in the

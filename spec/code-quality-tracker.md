@@ -181,7 +181,7 @@ Largest current source files observed:
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 4,981      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette/composition action modules. |
-| `packages/web/src/Viewport.tsx`                             | 5,150      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, and command-handler hooks. |
+| `packages/web/src/Viewport.tsx`                             | 5,101      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, command-handler, and camera-orientation hooks. |
 | `packages/core/src/index.ts`                                | 4.9k       | Public barrel after extracted resource type module.                                               |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.                                           |
@@ -1281,6 +1281,10 @@ Initial thresholds can be advisory before becoming blocking:
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
   `4,981` local lines with focused Workspace tests and web typecheck passing.
+- 2026-05-20: a Viewport extraction slice moved camera orientation state,
+  deferred sync, and cleanup handling into `viewport/useViewportCameraOrientation.ts`,
+  reducing `Viewport.tsx` to `5,101` local lines with focused viewport
+  orientation tests and web typecheck passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
