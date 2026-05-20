@@ -1400,7 +1400,6 @@ export function SectionViewportSvg(props: {
               <g
                 key="section-level-lines"
                 data-testid="section-level-lines"
-                // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: svgStr }}
               />
             );

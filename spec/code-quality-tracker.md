@@ -403,6 +403,11 @@ CI chooses one canonical quality gate.
   `5` errors / `30` warnings / `9` files, with
   `@typescript-eslint/no-explicit-any` locked at `0`, and the non-test
   type-escape budget is locked at `0` files / `0` matches.
+- 2026-05-20: removed the stale `react/no-danger` disable; `pnpm
+js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
+  with `react/no-danger` locked at `0`. The remaining JS lint errors are the
+  four `@ts-nocheck` headers guarding pre-existing type debt in large extracted
+  modules.
 
 ---
 

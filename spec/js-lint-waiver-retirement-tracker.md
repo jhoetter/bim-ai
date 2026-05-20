@@ -39,9 +39,9 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 5              |
+| Errors         | 4              |
 | Warnings       | 30             |
-| Affected files | 9              |
+| Affected files | 8              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -54,7 +54,7 @@ Rule budgets:
 | `react-hooks/exhaustive-deps`        | 30             |
 | `fatal`                              | 0              |
 | `@typescript-eslint/ban-ts-comment`  | 4              |
-| `react/no-danger`                    | 1              |
+| `react/no-danger`                    | 0              |
 
 ## Workpackages
 
@@ -135,3 +135,8 @@ Rule budgets:
   client-created elements. The lint budget moved to `5` errors / `30` warnings /
   `9` files; `@typescript-eslint/no-explicit-any` moved from `36` to `0`, and
   the non-test type-escape budget moved to `0` files / `0` matches.
+- 2026-05-20: removed the stale `react/no-danger` disable around section level
+  line SVG insertion. The lint budget moved to `4` errors / `30` warnings /
+  `8` files; `react/no-danger` moved from `1` to `0`. The four remaining
+  errors are `@ts-nocheck` headers that currently guard pre-existing type debt
+  in large extracted modules.
