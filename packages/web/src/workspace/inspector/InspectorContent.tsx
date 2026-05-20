@@ -42,6 +42,7 @@ import { LinkDxfInspectorSection } from './linkInspectorSections';
 import { MepInspectorSection, fmtMepRecord } from './mepInspectorSections';
 import { DetailDocumentationInspectorSection } from './detailDocumentationInspectorSections';
 import { DecalInspectorSection } from './decalInspectorSection';
+import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSection';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -4952,97 +4953,8 @@ export function InspectorPropertiesFor(
       );
     }
     case 'project_base_point': {
-      const { onPropertyChange: pbpPropChange } = options ?? {};
-      const posMm = el.positionMm as { xMm: number; yMm: number; zMm?: number };
       return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Position X (mm)</span>
-            <input
-              type="number"
-              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={posMm.xMm}
-              key={`${el.id}-pbp-x`}
-              step={100}
-              data-testid="inspector-pbp-x"
-              onBlur={(e) => {
-                const v = Number(e.currentTarget.value);
-                if (!isNaN(v))
-                  pbpPropChange?.('positionMm', {
-                    xMm: v,
-                    yMm: posMm.yMm,
-                    zMm: posMm.zMm ?? 0,
-                  });
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Position Y (mm)</span>
-            <input
-              type="number"
-              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={posMm.yMm}
-              key={`${el.id}-pbp-y`}
-              step={100}
-              data-testid="inspector-pbp-y"
-              onBlur={(e) => {
-                const v = Number(e.currentTarget.value);
-                if (!isNaN(v))
-                  pbpPropChange?.('positionMm', {
-                    xMm: posMm.xMm,
-                    yMm: v,
-                    zMm: posMm.zMm ?? 0,
-                  });
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
-            <input
-              type="number"
-              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={(posMm as { zMm?: number }).zMm ?? 0}
-              key={`${el.id}-pbp-elevation`}
-              step={100}
-              data-testid="inspector-pbp-elevation"
-              onBlur={(e) => {
-                const v = Number(e.currentTarget.value);
-                if (!isNaN(v))
-                  pbpPropChange?.('positionMm', {
-                    xMm: posMm.xMm,
-                    yMm: posMm.yMm,
-                    zMm: v,
-                  });
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Name</span>
-            <input
-              type="text"
-              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={(el as { name?: string | null }).name ?? ''}
-              key={`${el.id}-pbp-name`}
-              data-testid="inspector-pbp-name"
-              onBlur={(e) => {
-                pbpPropChange?.('name', e.currentTarget.value || null);
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Shared Coordinates</span>
-            <input
-              type="checkbox"
-              className="text-xs"
-              defaultChecked={false}
-              key={`${el.id}-pbp-shared`}
-              data-testid="inspector-pbp-shared"
-              onChange={(e) => {
-                pbpPropChange?.('isShared', e.currentTarget.checked);
-              }}
-            />
-          </div>
-        </div>
+        <ProjectBasePointInspectorSection el={el} onPropertyChange={options?.onPropertyChange} />
       );
     }
     case 'decal': {

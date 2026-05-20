@@ -64,6 +64,8 @@ Target modules:
   filled region, and detail arc documentation rows.
 - `workspace/inspector/decalInspectorSection.tsx`: decal preview and property
   rows.
+- `workspace/inspector/projectBasePointInspectorSection.tsx`: project base point
+  position and shared-coordinate rows.
 - `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
   equipment, fixture, terminal, and opening request rows.
 - `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
@@ -82,6 +84,7 @@ First landed slice:
 - `workspace/inspector/linkInspectorSections.tsx`
 - `workspace/inspector/detailDocumentationInspectorSections.tsx`
 - `workspace/inspector/decalInspectorSection.tsx`
+- `workspace/inspector/projectBasePointInspectorSection.tsx`
 
 ## Workspace.tsx
 

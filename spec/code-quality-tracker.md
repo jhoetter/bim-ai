@@ -515,6 +515,10 @@ impact of small changes.
 - 2026-05-20: `InspectorContent.tsx` no longer owns decal preview and property
   rows; these moved to `workspace/inspector/decalInspectorSection.tsx`, reducing
   the inspector file to about `6,680` lines.
+- 2026-05-20: `InspectorContent.tsx` no longer owns project base point position,
+  name, or shared-coordinate rows; these moved to
+  `workspace/inspector/projectBasePointInspectorSection.tsx`, reducing the
+  inspector file to about `6,590` lines.
 
 ---
 
