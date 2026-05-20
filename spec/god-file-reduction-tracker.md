@@ -35,7 +35,7 @@ Largest files at tracker start:
 | 3    | `app/bim_ai/api/registry.py`                                | 6,249 | backend-api        | API descriptor registry                         |
 | 4    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,740 | frontend-inspector | Element-kind switchboard and editors            |
 | 5    | `packages/web/src/workspace/Workspace.tsx`                  | 5,987 | frontend-workspace | Shell, tabs, dialogs, command routing           |
-| 6    | `packages/web/src/Viewport.tsx`                             | 5,470 | frontend-viewport  | Scene lifecycle, picking, overlays              |
+| 6    | `packages/web/src/Viewport.tsx`                             | 5,287 | frontend-viewport  | Scene lifecycle, picking, overlays              |
 | 7    | `packages/core/src/index.ts`                                | 5,301 | core-contracts     | Public type and command barrel                  |
 | 8    | `scripts/audit-ui-mcp-parity.mjs`                           | 4,663 | quality-tooling    | Audit orchestration                             |
 | 9    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4,313 | frontend-family    | Family editor shell and state orchestration     |
@@ -152,6 +152,11 @@ A-territory target:
   the ViewCube, walk hints, section-box badge, sky/render buttons, saved-view
   lock badges, and transient 3D authoring cursor overlays into
   `packages/web/src/viewport/ViewportOverlays.tsx`.
+- 2026-05-20: follow-up `GFR-2026-05` reduction moved viewer runtime helpers,
+  section-box handle placement, disposal, and CSG wall footprint helpers into
+  `packages/web/src/viewport/ViewportRuntimeHelpers.ts`. Local `wc -l` now
+  reports `Viewport.tsx` at `5,287` lines. `pnpm --filter @bim-ai/web
+typecheck` and focused viewport tests pass.
 - 2026-05-20: `GFR-2026-07` is Done. Local `wc -l` reports
   `scripts/audit-ui-mcp-parity.mjs` at `4,663` lines, below the `5,000`
   target. The slice moved constants to

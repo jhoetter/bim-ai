@@ -154,12 +154,15 @@ Target modules:
   clipping interactions.
 - `viewport/renderPolicy.ts`: detail level, visibility, temporary overrides,
   section box, and render-quality decisions.
+- `viewport/ViewportRuntimeHelpers.ts`: storage-backed viewer defaults,
+  render-role tagging, section-box handles, disposal, and CSG wall helpers.
 - `viewport/overlays/*`: HUD, view cube, labels, sun/shadow controls, and
   transient authoring overlays.
 
 First landed slice:
 
 - `viewport/ViewportOverlays.tsx`
+- `viewport/ViewportRuntimeHelpers.ts`
 
 ## FamilyEditorWorkbench.tsx
 

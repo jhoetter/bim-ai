@@ -181,7 +181,7 @@ Largest current source files observed:
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                |
-| `packages/web/src/Viewport.tsx`                             | 5.5k       | 3D viewport orchestration monolith.                                   |
+| `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                   |
 | `packages/core/src/index.ts`                                | 5.3k       | Public type and command barrel.                                       |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules. |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.               |
