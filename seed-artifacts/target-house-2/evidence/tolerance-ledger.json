@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "sketch-to-bim.tolerance-ledger.v1",
+  "seed": "target-house-2",
+  "status": "initial-offline-package",
+  "tolerances": [
+    {
+      "id": "live-evidence-pending",
+      "severity": "blocking-for-final-acceptance",
+      "statement": "Product live Advisor, constructability, renderer screenshots, and final acceptance have not yet been run.",
+      "expiry": "Before marking manifest acceptance as accepted."
+    },
+    {
+      "id": "scan-distortion",
+      "severity": "accepted-for-project-initiation",
+      "statement": "Scanned/folded drawings are not rectified; dimensions use explicit written values and approximate room rectangles.",
+      "expiry": "Before documentation-ready modeling."
+    },
+    {
+      "id": "parcel-precision",
+      "severity": "accepted-for-project-initiation",
+      "statement": "Parcel, drainage, Baulast, Altlasten, and energy documents are packaged but only represented as starter site metadata.",
+      "expiry": "Before planning/submission use."
+    },
+    {
+      "id": "seed-dsl-metadata-filter",
+      "severity": "accepted-for-current-backend",
+      "statement": "The executable bundle filters seed-DSL metadata-only updateElementProperty rows that this backend revision does not accept during seed materialization. The semantic intent remains in the recipe and BIM information requirements.",
+      "expiry": "When the seed materializer accepts type and asset metadata keys."
+    }
+  ]
+}

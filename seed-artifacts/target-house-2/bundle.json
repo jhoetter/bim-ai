@@ -1,0 +1,2622 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "parentRevision": null,
+  "targetOptionId": null,
+  "assumptions": [
+    {
+      "key": "seed-dsl-recipe",
+      "value": "target-house-2-project-initiation-v1",
+      "confidence": 1,
+      "source": "bim-ai seed-dsl compile"
+    },
+    {
+      "key": "source_scope",
+      "value": "The original drawing dimensions describe the complete paired double-house; the current expose describes one semi-detached half at Weidenstrasse 6.",
+      "confidence": 0.92,
+      "source": "Wohnflaechenberechnung.pdf and 535_06 KH Expose.pdf"
+    },
+    {
+      "key": "scale_basis",
+      "value": "Full paired footprint modeled as 19.80 m x 8.75 m, matching Umbauter Raum.pdf.",
+      "confidence": 0.96,
+      "source": "Umbauter Raum.pdf"
+    },
+    {
+      "key": "project_initiation_scope",
+      "value": "Major BIM elements, hosted openings, rooms, stairs, site context, schedules, and evidence views are included; exact historic detailing is deferred.",
+      "confidence": 0.85,
+      "source": "spec/target-house/target-house-2-bim-information-requirements.md"
+    }
+  ],
+  "commands": [
+    {
+      "type": "createProjectBasePoint",
+      "id": "th2-project-base-point",
+      "positionMm": {
+        "xMm": 0,
+        "yMm": 0,
+        "zMm": 0
+      },
+      "angleToTrueNorthDeg": 0
+    },
+    {
+      "type": "upsertWallType",
+      "id": "th2-wt-exterior-masonry",
+      "name": "Historic exterior masonry wall",
+      "layers": [
+        {
+          "thicknessMm": 240,
+          "function": "structure",
+          "materialKey": "masonry_brick"
+        },
+        {
+          "thicknessMm": 60,
+          "function": "finish",
+          "materialKey": "plaster"
+        }
+      ],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "th2-wt-party-masonry",
+      "name": "Central party wall",
+      "layers": [
+        {
+          "thicknessMm": 240,
+          "function": "structure",
+          "materialKey": "masonry_brick"
+        }
+      ],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "th2-wt-interior-partition",
+      "name": "Historic interior partition",
+      "layers": [
+        {
+          "thicknessMm": 120,
+          "function": "structure",
+          "materialKey": "plasterboard"
+        }
+      ],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertFloorType",
+      "id": "th2-ft-concrete-slab",
+      "name": "Concrete / screed slab",
+      "layers": [
+        {
+          "thicknessMm": 180,
+          "function": "structure",
+          "materialKey": "concrete_smooth"
+        },
+        {
+          "thicknessMm": 40,
+          "function": "finish",
+          "materialKey": "concrete_smooth"
+        }
+      ]
+    },
+    {
+      "type": "upsertRoofType",
+      "id": "th2-rt-tiled-pitched-roof",
+      "name": "Tiled pitched roof build-up",
+      "layers": [
+        {
+          "thicknessMm": 180,
+          "function": "structure",
+          "materialKey": "timber_roof_placeholder"
+        },
+        {
+          "thicknessMm": 80,
+          "function": "finish",
+          "materialKey": "roof_tile_terracotta"
+        }
+      ]
+    },
+    {
+      "type": "createLevel",
+      "id": "th2-lvl-basement",
+      "name": "Kellergeschoss",
+      "elevationMm": -2500,
+      "alsoCreatePlanView": true,
+      "planViewId": "th2-basement-plan"
+    },
+    {
+      "type": "createLevel",
+      "id": "th2-lvl-ground",
+      "name": "Erdgeschoss",
+      "elevationMm": 0,
+      "alsoCreatePlanView": true,
+      "planViewId": "th2-ground-plan"
+    },
+    {
+      "type": "createLevel",
+      "id": "th2-lvl-dg",
+      "name": "Dachgeschoss",
+      "elevationMm": 2750,
+      "alsoCreatePlanView": true,
+      "planViewId": "th2-dg-plan"
+    },
+    {
+      "type": "createLevel",
+      "id": "th2-lvl-roof-eave",
+      "name": "Dachtraufe",
+      "elevationMm": 5250,
+      "alsoCreatePlanView": false
+    },
+    {
+      "type": "CreateToposolid",
+      "toposolidId": "th2-site-toposolid",
+      "name": "Weidenstrasse site starter terrain",
+      "boundaryMm": [
+        {
+          "xMm": -18000,
+          "yMm": -14000
+        },
+        {
+          "xMm": 18000,
+          "yMm": -14000
+        },
+        {
+          "xMm": 18000,
+          "yMm": 14000
+        },
+        {
+          "xMm": -18000,
+          "yMm": 14000
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": -18000,
+          "yMm": -14000,
+          "zMm": -650
+        },
+        {
+          "xMm": 18000,
+          "yMm": -14000,
+          "zMm": -560
+        },
+        {
+          "xMm": 18000,
+          "yMm": 14000,
+          "zMm": -340
+        },
+        {
+          "xMm": -18000,
+          "yMm": 14000,
+          "zMm": -430
+        },
+        {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": -500
+        }
+      ],
+      "thicknessMm": 1300,
+      "baseElevationMm": -1800,
+      "defaultMaterialKey": "placeholder_unloaded"
+    },
+    {
+      "type": "createFloor",
+      "id": "th2-basement-floor",
+      "name": "Full paired basement floor",
+      "levelId": "th2-lvl-basement",
+      "boundaryMm": [
+        {
+          "xMm": -9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4375
+        },
+        {
+          "xMm": -9900,
+          "yMm": 4375
+        }
+      ],
+      "thicknessMm": 220,
+      "floorTypeId": "th2-ft-concrete-slab",
+      "materialKey": "concrete_smooth",
+      "roomBounded": true
+    },
+    {
+      "type": "createWall",
+      "id": "th2-basement-wall-01",
+      "name": "Full paired basement wall 1",
+      "levelId": "th2-lvl-basement",
+      "start": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "concrete_smooth",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-basement-wall-02",
+      "name": "Full paired basement wall 2",
+      "levelId": "th2-lvl-basement",
+      "start": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "concrete_smooth",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-basement-wall-03",
+      "name": "Full paired basement wall 3",
+      "levelId": "th2-lvl-basement",
+      "start": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "concrete_smooth",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-basement-wall-04",
+      "name": "Full paired basement wall 4",
+      "levelId": "th2-lvl-basement",
+      "start": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "concrete_smooth",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createFloor",
+      "id": "th2-ground-floor",
+      "name": "Full paired Erdgeschoss floor",
+      "levelId": "th2-lvl-ground",
+      "boundaryMm": [
+        {
+          "xMm": -9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4375
+        },
+        {
+          "xMm": -9900,
+          "yMm": 4375
+        }
+      ],
+      "thicknessMm": 220,
+      "floorTypeId": "th2-ft-concrete-slab",
+      "materialKey": "plaster",
+      "roomBounded": true
+    },
+    {
+      "type": "createWall",
+      "id": "th2-ground-wall-01",
+      "name": "Full paired Erdgeschoss wall 1",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2750,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-ground-wall-02",
+      "name": "Full paired Erdgeschoss wall 2",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2750,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-ground-wall-03",
+      "name": "Full paired Erdgeschoss wall 3",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2750,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-ground-wall-04",
+      "name": "Full paired Erdgeschoss wall 4",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2750,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createFloor",
+      "id": "th2-dg-floor",
+      "name": "Full paired Dachgeschoss knee-wall storey floor",
+      "levelId": "th2-lvl-dg",
+      "boundaryMm": [
+        {
+          "xMm": -9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4375
+        },
+        {
+          "xMm": -9900,
+          "yMm": 4375
+        }
+      ],
+      "thicknessMm": 220,
+      "floorTypeId": "th2-ft-concrete-slab",
+      "materialKey": "plaster",
+      "roomBounded": true
+    },
+    {
+      "type": "createWall",
+      "id": "th2-dg-wall-01",
+      "name": "Full paired Dachgeschoss knee-wall storey wall 1",
+      "levelId": "th2-lvl-dg",
+      "start": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-dg-wall-02",
+      "name": "Full paired Dachgeschoss knee-wall storey wall 2",
+      "levelId": "th2-lvl-dg",
+      "start": {
+        "xMm": 9900,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-dg-wall-03",
+      "name": "Full paired Dachgeschoss knee-wall storey wall 3",
+      "levelId": "th2-lvl-dg",
+      "start": {
+        "xMm": 9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createWall",
+      "id": "th2-dg-wall-04",
+      "name": "Full paired Dachgeschoss knee-wall storey wall 4",
+      "levelId": "th2-lvl-dg",
+      "start": {
+        "xMm": -9900,
+        "yMm": 4375
+      },
+      "end": {
+        "xMm": -9900,
+        "yMm": -4375
+      },
+      "thicknessMm": 300,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-exterior-masonry",
+      "materialKey": "plaster",
+      "isCurtainWall": false
+    },
+    {
+      "type": "createRoof",
+      "id": "th2-main-roof",
+      "name": "Continuous tiled pitched roof",
+      "referenceLevelId": "th2-lvl-roof-eave",
+      "footprintMm": [
+        {
+          "xMm": -9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": -4375
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4375
+        },
+        {
+          "xMm": -9900,
+          "yMm": 4375
+        }
+      ],
+      "roofGeometryMode": "gable_pitched_rectangle",
+      "slopeDeg": 35,
+      "overhangMm": 650,
+      "ridgeOffsetTransverseMm": null,
+      "eaveHeightLeftMm": null,
+      "eaveHeightRightMm": null,
+      "roofTypeId": "th2-rt-tiled-pitched-roof",
+      "materialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-basement-cellar",
+      "name": "Keller links",
+      "levelId": "th2-lvl-basement",
+      "outlineMm": [
+        {
+          "xMm": -9600,
+          "yMm": -4100
+        },
+        {
+          "xMm": -300,
+          "yMm": -4100
+        },
+        {
+          "xMm": -300,
+          "yMm": 4100
+        },
+        {
+          "xMm": -9600,
+          "yMm": 4100
+        }
+      ],
+      "programmeCode": "cellar",
+      "functionLabel": "storage and utility",
+      "finishSet": null,
+      "targetAreaM2": 55
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-basement-cellar",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "cellar",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF cellar",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-basement-cellar",
+      "name": "Keller rechts",
+      "levelId": "th2-lvl-basement",
+      "outlineMm": [
+        {
+          "xMm": 300,
+          "yMm": -4100
+        },
+        {
+          "xMm": 9600,
+          "yMm": -4100
+        },
+        {
+          "xMm": 9600,
+          "yMm": 4100
+        },
+        {
+          "xMm": 300,
+          "yMm": 4100
+        }
+      ],
+      "programmeCode": "cellar",
+      "functionLabel": "storage and utility",
+      "finishSet": null,
+      "targetAreaM2": 55
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-basement-cellar",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "cellar",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF cellar",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-living",
+      "name": "EG links Wohnzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -9600,
+          "yMm": 350
+        },
+        {
+          "xMm": -4700,
+          "yMm": 350
+        },
+        {
+          "xMm": -4700,
+          "yMm": 4150
+        },
+        {
+          "xMm": -9600,
+          "yMm": 4150
+        }
+      ],
+      "programmeCode": "living",
+      "functionLabel": "residential living",
+      "finishSet": null,
+      "targetAreaM2": 18.65
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-living",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "living",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF living",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-bedroom",
+      "name": "EG links Schlafzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -4700,
+          "yMm": 350
+        },
+        {
+          "xMm": -300,
+          "yMm": 350
+        },
+        {
+          "xMm": -300,
+          "yMm": 4150
+        },
+        {
+          "xMm": -4700,
+          "yMm": 4150
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "residential sleeping",
+      "finishSet": null,
+      "targetAreaM2": 16.69
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-bedroom",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-child",
+      "name": "EG links Kinderzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -9600,
+          "yMm": -4050
+        },
+        {
+          "xMm": -5700,
+          "yMm": -4050
+        },
+        {
+          "xMm": -5700,
+          "yMm": -1650
+        },
+        {
+          "xMm": -9600,
+          "yMm": -1650
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "child bedroom",
+      "finishSet": null,
+      "targetAreaM2": 9.33
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-child",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-hall",
+      "name": "EG links Flur",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -5700,
+          "yMm": -4050
+        },
+        {
+          "xMm": -4200,
+          "yMm": -4050
+        },
+        {
+          "xMm": -4200,
+          "yMm": -470
+        },
+        {
+          "xMm": -5700,
+          "yMm": -470
+        }
+      ],
+      "programmeCode": "circulation",
+      "functionLabel": "hall and stair access",
+      "finishSet": null,
+      "targetAreaM2": 5.37
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-hall",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "circulation",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "VF circulation",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-kitchen",
+      "name": "EG links Kueche",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -4200,
+          "yMm": -4050
+        },
+        {
+          "xMm": -1450,
+          "yMm": -4050
+        },
+        {
+          "xMm": -1450,
+          "yMm": -1700
+        },
+        {
+          "xMm": -4200,
+          "yMm": -1700
+        }
+      ],
+      "programmeCode": "kitchen",
+      "functionLabel": "residential kitchen",
+      "finishSet": null,
+      "targetAreaM2": 6.47
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-kitchen",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "kitchen",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF kitchen",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-eg-bath",
+      "name": "EG links Bad u.W.C.",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": -1450,
+          "yMm": -4050
+        },
+        {
+          "xMm": -300,
+          "yMm": -4050
+        },
+        {
+          "xMm": -300,
+          "yMm": -700
+        },
+        {
+          "xMm": -1450,
+          "yMm": -700
+        }
+      ],
+      "programmeCode": "bath",
+      "functionLabel": "bathroom",
+      "finishSet": null,
+      "targetAreaM2": 4.58
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-eg-bath",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bath",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-living",
+      "name": "EG rechts Wohnzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 4700,
+          "yMm": 350
+        },
+        {
+          "xMm": 9600,
+          "yMm": 350
+        },
+        {
+          "xMm": 9600,
+          "yMm": 4150
+        },
+        {
+          "xMm": 4700,
+          "yMm": 4150
+        }
+      ],
+      "programmeCode": "living",
+      "functionLabel": "residential living",
+      "finishSet": null,
+      "targetAreaM2": 18.65
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-living",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "living",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF living",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-bedroom",
+      "name": "EG rechts Schlafzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 300,
+          "yMm": 350
+        },
+        {
+          "xMm": 4700,
+          "yMm": 350
+        },
+        {
+          "xMm": 4700,
+          "yMm": 4150
+        },
+        {
+          "xMm": 300,
+          "yMm": 4150
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "residential sleeping",
+      "finishSet": null,
+      "targetAreaM2": 16.69
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-bedroom",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-child",
+      "name": "EG rechts Kinderzimmer",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 5700,
+          "yMm": -4050
+        },
+        {
+          "xMm": 9600,
+          "yMm": -4050
+        },
+        {
+          "xMm": 9600,
+          "yMm": -1650
+        },
+        {
+          "xMm": 5700,
+          "yMm": -1650
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "child bedroom",
+      "finishSet": null,
+      "targetAreaM2": 9.33
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-child",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-hall",
+      "name": "EG rechts Flur",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 4200,
+          "yMm": -4050
+        },
+        {
+          "xMm": 5700,
+          "yMm": -4050
+        },
+        {
+          "xMm": 5700,
+          "yMm": -470
+        },
+        {
+          "xMm": 4200,
+          "yMm": -470
+        }
+      ],
+      "programmeCode": "circulation",
+      "functionLabel": "hall and stair access",
+      "finishSet": null,
+      "targetAreaM2": 5.37
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-hall",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "circulation",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "VF circulation",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-kitchen",
+      "name": "EG rechts Kueche",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 1450,
+          "yMm": -4050
+        },
+        {
+          "xMm": 4200,
+          "yMm": -4050
+        },
+        {
+          "xMm": 4200,
+          "yMm": -1700
+        },
+        {
+          "xMm": 1450,
+          "yMm": -1700
+        }
+      ],
+      "programmeCode": "kitchen",
+      "functionLabel": "residential kitchen",
+      "finishSet": null,
+      "targetAreaM2": 6.47
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-kitchen",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "kitchen",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF kitchen",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-eg-bath",
+      "name": "EG rechts Bad u.W.C.",
+      "levelId": "th2-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 300,
+          "yMm": -4050
+        },
+        {
+          "xMm": 1450,
+          "yMm": -4050
+        },
+        {
+          "xMm": 1450,
+          "yMm": -700
+        },
+        {
+          "xMm": 300,
+          "yMm": -700
+        }
+      ],
+      "programmeCode": "bath",
+      "functionLabel": "bathroom",
+      "finishSet": null,
+      "targetAreaM2": 4.58
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-eg-bath",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bath",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-dg-living",
+      "name": "DG links Wohnzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": -9600,
+          "yMm": 550
+        },
+        {
+          "xMm": -4700,
+          "yMm": 550
+        },
+        {
+          "xMm": -4700,
+          "yMm": 4050
+        },
+        {
+          "xMm": -9600,
+          "yMm": 4050
+        }
+      ],
+      "programmeCode": "living",
+      "functionLabel": "residential living under roof",
+      "finishSet": null,
+      "targetAreaM2": 15.66
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-dg-living",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "living",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF living",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-dg-bedroom",
+      "name": "DG links Schlafzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": -4700,
+          "yMm": 550
+        },
+        {
+          "xMm": -300,
+          "yMm": 550
+        },
+        {
+          "xMm": -300,
+          "yMm": 4050
+        },
+        {
+          "xMm": -4700,
+          "yMm": 4050
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "residential sleeping under roof",
+      "finishSet": null,
+      "targetAreaM2": 15.33
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-dg-bedroom",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-dg-child",
+      "name": "DG links Kinderzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": -9600,
+          "yMm": -3950
+        },
+        {
+          "xMm": -5700,
+          "yMm": -3950
+        },
+        {
+          "xMm": -5700,
+          "yMm": -1950
+        },
+        {
+          "xMm": -9600,
+          "yMm": -1950
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "child bedroom under roof",
+      "finishSet": null,
+      "targetAreaM2": 7.68
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-dg-child",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-dg-kitchen",
+      "name": "DG links Kueche",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": -4200,
+          "yMm": -3950
+        },
+        {
+          "xMm": -1450,
+          "yMm": -3950
+        },
+        {
+          "xMm": -1450,
+          "yMm": -1850
+        },
+        {
+          "xMm": -4200,
+          "yMm": -1850
+        }
+      ],
+      "programmeCode": "kitchen",
+      "functionLabel": "residential kitchen under roof",
+      "finishSet": null,
+      "targetAreaM2": 5.7
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-dg-kitchen",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "kitchen",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF kitchen",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-left-dg-bath",
+      "name": "DG links Bad u.W.C.",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": -1450,
+          "yMm": -3950
+        },
+        {
+          "xMm": -300,
+          "yMm": -3950
+        },
+        {
+          "xMm": -300,
+          "yMm": -600
+        },
+        {
+          "xMm": -1450,
+          "yMm": -600
+        }
+      ],
+      "programmeCode": "bath",
+      "functionLabel": "bathroom under roof",
+      "finishSet": null,
+      "targetAreaM2": 4.68
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-left-dg-bath",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bath",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-dg-living",
+      "name": "DG rechts Wohnzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": 4700,
+          "yMm": 550
+        },
+        {
+          "xMm": 9600,
+          "yMm": 550
+        },
+        {
+          "xMm": 9600,
+          "yMm": 4050
+        },
+        {
+          "xMm": 4700,
+          "yMm": 4050
+        }
+      ],
+      "programmeCode": "living",
+      "functionLabel": "residential living under roof",
+      "finishSet": null,
+      "targetAreaM2": 15.66
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-dg-living",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "living",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF living",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-dg-bedroom",
+      "name": "DG rechts Schlafzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": 300,
+          "yMm": 550
+        },
+        {
+          "xMm": 4700,
+          "yMm": 550
+        },
+        {
+          "xMm": 4700,
+          "yMm": 4050
+        },
+        {
+          "xMm": 300,
+          "yMm": 4050
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "residential sleeping under roof",
+      "finishSet": null,
+      "targetAreaM2": 15.33
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-dg-bedroom",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-dg-child",
+      "name": "DG rechts Kinderzimmer",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": 5700,
+          "yMm": -3950
+        },
+        {
+          "xMm": 9600,
+          "yMm": -3950
+        },
+        {
+          "xMm": 9600,
+          "yMm": -1950
+        },
+        {
+          "xMm": 5700,
+          "yMm": -1950
+        }
+      ],
+      "programmeCode": "bed",
+      "functionLabel": "child bedroom under roof",
+      "finishSet": null,
+      "targetAreaM2": 7.68
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-dg-child",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bed",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-dg-kitchen",
+      "name": "DG rechts Kueche",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": 1450,
+          "yMm": -3950
+        },
+        {
+          "xMm": 4200,
+          "yMm": -3950
+        },
+        {
+          "xMm": 4200,
+          "yMm": -1850
+        },
+        {
+          "xMm": 1450,
+          "yMm": -1850
+        }
+      ],
+      "programmeCode": "kitchen",
+      "functionLabel": "residential kitchen under roof",
+      "finishSet": null,
+      "targetAreaM2": 5.7
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-dg-kitchen",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "kitchen",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF kitchen",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "th2-right-dg-bath",
+      "name": "DG rechts Bad u.W.C.",
+      "levelId": "th2-lvl-dg",
+      "outlineMm": [
+        {
+          "xMm": 300,
+          "yMm": -3950
+        },
+        {
+          "xMm": 1450,
+          "yMm": -3950
+        },
+        {
+          "xMm": 1450,
+          "yMm": -600
+        },
+        {
+          "xMm": 300,
+          "yMm": -600
+        }
+      ],
+      "programmeCode": "bath",
+      "functionLabel": "bathroom under roof",
+      "finishSet": null,
+      "targetAreaM2": 4.68
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "th2-right-dg-bath",
+      "key": "roomBimIntent",
+      "value": {
+        "number": null,
+        "occupancyUse": null,
+        "boundingStatus": null,
+        "areaSource": null,
+        "use": "bath",
+        "access": null,
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
+    },
+    {
+      "type": "IndexAsset",
+      "id": "th2-asset-bed",
+      "name": "Bed marker",
+      "assetKind": "block_2d",
+      "category": "furniture",
+      "tags": [],
+      "disciplineTags": ["arch"],
+      "thumbnailKind": "schematic_plan",
+      "thumbnailWidthMm": 1600,
+      "thumbnailHeightMm": 2100,
+      "planSymbolKind": "bed",
+      "renderProxyKind": "bed",
+      "paramSchema": null,
+      "description": null
+    },
+    {
+      "type": "IndexAsset",
+      "id": "th2-asset-table",
+      "name": "Dining table marker",
+      "assetKind": "block_2d",
+      "category": "furniture",
+      "tags": [],
+      "disciplineTags": ["arch"],
+      "thumbnailKind": "schematic_plan",
+      "thumbnailWidthMm": 1200,
+      "thumbnailHeightMm": 900,
+      "planSymbolKind": "table",
+      "renderProxyKind": "table",
+      "paramSchema": null,
+      "description": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-bed-left-eg-bedroom",
+      "name": "Left EG bedroom bed",
+      "assetId": "th2-asset-bed",
+      "levelId": "th2-lvl-ground",
+      "positionMm": {
+        "xMm": -2500,
+        "yMm": 2300
+      },
+      "rotationDeg": 90,
+      "paramValues": {
+        "roomId": "th2-left-eg-bedroom",
+        "typeId": "th2-asset-bed"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-bed-right-eg-bedroom",
+      "name": "Right EG bedroom bed",
+      "assetId": "th2-asset-bed",
+      "levelId": "th2-lvl-ground",
+      "positionMm": {
+        "xMm": 2500,
+        "yMm": 2300
+      },
+      "rotationDeg": 90,
+      "paramValues": {
+        "roomId": "th2-right-eg-bedroom",
+        "typeId": "th2-asset-bed"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-bed-left-dg-bedroom",
+      "name": "Left DG bedroom bed",
+      "assetId": "th2-asset-bed",
+      "levelId": "th2-lvl-dg",
+      "positionMm": {
+        "xMm": -2500,
+        "yMm": 2300
+      },
+      "rotationDeg": 90,
+      "paramValues": {
+        "roomId": "th2-left-dg-bedroom",
+        "typeId": "th2-asset-bed"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-bed-right-dg-bedroom",
+      "name": "Right DG bedroom bed",
+      "assetId": "th2-asset-bed",
+      "levelId": "th2-lvl-dg",
+      "positionMm": {
+        "xMm": 2500,
+        "yMm": 2300
+      },
+      "rotationDeg": 90,
+      "paramValues": {
+        "roomId": "th2-right-dg-bedroom",
+        "typeId": "th2-asset-bed"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-table-left-living",
+      "name": "Left living table",
+      "assetId": "th2-asset-table",
+      "levelId": "th2-lvl-ground",
+      "positionMm": {
+        "xMm": -7200,
+        "yMm": 2200
+      },
+      "rotationDeg": 0,
+      "paramValues": {
+        "roomId": "th2-left-eg-living",
+        "typeId": "th2-asset-table"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "th2-table-right-living",
+      "name": "Right living table",
+      "assetId": "th2-asset-table",
+      "levelId": "th2-lvl-ground",
+      "positionMm": {
+        "xMm": 7200,
+        "yMm": 2200
+      },
+      "rotationDeg": 0,
+      "paramValues": {
+        "roomId": "th2-right-eg-living",
+        "typeId": "th2-asset-table"
+      },
+      "hostElementId": null
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "th2-axon-site",
+      "name": "Target House 2 axon site",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": -18000,
+          "yMm": -14000,
+          "zMm": 9000
+        },
+        "target": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 2500
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      },
+      "hiddenSemanticKinds3d": [],
+      "cutawayStyle": null,
+      "viewerClipCapElevMm": null,
+      "viewerClipFloorElevMm": null,
+      "planOverlayEnabled": false,
+      "planOverlaySourcePlanViewId": null,
+      "evidenceRole": "site_centered_building",
+      "featureIds": []
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "th2-front-elevation-evidence",
+      "name": "Front elevation evidence view",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 0,
+          "yMm": -18000,
+          "zMm": 3500
+        },
+        "target": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 2800
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      },
+      "hiddenSemanticKinds3d": [],
+      "cutawayStyle": null,
+      "viewerClipCapElevMm": null,
+      "viewerClipFloorElevMm": null,
+      "planOverlayEnabled": false,
+      "planOverlaySourcePlanViewId": null,
+      "evidenceRole": "facade_rhythm_and_pitched_roof",
+      "featureIds": []
+    },
+    {
+      "type": "createSectionCut",
+      "id": "th2-section-cross",
+      "name": "Cross section through stair and roof",
+      "lineStartMm": {
+        "xMm": -11000,
+        "yMm": 0
+      },
+      "lineEndMm": {
+        "xMm": 11000,
+        "yMm": 0
+      },
+      "cropDepthMm": 9500
+    },
+    {
+      "type": "createElevationView",
+      "id": "th2-elevation-front",
+      "name": "Front elevation",
+      "direction": "south",
+      "cropMinMm": {
+        "xMm": -12000,
+        "yMm": -6000
+      },
+      "cropMaxMm": {
+        "xMm": 12000,
+        "yMm": 7000
+      },
+      "scale": 100
+    },
+    {
+      "type": "upsertSchedule",
+      "id": "th2-room-schedule",
+      "name": "Room Schedule",
+      "sheetId": null,
+      "filters": {
+        "category": "room"
+      },
+      "grouping": {}
+    },
+    {
+      "type": "upsertSchedule",
+      "id": "th2-opening-schedule",
+      "name": "Door and Window Schedule",
+      "sheetId": null,
+      "filters": {
+        "category": "opening"
+      },
+      "grouping": {}
+    },
+    {
+      "type": "createSurveyPoint",
+      "id": "th2-survey-point",
+      "positionMm": {
+        "xMm": 0,
+        "yMm": 0,
+        "zMm": 0
+      },
+      "sharedElevationMm": 0,
+      "clipped": false
+    },
+    {
+      "type": "upsertSite",
+      "id": "th2-site",
+      "name": "Weidenstrasse 6 starter parcel context",
+      "referenceLevelId": "th2-lvl-ground",
+      "boundaryMm": [
+        {
+          "xMm": -18000,
+          "yMm": -14000
+        },
+        {
+          "xMm": 18000,
+          "yMm": -14000
+        },
+        {
+          "xMm": 18000,
+          "yMm": 14000
+        },
+        {
+          "xMm": -18000,
+          "yMm": 14000
+        }
+      ],
+      "padThicknessMm": 80,
+      "baseOffsetMm": -500,
+      "northDegCwFromPlanX": 0,
+      "uniformSetbackMm": 3000
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "th2-property-front",
+      "name": "Street-side parcel line",
+      "startMm": {
+        "xMm": -15000,
+        "yMm": -11500
+      },
+      "endMm": {
+        "xMm": 15000,
+        "yMm": -11500
+      },
+      "setbackMm": 3000,
+      "classification": "street"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "th2-property-right",
+      "name": "Right parcel line",
+      "startMm": {
+        "xMm": 15000,
+        "yMm": -11500
+      },
+      "endMm": {
+        "xMm": 15000,
+        "yMm": 11500
+      },
+      "setbackMm": 3000,
+      "classification": "side"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "th2-property-rear",
+      "name": "Rear parcel line",
+      "startMm": {
+        "xMm": 15000,
+        "yMm": 11500
+      },
+      "endMm": {
+        "xMm": -15000,
+        "yMm": 11500
+      },
+      "setbackMm": 3000,
+      "classification": "rear"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "th2-property-left",
+      "name": "Left parcel line",
+      "startMm": {
+        "xMm": -15000,
+        "yMm": 11500
+      },
+      "endMm": {
+        "xMm": -15000,
+        "yMm": -11500
+      },
+      "setbackMm": 3000,
+      "classification": "side"
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "th2-door-900",
+      "name": "Historic single door 900 x 2100",
+      "familyId": "door-standard",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 900,
+        "heightMm": 2100,
+        "proxyHeightMm": 2100
+      }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "th2-window-1200",
+      "name": "Historic window 1200 x 1400",
+      "familyId": "window-standard",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 1200,
+        "heightMm": 1400,
+        "sillHeightMm": 900,
+        "proxyHeightMm": 1400
+      }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "th2-window-wide-dormer",
+      "name": "Dormer grouped window 2200 x 1200",
+      "familyId": "window-standard",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 2200,
+        "heightMm": 1200,
+        "sillHeightMm": 800,
+        "proxyHeightMm": 1200
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "th2-party-wall-ground",
+      "name": "Ground central party wall",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 0,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 4375
+      },
+      "thicknessMm": 240,
+      "heightMm": 2750,
+      "wallTypeId": "th2-wt-party-masonry",
+      "loadBearing": true,
+      "structuralRole": "load_bearing"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-party-wall-dg",
+      "name": "DG central party wall",
+      "levelId": "th2-lvl-dg",
+      "start": {
+        "xMm": 0,
+        "yMm": -4375
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 4375
+      },
+      "thicknessMm": 240,
+      "heightMm": 2500,
+      "wallTypeId": "th2-wt-party-masonry",
+      "loadBearing": true,
+      "structuralRole": "load_bearing"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-left-eg-back-partition",
+      "name": "Left EG back room partition",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -4700,
+        "yMm": 350
+      },
+      "end": {
+        "xMm": -4700,
+        "yMm": 4150
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-left-eg-front-back-split",
+      "name": "Left EG front back split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -9600,
+        "yMm": 350
+      },
+      "end": {
+        "xMm": -300,
+        "yMm": 350
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-left-eg-front-row-split",
+      "name": "Left EG front row split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -5700,
+        "yMm": -4050
+      },
+      "end": {
+        "xMm": -5700,
+        "yMm": -470
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-left-eg-kitchen-bath-split",
+      "name": "Left EG kitchen bath split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": -1450,
+        "yMm": -4050
+      },
+      "end": {
+        "xMm": -1450,
+        "yMm": -700
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-right-eg-back-partition",
+      "name": "Right EG back room partition",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 4700,
+        "yMm": 350
+      },
+      "end": {
+        "xMm": 4700,
+        "yMm": 4150
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-right-eg-front-back-split",
+      "name": "Right EG front back split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 300,
+        "yMm": 350
+      },
+      "end": {
+        "xMm": 9600,
+        "yMm": 350
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-right-eg-front-row-split",
+      "name": "Right EG front row split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 5700,
+        "yMm": -4050
+      },
+      "end": {
+        "xMm": 5700,
+        "yMm": -470
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "th2-right-eg-kitchen-bath-split",
+      "name": "Right EG kitchen bath split",
+      "levelId": "th2-lvl-ground",
+      "start": {
+        "xMm": 1450,
+        "yMm": -4050
+      },
+      "end": {
+        "xMm": 1450,
+        "yMm": -700
+      },
+      "thicknessMm": 120,
+      "heightMm": 2600,
+      "wallTypeId": "th2-wt-interior-partition"
+    },
+    {
+      "type": "createStair",
+      "id": "th2-left-stair",
+      "name": "Left half stair",
+      "baseLevelId": "th2-lvl-ground",
+      "topLevelId": "th2-lvl-dg",
+      "runStartMm": {
+        "xMm": -2250,
+        "yMm": -1550
+      },
+      "runEndMm": {
+        "xMm": -2250,
+        "yMm": 1250
+      },
+      "widthMm": 950,
+      "riserMm": 183,
+      "treadMm": 250,
+      "boundaryMm": [
+        {
+          "xMm": -2750,
+          "yMm": -1700
+        },
+        {
+          "xMm": -1750,
+          "yMm": -1700
+        },
+        {
+          "xMm": -1750,
+          "yMm": 1350
+        },
+        {
+          "xMm": -2750,
+          "yMm": 1350
+        }
+      ]
+    },
+    {
+      "type": "createStair",
+      "id": "th2-right-stair",
+      "name": "Right half stair",
+      "baseLevelId": "th2-lvl-ground",
+      "topLevelId": "th2-lvl-dg",
+      "runStartMm": {
+        "xMm": 2250,
+        "yMm": -1550
+      },
+      "runEndMm": {
+        "xMm": 2250,
+        "yMm": 1250
+      },
+      "widthMm": 950,
+      "riserMm": 183,
+      "treadMm": 250,
+      "boundaryMm": [
+        {
+          "xMm": 1750,
+          "yMm": -1700
+        },
+        {
+          "xMm": 2750,
+          "yMm": -1700
+        },
+        {
+          "xMm": 2750,
+          "yMm": 1350
+        },
+        {
+          "xMm": 1750,
+          "yMm": 1350
+        }
+      ]
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "th2-left-stair-opening",
+      "name": "Left stair slab opening",
+      "hostFloorId": "th2-dg-floor",
+      "boundaryMm": [
+        {
+          "xMm": -2850,
+          "yMm": -1800
+        },
+        {
+          "xMm": -1650,
+          "yMm": -1800
+        },
+        {
+          "xMm": -1650,
+          "yMm": 1450
+        },
+        {
+          "xMm": -2850,
+          "yMm": 1450
+        }
+      ],
+      "isShaft": false
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "th2-right-stair-opening",
+      "name": "Right stair slab opening",
+      "hostFloorId": "th2-dg-floor",
+      "boundaryMm": [
+        {
+          "xMm": 1650,
+          "yMm": -1800
+        },
+        {
+          "xMm": 2850,
+          "yMm": -1800
+        },
+        {
+          "xMm": 2850,
+          "yMm": 1450
+        },
+        {
+          "xMm": 1650,
+          "yMm": 1450
+        }
+      ],
+      "isShaft": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "th2-left-front-door",
+      "name": "Left front door",
+      "wallId": "th2-ground-wall-01",
+      "alongT": 0.43,
+      "widthMm": 900,
+      "familyTypeId": "th2-door-900"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "th2-right-front-door",
+      "name": "Right front door",
+      "wallId": "th2-ground-wall-01",
+      "alongT": 0.57,
+      "widthMm": 900,
+      "familyTypeId": "th2-door-900"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-left-front-window",
+      "name": "Left front child window",
+      "wallId": "th2-ground-wall-01",
+      "alongT": 0.13,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1300,
+      "familyTypeId": "th2-window-1200"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-right-front-window",
+      "name": "Right front child window",
+      "wallId": "th2-ground-wall-01",
+      "alongT": 0.87,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1300,
+      "familyTypeId": "th2-window-1200"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-left-back-living-window",
+      "name": "Left rear living window",
+      "wallId": "th2-ground-wall-03",
+      "alongT": 0.74,
+      "widthMm": 1600,
+      "sillHeightMm": 850,
+      "heightMm": 1400,
+      "familyTypeId": "th2-window-1200"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-right-back-living-window",
+      "name": "Right rear living window",
+      "wallId": "th2-ground-wall-03",
+      "alongT": 0.26,
+      "widthMm": 1600,
+      "sillHeightMm": 850,
+      "heightMm": 1400,
+      "familyTypeId": "th2-window-1200"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-left-dg-dormer-window",
+      "name": "Left DG dormer grouped window",
+      "wallId": "th2-dg-wall-03",
+      "alongT": 0.74,
+      "widthMm": 2200,
+      "sillHeightMm": 800,
+      "heightMm": 1200,
+      "familyTypeId": "th2-window-wide-dormer"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "th2-right-dg-dormer-window",
+      "name": "Right DG dormer grouped window",
+      "wallId": "th2-dg-wall-03",
+      "alongT": 0.26,
+      "widthMm": 2200,
+      "sillHeightMm": 800,
+      "heightMm": 1200,
+      "familyTypeId": "th2-window-wide-dormer"
+    },
+    {
+      "type": "createDormer",
+      "id": "th2-left-rear-dormer",
+      "name": "Left rear dormer proxy",
+      "hostRoofId": "th2-main-roof",
+      "positionOnRoof": {
+        "alongRidgeMm": -4700,
+        "acrossRidgeMm": 1400
+      },
+      "widthMm": 3200,
+      "wallHeightMm": 1600,
+      "depthMm": 1700,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "plaster",
+      "roofMaterialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createDormer",
+      "id": "th2-right-rear-dormer",
+      "name": "Right rear dormer proxy",
+      "hostRoofId": "th2-main-roof",
+      "positionOnRoof": {
+        "alongRidgeMm": 4700,
+        "acrossRidgeMm": 1400
+      },
+      "widthMm": 3200,
+      "wallHeightMm": 1600,
+      "depthMm": 1700,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "plaster",
+      "roofMaterialKey": "roof_tile_terracotta"
+    }
+  ],
+  "meta": {
+    "generatedBy": "@bim-ai/cli seed-dsl compile",
+    "recipeId": "target-house-2-project-initiation-v1",
+    "modelIdPlaceholder": "target-house-2",
+    "intent": "Project-initiation BIM seed for the Dahlerbrueck / Weidenstrasse 6 semi-detached double-house source package.",
+    "materialIntent": [],
+    "documentationIntent": {
+      "views": [
+        {
+          "id": "th2-section-cross",
+          "kind": "section",
+          "name": "Cross section through stair and roof",
+          "lineStartMm": {
+            "xMm": -11000,
+            "yMm": 0
+          },
+          "lineEndMm": {
+            "xMm": 11000,
+            "yMm": 0
+          },
+          "cropDepthMm": 9500
+        },
+        {
+          "id": "th2-elevation-front",
+          "kind": "elevation",
+          "name": "Front elevation",
+          "direction": "south",
+          "cropMinMm": {
+            "xMm": -12000,
+            "yMm": -6000
+          },
+          "cropMaxMm": {
+            "xMm": 12000,
+            "yMm": 7000
+          },
+          "scale": 100
+        }
+      ],
+      "schedules": [
+        {
+          "id": "th2-room-schedule",
+          "name": "Room Schedule",
+          "category": "room"
+        },
+        {
+          "id": "th2-opening-schedule",
+          "name": "Door and Window Schedule",
+          "category": "opening"
+        }
+      ]
+    },
+    "executableBundleNote": "Filtered unsupported metadata-only updateElementProperty rows (bimTypeIntent, assetScheduleMetadata) for current seed materializer compatibility; semantic intent is retained in evidence docs and recipe."
+  }
+}
