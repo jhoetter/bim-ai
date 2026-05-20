@@ -24,6 +24,7 @@ const DEFAULT_FILE_BUDGETS = {
 const BUDGET_CONFIG_PATH = 'spec/code-quality-budgets.json';
 const SECURITY_WAIVERS_PATH = 'spec/security-waivers.json';
 const UI_QUALITY_BUDGETS_PATH = 'spec/ui-quality-budgets.json';
+const TREND_BASELINE_PATH = 'spec/generated/code-quality-baseline.json';
 
 const GRADE_FLOORS = {
   C: 6.0,
@@ -230,6 +231,111 @@ function loadSecurityWaivers() {
     }
   }
   return { path: SECURITY_WAIVERS_PATH, waivers, active, expired, soon, missing: false };
+}
+
+function loadTrendBaseline() {
+  if (!existsSync(join(REPO_ROOT, TREND_BASELINE_PATH))) {
+    return { path: TREND_BASELINE_PATH, missing: true, baseline: null };
+  }
+  return {
+    path: TREND_BASELINE_PATH,
+    missing: false,
+    baseline: JSON.parse(readText(TREND_BASELINE_PATH)),
+  };
+}
+
+function trendMetrics(report) {
+  return {
+    'grade.numeric': report.grade.numeric,
+    'tracker.done': report.tracker.done,
+    'tracker.partial': report.tracker.partial,
+    'maintainability.blockingWithoutDispositionCount':
+      report.maintainability.blockingWithoutDispositionCount,
+    'repositoryHygiene.trackedArtifactCount': report.repositoryHygiene.trackedArtifactCount,
+    'typeSafety.nonTestHotspotFileCount': report.typeSafety.nonTestHotspotFileCount,
+    'typeSafety.totalNonTestHotspots': report.typeSafety.totalNonTestHotspots,
+    'waivers.expiredCount': report.waivers.expiredCount,
+    'security.waivers.expiredCount': report.security.waivers.expiredCount,
+  };
+}
+
+const LOWER_IS_BETTER_TREND_KEYS = new Set([
+  'tracker.partial',
+  'maintainability.blockingWithoutDispositionCount',
+  'repositoryHygiene.trackedArtifactCount',
+  'typeSafety.nonTestHotspotFileCount',
+  'typeSafety.totalNonTestHotspots',
+  'waivers.expiredCount',
+  'security.waivers.expiredCount',
+]);
+
+function metricLabel(key) {
+  return (
+    {
+      'grade.numeric': 'Numeric grade',
+      'tracker.done': 'Done tracker rows',
+      'tracker.partial': 'Partial tracker rows',
+      'maintainability.blockingWithoutDispositionCount':
+        'Blocking file budgets without disposition',
+      'repositoryHygiene.trackedArtifactCount': 'Tracked local/generated artifacts',
+      'typeSafety.nonTestHotspotFileCount': 'Frontend type-escape hotspot files',
+      'typeSafety.totalNonTestHotspots': 'Frontend type-escape total matches',
+      'waivers.expiredCount': 'Expired quality waivers',
+      'security.waivers.expiredCount': 'Expired security waivers',
+    }[key] ?? key
+  );
+}
+
+function trendSummary(report, baselineState) {
+  const current = trendMetrics(report);
+  const baseline = baselineState.baseline;
+  if (baselineState.missing || !baseline?.metrics) {
+    return {
+      baselinePath: baselineState.path,
+      baselineMissing: true,
+      baselineGeneratedAt: null,
+      improvements: [],
+      regressions: [],
+      unchanged: Object.entries(current).map(([key, value]) => ({
+        key,
+        label: metricLabel(key),
+        current: value,
+      })),
+    };
+  }
+
+  const improvements = [];
+  const regressions = [];
+  const unchanged = [];
+  for (const [key, currentValue] of Object.entries(current)) {
+    const previousValue = baseline.metrics[key];
+    if (typeof previousValue !== 'number' || typeof currentValue !== 'number') continue;
+    const delta = Number((currentValue - previousValue).toFixed(2));
+    const row = {
+      key,
+      label: metricLabel(key),
+      previous: previousValue,
+      current: currentValue,
+      delta,
+    };
+    if (delta === 0) unchanged.push(row);
+    else {
+      const improved = LOWER_IS_BETTER_TREND_KEYS.has(key) ? delta < 0 : delta > 0;
+      if (improved) improvements.push(row);
+      else regressions.push(row);
+    }
+  }
+  improvements.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.key.localeCompare(b.key));
+  regressions.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.key.localeCompare(b.key));
+  return {
+    baselinePath: baselineState.path,
+    baselineMissing: false,
+    baselineGeneratedAt: baseline.generatedAt ?? null,
+    baselineLabel: baseline.label ?? null,
+    improvements,
+    regressions,
+    unchanged,
+  };
 }
 
 function loadBudgetConfig() {
@@ -689,7 +795,7 @@ function buildReport() {
     typeEscapeBudgets: budgetConfig.typeEscapeBudgets,
   });
 
-  return {
+  const report = {
     schemaVersion: 'code-quality-report.v1',
     generatedAt: `${TODAY}T00:00:00.000Z`,
     grade,
@@ -787,6 +893,8 @@ function buildReport() {
       },
     },
   };
+  report.trend = trendSummary(report, loadTrendBaseline());
+  return report;
 }
 
 function renderMarkdown(report) {
@@ -803,6 +911,28 @@ function renderMarkdown(report) {
     lines.push('- None.');
   } else {
     for (const blocker of report.grade.blockersToNextGrade) lines.push(`- ${blocker}`);
+  }
+  lines.push('');
+  lines.push('## Trend Since Baseline');
+  lines.push('');
+  if (report.trend.baselineMissing) {
+    lines.push(`- Baseline missing at \`${report.trend.baselinePath}\`.`);
+  } else {
+    lines.push(
+      `Baseline: \`${report.trend.baselinePath}\`${report.trend.baselineLabel ? ` (${report.trend.baselineLabel})` : ''}.`,
+    );
+    lines.push('');
+    lines.push('Top improvements:');
+    if (report.trend.improvements.length === 0) lines.push('- None.');
+    for (const row of report.trend.improvements.slice(0, 5)) {
+      lines.push(`- ${row.label}: ${row.previous} -> ${row.current} (${row.delta})`);
+    }
+    lines.push('');
+    lines.push('Top regressions:');
+    if (report.trend.regressions.length === 0) lines.push('- None.');
+    for (const row of report.trend.regressions.slice(0, 5)) {
+      lines.push(`- ${row.label}: ${row.previous} -> ${row.current} (${row.delta})`);
+    }
   }
   lines.push('');
   lines.push('## Tracker');

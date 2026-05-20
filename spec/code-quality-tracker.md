@@ -20,9 +20,8 @@ verification gates are aligned, frontend test noise is materially quieter,
 backend focused/full test paths are explicit, quality waivers are
 machine-readable and expiring, and the largest frontend monoliths have extraction
 maps with first slices landed. The score is still held down by large remaining
-source files, the active JavaScript lint waiver, missing contract-parity budgets,
-limited real deployed-path integration coverage, and the absence of a
-trend-backed release-readiness scorecard and remaining P2 hygiene budgets.
+source files, the active JavaScript lint waiver, and A-grade budgets that are
+present but still early in their enforcement history.
 
 The practical target is:
 
@@ -200,28 +199,28 @@ Largest current source files observed:
 
 ## Summary Board
 
-| ID         | Priority | Status  | Theme                                     | Exit signal                                                                                       |
-| ---------- | -------- | ------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                                     |
-| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.                   |
-| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                                |
-| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.                  |
-| CQ-2026-05 | P1       | Done    | Core type model hygiene                   | Core facade has thematic type slices, public re-exports, and compile-time union fixtures.         |
-| CQ-2026-06 | P1       | Done    | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
-| CQ-2026-07 | P1       | Done    | Python route and registry maintainability | Registry core/metadata and route surfaces are split with descriptor and route tests.              |
-| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
-| CQ-2026-09 | P2       | Done    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
-| CQ-2026-10 | P2       | Done    | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
-| CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                          |
-| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                                     |
-| CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                         |
-| CQ-2026-14 | P1       | Done    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.           |
-| CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.                 |
-| CQ-2026-16 | P1       | Done    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                         |
-| CQ-2026-17 | P1       | Done    | Real-path integration coverage            | Real app, DB, websocket, and browser proxy smoke tests exercise deployed paths.                   |
-| CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.                  |
-| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.                    |
-| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.                  |
+| ID         | Priority | Status | Theme                                     | Exit signal                                                                                       |
+| ---------- | -------- | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| CQ-2026-01 | P0       | Done   | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                                     |
+| CQ-2026-02 | P0       | Done   | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.                   |
+| CQ-2026-03 | P0       | Done   | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                                |
+| CQ-2026-04 | P1       | Done   | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.                  |
+| CQ-2026-05 | P1       | Done   | Core type model hygiene                   | Core facade has thematic type slices, public re-exports, and compile-time union fixtures.         |
+| CQ-2026-06 | P1       | Done   | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
+| CQ-2026-07 | P1       | Done   | Python route and registry maintainability | Registry core/metadata and route surfaces are split with descriptor and route tests.              |
+| CQ-2026-08 | P1       | Done   | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
+| CQ-2026-09 | P2       | Done   | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
+| CQ-2026-10 | P2       | Done   | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
+| CQ-2026-11 | P2       | Done   | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                          |
+| CQ-2026-12 | P2       | Done   | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                                     |
+| CQ-2026-13 | P1       | Done   | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                         |
+| CQ-2026-14 | P1       | Done   | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.           |
+| CQ-2026-15 | P1       | Done   | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.                 |
+| CQ-2026-16 | P1       | Done   | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                         |
+| CQ-2026-17 | P1       | Done   | Real-path integration coverage            | Real app, DB, websocket, and browser proxy smoke tests exercise deployed paths.                   |
+| CQ-2026-18 | P2       | Done   | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.                  |
+| CQ-2026-19 | P2       | Done   | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.                    |
+| CQ-2026-20 | P1       | Done   | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.                  |
 
 ---
 
@@ -1400,7 +1399,7 @@ being introduced.
 ## CQ-2026-19 - Publish a Release-Readiness Scorecard
 
 Priority: P2
-Status: Partial
+Status: Done
 Owner area: scripts, CI, docs
 
 ### Problem
@@ -1442,21 +1441,25 @@ machine-readable waiver consumed by the report.
   artifact rows, and active/expired waivers.
 - 2026-05-20: the CLI supports `--json`, `--out-json`, `--out-md`, and
   `--fail-below`, so release jobs can fail below a configured grade.
-- 2026-05-20: CI uploads the generated scorecard. This remains Partial until
-  trend comparison against a previous baseline and release-note handoff are
-  implemented.
+- 2026-05-20: CI uploads the generated scorecard.
 - 2026-05-20: completed P0/P1 tracker rows and wired hard gates move the
   generated baseline to B. Tracked artifact disposition and frontend type escape
-  hotspots remain explicit blockers to the next grade band.
+  hotspot reductions are now reflected as passing report budgets.
+- 2026-05-20: `spec/generated/code-quality-baseline.json` gives the generated
+  scorecard a committed trend baseline, and
+  `spec/release-readiness-scorecard.md` documents the release handoff command,
+  CI artifact, release-note usage, and baseline policy. CQ-2026-19 is closed.
 
 ### Suggested Output
 
 ```text
 Code Quality Grade: B
 Blocking to A-:
-- tracked local/generated artifact rows need disposition
-- frontend type escape hotspot files exceed the next-grade budget
-- trend comparison against the previous baseline is not published yet
+- None.
+Top improvements:
+- tracked local/generated artifacts: 758 -> 0
+- frontend type escape total matches: 179 -> 106
+- partial tracker rows: 3 -> 0
 ```
 
 ---

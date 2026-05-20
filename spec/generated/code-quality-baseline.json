@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "code-quality-baseline.v1",
+  "label": "pre-CQ09-CQ10 closeout",
+  "generatedAt": "2026-05-20T00:00:00.000Z",
+  "metrics": {
+    "grade.numeric": 7.5,
+    "tracker.done": 17,
+    "tracker.partial": 3,
+    "maintainability.blockingWithoutDispositionCount": 0,
+    "repositoryHygiene.trackedArtifactCount": 758,
+    "typeSafety.nonTestHotspotFileCount": 29,
+    "typeSafety.totalNonTestHotspots": 179,
+    "waivers.expiredCount": 0,
+    "security.waivers.expiredCount": 0
+  }
+}
