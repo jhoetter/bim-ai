@@ -13,6 +13,8 @@ facade without changing imports for frontend, CLI, or tests.
   and concept seed handoff types.
 - `packages/core/src/elements/building.ts`: project settings, room color
   schemes, wall/floor/roof type definitions, and level elements.
+- `packages/core/src/elements/documentation.ts`: sheets, titleblock types,
+  window legend views, sheet metadata, and viewport placement rows.
 - `packages/core/src/elements/family.ts`: family types, family instances,
   family editor solids, nested components, reference planes, family definitions,
   parameters, and constraints.
@@ -24,7 +26,7 @@ facade without changing imports for frontend, CLI, or tests.
   structural connections, and building services.
 - `elements/family.ts`: continue moving family editor commands, custom
   materials, family kits, library assets, and placed assets.
-- `elements/documentation.ts`: views, sheets, titleblocks, schedules, tags,
+- `elements/documentation.ts`: continue moving views, schedules, tags,
   dimensions, detail drafting, view templates, graphics overrides, markups, and
   comments.
 - `commands/site.ts`: site/toposolid/concept seed commands currently re-exported

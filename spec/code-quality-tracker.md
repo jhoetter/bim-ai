@@ -565,6 +565,11 @@ a public re-export facade:
   exported `Element` union.
 - 2026-05-20: `packages/core/src/index.ts` reduced from `5,666` to `5,484`
   lines while preserving `@bim-ai/core` public re-exports.
+- 2026-05-20: `packages/core/src/elements/documentation.ts` owns the first
+  documentation slice for sheets, titleblock types, window legend views, sheet
+  metadata, and viewport placement rows, with
+  `packages/core/src/type-tests/documentationElementTypes.ts` proving union
+  membership.
 - 2026-05-20: `spec/core-type-extraction-map.md` documents the remaining core
   type slices and guardrails.
 - 2026-05-20: `pnpm --filter @bim-ai/core typecheck` and
