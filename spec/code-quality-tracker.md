@@ -185,6 +185,7 @@ Largest current source files observed:
 | `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,622      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,813      | Family editor state shell after extracted workbench and properties panel modules.                  |
+| `app/bim_ai/routes_api.py`                                  | 3,963      | API route aggregator after extracted query/resolve/QA routes.                                      |
 
 ## Status Model
 
@@ -790,10 +791,10 @@ Owner area: backend API
 
 ### Problem
 
-`app/bim_ai/api/registry.py` is approximately 5.9k lines and centralizes a large
-tool descriptor registry. `routes_api.py` remains another large application
-surface. These files are not necessarily failing today, but they are high-risk
-for merge conflicts and stale descriptor drift.
+`app/bim_ai/api/registry.py` started as an approximately 5.9k-line central tool
+descriptor registry, and `routes_api.py` was another large application surface.
+These files were not necessarily failing, but they were high-risk for merge
+conflicts and stale descriptor drift.
 
 ### Acceptance Criteria
 
@@ -859,6 +860,11 @@ for merge conflicts and stale descriptor drift.
   `app/bim_ai/api/registry.py` to `3,267` lines. Python compile and focused
   registry smoke checks confirm representative QA/query/resolve/lens
   descriptors still register.
+- 2026-05-20: extracted query, resolve, advisor, BIM requirement validation,
+  and area-reconciliation routes into `app/bim_ai/routes_query_resolve.py`,
+  reducing `app/bim_ai/routes_api.py` to `3,963` lines while preserving the
+  existing `/api/models/{model_id}/query/*`, `/resolve/*`, and `/qa/*` paths.
+  Python compile, ruff, and focused route tests pass.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path
@@ -1307,6 +1313,10 @@ Initial thresholds can be advisory before becoming blocking:
   and proof helpers into `scripts/audit-ui-mcp-parity.evidence.mjs`, reducing
   `scripts/audit-ui-mcp-parity.mjs` to `3,622` local lines with syntax checks
   passing.
+- 2026-05-20: a backend route extraction moved query, resolve, advisor, BIM
+  requirement validation, and area-reconciliation routes into
+  `app/bim_ai/routes_query_resolve.py`, reducing `routes_api.py` to `3,963`
+  local lines with focused Python route tests and ruff passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
