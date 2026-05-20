@@ -77,7 +77,7 @@ A-territory target:
 | GFR-2026-01 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.     |
 | GFR-2026-02 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.       |
 | GFR-2026-03 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing.   |
-| GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.         |
+| GFR-2026-04 | P1       | Done   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.         |
 | GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.     |
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
 | GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.    |
@@ -261,9 +261,18 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   `packages/web/src/plan/planCanvasRenderPasses.ts`. Local `wc -l` reports
   `PlanCanvas.tsx` at `6,597` lines. Focused PlanCanvas tests pass;
   `pnpm --filter @bim-ai/web typecheck` passes.
-- 2026-05-20: the remaining open rows (`GFR-2026-04`, `GFR-2026-06`, and
-  `GFR-2026-08`) currently touch files that already contain unrelated
-  uncommitted parallel-agent changes (`packages/cli/cli.mjs`,
-  `app/bim_ai/api/registry.py`, and `packages/core/src/index.ts`). Continue
-  those rows after those worktree edits are committed or cleared so tracker
+- 2026-05-20: the remaining open rows (`GFR-2026-06` and `GFR-2026-08`)
+  currently touch files that already contain unrelated uncommitted
+  parallel-agent changes (`app/bim_ai/api/registry.py` and
+  `packages/core/src/index.ts`). Continue those rows carefully so tracker
   commits do not accidentally include unrelated work.
+- 2026-05-20: `GFR-2026-04` is Done. The slice moved sketch phase apply/run,
+  evidence collection, initiation-run evidence packaging, bundle application,
+  and JSON artifact helpers into
+  `packages/cli/lib/sketch-phase-workflows.mjs`. Current worktree `wc -l`
+  reports `packages/cli/cli.mjs` at `5,539` lines; the staged commit preserves
+  the unrelated pre-existing trace-command deletion outside this commit, so the
+  committed CLI remains below the `6,000` LOC target. `node --check` passes for
+  the CLI entrypoint and extracted workflow module. Focused CLI initiation/link
+  tests pass. The full `@bim-ai/cli` test suite still fails on pre-existing
+  missing `seed-artifacts/target-house-1` fixtures.

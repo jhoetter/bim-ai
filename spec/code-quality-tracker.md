@@ -177,7 +177,7 @@ Largest current source files observed:
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 6,597      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
-| `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                                                           |
+| `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                                                  |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                                            |
@@ -583,6 +583,10 @@ impact of small changes.
   detail-component and placed-tag annotation rendering into
   `plan/planCanvasRenderPasses.ts`, reducing `PlanCanvas.tsx` to `6,597` local
   lines.
+- 2026-05-20: the CLI extraction moved sketch phase apply/run, evidence
+  collection, initiation-run packaging, bundle application, and JSON artifact
+  helpers into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing
+  `packages/cli/cli.mjs` below the `6,000` LOC tracker target.
 
 ---
 
@@ -1184,6 +1188,9 @@ Initial thresholds can be advisory before becoming blocking:
   isolated render passes into `plan/planCanvasRenderPasses.ts`.
 - 2026-05-20: a further PlanCanvas slice moved annotation render passes into
   the same render-pass module, bringing the canvas under `6,600` LOC.
+- 2026-05-20: the CLI god-file slice moved the sketch phase/evidence workflow
+  into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing `cli.mjs` under
+  `6,000` LOC.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
