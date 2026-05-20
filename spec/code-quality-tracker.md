@@ -184,7 +184,7 @@ Largest current source files observed:
 | `packages/web/src/Viewport.tsx`                             | 5,101      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, command-handler, and camera-orientation hooks. |
 | `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
-| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.                                           |
+| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,813      | Family editor state shell after extracted workbench and properties panel modules.                  |
 
 ## Status Model
 
@@ -1289,6 +1289,10 @@ Initial thresholds can be advisory before becoming blocking:
   contracts, presentation/export contracts, and collaboration-adjacent aliases
   into `core/src/modelContracts.ts`, reducing `packages/core/src/index.ts` to
   `3,386` local lines with core and web typechecks passing.
+- 2026-05-20: a family editor extraction slice moved symbolic-line and sweep
+  properties panels into `familyEditor/FamilyEditorPropertiesPanels.tsx`,
+  reducing `FamilyEditorWorkbench.tsx` to `3,813` local lines with focused
+  family editor tests and web typecheck passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.

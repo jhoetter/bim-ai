@@ -124,6 +124,7 @@ A-territory target:
 | GFR-2026-48 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract composition tab action handlers                            | Workspace below `5,000` LOC with focused tests green.       |
 | GFR-2026-49 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract camera orientation sync hook                               | Viewport below `5,110` LOC with focused tests green.        |
 | GFR-2026-50 | P1       | Done   | `packages/core/src/index.ts`                                | Extract late model contract types                                  | Core index below `4,000` LOC with core/web typechecks green. |
+| GFR-2026-51 | P1       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract family editor properties panels                            | Workbench below `4,000` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -554,3 +555,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   aliases into `packages/core/src/modelContracts.ts`. Local `wc -l` reports
   `packages/core/src/index.ts` at `3,386` lines. `pnpm --filter @bim-ai/core
   typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
+- 2026-05-20: `GFR-2026-51` is Done. The slice moved symbolic-line and sweep
+  properties panels into
+  `packages/web/src/familyEditor/FamilyEditorPropertiesPanels.tsx`. Local
+  `wc -l` reports
+  `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx` at `3,813` lines.
+  Focused family editor tests pass (`64 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
