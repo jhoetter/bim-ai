@@ -31,6 +31,16 @@ Target modules:
   preview, placement HUD, draft notice, and snap label.
 - `plan/PlanCanvasContextOverlays.tsx`: plan wall/canvas/element context menus,
   reveal-hidden actions, imported-CAD query overlays, and wall-join menu.
+- `plan/PlanCanvasViewControls.tsx`: thin-lines, constraints, underlay, and
+  active work-plane view controls.
+- `plan/PlanCanvasSketchOverlay.tsx`: sketch-authoring overlay wiring and
+  pick-wall projection props.
+- `plan/PlanCanvasEmptyStateOverlay.tsx`: empty level message.
+- `plan/planCanvasViewState.ts`: derived plan-view control/readout state.
+- `plan/planCanvasColorSchemeState.ts`: room list and color scheme legend state.
+- `plan/planCanvasComponentPreview.ts`: component asset preview lookup.
+- `plan/planCanvasSelectionState.ts`: selected element, grip, and temporary
+  dimension derivation.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -61,6 +71,13 @@ First landed slices:
 - `plan/PlanCanvasRoomColorLegend.tsx`
 - `plan/PlanCanvasWallDraftOverlays.tsx`
 - `plan/PlanCanvasContextOverlays.tsx`
+- `plan/PlanCanvasViewControls.tsx`
+- `plan/PlanCanvasSketchOverlay.tsx`
+- `plan/PlanCanvasEmptyStateOverlay.tsx`
+- `plan/planCanvasViewState.ts`
+- `plan/planCanvasColorSchemeState.ts`
+- `plan/planCanvasComponentPreview.ts`
+- `plan/planCanvasSelectionState.ts`
 
 ## InspectorContent.tsx
 

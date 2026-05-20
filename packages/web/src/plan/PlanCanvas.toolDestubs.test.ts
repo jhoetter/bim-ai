@@ -21,6 +21,7 @@ const SRC = readSource('PlanCanvas.tsx');
 const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
 const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
+const SKETCH_OVERLAY_SRC = readSource('PlanCanvasSketchOverlay.tsx');
 
 describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('removes every "stub:" console.warn from PlanCanvas.tsx', () => {
@@ -124,11 +125,11 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   });
 
   it('routes Room Separation sketch sessions through Pick Walls-capable SketchCanvas', () => {
-    expect(SRC).toMatch(
+    expect(SKETCH_OVERLAY_SRC).toMatch(
       /planTool\s*===\s*['"]room-separation-sketch['"][\s\S]{0,180}['"]room_separation['"]/,
     );
-    expect(SRC).toMatch(
-      /<SketchCanvas[\s\S]{0,900}wallsForPicking=\{Object\.values\(elementsById\)/,
+    expect(SKETCH_OVERLAY_SRC).toContain(
+      'wallsForPicking={wallsForPicking(elementsById, levelId)}',
     );
   });
 

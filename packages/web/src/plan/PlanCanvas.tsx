@@ -167,7 +167,6 @@ import {
   type SnapTabCycleState,
 } from './snapTabCycle';
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
-import { gripsFor } from './grip-providers';
 import { dimensionTextOffsetResetCommand } from './grip-providers/dimensionGripProvider';
 import {
   HALF_MAX,
@@ -190,7 +189,17 @@ import { PlanCanvasAuthoringOverlays } from './PlanCanvasAuthoringOverlays';
 import { PlanCanvasRoomColorLegend } from './PlanCanvasRoomColorLegend';
 import { PlanCanvasWallDraftOverlays } from './PlanCanvasWallDraftOverlays';
 import { PlanCanvasContextOverlays } from './PlanCanvasContextOverlays';
-import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
+import { PlanCanvasViewControls } from './PlanCanvasViewControls';
+import { PlanCanvasSketchOverlay } from './PlanCanvasSketchOverlay';
+import { usePlanCanvasViewState } from './planCanvasViewState';
+import { usePlanCanvasColorSchemeState } from './planCanvasColorSchemeState';
+import { PlanCanvasEmptyStateOverlay } from './PlanCanvasEmptyStateOverlay';
+import {
+  componentPreviewSymbolKind,
+  resolveActiveComponentAsset,
+} from './planCanvasComponentPreview';
+import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
+import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
 import { HelperDimsLayer } from './HelperDimsLayer';
@@ -251,7 +260,7 @@ import {
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import type { WallContextMenuCommand } from '../workspace/viewport/WallContextMenu';
 import { createSimilarPayload } from './createSimilar';
-import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
+import { type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
 import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
@@ -306,9 +315,7 @@ import {
   lineworkLineWeightPx,
   getLineworkLineDash,
 } from '../workspace/authoring';
-import type { ColorSchemeRoomEntry } from './ColorSchemeDialog';
 import { ColorSchemeLegend } from './ColorSchemeLegend';
-import { buildRoomColorSchemeLegend } from '../schedules/roomColorSchemeLegendReadout';
 
 /** Imperative handle so the tab host can snapshot / restore the 2D camera
  * without continuous callbacks. Fill via cameraHandleRef prop. */
@@ -480,14 +487,9 @@ export function PlanCanvas({
   const lastAutoFitLevelRef = useRef<string | null>(null);
   const snapEngineRef = useRef(new SnapEngine());
   const snapIndicatorRef = useRef<THREE.Mesh | null>(null);
-  // SKT-01: callback refs the SketchCanvas overlay reads to map pointer → mm
-  // and mm → screen pixels using the live orthographic camera. They stay
-  // attached to refs (not state) so panning / zooming updates the overlay
-  // without re-rendering this component.
   const sketchPointerToMmRef = useRef<PointerToMm | null>(null);
   const sketchMmToScreenRef = useRef<MmToScreen | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
-  // WP-NEXT-49: pre-commit boundary validation error shown above the canvas.
   const [boundaryValidationError, setBoundaryValidationError] = useState<string | null>(null);
   // EDT-05 — snap glyph layer state
   const [localSnapSettings] = useState<SnapSettings>(
@@ -686,45 +688,7 @@ export function PlanCanvas({
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
-  // §3.3.5 — Show Constraints toggle: whether EQ markers and lock symbols are shown.
-  const showConstraints = useMemo(() => {
-    if (!activePlanViewId) return false;
-    const pv = elementsById[activePlanViewId];
-    if (!pv || pv.kind !== 'plan_view') return false;
-    return (pv as any).showConstraints ?? false;
-  }, [activePlanViewId, elementsById]);
-  // §2.9.4 — plan underlay ghost toggle state
-  const showUnderlay = useMemo(() => {
-    if (!activePlanViewId) return false;
-    const pv = elementsById[activePlanViewId];
-    if (!pv || pv.kind !== 'plan_view') return false;
-    return (pv as any).showUnderlay ?? false;
-  }, [activePlanViewId, elementsById]);
-  const underlayLevelId = useMemo(() => {
-    if (!activePlanViewId) return null;
-    const pv = elementsById[activePlanViewId];
-    if (!pv || pv.kind !== 'plan_view') return null;
-    return (pv as any).underlayLevelId ?? null;
-  }, [activePlanViewId, elementsById]);
-  const underlayLevels = useMemo(
-    () =>
-      Object.values(elementsById)
-        .filter((e) => e.kind === 'level')
-        .map((e) => ({ id: e.id, name: (e as any).name ?? e.id })),
-    [elementsById],
-  );
   const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
-  // §7.3.1 — active work plane name for the plan view header badge.
-  const activeWorkPlaneName = useMemo(() => {
-    if (!activePlanViewId) return null;
-    const pv = elementsById[activePlanViewId];
-    if (!pv || pv.kind !== 'plan_view') return null;
-    const wpId = (pv as { activeWorkPlaneId?: string | null }).activeWorkPlaneId;
-    if (!wpId) return null;
-    const wp = elementsById[wpId];
-    if (!wp || wp.kind !== 'reference_plane') return null;
-    return (wp as { name?: string }).name ?? null;
-  }, [activePlanViewId, elementsById]);
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
@@ -820,33 +784,24 @@ export function PlanCanvas({
     [elementsById, displayLevelId],
   );
   const lvlId = displayLevelId || activeLevelResolvedId;
+  const {
+    showConstraints,
+    showUnderlay,
+    underlayLevelId,
+    underlayLevels,
+    activeWorkPlaneName,
+    activeLevelElem,
+    levelIsEmpty,
+  } = usePlanCanvasViewState({
+    activePlanViewId,
+    elementsById,
+    levelId: lvlId,
+    displayLevelId,
+    activeLevelResolvedId,
+  });
 
-  // F-025 — active level element for plan canvas elevation badge.
-  const activeLevelElem = useMemo(() => {
-    if (!lvlId) return undefined;
-    const el = elementsById[lvlId];
-    if (el && el.kind === 'level') return el;
-    return undefined;
-  }, [lvlId, elementsById]);
-
-  // EDT-01 — selected wall + grip / temp-dim derivation
-  const selectedWall = useMemo(() => {
-    if (!selectedId) return undefined;
-    const el = elementsById[selectedId];
-    return el && el.kind === 'wall' ? el : undefined;
-  }, [selectedId, elementsById]);
-  const selectedElement = useMemo(
-    () => (selectedId ? elementsById[selectedId] : undefined),
-    [selectedId, elementsById],
-  );
-  const gripDescriptors = useMemo<GripDescriptor[]>(
-    () => (selectedElement ? gripsFor(selectedElement, { elementsById }) : []),
-    [selectedElement, elementsById],
-  );
-  const tempDimTargets = useMemo<TempDimTarget[]>(
-    () => (selectedWall ? tempDimensionsFor(selectedWall, elementsById) : []),
-    [selectedWall, elementsById],
-  );
+  const { selectedWall, selectedElement, gripDescriptors, tempDimTargets } =
+    usePlanCanvasSelectionState({ selectedId, elementsById });
 
   // EDT-01 + EDT-05 — world-mm → screen-px mapping. Cheap to recompute
   // every render because the function closes over the live refs.
@@ -863,59 +818,12 @@ export function PlanCanvas({
     };
   }, []);
 
-  // B03 — empty-state detection: true when the active level has no elements on it
-  const levelIsEmpty = useMemo(() => {
-    const chkId = displayLevelId || activeLevelResolvedId;
-    if (!chkId) return false;
-    return !Object.values(elementsById).some(
-      (e) => 'levelId' in e && (e as { levelId: string }).levelId === chkId,
-    );
-  }, [elementsById, displayLevelId, activeLevelResolvedId]);
-
-  // D8 - Rooms on the active level (for Color Scheme dialog)
-  const roomsOnLevel = useMemo((): ColorSchemeRoomEntry[] => {
-    const out: ColorSchemeRoomEntry[] = [];
-    for (const el of Object.values(elementsById)) {
-      if (el.kind !== 'room') continue;
-      if (lvlId && (el as { levelId?: string }).levelId !== lvlId) continue;
-      out.push({
-        id: el.id,
-        name: (el as { name?: string }).name ?? '',
-        department: (el as { department?: string | null }).department ?? undefined,
-        area: undefined,
-        occupancy: undefined,
-      });
-    }
-    return out;
-  }, [elementsById, lvlId]);
-
-  // §13.1.3 — color fill legend rows derived from the active plan view's colorScheme field.
-  const activePlanViewColorScheme = useMemo(() => {
-    if (!activePlanViewId) return null;
-    const el = elementsById[activePlanViewId];
-    if (!el || el.kind !== 'plan_view') return null;
-    return el.colorScheme ?? null;
-  }, [activePlanViewId, elementsById]);
-
-  const colorSchemeLegendRows = useMemo(
-    () => buildRoomColorSchemeLegend(elementsById, activePlanViewColorScheme),
-    [elementsById, activePlanViewColorScheme],
-  );
-
-  const colorSchemeLegendTitle = useMemo(() => {
-    switch (activePlanViewColorScheme?.category) {
-      case 'name':
-        return 'By Name';
-      case 'department':
-        return 'By Department';
-      case 'area':
-        return 'By Area';
-      case 'occupancy':
-        return 'By Occupancy';
-      default:
-        return 'Color Scheme';
-    }
-  }, [activePlanViewColorScheme]);
+  const { roomsOnLevel, activePlanViewColorScheme, colorSchemeLegendRows, colorSchemeLegendTitle } =
+    usePlanCanvasColorSchemeState({
+      elementsById,
+      activePlanViewId,
+      levelId: lvlId,
+    });
 
   useEffect(() => {
     let cancel = false;
@@ -7319,157 +7227,50 @@ export function PlanCanvas({
     },
     [activateElevationView, onSemanticCommand, selectEl],
   );
-  const activeComponentAsset =
-    planTool === 'component' && activeComponentAssetId
-      ? (() => {
-          const storeAsset = elementsByIdRaw[activeComponentAssetId];
-          if (storeAsset?.kind === 'asset_library_entry') return storeAsset;
-          return activeComponentAssetPreviewEntry?.id === activeComponentAssetId
-            ? activeComponentAssetPreviewEntry
-            : null;
-        })()
-      : null;
+  const activeComponentAsset = resolveActiveComponentAsset({
+    planTool,
+    activeComponentAssetId,
+    elementsById: elementsByIdRaw,
+    previewEntry: activeComponentAssetPreviewEntry,
+  });
   const componentPreviewScreen = hudMm && activeComponentAsset ? worldToScreen(hudMm) : null;
-  const componentPreviewSymbolKind =
-    activeComponentAsset?.planSymbolKind ?? activeComponentAsset?.renderProxyKind;
+  const componentPreviewSymbol = componentPreviewSymbolKind(activeComponentAsset);
 
   return (
     <div
       data-testid="plan-canvas"
       className="relative h-full w-full overflow-hidden bg-canvas-paper"
     >
-      {/* §1.6.10 — Thin Lines toggle button */}
-      <div className="pointer-events-auto absolute left-2 top-1 z-20 flex items-center gap-2">
-        <button
-          type="button"
-          data-testid="plan-view-thin-lines-toggle"
-          title="Thin Lines"
-          onClick={() => useBimStore.getState().toggleThinLines()}
-          style={{
-            padding: '2px 8px',
-            fontSize: 11,
-            border: '1px solid var(--color-border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
-            color: thinLinesEnabled ? '#fff' : 'var(--color-foreground)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          TL
-        </button>
-        {/* §3.3.5 — Show Constraints toggle button */}
-        {activePlanViewId ? (
-          <button
-            type="button"
-            data-testid="plan-view-show-constraints-btn"
-            title={showConstraints ? 'Hide Constraints' : 'Show Constraints'}
-            onClick={() =>
-              void onSemanticCommand({ type: 'toggleShowConstraints', viewId: activePlanViewId })
-            }
-            style={{
-              fontSize: 10,
-              padding: '1px 5px',
-              border: `1px solid ${showConstraints ? '#22c55e' : 'var(--border)'}`,
-              borderRadius: 3,
-              background: showConstraints ? 'rgba(34,197,94,0.15)' : 'transparent',
-              color: showConstraints ? '#22c55e' : 'inherit',
-              cursor: 'pointer',
-            }}
-          >
-            EQ
-          </button>
-        ) : null}
-        {/* §2.9.4 — Plan underlay toggle + level selector */}
-        {activePlanViewId ? (
-          <button
-            type="button"
-            data-testid="plan-view-underlay-btn"
-            title={showUnderlay ? 'Hide Underlay' : 'Show Underlay'}
-            onClick={() =>
-              void onSemanticCommand({ type: 'setPlanUnderlay', viewId: activePlanViewId })
-            }
-            style={{
-              fontSize: 10,
-              padding: '1px 5px',
-              border: `1px solid ${showUnderlay ? '#a78bfa' : 'var(--border)'}`,
-              borderRadius: 3,
-              background: showUnderlay ? 'rgba(167,139,250,0.15)' : 'transparent',
-              color: showUnderlay ? '#a78bfa' : 'inherit',
-              cursor: 'pointer',
-            }}
-          >
-            UL
-          </button>
-        ) : null}
-        {showUnderlay && activePlanViewId ? (
-          <select
-            data-testid="plan-view-underlay-level-select"
-            value={underlayLevelId ?? ''}
-            onChange={(e) =>
-              void onSemanticCommand({
-                type: 'setPlanUnderlay',
-                viewId: activePlanViewId,
-                underlayLevelId: e.target.value || null,
-                showUnderlay: true,
-              })
-            }
-            style={{
-              fontSize: 10,
-              padding: '1px 4px',
-              background: 'transparent',
-              color: 'inherit',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <option value="">-- No Underlay --</option>
-            {underlayLevels.map((lv) => (
-              <option key={lv.id} value={lv.id}>
-                {lv.name}
-              </option>
-            ))}
-          </select>
-        ) : null}
-        {/* §7.3.1 — Active work plane badge */}
-        {activeWorkPlaneName ? (
-          <span
-            data-testid="plan-view-work-plane-badge"
-            style={{
-              fontSize: 10,
-              color: 'var(--color-muted)',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            Work Plane: {activeWorkPlaneName}
-            {activePlanViewId ? (
-              <button
-                type="button"
-                data-testid="plan-view-work-plane-clear"
-                onClick={() => {
-                  void onSemanticCommand({
-                    type: 'updateElementProperty',
-                    elementId: activePlanViewId,
-                    key: 'activeWorkPlaneId',
-                    value: null,
-                  });
-                }}
-                style={{
-                  fontSize: 10,
-                  cursor: 'pointer',
-                  background: 'none',
-                  border: 'none',
-                  color: 'inherit',
-                }}
-              >
-                ×
-              </button>
-            ) : null}
-          </span>
-        ) : null}
-      </div>
+      <PlanCanvasViewControls
+        thinLinesEnabled={thinLinesEnabled}
+        onToggleThinLines={() => useBimStore.getState().toggleThinLines()}
+        activePlanViewId={activePlanViewId}
+        showConstraints={showConstraints}
+        onToggleConstraints={(viewId) =>
+          void onSemanticCommand({ type: 'toggleShowConstraints', viewId })
+        }
+        showUnderlay={showUnderlay}
+        onToggleUnderlay={(viewId) => void onSemanticCommand({ type: 'setPlanUnderlay', viewId })}
+        underlayLevelId={underlayLevelId}
+        underlayLevels={underlayLevels}
+        onSetUnderlayLevel={(viewId, underlayLevelId) =>
+          void onSemanticCommand({
+            type: 'setPlanUnderlay',
+            viewId,
+            underlayLevelId,
+            showUnderlay: true,
+          })
+        }
+        activeWorkPlaneName={activeWorkPlaneName}
+        onClearWorkPlane={(elementId) => {
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId,
+            key: 'activeWorkPlaneId',
+            value: null,
+          });
+        }}
+      />
       <PlanCanvasContextOverlays
         wallContextMenu={wallContextMenu}
         onWallContextCommand={handleWallContextMenuCommand}
@@ -7528,16 +7329,7 @@ export function PlanCanvas({
         visible={legendVisible}
         onClose={() => setLegendVisible(false)}
       />
-      {/* B03 — empty-state overlay (spec §14.7): shown when the active level has no elements */}
-      {levelIsEmpty && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-center">
-          <p className="font-medium text-foreground text-sm">This level is empty.</p>
-          <p className="text-muted text-xs">
-            Press W to draw a wall, or insert the seed house from the Project menu.
-          </p>
-          <p className="text-muted text-[10px] mt-1">Use PageUp / PageDown to switch levels.</p>
-        </div>
-      )}
+      <PlanCanvasEmptyStateOverlay visible={levelIsEmpty} />
       <PlanCanvasAuthoringOverlays
         revealHiddenMode={revealHiddenMode}
         activePlanViewId={activePlanViewId}
@@ -7682,62 +7474,26 @@ export function PlanCanvas({
         boundaryValidationError={boundaryValidationError}
         onDismissBoundaryValidationError={() => setBoundaryValidationError(null)}
         componentPreviewScreen={componentPreviewScreen}
-        componentPreviewSymbolKind={componentPreviewSymbolKind}
+        componentPreviewSymbolKind={componentPreviewSymbol}
       />
-      {/* SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay. Active when one
-          of the *-sketch tools is selected. Commits a Create<Kind> command on
-          Finish and otherwise leaves the document untouched. */}
-      {(planTool === 'floor-sketch' ||
-        planTool === 'roof-sketch' ||
-        planTool === 'room-separation-sketch' ||
-        planTool === 'masking-region') &&
-      modelId &&
-      lvlId ? (
-        <SketchCanvas
-          modelId={modelId}
-          levelId={lvlId}
-          elementKind={
-            planTool === 'roof-sketch'
-              ? 'roof'
-              : planTool === 'room-separation-sketch'
-                ? 'room_separation'
-                : planTool === 'masking-region'
-                  ? 'masking_region'
-                  : 'floor'
-          }
-          pointerToMmRef={sketchPointerToMmRef}
-          mmToScreenRef={sketchMmToScreenRef}
-          wallsForPicking={Object.values(elementsById)
-            .filter(
-              (el): el is Extract<Element, { kind: 'wall' }> =>
-                el.kind === 'wall' && (!lvlId || el.levelId === lvlId),
-            )
-            .map((w) => ({
-              id: w.id,
-              startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
-              endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
-              thicknessMm: w.thicknessMm,
-            }))}
-          floorTypeId={useBimStore.getState().activeFloorTypeId ?? undefined}
-          extraOptions={
-            planTool === 'masking-region' && activePlanViewId
-              ? { hostViewId: activePlanViewId }
-              : planTool === 'roof-sketch'
-                ? {
-                    slopeDeg: initialRoofState().slopeDeg,
-                    overhangMm: initialRoofState().eaveOverhangMm,
-                  }
-                : planTool === 'floor-sketch'
-                  ? { offsetMm: useBimStore.getState().floorDrawOffsetMm || undefined }
-                  : undefined
-          }
-          onFinished={(createdId) => {
-            setPlanTool('select');
-            if (createdId) selectEl(createdId);
-          }}
-          onCancelled={() => setPlanTool('select')}
-        />
-      ) : null}
+      <PlanCanvasSketchOverlay
+        planTool={planTool}
+        modelId={modelId}
+        levelId={lvlId}
+        activePlanViewId={activePlanViewId}
+        elementsById={elementsById}
+        pointerToMmRef={sketchPointerToMmRef}
+        mmToScreenRef={sketchMmToScreenRef}
+        floorTypeId={useBimStore.getState().activeFloorTypeId}
+        floorDrawOffsetMm={useBimStore.getState().floorDrawOffsetMm}
+        roofSlopeDeg={initialRoofState().slopeDeg}
+        roofOverhangMm={initialRoofState().eaveOverhangMm}
+        onFinished={(createdId) => {
+          setPlanTool('select');
+          if (createdId) selectEl(createdId);
+        }}
+        onCancelled={() => setPlanTool('select')}
+      />
     </div>
   );
 }
