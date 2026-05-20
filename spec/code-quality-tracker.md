@@ -5,6 +5,8 @@ Last updated: 2026-05-20
 Purpose: track the current code-quality risks that block the repository from
 being a healthy production-grade codebase. This is the active successor to the
 completed historical tracker in `spec/archive/code-quality-tracker.md`.
+Ongoing large-file reduction after the B-grade closeout is tracked in
+`spec/god-file-reduction-tracker.md`.
 
 This tracker is intentionally limited to engineering quality: type safety,
 maintainability, test signal, tooling reliability, repository hygiene, and
