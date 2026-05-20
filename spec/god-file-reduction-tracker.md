@@ -75,7 +75,7 @@ A-territory target:
 | ----------- | -------- | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
 | GFR-2026-01 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.   |
 | GFR-2026-02 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
-| GFR-2026-03 | P1       | Open   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
+| GFR-2026-03 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
 | GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
 | GFR-2026-05 | P1       | Open   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
@@ -136,3 +136,10 @@ A-territory target:
 - 2026-05-20: `GFR-2026-02` is Done. Local `wc -l` reports
   `PlanCanvas.tsx` at `8,468` lines, below the `8,500` target. The focused
   overlay test and `pnpm --filter @bim-ai/web typecheck` pass.
+- 2026-05-20: `GFR-2026-03` is Done. Local `wc -l` reports
+  `Workspace.tsx` at `5,992` lines, below the `6,000` target. The slice moved
+  the dialog/modal stack into `packages/web/src/workspace/WorkspaceOverlays.tsx`
+  and the shell header/canvas/footer slots into
+  `packages/web/src/workspace/WorkspaceAppShellSlots.tsx`.
+  `pnpm --filter @bim-ai/web typecheck` passes; focused workspace tests are
+  tracked in the verification notes for the commit.

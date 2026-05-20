@@ -17,7 +17,6 @@ import {
   ScheduleViewHifi,
   SectionViewHifi,
   SheetHifi,
-  WallHifi,
 } from '@bim-ai/icons';
 import { Icons, type IconName } from '@bim-ai/ui';
 
@@ -33,7 +32,6 @@ import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDi
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
 import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
-import { ClearanceViolationPanel } from './ClearanceViolationPanel';
 import {
   applyCommand,
   ApiHttpError,
@@ -43,7 +41,6 @@ import {
   patchCommentResolved,
   undoModel,
   redoModel,
-  uploadDxfFile,
 } from '../lib/api';
 import {
   setActiveComponentAssetId,
@@ -56,7 +53,6 @@ import {
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
 import type { LensMode, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
-import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useStructuralValidationViolations } from '../advisor/structuralAdvisorViolations';
 import {
@@ -77,14 +73,7 @@ import {
 } from '../plan/snapSettings';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
-import {
-  AppShell,
-  ParticipantStrip,
-  RibbonBar,
-  StatusBar,
-  ViewContextStatusPanel,
-  type WorkspaceMode,
-} from './shell';
+import { AppShell, RibbonBar, ViewContextStatusPanel, type WorkspaceMode } from './shell';
 import { LensDropdown } from './shell/LensDropdown';
 import { OptionsBar, ToolModifierBar } from './authoring';
 import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
@@ -121,7 +110,6 @@ import {
   type PaneSplitDirection,
 } from './paneLayout';
 import {
-  CompositionBar,
   nextCompositionId,
   persistCompositions,
   readPersistedCompositions,
@@ -136,31 +124,12 @@ import {
   buildSnapshotPayload,
   downloadSnapshot,
   findRecentProject,
-  ManageLinksDialog,
-  ProjectInfoDialog,
-  ProjectMenu,
-  ProjectSetupDialog,
-  ProjectUnitsDialog,
   type ProjectMenuItemRecent,
   pushRollingSnapshotBackup,
   pushRecentProject,
   readRecentProjects,
   readSnapshotFile,
-  VVDialog,
 } from './project';
-import { PhaseManagerDialog } from '../phases/PhaseManagerDialog';
-import { ManagePhasesDialog } from './phases/ManagePhasesDialog';
-import { GlobalParamsDialog } from './project/GlobalParamsDialog';
-import { ManageGlobalParamsDialog } from './ManageGlobalParamsDialog';
-import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
-import { DimensionStyleDialog } from './DimensionStyleDialog';
-import { ViewRangeDialog } from './ViewRangeDialog';
-import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
-import { PerViewVGDialog } from './PerViewVGDialog';
-import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
-import { TerracePresetDialog } from './TerracePresetDialog';
-import { buildTerraceRailing } from '../plan/terraceFromFloor';
-import { DxfImportDialog } from './DxfImportDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -169,26 +138,15 @@ import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
 } from './readouts';
-import { CommentsPanel } from './comments';
-import { ActivityDrawer } from '../collab/ActivityDrawer';
-import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
-import { LibraryOverlay } from './library';
 import { useActivityStore } from '../collab/activityStore';
-import { JobsPanel } from '../jobs/JobsPanel';
-import { CheatsheetModal } from '../cmd/CheatsheetModal';
-import { Save3dViewAsDialog } from '../Save3dViewAsDialog';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
-import { getRegistry } from '../cmdPalette/registry';
-import {
-  FamilyLibraryPanel,
-  type ExternalCatalogPlacement,
-  type FamilyLibraryArrayFormulaUpdate,
-  type FamilyLibraryPlaceKind,
+import type {
+  ExternalCatalogPlacement,
+  FamilyLibraryArrayFormulaUpdate,
+  FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
-import { MaterialBrowserDialog } from '../familyEditor/MaterialBrowserDialog';
-import { AppearanceAssetBrowserDialog } from '../familyEditor/AppearanceAssetBrowserDialog';
 import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
@@ -200,30 +158,21 @@ import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { exportToIfc } from '../export/ifcExporter';
 import { exportToDxf } from '../export/dxfExporter';
-import { createToposolidFromDxf } from '../tools/dxfContourImport';
 import { exportSceneToDwg } from '../viewport/dwgExport';
 import { exportSceneToDgn } from '../export/dgnExporter';
-import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
-import { canvasContainerStyle, CanvasMount } from './viewport';
-import {
-  defaultTabFallbackForKind,
-  EmptyStateOverlay,
-  resolvePlanTabTarget,
-} from './WorkspaceHelpers';
-import { EmptyStateHint } from './shell';
-import { MilestoneDialog } from '../collab/MilestoneDialog';
-import { AppSettingsPanel } from './AppSettingsPanel';
-import { ProjectVersionHistoryPanel } from './ProjectVersionHistoryPanel';
-import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
-import { SelectionFilterDialog } from '../plan/selectionFilter';
-import { CreateGroupDialog } from '../groups/CreateGroupDialog';
-import { GroupEditModeBar } from '../groups/GroupEditModeBar';
-import { applyCreateGroup } from '../groups/groupCommands';
+import { CanvasMount } from './viewport';
+import { defaultTabFallbackForKind, resolvePlanTabTarget } from './WorkspaceHelpers';
 import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './hideInView';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
+import {
+  WorkspaceCanvasSlot,
+  WorkspaceFooterSlot,
+  WorkspaceHeaderSlot,
+} from './WorkspaceAppShellSlots';
+import { WorkspaceOverlays } from './WorkspaceOverlays';
 import { canonicalPlanToolForMode, mapComments, planToolToToolId } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { usePresenceStore } from '../presenceStore';
@@ -235,9 +184,6 @@ import {
 } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
-import { PrintPlotDialog } from './sheets/PrintPlotDialog';
-import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
-import { QuickAccessToolbar } from './QuickAccessToolbar';
 import {
   generateWallsFromMass,
   generateFloorsFromMass,
@@ -5633,14 +5579,142 @@ export function Workspace(): JSX.Element {
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
     <>
-      <GroupEditModeBar />
-      <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
-      <PrintPlotDialog open={printPlotOpen} onClose={() => setPrintPlotOpen(false)} sheets={[]} />
-      <Save3dViewAsDialog
-        isOpen={save3dViewAsOpen}
-        suggestedName={`Saved 3D View ${Object.values(elementsById).filter((e) => e.kind === 'saved_view').length + 1}`}
-        onSave={commitSave3dViewWithName}
-        onCancel={() => setSave3dViewAsOpen(false)}
+      <WorkspaceOverlays
+        elementsById={elementsById}
+        modelId={modelId}
+        revision={revision}
+        userId={userId}
+        userDisplayName={userDisplayName}
+        activeLevelId={activeLevelId}
+        activePlanViewId={activePlanViewId}
+        activeWorkspaceId={activeWorkspaceId}
+        selectedId={selectedId}
+        selectedIds={selectedIds}
+        projectNameRef={projectNameRef}
+        recentProjects={recentProjects}
+        seedModels={seedModels}
+        activeSeedLabel={activeSeedLabel}
+        saveAsMaximumBackups={saveAsMaximumBackups}
+        sheetPages={sheetPages}
+        comments={comments}
+        commentOutsideScopeNote={disciplineScopeNote(
+          activeWorkspaceId,
+          selectedId ? (elementsById[selectedId] as Element | undefined) : undefined,
+        )}
+        advisorCounts={advisorCounts}
+        unifiedAdvisorViolations={unifiedAdvisorViolations}
+        buildingPreset={buildingPreset}
+        codePresetIds={codePresetIds}
+        perspectiveId={perspectiveId}
+        activeMaterialKey={activeMaterialKey}
+        activeMaterialTargetLabel={activeMaterialTargetLabel}
+        groupRegistry={groupRegistry}
+        clearanceViolations={clearanceViolations}
+        activityIsOpen={activityIsOpen}
+        libraryDiscipline={libraryDisciplineFromLens(focusedPaneLensMode)}
+        vvDialogOpen={vvDialogOpen}
+        cheatsheetOpen={cheatsheetOpen}
+        setCheatsheetOpen={setCheatsheetOpen}
+        printPlotOpen={printPlotOpen}
+        setPrintPlotOpen={setPrintPlotOpen}
+        save3dViewAsOpen={save3dViewAsOpen}
+        setSave3dViewAsOpen={setSave3dViewAsOpen}
+        familyLibraryOpen={familyLibraryOpen}
+        setFamilyLibraryOpen={setFamilyLibraryOpen}
+        materialBrowserOpen={materialBrowserOpen}
+        setMaterialBrowserOpen={setMaterialBrowserOpen}
+        appearanceAssetBrowserOpen={appearanceAssetBrowserOpen}
+        setAppearanceAssetBrowserOpen={setAppearanceAssetBrowserOpen}
+        clearActiveMaterialBrowserTarget={() => setActiveMaterialBrowserTarget(null)}
+        tourOpen={tourOpen}
+        setTourOpen={setTourOpen}
+        templatesOpen={templatesOpen}
+        setTemplatesOpen={setTemplatesOpen}
+        versionHistoryOpen={versionHistoryOpen}
+        setVersionHistoryOpen={setVersionHistoryOpen}
+        appSettingsOpen={appSettingsOpen}
+        setAppSettingsOpen={setAppSettingsOpen}
+        advisorOpen={advisorOpen}
+        setAdvisorOpen={setAdvisorOpen}
+        jobsOpen={jobsOpen}
+        setJobsOpen={setJobsOpen}
+        commentsOpen={commentsOpen}
+        setCommentsOpen={setCommentsOpen}
+        projectMenuOpen={projectMenuOpen}
+        setProjectMenuOpen={setProjectMenuOpen}
+        projectSetupOpen={projectSetupOpen}
+        setProjectSetupOpen={setProjectSetupOpen}
+        manageLinksOpen={manageLinksOpen}
+        setManageLinksOpen={setManageLinksOpen}
+        dxfImportOpen={dxfImportOpen}
+        setDxfImportOpen={setDxfImportOpen}
+        projectUnitsOpen={projectUnitsOpen}
+        setProjectUnitsOpen={setProjectUnitsOpen}
+        phaseManagerOpen={phaseManagerOpen}
+        setPhaseManagerOpen={setPhaseManagerOpen}
+        managePhasesOpen={managePhasesOpen}
+        setManagePhasesOpen={setManagePhasesOpen}
+        globalParamsOpen={globalParamsOpen}
+        setGlobalParamsOpen={setGlobalParamsOpen}
+        vgOpen={vgOpen}
+        setVgOpen={setVgOpen}
+        perViewVGOpen={perViewVGOpen}
+        setPerViewVGOpen={setPerViewVGOpen}
+        setWorkPlaneOpen={setWorkPlaneOpen}
+        setSetWorkPlaneOpen={setSetWorkPlaneOpen}
+        manageGlobalParamsOpen={manageGlobalParamsOpen}
+        setManageGlobalParamsOpen={setManageGlobalParamsOpen}
+        dimStyleOpen={dimStyleOpen}
+        setDimStyleOpen={setDimStyleOpen}
+        projectInfoOpen={projectInfoOpen}
+        setProjectInfoOpen={setProjectInfoOpen}
+        milestoneDialogOpen={milestoneDialogOpen}
+        setMilestoneDialogOpen={setMilestoneDialogOpen}
+        pasteToLevelsOpen={pasteToLevelsOpen}
+        setPasteToLevelsOpen={setPasteToLevelsOpen}
+        selectionFilterOpen={selectionFilterOpen}
+        setSelectionFilterOpen={setSelectionFilterOpen}
+        createGroupOpen={createGroupOpen}
+        setCreateGroupOpen={setCreateGroupOpen}
+        sharePresentationOpen={sharePresentationOpen}
+        setSharePresentationOpen={setSharePresentationOpen}
+        libraryOpen={libraryOpen}
+        setLibraryOpen={setLibraryOpen}
+        terraceFloorId={terraceFloorId}
+        setTerraceFloorId={setTerraceFloorId}
+        setClearanceViolations={setClearanceViolations}
+        onSemanticCommand={onSemanticCommand}
+        commitSave3dViewWithName={commitSave3dViewWithName}
+        handlePlaceFamilyType={handlePlaceFamilyType}
+        handlePlaceCatalogFamily={handlePlaceCatalogFamily}
+        handleLoadCatalogFamily={handleLoadCatalogFamily}
+        handleUpdateArrayFormula={handleUpdateArrayFormula}
+        assignMaterialToTarget={assignMaterialToTarget}
+        setBuildingPreset={setBuildingPreset}
+        openElementById={openElementById}
+        handleCommentPost={handleCommentPost}
+        handleCommentResolve={handleCommentResolve}
+        handlePickRecent={handlePickRecent}
+        loadSeedModel={loadSeedModel}
+        insertSeedHouse={insertSeedHouse}
+        handleSaveSnapshot={handleSaveSnapshot}
+        handleSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
+        handleRestoreSnapshot={handleRestoreSnapshot}
+        openMilestoneDialog={openMilestoneDialog}
+        openMaterialBrowser={openMaterialBrowser}
+        openAppearanceAssetBrowser={openAppearanceAssetBrowser}
+        handleNewClear={handleNewClear}
+        replayOnboardingTour={replayOnboardingTour}
+        handleExportIfc={handleExportIfc}
+        handleExportDxf={handleExportDxf}
+        handleExportDwg={handleExportDwg}
+        handleExportDgn={handleExportDgn}
+        handleDuplicateProject={handleDuplicateProject}
+        handleRevertProject={handleRevertProject}
+        closeVVDialog={closeVVDialog}
+        setGroupRegistry={setGroupRegistry}
+        closeActivityDrawer={closeActivityDrawer}
+        handleLibraryPlace={handleLibraryPlace}
       />
       <CommandPalette
         isOpen={paletteOpen}
@@ -5818,483 +5892,6 @@ export function Workspace(): JSX.Element {
           },
         }}
       />
-      <FamilyLibraryPanel
-        open={familyLibraryOpen}
-        onClose={() => setFamilyLibraryOpen(false)}
-        elementsById={elementsById}
-        onPlaceType={handlePlaceFamilyType}
-        onPlaceCatalogFamily={handlePlaceCatalogFamily}
-        onLoadCatalogFamily={handleLoadCatalogFamily}
-        onUpdateArrayFormula={handleUpdateArrayFormula}
-        onImportLibraryFamilies={(families) => {
-          const { elementsById: cur } = useBimStore.getState();
-          useBimStore.setState({
-            elementsById: {
-              ...cur,
-              ...Object.fromEntries(
-                families.map((family) => {
-                  const id = cur[family.id] ? `fam-import-${Date.now()}-${family.id}` : family.id;
-                  return [id, { ...family, id }];
-                }),
-              ),
-            },
-          });
-        }}
-      />
-      {materialBrowserOpen ? (
-        <MaterialBrowserDialog
-          currentKey={activeMaterialKey}
-          targetLabel={activeMaterialTargetLabel}
-          elementsById={elementsById}
-          onAssign={(materialKey) => {
-            assignMaterialToTarget(materialKey);
-            setMaterialBrowserOpen(false);
-            setActiveMaterialBrowserTarget(null);
-          }}
-          onClose={() => {
-            setMaterialBrowserOpen(false);
-            setActiveMaterialBrowserTarget(null);
-          }}
-        />
-      ) : null}
-      {appearanceAssetBrowserOpen ? (
-        <AppearanceAssetBrowserDialog
-          currentKey={activeMaterialKey}
-          targetLabel={activeMaterialTargetLabel}
-          elementsById={elementsById}
-          onReplace={(materialKey) => {
-            assignMaterialToTarget(materialKey);
-            setAppearanceAssetBrowserOpen(false);
-            setActiveMaterialBrowserTarget(null);
-          }}
-          onClose={() => {
-            setAppearanceAssetBrowserOpen(false);
-            setActiveMaterialBrowserTarget(null);
-          }}
-        />
-      ) : null}
-      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
-      {templatesOpen && <ProjectTemplatesDialog onClose={() => setTemplatesOpen(false)} />}
-      {versionHistoryOpen ? (
-        <ProjectVersionHistoryPanel
-          modelId={modelId ?? 'empty'}
-          onClose={() => setVersionHistoryOpen(false)}
-          onRestore={(milestoneId) => {
-            void onSemanticCommand({ type: 'restoreMilestone', milestoneId });
-            setVersionHistoryOpen(false);
-          }}
-        />
-      ) : null}
-      {appSettingsOpen ? <AppSettingsPanel onClose={() => setAppSettingsOpen(false)} /> : null}
-      {vvDialogOpen ? <VVDialog open={vvDialogOpen} onClose={closeVVDialog} /> : null}
-      {advisorOpen ? (
-        <div
-          data-testid="advisor-dialog-backdrop"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 sm:items-center"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setAdvisorOpen(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="advisor-dialog-title"
-            data-testid="advisor-dialog"
-            className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-3xl flex-col rounded border border-border bg-surface shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div>
-                <h2 id="advisor-dialog-title" className="text-sm font-semibold text-foreground">
-                  Advisor
-                </h2>
-                <p className="text-[11px] text-muted">
-                  {advisorCounts.error} errors · {advisorCounts.warning} warnings ·{' '}
-                  {advisorCounts.info} info
-                </p>
-              </div>
-              <button
-                type="button"
-                data-testid="advisor-dialog-close"
-                onClick={() => setAdvisorOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label="Close advisor"
-              >
-                ×
-              </button>
-            </div>
-            <div className="min-h-0 overflow-auto p-4">
-              <AdvisorPanel
-                violations={unifiedAdvisorViolations}
-                preset={buildingPreset}
-                onPreset={setBuildingPreset}
-                codePresets={codePresetIds}
-                onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
-                perspective={perspectiveId}
-                showAllPerspectives
-                onNavigateToElement={(elementId) => {
-                  openElementById(elementId);
-                  setAdvisorOpen(false);
-                }}
-                onIsolateElements={(elementIds) => {
-                  useBimStore.getState().setTemporaryVisibility({
-                    viewId: activePlanViewId ?? 'advisor',
-                    mode: 'isolate',
-                    categories: [],
-                    elementIds,
-                  });
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {jobsOpen ? (
-        <div
-          data-testid="jobs-dialog-backdrop"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 sm:items-center"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setJobsOpen(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="jobs-dialog-title"
-            data-testid="jobs-dialog"
-            className="relative flex h-[min(760px,calc(100vh-32px))] w-full max-w-sm flex-col overflow-hidden rounded border border-border bg-surface shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <h2 id="jobs-dialog-title" className="text-sm font-semibold text-foreground">
-                Jobs
-              </h2>
-              <button
-                type="button"
-                data-testid="jobs-dialog-close"
-                onClick={() => setJobsOpen(false)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label="Close jobs"
-              >
-                ×
-              </button>
-            </div>
-            <div className="min-h-0 flex-1">
-              <JobsPanel />
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {commentsOpen ? (
-        <div
-          data-testid="comments-overlay"
-          style={{ position: 'fixed', top: 56, right: 12, zIndex: 50 }}
-        >
-          <CommentsPanel
-            comments={comments}
-            userDisplay={userDisplayName || 'Guest'}
-            outsideScopeNote={disciplineScopeNote(
-              activeWorkspaceId,
-              selectedId ? (elementsById[selectedId] as Element | undefined) : undefined,
-            )}
-            onPost={handleCommentPost}
-            onResolve={handleCommentResolve}
-            onClose={() => setCommentsOpen(false)}
-          />
-        </div>
-      ) : null}
-      <ProjectMenu
-        open={projectMenuOpen}
-        onOpenChange={setProjectMenuOpen}
-        anchorRef={projectNameRef}
-        recent={recentProjects}
-        onPickRecent={handlePickRecent}
-        seedModels={seedModels}
-        activeSeedModelId={modelId ?? null}
-        onPickSeedModel={(id) => void loadSeedModel(id)}
-        onInsertSeed={() => void insertSeedHouse()}
-        onSaveSnapshot={handleSaveSnapshot}
-        modelId={modelId}
-        saveAsMaximumBackups={saveAsMaximumBackups}
-        onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
-        onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
-        onOpenMilestone={openMilestoneDialog}
-        onOpenVersionHistory={() => setVersionHistoryOpen(true)}
-        onOpenMaterialBrowser={() => openMaterialBrowser()}
-        onOpenAppearanceAssetBrowser={() => openAppearanceAssetBrowser()}
-        onOpenProjectSetup={() => setProjectSetupOpen(true)}
-        onOpenProjectUnits={() => setProjectUnitsOpen(true)}
-        onManagePhases={() => setPhaseManagerOpen(true)}
-        onOpenGlobalParams={() => setGlobalParamsOpen(true)}
-        onOpenProjectInfo={() => setProjectInfoOpen(true)}
-        onOpenSettings={() => setAppSettingsOpen(true)}
-        onOpenProjectTemplates={() => setTemplatesOpen(true)}
-        onNewClear={handleNewClear}
-        onReplayTour={replayOnboardingTour}
-        onManageLinks={() => setManageLinksOpen(true)}
-        onLinkIfc={(file) => {
-          // FED-04: the workspace doesn't know its host model id at this
-          // layer; surface a console message and open the ManageLinksDialog
-          // so the user can finish the import there. Wired upstream by the
-          // model-aware shell.
-          console.warn('link-ifc selected', { name: file.name, size: file.size });
-          setManageLinksOpen(true);
-        }}
-        onLinkDxf={(file, options) => {
-          if (!modelId || !activeLevelId) {
-            setManageLinksOpen(true);
-            return;
-          }
-          void (async () => {
-            try {
-              await uploadDxfFile(modelId, file, activeLevelId, options);
-              // Refresh will happen via WebSocket broadcast
-              setManageLinksOpen(true);
-            } catch (err) {
-              console.error('DXF upload failed:', err);
-              setManageLinksOpen(true);
-            }
-          })();
-        }}
-        onExportIfc={handleExportIfc}
-        onExportDxf={handleExportDxf}
-        onExportDwg={handleExportDwg}
-        onExportDgn={handleExportDgn}
-        exportLevels={Object.values(elementsById)
-          .filter((e) => e.kind === 'level')
-          .map((e) => ({ id: e.id, name: (e as { name?: string }).name ?? e.id }))}
-        projectName={activeSeedLabel ?? 'project'}
-        onDuplicateProject={handleDuplicateProject}
-        onRevertProject={handleRevertProject}
-        onResetWorkspace={() => void onSemanticCommand({ type: 'resetWorkspace' })}
-        dxfLayerMapping={
-          (Object.values(elementsById).find((e) => e.kind === 'project_settings') as any)
-            ?.dxfLayerMapping
-        }
-        onSetDxfLayerMapping={(mapping) =>
-          void onSemanticCommand({ type: 'setDxfLayerMapping', mapping })
-        }
-      />
-      <ProjectSetupDialog
-        open={projectSetupOpen}
-        onClose={() => setProjectSetupOpen(false)}
-        elementsById={elementsById}
-        modelId={modelId}
-        revision={revision}
-        onSemanticCommand={onSemanticCommand}
-        onOpenManageLinks={() => {
-          setProjectSetupOpen(false);
-          setManageLinksOpen(true);
-        }}
-      />
-      <ManageLinksDialog
-        open={manageLinksOpen}
-        onClose={() => setManageLinksOpen(false)}
-        onSemanticCommand={onSemanticCommand}
-        activeLevelId={activeLevelId ?? undefined}
-      />
-      {dxfImportOpen && (
-        <DxfImportDialog
-          onImport={(text) => {
-            const topo = createToposolidFromDxf(text, activeLevelId ?? null);
-            void onSemanticCommand({ type: 'create_toposolid', element: topo });
-            setDxfImportOpen(false);
-          }}
-          onClose={() => setDxfImportOpen(false)}
-        />
-      )}
-      <ProjectUnitsDialog open={projectUnitsOpen} onClose={() => setProjectUnitsOpen(false)} />
-      <PhaseManagerDialog
-        open={phaseManagerOpen}
-        onClose={() => setPhaseManagerOpen(false)}
-        elementsById={elementsById}
-        onSemanticCommand={onSemanticCommand}
-      />
-      <ManagePhasesDialog
-        isOpen={managePhasesOpen}
-        phases={Object.values(elementsById).filter(
-          (e): e is Extract<(typeof elementsById)[string], { kind: 'phase' }> => e.kind === 'phase',
-        )}
-        onCreatePhase={(cmd) => void onSemanticCommand({ type: 'create_phase', ...cmd })}
-        onUpdatePhase={(cmd) => void onSemanticCommand({ type: 'update_phase', ...cmd })}
-        onDeletePhase={(id) => void onSemanticCommand({ type: 'delete_phase', id })}
-        onClose={() => setManagePhasesOpen(false)}
-      />
-      <GlobalParamsDialog
-        open={globalParamsOpen}
-        onClose={() => setGlobalParamsOpen(false)}
-        elementsById={elementsById}
-        onSemanticCommand={onSemanticCommand}
-      />
-      {vgOpen && activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view' ? (
-        <VisibilityGraphicsDialog
-          open={vgOpen}
-          onClose={() => setVgOpen(false)}
-          planView={
-            elementsById[activePlanViewId] as Extract<
-              (typeof elementsById)[string],
-              { kind: 'plan_view' }
-            >
-          }
-          onOverrideChange={(category, patch) =>
-            void onSemanticCommand({
-              type: 'update_category_override',
-              planViewId: activePlanViewId,
-              category,
-              patch,
-            })
-          }
-        />
-      ) : null}
-      {/* §1.6.10 — per-view category visibility/graphics override dialog */}
-      <PerViewVGDialog
-        open={perViewVGOpen}
-        onClose={() => setPerViewVGOpen(false)}
-        activePlanViewId={activePlanViewId ?? null}
-        elementsById={elementsById}
-        onApply={(viewId, overrides) =>
-          void onSemanticCommand({
-            type: 'updateElementProperty',
-            elementId: viewId,
-            key: 'viewCategoryOverrides',
-            value: overrides,
-          })
-        }
-      />
-      <SetWorkPlaneDialog
-        open={setWorkPlaneOpen}
-        onClose={() => setSetWorkPlaneOpen(false)}
-        referencePlanes={Object.values(elementsById)
-          .filter(
-            (
-              e,
-            ): e is Extract<(typeof elementsById)[string] & object, { kind: 'reference_plane' }> =>
-              e != null && e.kind === 'reference_plane' && 'levelId' in e,
-          )
-          .map((rp) => ({ id: rp.id, name: (rp as { name?: string }).name ?? '' }))}
-        currentWorkPlaneId={
-          activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view'
-            ? ((elementsById[activePlanViewId] as { activeWorkPlaneId?: string | null })
-                .activeWorkPlaneId ?? null)
-            : null
-        }
-        onApply={(refPlaneId) => {
-          if (!activePlanViewId) return;
-          void onSemanticCommand({
-            type: 'updateElementProperty',
-            elementId: activePlanViewId,
-            key: 'activeWorkPlaneId',
-            value: refPlaneId,
-          });
-        }}
-      />
-      <ManageGlobalParamsDialog
-        isOpen={manageGlobalParamsOpen}
-        params={
-          (Object.values(elementsById).find((e) => e.kind === 'project_settings')?.globalParams ??
-            []) as unknown as SimpleGlobalParam[]
-        }
-        onUpsertParam={(param) => void onSemanticCommand({ type: 'upsert_global_param', param })}
-        onDeleteParam={(paramId) =>
-          void onSemanticCommand({ type: 'delete_global_param', paramId })
-        }
-        onClose={() => setManageGlobalParamsOpen(false)}
-      />
-      <DimensionStyleDialog
-        open={dimStyleOpen}
-        onClose={() => setDimStyleOpen(false)}
-        currentStyle={
-          Object.values(elementsById).find((e) => e.kind === 'project_settings')?.dimensionStyle ??
-          {}
-        }
-        onSave={(style) => {
-          const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
-          if (!ps) return;
-          void onSemanticCommand({
-            type: 'updateElementProperty',
-            elementId: ps.id,
-            key: 'dimensionStyle',
-            value: style,
-          });
-        }}
-      />
-      <ProjectInfoDialog
-        open={projectInfoOpen}
-        onClose={() => setProjectInfoOpen(false)}
-        elementsById={elementsById}
-        onSemanticCommand={onSemanticCommand}
-      />
-      {modelId && (
-        <MilestoneDialog
-          open={milestoneDialogOpen}
-          modelId={modelId}
-          snapshotId={String(revision)}
-          authorId={userDisplayName || 'local-dev'}
-          onClose={() => setMilestoneDialogOpen(false)}
-        />
-      )}
-      <PasteToLevelsDialog
-        open={pasteToLevelsOpen}
-        onClose={() => setPasteToLevelsOpen(false)}
-        elementsById={elementsById}
-        activeLevelId={activeLevelId}
-        selectedElementIds={selectedId ? [selectedId, ...selectedIds] : [...selectedIds]}
-        onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-      />
-      <SelectionFilterDialog
-        open={selectionFilterOpen}
-        onClose={() => setSelectionFilterOpen(false)}
-        selectedId={selectedId ?? undefined}
-        selectedIds={selectedIds}
-        elementsById={elementsById}
-        onApply={(newPrimary, newRest) => {
-          useBimStore.setState({ selectedId: newPrimary, selectedIds: newRest });
-        }}
-      />
-      <CreateGroupDialog
-        open={createGroupOpen}
-        elementCount={selectedIds.length + (selectedId ? 1 : 0)}
-        onClose={() => setCreateGroupOpen(false)}
-        onConfirm={(name) => {
-          const allIds = [...(selectedId ? [selectedId] : []), ...selectedIds];
-          const centroidX =
-            allIds.reduce((sum, id) => {
-              const el = elementsById[id];
-              const x =
-                (el as { insertionPoint?: { xMm: number } } | undefined)?.insertionPoint?.xMm ??
-                (el as { xMm?: number } | undefined)?.xMm ??
-                0;
-              return sum + x;
-            }, 0) / Math.max(allIds.length, 1);
-          const centroidY =
-            allIds.reduce((sum, id) => {
-              const el = elementsById[id];
-              const y =
-                (el as { insertionPoint?: { yMm: number } } | undefined)?.insertionPoint?.yMm ??
-                (el as { yMm?: number } | undefined)?.yMm ??
-                0;
-              return sum + y;
-            }, 0) / Math.max(allIds.length, 1);
-          const { registry } = applyCreateGroup(
-            groupRegistry,
-            {
-              type: 'createGroup',
-              name,
-              elementIds: allIds,
-              originXMm: centroidX,
-              originYMm: centroidY,
-            },
-            () => crypto.randomUUID(),
-          );
-          setGroupRegistry(registry);
-        }}
-      />
-      {modelId ? (
-        <SharePresentationModal
-          modelId={modelId}
-          open={sharePresentationOpen}
-          onClose={() => setSharePresentationOpen(false)}
-          pages={sheetPages}
-        />
-      ) : null}
       <AppShell
         activeMode={effectiveMode}
         showRibbonToolbars={false}
@@ -6303,94 +5900,24 @@ export function Workspace(): JSX.Element {
         rightCollapsed={rightRailCollapsed}
         footerInsetLeft={rootPaneFooterInsetLeft}
         header={
-          <div
-            data-testid="workspace-header"
-            className="flex min-h-[44px] w-full min-w-0 items-center gap-2 bg-surface px-2"
-          >
-            <div className="flex min-w-0 flex-1 flex-col">
-              <CompositionBar
-                compositions={compositionState.compositions}
-                activeId={compositionState.activeId}
-                loadingId={loadingCompositionId}
-                onActivate={handleCompositionActivate}
-                onCreate={handleCompositionCreate}
-                onClose={handleCompositionClose}
-                onReorder={handleCompositionReorder}
-                onRename={handleCompositionRename}
-              />
-              {/* §1.6.1: breadcrumb subtitle showing active view */}
-              {activePlanViewName && (
-                <div
-                  data-testid="workspace-view-breadcrumb"
-                  style={{
-                    fontSize: 10,
-                    color: 'var(--text-muted, #888)',
-                    padding: '0 12px 2px',
-                    lineHeight: 1,
-                    userSelect: 'none',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {activeSeedLabel ?? 'bim-ai'} / {activePlanViewName}
-                </div>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                data-testid="workspace-header-share"
-                onClick={() => setSharePresentationOpen(true)}
-                disabled={sheetPages.length === 0}
-                className="inline-flex h-8 items-center gap-1.5 rounded border border-border bg-surface px-2 text-xs font-medium text-foreground hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-45"
-                title={
-                  sheetPages.length > 0
-                    ? 'Share presentation'
-                    : 'Create a sheet before sharing a presentation'
-                }
-              >
-                <Icons.externalLink size={14} aria-hidden="true" />
-                <span>Share</span>
-              </button>
-              <button
-                type="button"
-                data-testid="workspace-header-cmdk"
-                onClick={() => setPaletteOpen(true)}
-                className="inline-flex h-8 min-w-[150px] items-center gap-2 rounded border border-border bg-background px-2 text-left text-xs text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label="Open command palette"
-              >
-                <Icons.commandPalette size={14} aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">Search or press</span>
-                <kbd className="rounded border border-border bg-surface px-1 py-0.5 text-[10px]">
-                  ⌘K
-                </kbd>
-              </button>
-              {presenceParticipants.length > 0 ? (
-                <ParticipantStrip
-                  participants={presenceParticipants}
-                  localUserId={presenceLocalUserId ?? userId ?? ''}
-                  maxVisible={3}
-                  avatarSize={20}
-                  onClick={() => setCommentsOpen((v) => !v)}
-                  buttonLabel="Open collaboration comments"
-                  title="Open collaboration comments"
-                  testId="workspace-header-participants"
-                />
-              ) : (
-                <button
-                  type="button"
-                  data-testid="workspace-header-participants"
-                  onClick={() => setCommentsOpen((v) => !v)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground"
-                  aria-label="Open collaboration comments"
-                  title="Open collaboration comments"
-                >
-                  <Icons.collaborators size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </div>
+          <WorkspaceHeaderSlot
+            compositionState={compositionState}
+            loadingCompositionId={loadingCompositionId}
+            activeSeedLabel={activeSeedLabel}
+            activePlanViewName={activePlanViewName}
+            sheetPagesCount={sheetPages.length}
+            presenceParticipants={presenceParticipants}
+            presenceLocalUserId={presenceLocalUserId}
+            userId={userId}
+            onSharePresentation={() => setSharePresentationOpen(true)}
+            onOpenCommandPalette={() => setPaletteOpen(true)}
+            onToggleComments={() => setCommentsOpen((v) => !v)}
+            onActivate={handleCompositionActivate}
+            onCreate={handleCompositionCreate}
+            onClose={handleCompositionClose}
+            onReorder={handleCompositionReorder}
+            onRename={handleCompositionRename}
+          />
         }
         primarySidebar={
           <WorkspaceLeftRail
@@ -6417,51 +5944,21 @@ export function Workspace(): JSX.Element {
           />
         }
         canvas={
-          <div
-            style={{
-              ...canvasContainerStyle,
-              // VIS-V3-08: paper background for 2D views; 3D viewport keeps dark background.
-              background: ['plan', 'section', 'elevation'].includes(activeTab?.kind ?? '')
-                ? 'var(--color-canvas-paper)'
-                : 'var(--color-background)',
-              transition: 'background 120ms var(--ease-paper)',
-            }}
-            data-view-type={activeTab?.kind ?? 'none'}
-            data-testid="redesign-canvas-root"
-          >
-            {showEmptyStateOverlay ? (
-              <EmptyStateOverlay
-                headline={emptyHint.headline}
-                hint={emptyHint.hint}
-                ctaLabel={emptyHint.cta?.label ?? null}
-                ctaPending={seedLoading}
-                ctaError={seedError}
-                onCta={() => void insertSeedHouse()}
-                Icon={WallHifi}
-              />
-            ) : null}
-            {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
-            {/* §1.6.3: Quick Access Toolbar — renders pinned command buttons above the canvas */}
-            <QuickAccessToolbar
-              onInvokeCommand={(commandId) => {
-                const entry = getRegistry().find((e) => e.id === commandId);
-                if (entry) {
-                  entry.invoke({
-                    selectedElementIds: [],
-                    activeViewId: null,
-                    dispatchCommand: (cmd) => void onSemanticCommand(cmd),
-                  });
-                }
-              }}
-              onRemoveFromQAT={(commandId) => {
-                void onSemanticCommand({ type: 'removeFromQuickAccess', commandId });
-              }}
-            />
-            {renderPaneNode(paneLayout.root)}
-          </div>
+          <WorkspaceCanvasSlot
+            activeViewKind={activeTab?.kind}
+            showEmptyStateOverlay={showEmptyStateOverlay}
+            showCanvasHint={showCanvasHint && !showEmptyState}
+            emptyHint={emptyHint}
+            seedLoading={seedLoading}
+            seedError={seedError}
+            onInsertSeedHouse={insertSeedHouse}
+            paneRoot={paneLayout.root}
+            renderPaneNode={renderPaneNode}
+            onSemanticCommand={onSemanticCommand}
+          />
         }
         footer={
-          <StatusBar
+          <WorkspaceFooterSlot
             level={activeLevel}
             undoDepth={undoDepth}
             redoDepth={redoDepth}
@@ -6485,75 +5982,6 @@ export function Workspace(): JSX.Element {
           />
         }
       />
-      <ActivityDrawer
-        isOpen={activityIsOpen}
-        onClose={closeActivityDrawer}
-        modelId={modelId ?? null}
-        selfId={userId ?? null}
-      />
-      <LibraryOverlay
-        isOpen={libraryOpen}
-        onClose={() => setLibraryOpen(false)}
-        activeDiscipline={libraryDisciplineFromLens(focusedPaneLensMode)}
-        entries={Object.values(elementsById)
-          .filter((e) => (e as { kind: string }).kind === 'asset_library_entry')
-          .map((e) => {
-            const a = e as unknown as Record<string, unknown>;
-            return {
-              id: String(a['id']),
-              assetKind: (a['assetKind'] ?? 'block_2d') as import('@bim-ai/core').AssetKind,
-              name: String(a['name']),
-              tags: (a['tags'] as string[]) ?? [],
-              category: a['category'] as import('@bim-ai/core').AssetCategory,
-              disciplineTags: a['disciplineTags'] as
-                | import('@bim-ai/core').AssetDisciplineTag[]
-                | undefined,
-              thumbnailKind: ((a['thumbnailKind'] as string) ?? 'schematic_plan') as
-                | 'schematic_plan'
-                | 'rendered_3d',
-              thumbnailMm:
-                a['thumbnailWidthMm'] != null
-                  ? {
-                      widthMm: a['thumbnailWidthMm'] as number,
-                      heightMm: (a['thumbnailHeightMm'] as number) ?? 60,
-                    }
-                  : undefined,
-              planSymbolKind: a['planSymbolKind'] as
-                | import('@bim-ai/core').AssetSymbolKind
-                | undefined,
-              renderProxyKind: a['renderProxyKind'] as
-                | import('@bim-ai/core').AssetSymbolKind
-                | undefined,
-              paramSchema: a['paramSchema'] as
-                | import('@bim-ai/core').ParamSchemaEntry[]
-                | undefined,
-              description: a['description'] as string | undefined,
-            };
-          })}
-        onPlace={(entry, paramValues) => void handleLibraryPlace(entry, paramValues)}
-      />
-      <ClearanceViolationPanel
-        violations={clearanceViolations}
-        onClose={() => setClearanceViolations([])}
-      />
-      {terraceFloorId && (
-        <TerracePresetDialog
-          floorId={terraceFloorId}
-          onApply={(railingHeightMm) => {
-            const floor = elementsById[terraceFloorId];
-            if (floor?.kind === 'floor') {
-              const railing = buildTerraceRailing(floor, railingHeightMm);
-              if (railing) {
-                useBimStore.setState({
-                  elementsById: { ...elementsById, [railing.id]: railing },
-                });
-              }
-            }
-            setTerraceFloorId(null);
-          }}
-          onClose={() => setTerraceFloorId(null)}
-        />
-      )}
     </>
   );
 }

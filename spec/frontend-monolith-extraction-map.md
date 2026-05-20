@@ -131,6 +131,8 @@ Target modules:
 First landed slice:
 
 - `workspace/compositions.tsx`
+- `workspace/WorkspaceOverlays.tsx`
+- `workspace/WorkspaceAppShellSlots.tsx`
 
 ## Viewport.tsx
 

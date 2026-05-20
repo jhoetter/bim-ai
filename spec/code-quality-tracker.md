@@ -174,14 +174,15 @@ Code scale snapshot:
 
 Largest current source files observed:
 
-| File                                                        | Approx LOC | Concern                                   |
-| ----------------------------------------------------------- | ---------- | ----------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 9.0k       | High-churn plan interaction monolith.     |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 6.8k       | Inspector rendering and editing monolith. |
-| `packages/cli/cli.mjs`                                      | 6.8k       | CLI command and evidence orchestration.   |
-| `packages/web/src/workspace/Workspace.tsx`                  | 6.6k       | Shell/workflow orchestration monolith.    |
-| `app/bim_ai/api/registry.py`                                | 6.3k       | Central API descriptor registry.          |
-| `packages/web/src/Viewport.tsx`                             | 6.2k       | 3D viewport orchestration monolith.       |
+| File                                                        | Approx LOC | Concern                                    |
+| ----------------------------------------------------------- | ---------- | ------------------------------------------ |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.5k       | High-churn plan interaction monolith.      |
+| `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.    |
+| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.           |
+| `packages/web/src/Viewport.tsx`                             | 6.2k       | 3D viewport orchestration monolith.        |
+| `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.     |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 6.0k       | Inspector rendering and editing monolith.  |
+| `scripts/audit-ui-mcp-parity.mjs`                           | 6.0k       | Audit orchestration and report formatting. |
 
 ## Status Model
 
