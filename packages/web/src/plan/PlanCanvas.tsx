@@ -242,6 +242,11 @@ import { createPlanCanvasPreviewHelpers } from './planCanvasPreviewHelpers';
 import { createPlanCanvasPickHelpers } from './planCanvasPickHelpers';
 import { updatePlanCanvasSnapHover } from './planCanvasSnapHover';
 import {
+  updateColumnAtGridsHover,
+  updateComponentGhostHover,
+  updateSplitWallHover,
+} from './planCanvasHoverHandlers';
+import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
   WALL_CROP_BLOCK_MESSAGE,
@@ -262,7 +267,6 @@ import {
   familyTypeRequiresWallHost,
 } from '../families/familyPlacementRuntime';
 import type { FamilyDefinition } from '../families/types';
-import { buildComponentGhost } from './componentGhost';
 import {
   copyElementsToClipboard,
   pasteElementsFromClipboard,
@@ -1279,110 +1283,38 @@ export function PlanCanvas({
         previewRef.current = line;
         grp.add(previewRef.current);
       }
-      // §3.3.6 — split-wall hover: track nearest wall under cursor
-      if (planTool === 'split-wall') {
-        const nearest = nearestWallAt(elementsById, displayLevelId || undefined, v.xMm, v.yMm);
-        if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
-          const hoverPt = {
-            xMm:
-              nearest.wall.start.xMm +
-              (nearest.wall.end.xMm - nearest.wall.start.xMm) * nearest.alongT,
-            yMm:
-              nearest.wall.start.yMm +
-              (nearest.wall.end.yMm - nearest.wall.start.yMm) * nearest.alongT,
-          };
-          const { state } = reduceSplitWall(splitWallStateRef.current, {
-            kind: 'hoverWall',
-            wallId: nearest.wall.id,
-            pointMm: hoverPt,
-          });
-          splitWallStateRef.current = state;
-        } else {
-          const { state } = reduceSplitWall(splitWallStateRef.current, { kind: 'hoverClear' });
-          splitWallStateRef.current = state;
-        }
-        bumpGeom((x) => x + 1);
-      }
-      // F-115 — live ghost preview for the component placement tool.
-      if (planTool === 'component') {
-        const assetId = activeComponentAssetId;
-        const familyTypeId = activeComponentFamilyTypeId;
-        const entry = assetId
-          ? (() => {
-              for (const el of Object.values(elementsById)) {
-                if (el.kind === 'asset_library_entry' && el.id === assetId) {
-                  return el;
-                }
-              }
-              return activeComponentAssetPreviewEntry?.id === assetId
-                ? activeComponentAssetPreviewEntry
-                : undefined;
-            })()
-          : undefined;
-        const familyType = familyTypeId ? elementsById[familyTypeId] : undefined;
-        const familyParams =
-          familyType?.kind === 'family_type'
-            ? (familyType.parameters as Record<string, unknown>)
-            : undefined;
-        const w =
-          entry?.thumbnailWidthMm ??
-          Number(familyParams?.widthMm ?? familyParams?.Width ?? familyParams?.lengthMm ?? 1000);
-        const h =
-          entry?.thumbnailHeightMm ??
-          Number(familyParams?.depthMm ?? familyParams?.Depth ?? familyParams?.heightMm ?? 600);
-        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (rr) {
-          if (componentGhostRef.current) {
-            grp.remove(componentGhostRef.current);
-            componentGhostRef.current = null;
-          }
-          const ghost = buildComponentGhost({
-            activeLevelId: activeLevelResolvedId,
-            entry,
-            widthMm: w,
-            heightMm: h,
-            rotDeg: pendingComponentRotationDeg,
-          });
-          ghost.position.set(rr.xMm / 1000, ghost.position.y, rr.yMm / 1000);
-          grp.add(ghost);
-          componentGhostRef.current = ghost;
-        }
-      } else if (componentGhostRef.current) {
-        grp.remove(componentGhostRef.current);
-        componentGhostRef.current = null;
-      }
-
-      if (planTool === 'column-at-grids') {
-        const ray = new THREE.Raycaster();
-        ray.setFromCamera(
-          new THREE.Vector2(
-            ((ev.clientX - rnd.domElement.getBoundingClientRect().left) /
-              rnd.domElement.getBoundingClientRect().width) *
-              2 -
-              1,
-            -(
-              ((ev.clientY - rnd.domElement.getBoundingClientRect().top) /
-                rnd.domElement.getBoundingClientRect().height) *
-                2 -
-              1
-            ),
-          ),
-          cameraRef.current!,
-        );
-        const hits = ray.intersectObjects(grp.children, true);
-        const h = hits.find(
-          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
-        );
-        const hovId = h ? ((h.object.userData as { bimPickId: string }).bimPickId ?? null) : null;
-        const el = hovId ? elementsById[hovId] : null;
-        const nextHovId = el?.kind === 'grid_line' ? hovId : null;
-        if (nextHovId !== columnAtGridsHoverRef.current) {
-          columnAtGridsHoverRef.current = nextHovId;
-          bumpGeom((x) => x + 1);
-        }
-      } else if (columnAtGridsHoverRef.current !== null) {
-        columnAtGridsHoverRef.current = null;
-      }
+      updateSplitWallHover({
+        planTool,
+        elementsById,
+        displayLevelId,
+        cursorMm: v,
+        splitWallStateRef,
+        bumpGeom,
+      });
+      updateComponentGhostHover({
+        planTool,
+        renderer: rnd,
+        camera: camNow,
+        group: grp,
+        event: ev,
+        componentGhostRef,
+        elementsById,
+        activeLevelResolvedId,
+        activeComponentAssetId,
+        activeComponentFamilyTypeId,
+        activeComponentAssetPreviewEntry,
+        pendingComponentRotationDeg,
+      });
+      updateColumnAtGridsHover({
+        planTool,
+        renderer: rnd,
+        camera: camNow,
+        group: grp,
+        event: ev,
+        elementsById,
+        columnAtGridsHoverRef,
+        bumpGeom,
+      });
     };
 
     const onDown = (ev: PointerEvent) => {

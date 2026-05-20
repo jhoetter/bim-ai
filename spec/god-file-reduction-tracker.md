@@ -101,6 +101,7 @@ A-territory target:
 | GFR-2026-25 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract grip and temp-dimension callback handlers                  | PlanCanvas below `6,000` LOC with focused tests green.      |
 | GFR-2026-26 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract wall/DXF/area pick helper cluster                          | PlanCanvas below `5,950` LOC with focused tests green.      |
 | GFR-2026-27 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract snap hover and glyph candidate pipeline                    | PlanCanvas below `5,800` LOC with focused tests green.      |
+| GFR-2026-28 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract split-wall, component, and column hover handlers           | PlanCanvas at or below `5,700` LOC with focused tests green. |
 
 ## Progress Log
 
@@ -389,4 +390,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/plan/planCanvasSnapHover.ts`. Local `wc -l` reports
   `packages/web/src/plan/PlanCanvas.tsx` at `5,768` lines. Focused snap,
   glyph, and PlanCanvas tool tests pass (`80 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-28` is Done. The slice moved split-wall hover state,
+  component-placement ghost hover, and column-at-grids hover picking into
+  `packages/web/src/plan/planCanvasHoverHandlers.ts`. Local `wc -l` reports
+  `packages/web/src/plan/PlanCanvas.tsx` at `5,700` lines. Focused PlanCanvas
+  tool and column-at-grids tests pass (`35 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
