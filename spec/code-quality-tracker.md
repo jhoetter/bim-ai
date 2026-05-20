@@ -200,28 +200,28 @@ Largest current source files observed:
 
 ## Summary Board
 
-| ID         | Priority | Status  | Theme                                     | Exit signal                                                                               |
-| ---------- | -------- | ------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                             |
-| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.           |
-| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                        |
-| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.          |
-| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.           |
-| CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline.  |
-| CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices. |
-| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.      |
-| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                      |
-| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                        |
-| CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                  |
-| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                             |
-| CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
-| CQ-2026-14 | P1       | Done    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
-| CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
-| CQ-2026-16 | P1       | Done    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
-| CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
-| CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
-| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.            |
-| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.          |
+| ID         | Priority | Status  | Theme                                     | Exit signal                                                                                       |
+| ---------- | -------- | ------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                                     |
+| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.                   |
+| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                                |
+| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.                  |
+| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.                   |
+| CQ-2026-06 | P1       | Done    | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
+| CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices.         |
+| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
+| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
+| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
+| CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                          |
+| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                                     |
+| CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                         |
+| CQ-2026-14 | P1       | Done    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.           |
+| CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.                 |
+| CQ-2026-16 | P1       | Done    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                         |
+| CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                          |
+| CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.                  |
+| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.                    |
+| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.                  |
 
 ---
 
@@ -678,12 +678,17 @@ more defensive `as any` logic.
 - 2026-05-20: added focused spatial coercion coverage in
   `packages/web/src/state/coercion/spatialElements.test.ts` for rooms, areas,
   room separation lines, and plan regions across snake_case/camelCase payloads.
+- 2026-05-20: CQ-2026-06 is closed: the largest wire domains are now grouped
+  under `packages/web/src/state/coercion/`, focused tests cover compatibility
+  and defaulting behavior, and the stable `coerceElement` facade is below the
+  TypeScript blocking file-size budget.
 - 2026-05-20: `packages/web/src/state/storeCoercion.ts` reduced from `2,290`
   to `1,367` lines while keeping `coerceElement` as the stable public entry
   point.
 - 2026-05-20: verification passed:
-  `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/siteElements.test.ts src/state/store.test.ts`,
-  `pnpm --filter @bim-ai/web typecheck`, and `pnpm format:check`.
+  `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/buildingElements.test.ts src/state/store.test.ts src/state/store.viewpoint-visibility.test.ts`,
+  `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/spatialElements.test.ts src/state/store.test.ts`,
+  and `pnpm --filter @bim-ai/web typecheck`.
 
 ---
 
