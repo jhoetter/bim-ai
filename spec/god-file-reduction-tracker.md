@@ -33,7 +33,7 @@ Largest files at tracker start:
 | 1    | `packages/web/src/plan/PlanCanvas.tsx`                      | 8,468 | frontend-plan      | Input, preview, selection, render orchestration |
 | 2    | `packages/cli/cli.mjs`                                      | 6,735 | cli-contracts      | CLI command dispatch and evidence workflows     |
 | 3    | `app/bim_ai/api/registry.py`                                | 6,249 | backend-api        | API descriptor registry                         |
-| 4    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,994 | frontend-inspector | Element-kind switchboard and editors            |
+| 4    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,740 | frontend-inspector | Element-kind switchboard and editors            |
 | 5    | `packages/web/src/workspace/Workspace.tsx`                  | 5,987 | frontend-workspace | Shell, tabs, dialogs, command routing           |
 | 6    | `packages/web/src/Viewport.tsx`                             | 5,470 | frontend-viewport  | Scene lifecycle, picking, overlays              |
 | 7    | `packages/core/src/index.ts`                                | 5,301 | core-contracts     | Public type and command barrel                  |
@@ -185,3 +185,9 @@ A-territory target:
   `packages/web/src/viewport/meshBuilders.familyDetail.ts` and are re-exported
   through `meshBuilders.ts`. `pnpm --filter @bim-ai/web typecheck` and focused
   mesh tests pass.
+- 2026-05-20: follow-up `GFR-2026-01` reduction moved project settings and plan
+  region editors into
+  `packages/web/src/workspace/inspector/projectSettingsInspectorSection.tsx`.
+  Local `wc -l` now reports `InspectorContent.tsx` at `5,740` lines.
+  `pnpm --filter @bim-ai/web typecheck` and
+  `InspectorContent.test.tsx` pass.

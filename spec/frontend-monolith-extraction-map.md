@@ -81,6 +81,8 @@ Target modules:
   actions and detail group edit rows.
 - `workspace/inspector/viewReferenceInspectorSections.tsx`: viewpoint,
   elevation view, and callout read-only rows.
+- `workspace/inspector/projectSettingsInspectorSection.tsx`: project settings
+  and plan region property editors.
 - `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
   equipment, fixture, terminal, and opening request rows.
 - `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
@@ -106,6 +108,7 @@ First landed slice:
 - `workspace/inspector/interiorElevationMarkerInspectorSection.tsx`
 - `workspace/inspector/modelingActionInspectorSections.tsx`
 - `workspace/inspector/viewReferenceInspectorSections.tsx`
+- `workspace/inspector/projectSettingsInspectorSection.tsx`
 
 ## Workspace.tsx
 

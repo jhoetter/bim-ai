@@ -179,7 +179,7 @@ Largest current source files observed:
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 8.5k       | High-churn plan interaction monolith.                                 |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                               |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 6.0k       | Inspector rendering and editing monolith.                             |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                |
 | `packages/web/src/Viewport.tsx`                             | 5.5k       | 3D viewport orchestration monolith.                                   |
 | `packages/core/src/index.ts`                                | 5.3k       | Public type and command barrel.                                       |
