@@ -30,14 +30,14 @@ Largest files at tracker start:
 
 | Rank | File                                                        | Lines | Owner area         | Main risk                                       |
 | ---- | ----------------------------------------------------------- | ----: | ------------------ | ----------------------------------------------- |
-| 1    | `packages/web/src/plan/PlanCanvas.tsx`                      | 8,974 | frontend-plan      | Input, preview, selection, render orchestration |
-| 2    | `packages/cli/cli.mjs`                                      | 6,785 | cli-contracts      | CLI command dispatch and evidence workflows     |
-| 3    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 6,586 | frontend-inspector | Element-kind switchboard and editors            |
-| 4    | `packages/web/src/workspace/Workspace.tsx`                  | 6,560 | frontend-workspace | Shell, tabs, dialogs, command routing           |
-| 5    | `app/bim_ai/api/registry.py`                                | 6,320 | backend-api        | API descriptor registry                         |
-| 6    | `packages/web/src/Viewport.tsx`                             | 6,207 | frontend-viewport  | Scene lifecycle, picking, overlays              |
-| 7    | `scripts/audit-ui-mcp-parity.mjs`                           | 5,962 | quality-tooling    | Audit orchestration and report formatting       |
-| 8    | `packages/core/src/index.ts`                                | 5,356 | core-contracts     | Public type and command barrel                  |
+| 1    | `packages/web/src/plan/PlanCanvas.tsx`                      | 8,468 | frontend-plan      | Input, preview, selection, render orchestration |
+| 2    | `packages/cli/cli.mjs`                                      | 6,735 | cli-contracts      | CLI command dispatch and evidence workflows     |
+| 3    | `app/bim_ai/api/registry.py`                                | 6,249 | backend-api        | API descriptor registry                         |
+| 4    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,994 | frontend-inspector | Element-kind switchboard and editors            |
+| 5    | `packages/web/src/workspace/Workspace.tsx`                  | 5,987 | frontend-workspace | Shell, tabs, dialogs, command routing           |
+| 6    | `packages/web/src/Viewport.tsx`                             | 5,470 | frontend-viewport  | Scene lifecycle, picking, overlays              |
+| 7    | `packages/core/src/index.ts`                                | 5,301 | core-contracts     | Public type and command barrel                  |
+| 8    | `scripts/audit-ui-mcp-parity.mjs`                           | 4,663 | quality-tooling    | Audit orchestration                             |
 
 ## Operating Rules
 
@@ -79,7 +79,7 @@ A-territory target:
 | GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
 | GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
-| GFR-2026-07 | P2       | Open   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with quality tests green.  |
+| GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.  |
 | GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.     |
 
 ## Progress Log
@@ -148,3 +148,14 @@ A-territory target:
   the ViewCube, walk hints, section-box badge, sky/render buttons, saved-view
   lock badges, and transient 3D authoring cursor overlays into
   `packages/web/src/viewport/ViewportOverlays.tsx`.
+- 2026-05-20: `GFR-2026-07` is Done. Local `wc -l` reports
+  `scripts/audit-ui-mcp-parity.mjs` at `4,663` lines, below the `5,000`
+  target. The slice moved constants to
+  `scripts/audit-ui-mcp-parity.config.mjs`, SKB readiness collection to
+  `scripts/audit-ui-mcp-parity.readiness.mjs`, and JSON/Markdown report
+  writing to `scripts/audit-ui-mcp-parity.reports.mjs`. `node --check` passes
+  for all four modules. The full generator currently reaches audit validation
+  and then fails on existing M3 route-mismatch gates for
+  `author.stair_between_levels`, `opening.shaft_opening`, and
+  `opening.slab_opening`, so the tracker records the narrower syntax gate for
+  this mechanical split.
