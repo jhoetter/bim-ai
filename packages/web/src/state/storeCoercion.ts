@@ -1,5 +1,6 @@
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
+import { coerceAssetElement } from './coercion/assetElements';
 import { coerceLinkElement } from './coercion/linkElements';
 import { coerceSiteElement } from './coercion/siteElements';
 import {
@@ -1935,96 +1936,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
-  if (kind === 'asset_library_entry') {
-    const listOfStrings = (v: unknown): string[] =>
-      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-    const isAssetSymbolKind = (
-      v: unknown,
-    ): v is Extract<Element, { kind: 'asset_library_entry' }>['planSymbolKind'] =>
-      v === 'bed' ||
-      v === 'wardrobe' ||
-      v === 'lamp' ||
-      v === 'rug' ||
-      v === 'fridge' ||
-      v === 'oven' ||
-      v === 'sink' ||
-      v === 'counter' ||
-      v === 'sofa' ||
-      v === 'table' ||
-      v === 'chair' ||
-      v === 'toilet' ||
-      v === 'bath' ||
-      v === 'shower' ||
-      v === 'bathroom_layout' ||
-      v === 'generic';
-    const thumbnailWidth = raw.thumbnailWidthMm ?? raw.thumbnail_width_mm;
-    const thumbnailHeight = raw.thumbnailHeightMm ?? raw.thumbnail_height_mm;
-    const planSymbolKind = raw.planSymbolKind ?? raw.plan_symbol_kind;
-    const renderProxyKind = raw.renderProxyKind ?? raw.render_proxy_kind;
-    const paramSchema = raw.paramSchema ?? raw.param_schema;
-    return {
-      kind: 'asset_library_entry',
-      id,
-      name,
-      assetKind:
-        raw.assetKind === 'family_instance' ||
-        raw.assetKind === 'kit' ||
-        raw.assetKind === 'decal' ||
-        raw.assetKind === 'profile'
-          ? raw.assetKind
-          : 'block_2d',
-      category:
-        raw.category === 'kitchen' ||
-        raw.category === 'bathroom' ||
-        raw.category === 'door' ||
-        raw.category === 'window' ||
-        raw.category === 'decal' ||
-        raw.category === 'profile' ||
-        raw.category === 'casework'
-          ? raw.category
-          : 'furniture',
-      tags: listOfStrings(raw.tags),
-      disciplineTags: listOfStrings(raw.disciplineTags ?? raw.discipline_tags).filter(
-        (x): x is 'arch' | 'struct' | 'mep' => x === 'arch' || x === 'struct' || x === 'mep',
-      ),
-      thumbnailKind: raw.thumbnailKind === 'rendered_3d' ? 'rendered_3d' : 'schematic_plan',
-      ...(thumbnailWidth != null && Number.isFinite(Number(thumbnailWidth))
-        ? { thumbnailWidthMm: Number(thumbnailWidth) }
-        : {}),
-      ...(thumbnailHeight != null && Number.isFinite(Number(thumbnailHeight))
-        ? { thumbnailHeightMm: Number(thumbnailHeight) }
-        : {}),
-      ...(isAssetSymbolKind(planSymbolKind) ? { planSymbolKind } : {}),
-      ...(isAssetSymbolKind(renderProxyKind) ? { renderProxyKind } : {}),
-      ...(Array.isArray(paramSchema) ? { paramSchema } : {}),
-      ...(raw.publishedFromOrgId || raw.published_from_org_id
-        ? { publishedFromOrgId: String(raw.publishedFromOrgId ?? raw.published_from_org_id) }
-        : {}),
-      ...(typeof raw.description === 'string' ? { description: raw.description } : {}),
-    };
-  }
-
-  if (kind === 'placed_asset') {
-    const assetId = raw.assetId ?? raw.asset_id;
-    const levelId = raw.levelId ?? raw.level_id;
-    if (typeof assetId !== 'string' || typeof levelId !== 'string') return null;
-    const paramValues = raw.paramValues ?? raw.param_values;
-    return {
-      kind: 'placed_asset',
-      id,
-      name,
-      assetId,
-      levelId,
-      positionMm: coerceXY((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
-      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
-      ...(paramValues && typeof paramValues === 'object' && !Array.isArray(paramValues)
-        ? { paramValues: paramValues as Record<string, unknown> }
-        : {}),
-      ...(raw.hostElementId || raw.host_element_id
-        ? { hostElementId: String(raw.hostElementId ?? raw.host_element_id) }
-        : {}),
-    };
-  }
+  const assetElement = coerceAssetElement(id, name, raw as WireRecord);
+  if (assetElement) return assetElement;
 
   if (kind === 'clash_test') {
     const coerceIds = (v: unknown): string[] =>
