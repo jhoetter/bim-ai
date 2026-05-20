@@ -21,8 +21,8 @@ backend focused/full test paths are explicit, quality waivers are
 machine-readable and expiring, and the largest frontend monoliths have extraction
 maps with first slices landed. The score is still held down by large remaining
 source files, the active JavaScript lint waiver, missing contract-parity budgets,
-limited real deployed-path integration coverage, and the absence of a generated
-release-readiness scorecard.
+limited real deployed-path integration coverage, and the absence of a
+trend-backed release-readiness scorecard.
 
 The practical target is:
 
@@ -210,8 +210,8 @@ Largest current source files observed:
 | CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
-| CQ-2026-09 | P2       | Open    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
-| CQ-2026-10 | P2       | Open    | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
+| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
+| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
 | CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                 |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                            |
 | CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                |
@@ -641,7 +641,7 @@ cd app && uv run pytest -q -m 'not integration' --no-cov
 ## CQ-2026-09 - Clean Repository Hygiene
 
 Priority: P2
-Status: Open
+Status: Partial
 Owner area: repository policy
 
 ### Problem
@@ -671,12 +671,21 @@ Move long-lived visual baselines into one of:
 - `packages/web/e2e/__screenshots__/`
 - `seed-artifacts/<seed>/evidence/`
 
+### Progress Notes
+
+- 2026-05-20: `spec/code-quality-budgets.json` defines tracked local artifact
+  patterns and intentional evidence prefixes.
+- 2026-05-20: `scripts/code-quality-report.mjs` reports
+  `trackedArtifactCount` plus sample artifact rows in JSON/Markdown and CI
+  artifacts. This remains Partial until tracked local-only files are removed or
+  migrated into intentional evidence/baseline locations.
+
 ---
 
 ## CQ-2026-10 - Reduce `any` / `unknown` Hotspots
 
 Priority: P2
-Status: Open
+Status: Partial
 Owner area: frontend and backend type safety
 
 ### Problem
@@ -709,6 +718,15 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   | grep -v test \
   | xargs rg -n "as any|: any|Record<string, any>|@ts-ignore|@ts-expect-error"
 ```
+
+### Progress Notes
+
+- 2026-05-20: `scripts/code-quality-report.mjs` establishes a CI-visible
+  non-test frontend baseline for `as any`, `: any`, `Record<string, any>`,
+  `@ts-ignore`, and `@ts-expect-error`, including top hotspot files and total
+  match count.
+- 2026-05-20: this remains Partial until the top hotspot files are reduced with
+  type guards, discriminated-union helpers, or core type exports.
 
 ---
 
