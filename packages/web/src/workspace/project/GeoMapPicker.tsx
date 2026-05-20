@@ -73,6 +73,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   valueRef.current = value;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const { lat, lon, bboxNorth, bboxSouth, bboxEast, bboxWest } = value;
 
   // Mount Leaflet once.
   useEffect(() => {
@@ -248,7 +249,6 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
       maskRef.current = null;
       previewRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync external value (e.g. address search result) into the map.
@@ -257,7 +257,6 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     const rect = rectRef.current;
     const mask = maskRef.current;
     if (!map || !rect || !mask) return;
-    const { bboxSouth, bboxWest, bboxNorth, bboxEast } = value;
     rect.setBounds([
       [bboxSouth, bboxWest],
       [bboxNorth, bboxEast],
@@ -266,8 +265,8 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
       OUTER_RING,
       innerRing(bboxSouth, bboxWest, bboxNorth, bboxEast),
     ] as L.LatLngExpression[][]);
-    map.panTo([value.lat, value.lon]);
-  }, [value.lat, value.lon, value.bboxNorth, value.bboxSouth, value.bboxEast, value.bboxWest]);
+    map.panTo([lat, lon]);
+  }, [lat, lon, bboxNorth, bboxSouth, bboxEast, bboxWest]);
 
   // ── Draw mode toggle ────────────────────────────────────────────────────────
 

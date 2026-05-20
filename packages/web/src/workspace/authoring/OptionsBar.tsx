@@ -81,7 +81,6 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
 }
 
 /** §9.1.1 — column usage for the next placed column. Read at click-time by PlanCanvas. */
-// eslint-disable-next-line prefer-const
 export let columnDrawUsage: 'architectural' | 'structural' = 'architectural';
 
 /** Roof options */
@@ -144,11 +143,9 @@ export function setGridNamePrefix(v: string) {
 }
 
 /** §3.3.7 — Linework override options. Read at click-time by PlanCanvas. */
-// eslint-disable-next-line prefer-const, bim-ai/no-hex-in-chrome
+// eslint-disable-next-line bim-ai/no-hex-in-chrome
 export let lineworkColorHex = '#ff0000';
-// eslint-disable-next-line prefer-const
 export let lineworkLineWeightPx: number = 1;
-// eslint-disable-next-line prefer-const
 export let lineworkStyle: 'solid' | 'dashed' | 'hidden' = 'solid';
 export function getLineworkLineDash(): number[] | undefined {
   if (lineworkStyle === 'dashed') return [4, 4];

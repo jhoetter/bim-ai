@@ -6,7 +6,8 @@ Purpose: track the current code-quality risks that block the repository from
 being a healthy production-grade codebase. This is the active successor to the
 completed historical tracker in `spec/archive/code-quality-tracker.md`.
 Ongoing large-file reduction after the B-grade closeout is tracked in
-`spec/god-file-reduction-tracker.md`.
+`spec/god-file-reduction-tracker.md`. Retirement of the active JavaScript lint
+waiver is tracked in `spec/js-lint-waiver-retirement-tracker.md`.
 
 This tracker is intentionally limited to engineering quality: type safety,
 maintainability, test signal, tooling reliability, repository hygiene, and
@@ -364,6 +365,10 @@ CI chooses one canonical quality gate.
   waiver at the current backlog (`223` errors / `154` warnings / `84` files)
   and is wired into `pnpm verify:strict` and `make verify`, so new lint growth
   fails before the full lint gate is retired.
+- 2026-05-20: started
+  `spec/js-lint-waiver-retirement-tracker.md`; cleared all fatal ESLint
+  findings and one mechanical unused-variable slice, then ratcheted
+  `pnpm js-lint:budget` to `223` errors / `134` warnings / `81` files.
 
 ---
 
@@ -883,7 +888,7 @@ conflicts and stale descriptor drift.
   reverse-BIM, and reverse-BIM semantic-authoring descriptor registrations into
   `app/bim_ai/api/descriptors/source_reverse_bim.py`, reducing
   `app/bim_ai/api/registry.py` to `5,273` lines. `PYTHONPATH=app python -m
-  py_compile` passes for the registry and descriptor module, and a focused
+py_compile` passes for the registry and descriptor module, and a focused
   registry smoke check confirms the extracted descriptors still register.
 - 2026-05-20: extracted QA/advisor, query, resolve, model-resource, evidence,
   command-schema, and lens-review descriptor registrations into
@@ -1244,7 +1249,7 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: retired the broad frontend/backend file-size waivers
   `CQW-2026-002` and `CQW-2026-003` after the god-file reductions and
   tracker-owned budget dispositions made them redundant. `pnpm
-  maintainability:budgets` remains green without those waivers.
+maintainability:budgets` remains green without those waivers.
 - 2026-05-20: added ownership rows for frontend platform i18n, design-system,
   schedule, and family-library modules that were still reported as unowned
   advisory over-budget files. The generated scorecard now reports `0` unowned

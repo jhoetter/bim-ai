@@ -1,6 +1,6 @@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Element, Saved3dViewElement } from '@bim-ai/core';
+import type { Element } from '@bim-ai/core';
 import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
@@ -25,7 +25,7 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { LensMode, ModelDelta, Violation } from '@bim-ai/core';
+import type { LensMode, Violation } from '@bim-ai/core';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useStructuralValidationViolations } from '../advisor/structuralAdvisorViolations';
 import {
@@ -161,7 +161,6 @@ import {
   EMPTY_JOBS_COUNTS,
   firstMmVector,
   formatStatusMm,
-  lensForWorkspace,
   libraryDisciplineFromLens,
   splitViewTabLabel,
   summarizeJobsCounts,
@@ -169,7 +168,6 @@ import {
 import { materializeOptimisticHostedOpening } from './semanticCommands/optimisticHostedOpening';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { usePresenceStore } from '../presenceStore';
-import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
 import {
   generateWallsFromMass,
@@ -177,7 +175,6 @@ import {
   generateRoofFromMass,
   generateCurtainWallsFromMass,
 } from '../tools/massGenerateBim';
-import type { MassNewElem } from '../tools/massToFloors';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -193,20 +190,6 @@ import type { MassNewElem } from '../tools/massToFloors';
 type RailOverride = 'open' | 'collapsed' | null;
 
 const PANE_SECONDARY_SIDEBAR_WIDTH = 'min(248px, 34%)';
-
-type PlanViewElement = Extract<Element, { kind: 'plan_view' }>;
-type PlanViewCropRegion = NonNullable<PlanViewElement['cropRegionMm']>;
-type EditableStairRun = {
-  runIndex: number;
-  riserCount: number;
-  runWidthMm: number;
-};
-type EditableStairElement = Extract<Element, { kind: 'stair' }> & {
-  runs?: EditableStairRun[];
-  riserCount?: number;
-  runWidthMm?: number;
-  editStairActive?: boolean;
-};
 
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -243,7 +226,6 @@ export function Workspace(): JSX.Element {
   const perspectiveId = useBimStore((s) => s.perspectiveId);
   const comments = useBimStore((s) => s.comments);
   const setComments = useBimStore((s) => s.setComments);
-  const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
   const setActivity = useBimStore((s) => s.setActivity);
   const vvDialogOpen = useBimStore((s) => s.vvDialogOpen);
   const openVVDialog = useBimStore((s) => s.openVVDialog);
@@ -410,7 +392,7 @@ export function Workspace(): JSX.Element {
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
   );
-  const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
+  const [, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [rightRailOverride, setRightRailOverride] = useState<RailOverride>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -450,7 +432,7 @@ export function Workspace(): JSX.Element {
   const [globalParamsOpen, setGlobalParamsOpen] = useState(false);
   const [manageGlobalParamsOpen, setManageGlobalParamsOpen] = useState(false);
   const [dimStyleOpen, setDimStyleOpen] = useState(false);
-  const [viewRangeOpen, setViewRangeOpen] = useState(false);
+  const [, setViewRangeOpen] = useState(false);
   const [vgOpen, setVgOpen] = useState(false);
   const [perViewVGOpen, setPerViewVGOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
@@ -464,7 +446,6 @@ export function Workspace(): JSX.Element {
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
-  const setActiveWorkspaceId = useBimStore((s) => s.setActiveWorkspaceId);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const viewerSectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
@@ -625,14 +606,6 @@ export function Workspace(): JSX.Element {
     [focusedPaneTabId, tabsState.tabs],
   );
   const focusedPaneLensMode = focusedPaneTab?.lensMode ?? lensMode;
-
-  const activePlanTarget = useMemo(
-    () =>
-      activeTab?.kind === 'plan'
-        ? resolvePlanTabTarget(elementsById, activeTab.targetId, activeLevelId)
-        : { activeLevelId: activeLevelId ?? '' },
-    [activeTab, activeLevelId, elementsById],
-  );
 
   const handleTabActivate = useCallback(
     (id: string) => {
@@ -1161,17 +1134,6 @@ export function Workspace(): JSX.Element {
       });
     },
     [setViewerMode, elementsById, activeLevelId],
-  );
-
-  const handleWorkspaceChange = useCallback(
-    (id: WorkspaceId) => {
-      setActiveWorkspaceId(id);
-      setFocusedPaneLensMode(lensForWorkspace(id));
-      if (id === 'struct') setPerspectiveId('structure');
-      else if (id === 'mep') setPerspectiveId('mep');
-      else if (id === 'arch') setPerspectiveId('architecture');
-    },
-    [setActiveWorkspaceId, setFocusedPaneLensMode, setPerspectiveId],
   );
 
   /**
@@ -1769,7 +1731,6 @@ export function Workspace(): JSX.Element {
 
   const {
     createFloorPlanView,
-    createCeilingPlanView,
     create3dSavedView,
     createSectionView,
     createSheetView,
@@ -3186,7 +3147,6 @@ export function Workspace(): JSX.Element {
             });
           },
           setTrueNorthAngle: () => {
-            // eslint-disable-next-line no-alert
             const angleDeg = parseFloat(
               prompt('Angle from project north to true north (degrees clockwise):') ?? '0',
             );
@@ -3201,7 +3161,6 @@ export function Workspace(): JSX.Element {
             });
           },
           setProjectElevation: () => {
-            // eslint-disable-next-line no-alert
             const elevMm = parseFloat(prompt('Project real-world elevation (mm):') ?? '0');
             if (isNaN(elevMm)) return;
             const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
@@ -3222,10 +3181,8 @@ export function Workspace(): JSX.Element {
             );
             setClearanceViolations(violations);
             if (violations.length === 0) {
-              // eslint-disable-next-line no-alert
               alert('No clearance violations found.');
             } else {
-              // eslint-disable-next-line no-alert
               alert(`${violations.length} clearance violation(s) found. See highlighted elements.`);
             }
           },
