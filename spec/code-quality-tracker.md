@@ -415,6 +415,10 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
   semantic command hook dependencies; `pnpm js-lint:budget` is now ratcheted to
   `4` errors / `18` warnings / `4` files, with `react-hooks/exhaustive-deps`
   down to `18`.
+- 2026-05-20: declared the remaining viewport scene hook dependencies across
+  camera, renderer, overlays, outlines, walk controls, and scene graph effects;
+  `pnpm js-lint:budget` is now ratcheted to `4` errors / `0` warnings /
+  `4` files, with `react-hooks/exhaustive-deps` locked at `0`.
 
 ---
 

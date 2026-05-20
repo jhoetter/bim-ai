@@ -35,12 +35,12 @@ Rule budgets:
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 1              |
 
-Latest ratcheted budget after JSL-2026-03:
+Latest ratcheted budget after JSL-2026-05:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
 | Errors         | 4              |
-| Warnings       | 18             |
+| Warnings       | 0              |
 | Affected files | 4              |
 | Fatal findings | 0              |
 
@@ -51,7 +51,7 @@ Rule budgets:
 | `@typescript-eslint/no-explicit-any` | 0              |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
-| `react-hooks/exhaustive-deps`        | 18             |
+| `react-hooks/exhaustive-deps`        | 0              |
 | `fatal`                              | 0              |
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 0              |
@@ -64,7 +64,7 @@ Rule budgets:
 | JSL-2026-02 | Done   | Mechanical unused variables | `@typescript-eslint/no-unused-vars` budget is `0`.                                          |
 | JSL-2026-03 | Done   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget is `0`.                                                    |
 | JSL-2026-04 | Done   | Type escapes                | `@typescript-eslint/no-explicit-any` and non-test type-escape budgets are `0`.              |
-| JSL-2026-05 | Open   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget trends downward with semantic review.                  |
+| JSL-2026-05 | Done   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget is `0`.                                                |
 | JSL-2026-06 | Open   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
 | JSL-2026-07 | Open   | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
 
@@ -148,3 +148,8 @@ Rule budgets:
   existing plan-canvas activation, canvas listener, and workspace semantic
   command dependencies. The lint budget moved to `4` errors / `18` warnings /
   `4` files; `react-hooks/exhaustive-deps` moved from `21` to `18`.
+- 2026-05-20: completed the viewport scene hook dependency slice by declaring
+  the existing camera, renderer, scene graph, overlay, and controller
+  dependencies in the extracted viewport orchestration effects. The lint budget
+  moved to `4` errors / `0` warnings / `4` files;
+  `react-hooks/exhaustive-deps` moved from `18` to `0`.

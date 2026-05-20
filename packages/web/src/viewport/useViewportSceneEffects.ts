@@ -217,7 +217,17 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
         mirrorSceneCameraPose(persp, oc, snap.target);
       }
     }
-  }, [orthoMode]);
+  }, [
+    cameraRef,
+    cameraRigRef,
+    mirrorSceneCameraPose,
+    orthoCameraRef,
+    orthoMode,
+    outlinePassRef,
+    renderPassRef,
+    rendererRef,
+    ssaoPassRef,
+  ]);
 
   useEffect(() => {
     if (!viewerCameraAction) return;
@@ -247,7 +257,17 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       mirrorSceneCameraPose(camera, orthoCamera, snap.target);
     }
     syncCameraOrientationState(snap, 'immediate');
-  }, [syncCameraOrientationState, viewerCameraAction]);
+  }, [
+    applySceneCameraPose,
+    cameraRef,
+    cameraRigRef,
+    computeRootBoundingBox,
+    mirrorSceneCameraPose,
+    orthoCameraRef,
+    rootGroupRef,
+    syncCameraOrientationState,
+    viewerCameraAction,
+  ]);
 
   // ── Incremental geometry effect ──────────────────────────────────────────
   // Diffs elementsById against the previous snapshot and surgically adds,
@@ -992,6 +1012,94 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
     activeLensMode,
     theme,
     text3dRebuildTick,
+    CSG_ENABLED,
+    applyClippingPlanesToMeshes,
+    applyLensGhosting,
+    applyLinkedGhosting,
+    applyModelEdgeDisplay,
+    applyRenderRole,
+    applySceneCameraPose,
+    bimPickMapRef,
+    buildConicalRoofMesh,
+    buildDomeRoofMesh,
+    buildFamilyBlendMesh,
+    buildFamilySweepMesh,
+    buildGradedRegionMesh,
+    buildMassMesh,
+    buildSpireRoofMesh,
+    cameraRef,
+    cameraRigRef,
+    clippingPlanesRef,
+    computeRootBoundingBox,
+    csgBaseFootprintsForWall,
+    csgNonceRef,
+    csgWallSurfaceMaterialKey,
+    csgWorkerRef,
+    elemViewerCategory,
+    elevationMForLevel,
+    getResolvedText3dFont,
+    hasAutoFittedRef,
+    isElementVisibleUnderPhaseFilter,
+    lensFilterFromMode,
+    loadText3dFont,
+    makeBalconyMesh,
+    makeBeamMesh,
+    makeBeamSystemMesh,
+    makeBraceMesh,
+    makeCeilingMesh,
+    makeColumnMesh,
+    makeCurtainWallMesh,
+    makeDoorMesh,
+    makeDormerMesh,
+    makeFamilyInstanceMesh,
+    makeFloorSlabMesh,
+    makeInternalOriginMarker,
+    makeMassBoxMesh,
+    makeMassExtrusionMesh,
+    makeMassRevolutionMesh,
+    makePlacedAssetMesh,
+    makeProjectBasePointMarker,
+    makeRailingMesh,
+    makeReferencePlaneMarker,
+    makeRoofJoinPreviewMesh,
+    makeRoofMassMesh,
+    makeRoomRibbon,
+    makeSiteMesh,
+    makeStairVolumeMesh,
+    makeSurveyPointMarker,
+    makeSweepMesh,
+    makeText3dMesh,
+    makeToposolidMesh,
+    makeWallMesh,
+    makeWindowMesh,
+    materialDependencyDirtyIds,
+    orbitRigApiRef,
+    outlinePassRef,
+    paintBundleRef,
+    pendingCsgMetaRef,
+    pendingCsgRef,
+    prevCatHiddenRef,
+    prevElementsByIdRef,
+    prevLensModeRef,
+    prevLevelHiddenRef,
+    readToken,
+    resolveDoorCutDimensions,
+    resolveWindowCutDimensions,
+    resolveWindowOutline,
+    rootGroupRef,
+    selectedIdRef,
+    selectedIdsRef,
+    setText3dRebuildTick,
+    shouldRunWallOpeningCsg,
+    spotElevationThree,
+    sunRef,
+    text3dPendingRef,
+    viewerEdgesRef,
+    viewerSilhouetteEdgeWidthRef,
+    wallPlanOffsetM,
+    wallVerticalSpanM,
+    wallWith3dJoinDisallowGaps,
+    yawForPlanSegment,
   ]);
 
   // Revit-style 3D authoring datum: levels stay visible as named horizontal datums,
@@ -1018,7 +1126,19 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       group.parent?.remove(group);
       disposeObject3D(group);
     };
-  }, [activeLevelId, direct3dAuthoringActive, elementsById, viewerLevelHidden]);
+  }, [
+    activeLevelId,
+    computeRootBoundingBox,
+    direct3dAuthoringActive,
+    disposeObject3D,
+    elementsById,
+    levelDatumBoundsFromBox,
+    levelDatumGroupRef,
+    makeLevelDatum3dGroup,
+    resolveLevelDatum3dRows,
+    rootGroupRef,
+    viewerLevelHidden,
+  ]);
 
   // ── OSM site context: fetch neighbouring buildings/roads/trees from Overpass API ──
   useEffect(() => {
@@ -1090,7 +1210,17 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
     return () => {
       cancelled = true;
     };
-  }, [georeference]); // osmLayerHidden/osmVisible intentionally excluded — effects below sync them
+  }, [
+    cameraRigRef,
+    computeRootBoundingBox,
+    disposeObject3D,
+    fetchOsmContext,
+    georeference,
+    makeOsmContextGroup,
+    osmContextGroupRef,
+    rootGroupRef,
+    setOsmStatus,
+  ]); // osmLayerHidden/osmVisible intentionally excluded — effects below sync them
 
   // Sync osmVisible store state → Three.js group visibility.
   useEffect(() => {
@@ -1179,7 +1309,13 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
         }
       });
     }
-  }, [elementsById, viewerRenderStyle]);
+  }, [
+    applyTextureVisibilityToMesh,
+    bimPickMapRef,
+    elementsById,
+    isTextureRichRenderStyle,
+    viewerRenderStyle,
+  ]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -1233,7 +1369,14 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
     }
 
     scene.fog = viewerDepthCueEnabled && fogColor != null ? new THREE.Fog(fogColor, 28, 140) : null;
-  }, [skyBackground, skyBackgroundColor, viewerBackground, viewerDepthCueEnabled]);
+  }, [
+    rendererRef,
+    sceneRef,
+    skyBackground,
+    skyBackgroundColor,
+    viewerBackground,
+    viewerDepthCueEnabled,
+  ]);
 
   // ── F-113: shadows, ambient occlusion, depth cue, and silhouette edges ──
   useEffect(() => {
@@ -1251,7 +1394,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       obj.castShadow = viewerShadowsEnabled;
       obj.receiveShadow = viewerShadowsEnabled;
     });
-  }, [viewerShadowsEnabled]);
+  }, [rendererRef, rootGroupRef, sunRef, viewerShadowsEnabled]);
 
   // ── §14.3: render quality (shadows, tone mapping, pixel ratio) ──
   useEffect(() => {
@@ -1269,7 +1412,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
           ? 2
           : Math.min(window.devicePixelRatio ?? 1, 2);
     renderer.setPixelRatio(pr);
-  }, [renderQuality]);
+  }, [renderQuality, rendererRef]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -1298,7 +1441,16 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       disposeObject3D(group);
       planOverlayGroupRef.current = null;
     };
-  }, [elementsById, persistedOrbitViewpoint, theme]);
+  }, [
+    buildPlanOverlay3dGroup,
+    disposeObject3D,
+    elementsById,
+    persistedOrbitViewpoint,
+    planOverlayGroupRef,
+    readToken,
+    sceneRef,
+    theme,
+  ]);
 
   useEffect(() => {
     const ssao = ssaoPassRef.current;
@@ -1318,7 +1470,14 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
     for (const pass of remoteOutlinePassesRef.current.values()) {
       pass.edgeThickness = selectedThickness;
     }
-  }, [viewerEdges, viewerSilhouetteEdgeWidth]);
+  }, [
+    applyModelEdgeDisplay,
+    outlinePassRef,
+    remoteOutlinePassesRef,
+    rootGroupRef,
+    viewerEdges,
+    viewerSilhouetteEdgeWidth,
+  ]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.
@@ -1469,7 +1628,27 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       }
       clipCapsRef.current = newCaps;
     }
-  }, [viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]);
+  }, [
+    aabbWireframeVertices,
+    applyClippingPlanesToMeshes,
+    clipCapsRef,
+    clippingPlanesRef,
+    computeRootBoundingBox,
+    makeClipPlaneCap,
+    readColorToken,
+    readToken,
+    rendererRef,
+    rootGroupRef,
+    sceneRef,
+    sectionBoxActive,
+    sectionBoxCageRef,
+    sectionBoxHandleGroupRef,
+    sectionBoxPrevActiveRef,
+    sectionBoxRef,
+    updateSectionBoxHandles,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+  ]);
 
   useEffect(() => {
     const op = outlinePassRef.current;
@@ -1479,7 +1658,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       .map((id) => bimPickMapRef.current.get(id))
       .filter((obj): obj is THREE.Object3D => Boolean(obj));
     op.selectedObjects = selectedObjects;
-  }, [selectedId, selectedIds]);
+  }, [bimPickMapRef, outlinePassRef, selectedId, selectedIds]);
 
   // COL-V3-01 — render colored outline halos for remote participant selections.
   // One OutlinePass per unique color is inserted before the OutputPass so each
@@ -1529,7 +1708,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       }
       pass.selectedObjects = objs;
     }
-  }, [remoteSelections]);
+  }, [bimPickMapRef, cameraRef, composerRef, remoteOutlinePassesRef, remoteSelections, sceneRef]);
 
   // EDT-03 — rebuild 3D grip meshes when the selection (or its element
   // shape) changes. The pointer handlers raycast against
@@ -1558,7 +1737,15 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
         gripPickablesRef.current = [];
       }
     };
-  }, [selectedId, elementsById]);
+  }, [
+    buildGripMeshes,
+    elementsById,
+    gripHandleRef,
+    gripPickablesRef,
+    gripsFor,
+    sceneRef,
+    selectedId,
+  ]);
 
   // FED-03 — render drift badges as billboarded sprites at the centroid
   // of every element with a drifted `monitorSource`. The 2D plan canvas
@@ -1592,7 +1779,14 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       }
       tex.dispose();
     };
-  }, [elementsById]);
+  }, [
+    buildDriftBadgeCanvas,
+    driftBadgeTooltip,
+    elementBadgeAnchorMm,
+    elementsById,
+    sceneRef,
+    selectDriftedElements,
+  ]);
 
   // WP-B B3 — rebuild 3D group instance meshes when groupRegistry changes.
   useEffect(() => {
@@ -1616,7 +1810,14 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
     }
     groupInstanceGroupRef.current = container;
     root.add(container);
-  }, [groupRegistry, elementsById]);
+  }, [
+    buildGroupInstance3d,
+    elementsById,
+    groupRegistry,
+    groupInstanceGroupRef,
+    paintBundleRef,
+    rootGroupRef,
+  ]);
 
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {
@@ -1659,5 +1860,5 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       }
       if (document.pointerLockElement) document.exitPointerLock();
     }
-  }, [walkActive]);
+  }, [cameraRef, mountRef, walkActive, walkControllerRef, walkLevelsRef]);
 }
