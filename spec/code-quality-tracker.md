@@ -180,7 +180,7 @@ Largest current source files observed:
 | `packages/cli/cli.mjs`                                      | 3,920      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `app/bim_ai/api/registry.py`                                | 3,267      | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
-| `packages/web/src/workspace/Workspace.tsx`                  | 4,981      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette/composition action modules. |
+| `packages/web/src/workspace/Workspace.tsx`                  | 3,326      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
 | `packages/web/src/Viewport.tsx`                             | 3,801      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
@@ -1303,6 +1303,10 @@ Initial thresholds can be advisory before becoming blocking:
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
   `4,981` local lines with focused Workspace tests and web typecheck passing.
+- 2026-05-20: a Workspace extraction slice moved the semantic command
+  switchboard into `workspace/useWorkspaceSemanticCommand.ts`, reducing
+  `Workspace.tsx` to `3,326` local lines with focused Workspace semantic/smoke
+  tests and web typecheck passing.
 - 2026-05-20: a Viewport extraction slice moved camera orientation state,
   deferred sync, and cleanup handling into `viewport/useViewportCameraOrientation.ts`,
   reducing `Viewport.tsx` to `5,101` local lines with focused viewport

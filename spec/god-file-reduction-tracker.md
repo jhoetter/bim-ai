@@ -130,6 +130,7 @@ A-territory target:
 | GFR-2026-54 | P0       | Done   | `packages/cli/cli.mjs`                                      | Extract CLI command families and shared helpers                    | CLI below `4,000` LOC with focused CLI tests green.         |
 | GFR-2026-55 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract keyboard and auxiliary canvas handlers                     | PlanCanvas below `4,000` LOC with focused tests green.      |
 | GFR-2026-56 | P0       | Done   | `packages/web/src/Viewport.tsx`                             | Extract post-mount scene synchronization effects                   | Viewport below `4,000` LOC with focused tests green.        |
+| GFR-2026-57 | P0       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract semantic command dispatcher hook                           | Workspace below `4,000` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -604,3 +605,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/Viewport.tsx` at `3,801` lines and the new hook at `1,666`
   lines. Focused viewport tests pass (`63 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-57` is Done. The slice moved the Workspace semantic
+  command switchboard into
+  `packages/web/src/workspace/useWorkspaceSemanticCommand.ts`. Local `wc -l`
+  reports `packages/web/src/workspace/Workspace.tsx` at `3,326` lines and the
+  new hook at `1,759` lines. Focused Workspace semantic/smoke/family-library/
+  tab/pane tests pass (`98 passed`), and `pnpm --filter @bim-ai/web typecheck`
+  passes.
