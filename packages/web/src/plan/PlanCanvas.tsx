@@ -177,6 +177,10 @@ import {
   orthoExtents,
   rayToPlanMm,
 } from './interaction/planCameraMath';
+import {
+  resolveSnapOverrideShortcut,
+  type SnapOverrideKeyState,
+} from './interaction/snapOverrideShortcuts';
 import { nearestWallAt } from './selection/nearestWall';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
@@ -605,7 +609,7 @@ export function PlanCanvas({
   const snapOverrideRef = useRef<ToggleableSnapKind | null>(null);
   const [snapOverrideDisplay, setSnapOverrideDisplay] = useState<ToggleableSnapKind | null>(null);
   // Tracks the first key in a two-key snap-override sequence (e.g. "S" before "I").
-  const lastKeyRef = useRef<{ key: string; time: number } | null>(null);
+  const lastKeyRef = useRef<SnapOverrideKeyState>(null);
   // EDT-01 — grip + temp-dim layer state
   const gripDragRef = useRef<{
     grip: GripDescriptor;
@@ -6247,35 +6251,12 @@ export function PlanCanvas({
       }
       // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SN / SC / SP / SX / SW).
       // Two-letter sequence: press S, then within 500 ms press the second letter.
-      if (!ev.metaKey && !ev.ctrlKey && !ev.altKey) {
-        const now = Date.now();
-        const last = lastKeyRef.current;
-        if (last && last.key === 's' && now - last.time <= 500) {
-          type OverrideEntry = { key: string; kind: ToggleableSnapKind; label: string };
-          const SNAP_OVERRIDE_MAP: OverrideEntry[] = [
-            { key: 'i', kind: 'intersection', label: 'Intersection' },
-            { key: 'e', kind: 'endpoint', label: 'Endpoint' },
-            { key: 'm', kind: 'midpoint', label: 'Midpoint' },
-            { key: 'n', kind: 'nearest', label: 'Nearest' },
-            { key: 'c', kind: 'center', label: 'Center' },
-            { key: 'p', kind: 'perpendicular', label: 'Perpendicular' },
-            { key: 'x', kind: 'extension', label: 'Extension' },
-            { key: 'w', kind: 'workplane', label: 'Work Plane' },
-          ];
-          const match = SNAP_OVERRIDE_MAP.find((o) => o.key === ev.key.toLowerCase());
-          if (match) {
-            ev.preventDefault();
-            snapOverrideRef.current = match.kind;
-            setSnapOverrideDisplay(match.kind);
-            lastKeyRef.current = null;
-          } else {
-            lastKeyRef.current = null;
-          }
-        } else if (ev.key.toLowerCase() === 's') {
-          lastKeyRef.current = { key: 's', time: now };
-        } else {
-          lastKeyRef.current = null;
-        }
+      const snapOverrideShortcut = resolveSnapOverrideShortcut(ev, lastKeyRef.current);
+      lastKeyRef.current = snapOverrideShortcut.nextState;
+      if (snapOverrideShortcut.override) {
+        ev.preventDefault();
+        snapOverrideRef.current = snapOverrideShortcut.override;
+        setSnapOverrideDisplay(snapOverrideShortcut.override);
       }
       if (ev.key === 'Escape') {
         // §8.9.3: Esc exits group edit mode if active.

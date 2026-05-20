@@ -469,6 +469,9 @@ impact of small changes.
   `workspace/inspector/materialInspectorSections.tsx`.
 - 2026-05-19: focused tests cover the extracted plan camera and nearest-wall
   helpers.
+- 2026-05-20: `PlanCanvas.tsx` no longer owns snap-override keyboard sequence
+  resolution; `plan/interaction/snapOverrideShortcuts.ts` owns the pure state
+  transition and has focused tests.
 
 ---
 

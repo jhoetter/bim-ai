@@ -1,6 +1,6 @@
 # Frontend Monolith Extraction Map
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 Scope: CQ-2026-04. This map defines the ownership direction for the current
 high-churn frontend files so extraction work can continue in small, testable
@@ -30,6 +30,7 @@ First landed slices:
 
 - `plan/interaction/planCameraMath.ts`
 - `plan/selection/nearestWall.ts`
+- `plan/interaction/snapOverrideShortcuts.ts`
 
 ## InspectorContent.tsx
 
