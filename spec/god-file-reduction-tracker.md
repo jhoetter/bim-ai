@@ -88,6 +88,7 @@ A-territory target:
 | GFR-2026-12 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting presentational overlays and controllers        | PlanCanvas below `8,000` LOC with plan tests passing.       |
 | GFR-2026-13 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting wall/context HUD and query overlays            | PlanCanvas below `7,500` LOC with plan tests passing.       |
 | GFR-2026-14 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract projection sync, camera, and interaction controller hooks  | PlanCanvas below `7,000` LOC with plan tests passing.       |
+| GFR-2026-15 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting annotation render passes                       | PlanCanvas below `6,600` LOC with plan tests passing.       |
 
 ## Progress Log
 
@@ -255,3 +256,14 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   camera hook now also owns world-mm to screen-px projection. Local `wc -l`
   reports `PlanCanvas.tsx` at `6,996` lines. Focused PlanCanvas tests pass;
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-15` is Done. The slice moved detail-component and
+  placed-tag annotation render passes into
+  `packages/web/src/plan/planCanvasRenderPasses.ts`. Local `wc -l` reports
+  `PlanCanvas.tsx` at `6,597` lines. Focused PlanCanvas tests pass;
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: the remaining open rows (`GFR-2026-04`, `GFR-2026-06`, and
+  `GFR-2026-08`) currently touch files that already contain unrelated
+  uncommitted parallel-agent changes (`packages/cli/cli.mjs`,
+  `app/bim_ai/api/registry.py`, and `packages/core/src/index.ts`). Continue
+  those rows after those worktree edits are committed or cleared so tracker
+  commits do not accidentally include unrelated work.

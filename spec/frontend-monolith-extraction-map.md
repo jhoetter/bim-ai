@@ -51,7 +51,7 @@ Target modules:
   coordinate mapping, resize observer, and render loop lifecycle.
 - `plan/planCanvasRenderPasses.ts`: self-contained render passes for
   neighborhood masses, drafting grid, DXF underlays, masking regions,
-  plan-region outlines, and area-plan overlays.
+  plan-region outlines, area-plan overlays, detail components, and placed tags.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
