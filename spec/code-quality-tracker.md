@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                               |
 | ----------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,935      | High-churn plan interaction monolith after extracted overlay modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,743      | High-churn plan interaction monolith after extracted overlay modules. |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                               |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
@@ -561,6 +561,9 @@ impact of small changes.
 - 2026-05-20: the next PlanCanvas extraction moved wall drafting HUD and preview
   overlays into `plan/PlanCanvasWallDraftOverlays.tsx`, reducing
   `PlanCanvas.tsx` to `7,935` local lines.
+- 2026-05-20: the next PlanCanvas extraction moved context menus and
+  imported-CAD query overlays into `plan/PlanCanvasContextOverlays.tsx`,
+  reducing `PlanCanvas.tsx` to `7,743` local lines.
 
 ---
 
@@ -1148,6 +1151,8 @@ Initial thresholds can be advisory before becoming blocking:
   room-colour legend UI into dedicated plan overlay modules.
 - 2026-05-20: a follow-up PlanCanvas slice moved wall drafting HUD and preview
   UI into `plan/PlanCanvasWallDraftOverlays.tsx`.
+- 2026-05-20: a follow-up PlanCanvas slice moved context-menu and imported-CAD
+  query UI into `plan/PlanCanvasContextOverlays.tsx`.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.

@@ -220,3 +220,8 @@ typecheck` and focused PlanCanvas overlay tests pass.
   `packages/web/src/plan/PlanCanvasWallDraftOverlays.tsx`. Local `wc -l` now
   reports `PlanCanvas.tsx` at `7,935` lines. `pnpm --filter @bim-ai/web
 typecheck` and focused PlanCanvas overlay tests pass.
+- 2026-05-20: the next `GFR-2026-13` slice moved wall/canvas/element context
+  menus, reveal-hidden actions, imported-CAD query overlays, and wall-join menu
+  UI into `packages/web/src/plan/PlanCanvasContextOverlays.tsx`. Local `wc -l`
+  now reports `PlanCanvas.tsx` at `7,743` lines. `pnpm --filter @bim-ai/web
+typecheck` and focused PlanCanvas context/overlay tests pass.

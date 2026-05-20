@@ -189,6 +189,7 @@ import { PlanCanvasWorkflowOverlays } from './PlanCanvasWorkflowOverlays';
 import { PlanCanvasAuthoringOverlays } from './PlanCanvasAuthoringOverlays';
 import { PlanCanvasRoomColorLegend } from './PlanCanvasRoomColorLegend';
 import { PlanCanvasWallDraftOverlays } from './PlanCanvasWallDraftOverlays';
+import { PlanCanvasContextOverlays } from './PlanCanvasContextOverlays';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -232,7 +233,6 @@ import { planAnnotationLabelSprite, tagLeaderLineThree } from './planElementMesh
 import { createPlanTextSprite } from './planTextSprites';
 import {
   dxfViewOverrideKey,
-  hiddenDxfLayerNamesForView,
   isDxfLinkVisibleInView,
   makeDxfLinkTransform,
   isDxfLayerHidden,
@@ -240,7 +240,6 @@ import {
   resolveDxfPrimitiveColor,
   resolveDxfUnderlayStyle,
   selectDxfUnderlaysForLevel,
-  setDxfLayerHiddenInView,
   type DxfPrimitiveQueryHit,
 } from './dxfUnderlay';
 import {
@@ -250,10 +249,7 @@ import {
   selectDriftedElements,
 } from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
-import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
-import { ElementContextMenu } from '../workspace/ElementContextMenu';
-import { contextMenuItemsForElement } from '../workspace/contextMenuItems';
-import { CanvasContextMenu } from './CanvasContextMenu';
+import type { WallContextMenuCommand } from '../workspace/viewport/WallContextMenu';
 import { createSimilarPayload } from './createSimilar';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
@@ -7474,226 +7470,38 @@ export function PlanCanvas({
           </span>
         ) : null}
       </div>
-      {wallContextMenu && (
-        <WallContextMenu
-          wall={wallContextMenu.wall}
-          position={wallContextMenu.position}
-          onCommand={handleWallContextMenuCommand}
-          onClose={() => setWallContextMenu(null)}
-        />
-      )}
-      {/* §1.7.1: canvas right-click context menu — shown when right-clicking on empty canvas space */}
-      {canvasCtxMenu && (
-        <CanvasContextMenu
-          x={canvasCtxMenu.x}
-          y={canvasCtxMenu.y}
-          onClose={() => setCanvasCtxMenu(null)}
-          onZoomIn={() => {
-            camRef.current.half = Math.max(HALF_MIN, camRef.current.half * Math.exp(-0.5));
-            resizeCam();
-          }}
-          onZoomOut={() => {
-            camRef.current.half = Math.min(HALF_MAX, camRef.current.half * Math.exp(0.5));
-            resizeCam();
-          }}
-          onZoomFit={handleFitToView}
-        />
-      )}
-      {/* §1.7.2: generic element right-click context menu for non-wall elements */}
-      {elementCtxMenu && (
-        <ElementContextMenu
-          open
-          anchorX={elementCtxMenu.position.x}
-          anchorY={elementCtxMenu.position.y}
-          items={contextMenuItemsForElement(
-            elementCtxMenu.el,
-            (cmd) => void onSemanticCommand(cmd),
-            { activeLevelId: displayLevelId ?? '', planTool: planTool ?? '' },
-          )}
-          onClose={() => setElementCtxMenu(null)}
-          data-testid="element-context-menu"
-        />
-      )}
-      {/* F-014/F-102: Unhide in View context menu — shown when right-clicking a hidden element in reveal hidden mode */}
-      {unhideContextMenu && (
-        <div
-          data-testid="unhide-context-menu"
-          className="pointer-events-auto absolute z-50 flex flex-col overflow-hidden rounded border border-border bg-surface shadow-md"
-          style={{ left: unhideContextMenu.position.x, top: unhideContextMenu.position.y }}
-        >
-          {/* F-102: per-element unhide action — shown only when the element is individually hidden. */}
-          {unhideContextMenu.elementId && (
-            <button
-              type="button"
-              className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
-              data-testid="unhide-context-element"
-              onClick={() => {
-                if (activePlanViewId && unhideContextMenu.elementId) {
-                  void onSemanticCommand({
-                    type: 'unhideElementInView',
-                    planViewId: activePlanViewId,
-                    elementId: unhideContextMenu.elementId,
-                  });
-                }
-                setUnhideContextMenu(null);
-              }}
-            >
-              Unhide Element
-            </button>
-          )}
-          <button
-            type="button"
-            className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
-            data-testid="unhide-context-category"
-            onClick={() => {
-              if (activePlanViewId) {
-                setCategoryOverride(activePlanViewId, unhideContextMenu.elementKind, {
-                  visible: true,
-                });
-              }
-              setUnhideContextMenu(null);
-            }}
-          >
-            Unhide in View: {unhideContextMenu.elementKind}
-          </button>
-        </div>
-      )}
-      {dxfQueryHover && planTool === 'query' ? (
-        <div
-          data-testid="dxf-query-hover"
-          className="pointer-events-none absolute left-3 top-3 z-40 rounded border border-border bg-surface px-2 py-1 text-[11px] shadow-sm"
-        >
-          {dxfQueryHover.link.name ?? 'DXF Underlay'} / {dxfQueryHover.layerName}
-        </div>
-      ) : null}
-      {dxfQueryDialog && (
-        <div
-          data-testid="dxf-query-dialog"
-          className="pointer-events-auto absolute z-50 w-64 rounded border border-border bg-surface p-3 text-xs shadow-md"
-          style={{ left: dxfQueryDialog.position.x, top: dxfQueryDialog.position.y }}
-        >
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="font-medium">Imported CAD Query</div>
-              <div className="truncate text-[11px] text-muted">
-                {dxfQueryDialog.hit.link.name ?? 'DXF Underlay'}
-              </div>
-            </div>
-            <button
-              type="button"
-              aria-label="Close imported CAD query"
-              className="rounded border border-border px-1.5 py-0.5 text-[11px] hover:bg-surface-strong"
-              onClick={() => setDxfQueryDialog(null)}
-            >
-              Close
-            </button>
-          </div>
-          <dl className="grid grid-cols-[64px_1fr] gap-x-2 gap-y-1 text-[11px]">
-            <dt className="text-muted">Layer</dt>
-            <dd className="min-w-0 truncate" data-testid="dxf-query-layer">
-              {dxfQueryDialog.hit.layerName}
-            </dd>
-            <dt className="text-muted">Color</dt>
-            <dd className="flex min-w-0 items-center gap-1">
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-sm border border-border"
-                style={{ backgroundColor: dxfQueryDialog.hit.color }}
-              />
-              <span className="truncate font-mono">{dxfQueryDialog.hit.color}</span>
-            </dd>
-            <dt className="text-muted">Link</dt>
-            <dd className="min-w-0 truncate">{dxfQueryDialog.hit.link.id}</dd>
-            <dt className="text-muted">Primitive</dt>
-            <dd className="min-w-0 truncate">
-              {dxfQueryDialog.hit.primitive.kind} #{dxfQueryDialog.hit.primitiveIndex + 1}
-            </dd>
-          </dl>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(() => {
-              const hit = dxfQueryDialog.hit;
-              const key = dxfViewOverrideKey(hit.link.id);
-              const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
-              const override =
-                activePlanView?.kind === 'plan_view'
-                  ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)[
-                      key
-                    ]
-                  : undefined;
-              const hiddenInView = (override?.dxf?.hiddenLayerNames ?? []).includes(hit.layerName);
-              const hiddenGlobally = (hit.link.hiddenLayerNames ?? []).includes(hit.layerName);
-              const effectiveHidden = hiddenDxfLayerNamesForView(hit.link, override).includes(
-                hit.layerName,
-              );
-              const canShow = hiddenInView && !hiddenGlobally;
-              return (
-                <>
-                  <button
-                    type="button"
-                    disabled={!activePlanViewId || effectiveHidden}
-                    data-testid="dxf-query-hide-layer-view"
-                    className="rounded border border-border px-2 py-1 text-[11px] hover:bg-surface-strong disabled:opacity-50"
-                    onClick={() => {
-                      if (!activePlanViewId) return;
-                      const next = setDxfLayerHiddenInView(override, hit.layerName, true);
-                      setCategoryOverride(activePlanViewId, key, next);
-                      setDxfQueryDialog({
-                        ...dxfQueryDialog,
-                        hit,
-                      });
-                    }}
-                  >
-                    Hide Layer in View
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!activePlanViewId || !canShow}
-                    data-testid="dxf-query-show-layer-view"
-                    className="rounded border border-border px-2 py-1 text-[11px] hover:bg-surface-strong disabled:opacity-50"
-                    title={
-                      hiddenGlobally
-                        ? 'This layer is hidden globally in Manage Links'
-                        : 'Show this layer in the active view'
-                    }
-                    onClick={() => {
-                      if (!activePlanViewId) return;
-                      const next = setDxfLayerHiddenInView(override, hit.layerName, false);
-                      setCategoryOverride(activePlanViewId, key, next);
-                    }}
-                  >
-                    Show Layer in View
-                  </button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-      {/* F-040: Allow/Disallow Join context menu shown when right-clicking near a wall endpoint */}
-      {wallJoinCtxMenu && (
-        <div
-          data-testid="wall-join-ctx-menu"
-          className="pointer-events-auto absolute z-50 flex flex-col overflow-hidden rounded border border-border bg-surface shadow-md"
-          style={{ left: wallJoinCtxMenu.position.x, top: wallJoinCtxMenu.position.y }}
-        >
-          <button
-            type="button"
-            className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
-            data-testid="wall-join-ctx-toggle"
-            onClick={() => {
-              void onSemanticCommand({
-                type: 'setWallJoinDisallow',
-                wallId: wallJoinCtxMenu.wallId,
-                endpoint: wallJoinCtxMenu.endpoint,
-                disallow: !wallJoinCtxMenu.currentlyDisallowed,
-              });
-              setWallJoinCtxMenu(null);
-            }}
-          >
-            {wallJoinCtxMenu.currentlyDisallowed ? 'Allow Join' : 'Disallow Join'} (
-            {wallJoinCtxMenu.endpoint})
-          </button>
-        </div>
-      )}
+      <PlanCanvasContextOverlays
+        wallContextMenu={wallContextMenu}
+        onWallContextCommand={handleWallContextMenuCommand}
+        onCloseWallContextMenu={() => setWallContextMenu(null)}
+        canvasContextMenu={canvasCtxMenu}
+        onCloseCanvasContextMenu={() => setCanvasCtxMenu(null)}
+        onCanvasZoomIn={() => {
+          camRef.current.half = Math.max(HALF_MIN, camRef.current.half * Math.exp(-0.5));
+          resizeCam();
+        }}
+        onCanvasZoomOut={() => {
+          camRef.current.half = Math.min(HALF_MAX, camRef.current.half * Math.exp(0.5));
+          resizeCam();
+        }}
+        onCanvasZoomFit={handleFitToView}
+        elementContextMenu={elementCtxMenu}
+        activeLevelId={displayLevelId ?? ''}
+        planTool={planTool ?? ''}
+        onSemanticCommand={onSemanticCommand}
+        onCloseElementContextMenu={() => setElementCtxMenu(null)}
+        unhideContextMenu={unhideContextMenu}
+        activePlanViewId={activePlanViewId}
+        onSetCategoryOverride={setCategoryOverride}
+        onCloseUnhideContextMenu={() => setUnhideContextMenu(null)}
+        dxfQueryHover={planTool === 'query' ? dxfQueryHover : null}
+        dxfQueryDialog={dxfQueryDialog}
+        elementsById={elementsById}
+        onCloseDxfQueryDialog={() => setDxfQueryDialog(null)}
+        onUpdateDxfQueryDialog={setDxfQueryDialog}
+        wallJoinContextMenu={wallJoinCtxMenu}
+        onCloseWallJoinContextMenu={() => setWallJoinCtxMenu(null)}
+      />
       <PlanCanvasWallDraftOverlays
         hudMm={hudMm ?? null}
         worldToScreen={worldToScreen}
