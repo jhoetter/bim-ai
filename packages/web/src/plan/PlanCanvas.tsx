@@ -160,7 +160,7 @@ import {
   type SnapOverrideKeyState,
 } from './interaction/snapOverrideShortcuts';
 import { nearestWallAt } from './selection/nearestWall';
-import { guessGridLabel, readPlanToken, type Draft } from './planCanvasHelpers';
+import { readPlanToken, type Draft } from './planCanvasHelpers';
 import { PlanCanvasReadouts } from './PlanCanvasReadouts';
 import { PlanCanvasToolOverlays } from './PlanCanvasToolOverlays';
 import { PlanCanvasStatusOverlays } from './PlanCanvasStatusOverlays';
@@ -183,6 +183,7 @@ import {
   handleQueryToolClick,
   handleTagToolClick,
 } from './planCanvasClickHandlers';
+import { handleMeasureDraftClick } from './planCanvasMeasureDraftClicks';
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
 import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
 import { usePlanCanvasToolCleanupEffects } from './usePlanCanvasToolCleanupEffects';
@@ -1634,97 +1635,22 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
-      if (planTool === 'room_rectangle') {
-        const dr = draftRef.current;
-        if (!dr || dr.kind !== 'room_rect') {
-          draftRef.current = { kind: 'room_rect', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const ox = Math.min(dr.sx, sp.xMm);
-        const oy = Math.min(dr.sy, sp.yMm);
-        const widthMm = Math.abs(sp.xMm - dr.sx);
-        const depthMm = Math.abs(sp.yMm - dr.sy);
-        if (widthMm < 200 || depthMm < 200) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        onSemanticCommand({
-          type: 'createRoomRectangle',
+      if (
+        handleMeasureDraftClick({
+          planTool,
+          pointMm: sp,
           levelId: lvlId,
-          origin: { xMm: ox, yMm: oy },
-          widthMm,
-          depthMm,
-        });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'grid') {
-        const d = draftRef.current;
-        if (!d || d.kind !== 'grid') {
-          draftRef.current = { kind: 'grid', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        onSemanticCommand({
-          type: 'createGridLine',
-          label: guessGridLabel(d.sx, d.sy, sp.xMm, sp.yMm),
-          levelId: lvlId,
-          start: { xMm: d.sx, yMm: d.sy },
-          end: { xMm: sp.xMm, yMm: sp.yMm },
-        });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'measure') {
-        const d = draftRef.current;
-        if (!d || d.kind !== 'measure') {
-          draftRef.current = { kind: 'measure', ax: sp.xMm, ay: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const distMm = Math.hypot(sp.xMm - d.ax, sp.yMm - d.ay);
-        setMeasureReadout({ distMm });
-        draftRef.current = undefined;
-        if (previewRef.current) {
-          grp.remove(previewRef.current);
-          previewRef.current.geometry.dispose();
-          previewRef.current = null;
-        }
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'measure-angle') {
-        measureAngleStateRef.current = reduceMeasureAngle(measureAngleStateRef.current, {
-          type: 'click',
-          positionMm: { xMm: sp.xMm, yMm: sp.yMm },
-        });
-        if (
-          measureAngleStateRef.current.status === 'complete' &&
-          measureAngleStateRef.current.angleDeg != null
-        ) {
-          setMeasureAngleReadout({ angleDeg: measureAngleStateRef.current.angleDeg });
-        }
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'measure-arc') {
-        measureArcStateRef.current = reduceMeasureArc(measureArcStateRef.current, {
-          type: 'click',
-          positionMm: { xMm: sp.xMm, yMm: sp.yMm },
-        });
-        const arcState = measureArcStateRef.current;
-        if (
-          arcState.status === 'complete' &&
-          arcState.arcLengthMm != null &&
-          arcState.radiusMm != null
-        ) {
-          setMeasureArcReadout({ arcLengthMm: arcState.arcLengthMm, radiusMm: arcState.radiusMm });
-        }
-        bumpGeom((x) => x + 1);
+          draftRef,
+          measureAngleStateRef,
+          measureArcStateRef,
+          setMeasureReadout,
+          setMeasureAngleReadout,
+          setMeasureArcReadout,
+          onSemanticCommand,
+          clearPreview,
+          bumpGeom,
+        })
+      ) {
         return;
       }
       if (planTool === 'dimension') {
