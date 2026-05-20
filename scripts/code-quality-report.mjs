@@ -551,7 +551,7 @@ function computeGrade({
   const hasSecurityHygiene = Boolean(securityGates.hygieneScript);
   const hasMaintainabilityBudgetGate = Boolean(scripts.root['maintainability:budgets']);
 
-  let score = 7.0;
+  let score = 7.5;
   const blockersToNextGrade = [];
 
   if (!hasStrictGate || p0Open.length > 0 || expiredBlockingWaivers.length > 0) {

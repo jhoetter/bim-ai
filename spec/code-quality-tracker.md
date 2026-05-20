@@ -13,7 +13,7 @@ and sketch-to-BIM readiness remain in their dedicated trackers.
 
 ## Current Rating
 
-Current assessment: **7/10 (B-)**.
+Current assessment: **7.5/10 (B)**.
 
 The project is now in B territory: strict TypeScript is green, the canonical
 verification gates are aligned, frontend test noise is materially quieter,
@@ -22,7 +22,7 @@ machine-readable and expiring, and the largest frontend monoliths have extractio
 maps with first slices landed. The score is still held down by large remaining
 source files, the active JavaScript lint waiver, missing contract-parity budgets,
 limited real deployed-path integration coverage, and the absence of a
-trend-backed release-readiness scorecard.
+trend-backed release-readiness scorecard and remaining P2 hygiene budgets.
 
 The practical target is:
 
@@ -1425,15 +1425,18 @@ machine-readable waiver consumed by the report.
 - 2026-05-20: CI uploads the generated scorecard. This remains Partial until
   trend comparison against a previous baseline and release-note handoff are
   implemented.
+- 2026-05-20: completed P0/P1 tracker rows and wired hard gates move the
+  generated baseline to B. Tracked artifact disposition and frontend type escape
+  hotspots remain explicit blockers to the next grade band.
 
 ### Suggested Output
 
 ```text
-Code Quality Grade: B-
+Code Quality Grade: B
 Blocking to A-:
-- frontend test warning budget exceeded
-- PlanCanvas.tsx above file-size budget without active extraction issue
-- command registry parity report missing 3 UI commands
+- tracked local/generated artifact rows need disposition
+- frontend type escape hotspot files exceed the next-grade budget
+- trend comparison against the previous baseline is not published yet
 ```
 
 ---
