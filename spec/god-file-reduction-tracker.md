@@ -131,6 +131,7 @@ A-territory target:
 | GFR-2026-55 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract keyboard and auxiliary canvas handlers                     | PlanCanvas below `4,000` LOC with focused tests green.      |
 | GFR-2026-56 | P0       | Done   | `packages/web/src/Viewport.tsx`                             | Extract post-mount scene synchronization effects                   | Viewport below `4,000` LOC with focused tests green.        |
 | GFR-2026-57 | P0       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract semantic command dispatcher hook                           | Workspace below `4,000` LOC with focused tests green.       |
+| GFR-2026-58 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract wall and floor inspector sections                          | Inspector below `4,000` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -612,3 +613,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   new hook at `1,759` lines. Focused Workspace semantic/smoke/family-library/
   tab/pane tests pass (`98 passed`), and `pnpm --filter @bim-ai/web typecheck`
   passes.
+- 2026-05-20: `GFR-2026-58` is Done. The slice moved wall and floor property
+  editors into
+  `packages/web/src/workspace/inspector/wallFloorInspectorSections.tsx`. Local
+  `wc -l` reports
+  `packages/web/src/workspace/inspector/InspectorContent.tsx` at `3,856` lines
+  and the new section module at `1,162` lines. Focused wall/floor/material/
+  graphics inspector tests pass (`97 passed` across the focused runs), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
