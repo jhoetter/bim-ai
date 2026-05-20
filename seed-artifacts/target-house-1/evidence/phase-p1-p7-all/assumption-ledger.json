@@ -381,8 +381,8 @@
       "text": "Scaled target-house geometry to the 14 m x 10 m source envelope, removed helper room-separation commands, removed synthetic access partitions and unsupported roof/slab cut commands from the physical bundle, closed detached wall loops, and rebound room ids to required target-house room ids."
     }
   ],
-  "generatedAtEpochMs": 1779225231481,
-  "gitHead": "ced10aac3da218983e300d9b6fecb6e3c1374950",
+  "generatedAtEpochMs": 1779227106824,
+  "gitHead": "157fd8b88266311a97cc05415dfd54380c0838f2",
   "incomplete": [],
   "ok": true,
   "phase": "p1-p7-all",
