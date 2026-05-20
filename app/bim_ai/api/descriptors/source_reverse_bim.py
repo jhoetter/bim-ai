@@ -348,6 +348,13 @@ for _reverse_tool in (
         "notes": "Builds wall/floor/roof material and layer-stack readiness from source facts; blocks generic type authoring unless assemblies are captured or explicitly source-unavailable.",
     },
     {
+        "name": "reverse_bim.source_building_scope",
+        "title": "ReverseBimSourceBuildingScopeInput",
+        "path": "/api/v3/reverse-bim/source-building-scope",
+        "cli": "bim-ai reverse-bim source-building-scope --facts ai-source-facts.json",
+        "notes": "Checks whether source facts resolve the authoring target as whole building, Doppelhaus, target half, unit, or context-only geometry before MCP modeling.",
+    },
+    {
         "name": "reverse_bim.source_level_completeness",
         "title": "ReverseBimSourceLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/source-level-completeness",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bim_ai.folder_output import _build_open_repair_requests, _build_package_acceptance_report
 from bim_ai.source_roof_dormer import build_source_roof_dormer_report
 
 
@@ -69,3 +70,48 @@ def test_source_roof_dormer_report_checks_roof_opening_host_and_position() -> No
     assert report["summary"]["roofOpeningCount"] == 1
     assert report["roofOpenings"][0]["missingFields"] == ["hostRoofRef", "position"]
     assert report["actions"][0]["kind"] == "roof_opening_precision_repair"
+
+
+def test_folder_acceptance_and_repairs_include_roof_dormer_blockers() -> None:
+    roof_dormer = build_source_roof_dormer_report(
+        [
+            {
+                "factId": "roof-a",
+                "kind": "roof",
+                "status": "source_visible_estimate",
+                "value": {
+                    "roofType": "gable",
+                    "boundaryRef": "roof outline",
+                    "pitchDeg": 42,
+                    "eaveHeightMm": 5000,
+                    "ridgeHeightMm": 8000,
+                },
+            }
+        ]
+    )
+
+    acceptance = _build_package_acceptance_report(
+        raw_responses={"responseCount": 1},
+        loop={"summary": {}},
+        readiness={"summary": {}},
+        conflicts={"openConflictCount": 0},
+        source_completeness={"ok": True},
+        room_topology={"summary": {}},
+        source_area_consistency={"summary": {"blockingCount": 0}},
+        coordinate_frame_alignment_report={"summary": {"blockingAlignmentCount": 0}},
+        site_terrain={"summary": {"blockedActionCount": 0}},
+        roof_dormer=roof_dormer,
+        source_material_assemblies={"summary": {"blockedAssemblyCount": 0}},
+        reader_consensus={"summary": {"blockingCount": 0}},
+        source_level_completeness={"summary": {}},
+    )
+    repairs = _build_open_repair_requests(
+        loop={"repairRequests": []},
+        room_topology={"rooms": []},
+        roof_dormer=roof_dormer,
+    )
+
+    assert acceptance["ok"] is False
+    assert acceptance["summary"]["roofDormerBlockerCount"] == 1
+    assert acceptance["findings"][0]["code"] == "folder_output_roof_dormer_incomplete"
+    assert repairs[0]["kind"] == "roof_precision_repair"

@@ -542,7 +542,9 @@ Hard gates:
 
 - `accepted=true` is possible only if all gate statuses are `passed`.
 - Geometry/topology warnings cannot be dispositioned as accepted unless the
-  source proves an existing nonconforming condition.
+  source proves an existing nonconforming condition. Existing-building work
+  must not redesign away a documented 100-year-old condition just to satisfy a
+  modern rule, but the warning remains visible in the ledger and handoff.
 - Every tolerance must have source ids, owner, scope, and downstream impact.
 - Final UI and MCP readback must describe the same model.
 - No final seed/export package is generated if acceptance fails.
@@ -555,8 +557,8 @@ Acceptance gate table:
 | Conflict ledger | No unresolved conflicts. |
 | Level completeness | Every source level modeled or source-blocked; no empty KG-like level. |
 | Physical topology | Rooms/walls/openings/stairs are physically coherent. |
-| Advisor | 0 errors, 0 unresolved geometry/topology warnings. |
-| Constructability | 0 unresolved geometry/topology warnings. |
+| Advisor | 0 errors, 0 unresolved geometry/topology warnings; source-backed existing nonconformances are carried as visible tolerated warnings. |
+| Constructability | 0 unresolved geometry/topology warnings; source-backed existing nonconformances are carried as visible tolerated warnings. |
 | Integrity | 0 blockers. |
 | Overlay | All required plan/section/elevation overlays within tolerance. |
 | Areas | Source areas reconcile by basis/formula or block. |
@@ -569,7 +571,7 @@ Implementation status:
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
 | RBM9-001 | Final acceptance rewrite | Done | `reverseBimFinalAcceptancePolicy_v2` fails the target-house-3 failure shape instead of accepting it. |
-| RBM9-002 | Warning policy hardening | Done | Geometry/topology warnings are blocking by default; only source-backed `existing_nonconforming_tolerated` rows can pass. |
+| RBM9-002 | Warning policy hardening | Done | Geometry/topology warnings are blocking by default; only source-backed `existing_nonconforming_tolerated` / `existing_nonconforming_source_backed` rows with source fact ids, reason, and reviewer can pass. |
 | RBM9-003 | Visual evidence gate | Partial | Final acceptance now requires source-overlay and UI evidence reports; generating the screenshots/overlays remains pending. |
 | RBM9-004 | Seed/export guard | Not started | Seed/export command refuses unaccepted models. |
 
@@ -629,6 +631,7 @@ Leo-specific blockers known from `target-house-3`:
 | LEO-RBM-006 | Missing material/layer semantics | Extract or explicitly source-block wall/floor/roof assemblies. |
 | LEO-RBM-007 | Site placeholder | Source-align parcel/building/toposolid or block terrain fidelity. |
 | LEO-RBM-008 | UI evidence absent | Add required screenshots and visual checklist before acceptance. |
+| LEO-RBM-009 | Target/context scope unresolved | Add `building_scope` and target/context scope mask so the agent does not model one half when the source requires the whole Doppelhaus or vice versa. |
 
 ## Product Tool Gaps
 
@@ -655,6 +658,7 @@ Implemented first-pass surfaces:
 - `reverse_bim.ui_evidence`
 - `reverse_bim.final_acceptance` with `reverseBimFinalAcceptancePolicy_v2`
 - `reverse_bim.source_material_assemblies`
+- `reverse_bim.source_building_scope`
 - `reverse_bim.source_level_completeness`
 - `source.reader_consensus`
 - `reverse_bim.phase_run`
@@ -662,7 +666,15 @@ Implemented first-pass surfaces:
 
 These enforce the new gates with structured reports. The remaining work is
 automatic source/model overlay rendering, screenshot capture, live phase
-orchestration, material type authoring/readback gates, and a fresh Leo benchmark.
+orchestration, material type authoring/readback gates, target/context scope
+mask polygons, and a fresh Leo benchmark.
+
+Fresh live audit evidence for `target-house-3` now lives under
+`tmp/reverse-bim-testhaus-leo/live-target-house-3-audit/`. It rejects the
+current seeded model through the actual live `/validate`,
+`/constructability-report`, and `/summary` payloads: Advisor warnings,
+constructability door/stair findings, empty KG, missing source overlays, and
+missing accepted UI evidence all block final acceptance.
 
 ## Implementation Waves
 
@@ -698,6 +710,7 @@ Tests must encode the failure so it cannot regress.
 | TEST-011 | Phase packet omits expected model readback evidence | Phase run fails before next phase. |
 | TEST-012 | UI screenshot lacks/fails visual inspection checklist | UI evidence fails even when screenshot file exists. |
 | TEST-013 | Source-required KG/level has no physical source facts | Folder output acceptance fails and emits level repair request. |
+| TEST-014 | Building target/context scope is missing, ambiguous, or conflicting | Folder output acceptance fails and emits `building_scope_repair`. |
 
 ## Done Definition For The Overall Goal
 

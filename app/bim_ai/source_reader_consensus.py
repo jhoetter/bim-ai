@@ -9,6 +9,7 @@ from typing import Any
 from bim_ai.source_agent_loop import normalize_ai_visual_trace_reader_response
 
 CRITICAL_FACT_KINDS = {
+    "building_scope",
     "level",
     "storey",
     "wall_line",
@@ -40,6 +41,7 @@ NUMERIC_TOLERANCES = {
 }
 
 COMPARISON_FIELDS_BY_KIND = {
+    "building_scope": ["scopeType", "modeledExtent"],
     "level": ["name", "elevationMm"],
     "storey": ["name", "elevationMm"],
     "wall_thickness": ["appliesTo", "thicknessMm"],
@@ -225,6 +227,7 @@ def _fact_match_key(fact: dict[str, Any]) -> str:
     kind = str(fact.get("kind") or "unknown")
     value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
     identity_fields = {
+        "building_scope": ["targetScopeId"],
         "level": ["name", "levelId"],
         "storey": ["name", "levelId"],
         "wall_thickness": ["appliesTo", "elementScope", "levelId", "wallRole"],

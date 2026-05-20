@@ -129,6 +129,7 @@ from bim_ai.reverse_bim import (
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.source_level_completeness import build_source_level_completeness_report
+from bim_ai.source_building_scope import build_source_building_scope_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 from bim_ai.renderer_diagnostic_persistence import (
@@ -1624,6 +1625,15 @@ async def reverse_bim_source_material_assemblies_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
     return build_source_material_assembly_report(
+        body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
+    )
+
+
+@api_router.post("/v3/reverse-bim/source-building-scope")
+async def reverse_bim_source_building_scope_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_source_building_scope_report(
         body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
     )
 

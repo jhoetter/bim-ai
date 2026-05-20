@@ -32,7 +32,14 @@ FINDING_DISPOSITIONS = {
     "source_conflict",
     "later_phase",
     "tolerated",
+    "existing_nonconforming_tolerated",
+    "existing_nonconforming_source_backed",
     "blocked",
+}
+
+SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS = {
+    "existing_nonconforming_tolerated",
+    "existing_nonconforming_source_backed",
 }
 
 FACT_KIND_TO_AUTHORING_TOOL = {
@@ -62,6 +69,7 @@ NON_AUTHORING_SOURCE_FACT_KINDS = {
     "photo_observation",
     "drainage",
     "basement",
+    "building_scope",
     "conflict",
     "site_context",
 }
@@ -546,6 +554,22 @@ def build_reverse_bim_phase_packet(
                     "message": "Tolerated findings require a reason.",
                 }
             )
+        if (
+            value in SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS
+            and not _is_valid_source_backed_existing_nonconformance(disposition)
+        ):
+            findings.append(
+                {
+                    "code": "phase_existing_nonconformance_evidence_missing",
+                    "severity": "error",
+                    "field": f"findingDispositions[{idx}]",
+                    "message": (
+                        "Existing-condition warning tolerances require source=advisor/"
+                        "constructability/integrity_preflight, severity=warning, reason, "
+                        "acceptedBy/reviewer, and sourceFactIds."
+                    ),
+                }
+            )
 
     open_blockers = [
         row
@@ -555,10 +579,34 @@ def build_reverse_bim_phase_packet(
     advisor_counts = _severity_counts_from_payload(advisor or {})
     constructability_counts = _severity_counts_from_payload(constructability or {})
     integrity_counts = _severity_counts_from_payload(integrity_preflight or {})
+    advisor_warning_count = int(advisor_counts.get("warning", 0))
+    constructability_warning_count = int(constructability_counts.get("warning", 0))
+    integrity_warning_count = int(integrity_counts.get("warning", 0))
+    source_backed_existing_nonconformance_counts = {
+        "advisor": _source_backed_existing_nonconformance_count(
+            dispositions,
+            source="advisor",
+            warning_count=advisor_warning_count,
+        ),
+        "constructability": _source_backed_existing_nonconformance_count(
+            dispositions,
+            source="constructability",
+            warning_count=constructability_warning_count,
+        ),
+        "integrityPreflight": _source_backed_existing_nonconformance_count(
+            dispositions,
+            source="integrity_preflight",
+            warning_count=integrity_warning_count,
+        ),
+    }
+    raw_warning_count = (
+        advisor_warning_count + constructability_warning_count + integrity_warning_count
+    )
+    source_backed_existing_nonconformance_count = sum(
+        source_backed_existing_nonconformance_counts.values()
+    )
     blocking_warning_count = (
-        int(advisor_counts.get("warning", 0))
-        + int(constructability_counts.get("warning", 0))
-        + int(integrity_counts.get("warning", 0))
+        raw_warning_count - source_backed_existing_nonconformance_count
     )
     payload = {
         "format": "reverseBimPhasePacket_v1",
@@ -580,6 +628,13 @@ def build_reverse_bim_phase_packet(
             "advisorSeverityCounts": advisor_counts,
             "constructabilitySeverityCounts": constructability_counts,
             "integritySeverityCounts": integrity_counts,
+            "rawWarningCount": raw_warning_count,
+            "sourceBackedExistingNonconformanceCount": (
+                source_backed_existing_nonconformance_count
+            ),
+            "sourceBackedExistingNonconformanceCountsBySource": (
+                source_backed_existing_nonconformance_counts
+            ),
             "blockingWarningCount": blocking_warning_count,
             "openBlockerCount": len(open_blockers),
             "packetErrorCount": sum(1 for row in findings if row.get("severity") == "error"),
@@ -598,6 +653,84 @@ def build_reverse_bim_phase_packet(
     )
     payload["digestSha256"] = _digest(payload)
     return payload
+
+
+def _nested_decision(row: dict[str, Any]) -> dict[str, Any]:
+    value = row.get("dispositionDecision")
+    return value if isinstance(value, dict) else {}
+
+
+def _source_fact_ids_for_disposition(row: dict[str, Any]) -> list[str]:
+    decision = _nested_decision(row)
+    source_fact_ids = (
+        row.get("sourceFactIds")
+        or row.get("sourceFacts")
+        or row.get("evidenceFactIds")
+        or decision.get("sourceFactIds")
+        or decision.get("sourceFacts")
+        or decision.get("evidenceFactIds")
+        or []
+    )
+    if not isinstance(source_fact_ids, list):
+        return []
+    return [str(item) for item in source_fact_ids if item]
+
+
+def _reviewer_for_disposition(row: dict[str, Any]) -> str:
+    decision = _nested_decision(row)
+    return str(
+        row.get("acceptedBy")
+        or row.get("reviewer")
+        or row.get("owner")
+        or decision.get("acceptedBy")
+        or decision.get("reviewer")
+        or decision.get("owner")
+        or ""
+    )
+
+
+def _reason_for_disposition(row: dict[str, Any]) -> str:
+    decision = _nested_decision(row)
+    return str(row.get("reason") or decision.get("reason") or "")
+
+
+def _is_valid_source_backed_existing_nonconformance(row: dict[str, Any]) -> bool:
+    """Return true only for documented existing-condition warning tolerances."""
+
+    disposition = str(row.get("disposition") or "")
+    if disposition not in SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS:
+        return False
+    if str(row.get("severity") or "").lower() != "warning":
+        return False
+    if str(row.get("source") or "").lower() not in {
+        "advisor",
+        "constructability",
+        "integrity",
+        "integrity_preflight",
+    }:
+        return False
+    return bool(
+        _reason_for_disposition(row)
+        and _reviewer_for_disposition(row)
+        and _source_fact_ids_for_disposition(row)
+    )
+
+
+def _source_backed_existing_nonconformance_count(
+    dispositions: list[dict[str, Any]],
+    *,
+    source: str,
+    warning_count: int,
+) -> int:
+    if warning_count <= 0:
+        return 0
+    accepted = sum(
+        1
+        for row in dispositions
+        if str(row.get("source") or "").lower() == source
+        and _is_valid_source_backed_existing_nonconformance(row)
+    )
+    return min(accepted, warning_count)
 
 
 def _is_metadata_fact(kind: str, value: dict[str, Any]) -> bool:

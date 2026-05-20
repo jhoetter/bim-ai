@@ -82,6 +82,35 @@ def test_final_acceptance_blocks_partial_reverse_bim_model() -> None:
     ]
 
 
+def test_final_acceptance_derives_counts_from_live_advisor_violations_shape() -> None:
+    payload = _clean_inputs()
+    payload["advisor"] = {
+        "data": {
+            "summary": {"elementTotal": 12},
+            "violations": [
+                {
+                    "ruleId": "door_operation_clearance_conflict",
+                    "severity": "warning",
+                    "blocking": False,
+                },
+                {
+                    "ruleId": "door_operation_clearance_conflict",
+                    "severity": "warning",
+                    "blocking": False,
+                },
+            ],
+        }
+    }
+
+    report = build_final_acceptance_report("model-a", **payload)
+
+    assert report["accepted"] is False
+    advisor_gate = next(gate for gate in report["gates"] if gate["id"] == "advisor_clean")
+    assert advisor_gate["summary"]["severityCounts"] == {"warning": 2}
+    assert advisor_gate["summary"]["ruleCounts"] == {"door_operation_clearance_conflict": 2}
+    assert advisor_gate["blockingReasons"] == ["2 blocking Advisor warnings remain"]
+
+
 def test_final_acceptance_blocks_reviewed_warning_dispositions() -> None:
     payload = _clean_inputs()
     payload["advisor"] = {
@@ -134,6 +163,32 @@ def test_final_acceptance_allows_source_backed_existing_condition_tolerance() ->
                 "reason": "Existing stair dimensions are documented in the source plan.",
                 "acceptedBy": "architect-review",
                 "sourceFactIds": ["stair-source-1"],
+            }
+        ],
+    }
+
+    report = build_final_acceptance_report("model-a", **payload)
+
+    assert report["accepted"] is True
+
+
+def test_final_acceptance_allows_source_backed_existing_condition_alias() -> None:
+    payload = _clean_inputs()
+    payload["constructability"] = {
+        "summary": {"severityCounts": {"error": 0, "warning": 1}}
+    }
+    payload["finding_disposition"] = {
+        "summary": {"accepted": True, "unresolvedBlockingCount": 0},
+        "rows": [
+            {
+                "source": "constructability",
+                "ruleId": "wall_clearance_existing_condition",
+                "severity": "warning",
+                "disposition": "existing_nonconforming_source_backed",
+                "blocking": False,
+                "reason": "The close wall spacing is shown in the source floor plan.",
+                "acceptedBy": "architect-review",
+                "sourceFactIds": ["wall-fact-1", "wall-fact-2"],
             }
         ],
     }

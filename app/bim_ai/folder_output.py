@@ -22,6 +22,7 @@ from bim_ai.source_agent_loop import (
     run_ai_visual_trace_agent_loop,
 )
 from bim_ai.source_area_consistency import build_source_area_consistency_report
+from bim_ai.source_building_scope import build_source_building_scope_report
 from bim_ai.source_conflicts import (
     apply_source_conflict_dispositions,
     build_source_conflict_disposition_worklist,
@@ -52,6 +53,7 @@ from bim_ai.source_site_terrain import (
 )
 
 PHASE_BY_FACT_KIND = {
+    "building_scope": "P0-source-inventory",
     "level": "P2-levels",
     "storey": "P2-levels",
     "wall_line": "P4-floor-plan-topology",
@@ -199,6 +201,7 @@ def build_reverse_bim_folder_output(
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
     facts = _facts_for_handoff(loop=loop, normalized=normalized)
+    source_building_scope = build_source_building_scope_report(facts)
     source_level_completeness = build_source_level_completeness_report(facts)
     room_topology = build_source_room_topology_report(facts)
     source_area_consistency = build_source_area_consistency_report(facts)
@@ -266,8 +269,10 @@ def build_reverse_bim_folder_output(
         source_area_consistency=source_area_consistency,
         coordinate_frame_alignment_report=coordinate_frame_alignment_report,
         site_terrain=site_terrain,
+        roof_dormer=roof_dormer,
         source_material_assemblies=source_material_assemblies,
         reader_consensus=reader_consensus,
+        source_building_scope=source_building_scope,
     )
     run_summary = _build_run_summary(
         source_folder=source_root,
@@ -315,6 +320,7 @@ def build_reverse_bim_folder_output(
         "coordinateFrames": out_dir / "understanding" / "coordinate-frames.json",
         "coordinateFrameWorklist": out_dir / "understanding" / "coordinate-frame-worklist.json",
         "sourceFactLedger": out_dir / "understanding" / "source-fact-ledger.json",
+        "sourceBuildingScope": out_dir / "understanding" / "building-scope.json",
         "sourceLevelCompleteness": out_dir / "understanding" / "source-level-completeness.json",
         "roomTopology": out_dir / "understanding" / "room-topology.json",
         "sourceAreaConsistency": out_dir / "understanding" / "source-area-consistency.json",
@@ -362,10 +368,12 @@ def build_reverse_bim_folder_output(
             "format": "reverseBimOpenRepairRequests_v1",
             "requests": _build_open_repair_requests(
                 loop=loop,
+                source_building_scope=source_building_scope,
                 source_level_completeness=source_level_completeness,
                 room_topology=room_topology,
                 source_area_consistency=source_area_consistency,
                 site_terrain=site_terrain,
+                roof_dormer=roof_dormer,
                 source_material_assemblies=source_material_assemblies,
                 reader_consensus=reader_consensus,
             ),
@@ -373,6 +381,7 @@ def build_reverse_bim_folder_output(
         "coordinateFrames": coordinate_frames,
         "coordinateFrameWorklist": coordinate_frame_worklist,
         "sourceFactLedger": fact_ledger,
+        "sourceBuildingScope": source_building_scope,
         "sourceLevelCompleteness": source_level_completeness,
         "roomTopology": room_topology,
         "sourceAreaConsistency": source_area_consistency,
@@ -1024,13 +1033,31 @@ def _build_open_repair_requests(
     *,
     loop: dict[str, Any],
     room_topology: dict[str, Any],
+    source_building_scope: dict[str, Any] | None = None,
     source_level_completeness: dict[str, Any] | None = None,
     source_area_consistency: dict[str, Any] | None = None,
     site_terrain: dict[str, Any] | None = None,
+    roof_dormer: dict[str, Any] | None = None,
     source_material_assemblies: dict[str, Any] | None = None,
     reader_consensus: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     requests = [row for row in loop.get("repairRequests") or [] if isinstance(row, dict)]
+    source_building_scope = source_building_scope or {}
+    for action in source_building_scope.get("actions") or []:
+        if not isinstance(action, dict) or not str(action.get("status") or "").startswith("blocked"):
+            continue
+        requests.append(
+            {
+                "repairRequestId": f"building-scope-{action.get('blockingCode') or action.get('id')}",
+                "kind": action.get("kind") or "building_scope_repair",
+                "workPackageId": "wp-dimensional-floorplans",
+                "sourceFactIds": action.get("sourceFactIds") or [],
+                "status": "open",
+                "requiredFields": action.get("requiredSourceFields") or [],
+                "findingsToFix": action.get("findingsToFix") or [],
+                "sourcePrompt": action.get("sourcePrompt"),
+            }
+        )
     source_level_completeness = source_level_completeness or {}
     for level in source_level_completeness.get("blockers") or []:
         if not isinstance(level, dict):
@@ -1134,6 +1161,29 @@ def _build_open_repair_requests(
                 "provenance": action.get("provenance"),
             }
         )
+    roof_dormer = roof_dormer or {}
+    for action in roof_dormer.get("actions") or []:
+        if not isinstance(action, dict) or not str(action.get("status") or "").startswith("blocked"):
+            continue
+        requests.append(
+            {
+                "repairRequestId": f"roof-dormer-{action.get('id')}",
+                "kind": action.get("kind"),
+                "workPackageId": "wp-sections-elevations-roof",
+                "sourceFactId": action.get("factId"),
+                "status": "open",
+                "requiredFields": action.get("requiredSourceFields") or [],
+                "missingFields": action.get("missingFields") or [],
+                "findingsToFix": [
+                    {
+                        "code": action.get("kind"),
+                        "message": "Roof, dormer, or roof-opening source geometry is not modeling-ready.",
+                    }
+                ],
+                "sourcePrompt": action.get("sourcePrompt"),
+                "provenance": action.get("provenance"),
+            }
+        )
     source_material_assemblies = source_material_assemblies or {}
     for scope in source_material_assemblies.get("assemblyScopes") or []:
         if not isinstance(scope, dict) or scope.get("status") != "blocked_needs_source_or_disposition":
@@ -1201,9 +1251,11 @@ def _build_package_acceptance_report(
     source_area_consistency: dict[str, Any],
     coordinate_frame_alignment_report: dict[str, Any],
     site_terrain: dict[str, Any] | None = None,
+    roof_dormer: dict[str, Any] | None = None,
     source_material_assemblies: dict[str, Any] | None = None,
     reader_consensus: dict[str, Any] | None = None,
     source_level_completeness: dict[str, Any] | None = None,
+    source_building_scope: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     findings = []
     if int(raw_responses.get("responseCount") or 0) == 0:
@@ -1240,6 +1292,24 @@ def _build_package_acceptance_report(
                 "code": "folder_output_conflicts_open",
                 "severity": "error",
                 "message": "Open source conflicts remain.",
+            }
+        )
+    source_building_scope = source_building_scope or {}
+    source_building_scope_summary = (
+        source_building_scope.get("summary")
+        if isinstance(source_building_scope.get("summary"), dict)
+        else {}
+    )
+    source_building_scope_blocker_count = int(source_building_scope_summary.get("blockingCount") or 0)
+    if source_building_scope_blocker_count:
+        findings.append(
+            {
+                "code": "folder_output_building_scope_unresolved",
+                "severity": "error",
+                "message": (
+                    f"{source_building_scope_blocker_count} building-scope blocker(s) remain. "
+                    "Resolve target/context scope before MCP authoring so the model is not built as the wrong house."
+                ),
             }
         )
     source_level_completeness = source_level_completeness or {}
@@ -1327,6 +1397,23 @@ def _build_package_acceptance_report(
                 ),
             }
         )
+    roof_dormer = roof_dormer or {}
+    roof_dormer_summary = (
+        roof_dormer.get("summary") if isinstance(roof_dormer.get("summary"), dict) else {}
+    )
+    roof_dormer_blocker_count = int(roof_dormer_summary.get("blockedActionCount") or 0)
+    if roof_dormer_blocker_count:
+        findings.append(
+            {
+                "code": "folder_output_roof_dormer_incomplete",
+                "severity": "error",
+                "message": (
+                    f"{roof_dormer_blocker_count} roof/dormer/opening source action(s) need "
+                    "precise source geometry, section/elevation alignment, or explicit tolerance "
+                    "before roof authoring."
+                ),
+            }
+        )
     source_material_assemblies = source_material_assemblies or {}
     source_material_summary = (
         source_material_assemblies.get("summary")
@@ -1374,6 +1461,10 @@ def _build_package_acceptance_report(
             "openConflictCount": conflicts.get("openConflictCount", 0),
             "mcpReadinessBlockerCount": (readiness.get("summary") or {}).get("blockerCount", 0),
             "hardMcpReadinessBlockerCount": hard_mcp_blocker_count,
+            "buildingScopeBlockerCount": source_building_scope_blocker_count,
+            "targetScopeFactCount": source_building_scope_summary.get("targetScopeFactCount", 0),
+            "contextScopeFactCount": source_building_scope_summary.get("contextScopeFactCount", 0),
+            "resolvedTargetScopeType": source_building_scope_summary.get("resolvedTargetScopeType"),
             "emptySourceLevelCount": empty_source_level_count,
             "missingSourceLevelFacts": missing_source_level_facts,
             "roomsNeedingBoundaryBackingCount": rooms_needing_backing,
@@ -1383,6 +1474,7 @@ def _build_package_acceptance_report(
             "sourceAreaConsistencyBlockerCount": source_area_blocker_count,
             "coordinateFrameAlignmentBlockerCount": blocking_alignment_count,
             "siteTerrainBlockerCount": site_terrain_blocker_count,
+            "roofDormerBlockerCount": roof_dormer_blocker_count,
             "sourceMaterialAssemblyBlockerCount": source_material_blocker_count,
             "readerConsensusBlockerCount": reader_consensus_blocker_count,
             "readerResponseCount": raw_responses.get("responseCount", 0),

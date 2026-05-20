@@ -84,7 +84,7 @@ Observed from the current repo on 2026-05-20:
 | Area | Current state | Status |
 | ---- | ------------- | ------ |
 | Backend command catalogue | `app/bim_ai/commands.py` exposes 262 command discriminators via `commands.schema.catalog` / `GET /api/v3/commands`. | Done |
-| API/MCP-like descriptor catalogue | `app/bim_ai/api/registry.py` exposes 171 descriptors after the reverse-BIM source, multimodal agent-loop, AI-reader normalization, folder-output handoff, MCP-readiness, authoring-plan, AI visual completeness, and promoted architecture authoring/resolver surfaces including `author.level`, `author.dormer_on_roof`, `resolve.opening_source_match`, `resolve.dormer_opening_host`, `resolve.roof_position_from_source_point`, and `validate.roof_dormer_source_alignment`. | Done |
+| API/MCP-like descriptor catalogue | `app/bim_ai/api/registry.py` exposes 186 descriptors after the reverse-BIM source, multimodal agent-loop, AI-reader normalization, folder-output handoff, MCP-readiness, authoring-plan, AI visual completeness, source building-scope gate, and promoted architecture authoring/resolver surfaces including `author.level`, `author.dormer_on_roof`, `resolve.opening_source_match`, `resolve.dormer_opening_host`, `resolve.roof_position_from_source_point`, and `validate.roof_dormer_source_alignment`. | Done |
 | Transaction path | `model.dry_run`, `model.commit_bundle`, `apply-bundle`, `/api/models/{model_id}/bundles`, `/commands/bundle/dry-run`, command log, undo/redo. | Done |
 | Query/readback path | `model-show`, `model.summary`, `query.elements`, `query.levels`, `query.types`, `query.views`, `query.hosts`, `query.nearest_wall`, `query.enclosed_loops`, `resolve.*`. | Done |
 | QA feedback | `qa.advisor`, `qa.constructability`, `qa.integrity_preflight`, `qa.profile_comparison`, `evidence.package`, renderer diagnostics route. | Done |
@@ -92,7 +92,7 @@ Observed from the current repo on 2026-05-20:
 | Site authoring | Toposolid, toposolid subdivision/excavation, graded region, property line, project base point, survey point, sun settings, upsert site. | Partial |
 | AI visual source tracing | `source.prepare_ai_visual_trace_run` prepares an entire source folder; `source.ai_visual_trace_packet` packages rendered drawings/docs for external AI/subagent visual reading; `source.ai_visual_trace_work_order` splits reusable reader work packages; `source.ai_visual_trace_agent_requests` creates provider-neutral multimodal reader requests; `source.normalize_ai_visual_trace_reader_responses` normalizes flexible AI/subagent output into MCP-feedable source facts; `source.ai_visual_trace_agent_loop` validates normalized returned facts, can optionally dispatch an external JSON stdin/stdout reader command, and emits repair prompts; `source.validate_ai_visual_trace_completeness` blocks non-modelable returned facts. The old deterministic CV trace product surface has been removed. | Partial |
 | PDF/folder ingestion | Source manifest, PDF rendering/text extraction, document classification, AI-reading/AI-visual-trace packets, and AI fact validation now exist as first slice surfaces. | Partial |
-| Folder-output handoff | `reverse_bim.folder_output` builds the source-folder handoff package with registry, page index, raw/indexed/normalized reader responses, completeness report, fact ledger, conflict ledger/disposition worklist, coordinate-frame candidates/alignment worklist, room topology report, opening reconciliation, roof/dormer precision report, site/terrain report, MCP readiness, resolver worklist, phase authoring spec, package acceptance report, and README. | Partial |
+| Folder-output handoff | `reverse_bim.folder_output` builds the source-folder handoff package with registry, page index, raw/indexed/normalized reader responses, completeness report, fact ledger, building-scope report, conflict ledger/disposition worklist, coordinate-frame candidates/alignment worklist, room topology report, opening reconciliation, roof/dormer precision report, site/terrain report, MCP readiness, resolver worklist, phase authoring spec, package acceptance report, and README. | Partial |
 | Existing-building IR | A seed/validation surface now exists for source-linked existing-building IR packets, but the full schema and conflict ledger are still incomplete. | Partial |
 | Legacy seed/sketch flow | Still documented and partially surfaced as sketch descriptors; not suitable as primary reverse-BIM path. | Legacy |
 
@@ -218,6 +218,12 @@ gate. It validates modelable fields by fact kind and can be called with
 a complete-looking subset while omitting required wall, room, opening, stair,
 roof, or site facts:
 
+- building scope requires an explicit `building_scope` fact that states whether
+  the modeled target is the whole building, one half of a Doppelhaus, one
+  dwelling/unit, context-only adjoining structure, or unresolved/ambiguous;
+  `reverse_bim.source_building_scope` then blocks handoff if that fact is
+  missing, ambiguous, context-only without a target, or conflicts across
+  readers/pages;
 - walls require level, endpoints/chain points, thickness, role, and closed/open
   chain state;
 - rooms require level, name, source area, and boundary reference;

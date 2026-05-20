@@ -168,6 +168,57 @@ def test_source_coverage_and_phase_packet_blockers() -> None:
     assert clean_packet["summary"]["missingRequiredReportCount"] == 0
 
 
+def test_phase_packet_allows_source_backed_existing_condition_warnings() -> None:
+    packet = build_reverse_bim_phase_packet(
+        phase_id="P8-stairs",
+        advisor={"data": {"summary": {"severityCounts": {"error": 0, "warning": 1}}}},
+        constructability={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+        integrity_preflight={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+        finding_dispositions=[
+            {
+                "source": "advisor",
+                "ruleId": "stair_riser_tread_comfort_failure",
+                "severity": "warning",
+                "disposition": "existing_nonconforming_tolerated",
+                "reason": "The existing stair is documented in the source section.",
+                "acceptedBy": "architect-review",
+                "sourceFactIds": ["fact-stair-section-1"],
+            }
+        ],
+    )
+
+    assert packet["acceptedForNextPhase"] is True
+    assert packet["summary"]["rawWarningCount"] == 1
+    assert packet["summary"]["sourceBackedExistingNonconformanceCount"] == 1
+    assert packet["summary"]["blockingWarningCount"] == 0
+
+
+def test_phase_packet_rejects_unbacked_existing_condition_warning_tolerance() -> None:
+    packet = build_reverse_bim_phase_packet(
+        phase_id="P8-stairs",
+        advisor={"data": {"summary": {"severityCounts": {"error": 0, "warning": 1}}}},
+        constructability={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+        integrity_preflight={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+        finding_dispositions=[
+            {
+                "source": "advisor",
+                "ruleId": "stair_riser_tread_comfort_failure",
+                "severity": "warning",
+                "disposition": "existing_nonconforming_tolerated",
+                "reason": "Reviewed.",
+                "acceptedBy": "architect-review",
+            }
+        ],
+    )
+
+    assert packet["acceptedForNextPhase"] is False
+    assert packet["summary"]["sourceBackedExistingNonconformanceCount"] == 0
+    assert packet["summary"]["blockingWarningCount"] == 1
+    assert {
+        row["code"] for row in packet["packetFindings"]
+    } == {"phase_existing_nonconformance_evidence_missing"}
+
+
 def test_authoring_plan_maps_ai_facts_to_mcp_tools() -> None:
     plan = plan_mcp_authoring_actions(
         facts=[
@@ -454,6 +505,7 @@ def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
     )
     assert floorplan_wp["status"] == "ready"
     assert floorplan_wp["inputs"][0]["renderedPagePath"] == "/tmp/EG-1.png"
+    assert "building_scope" in floorplan_wp["blockingRequiredFactKinds"]
     assert "wall_chain" in floorplan_wp["blockingRequiredFactKinds"]
 
     validation = validate_ai_source_facts(
@@ -610,6 +662,21 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
                 "workPackageId": "wp-dimensional-floorplans",
                 "facts": [
                     {
+                        "factId": "ai-srcfact-building-scope",
+                        "kind": "building_scope",
+                        "value": {
+                            "scopeType": "single_house",
+                            "modeledExtent": "one complete house shown on the floor plan",
+                            "evidenceSummary": "The sheet contains one source building scope.",
+                        },
+                        "confidence": 0.9,
+                        "provenance": {
+                            "sourceDocumentId": source_document_id,
+                            "page": 1,
+                            "region": "plan title and full sheet",
+                        },
+                    },
+                    {
                         "factId": "ai-srcfact-level-eg",
                         "kind": "level",
                         "value": {"name": "EG", "elevationMm": 0},
@@ -754,7 +821,7 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
     )
     assert accepted["ok"] is True
     assert accepted["summary"]["acceptedPackageCount"] == 1
-    assert len(accepted["acceptedFacts"]) == 8
+    assert len(accepted["acceptedFacts"]) == 9
     assert accepted["readerResponses"][0]["workPackageId"] == "wp-dimensional-floorplans"
 
 
@@ -1077,6 +1144,26 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["summary"]["blockedAssemblyCount"] == 1
 
     resp = client.post(
+        "/api/v3/reverse-bim/source-building-scope",
+        json={
+            "facts": [
+                {
+                    "factId": "scope-target",
+                    "kind": "building_scope",
+                    "value": {
+                        "scopeType": "target_half",
+                        "modeledExtent": "right half of Doppelhaus",
+                        "evidenceSummary": "title block and party-wall evidence",
+                    },
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimSourceBuildingScopeReport_v1"
+    assert resp.json()["ok"] is True
+
+    resp = client.post(
         "/api/v3/reverse-bim/source-level-completeness",
         json={
             "facts": [
@@ -1171,6 +1258,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.plan_authoring",
         "reverse_bim.mcp_readiness",
         "reverse_bim.source_material_assemblies",
+        "reverse_bim.source_building_scope",
         "reverse_bim.source_level_completeness",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",

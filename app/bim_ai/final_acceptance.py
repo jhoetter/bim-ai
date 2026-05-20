@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from collections import Counter
 from typing import Any
+
+SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS = {
+    "existing_nonconforming_tolerated",
+    "existing_nonconforming_source_backed",
+}
 
 
 def _summary(payload: dict[str, Any], *path: str) -> dict[str, Any]:
@@ -22,6 +28,39 @@ def _count(payload: dict[str, Any], *path: str) -> int:
             return 0
         value = value.get(key)
     return int(value) if isinstance(value, int | float) else 0
+
+
+def _finding_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    candidates: list[Any] = [
+        payload.get("violations"),
+        payload.get("findings"),
+        payload.get("issues"),
+    ]
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    candidates.extend([data.get("violations"), data.get("findings"), data.get("issues")])
+    for candidate in candidates:
+        if isinstance(candidate, list):
+            return [row for row in candidate if isinstance(row, dict)]
+    return []
+
+
+def _checker_summary(payload: dict[str, Any], *, nested_data: bool = False) -> dict[str, Any]:
+    summary = _summary(payload, "data", "summary") if nested_data else _summary(payload, "summary")
+    if "severityCounts" in summary:
+        return summary
+    rows = _finding_rows(payload)
+    if not rows:
+        return summary
+    severity_counts = Counter(str(row.get("severity") or "warning") for row in rows)
+    rule_counts = Counter(str(row.get("ruleId") or row.get("code") or "unknown") for row in rows)
+    blocking_count = sum(1 for row in rows if row.get("blocking") is True)
+    return {
+        **summary,
+        "findingCount": len(rows),
+        "severityCounts": dict(sorted(severity_counts.items())),
+        "ruleCounts": dict(sorted(rule_counts.items())),
+        "blockingFindingCount": blocking_count,
+    }
 
 
 def _gate(gate_id: str, passed: bool, summary: dict[str, Any], blocking: list[str]) -> dict[str, Any]:
@@ -57,7 +96,7 @@ def _is_valid_existing_condition_tolerance(row: Mapping[str, Any]) -> bool:
     """
 
     disposition = str(row.get("disposition") or "")
-    if disposition != "existing_nonconforming_tolerated":
+    if disposition not in SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS:
         return False
     decision = row.get("dispositionDecision") if isinstance(row.get("dispositionDecision"), Mapping) else {}
     source_fact_ids = (
@@ -173,8 +212,8 @@ def build_final_acceptance_report(
     room_boundary_edges = room_boundary_edges or {}
     room_topology_repair = room_topology_repair or {}
 
-    advisor_summary = _summary(advisor, "data", "summary")
-    constructability_summary = _summary(constructability, "summary")
+    advisor_summary = _checker_summary(advisor, nested_data=True)
+    constructability_summary = _checker_summary(constructability)
     integrity_summary = _summary(integrity, "summary")
     area_summary = _summary(area_reconciliation, "summary")
     disposition_summary = _summary(finding_disposition, "summary")

@@ -39,12 +39,14 @@ AI_VISUAL_FACT_VALUE_REQUIREMENTS: dict[str, list[str]] = {
     "material": ["elementScope", "materialName"],
     "construction_history": ["event", "year"],
     "photo_observation": ["observation", "elementScope"],
+    "building_scope": ["scopeType", "modeledExtent", "evidenceSummary"],
     "conflict": ["topic", "candidates", "recommendedDisposition"],
 }
 
 AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE: dict[str, list[str]] = {
     "wp-current-condition": ["photo_observation", "material", "construction_history"],
     "wp-dimensional-floorplans": [
+        "building_scope",
         "level",
         "wall_chain",
         "wall_thickness",
@@ -54,7 +56,7 @@ AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE: dict[str, list[str]] = {
         "slab_opening",
         "area",
     ],
-    "wp-sections-elevations-roof": ["level", "roof", "opening"],
+    "wp-sections-elevations-roof": ["building_scope", "level", "roof", "dormer", "opening"],
     "wp-site-parcel-terrain": ["parcel_boundary", "terrain"],
     "wp-area-volume-schedules": ["area", "volume"],
     "wp-drainage-services": ["drainage", "basement"],
@@ -535,8 +537,9 @@ def build_ai_visual_trace_work_order(
             "id": "wp-dimensional-floorplans",
             "title": "Dimensional floor plans",
             "classes": ("floor_plan",),
-            "task": "Trace levels, wall chains, room loops, wall thicknesses, openings, stairs, and slab openings from floor plans. Prefer explicit dimensions over pixel measurement.",
+            "task": "Trace building scope, levels, wall chains, room loops, wall thicknesses, openings, stairs, and slab openings from floor plans. Prefer explicit dimensions over pixel measurement. State explicitly whether the source represents the whole building, one half of a Doppelhaus, one unit, or an ambiguous scope.",
             "factKinds": [
+                "building_scope",
                 "level",
                 "wall_chain",
                 "wall_thickness",
@@ -552,8 +555,9 @@ def build_ai_visual_trace_work_order(
             "id": "wp-sections-elevations-roof",
             "title": "Sections, elevations, roof, dormers",
             "classes": ("section", "elevation"),
-            "task": "Extract levels, heights, roof pitch, eaves/ridge, dormers, skylights, chimneys, facade openings, and section/elevation conflicts.",
+            "task": "Extract building scope, levels, heights, roof pitch, eaves/ridge, dormers, skylights, chimneys, facade openings, and section/elevation conflicts. Cross-check whether each elevation/section is for the modeled scope or for a mirrored/neighbouring half.",
             "factKinds": [
+                "building_scope",
                 "level",
                 "roof",
                 "dormer",
