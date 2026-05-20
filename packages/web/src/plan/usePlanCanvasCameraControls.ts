@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as THREE from 'three';
 
-import { HALF_MAX, HALF_MIN } from './interaction/planCameraMath';
+import { HALF_MAX, HALF_MIN, SLICE_Y } from './interaction/planCameraMath';
 
 type MutableRef<T> = {
   current: T;
@@ -98,5 +98,21 @@ export function usePlanCanvasCameraControls({
     resizeCam();
   }, [camRef, rendererRef, resizeCam, rootRef]);
 
-  return { halfUi, resizeCam, handleFitToView };
+  const worldToScreen = useCallback(
+    (xy: { xMm: number; yMm: number }) => {
+      const cam = cameraRef.current;
+      const renderer = rendererRef.current;
+      if (!cam || !renderer) return { pxX: 0, pxY: 0 };
+      const v = new THREE.Vector3(xy.xMm / 1000, SLICE_Y, xy.yMm / 1000);
+      v.project(cam);
+      const rect = renderer.domElement.getBoundingClientRect();
+      return {
+        pxX: ((v.x + 1) / 2) * rect.width,
+        pxY: ((1 - v.y) / 2) * rect.height,
+      };
+    },
+    [cameraRef, rendererRef],
+  );
+
+  return { halfUi, resizeCam, handleFitToView, worldToScreen };
 }

@@ -174,17 +174,17 @@ Code scale snapshot:
 
 Largest current source files observed:
 
-| File                                                        | Approx LOC | Concern                                                                               |
-| ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,320      | High-churn plan interaction monolith after extracted overlay/state/lifecycle modules. |
-| `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                                               |
-| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                                      |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                             |
-| `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                                |
-| `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                   |
-| `packages/core/src/index.ts`                                | 5.3k       | Public type and command barrel.                                                       |
-| `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                 |
-| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.                               |
+| File                                                        | Approx LOC | Concern                                                                                           |
+| ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 6,996      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
+| `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                                                           |
+| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                                                  |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |
+| `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                                            |
+| `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                               |
+| `packages/core/src/index.ts`                                | 5.3k       | Public type and command barrel.                                                                   |
+| `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
+| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.                                           |
 
 ## Status Model
 
@@ -576,6 +576,9 @@ impact of small changes.
 - 2026-05-20: the next PlanCanvas extraction moved camera controls and scene
   lifecycle setup into focused hooks, reducing `PlanCanvas.tsx` to `7,320`
   local lines.
+- 2026-05-20: the PlanCanvas `GFR-2026-14` closeout moved isolated render
+  passes into `plan/planCanvasRenderPasses.ts` and world-to-screen projection
+  into the camera hook, reducing `PlanCanvas.tsx` to `6,996` local lines.
 
 ---
 
@@ -1173,6 +1176,8 @@ Initial thresholds can be advisory before becoming blocking:
   `plan/usePlanCanvasToolCleanupEffects.ts`.
 - 2026-05-20: a follow-up PlanCanvas slice moved camera controls and Three
   scene lifecycle setup into dedicated hooks.
+- 2026-05-20: the current PlanCanvas target closed below `7,000` LOC by moving
+  isolated render passes into `plan/planCanvasRenderPasses.ts`.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
