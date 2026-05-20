@@ -76,10 +76,6 @@ from bim_ai.agent_loop import (
     AgentIterateResponse,
     generate_patch,
 )
-from bim_ai.family_catalog_format import (
-    load_catalog_by_id,
-    load_catalog_index,
-)
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -155,6 +151,7 @@ from bim_ai.semantic_authoring import (
     build_semantic_authoring_bundle,
 )
 from bim_ai.routes_activity import activity_router
+from bim_ai.routes_catalogs import catalogs_router
 from bim_ai.routes_commands import commands_router
 from bim_ai.routes_deps import (
     PERSPECTIVE_IDS,
@@ -204,6 +201,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
+api_router.include_router(catalogs_router)
 api_router.include_router(integrity_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
@@ -1757,27 +1755,6 @@ async def schedule_view_rows(
         )
 
     return rows
-
-
-# ---------------------------------------------------------------------------
-# FAM-08 — Family catalog endpoints
-# ---------------------------------------------------------------------------
-
-
-@api_router.get("/family-catalogs")
-async def list_family_catalogs() -> dict[str, Any]:
-    """Return the index of bundled external family catalogs."""
-    entries = load_catalog_index()
-    return {"catalogs": [e.model_dump(by_alias=True) for e in entries]}
-
-
-@api_router.get("/family-catalogs/{catalog_id}")
-async def get_family_catalog(catalog_id: str) -> dict[str, Any]:
-    """Return the full payload of one external family catalog."""
-    payload = load_catalog_by_id(catalog_id)
-    if payload is None:
-        raise HTTPException(status_code=404, detail="Catalog not found")
-    return payload.model_dump(by_alias=True)
 
 
 # ---------------------------------------------------------------------------
@@ -3947,34 +3924,6 @@ async def get_sheet_pixel_map(
                     }
 
     return {"map": pixel_map}
-
-
-# ---------------------------------------------------------------------------
-# CTL-V3-01 — Catalog query endpoint
-# ---------------------------------------------------------------------------
-
-
-@api_router.get("/v3/catalog")
-async def catalog_query_endpoint(
-    kind: str | None = None,
-    maxWidthMm: float | None = None,
-    minWidthMm: float | None = None,
-    tag: str | None = None,
-    style: str | None = None,
-    page: int = 0,
-    pageSize: int = 50,
-) -> dict:
-    from bim_ai.catalog.query import query_catalog
-
-    return query_catalog(
-        kind=kind,
-        max_width_mm=maxWidthMm,
-        min_width_mm=minWidthMm,
-        tag=tag,
-        style=style,
-        page=page,
-        page_size=pageSize,
-    )
 
 
 # ---------------------------------------------------------------------------

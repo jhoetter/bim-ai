@@ -684,6 +684,11 @@ for merge conflicts and stale descriptor drift.
   and resource groups into `app/bim_ai/api/registry_metadata.py`, reducing
   `app/bim_ai/api/registry.py` from `6,291` to `6,151` lines without changing
   the public registry entry points.
+- 2026-05-20: extracted family/catalog API routes into
+  `app/bim_ai/routes_catalogs.py`, keeping the existing `/api/family-catalogs`,
+  `/api/family-catalogs/{catalog_id}`, and `/api/v3/catalog` paths mounted via
+  `api_router.include_router(catalogs_router)` while reducing
+  `app/bim_ai/routes_api.py` to `4,091` lines.
 - 2026-05-20: focused registry verification passed:
   `cd app && uv run pytest -q tests/test_api_v3_registry.py --no-cov` and
   `cd app && uv run ruff check bim_ai/api/registry.py bim_ai/api/registry_metadata.py`.
