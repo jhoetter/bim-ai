@@ -102,3 +102,11 @@ A-territory target:
   `materialTagInspector.test.tsx` covers the material tag branch. The scorecard
   now counts `InspectorContent.tsx` at about `6,309` lines, and this slice also
   reduced non-test frontend type-escape matches from `106` to `103`.
+- 2026-05-20: the next `GFR-2026-01` slice moved spot elevation, spot
+  coordinate, spot slope, and slope annotation rows into
+  `packages/web/src/workspace/inspector/spotAnnotationInspectorSections.tsx`.
+  Existing spot elevation tests continue to cover the main editor controls, and
+  `spotAnnotationInspector.test.tsx` covers coordinate and slope annotation
+  delegation. Local `wc -l` now reports `InspectorContent.tsx` at `6,133`
+  lines; scorecard confirmation is blocked until the unrelated parallel deletion
+  of `packages/web/src/plan/ImageTraceDropZone.tsx` is resolved.

@@ -45,6 +45,7 @@ import { DecalInspectorSection } from './decalInspectorSection';
 import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSection';
 import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
 import { AnnotationTagInspectorSection } from './annotationTagInspectorSections';
+import { SpotAnnotationInspectorSection } from './spotAnnotationInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -4409,188 +4410,12 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'spot_elevation': {
-      const { onPropertyChange: sePropChange } = options ?? {};
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow
-            label="Position"
-            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
-            mono
-          />
-          <FieldRow label="Elevation" value={`${(el.elevationMm / 1000).toFixed(3)} m`} mono />
-          {sePropChange ? (
-            <>
-              <div className="flex items-center gap-2 py-0.5">
-                <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
-                <input
-                  type="number"
-                  className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  defaultValue={el.elevationMm}
-                  key={`${el.id}-elev`}
-                  step={100}
-                  aria-label="Spot elevation in millimetres"
-                  data-testid="inspector-spot-elevation-mm"
-                  onBlur={(e) => sePropChange('elevationMm', Number(e.currentTarget.value))}
-                />
-              </div>
-              <div className="flex items-center gap-2 py-0.5">
-                <span className="text-xs text-muted w-28 shrink-0">Elevation mode</span>
-                <select
-                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  value={el.elevationMode ?? 'absolute'}
-                  data-testid="inspector-spot-elevation-mode"
-                  onChange={(e) => sePropChange('elevationMode', e.currentTarget.value)}
-                >
-                  <option value="absolute">Absolute</option>
-                  <option value="relative-to-level">Relative to level</option>
-                </select>
-              </div>
-              <label className="flex items-center gap-2 py-0.5">
-                <input
-                  type="checkbox"
-                  defaultChecked={el.showIn3D !== false}
-                  key={`${el.id}-show3d`}
-                  data-testid="inspector-spot-elevation-show3d"
-                  onChange={(e) => sePropChange('showIn3D', e.currentTarget.checked)}
-                />
-                <span className="text-xs text-muted">Show in 3D</span>
-              </label>
-              <div className="flex items-center gap-2 py-0.5">
-                <span className="text-xs text-muted w-28 shrink-0">Prefix</span>
-                <input
-                  type="text"
-                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  defaultValue={el.prefix ?? ''}
-                  key={`${el.id}-prefix`}
-                  aria-label="Elevation text prefix"
-                  data-testid="inspector-spot-elevation-prefix"
-                  onBlur={(e) => sePropChange('prefix', e.currentTarget.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2 py-0.5">
-                <span className="text-xs text-muted w-28 shrink-0">Suffix</span>
-                <input
-                  type="text"
-                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  defaultValue={el.suffix ?? ''}
-                  key={`${el.id}-suffix`}
-                  aria-label="Elevation text suffix"
-                  data-testid="inspector-spot-elevation-suffix"
-                  onBlur={(e) => sePropChange('suffix', e.currentTarget.value)}
-                />
-              </div>
-            </>
-          ) : null}
-        </div>
-      );
-    }
-    case 'spot_coordinate': {
-      const { onPropertyChange: scPropChange } = options ?? {};
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow
-            label="Position"
-            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
-            mono
-          />
-          <div className="flex items-center gap-2 py-0.5">
-            <label className="flex items-center gap-2 py-0.5 w-full">
-              <span className="text-xs text-muted w-28 shrink-0">N (Northing)</span>
-              <input
-                type="number"
-                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                defaultValue={el.coordinateN ?? el.northMm ?? 0}
-                key={`${el.id}-coord-n`}
-                data-testid="inspector-spot-coord-n"
-                onChange={(e) => scPropChange?.('coordinateN', +e.target.value)}
-              />
-            </label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <label className="flex items-center gap-2 py-0.5 w-full">
-              <span className="text-xs text-muted w-28 shrink-0">E (Easting)</span>
-              <input
-                type="number"
-                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                defaultValue={el.coordinateE ?? el.eastMm ?? 0}
-                key={`${el.id}-coord-e`}
-                data-testid="inspector-spot-coord-e"
-                onChange={(e) => scPropChange?.('coordinateE', +e.target.value)}
-              />
-            </label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
-            <span className="text-xs" data-testid="inspector-spot-coord-elevation">
-              {el.elevationMm ?? 0}
-            </span>
-          </div>
-        </div>
-      );
-    }
-    case 'spot_slope': {
-      const { onPropertyChange: slPropChange } = options ?? {};
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow
-            label="Position"
-            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
-            mono
-          />
-          {slPropChange ? (
-            <div className="flex items-center gap-2 py-0.5">
-              <span className="text-xs text-muted w-28 shrink-0">Slope (%)</span>
-              <input
-                type="number"
-                className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                defaultValue={el.slopePct}
-                key={`${el.id}-slope`}
-                step={0.5}
-                aria-label="Slope percentage"
-                data-testid="inspector-spot-slope-pct"
-                onBlur={(e) => slPropChange('slopePct', Number(e.currentTarget.value))}
-              />
-            </div>
-          ) : (
-            <FieldRow label="Slope" value={`${el.slopePct}%`} />
-          )}
-        </div>
-      );
-    }
+    case 'spot_elevation':
+    case 'spot_coordinate':
+    case 'spot_slope':
     case 'slope_annotation': {
-      const { onPropertyChange: saPropChange } = options ?? {};
       return (
-        <div className="flex flex-col gap-2">
-          <FieldRow
-            label="Start"
-            value={`(${Math.round(el.startMm.xMm)}, ${Math.round(el.startMm.yMm)}) mm`}
-            mono
-          />
-          <FieldRow
-            label="End"
-            value={`(${Math.round(el.endMm.xMm)}, ${Math.round(el.endMm.yMm)}) mm`}
-            mono
-          />
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Slope (%)</span>
-            <input
-              type="number"
-              step={0.1}
-              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-              defaultValue={el.slopePct}
-              key={`${el.id}-sa-slope`}
-              data-testid="inspector-slope-annotation-pct"
-              onChange={(e) => saPropChange?.('slopePct', +e.target.value)}
-            />
-          </div>
-          <span className="text-xs text-muted" data-testid="inspector-slope-annotation-ratio">
-            1:{(100 / Math.max(el.slopePct, 0.01)).toFixed(0)}
-          </span>
-        </div>
+        <SpotAnnotationInspectorSection el={el} onPropertyChange={options?.onPropertyChange} />
       );
     }
     case 'toposolid':

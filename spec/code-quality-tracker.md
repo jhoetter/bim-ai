@@ -529,6 +529,10 @@ impact of small changes.
   material tag rows into `workspace/inspector/annotationTagInspectorSections.tsx`
   with focused material tag coverage, reducing the inspector file to about
   `6,309` scorecard-counted lines.
+- 2026-05-20: the next InspectorContent slice moved spot elevation, coordinate,
+  slope, and slope annotation rows into
+  `workspace/inspector/spotAnnotationInspectorSections.tsx`, reducing the local
+  file to about `6,133` lines.
 
 ---
 
