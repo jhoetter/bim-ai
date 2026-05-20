@@ -4,7 +4,31 @@ import { useCallback } from 'react';
 import type { Element, ModelDelta, Violation } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 
-export function useWorkspaceSemanticCommand(args: any) {
+type ElementWithLevel = Element & { levelId?: string | null };
+type PaintableElement = Element & { faceOverrides?: Record<string, string> };
+type WallJoinElement = Extract<Element, { kind: 'wall' }> & {
+  joinOverrides?: Record<string, 'miter' | 'butt' | 'square'>;
+};
+type LinkPdfElement = Element & { hidden?: boolean };
+type PointCloudElement = Element & { visible?: boolean };
+type CuttableElement = Element & { cutBy?: string[] };
+type JoinedPairsState = { joinedPairs?: [string, string][] };
+type SplitViewState = { splitViewEnabled?: boolean };
+type QuickAccessState = { quickAccessItems?: string[] };
+type RecentProjectsState = { recentProjectIds?: string[] };
+type ColumnStructuralElement = Extract<Element, { kind: 'column' }> & {
+  isNonStructural?: boolean;
+};
+type WorkPlaneHostElement = Element & {
+  angleDeg?: number;
+  baseElevationMm?: number;
+  levelId?: string;
+};
+type DxfLayerSettingsElement = Element & {
+  dxfLayerMapping?: Record<string, string>;
+};
+
+export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
   const {
     activePlanViewId,
     ApiHttpError,
@@ -367,7 +391,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               rayAMm: cmd.rayAMm as { xMm: number; yMm: number },
               rayBMm: cmd.rayBMm as { xMm: number; yMm: number },
               arcRadiusMm: (cmd.arcRadiusMm as number) ?? 400,
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -385,7 +409,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               hostViewId: cmd.hostViewId as string,
               centerMm: cmd.centerMm as { xMm: number; yMm: number },
               arcPointMm: cmd.arcPointMm as { xMm: number; yMm: number },
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -403,7 +427,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               hostViewId: cmd.hostViewId as string,
               centerMm: cmd.centerMm as { xMm: number; yMm: number },
               arcPointMm: cmd.arcPointMm as { xMm: number; yMm: number },
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -413,7 +437,8 @@ export function useWorkspaceSemanticCommand(args: any) {
         const { elementsById: cur } = useBimStore.getState();
         const walls = Object.values(cur).filter(
           (e): e is Extract<Element, { kind: 'wall' }> =>
-            e?.kind === 'wall' && (cmd.levelId === null || (e as any).levelId === cmd.levelId),
+            e?.kind === 'wall' &&
+            (cmd.levelId === null || (e as ElementWithLevel).levelId === cmd.levelId),
         );
         const dims = autoDimensionWallsCmd(walls, (cmd.offsetMm as number | undefined) ?? 1000);
         const next = { ...cur };
@@ -428,12 +453,12 @@ export function useWorkspaceSemanticCommand(args: any) {
         const { elementsById: cur } = useBimStore.getState();
         const allDims = Object.values(cur).filter(
           (el) => el.kind === 'permanent_dimension',
-        ) as any[];
+        ) as Extract<Element, { kind: 'permanent_dimension' }>[];
         const targetDims = (cmd.dimensionIds as string[] | undefined)?.length
           ? allDims.filter((d) => (cmd.dimensionIds as string[]).includes(d.id))
           : allDims;
         const offsets = stackDimensions(targetDims, (cmd.spacingMm as number | undefined) ?? 7);
-        const updates: Record<string, any> = { ...cur };
+        const updates: Record<string, Element> = { ...cur };
         for (const [id, offsetMm] of offsets) {
           updates[id] = { ...cur[id], offsetMm };
         }
@@ -542,7 +567,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               name: familyName,
               categoryKey: (el as { categoryKey?: string }).categoryKey ?? el.kind,
               sourceElementId: el.id,
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -554,7 +579,10 @@ export function useWorkspaceSemanticCommand(args: any) {
         const without = Object.fromEntries(
           Object.entries(cur).filter(
             ([, el]) =>
-              !(el.kind === 'family_opening_cut' && (el as any).familyId === cmd.familyId),
+              !(
+                el.kind === 'family_opening_cut' &&
+                (el as Extract<Element, { kind: 'family_opening_cut' }>).familyId === cmd.familyId
+              ),
           ),
         );
         const newId = crypto.randomUUID();
@@ -568,7 +596,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               widthMm: cmd.widthMm as number,
               heightMm: cmd.heightMm as number,
               sillOffsetMm: (cmd.sillOffsetMm as number | undefined) ?? 0,
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -588,7 +616,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               label: (cmd.label as string | undefined) ?? cmd.componentTypeId,
               originMm: cmd.originMm as { xMm: number; yMm: number; zMm: number },
               rotationDeg: (cmd.rotationDeg as number | undefined) ?? 0,
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -745,11 +773,11 @@ export function useWorkspaceSemanticCommand(args: any) {
         const el = cur[cmd.elementId as string];
         if (!el) return;
         const overrides = {
-          ...((el as any).faceOverrides ?? {}),
+          ...((el as PaintableElement).faceOverrides ?? {}),
           [cmd.faceKey as string]: cmd.materialKey as string,
         };
         useBimStore.setState({
-          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as any },
+          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as Element },
         });
         return;
       }
@@ -757,10 +785,10 @@ export function useWorkspaceSemanticCommand(args: any) {
         const { elementsById: cur } = useBimStore.getState();
         const el = cur[cmd.elementId as string];
         if (!el) return;
-        const overrides = { ...((el as any).faceOverrides ?? {}) };
+        const overrides = { ...((el as PaintableElement).faceOverrides ?? {}) };
         delete overrides[cmd.faceKey as string];
         useBimStore.setState({
-          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as any },
+          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as Element },
         });
         return;
       }
@@ -1132,7 +1160,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               id,
               name: (cmd.name as string) || 'Drafting View',
               planViewSubtype: 'drafting' as const,
-              levelId: null as any,
+              levelId: null,
               cropRegionEnabled: false,
             },
           },
@@ -1212,7 +1240,7 @@ export function useWorkspaceSemanticCommand(args: any) {
           next[wallIdA] = {
             ...wallA,
             joinOverrides: {
-              ...((wallA as any).joinOverrides ?? {}),
+              ...((wallA as WallJoinElement).joinOverrides ?? {}),
               [wallIdB]: cmd.variant as 'miter' | 'butt' | 'square',
             },
           } as typeof wallA;
@@ -1221,7 +1249,7 @@ export function useWorkspaceSemanticCommand(args: any) {
           next[wallIdB] = {
             ...wallB,
             joinOverrides: {
-              ...((wallB as any).joinOverrides ?? {}),
+              ...((wallB as WallJoinElement).joinOverrides ?? {}),
               [wallIdA]: cmd.variant as 'miter' | 'butt' | 'square',
             },
           } as typeof wallB;
@@ -1280,7 +1308,7 @@ export function useWorkspaceSemanticCommand(args: any) {
               scaleMm: (cmd.scaleMm as number | undefined) ?? 1,
               levelId: cmd.levelId as string,
               hidden: false,
-            } as any,
+            } as unknown as Element,
           },
         });
         return;
@@ -1300,7 +1328,7 @@ export function useWorkspaceSemanticCommand(args: any) {
         useBimStore.setState({
           elementsById: {
             ...cur,
-            [link.id]: { ...link, hidden: !(link as any).hidden } as any,
+            [link.id]: { ...link, hidden: !(link as LinkPdfElement).hidden } as Element,
           },
         });
         return;
@@ -1337,7 +1365,10 @@ export function useWorkspaceSemanticCommand(args: any) {
         const link = cur[cmd.linkId as string];
         if (!link || link.kind !== 'link_pointcloud') return;
         useBimStore.setState({
-          elementsById: { ...cur, [link.id]: { ...link, visible: !(link as any).visible } },
+          elementsById: {
+            ...cur,
+            [link.id]: { ...link, visible: !(link as PointCloudElement).visible },
+          },
         });
         return;
       }
@@ -1432,7 +1463,7 @@ export function useWorkspaceSemanticCommand(args: any) {
       // §3.3.4: applyCutGeometry — add cutterId to host element's cutBy list
       if (cmd.type === 'applyCutGeometry') {
         const { elementsById: cur } = useBimStore.getState();
-        const host = cur[cmd.hostId as string] as any;
+        const host = cur[cmd.hostId as string] as CuttableElement | undefined;
         if (host) {
           useBimStore.setState({
             elementsById: {
@@ -1449,7 +1480,7 @@ export function useWorkspaceSemanticCommand(args: any) {
       // §3.3.4: removeCutGeometry — remove cutterId from host element's cutBy list
       if (cmd.type === 'removeCutGeometry') {
         const { elementsById: cur } = useBimStore.getState();
-        const host = cur[cmd.hostId as string] as any;
+        const host = cur[cmd.hostId as string] as CuttableElement | undefined;
         if (host) {
           useBimStore.setState({
             elementsById: {
@@ -1468,7 +1499,7 @@ export function useWorkspaceSemanticCommand(args: any) {
           string,
           string,
         ];
-        useBimStore.setState((s: any) => {
+        useBimStore.setState((s: JoinedPairsState) => {
           const existing: [string, string][] = s.joinedPairs ?? [];
           const alreadyJoined = existing.some(([a, b]) => a === pair[0] && b === pair[1]);
           return alreadyJoined ? {} : { joinedPairs: [...existing, pair] };
@@ -1477,7 +1508,7 @@ export function useWorkspaceSemanticCommand(args: any) {
       }
       if (cmd.type === 'unjoinGeometry') {
         const pair = [cmd.elementId1 as string, cmd.elementId2 as string].sort();
-        useBimStore.setState((s: any) => ({
+        useBimStore.setState((s: JoinedPairsState) => ({
           joinedPairs: (s.joinedPairs ?? []).filter(
             ([a, b]: [string, string]) => !(a === pair[0] && b === pair[1]),
           ),
@@ -1492,7 +1523,10 @@ export function useWorkspaceSemanticCommand(args: any) {
         useBimStore.setState({
           elementsById: {
             ...cur,
-            [col.id]: { ...col, isNonStructural: !(col as any).isNonStructural },
+            [col.id]: {
+              ...col,
+              isNonStructural: !(col as ColumnStructuralElement).isNonStructural,
+            },
           },
         });
         return;
@@ -1503,8 +1537,10 @@ export function useWorkspaceSemanticCommand(args: any) {
         const host = cur[cmd.hostElementId as string];
         if (!host) return;
         const newId = crypto.randomUUID();
-        const normalDeg = host.kind === 'wall' ? (((host as any).angleDeg ?? 0) + 90) % 360 : 0;
-        const elevationMm = host.kind === 'floor' ? ((host as any).baseElevationMm ?? 0) : 0;
+        const normalDeg =
+          host.kind === 'wall' ? (((host as WorkPlaneHostElement).angleDeg ?? 0) + 90) % 360 : 0;
+        const elevationMm =
+          host.kind === 'floor' ? ((host as WorkPlaneHostElement).baseElevationMm ?? 0) : 0;
         const wp = {
           kind: 'work_plane' as const,
           id: newId,
@@ -1512,10 +1548,10 @@ export function useWorkspaceSemanticCommand(args: any) {
           hostElementId: cmd.hostElementId as string,
           elevationMm,
           normalDeg,
-          levelId: (host as any).levelId ?? '',
+          levelId: (host as WorkPlaneHostElement).levelId ?? '',
         };
         useBimStore.setState({
-          elementsById: { ...cur, [newId]: wp as any },
+          elementsById: { ...cur, [newId]: wp as unknown as Element },
         });
         return;
       }
@@ -1531,7 +1567,7 @@ export function useWorkspaceSemanticCommand(args: any) {
             [settings.id]: {
               ...settings,
               dxfLayerMapping: {
-                ...((settings as any).dxfLayerMapping ?? {}),
+                ...((settings as DxfLayerSettingsElement).dxfLayerMapping ?? {}),
                 ...(cmd.mapping as Record<string, string>),
               },
             },
@@ -1542,13 +1578,13 @@ export function useWorkspaceSemanticCommand(args: any) {
 
       // §1.6.12: toggleSplitView — flip splitViewEnabled in store
       if (cmd.type === 'toggleSplitView') {
-        useBimStore.setState((s: any) => ({ splitViewEnabled: !s.splitViewEnabled }));
+        useBimStore.setState((s: SplitViewState) => ({ splitViewEnabled: !s.splitViewEnabled }));
         return;
       }
 
       // §1.6.3: addToQuickAccess — pin a command to the Quick Access Toolbar
       if (cmd.type === 'addToQuickAccess') {
-        useBimStore.setState((s: any) => {
+        useBimStore.setState((s: QuickAccessState) => {
           const existing = s.quickAccessItems ?? [];
           if (existing.includes(cmd.commandId)) return s;
           return { quickAccessItems: [...existing, cmd.commandId as string] };
@@ -1558,7 +1594,7 @@ export function useWorkspaceSemanticCommand(args: any) {
 
       // §1.6.3: removeFromQuickAccess — unpin a command from the Quick Access Toolbar
       if (cmd.type === 'removeFromQuickAccess') {
-        useBimStore.setState((s: any) => ({
+        useBimStore.setState((s: QuickAccessState) => ({
           quickAccessItems: (s.quickAccessItems ?? []).filter((id: string) => id !== cmd.commandId),
         }));
         return;
@@ -1566,7 +1602,7 @@ export function useWorkspaceSemanticCommand(args: any) {
 
       // §1.5: openRecentProject — prepend to recentProjectIds in store (LRU, max 10)
       if (cmd.type === 'openRecentProject') {
-        useBimStore.setState((s: any) => ({
+        useBimStore.setState((s: RecentProjectsState) => ({
           recentProjectIds: [
             cmd.projectId as string,
             ...(s.recentProjectIds ?? []).filter((x: string) => x !== cmd.projectId),

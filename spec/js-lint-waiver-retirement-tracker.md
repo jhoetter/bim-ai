@@ -39,7 +39,7 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 41             |
+| Errors         | 5              |
 | Warnings       | 30             |
 | Affected files | 9              |
 | Fatal findings | 0              |
@@ -48,7 +48,7 @@ Rule budgets:
 
 | Rule                                 | Current budget |
 | ------------------------------------ | -------------- |
-| `@typescript-eslint/no-explicit-any` | 36             |
+| `@typescript-eslint/no-explicit-any` | 0              |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
@@ -63,7 +63,7 @@ Rule budgets:
 | JSL-2026-01 | Done   | Fatal ESLint findings       | `fatal` budget is `0`.                                                                      |
 | JSL-2026-02 | Done   | Mechanical unused variables | `@typescript-eslint/no-unused-vars` budget is `0`.                                          |
 | JSL-2026-03 | Done   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget is `0`.                                                    |
-| JSL-2026-04 | Open   | Type escapes                | `@typescript-eslint/no-explicit-any` and type-escape budgets trend downward together.       |
+| JSL-2026-04 | Done   | Type escapes                | `@typescript-eslint/no-explicit-any` and non-test type-escape budgets are `0`.              |
 | JSL-2026-05 | Open   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget trends downward with semantic review.                  |
 | JSL-2026-06 | Open   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
 | JSL-2026-07 | Open   | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
@@ -130,3 +130,8 @@ Rule budgets:
   The lint budget moved to `41` errors / `30` warnings / `9` files;
   `@typescript-eslint/no-explicit-any` moved from `58` to `36`, and the
   non-test type-escape budget moved to `1` file / `36` matches.
+- 2026-05-20: typed the remaining workspace semantic command payload helpers,
+  local store-state callbacks, cut/join/paint/link/work-plane patches, and
+  client-created elements. The lint budget moved to `5` errors / `30` warnings /
+  `9` files; `@typescript-eslint/no-explicit-any` moved from `36` to `0`, and
+  the non-test type-escape budget moved to `0` files / `0` matches.

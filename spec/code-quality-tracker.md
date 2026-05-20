@@ -398,6 +398,11 @@ CI chooses one canonical quality gate.
   `pnpm js-lint:budget` is now ratcheted to `41` errors / `30` warnings /
   `9` files, with `@typescript-eslint/no-explicit-any` down to `36`, and the
   non-test type-escape budget is down to `1` file / `36` matches.
+- 2026-05-20: typed the remaining workspace semantic command payload helpers
+  and local store-state callbacks; `pnpm js-lint:budget` is now ratcheted to
+  `5` errors / `30` warnings / `9` files, with
+  `@typescript-eslint/no-explicit-any` locked at `0`, and the non-test
+  type-escape budget is locked at `0` files / `0` matches.
 
 ---
 
