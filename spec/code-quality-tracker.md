@@ -1002,6 +1002,10 @@ Start with parity checks before full generation:
   `packages/cli/lib/api-client.mjs`, giving schema, descriptor, snapshot, and
   bundle calls a shared client boundary and reducing `packages/cli/cli.mjs`
   from `7,412` to `7,327` lines.
+- 2026-05-20: extracted CLI advisor summary/actionability shaping into
+  `packages/cli/lib/advisor-summary.mjs`, so live advisor evidence and
+  refinement reports share a smaller contract-owned module instead of adding to
+  the CLI entrypoint.
 - 2026-05-20: `scripts/check-contract-parity.mjs` compares API descriptor names
   against CLI-generated `toolId` values, validates API introspection CLI rows,
   rejects duplicate descriptor names, and consumes
