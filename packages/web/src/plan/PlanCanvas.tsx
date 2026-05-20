@@ -205,6 +205,7 @@ import {
   usePlanCanvasRenderPasses,
   type PlanCanvasDraftingPaint,
 } from './usePlanCanvasRenderPasses';
+import { usePlanCanvasToolActivation } from './usePlanCanvasToolActivation';
 import { clearColumnAtGridsOverlay, renderColumnAtGridsOverlay } from './planCanvasRenderPasses';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
@@ -819,128 +820,57 @@ export function PlanCanvas({
     cameraHandleRef,
   });
 
-  useEffect(() => {
-    draftRef.current = undefined;
-    wallFlipRef.current = false;
-    alignStateRef.current = initialAlignState();
-    setAlignReferenceMm(null);
-    mirrorAxisStartRef.current = null;
-    setMirrorAxisSet(false);
-    copyAnchorRef.current = null;
-    setCopyAnchorSet(false);
-    moveAnchorRef.current = null;
-    setMoveAnchorSet(false);
-    rotateAnchorRef.current = null;
-    setRotateAnchorSet(false);
-    rotateReferenceRef.current = null;
-    setRotateReferenceSet(false);
-    scaleStateRef.current = initialScaleState();
-    setScalePhase('idle');
-    setNumericInput(null);
-    splitStateRef.current = initialSplitState();
-    splitWallStateRef.current = initialSplitWallState();
-    trimStateRef.current = initialTrimState();
-    trimExtendFirstWallRef.current = null;
-    setTrimExtendFirstWallSet(false);
-    wallJoinStateRef.current = initialWallJoinState();
-    if (planTool === 'align') {
-      const { state } = reduceAlign(alignStateRef.current, { kind: 'activate' });
-      alignStateRef.current = state;
-    } else if (planTool === 'split') {
-      const { state } = reduceSplit(splitStateRef.current, { kind: 'activate' });
-      splitStateRef.current = state;
-    } else if (planTool === 'split-wall') {
-      const { state } = reduceSplitWall(splitWallStateRef.current, { kind: 'activate' });
-      splitWallStateRef.current = state;
-    } else if (planTool === 'trim') {
-      const { state } = reduceTrim(trimStateRef.current, { kind: 'activate' });
-      trimStateRef.current = state;
-    } else if (planTool === 'wall-join') {
-      const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'activate' });
-      wallJoinStateRef.current = state;
-    } else if (planTool === 'wall-opening') {
-      wallOpeningStateRef.current = initialWallOpeningState();
-    } else if (planTool === 'shaft') {
-      shaftStateRef.current = initialShaftState();
-    } else if (planTool === 'column') {
-      columnStateRef.current = initialColumnState();
-    } else if (planTool === 'beam') {
-      beamStateRef.current = initialBeamState();
-    } else if (planTool === 'stair') {
-      stairStateRef.current = initialBeamState();
-    } else if (planTool === 'ramp') {
-      rampStateRef.current = initialRampState();
-    } else if (planTool === 'ceiling') {
-      ceilingStateRef.current = initialCeilingState();
-    } else if (planTool === 'excavation') {
-      excavationStateRef.current = initialExcavationState();
-    } else if (planTool === 'beam-system') {
-      beamSystemStateRef.current = initialBeamSystemState();
-    } else if (planTool === 'steel-connection') {
-      const { state: scState } = reduceSteelConnection(steelConnectionStateRef.current, {
-        kind: 'activate',
-      });
-      steelConnectionStateRef.current = scState;
-    } else if (planTool === 'column-at-grids') {
-      const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
-      columnAtGridsStateRef.current = state;
-      useBimStore.getState().setColumnAtGridsSelectedIds([]);
-      setDispatchColumnAtGridsSelectAll((gridIds) => {
-        const { state: s } = reduceColumnAtGrids(columnAtGridsStateRef.current, {
-          kind: 'selectAllGrids',
-          gridIds,
-        });
-        columnAtGridsStateRef.current = s;
-        useBimStore
-          .getState()
-          .setColumnAtGridsSelectedIds(s.phase === 'selecting' ? s.selectedGridIds : []);
-        bumpGeom((x) => x + 1);
-      });
-    } else if (planTool === 'scale') {
-      const { state } = reduceScale(scaleStateRef.current, { kind: 'activate' });
-      scaleStateRef.current = state;
-      setScalePhase(state.phase);
-    } else if (planTool === 'array') {
-      const { state } = reduceArray(arrayStateRef.current, { kind: 'activate' });
-      arrayStateRef.current = state;
-      setArrayPhase(state.phase);
-    } else if (planTool === 'place-group') {
-      const { state } = reducePlaceGroup(placeGroupStateRef.current, { kind: 'activate' });
-      placeGroupStateRef.current = state;
-    } else if (planTool === 'roof-by-extrusion') {
-      const { state } = reduceRoofByExtrusion(
-        roofByExtrusionStateRef.current,
-        { kind: 'activate' },
-        '',
-      );
-      roofByExtrusionStateRef.current = state;
-      setRoofByExtrusionPhase(state.phase);
-    } else if (planTool === 'linework') {
-      const { state } = reduceLinework(lineworkStateRef.current, { kind: 'activate' });
-      lineworkStateRef.current = state;
-    } else if (planTool === 'conical-roof') {
-      const { state } = reduceConicalRoof(conicalRoofStateRef.current, { kind: 'activate' });
-      conicalRoofStateRef.current = state;
-    } else if (planTool === 'dome-roof') {
-      const { state } = reduceDomeRoof(domeRoofStateRef.current, { kind: 'activate' });
-      domeRoofStateRef.current = state;
-    } else if (planTool === 'spire-roof') {
-      const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'activate' });
-      spireRoofStateRef.current = state;
-    } else if (planTool === 'stair-run') {
-      stairRunStateRef.current = initialStairRunState();
-    } else if (planTool === 'stair-landing') {
-      stairLandingStateRef.current = initialStairLandingState();
-    } else if (planTool === 'detail-line') {
-      const { state } = reduceDetailLine(detailLineStateRef.current, { kind: 'activate' });
-      detailLineStateRef.current = state;
-    } else if (planTool === 'detail-filled-region') {
-      const { state } = reduceDetailFilledRegion(detailFilledRegionStateRef.current, {
-        kind: 'activate',
-      });
-      detailFilledRegionStateRef.current = state;
-    }
-  }, [planTool]);
+  usePlanCanvasToolActivation({
+    planTool,
+    draftRef,
+    wallFlipRef,
+    alignStateRef,
+    setAlignReferenceMm,
+    mirrorAxisStartRef,
+    setMirrorAxisSet,
+    copyAnchorRef,
+    setCopyAnchorSet,
+    moveAnchorRef,
+    setMoveAnchorSet,
+    rotateAnchorRef,
+    setRotateAnchorSet,
+    rotateReferenceRef,
+    setRotateReferenceSet,
+    scaleStateRef,
+    setScalePhase,
+    setNumericInput,
+    splitStateRef,
+    splitWallStateRef,
+    trimStateRef,
+    trimExtendFirstWallRef,
+    setTrimExtendFirstWallSet,
+    wallJoinStateRef,
+    wallOpeningStateRef,
+    shaftStateRef,
+    columnStateRef,
+    beamStateRef,
+    stairStateRef,
+    rampStateRef,
+    ceilingStateRef,
+    excavationStateRef,
+    beamSystemStateRef,
+    steelConnectionStateRef,
+    columnAtGridsStateRef,
+    bumpGeom,
+    arrayStateRef,
+    setArrayPhase,
+    placeGroupStateRef,
+    roofByExtrusionStateRef,
+    setRoofByExtrusionPhase,
+    lineworkStateRef,
+    conicalRoofStateRef,
+    domeRoofStateRef,
+    spireRoofStateRef,
+    stairRunStateRef,
+    stairLandingStateRef,
+    detailLineStateRef,
+    detailFilledRegionStateRef,
+  });
 
   usePlanCanvasSceneLifecycle({
     mountRef,
