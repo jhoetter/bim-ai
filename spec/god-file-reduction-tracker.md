@@ -115,6 +115,7 @@ A-territory target:
 | GFR-2026-39 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract room/grid/measure draft-click handlers                     | PlanCanvas below `5,350` LOC with focused tests green.      |
 | GFR-2026-40 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract text annotation inspector sections                         | Inspector below `5,150` LOC with focused tests green.       |
 | GFR-2026-41 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract reference/property/area/plan-region boundary clicks         | PlanCanvas below `5,250` LOC with focused tests green.      |
+| GFR-2026-42 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract view-cube and saved-orientation handlers                   | Viewport below `5,250` LOC with focused tests green.        |
 
 ## Progress Log
 
@@ -490,4 +491,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   into `packages/web/src/plan/planCanvasBoundaryClicks.ts`. Local `wc -l`
   reports `packages/web/src/plan/PlanCanvas.tsx` at `5,199` lines. Focused
   PlanCanvas/area tests pass (`33 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-42` is Done. The slice moved view-cube pick/drag and
+  saved-3D orientation handlers into
+  `packages/web/src/viewport/useViewportViewCubeHandlers.ts`. Local `wc -l`
+  reports `packages/web/src/Viewport.tsx` at `5,233` lines. Focused view-cube
+  and saved-3D tests pass (`26 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.

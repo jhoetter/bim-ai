@@ -41,7 +41,6 @@ import {
   elementBadgeAnchorMm,
   selectDriftedElements,
 } from './plan/monitorDriftBadge';
-import { type ViewCubePick } from './viewport/viewCubeAlignment';
 import { SectionBox } from './viewport/sectionBox';
 import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
 import {
@@ -214,6 +213,7 @@ import {
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
+import { useViewportViewCubeHandlers } from './viewport/useViewportViewCubeHandlers';
 import {
   initialWalkthroughState,
   reduceWalkthrough,
@@ -5132,56 +5132,13 @@ export function Viewport({
     }
   }, [walkActive]);
 
-  const handleViewCubePick = useCallback(
-    (
-      _pick: ViewCubePick,
-      alignment: { azimuth: number; elevation: number; up: { x: number; y: number; z: number } },
-    ): void => {
-      const rig = cameraRigRef.current;
-      if (!rig) return;
-      const snap = rig.snapshot();
-      rig.applyViewpoint(
-        {
-          x:
-            snap.target.x +
-            snap.radius * Math.cos(alignment.elevation) * Math.sin(alignment.azimuth),
-          y: snap.target.y + snap.radius * Math.sin(alignment.elevation),
-          z:
-            snap.target.z +
-            snap.radius * Math.cos(alignment.elevation) * Math.cos(alignment.azimuth),
-        },
-        snap.target,
-        alignment.up,
-      );
-      const camera = cameraRef.current;
-      if (camera) {
-        const next = rig.snapshot();
-        applySceneCameraPose(camera, next);
-        const orthoCamera = orthoCameraRef.current;
-        if (orthoCamera) {
-          mirrorSceneCameraPose(camera, orthoCamera, next.target);
-        }
-        syncCameraOrientationState(next, 'immediate');
-      }
+  const { handleViewCubePick, handleViewCubeDrag, handleOrientSaved } = useViewportViewCubeHandlers(
+    {
+      cameraRigRef,
+      cameraRef,
+      orthoCameraRef,
+      syncCameraOrientationState,
     },
-    [syncCameraOrientationState],
-  );
-
-  const handleViewCubeDrag = useCallback(
-    (dxPx: number, dyPx: number): void => {
-      const rig = cameraRigRef.current;
-      const camera = cameraRef.current;
-      if (!rig || !camera) return;
-      rig.orbit(dxPx, dyPx);
-      const snap = rig.snapshot();
-      applySceneCameraPose(camera, snap);
-      const orthoCamera = orthoCameraRef.current;
-      if (orthoCamera) {
-        mirrorSceneCameraPose(camera, orthoCamera, snap.target);
-      }
-      syncCameraOrientationState(snap, 'immediate');
-    },
-    [syncCameraOrientationState],
   );
 
   const saved3dViewsList = useMemo(
@@ -5191,16 +5148,6 @@ export function Viewport({
       ),
     [elementsById],
   );
-
-  const handleOrientSaved = useCallback((view: Saved3dViewElement): void => {
-    useBimStore.getState().setOrbitCameraFromViewpointMm({
-      position: { xMm: view.cameraMm.x, yMm: view.cameraMm.y, zMm: view.cameraMm.z },
-      target: { xMm: view.targetMm.x, yMm: view.targetMm.y, zMm: view.targetMm.z },
-      up: view.upVector
-        ? { xMm: view.upVector.x, yMm: view.upVector.y, zMm: view.upVector.z }
-        : { xMm: 0, yMm: 1, zMm: 0 },
-    });
-  }, []);
 
   const direct3dLevelOptions = useMemo(
     () =>
