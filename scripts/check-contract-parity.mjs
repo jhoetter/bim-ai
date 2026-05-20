@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
-const REGISTRY_PATH = join(REPO_ROOT, 'app', 'bim_ai', 'api', 'registry.py');
+const API_DESCRIPTOR_ROOT = join(REPO_ROOT, 'app', 'bim_ai', 'api');
 const CLI_PATH = join(REPO_ROOT, 'packages', 'cli', 'cli.mjs');
 const BASELINE_PATH = join(REPO_ROOT, 'spec', 'contract-parity-baseline.json');
 
@@ -18,9 +18,23 @@ function uniqueSorted(rows) {
   return [...new Set(rows)].sort();
 }
 
-function extractApiToolNames(registryText) {
+function pythonFiles(root) {
+  return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) return pythonFiles(path);
+    return entry.isFile() && entry.name.endsWith('.py') ? [path] : [];
+  });
+}
+
+function readApiDescriptorText() {
+  return pythonFiles(API_DESCRIPTOR_ROOT)
+    .map((path) => readText(path))
+    .join('\n');
+}
+
+function extractApiToolNames(apiText) {
   return uniqueSorted(
-    [...registryText.matchAll(/\bname\s*=\s*['"]([^'"]+)['"]/g)].map((match) => match[1]),
+    [...apiText.matchAll(/\bname\s*=\s*['"]([^'"]+)['"]/g)].map((match) => match[1]),
   );
 }
 
@@ -62,14 +76,14 @@ function loadBaseline() {
 }
 
 function main() {
-  const registryText = readText(REGISTRY_PATH);
+  const apiDescriptorText = readApiDescriptorText();
   const cliText = readText(CLI_PATH);
   const baseline = loadBaseline();
 
-  const allRegistryNames = [...registryText.matchAll(/\bname\s*=\s*['"]([^'"]+)['"]/g)].map(
+  const allRegistryNames = [...apiDescriptorText.matchAll(/\bname\s*=\s*['"]([^'"]+)['"]/g)].map(
     (match) => match[1],
   );
-  const apiToolNames = extractApiToolNames(registryText);
+  const apiToolNames = extractApiToolNames(apiDescriptorText);
   const cliToolIds = extractCliToolIds(cliText);
   const baselineMissing = new Set(baseline.cliToolIdsMissingApiDescriptors);
   const apiToolNameSet = new Set(apiToolNames);

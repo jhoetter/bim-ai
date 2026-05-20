@@ -20,10 +20,11 @@ Current assessment: **7.5/10 (B)**.
 The project is now in B territory: strict TypeScript is green, the canonical
 verification gates are aligned, frontend test noise is materially quieter,
 backend focused/full test paths are explicit, quality waivers are
-machine-readable and expiring, and the largest frontend monoliths have extraction
-maps with first slices landed. The score is still held down by large remaining
-source files, the active JavaScript lint waiver, and A-grade budgets that are
-present but still early in their enforcement history.
+machine-readable and expiring, contract parity is green across extracted
+descriptor modules, and no hand-written source file is above 4,000 LOC. The
+score is still held down by the frontend type-escape budget, the active
+JavaScript lint waiver, and A-grade budgets that are present but still early in
+their enforcement history.
 
 The practical target is:
 
@@ -1429,6 +1430,12 @@ Start with parity checks before full generation:
 - 2026-05-20: `scripts/code-quality-report.mjs` now runs the contract parity
   check in JSON mode and includes descriptor counts, CLI tool ID counts, and
   tracked descriptor gaps in the generated release-readiness scorecard.
+- 2026-05-20: `scripts/check-contract-parity.mjs` now scans extracted
+  descriptor modules under `app/bim_ai/api`, not only `registry.py`. This keeps
+  extracted descriptors such as `asset.place` visible to the parity gate.
+  `spec/contract-parity-baseline.json` dropped the unused
+  `presentation.documentation_pack` row. `pnpm contract:parity` is green with
+  `105` API descriptors, `26` CLI tool IDs, and `23` tracked gaps.
 
 ---
 
