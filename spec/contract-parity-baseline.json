@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "targetResolutionDate": "2026-06-30",
+  "cliToolIdsMissingApiDescriptors": [
+    "asset.query_index",
+    "author.floor_from_boundary",
+    "author.wall",
+    "author.wall_chain",
+    "construction.logistics",
+    "construction.package",
+    "construction.qa_checklist",
+    "mep.cable_tray",
+    "mep.duct_route",
+    "mep.equipment",
+    "mep.fixture",
+    "mep.opening_request",
+    "mep.pipe_route",
+    "mep.terminal",
+    "opening.door_on_wall",
+    "opening.roof_opening",
+    "opening.wall_opening",
+    "opening.window_on_wall",
+    "presentation.documentation_pack",
+    "structure.beam",
+    "structure.column",
+    "structure.column_update",
+    "structure.constraint",
+    "view.save_3d"
+  ],
+  "owner": "CQ-2026-14",
+  "reason": "Existing CLI-generated tool IDs that need first-class API descriptors. New CLI tool IDs must either land with descriptors or update this baseline deliberately."
+}

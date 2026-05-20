@@ -215,7 +215,7 @@ Largest current source files observed:
 | CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                 |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                            |
 | CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                |
-| CQ-2026-14 | P1       | Open    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.  |
+| CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.  |
 | CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.        |
 | CQ-2026-16 | P1       | Open    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                |
 | CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                 |
@@ -953,7 +953,7 @@ Initial thresholds can be advisory before becoming blocking:
 ## CQ-2026-14 - Generate or Parity-Check Public Contracts
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: `packages/core`, backend schemas, API descriptor registry, CLI
 
 ### Problem
@@ -995,7 +995,12 @@ Start with parity checks before full generation:
 - 2026-05-20: extracted CLI API transport concerns into
   `packages/cli/lib/api-client.mjs`, giving schema, descriptor, snapshot, and
   bundle calls a shared client boundary and reducing `packages/cli/cli.mjs`
-  from `7,412` to `7,327` lines. This is still Open until parity checks exist.
+  from `7,412` to `7,327` lines.
+- 2026-05-20: `scripts/check-contract-parity.mjs` compares API descriptor names
+  against CLI-generated `toolId` values, validates API introspection CLI rows,
+  rejects duplicate descriptor names, and consumes
+  `spec/contract-parity-baseline.json` for the existing descriptor backlog.
+  `pnpm contract:parity` now runs inside `pnpm verify:strict`.
 
 ---
 
