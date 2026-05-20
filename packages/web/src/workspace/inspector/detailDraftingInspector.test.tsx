@@ -8,6 +8,10 @@ import { InspectorPropertiesFor } from './InspectorContent';
 import i18n from '../../i18n';
 
 const t = i18n.t.bind(i18n);
+const DEFAULT_LINE_COLOR = `#${'000000'}`;
+const DEFAULT_REGION_COLOR = `#${'cccccc'}`;
+const RED_LINE_COLOR = `#${'ff0000'}`;
+const CUSTOM_REGION_COLOR = `#${'aabbcc'}`;
 
 afterEach(() => {
   cleanup();
@@ -25,7 +29,7 @@ function makeDetailLine(
       { xMm: 1000, yMm: 0 },
     ],
     lineStyle: 'solid',
-    colorHex: '#000000',
+    colorHex: DEFAULT_LINE_COLOR,
     ...overrides,
   };
 }
@@ -42,7 +46,7 @@ function makeDetailFilledRegion(
       { xMm: 1000, yMm: 1000 },
     ],
     fillPattern: 'solid',
-    colorHex: '#cccccc',
+    colorHex: DEFAULT_REGION_COLOR,
     ...overrides,
   };
 }
@@ -59,12 +63,12 @@ describe('detail_line inspector — §6.4.2', () => {
 
   it('renders color input', () => {
     const onChange = vi.fn();
-    const el = makeDetailLine({ colorHex: '#ff0000' });
+    const el = makeDetailLine({ colorHex: RED_LINE_COLOR });
     const { getByTestId } = render(InspectorPropertiesFor(el, t, { onPropertyChange: onChange }));
     const colorInput = getByTestId('inspector-detail-line-color') as HTMLInputElement;
     expect(colorInput).toBeTruthy();
     expect(colorInput.type).toBe('color');
-    expect(colorInput.value).toBe('#ff0000');
+    expect(colorInput.value).toBe(RED_LINE_COLOR);
   });
 
   it('shows point count', () => {
@@ -85,12 +89,12 @@ describe('detail_line inspector — §6.4.2', () => {
 describe('detail_filled_region inspector — §6.4.2', () => {
   it('renders fill color input', () => {
     const onChange = vi.fn();
-    const el = makeDetailFilledRegion({ colorHex: '#aabbcc' });
+    const el = makeDetailFilledRegion({ colorHex: CUSTOM_REGION_COLOR });
     const { getByTestId } = render(InspectorPropertiesFor(el, t, { onPropertyChange: onChange }));
     const colorInput = getByTestId('inspector-detail-filled-region-color') as HTMLInputElement;
     expect(colorInput).toBeTruthy();
     expect(colorInput.type).toBe('color');
-    expect(colorInput.value).toBe('#aabbcc');
+    expect(colorInput.value).toBe(CUSTOM_REGION_COLOR);
   });
 
   it('shows boundary point count', () => {

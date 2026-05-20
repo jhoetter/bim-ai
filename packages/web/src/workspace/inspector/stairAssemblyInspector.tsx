@@ -41,7 +41,7 @@ export function StairAssemblySection({
               onClick={() =>
                 onSemanticCommand?.({ type: 'removeStairComponent', componentId: run.id })
               }
-              style={{ color: '#f87171', fontSize: 10 }}
+              style={{ color: 'var(--color-danger)', fontSize: 10 }}
             >
               ✕
             </button>
@@ -69,7 +69,7 @@ export function StairAssemblySection({
                 onClick={() =>
                   onSemanticCommand?.({ type: 'removeStairComponent', componentId: landing.id })
                 }
-                style={{ color: '#f87171', fontSize: 10 }}
+                style={{ color: 'var(--color-danger)', fontSize: 10 }}
               >
                 ✕
               </button>
@@ -77,7 +77,10 @@ export function StairAssemblySection({
           );
         })}
         {runs.length === 0 && landings.length === 0 && (
-          <p data-testid="inspector-stair-assembly-empty" style={{ fontSize: 11, color: '#888' }}>
+          <p
+            data-testid="inspector-stair-assembly-empty"
+            style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}
+          >
             No components. Use the Stair by Component tool to add runs and landings.
           </p>
         )}

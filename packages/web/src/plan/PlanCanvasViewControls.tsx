@@ -45,8 +45,8 @@ export function PlanCanvasViewControls({
           border: '1px solid var(--color-border)',
           borderRadius: 4,
           cursor: 'pointer',
-          background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
-          color: thinLinesEnabled ? '#fff' : 'var(--color-foreground)',
+          background: thinLinesEnabled ? 'var(--color-accent)' : 'transparent',
+          color: thinLinesEnabled ? 'var(--color-accent-foreground)' : 'var(--color-foreground)',
           whiteSpace: 'nowrap',
         }}
       >
@@ -61,10 +61,12 @@ export function PlanCanvasViewControls({
           style={{
             fontSize: 10,
             padding: '1px 5px',
-            border: `1px solid ${showConstraints ? '#22c55e' : 'var(--border)'}`,
+            border: `1px solid ${showConstraints ? 'var(--color-success)' : 'var(--color-border)'}`,
             borderRadius: 3,
-            background: showConstraints ? 'rgba(34,197,94,0.15)' : 'transparent',
-            color: showConstraints ? '#22c55e' : 'inherit',
+            background: showConstraints
+              ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
+              : 'transparent',
+            color: showConstraints ? 'var(--color-success)' : 'inherit',
             cursor: 'pointer',
           }}
         >
@@ -80,10 +82,12 @@ export function PlanCanvasViewControls({
           style={{
             fontSize: 10,
             padding: '1px 5px',
-            border: `1px solid ${showUnderlay ? '#a78bfa' : 'var(--border)'}`,
+            border: `1px solid ${showUnderlay ? 'var(--color-info)' : 'var(--color-border)'}`,
             borderRadius: 3,
-            background: showUnderlay ? 'rgba(167,139,250,0.15)' : 'transparent',
-            color: showUnderlay ? '#a78bfa' : 'inherit',
+            background: showUnderlay
+              ? 'color-mix(in srgb, var(--color-info) 15%, transparent)'
+              : 'transparent',
+            color: showUnderlay ? 'var(--color-info)' : 'inherit',
             cursor: 'pointer',
           }}
         >

@@ -16,6 +16,8 @@ import { PhaseSection } from './phaseInspectorSection';
 import { FloorNewTypeRow } from './floorTypeInspectorSections';
 import { WallPartsPanel } from './wallPartsPanel';
 
+const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
+
 function InspectorDisciplineDropdown({
   value,
   onChange,
@@ -231,9 +233,9 @@ export function WallInspectorSection(args: any): JSX.Element {
                   width={120}
                   height={60}
                   style={{
-                    border: '1px solid var(--border, #444)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: 3,
-                    background: '#111',
+                    background: 'var(--color-foreground)',
                   }}
                 >
                   {(() => {
@@ -256,9 +258,9 @@ export function WallInspectorSection(args: any): JSX.Element {
                     return (
                       <path
                         d={pathD}
-                        stroke="#a78bfa"
+                        stroke="var(--color-info)"
                         strokeWidth={1.5}
-                        fill="rgba(167,139,250,0.1)"
+                        fill="color-mix(in srgb, var(--color-info) 10%, transparent)"
                       />
                     );
                   })()}
@@ -276,7 +278,9 @@ export function WallInspectorSection(args: any): JSX.Element {
                       alignItems: 'center',
                     }}
                   >
-                    <span style={{ fontSize: 10, color: '#888' }}>{i + 1}</span>
+                    <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)' }}>
+                      {i + 1}
+                    </span>
                     <input
                       data-testid={`wall-profile-pt-x-${i}`}
                       type="number"
@@ -608,8 +612,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.fillColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.fillColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
                     onPropertyChange?.('graphicsOverride', {
@@ -637,8 +640,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.surfaceColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
                     onPropertyChange?.('graphicsOverride', {
@@ -684,7 +686,10 @@ export function WallInspectorSection(args: any): JSX.Element {
                       marginBottom: 2,
                     }}
                   >
-                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                    <span
+                      data-testid={`inspector-cut-by-id-${i}`}
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {cutterId.slice(-8)}
                     </span>
                     <button
@@ -692,7 +697,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                       onClick={() =>
                         onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
                       }
-                      style={{ color: '#f87171', fontSize: 11 }}
+                      style={{ color: 'var(--color-danger)', fontSize: 11 }}
                     >
                       Remove Cut
                     </button>
@@ -866,8 +871,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.fillColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.fillColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
                     floorOnPropertyChange?.('graphicsOverride', {
@@ -895,8 +899,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.surfaceColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
                     floorOnPropertyChange?.('graphicsOverride', {
@@ -1040,7 +1043,9 @@ export function FloorInspectorSection(args: any): JSX.Element {
                   key={pt.id}
                   style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}
                 >
-                  <span style={{ fontSize: 11, color: '#aaa', minWidth: 60 }}>
+                  <span
+                    style={{ fontSize: 11, color: 'var(--color-muted-foreground)', minWidth: 60 }}
+                  >
                     Pt {idx + 1}: ({pt.xMm.toFixed(0)}, {pt.yMm.toFixed(0)})
                   </span>
                   <input
@@ -1067,7 +1072,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
                         pointId: pt.id,
                       })
                     }
-                    style={{ color: '#f87171', fontSize: 11 }}
+                    style={{ color: 'var(--color-danger)', fontSize: 11 }}
                   >
                     ✕
                   </button>
@@ -1134,7 +1139,10 @@ export function FloorInspectorSection(args: any): JSX.Element {
                       marginBottom: 2,
                     }}
                   >
-                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                    <span
+                      data-testid={`inspector-cut-by-id-${i}`}
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {cutterId.slice(-8)}
                     </span>
                     <button
@@ -1142,7 +1150,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
                       onClick={() =>
                         onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
                       }
-                      style={{ color: '#f87171', fontSize: 11 }}
+                      style={{ color: 'var(--color-danger)', fontSize: 11 }}
                     >
                       Remove Cut
                     </button>

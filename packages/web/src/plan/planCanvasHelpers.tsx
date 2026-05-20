@@ -11,16 +11,32 @@ export function ComponentPlacementPreviewGlyph({ symbolKind }: { symbolKind?: st
   if (symbolKind === 'toilet') {
     return (
       <svg viewBox="0 0 64 64" className="h-full w-full" aria-hidden="true">
-        <rect x="18" y="8" width="28" height="48" rx="4" fill="#dbeafe" opacity="0.72" />
-        <ellipse cx="32" cy="31" rx="15" ry="18" fill="#eff6ff" stroke="#2563eb" strokeWidth="3" />
+        <rect
+          x="18"
+          y="8"
+          width="28"
+          height="48"
+          rx="4"
+          fill="var(--color-accent-soft)"
+          opacity="0.72"
+        />
+        <ellipse
+          cx="32"
+          cy="31"
+          rx="15"
+          ry="18"
+          fill="var(--color-background)"
+          stroke="var(--color-accent)"
+          strokeWidth="3"
+        />
         <rect
           x="22"
           y="8"
           width="20"
           height="15"
           rx="2"
-          fill="#bfdbfe"
-          stroke="#2563eb"
+          fill="var(--color-accent-soft)"
+          stroke="var(--color-accent)"
           strokeWidth="3"
         />
       </svg>
@@ -34,12 +50,12 @@ export function ComponentPlacementPreviewGlyph({ symbolKind }: { symbolKind?: st
         width="44"
         height="36"
         rx="3"
-        fill="#dbeafe"
+        fill="var(--color-accent-soft)"
         opacity="0.62"
-        stroke="#2563eb"
+        stroke="var(--color-accent)"
         strokeWidth="3"
       />
-      <path d="M14 18 L50 46 M50 18 L14 46" stroke="#2563eb" strokeWidth="2.5" />
+      <path d="M14 18 L50 46 M50 18 L14 46" stroke="var(--color-accent)" strokeWidth="2.5" />
     </svg>
   );
 }

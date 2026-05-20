@@ -1530,7 +1530,7 @@ function TemplatePicker({
               fontSize: 11,
               fontWeight: 600,
               marginBottom: 6,
-              color: '#888',
+              color: 'var(--color-muted-foreground)',
               textTransform: 'uppercase',
             }}
           >
@@ -1554,7 +1554,7 @@ function TemplatePicker({
                   fontSize: 12,
                   padding: '4px 8px',
                   borderRadius: 4,
-                  border: '1px solid var(--border, #444)',
+                  border: '1px solid var(--color-border)',
                   cursor: 'pointer',
                 }}
               >

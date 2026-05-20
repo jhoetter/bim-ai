@@ -233,7 +233,7 @@ export function PlanViewHeader({
             border: '1px solid var(--color-border)',
             borderRadius: 4,
             cursor: 'pointer',
-            background: legendVisible ? 'var(--color-accent, #2563eb)' : 'transparent',
+            background: legendVisible ? 'var(--color-accent)' : 'transparent',
             color: legendVisible ? 'var(--color-foreground-on-accent)' : 'var(--color-foreground)',
             whiteSpace: 'nowrap',
           }}
@@ -253,10 +253,8 @@ export function PlanViewHeader({
             border: '1px solid var(--color-border)',
             borderRadius: 4,
             cursor: 'pointer',
-            background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
-            color: thinLinesEnabled
-              ? 'var(--color-foreground-on-accent)'
-              : 'var(--color-foreground)',
+            background: thinLinesEnabled ? 'var(--color-accent)' : 'transparent',
+            color: thinLinesEnabled ? 'var(--color-accent-foreground)' : 'var(--color-foreground)',
             whiteSpace: 'nowrap',
           }}
         >
@@ -271,9 +269,11 @@ export function PlanViewHeader({
         style={{
           padding: '2px 6px',
           borderRadius: 4,
-          background: selectLinkedEnabled ? '#2563eb' : 'transparent',
-          color: selectLinkedEnabled ? '#fff' : '#aaa',
-          border: '1px solid #555',
+          background: selectLinkedEnabled ? 'var(--color-accent)' : 'transparent',
+          color: selectLinkedEnabled
+            ? 'var(--color-accent-foreground)'
+            : 'var(--color-muted-foreground)',
+          border: '1px solid var(--color-border-strong)',
           fontSize: 11,
           cursor: 'pointer',
         }}
@@ -393,7 +393,7 @@ export function PlanViewHeader({
             padding: '2px 4px',
             border: '1px solid var(--color-border)',
             borderRadius: 4,
-            background: phaseFilterMode ? 'var(--color-accent, #2563eb)' : 'var(--color-surface)',
+            background: phaseFilterMode ? 'var(--color-accent)' : 'var(--color-surface)',
             color: phaseFilterMode
               ? 'var(--color-foreground-on-accent)'
               : 'var(--color-foreground)',
@@ -425,7 +425,7 @@ export function PlanViewHeader({
             border: '1px solid var(--color-border)',
             borderRadius: 4,
             cursor: 'pointer',
-            background: trueNorthActive ? 'var(--color-accent, #2563eb)' : 'transparent',
+            background: trueNorthActive ? 'var(--color-accent)' : 'transparent',
             color: trueNorthActive
               ? 'var(--color-foreground-on-accent)'
               : 'var(--color-foreground)',
@@ -479,10 +479,12 @@ export function PlanViewHeader({
           style={{
             fontSize: 10,
             padding: '1px 5px',
-            border: `1px solid ${showUnderlay ? '#a78bfa' : 'var(--border)'}`,
+            border: `1px solid ${showUnderlay ? 'var(--color-info)' : 'var(--color-border)'}`,
             borderRadius: 3,
-            background: showUnderlay ? 'rgba(167,139,250,0.15)' : 'transparent',
-            color: showUnderlay ? '#a78bfa' : 'inherit',
+            background: showUnderlay
+              ? 'color-mix(in srgb, var(--color-info) 15%, transparent)'
+              : 'transparent',
+            color: showUnderlay ? 'var(--color-info)' : 'inherit',
             cursor: 'pointer',
           }}
         >

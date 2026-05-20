@@ -526,7 +526,7 @@ export function ViewportOverlays({
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            'linear-gradient(to bottom, #cce8f4 0%, #e8f4fd 40%, #f5f9fc 75%, #e8e4d8 100%)',
+            'linear-gradient(to bottom, hsl(198 62% 88%) 0%, hsl(205 71% 95%) 40%, hsl(205 54% 97%) 75%, hsl(43 33% 88%) 100%)',
         }}
       />
       {savedViewLocked && activeSavedView ? (
@@ -583,10 +583,12 @@ export function ViewportOverlays({
         style={{
           fontSize: 10,
           padding: '2px 6px',
-          border: `1px solid ${splitViewEnabled ? '#a78bfa' : 'var(--border)'}`,
+          border: `1px solid ${splitViewEnabled ? 'var(--color-info)' : 'var(--color-border)'}`,
           borderRadius: 3,
-          background: splitViewEnabled ? 'rgba(167,139,250,0.15)' : 'transparent',
-          color: splitViewEnabled ? '#a78bfa' : 'inherit',
+          background: splitViewEnabled
+            ? 'color-mix(in srgb, var(--color-info) 15%, transparent)'
+            : 'transparent',
+          color: splitViewEnabled ? 'var(--color-info)' : 'inherit',
           cursor: 'pointer',
           position: 'absolute',
           bottom: '5.25rem',
@@ -830,9 +832,7 @@ function HostedOpeningPreviewSvg({
   authoringOverlay: Authoring3dOverlayState;
 }): JSX.Element {
   const accent =
-    authoringOverlay.previewHostValid === false
-      ? 'var(--color-danger-500, #dc2626)'
-      : 'var(--color-accent)';
+    authoringOverlay.previewHostValid === false ? 'var(--color-danger)' : 'var(--color-accent)';
   return (
     <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
       {authoringOverlay.previewOutlineScreen &&
@@ -841,7 +841,7 @@ function HostedOpeningPreviewSvg({
           points={authoringOverlay.previewOutlineScreen.map((p) => `${p.x},${p.y}`).join(' ')}
           fill={
             authoringOverlay.previewHostValid === false
-              ? 'color-mix(in srgb, var(--color-danger-500, #dc2626) 18%, transparent)'
+              ? 'color-mix(in srgb, var(--color-danger) 18%, transparent)'
               : 'color-mix(in srgb, var(--color-accent) 16%, transparent)'
           }
           stroke={accent}

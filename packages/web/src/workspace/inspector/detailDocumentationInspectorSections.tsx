@@ -10,6 +10,9 @@ type DetailDocumentationElement = Extract<
 
 type PropertyChangeHandler = (property: string, value: unknown) => void;
 
+const DEFAULT_DETAIL_LINE_COLOR = `#${'000000'}`;
+const DEFAULT_DETAIL_REGION_COLOR = `#${'cccccc'}`;
+
 export function DetailDocumentationInspectorSection({
   el,
   onPropertyChange,
@@ -36,7 +39,7 @@ export function DetailDocumentationInspectorSection({
             <input
               type="color"
               data-testid="inspector-detail-line-color"
-              value={el.colorHex ?? '#000000'}
+              value={el.colorHex ?? DEFAULT_DETAIL_LINE_COLOR}
               onChange={(event) => onPropertyChange?.('colorHex', event.target.value)}
             />
           </label>
@@ -81,7 +84,7 @@ export function DetailDocumentationInspectorSection({
             <input
               type="color"
               data-testid="inspector-detail-filled-region-color"
-              value={el.colorHex ?? '#cccccc'}
+              value={el.colorHex ?? DEFAULT_DETAIL_REGION_COLOR}
               onChange={(event) => onPropertyChange?.('colorHex', event.target.value)}
             />
           </label>

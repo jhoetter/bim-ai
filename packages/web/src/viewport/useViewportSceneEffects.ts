@@ -1,4 +1,3 @@
-/* eslint-disable bim-ai/no-hex-in-chrome -- extracted viewport rendering effects preserve existing pre-v3 literals */
 // @ts-nocheck
 import { useEffect } from 'react';
 

@@ -25,8 +25,8 @@ export function ProjectTemplatesDialog({ onClose }: { onClose: () => void }) {
     >
       <div
         style={{
-          background: '#1a1a2e',
-          color: '#eee',
+          background: 'var(--color-surface)',
+          color: 'var(--color-foreground)',
           padding: 24,
           borderRadius: 8,
           width: 480,
@@ -38,7 +38,12 @@ export function ProjectTemplatesDialog({ onClose }: { onClose: () => void }) {
 
         {/* Save current project as template */}
         <fieldset
-          style={{ marginBottom: 16, border: '1px solid #444', borderRadius: 4, padding: 12 }}
+          style={{
+            marginBottom: 16,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            padding: 12,
+          }}
         >
           <legend>Save Current Project as Template</legend>
           <label style={{ display: 'block', marginBottom: 8 }}>
@@ -75,7 +80,10 @@ export function ProjectTemplatesDialog({ onClose }: { onClose: () => void }) {
         {/* List of saved templates */}
         <h4 style={{ marginBottom: 8 }}>Saved Templates ({templates.length})</h4>
         {templates.length === 0 && (
-          <p data-testid="template-empty-state" style={{ color: '#888', fontSize: 13 }}>
+          <p
+            data-testid="template-empty-state"
+            style={{ color: 'var(--color-muted-foreground)', fontSize: 13 }}
+          >
             No templates saved yet.
           </p>
         )}
@@ -88,15 +96,17 @@ export function ProjectTemplatesDialog({ onClose }: { onClose: () => void }) {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '8px 0',
-              borderBottom: '1px solid #333',
+              borderBottom: '1px solid var(--color-border)',
             }}
           >
             <div>
               <strong data-testid={`template-name-${tpl.id}`}>{tpl.name}</strong>
               {tpl.description && (
-                <div style={{ fontSize: 12, color: '#aaa' }}>{tpl.description}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
+                  {tpl.description}
+                </div>
               )}
-              <div style={{ fontSize: 11, color: '#666' }}>
+              <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>
                 {new Date(tpl.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -113,7 +123,7 @@ export function ProjectTemplatesDialog({ onClose }: { onClose: () => void }) {
               <button
                 data-testid={`template-delete-${tpl.id}`}
                 onClick={() => deleteProjectTemplate(tpl.id)}
-                style={{ color: '#f87171' }}
+                style={{ color: 'var(--color-danger)' }}
               >
                 Delete
               </button>

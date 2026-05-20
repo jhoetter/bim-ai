@@ -67,10 +67,10 @@ export function FamilyParameterPanel({
                   style={{
                     fontSize: 10,
                     padding: '1px 4px',
-                    border: '1px solid var(--border, #555)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: 2,
                     background: 'transparent',
-                    color: '#a78bfa',
+                    color: 'var(--color-info)',
                     width: '100%',
                     boxSizing: 'border-box',
                   }}

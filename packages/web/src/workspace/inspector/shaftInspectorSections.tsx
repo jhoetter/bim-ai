@@ -31,7 +31,7 @@ export function ShaftSideWallsButton({
       {sideWallsAdded !== null && (
         <p
           data-testid="inspector-shaft-side-walls-added"
-          style={{ fontSize: 11, color: '#22c55e', marginTop: 4 }}
+          style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 4 }}
         >
           {sideWallsAdded} side walls added
         </p>

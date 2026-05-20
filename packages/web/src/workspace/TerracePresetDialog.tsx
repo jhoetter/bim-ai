@@ -27,10 +27,16 @@ export function TerracePresetDialog({
       }}
     >
       <div
-        style={{ background: '#1a1a2e', color: '#eee', padding: 24, borderRadius: 8, width: 320 }}
+        style={{
+          background: 'var(--color-surface)',
+          color: 'var(--color-foreground)',
+          padding: 24,
+          borderRadius: 8,
+          width: 320,
+        }}
       >
         <h3 style={{ marginTop: 0 }}>Create Terrace</h3>
-        <p style={{ fontSize: 13, color: '#aaa' }}>
+        <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>
           A perimeter railing will be added along all edges of the selected floor boundary.
         </p>
         <label style={{ display: 'block', marginBottom: 16 }}>

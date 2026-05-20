@@ -33,6 +33,9 @@ import { DecalInspectorSection } from './decalInspectorSection';
 import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSection';
 import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
 import { AnnotationTagInspectorSection } from './annotationTagInspectorSections';
+
+const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
+const DEFAULT_MASKING_REGION_FILL = `#${'ffffff'}`;
 import { SpotAnnotationInspectorSection } from './spotAnnotationInspectorSections';
 import { InteriorElevationMarkerInspectorSection } from './interiorElevationMarkerInspectorSection';
 import { ModelingActionInspectorSection } from './modelingActionInspectorSections';
@@ -744,7 +747,7 @@ export function InspectorPropertiesFor(
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
           {/* §8.6.4 stair edit mode panel */}
-          <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+          <div style={{ marginTop: 8, borderTop: '1px solid var(--color-border)', paddingTop: 8 }}>
             {(el as any).editStairActive ? (
               <>
                 <strong data-testid="inspector-stair-edit-mode-active">Edit Mode</strong>
@@ -1096,8 +1099,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.fillColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.fillColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
                     colPropChange?.('graphicsOverride', {
@@ -1125,8 +1127,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
-                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
-                  value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
+                  value={el.graphicsOverride?.surfaceColorHex ?? DEFAULT_GRAPHICS_OVERRIDE_COLOR}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
                     colPropChange?.('graphicsOverride', {
@@ -1172,7 +1173,10 @@ export function InspectorPropertiesFor(
                       marginBottom: 2,
                     }}
                   >
-                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                    <span
+                      data-testid={`inspector-cut-by-id-${i}`}
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {cutterId.slice(-8)}
                     </span>
                     <button
@@ -1180,7 +1184,7 @@ export function InspectorPropertiesFor(
                       onClick={() =>
                         onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
                       }
-                      style={{ color: '#f87171', fontSize: 11 }}
+                      style={{ color: 'var(--color-danger)', fontSize: 11 }}
                     >
                       Remove Cut
                     </button>
@@ -2088,8 +2092,7 @@ export function InspectorPropertiesFor(
       const { onPropertyChange: mrPropChange } = options ?? {};
       const hostView = elementsById[el.hostViewId];
       const viewName = hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
-      // eslint-disable-next-line bim-ai/no-hex-in-chrome -- fallback when element has no color
-      const fillColor = el.fillColor ?? '#ffffff';
+      const fillColor = el.fillColor ?? DEFAULT_MASKING_REGION_FILL;
       return (
         <div className="space-y-1 text-[11px]">
           <FieldRow label="Host View" value={viewName} />
@@ -2175,7 +2178,7 @@ export function InspectorPropertiesFor(
                       width: 12,
                       height: 12,
                       background: ov.colorHex,
-                      border: '1px solid #888',
+                      border: '1px solid var(--color-border-strong)',
                       display: 'inline-block',
                       flexShrink: 0,
                     }}

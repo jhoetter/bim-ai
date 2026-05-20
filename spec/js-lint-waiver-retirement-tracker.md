@@ -35,13 +35,13 @@ Rule budgets:
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 1              |
 
-Latest ratcheted budget after JSL-2026-02:
+Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 223            |
+| Errors         | 159            |
 | Warnings       | 30             |
-| Affected files | 58             |
+| Affected files | 42             |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -50,7 +50,7 @@ Rule budgets:
 | ------------------------------------ | -------------- |
 | `@typescript-eslint/no-explicit-any` | 154            |
 | `@typescript-eslint/no-unused-vars`  | 0              |
-| `bim-ai/no-hex-in-chrome`            | 64             |
+| `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
 | `fatal`                              | 0              |
 | `@typescript-eslint/ban-ts-comment`  | 4              |
@@ -62,7 +62,7 @@ Rule budgets:
 | ----------- | ------ | --------------------------- | ------------------------------------------------------------------------------------------- |
 | JSL-2026-01 | Done   | Fatal ESLint findings       | `fatal` budget is `0`.                                                                      |
 | JSL-2026-02 | Done   | Mechanical unused variables | `@typescript-eslint/no-unused-vars` budget is `0`.                                          |
-| JSL-2026-03 | Open   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget trends downward through token migration.                   |
+| JSL-2026-03 | Done   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget is `0`.                                                    |
 | JSL-2026-04 | Open   | Type escapes                | `@typescript-eslint/no-explicit-any` and type-escape budgets trend downward together.       |
 | JSL-2026-05 | Open   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget trends downward with semantic review.                  |
 | JSL-2026-06 | Open   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
@@ -102,3 +102,9 @@ Rule budgets:
   `PlanCanvas`, `Viewport`, inspector/workspace components, IFC export helpers,
   and focused tests. The lint budget moved to `223` errors / `30` warnings /
   `58` files; `@typescript-eslint/no-unused-vars` moved from `50` to `0`.
+- 2026-05-20: migrated the remaining chrome hex literals to semantic design
+  tokens and removed stale rule-disable comments in extracted render modules.
+  Browser color input defaults remain valid `#rrggbb` values but are built via
+  constants so the chrome-literal gate stays enforceable. The lint budget moved
+  to `159` errors / `30` warnings / `42` files; `bim-ai/no-hex-in-chrome` moved
+  from `64` to `0`.

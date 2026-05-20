@@ -28,8 +28,8 @@ export function ProjectVersionHistoryPanel({
         transform: 'translate(-50%, -50%)',
         width: 440,
         maxHeight: 520,
-        background: 'var(--panel-bg, #1e1e2e)',
-        border: '1px solid var(--border, #444)',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
         borderRadius: 8,
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         display: 'flex',
@@ -42,7 +42,7 @@ export function ProjectVersionHistoryPanel({
           display: 'flex',
           alignItems: 'center',
           padding: '10px 14px',
-          borderBottom: '1px solid var(--border, #444)',
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Version History</span>
@@ -61,9 +61,11 @@ export function ProjectVersionHistoryPanel({
         </button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-        {loading && <p style={{ fontSize: 12, color: '#888' }}>Loading…</p>}
+        {loading && (
+          <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>Loading…</p>
+        )}
         {!loading && milestones.length === 0 && (
-          <p style={{ fontSize: 12, color: '#888' }}>
+          <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
             No saved versions yet. Use &ldquo;Save Milestone&rdquo; to create one.
           </p>
         )}
@@ -76,12 +78,12 @@ export function ProjectVersionHistoryPanel({
               alignItems: 'center',
               gap: 10,
               padding: '8px 0',
-              borderBottom: '1px solid var(--border, #2a2a3e)',
+              borderBottom: '1px solid var(--color-border)',
             }}
           >
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{m.name}</div>
-              <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
+              <div style={{ fontSize: 10, color: 'var(--color-muted-foreground)', marginTop: 2 }}>
                 {new Date(m.createdAt).toLocaleString()}
               </div>
             </div>

@@ -1,4 +1,3 @@
-/* eslint-disable bim-ai/no-hex-in-chrome -- migrated PlanCanvas render pass literals */
 import type { Element } from '@bim-ai/core';
 import * as THREE from 'three';
 

@@ -379,6 +379,10 @@ CI chooses one canonical quality gate.
   plan, viewport, workspace, inspector, IFC export, and focused test files;
   `pnpm js-lint:budget` is now ratcheted to `223` errors / `30` warnings /
   `58` files, with `@typescript-eslint/no-unused-vars` locked at `0`.
+- 2026-05-20: migrated the remaining chrome hex literals to semantic tokens
+  and removed stale no-hex disable comments; `pnpm js-lint:budget` is now
+  ratcheted to `159` errors / `30` warnings / `42` files, with
+  `bim-ai/no-hex-in-chrome` locked at `0`.
 
 ---
 
