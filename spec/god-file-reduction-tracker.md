@@ -126,6 +126,7 @@ A-territory target:
 | GFR-2026-50 | P1       | Done   | `packages/core/src/index.ts`                                | Extract late model contract types                                  | Core index below `4,000` LOC with core/web typechecks green. |
 | GFR-2026-51 | P1       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract family editor properties panels                            | Workbench below `4,000` LOC with focused tests green.       |
 | GFR-2026-52 | P1       | Done   | `app/bim_ai/api/registry.py`                                | Extract source/reverse-BIM descriptor module                       | Registry reduced with descriptor import checks green.       |
+| GFR-2026-53 | P0       | Done   | `app/bim_ai/api/registry.py`                                | Extract QA/query/resolve resource descriptors                      | Registry below `4,000` LOC with descriptor import checks green. |
 
 ## Progress Log
 
@@ -569,3 +570,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `wc -l` reports `app/bim_ai/api/registry.py` at `5,273` lines. Python
   compile checks pass, and a focused registry import smoke check confirms the
   extracted audit/source/reverse/authoring descriptors are still registered.
+- 2026-05-20: `GFR-2026-53` is Done. The slice moved QA/advisor, query, resolve,
+  model-resource, evidence, command-schema, and lens-review descriptors into
+  `app/bim_ai/api/descriptors/qa_model_resources.py`. Local `wc -l` reports
+  `app/bim_ai/api/registry.py` at `3,267` lines. Python compile checks pass,
+  and a focused registry smoke check confirms representative QA, query, resolve,
+  lens, and downstream registry descriptors are still registered.
