@@ -28,6 +28,13 @@
       "blocking": 1500
     }
   },
+  "complexityBudgets": {
+    "maxFunctionLines": {
+      "label": "Function body length",
+      "advisory": 250,
+      "blocking": 500
+    }
+  },
   "ownership": [
     {
       "pattern": "packages/web/src/plan/**",

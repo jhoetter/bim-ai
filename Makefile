@@ -26,7 +26,7 @@ SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root 
 .PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
 	test test-py test-py-full test-py-focused test-py-real-path test-js format format-check python-format-check lint lint-js lint-py architecture \
-	quality-waivers security-hygiene test-env-policy code-quality-report typecheck verify build clean lockfile-check verify-refinement-reliability
+	quality-waivers maintainability-budgets security-hygiene test-env-policy code-quality-report typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
 	@echo "bim-ai Makefile"
@@ -39,6 +39,7 @@ help:
 	@echo "  test-py-focused — focused backend tests without coverage; pass PYTEST_ARGS=tests/path.py"
 	@echo "  test-py-real-path — marked backend real-path smoke tests without coverage"
 	@echo "  quality-waivers — validate expiring machine-readable quality waivers"
+	@echo "  maintainability-budgets — enforce file-size ownership and disposition budgets"
 	@echo "  security-hygiene — scan tracked files for secrets and unsafe browser APIs"
 	@echo "  test-env-policy — verify browser rendering tests stay out of Vitest/jsdom"
 	@echo "  code-quality-report — emit generated code-quality scorecard"
@@ -159,6 +160,9 @@ architecture:
 quality-waivers:
 	node scripts/check-quality-waivers.mjs
 
+maintainability-budgets:
+	node scripts/check-maintainability-budgets.mjs
+
 security-hygiene:
 	node scripts/check-security-hygiene.mjs
 
@@ -174,7 +178,7 @@ typecheck:
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint-py quality-waivers security-hygiene test-env-policy architecture typecheck test build lockfile-check
+verify: format-check python-format-check lint-py quality-waivers maintainability-budgets security-hygiene test-env-policy architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 verify-refinement-reliability:

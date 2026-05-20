@@ -214,7 +214,7 @@ Largest current source files observed:
 | CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                        |
 | CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                  |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                             |
-| CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
+| CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
 | CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
 | CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
 | CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
@@ -922,7 +922,7 @@ tracked generated artifacts.
 ## CQ-2026-13 - Enforce Maintainability Budgets
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: architecture scripts, frontend/backend module ownership
 
 ### Problem
@@ -972,8 +972,8 @@ Initial thresholds can be advisory before becoming blocking:
   thresholds, target blocking date, high-risk file ownership patterns, and
   tracked local artifact policy consumed by the scorecard.
 - 2026-05-20: the scorecard exposes blocking over-budget files without an
-  active waiver. This remains Partial because modified-file budget enforcement,
-  complexity budgets, and ownership metadata are not yet blocking CI policy.
+  active waiver; the dedicated maintainability budget gate now makes those
+  missing dispositions blocking policy.
 - 2026-05-20: the scorecard now treats a machine-readable owner tracker ID as a
   budget disposition alongside waivers, reports tracker IDs in the
   maintainability table, and adds ownership rows for top frontend hotspots that
@@ -988,6 +988,14 @@ Initial thresholds can be advisory before becoming blocking:
   current-head digesting, and tool-run summary writing into
   `packages/cli/lib/evidence-freshness.mjs`, reducing the CLI entrypoint to
   `6,784` lines.
+- 2026-05-20: `pnpm maintainability:budgets` now runs
+  `scripts/check-maintainability-budgets.mjs`, failing over-budget files
+  without owner/tracker/waiver disposition and checking modified over-budget
+  files in the current change range. The gate is wired into `pnpm
+verify:strict`, `make verify`, and the generated scorecard.
+- 2026-05-20: `spec/code-quality-budgets.json` now includes advisory/blocking
+  complexity-budget metadata alongside file-size thresholds and ownership
+  patterns, so the budget policy is machine-readable rather than tracker prose.
 
 ---
 

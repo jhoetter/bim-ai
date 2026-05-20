@@ -238,6 +238,7 @@ function loadBudgetConfig() {
       schemaVersion: 0,
       targetBlockingDate: null,
       fileSizeBudgets: DEFAULT_FILE_BUDGETS,
+      complexityBudgets: null,
       ownership: [],
       generatedArtifactPolicy: null,
     };
@@ -248,6 +249,7 @@ function loadBudgetConfig() {
     schemaVersion: parsed.schemaVersion,
     targetBlockingDate: parsed.targetBlockingDate ?? null,
     fileSizeBudgets: parsed.fileSizeBudgets ?? DEFAULT_FILE_BUDGETS,
+    complexityBudgets: parsed.complexityBudgets ?? null,
     ownership: Array.isArray(parsed.ownership) ? parsed.ownership : [],
     generatedArtifactPolicy: parsed.generatedArtifactPolicy ?? null,
   };
@@ -356,6 +358,7 @@ function packageScripts() {
       verify: /^verify:/m.test(makefile),
       lintPy: /^lint-py:/m.test(makefile),
       qualityWaivers: /^quality-waivers:/m.test(makefile),
+      maintainabilityBudgets: /^maintainability-budgets:/m.test(makefile),
       securityHygiene: /^security-hygiene:/m.test(makefile),
       testEnvPolicy: /^test-env-policy:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
@@ -450,6 +453,7 @@ function computeGrade({
   const hasQualityReportScript = Boolean(scripts.root['quality:report']);
   const hasStrictGate = Boolean(scripts.root['verify:strict']);
   const hasSecurityHygiene = Boolean(securityGates.hygieneScript);
+  const hasMaintainabilityBudgetGate = Boolean(scripts.root['maintainability:budgets']);
 
   let score = 7.0;
   const blockersToNextGrade = [];
@@ -463,6 +467,9 @@ function computeGrade({
   }
   if (!hasQualityReportScript) {
     blockersToNextGrade.push('quality report script is not wired into package scripts');
+  }
+  if (!hasMaintainabilityBudgetGate) {
+    blockersToNextGrade.push('maintainability budget gate is not wired into package scripts');
   }
   if (!hasSecurityHygiene || !securityGates.ciRunsJsAudit || !securityGates.ciRunsPythonAudit) {
     blockersToNextGrade.push('security hygiene and dependency audit gates are not fully wired');
@@ -575,6 +582,7 @@ function buildReport() {
         verifyStrict: scripts.root['verify:strict'] ?? null,
         qualityReport: scripts.root['quality:report'] ?? null,
         qualityWaivers: scripts.root['quality:waivers'] ?? null,
+        maintainabilityBudgets: scripts.root['maintainability:budgets'] ?? null,
         securityHygiene: scripts.root['security:hygiene'] ?? null,
         architecture: scripts.root.architecture ?? null,
       },
@@ -588,6 +596,7 @@ function buildReport() {
         schemaVersion: budgetConfig.schemaVersion,
         targetBlockingDate: budgetConfig.targetBlockingDate,
         ownershipCount: budgetConfig.ownership.length,
+        hasComplexityBudgets: Boolean(budgetConfig.complexityBudgets),
       },
       budgets: budgetConfig.fileSizeBudgets,
       largestFiles: sourceRows.slice(0, 25).map(({ path, kind, lines, generated }) => ({
@@ -675,6 +684,9 @@ function renderMarkdown(report) {
   );
   lines.push(
     `| Quality report | ${report.gates.rootScripts.qualityReport ? 'configured' : 'missing'} | ${escapeCell(report.gates.rootScripts.qualityReport ?? '')} |`,
+  );
+  lines.push(
+    `| Maintainability budgets | ${report.gates.rootScripts.maintainabilityBudgets ? 'configured' : 'missing'} | make: ${report.gates.make.maintainabilityBudgets ? 'yes' : 'no'} |`,
   );
   lines.push(
     `| Security hygiene | ${report.gates.security.hygieneScript ? 'configured' : 'missing'} | strict: ${report.gates.security.strictIncludesHygiene ? 'yes' : 'no'}, CI: ${report.gates.security.ciRunsHygiene ? 'yes' : 'no'} |`,
