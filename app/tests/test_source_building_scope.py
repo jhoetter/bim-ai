@@ -40,6 +40,7 @@ def test_source_building_scope_accepts_target_half_with_context_scope() -> None:
                     "evidenceSummary": "address/party wall evidence shows the right half is the target scope",
                     "targetScopeId": "leo-right-half",
                     "contextScopeRefs": ["left-adjoining-half"],
+                    "scopeBoundaryRef": "wall-chain-eg-party-wall plus target exterior boundary",
                 },
             },
             {
@@ -58,6 +59,25 @@ def test_source_building_scope_accepts_target_half_with_context_scope() -> None:
     assert report["summary"]["resolvedTargetScopeType"] == "target_half"
     assert report["summary"]["targetHalfDirection"] == "right"
     assert report["summary"]["contextScopeFactCount"] == 1
+
+
+def test_source_building_scope_blocks_target_half_without_scope_mask() -> None:
+    report = build_source_building_scope_report(
+        [
+            {
+                "factId": "scope-target",
+                "kind": "building_scope",
+                "value": {
+                    "scopeType": "target_half",
+                    "modeledExtent": "right half of Doppelhaus",
+                    "evidenceSummary": "address/party wall evidence shows the right half is the target scope",
+                },
+            }
+        ]
+    )
+
+    assert report["ok"] is False
+    assert report["blockers"][0]["code"] == "building_scope_mask_missing"
 
 
 def test_source_building_scope_blocks_target_type_conflict() -> None:
@@ -79,6 +99,7 @@ def test_source_building_scope_blocks_target_type_conflict() -> None:
                     "scopeType": "target_half",
                     "modeledExtent": "right half only",
                     "evidenceSummary": "parcel/address evidence points to one half",
+                    "scopeBoundaryRef": "right-half perimeter",
                 },
             },
         ]
@@ -129,10 +150,11 @@ def test_reader_consensus_treats_building_scope_as_critical() -> None:
                         "factId": "scope-a",
                         "kind": "building_scope",
                         "value": {
-                            "scopeType": "target_half",
-                            "modeledExtent": "right half",
-                            "evidenceSummary": "visible title/address evidence",
-                        },
+                        "scopeType": "target_half",
+                        "modeledExtent": "right half",
+                        "evidenceSummary": "visible title/address evidence",
+                        "scopeBoundaryRef": "target half perimeter",
+                    },
                     }
                 ],
             }

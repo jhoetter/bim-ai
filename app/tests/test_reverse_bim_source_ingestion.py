@@ -1154,6 +1154,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
                         "scopeType": "target_half",
                         "modeledExtent": "right half of Doppelhaus",
                         "evidenceSummary": "title block and party-wall evidence",
+                        "scopeBoundaryRef": "right-half perimeter and party wall",
                     },
                 }
             ]

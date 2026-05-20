@@ -223,7 +223,8 @@ roof, or site facts:
   dwelling/unit, context-only adjoining structure, or unresolved/ambiguous;
   `reverse_bim.source_building_scope` then blocks handoff if that fact is
   missing, ambiguous, context-only without a target, or conflicts across
-  readers/pages;
+  readers/pages; target-half/unit scopes also require a source-backed scope
+  mask, polygon, or boundary reference;
 - walls require level, endpoints/chain points, thickness, role, and closed/open
   chain state;
 - rooms require level, name, source area, and boundary reference;

@@ -16,6 +16,16 @@ TARGET_SCOPE_TYPES = {
 }
 CONTEXT_SCOPE_TYPES = {"context_only"}
 UNRESOLVED_SCOPE_TYPES = {"", "ambiguous", "unknown", "unresolved"}
+SCOPE_MASK_TARGET_TYPES = {"target_half", "target_unit", "selected_unit"}
+SCOPE_MASK_KEYS = (
+    "scopeMask",
+    "scopePolygon",
+    "scopePolygonRef",
+    "scopeBoundaryRef",
+    "scopeBoundaryMm",
+    "targetBoundaryRef",
+    "targetScopePolygon",
+)
 
 
 def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str, Any]:
@@ -64,6 +74,16 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
                     "sourceFactIds": [scope.get("factId")],
                     "scopeType": scope.get("scopeType"),
                     "message": "Building scope is ambiguous, unknown, or not one of the supported resolved scope types.",
+                }
+            )
+        if scope.get("scopeRole") == "target" and scope.get("scopeMaskRequired") and not scope.get("scopeMaskRef"):
+            blockers.append(
+                {
+                    "code": "building_scope_mask_missing",
+                    "severity": "error",
+                    "sourceFactIds": [scope.get("factId")],
+                    "scopeType": scope.get("normalizedScopeType"),
+                    "message": "Target-half/unit building scope needs a source-backed scope mask, polygon, or boundary reference.",
                 }
             )
 
@@ -139,6 +159,7 @@ def _scope_row(fact: dict[str, Any]) -> dict[str, Any]:
     modeled_extent = str(value.get("modeledExtent") or "").strip()
     evidence_summary = str(value.get("evidenceSummary") or "").strip()
     normalized_scope_type = _normalize_scope_type(scope_type, modeled_extent, evidence_summary)
+    scope_mask_ref = _scope_mask_ref(value)
     return {
         "factId": fact.get("factId"),
         "scopeType": scope_type,
@@ -148,6 +169,9 @@ def _scope_row(fact: dict[str, Any]) -> dict[str, Any]:
         "evidenceSummary": evidence_summary,
         "targetScopeId": value.get("targetScopeId"),
         "contextScopeRefs": value.get("contextScopeRefs") or [],
+        "scopeMaskRequired": normalized_scope_type in SCOPE_MASK_TARGET_TYPES,
+        "scopeMaskRef": scope_mask_ref,
+        "scopeMaskStatus": "source_backed" if scope_mask_ref else "missing",
         "extentDirection": _extent_direction(" ".join([modeled_extent, evidence_summary])),
         "missingFields": [
             field
@@ -176,6 +200,7 @@ def _repair_action(blocker: dict[str, Any], scopes: list[dict[str, Any]]) -> dic
             "modeledExtent: exact target extent, e.g. whole Doppelhaus, left/right half, unit, or context-only neighbor",
             "evidenceSummary: title block, plan labels, party-wall/mirror evidence, address/parcel references, and page refs",
             "targetScopeId plus contextScopeRefs when a source page contains both target and adjoining/context geometry",
+            "scopeMask/scopePolygonRef/scopeBoundaryRef for target-half or unit scopes",
         ],
         "findingsToFix": [blocker],
         "sourcePrompt": (
@@ -213,6 +238,10 @@ def _normalize_scope_type(scope_type: str, modeled_extent: str, evidence_summary
         "haushaelfte": "target_half",
         "target unit": "target_unit",
         "selected unit": "selected_unit",
+        "single house": "selected_building",
+        "single building": "selected_building",
+        "one complete house": "selected_building",
+        "one complete building": "selected_building",
         "dwelling unit": "target_unit",
         "wohneinheit": "target_unit",
         "wohnung": "target_unit",
@@ -245,6 +274,14 @@ def _scope_role(normalized_scope_type: str) -> str:
     if normalized_scope_type in CONTEXT_SCOPE_TYPES:
         return "context"
     return "unresolved"
+
+
+def _scope_mask_ref(value: dict[str, Any]) -> Any:
+    for key in SCOPE_MASK_KEYS:
+        raw = value.get(key)
+        if raw not in (None, "", [], {}):
+            return raw
+    return None
 
 
 def _extent_direction(text: str) -> str | None:

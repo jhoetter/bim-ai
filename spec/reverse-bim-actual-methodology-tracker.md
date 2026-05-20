@@ -666,8 +666,8 @@ Implemented first-pass surfaces:
 
 These enforce the new gates with structured reports. The remaining work is
 automatic source/model overlay rendering, screenshot capture, live phase
-orchestration, material type authoring/readback gates, target/context scope
-mask polygons, and a fresh Leo benchmark.
+orchestration, material type authoring/readback gates, applying target/context
+scope masks into authoring, and a fresh Leo benchmark.
 
 Fresh live audit evidence for `target-house-3` now lives under
 `tmp/reverse-bim-testhaus-leo/live-target-house-3-audit/`. It rejects the
