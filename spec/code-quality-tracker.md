@@ -180,7 +180,6 @@ Largest current source files observed:
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
 | `app/bim_ai/commands.py`                                    | 3,996      | Command execution module, now the largest hand-written file and just below the 4,000 LOC cap.     |
 | `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,980      | Project browser shell near the cap; should be watched for new feature growth.                     |
-| `app/bim_ai/routes_api.py`                                  | 3,964      | API route aggregator after extracted query/resolve/QA routes.                                      |
 | `app/bim_ai/elements.py`                                    | 3,958      | Element model aggregator after extracted primitive geometry, evidence, and shared literal types.   |
 | `packages/web/src/viewport/meshBuilders.ts`                 | 3,950      | Mesh builder collection after prior helper extractions; near-cap growth should trigger another split. |
 | `packages/cli/cli.mjs`                                      | 3,921      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
@@ -190,6 +189,7 @@ Largest current source files observed:
 | `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,807      | Workspace side rail remains large but below the current cap.                                      |
 | `packages/web/src/Viewport.tsx`                             | 3,802      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                 |
+| `app/bim_ai/routes_api.py`                                  | 3,753      | API route aggregator after extracted query/resolve/QA and presentation routes.                    |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
 | `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                             |
@@ -892,6 +892,10 @@ conflicts and stale descriptor drift.
   reducing `app/bim_ai/routes_api.py` to `3,963` lines while preserving the
   existing `/api/models/{model_id}/query/*`, `/resolve/*`, and `/qa/*` paths.
   Python compile, ruff, and focused route tests pass.
+- 2026-05-20: extracted live presentation share-link, presentation websocket,
+  and presentation-canvas export routes into `app/bim_ai/routes_presentation.py`,
+  reducing `app/bim_ai/routes_api.py` to `3,753` local lines with Python
+  compile, ruff, and focused permissions/activity route tests passing.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path
@@ -1366,6 +1370,10 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: a backend route extraction moved query, resolve, advisor, BIM
   requirement validation, and area-reconciliation routes into
   `app/bim_ai/routes_query_resolve.py`, reducing `routes_api.py` to `3,963`
+  local lines with focused Python route tests and ruff passing.
+- 2026-05-20: a backend route extraction moved live presentation links,
+  websocket fan-out, and presentation-canvas export routes into
+  `app/bim_ai/routes_presentation.py`, reducing `routes_api.py` to `3,753`
   local lines with focused Python route tests and ruff passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into

@@ -135,6 +135,7 @@ A-territory target:
 | GFR-2026-59 | P1       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract benchmark evidence parsing and proof helpers               | Audit script below `4,000` LOC with syntax checks green.    |
 | GFR-2026-60 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract query, resolve, and QA route cluster                       | Routes API below `4,000` LOC with focused tests green.      |
 | GFR-2026-61 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract primitive geometry and shared literal types                 | Elements module below `4,000` LOC with focused tests green. |
+| GFR-2026-62 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract presentation and presentation-export routes                | Routes API below `3,800` LOC with focused route tests green. |
 
 ## Progress Log
 
@@ -644,3 +645,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   reports `app/bim_ai/elements.py` at `3,957` lines and the new primitive
   module at `191` lines. Python compile, ruff, and focused area/query/IFC/wall
   geometry tests pass (`52 passed`, `37 skipped`).
+- 2026-05-20: `GFR-2026-62` is Done. The slice moved live presentation
+  share-link routes, presentation websocket session handling, and
+  presentation-canvas export into `app/bim_ai/routes_presentation.py`. With
+  parallel backend changes included, local `wc -l` reports
+  `app/bim_ai/routes_api.py` at `3,753` lines and the new route module at
+  `332` lines. Python compile, ruff, and focused permissions/activity route
+  tests pass (`28 passed`).
