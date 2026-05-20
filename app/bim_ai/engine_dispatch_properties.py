@@ -9,6 +9,7 @@ from bim_ai.engine import (
     AreaElem,
     CreateWallTypeCmd,
     DoorElem,
+    FloorElem,
     FloorTypeElem,
     GridLineElem,
     IssueElem,
@@ -180,6 +181,10 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         "structuralMaterial must be concrete|steel|timber|masonry|composite|other or empty"
                     )
                 els[cmd.element_id] = el.model_copy(update={"structural_material": material})
+            elif cmd.key == "props" and hasattr(el, "props"):
+                if cmd.value is not None and not isinstance(cmd.value, dict):
+                    raise ValueError("props must be a JSON object or null")
+                els[cmd.element_id] = el.model_copy(update={"props": cmd.value})
             elif cmd.key == "analysisStatus" and hasattr(el, "analysis_status"):
                 status = str(cmd.value or "").strip() or "not_modeled"
                 if status not in {"not_modeled", "ready_for_export", "needs_review"}:
@@ -267,6 +272,40 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     props[cmd.key] = raw_prop
                 else:
                     props.pop(cmd.key, None)
+                els[cmd.element_id] = el.model_copy(update={"props": props or None})
+            elif cmd.key in {"supportedByIds", "supportIds"} and isinstance(el, FloorElem):
+                if cmd.value in (None, ""):
+                    ids: list[str] = []
+                elif isinstance(cmd.value, list):
+                    ids = [str(item) for item in cmd.value if str(item)]
+                else:
+                    raise ValueError("floor support ids must be a list or empty")
+                missing = [element_id for element_id in ids if element_id not in els]
+                if missing:
+                    raise ValueError(
+                        f"floor support ids must reference existing elements: {', '.join(missing)}"
+                    )
+                props = dict(el.props or {})
+                if ids:
+                    props[cmd.key] = ids
+                else:
+                    props.pop(cmd.key, None)
+                els[cmd.element_id] = el.model_copy(update={"props": props or None})
+            elif cmd.key in {
+                "structuralSystem",
+                "supportSystem",
+                "beamGridId",
+                "joistSpacingMm",
+                "spanDirection",
+                "spanResolved",
+                "structuralReviewed",
+                "structuralReviewApproved",
+            } and isinstance(el, FloorElem):
+                props = dict(el.props or {})
+                if cmd.value in (None, "", []):
+                    props.pop(cmd.key, None)
+                else:
+                    props[cmd.key] = cmd.value
                 els[cmd.element_id] = el.model_copy(update={"props": props or None})
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
@@ -738,8 +777,18 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(
                         update={"material_slots": _material_slots_val(cmd.value)}
                     )
+                elif cmd.key == "existingConditionTolerance":
+                    value = _json_object_or_empty(
+                        cmd.value, field_name="existingConditionTolerance"
+                    )
+                    props = dict(el.props or {})
+                    if value is None:
+                        props.pop("existingConditionTolerance", None)
+                    else:
+                        props["existingConditionTolerance"] = value
+                    els[cmd.element_id] = el.model_copy(update={"props": props or None})
                 else:
-                    raise ValueError("stair updates: key=materialSlots")
+                    raise ValueError("stair updates: key=materialSlots | existingConditionTolerance")
             elif isinstance(el, RailingElem):
                 if cmd.key == "materialSlots":
                     els[cmd.element_id] = el.model_copy(
@@ -811,8 +860,20 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                             [(p.x_mm, p.y_mm) for p in el.footprint_mm]
                         )
                     els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
+                elif cmd.key == "overhangSemantics":
+                    value = raw_r or None
+                    if value is not None and value not in {"eave", "rake", "canopy", "none"}:
+                        raise ValueError("overhangSemantics must be eave|rake|canopy|none")
+                    props = dict(el.props or {})
+                    if value is None:
+                        props.pop("overhangSemantics", None)
+                    else:
+                        props["overhangSemantics"] = value
+                    els[cmd.element_id] = el.model_copy(update={"props": props or None})
                 else:
-                    raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
+                    raise ValueError(
+                        "roof updates: key=roofTypeId | roofGeometryMode | overhangSemantics | name"
+                    )
             elif isinstance(el, MaterialElem) and cmd.key == "sustainability":
                 raw_sustainability = _json_object_or_empty(cmd.value, field_name="sustainability")
                 els[cmd.element_id] = el.model_copy(

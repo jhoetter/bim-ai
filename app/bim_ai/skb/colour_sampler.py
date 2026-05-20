@@ -174,7 +174,7 @@ def sample_and_match(
 
 
 # ---------------------------------------------------------------------------
-# SKB-07 polygon sampler — used by the IMG-V3-01 pipeline
+# SKB-07 polygon sampler — retained for older deterministic image utilities.
 # ---------------------------------------------------------------------------
 
 

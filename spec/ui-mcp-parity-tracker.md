@@ -190,7 +190,7 @@ The current API v3 registry exposes 40 descriptors:
 | Site                         | `toposolid-create`, `toposolid-update`, `toposolid-delete`, `create-graded-region`, `create-toposolid-subdivision`, `import-neighborhood`                                       |
 | Lenses and metadata          | `fire-safety-lens-review-status`, `cost-quantity-lens-review-status`, `construction-lens-report`, `set-view-lens`, `set-element-discipline`, `set-element-construction`         |
 | Presentation/export          | `presentation-create`, `presentation-revoke`, `presentation-list`, `create-frame`, `export-presentation`, `create-brand-template`, `export-branded-pdf`, `export-render-bundle` |
-| Image/sketch/material/assets | `img-trace`, `import-image-underlay`, `catalog-query`, `place-kitchen-kit`, `update-material-pbr`, `commit-concept-seed`, `list-concept-seeds`                                  |
+| Image/sketch/material/assets | `source.ai_visual_trace_packet`, `import-image-underlay`, `catalog-query`, `place-kitchen-kit`, `update-material-pbr`, `commit-concept-seed`, `list-concept-seeds`                                  |
 | Schedule/detail/property     | `create-schedule-view`, `set-element-prop`, `draw-detail-region`                                                                                                                |
 | QA                           | `compare-snapshots`, `external-model-call-audit-export`                                                                                                                         |
 
@@ -504,7 +504,7 @@ blocking unrelated work.
 | Property lines, base/survey point, sun/settings | `createPropertyLine`, `createProjectBasePoint`, `createSurveyPoint`, `createSunSettings`, updates | UI-F/P                                  | Activators/direct dialogs   | AG-R                                                                                            | Usable | Add first-class georeference/site setup toolset.                                       |
 | Neighborhood/site import                        | OSM/context commands, `upsertSite`                                                                | UI-P                                    | Direct/display commands     | AG-F for `import-neighborhood`; AG-D georeference in seed DSL                                   | Usable | Need deterministic site context authoring contract.                                    |
 | Links/imports                                   | `createLinkModel`, `createLinkDxf`, `createExternalLink`, update/delete variants                  | UI-F through Manage Links/project menu  | Direct/open dialogs         | AG-R plus CLI `link` commands for model links                                                   | Usable | Add MCP descriptors for all link CRUD and reload semantics.                            |
-| Image underlay and tracing                      | `import_image_underlay`, move/scale/rotate/delete underlay, `TraceImage`                          | UI-F/P                                  | Import/open commands        | AG-F for import underlay and `img-trace`; AG-R for transform commands                           | Usable | Important for sketch-to-BIM. Add complete underlay transform descriptors.              |
+| Image underlay and AI visual tracing            | `import_image_underlay`, move/scale/rotate/delete underlay, `source.ai_visual_trace_packet`        | UI-F/P                                  | Import/open commands        | AG-F for import underlay and AI visual-trace packet; AG-R for transform commands                | Partial | Legacy CV trace removed; source understanding is AI visual reading plus deterministic validation. |
 | Export                                          | IFC/DXF/DGN/PDF/glTF/render bundles/branded PDF                                                   | UI-F/P through project/export menus     | Export commands open/direct | AG-F for render/branded/presentation exports; CLI has gltf/glb/ifc/json                         | Usable | Need one export registry that matches UI export choices.                               |
 
 ### F. Structure, MEP, Families, Materials
@@ -521,7 +521,7 @@ blocking unrelated work.
 
 | Workflow capability                 | Current state                                                                                                                                 | UI status                 | Agent status                                               | Parity | Required work                                                                                            |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
-| Intake sketch and produce IR        | Methodology and examples exist. `img-trace` extracts floorplan structure, but broad visual interpretation is still agent cognition.           | UI-N/P                    | AG-F for image trace, AG-B/agent cognition for visual read | Usable | Add first-class `create_sketch_ir` or external-agent contract for images/briefs.                         |
+| Intake source drawings and produce IR | Reverse-BIM methodology uses rendered source packets for AI visual reading; deterministic code validates returned facts. | UI-N/P | AG-F for AI visual-trace packet, AG-B/agent cognition for visual read | Partial | Add first-class orchestration that dispatches packets to multimodal subagents and stores fact ledgers. |
 | Compile design intent into commands | `seed-dsl.v0` compiles levels, types, volumes, roofs/openings, rooms, terrain, assets, materials, loggias/wrappers, viewpoints, raw commands. | UI-N                      | AG-D                                                       | Usable | Extend DSL primitives for stairs, openings, facade rhythm, MEP, sheets, roof terrace, wall attachments.  |
 | Load/apply generated model          | `make seed`, CLI `apply-bundle`, API bundle routes                                                                                            | UI-P through loaded model | AG-F/AG-R                                                  | Usable | Standardize one MCP "apply design bundle" tool with dry-run, commit, evidence output.                    |
 | Validate model                      | Advisor, constructability report, evidence package, screenshots, visual gate                                                                  | UI-F advisor/right rail   | AG-F/P through CLI helper and endpoints                    | Usable | Promote helper functions to stable API tools: advisor, constructability, browser evidence, phase accept. |
@@ -830,13 +830,13 @@ Priority: P0 for move/copy/rotate/delete/join, P1 for phases/options.
 ### Families, Assets, Materials
 
 Commands:
-`IndexAsset`, `PlaceAsset`, `TraceImage`, `create_decal`,
+`IndexAsset`, `PlaceAsset`, `create_decal`,
 `delete_image_underlay`, `import_image_underlay`, `moveAssetDelta`,
 `move_image_underlay`, `placeFamilyInstance`, `place_kit`,
 `rotate_image_underlay`, `scale_image_underlay`, `update_kit_component`,
 `update_material_pbr`, `upsertFamilyType`.
 
-Status: UI-F/P, Cmd+K mixed, AG-F for `img-trace`, `import-image-underlay`,
+Status: UI-F/P, Cmd+K mixed, AG-F for `source.ai_visual_trace_packet`, `import-image-underlay`,
 `catalog-query`, `place-kitchen-kit`, `update-material-pbr`, AG-R for general
 family/asset/decal operations. Priority: P1.
 

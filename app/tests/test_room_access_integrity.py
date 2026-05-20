@@ -3,7 +3,9 @@ from __future__ import annotations
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, RoomElem, StairElem, Vec2Mm, WallElem
 from bim_ai.room_access_integrity import (
     check_room_access_integrity,
+    room_access_graph_v1,
     room_access_integrity_smoke_v1,
+    room_boundary_edges_report_v1,
 )
 
 
@@ -444,6 +446,36 @@ def test_room_separations_are_explicit_room_wall_topology() -> None:
         and finding.element_ids == ("open-room",)
     ]
     assert topology_gaps == []
+
+
+def test_room_boundary_edges_report_returns_per_edge_backing() -> None:
+    elements = _small_house()
+
+    report = room_boundary_edges_report_v1(elements, room_ids=["room-a"])
+
+    assert report["ok"] is True
+    room = report["rooms"][0]
+    assert room["roomId"] == "room-a"
+    assert room["edgeCount"] == 4
+    assert all(edge["supportRefs"] for edge in room["edges"])
+    assert report["summary"]["unbackedEdgeCount"] == 0
+
+
+def test_room_access_graph_reports_doors_adjacency_and_inaccessible_rooms() -> None:
+    elements = _small_house()
+    elements["room-c"] = _room(
+        "room-c",
+        "lvl-1",
+        [(7000, 0), (8000, 0), (8000, 1000), (7000, 1000)],
+    )
+
+    graph = room_access_graph_v1(elements)
+
+    assert graph["ok"] is True
+    assert any(door["doorId"] == "door-between" for door in graph["doors"])
+    assert "room-c" in graph["inaccessibleRoomIds"]
+    room_a = next(room for room in graph["rooms"] if room["roomId"] == "room-a")
+    assert "door-between" in room_a["doorIds"]
 
 
 def test_room_wall_topology_gap_requires_wall_or_explicit_separator() -> None:

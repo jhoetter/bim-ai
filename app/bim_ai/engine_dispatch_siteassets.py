@@ -36,7 +36,6 @@ from bim_ai.engine import (
     ToposolidElem,
     ToposolidExcavationElem,
     ToposolidSubdivisionElem,
-    TraceImageCmd,
     UpdateGradedRegionCmd,
     UpdateKitComponentCmd,
     UpdateMaterialPbrCmd,
@@ -815,11 +814,6 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
         case SetToolPrefCmd():
             # CHR-V3-08: store sticky modifier preference on the document.
             doc.tool_prefs.setdefault(cmd.tool, {})[cmd.pref_key] = cmd.pref_value
-        case TraceImageCmd():
-            raise ValueError(
-                "TraceImageCmd cannot be applied in a bundle; "
-                "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
-            )
         case _:
             return False
     return True

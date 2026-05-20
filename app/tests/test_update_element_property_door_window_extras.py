@@ -81,6 +81,21 @@ def test_door_operation_type_setter() -> None:
     assert d.operation_type == "sliding_double"
 
 
+def test_door_props_setter_supports_exit_classification() -> None:
+    doc = _base_doc()
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="d1",
+            key="props",
+            value={"exteriorDoor": True, "egressDoor": True},
+        ),
+    )
+    d = doc.elements["d1"]
+    assert isinstance(d, DoorElem)
+    assert d.props == {"exteriorDoor": True, "egressDoor": True}
+
+
 def test_door_operation_type_clear_with_empty_value() -> None:
     doc = _base_doc()
     apply_inplace(

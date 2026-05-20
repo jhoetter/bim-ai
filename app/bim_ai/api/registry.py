@@ -944,6 +944,211 @@ register(
 
 register(
     ToolDescriptor(
+        name="author.stair_by_runs",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "StairByRunsInput",
+            "type": "object",
+            "required": ["baseLevelId", "topLevelId", "runs"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "baseLevelId": {"type": "string"},
+                "topLevelId": {"type": "string"},
+                "runStartMm": _POINT_2_SCHEMA,
+                "runEndMm": _POINT_2_SCHEMA,
+                "widthMm": {"type": "number", "exclusiveMinimum": 0, "default": 1000},
+                "riserMm": {"type": "number", "exclusiveMinimum": 0, "default": 175},
+                "treadMm": {"type": "number", "exclusiveMinimum": 0, "default": 275},
+                "shape": {
+                    "type": "string",
+                    "enum": ["straight", "l_shape", "u_shape", "spiral", "sketch"],
+                },
+                "runs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "required": ["id", "startMm", "endMm"],
+                        "properties": {
+                            "id": {"type": "string"},
+                            "startMm": _POINT_2_SCHEMA,
+                            "endMm": _POINT_2_SCHEMA,
+                            "widthMm": {"type": "number", "exclusiveMinimum": 0},
+                            "riserCount": {"type": "integer", "minimum": 1},
+                            "polylineMm": {"type": "array", "items": _POINT_2_SCHEMA},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "landings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["id", "boundaryMm"],
+                        "properties": {
+                            "id": {"type": "string"},
+                            "boundaryMm": {
+                                "type": "array",
+                                "minItems": 3,
+                                "items": _POINT_2_SCHEMA,
+                            },
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed multi-run createStair bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid stair-by-runs payload"),
+        },
+        cliExample="bim-ai author stair-by-runs --json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Generates createStair with explicit runs/landings; submit through dry-run and "
+            "Advisor before acceptance."
+        ),
+        schemaRefs=["input:StairByRunsInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["route:author.stair_by_runs"],
+        resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
+        uiFeatures=["tool:stair", "cmd-k:tool.stair"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="author.stair_by_sketch",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "StairBySketchInput",
+            "type": "object",
+            "required": [
+                "baseLevelId",
+                "topLevelId",
+                "runStartMm",
+                "runEndMm",
+                "boundaryMm",
+                "treadLines",
+                "totalRiseMm",
+            ],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "baseLevelId": {"type": "string"},
+                "topLevelId": {"type": "string"},
+                "runStartMm": _POINT_2_SCHEMA,
+                "runEndMm": _POINT_2_SCHEMA,
+                "widthMm": {"type": "number", "exclusiveMinimum": 0, "default": 1000},
+                "riserMm": {"type": "number", "exclusiveMinimum": 0, "default": 175},
+                "treadMm": {"type": "number", "exclusiveMinimum": 0, "default": 275},
+                "boundaryMm": {"type": "array", "minItems": 3, "items": _POINT_2_SCHEMA},
+                "treadLines": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "required": ["fromMm", "toMm"],
+                        "properties": {
+                            "fromMm": _POINT_2_SCHEMA,
+                            "toMm": _POINT_2_SCHEMA,
+                            "riserHeightMm": {"type": "number", "exclusiveMinimum": 0},
+                            "manualOverride": {"type": "boolean"},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "totalRiseMm": {"type": "number", "exclusiveMinimum": 0},
+                "landings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["id", "boundaryMm"],
+                        "properties": {
+                            "id": {"type": "string"},
+                            "boundaryMm": {
+                                "type": "array",
+                                "minItems": 3,
+                                "items": _POINT_2_SCHEMA,
+                            },
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed by-sketch createStair bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid stair-by-sketch payload"),
+        },
+        cliExample="bim-ai author stair-by-sketch --json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Generates createStair authoringMode=by_sketch from explicit boundary and tread "
+            "lines; dry-run and inspect Advisor before commit."
+        ),
+        schemaRefs=["input:StairBySketchInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["route:author.stair_by_sketch"],
+        resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
+        uiFeatures=["tool:stair", "cmd-k:tool.stair"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="author.stair_existing_condition",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "StairExistingConditionInput",
+            "type": "object",
+            "required": ["stairId", "findingCodes", "reason", "sourceFactIds"],
+            "properties": {
+                "stairId": {"type": "string"},
+                "findingCodes": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                "reason": {"type": "string", "minLength": 1},
+                "sourceFactIds": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                "reviewer": {"type": "string"},
+                "accepted": {"type": "boolean", "default": True},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(
+                code=0, meaning="Typed existing-condition stair tolerance bundle generated"
+            ),
+            "invalid": ExitCode(code=422, meaning="Invalid existing-condition stair payload"),
+        },
+        cliExample="bim-ai author stair-existing-condition --json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Use only for source-evidenced existing-building nonconformance. It records "
+            "explicit tolerated finding codes on the stair and must be backed by source facts."
+        ),
+        schemaRefs=["input:StairExistingConditionInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["route:author.stair_existing_condition"],
+        resourceGroups=[
+            "semantic-authoring",
+            "vertical-circulation",
+            "reverse-bim",
+            "kernel-command",
+        ],
+        uiFeatures=["advisor-panel", "tool:stair"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="opening.slab_opening",
         category="mutation",
         inputSchema=_SLAB_OPENING_INPUT_SCHEMA,
@@ -1920,6 +2125,57 @@ register(
 
 register(
     ToolDescriptor(
+        name="validate.roof_dormer_source_alignment",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ValidateRoofDormerSourceAlignmentInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "facts": {"type": "array", "items": {"type": "object"}},
+                "sourceFacts": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ValidateRoofDormerSourceAlignmentResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Roof/dormer source alignment report returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid alignment validation request"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai validate roof-dormer-source-alignment --facts roof-facts.json --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/validate/roof-dormer-source-alignment"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only phase gate; unresolved errors must be disposed before final acceptance.",
+        requiredPermissions=["model:read"],
+        schemaRefs=[
+            "input:ValidateRoofDormerSourceAlignmentInput",
+            "output:ValidateRoofDormerSourceAlignmentResult",
+        ],
+        exampleRefs=["route:validate-roof-dormer-source-alignment"],
+        resourceGroups=["validate", "roofs", "dormers", "source", "reverse-bim", "mcp-resource"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="qa.constructability",
         category="query",
         inputSchema={
@@ -1979,6 +2235,59 @@ register(
 
 register(
     ToolDescriptor(
+        name="qa.area_reconciliation",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaAreaReconciliationInput",
+            "type": "object",
+            "required": ["modelId", "sourceFacts"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "sourceFacts": {"type": "array", "items": {"type": "object"}},
+                "toleranceM2": {"type": "number", "minimum": 0, "default": 0.5},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaAreaReconciliationResult",
+            "type": "object",
+            "required": ["format", "modelId", "revision", "summary", "rows"],
+            "properties": {
+                "format": {"const": "areaReconciliationReport_v1"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "toleranceM2": {"type": "number"},
+                "summary": {"type": "object"},
+                "rows": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Area reconciliation report returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid source fact payload"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai qa area-reconciliation --source-facts source-fact-ledger.json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/qa/area-reconciliation"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only source-vs-model area QA. Reverse-BIM acceptance should keep "
+            "accepted=false until mismatches and missing model rooms are resolved."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaAreaReconciliationInput", "output:QaAreaReconciliationResult"],
+        exampleRefs=["route:qa-area-reconciliation"],
+        resourceGroups=["qa", "areas", "rooms", "reverse-bim", "mcp-resource"],
+        uiFeatures=["advisor-panel", "schedule-view"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="qa.bim_requirement_validation",
         category="query",
         inputSchema={
@@ -2007,9 +2316,7 @@ register(
                         "type": "object",
                         "required": ["schemaVersion", "packId", "summary", "checks"],
                         "properties": {
-                            "schemaVersion": {
-                                "const": "bim-requirement-validation-pack.v1"
-                            },
+                            "schemaVersion": {"const": "bim-requirement-validation-pack.v1"},
                             "packId": {"type": "string"},
                             "summary": {"type": "object"},
                             "checks": {"type": "array", "items": {"type": "object"}},
@@ -2023,9 +2330,7 @@ register(
                         "type": "object",
                         "required": ["schemaVersion", "ok", "summary", "blockers"],
                         "properties": {
-                            "schemaVersion": {
-                                "const": "bim-requirement-validation-report.v1"
-                            },
+                            "schemaVersion": {"const": "bim-requirement-validation-report.v1"},
                             "ok": {"type": "boolean"},
                             "summary": {"type": "object"},
                             "blockers": {"type": "array", "items": {"type": "object"}},
@@ -2041,9 +2346,7 @@ register(
             "ok": ExitCode(code=0, meaning="BIR/IDS-style validation packs returned"),
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
-        cliExample=(
-            "curl /api/models/$BIM_AI_MODEL_ID/qa/bim-requirement-validation"
-        ),
+        cliExample=("curl /api/models/$BIM_AI_MODEL_ID/qa/bim-requirement-validation"),
         restEndpoint=RestEndpoint(
             method="GET", path="/api/models/{model_id}/qa/bim-requirement-validation"
         ),
@@ -2761,6 +3064,57 @@ register(
 
 register(
     ToolDescriptor(
+        name="query.room_access_graph",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryRoomAccessGraphInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "roomId": {"type": "string"},
+                "roomIds": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryRoomAccessGraphResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Room access graph returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid room access graph request"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query room-access-graph --room room-1 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/query/room-access-graph"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only access graph for existing-building room/access repair loops. "
+            "Use with Advisor findings before accepting room topology."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryRoomAccessGraphInput", "output:RoomAccessGraphResult"],
+        exampleRefs=["route:query-room-access-graph"],
+        resourceGroups=["query", "rooms", "access", "reverse-bim", "mcp-resource"],
+        uiFeatures=["advisor-panel", "room-tool"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="query.enclosed_loops",
         category="query",
         inputSchema={
@@ -2953,6 +3307,330 @@ register(
         exampleRefs=["route:resolve-wall-by-line", "cli:resolve:wall"],
         resourceGroups=["resolve", "walls", "line-match", "mcp-resource", "sketch-to-bim"],
         uiFeatures=["wall-tool", "selection"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.floor_supports",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveFloorSupportsInput",
+            "type": "object",
+            "required": ["modelId", "floorId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "floorId": {"type": "string"},
+                "lowerLevelId": {"type": "string"},
+                "supportLevelId": {"type": "string"},
+                "supportKinds": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["wall"]},
+                    "default": ["wall"],
+                },
+                "toleranceMm": {"type": "number", "minimum": 0, "default": 250},
+                "verticalToleranceMm": {"type": "number", "minimum": 0, "default": 500},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveFloorSupportsResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Floor support candidates returned"),
+            "not_found": ExitCode(code=1, meaning="No support candidate matched"),
+            "bad_request": ExitCode(code=2, meaning="Invalid floor/support request"),
+        },
+        cliExample="bim-ai resolve floor-supports --floor floor-dg --lower-level eg --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/floor-supports"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only floor support resolver. Use returned payloadPatch in a follow-up "
+            "transaction and rerun Advisor."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveFloorSupportsInput", "output:ResolveFloorSupportsResult"],
+        exampleRefs=["route:resolve-floor-supports"],
+        resourceGroups=["resolve", "floors", "structure", "mcp-resource", "reverse-bim"],
+        uiFeatures=["floor-tool", "advisor-panel"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.opening_source_match",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveOpeningSourceMatchInput",
+            "type": "object",
+            "required": ["modelId", "openings"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "openings": {"type": "array", "items": {"type": "object"}, "minItems": 2},
+                "minScore": {"type": "number", "minimum": 0, "maximum": 1},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveOpeningSourceMatchResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Opening source matches returned"),
+            "bad_request": ExitCode(code=2, meaning="At least two opening rows are required"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai resolve opening-source-match --source-openings openings.json --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/opening-source-match"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only source reconciliation; use output as a disposition worklist before creating duplicate openings.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveOpeningSourceMatchInput", "output:ResolveOpeningSourceMatchResult"],
+        exampleRefs=["route:resolve-opening-source-match"],
+        resourceGroups=["resolve", "openings", "source", "reverse-bim", "mcp-resource"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.wall_opening_host",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveWallOpeningHostInput",
+            "type": "object",
+            "required": ["modelId", "pointMm", "widthMm"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "nearPointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "sourcePointMm": {"type": "object"},
+                "widthMm": {"type": "number", "exclusiveMinimum": 0},
+                "levelId": {"type": "string"},
+                "maxDistanceMm": {"type": "number", "minimum": 0},
+                "maxAdjustmentMm": {"type": "number", "minimum": 0},
+                "adjustOpeningToFit": {"type": "boolean"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveWallOpeningHostResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Wall host and authoring-safe alongT returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid point or opening width"),
+            "not_found": ExitCode(code=1, meaning="No fitting wall host found"),
+        },
+        cliExample=(
+            "bim-ai resolve wall-opening-host --point-mm 3285,4100 "
+            "--width-mm 875 --level EG --output json"
+        ),
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/wall-opening-host"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only resolver for existing-building openings. Use the returned wallId/alongT "
+            "in a transactional door/window command, then rerun Advisor."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveWallOpeningHostInput", "output:ResolveWallOpeningHostResult"],
+        exampleRefs=["route:resolve-wall-opening-host"],
+        resourceGroups=["resolve", "openings", "walls", "reverse-bim", "mcp-resource"],
+        uiFeatures=["wall-tool", "advisor-panel"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.dormer_opening_host",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveDormerOpeningHostInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "dormerId": {"type": "string"},
+                "hostRoofId": {"type": "string"},
+                "positionOnRoof": {"type": "object"},
+                "maxDistanceMm": {"type": "number", "minimum": 0},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveDormerOpeningHostResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Dormer host candidate returned"),
+            "not_found": ExitCode(code=1, meaning="No matching dormer found"),
+            "bad_request": ExitCode(code=2, meaning="Invalid dormer host request"),
+        },
+        cliExample="bim-ai resolve dormer-opening-host --dormer dormer-1 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/dormer-opening-host"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only host resolver for dormer windows; may return a tool-gap blocker until a dormer face/wall host exists.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveDormerOpeningHostInput", "output:ResolveDormerOpeningHostResult"],
+        exampleRefs=["route:resolve-dormer-opening-host"],
+        resourceGroups=["resolve", "openings", "dormers", "roofs", "reverse-bim", "mcp-resource"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.roof_position_from_source_point",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoofPositionFromSourcePointInput",
+            "type": "object",
+            "required": ["modelId", "hostRoofId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "hostRoofId": {"type": "string"},
+                "roofId": {"type": "string"},
+                "sourcePointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "sourcePositionMm": {"type": "object"},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoofPositionFromSourcePointResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Roof-local position candidate returned"),
+            "not_found": ExitCode(code=1, meaning="Roof not found"),
+            "bad_request": ExitCode(code=2, meaning="Invalid source point"),
+        },
+        cliExample="bim-ai resolve roof-position --roof roof-1 --point-mm 1200,3000 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/roof-position-from-source-point"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only approximate roof-local projection; source overlay validation must confirm final placement.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveRoofPositionFromSourcePointInput", "output:ResolveRoofPositionFromSourcePointResult"],
+        exampleRefs=["route:resolve-roof-position-from-source-point"],
+        resourceGroups=["resolve", "roofs", "dormers", "openings", "reverse-bim", "mcp-resource"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.room_boundary_edges",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoomBoundaryEdgesInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "roomId": {"type": "string"},
+                "roomIds": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoomBoundaryEdgesResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Room boundary edge backing returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid room boundary edge request"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai resolve room-boundary-edges --room room-1 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/room-boundary-edges"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only room boundary backing report. Use unbacked/partial edges to author "
+            "walls, room separations, or revised room outlines before accepting topology."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=[
+            "input:ResolveRoomBoundaryEdgesInput",
+            "output:ResolveRoomBoundaryEdgesResult",
+        ],
+        exampleRefs=["route:resolve-room-boundary-edges"],
+        resourceGroups=["resolve", "rooms", "topology", "reverse-bim", "mcp-resource"],
+        uiFeatures=["advisor-panel", "room-tool"],
     )
 )
 
@@ -3652,100 +4330,6 @@ register(
         agentSafetyNotes="Safe to call freely; lists non-revoked presentation links only.",
     )
 )
-# ---------------------------------------------------------------------------
-# IMG-V3-01 — Image-to-layout trace
-# ---------------------------------------------------------------------------
-
-register(
-    ToolDescriptor(
-        name="img-trace",
-        category="transform",
-        inputSchema={
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "ImgTraceInput",
-            "type": "object",
-            "required": ["image"],
-            "properties": {
-                "image": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Image file (multipart/form-data field 'image'). JPEG or PNG.",
-                },
-                "archetypeHint": {
-                    "type": "string",
-                    "description": "Optional layout archetype hint (e.g. 'residential_apartment').",
-                },
-                "brief": {
-                    "type": "string",
-                    "description": "Optional free-text design brief (multipart field 'brief').",
-                },
-            },
-            "additionalProperties": False,
-        },
-        outputSchema={
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "StructuredLayout",
-            "type": "object",
-            "required": [
-                "schemaVersion",
-                "imageMetadata",
-                "rooms",
-                "walls",
-                "openings",
-                "ocrLabels",
-                "advisories",
-            ],
-            "properties": {
-                "schemaVersion": {"type": "string", "enum": ["img-v3.0"]},
-                "imageMetadata": {
-                    "type": "object",
-                    "required": ["widthPx", "heightPx"],
-                    "properties": {
-                        "widthPx": {"type": "integer"},
-                        "heightPx": {"type": "integer"},
-                        "calibrationMmPerPx": {"type": "number"},
-                    },
-                },
-                "rooms": {"type": "array", "items": {"type": "object"}},
-                "walls": {"type": "array", "items": {"type": "object"}},
-                "openings": {"type": "array", "items": {"type": "object"}},
-                "ocrLabels": {"type": "array", "items": {"type": "object"}},
-                "advisories": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "required": ["code"],
-                        "properties": {
-                            "code": {"type": "string"},
-                            "message": {"type": "string"},
-                        },
-                    },
-                },
-                "jobId": {
-                    "type": "string",
-                    "description": "Present instead of layout fields when image >2MB was enqueued.",
-                },
-            },
-        },
-        exitCodes={
-            "ok": ExitCode(code=0, meaning="Layout extracted successfully"),
-            "no_walls_detected": ExitCode(
-                code=1, meaning="No wall segments found; image may not be a floor plan"
-            ),
-        },
-        cliExample="bim-ai trace --image plan.png --archetype-hint residential_apartment -o layout.json",
-        restEndpoint=RestEndpoint(method="POST", path="/api/v3/trace"),
-        sideEffects="none",
-        agentSafetyNotes=(
-            "Deterministic: same image bytes → byte-identical StructuredLayout JSON. "
-            "Images >2MB are enqueued as image_trace jobs; response contains {jobId}. "
-            "Check advisories[].code for 'no_walls_detected', 'low_contrast_image', "
-            "'opencv_unavailable', 'tesseract_unavailable'. "
-            "Exit code 1 (no_walls_detected) means the image is likely not a floor plan."
-        ),
-    )
-)
-
 # ---------------------------------------------------------------------------
 # SCH-V3-01 — Custom-properties + schedule view
 # ---------------------------------------------------------------------------
@@ -4721,3 +5305,438 @@ register(
         ),
     )
 )
+
+
+# ---------------------------------------------------------------------------
+# Reverse-BIM / existing-building digitization source surfaces
+# ---------------------------------------------------------------------------
+
+_SOURCE_PATH_INPUT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SourcePathInput",
+    "type": "object",
+    "required": ["sourcePath"],
+    "properties": {
+        "sourcePath": {"type": "string"},
+        "path": {"type": "string"},
+    },
+    "additionalProperties": True,
+}
+
+_GENERIC_JSON_OUTPUT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "StructuredJsonResult",
+    "type": "object",
+    "properties": {
+        "ok": {"type": "boolean"},
+        "format": {"type": "string"},
+        "summary": {"type": "object"},
+        "diagnostics": {"type": "array", "items": {"type": "object"}},
+    },
+    "additionalProperties": True,
+}
+
+
+for _source_tool in (
+    {
+        "name": "source.folder_manifest",
+        "title": "SourceFolderManifestInput",
+        "path": "/api/v3/source/folder-manifest",
+        "required": ["rootPath"],
+        "properties": {"rootPath": {"type": "string"}, "path": {"type": "string"}},
+        "cli": "bim-ai source folder-manifest --root /path/to/source --output json",
+        "notes": "Builds an immutable file manifest with hashes and lightweight PDF/image metadata.",
+    },
+    {
+        "name": "source.classify_documents",
+        "title": "SourceClassifyDocumentsInput",
+        "path": "/api/v3/source/classify-documents",
+        "required": ["manifest"],
+        "properties": {"manifest": {"type": "object"}, "files": {"type": "array"}},
+        "cli": "bim-ai source classify-documents --manifest manifest.json --output json",
+        "notes": "Classifies source files/pages by reverse-BIM document role using deterministic heuristics.",
+    },
+    {
+        "name": "source.extract_text",
+        "title": "SourcePdfTextInput",
+        "path": "/api/v3/source/pdf-text",
+        "required": ["sourcePath"],
+        "properties": {"sourcePath": {"type": "string"}, "maxPages": {"type": "integer"}},
+        "cli": "bim-ai source pdf-text --source plan.pdf --output json",
+        "notes": "Extracts native PDF text when pypdf is available; returns diagnostics otherwise.",
+    },
+    {
+        "name": "source.render_pdf_pages",
+        "title": "SourceRenderPdfInput",
+        "path": "/api/v3/source/render-pdf",
+        "required": ["sourcePath"],
+        "properties": {
+            "sourcePath": {"type": "string"},
+            "outputDir": {"type": "string"},
+            "dpi": {"type": "integer", "default": 200},
+            "firstPage": {"type": "integer"},
+            "lastPage": {"type": "integer"},
+        },
+        "cli": "bim-ai source render-pdf --source plan.pdf --output-dir tmp/pdfs/source-render",
+        "notes": "Renders PDF pages via Poppler pdftoppm when available; returns diagnostics otherwise.",
+    },
+    {
+        "name": "source.detect_scale",
+        "title": "SourceDetectScaleInput",
+        "path": "/api/v3/source/detect-scale",
+        "required": ["text"],
+        "properties": {"text": {"type": "string"}, "sourceDocumentId": {"type": "string"}},
+        "cli": "bim-ai source detect-scale --text 'M 1:100' --output json",
+        "notes": "Detects drawing scale and dimension-text candidates from source text.",
+    },
+    {
+        "name": "source.ai_reading_packet",
+        "title": "SourceAiReadingPacketInput",
+        "path": "/api/v3/source/ai-reading-packet",
+        "required": ["manifest"],
+        "properties": {
+            "manifest": {"type": "object"},
+            "classifications": {"type": "object"},
+            "renderedPages": {"type": "array", "items": {"type": "object"}},
+            "textExtractions": {"type": "array", "items": {"type": "object"}},
+        },
+        "cli": "bim-ai source ai-reading-packet --manifest manifest.json --rendered rendered.json --output json",
+        "notes": "Packages rendered source pages and native text for a multimodal LLM/subagent to read; this is not OCR.",
+    },
+    {
+        "name": "source.ai_visual_trace_packet",
+        "title": "SourceAiVisualTracePacketInput",
+        "path": "/api/v3/source/ai-visual-trace-packet",
+        "required": ["manifest"],
+        "properties": {
+            "manifest": {"type": "object"},
+            "classifications": {"type": "object"},
+            "renderedPages": {"type": "array", "items": {"type": "object"}},
+            "textExtractions": {"type": "array", "items": {"type": "object"}},
+        },
+        "cli": "bim-ai source ai-visual-trace-packet --manifest manifest.json --rendered rendered.json --output json",
+        "notes": "Packages rendered plans/docs for AI visual tracing into source facts; replaces CV tracing as the primary reverse-BIM source-understanding path.",
+    },
+    {
+        "name": "source.ai_visual_trace_work_order",
+        "title": "SourceAiVisualTraceWorkOrderInput",
+        "path": "/api/v3/source/ai-visual-trace-work-order",
+        "required": ["aiVisualTracePacket"],
+        "properties": {
+            "aiVisualTracePacket": {"type": "object"},
+            "packet": {"type": "object"},
+            "projectGoal": {"type": "string"},
+        },
+        "cli": "bim-ai source ai-visual-trace-work-order --packet source-ai-visual-trace-packet.json --output json",
+        "notes": "Splits an AI visual trace packet into reusable source-reading work packages before any MCP modeling.",
+    },
+    {
+        "name": "source.ai_visual_trace_agent_requests",
+        "title": "SourceAiVisualTraceAgentRequestsInput",
+        "path": "/api/v3/source/ai-visual-trace-agent-requests",
+        "required": ["workOrder"],
+        "properties": {
+            "workOrder": {"type": "object"},
+            "aiVisualTraceWorkOrder": {"type": "object"},
+            "runId": {"type": "string"},
+            "maxNativeTextChars": {"type": "integer"},
+        },
+        "cli": "bim-ai source ai-visual-trace-agent-requests --work-order work-order.json --output json",
+        "notes": "Creates multimodal AI-reader request packets from a visual trace work order; does not call a model or mutate BIM.",
+    },
+    {
+        "name": "source.prepare_ai_visual_trace_run",
+        "title": "SourcePrepareAiVisualTraceRunInput",
+        "path": "/api/v3/source/prepare-ai-visual-trace-run",
+        "required": ["rootPath", "outputDir"],
+        "properties": {
+            "rootPath": {"type": "string"},
+            "path": {"type": "string"},
+            "outputDir": {"type": "string"},
+            "runId": {"type": "string"},
+            "dpi": {"type": "integer"},
+            "maxPagesPerPdf": {"type": "integer"},
+        },
+        "cli": "bim-ai source prepare-ai-visual-trace-run --root /path/to/source --output-dir tmp/reverse-bim/run",
+        "notes": "End-to-end folder preparation: manifest, classify, render PDFs, extract native text, build AI visual trace packet/work order, create reader requests, and write initial blocked loop artifacts.",
+    },
+    {
+        "name": "source.ai_visual_trace_agent_loop",
+        "title": "SourceAiVisualTraceAgentLoopInput",
+        "path": "/api/v3/source/ai-visual-trace-agent-loop",
+        "required": ["workOrder"],
+        "properties": {
+            "workOrder": {"type": "object"},
+            "aiVisualTraceWorkOrder": {"type": "object"},
+            "responses": {"type": "array", "items": {"type": "object"}},
+            "readerResponses": {"type": "array", "items": {"type": "object"}},
+            "readerCommand": {"type": "array", "items": {"type": "string"}},
+            "readerTimeoutSeconds": {"type": "integer"},
+            "runId": {"type": "string"},
+        },
+        "cli": "bim-ai source ai-visual-trace-agent-loop --work-order work-order.json --responses responses.json --output json",
+        "notes": "Validates multimodal AI-reader responses, optionally dispatches missing packages to an external reader command over JSON stdin/stdout, accepts complete packages, and emits repair requests before MCP authoring.",
+    },
+    {
+        "name": "source.normalize_ai_visual_trace_reader_responses",
+        "title": "SourceNormalizeAiVisualTraceReaderResponsesInput",
+        "path": "/api/v3/source/normalize-ai-visual-trace-reader-responses",
+        "required": ["responses"],
+        "properties": {
+            "responses": {"type": "array", "items": {"type": "object"}},
+            "readerResponses": {"type": "array", "items": {"type": "object"}},
+        },
+        "cli": "bim-ai source normalize-ai-visual-trace-reader-responses --responses responses.json --output json",
+        "notes": "Normalizes flexible AI/subagent visual-reading responses into structured, provenance-preserving source facts that can be validated and mapped to MCP authoring surfaces.",
+    },
+    {
+        "name": "source.validate_ai_facts",
+        "title": "SourceValidateAiFactsInput",
+        "path": "/api/v3/source/validate-ai-facts",
+        "required": ["facts"],
+        "properties": {
+            "facts": {"type": "array", "items": {"type": "object"}},
+        },
+        "cli": "bim-ai source validate-ai-facts --facts ai-source-facts.json --output json",
+        "notes": "Validates AI-read source facts for required provenance and confidence before reverse-BIM IR ingestion.",
+    },
+    {
+        "name": "source.validate_ai_visual_trace_completeness",
+        "title": "SourceValidateAiVisualTraceCompletenessInput",
+        "path": "/api/v3/source/validate-ai-visual-trace-completeness",
+        "required": ["facts"],
+        "properties": {
+            "facts": {"type": "array", "items": {"type": "object"}},
+            "requiredKinds": {"type": "array", "items": {"type": "string"}},
+            "requiredFactKinds": {"type": "array", "items": {"type": "string"}},
+        },
+        "cli": "bim-ai source validate-ai-visual-trace-completeness --facts ai-source-facts.json --output json",
+        "notes": "Validates that AI visual trace facts contain required modelable fields and optional required fact kinds for reverse-BIM authoring, not only generic provenance.",
+    },
+    {
+        "name": "source.extract_facts",
+        "title": "SourceExtractFactsInput",
+        "path": "/api/v3/source/extract-facts",
+        "required": ["classifications"],
+        "properties": {
+            "classifications": {"type": "object"},
+            "textExtractions": {"type": "array", "items": {"type": "object"}},
+        },
+        "cli": "bim-ai source extract-facts --classifications classifications.json --output json",
+        "notes": "Builds a source fact ledger with provenance from classifications and extracted text.",
+    },
+):
+    register(
+        ToolDescriptor(
+            name=_source_tool["name"],
+            category="transform",
+            inputSchema={
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": _source_tool["title"],
+                "type": "object",
+                "required": _source_tool["required"],
+                "properties": _source_tool["properties"],
+                "additionalProperties": True,
+            },
+            outputSchema=_GENERIC_JSON_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Source ingestion result returned"),
+                "invalid": ExitCode(code=2, meaning="Invalid source request"),
+            },
+            cliExample=_source_tool["cli"],
+            restEndpoint=RestEndpoint(method="POST", path=_source_tool["path"]),
+            sideEffects="none",
+            agentSafetyNotes=str(_source_tool["notes"]),
+            requiredPermissions=["model:read"],
+            schemaRefs=[f"input:{_source_tool['title']}", "output:StructuredJsonResult"],
+            exampleRefs=[f"route:{_source_tool['name']}"],
+            resourceGroups=["source-ingestion", "reverse-bim", "mcp"],
+            uiFeatures=["agent-review", "source-ingestion"],
+        )
+    )
+
+
+for _reverse_tool in (
+    {
+        "name": "reverse_bim.ir_seed",
+        "title": "ReverseBimIrSeedInput",
+        "path": "/api/v3/reverse-bim/ir/seed",
+        "cli": "bim-ai reverse-bim ir-seed --manifest manifest.json --facts facts.json",
+        "notes": "Creates a starter ExistingBuildingIR shell from source manifest, classifications, and facts.",
+    },
+    {
+        "name": "reverse_bim.ir_validate",
+        "title": "ReverseBimIrValidateInput",
+        "path": "/api/v3/reverse-bim/ir/validate",
+        "cli": "bim-ai reverse-bim ir-validate --ir existing-building-ir.json",
+        "notes": "Validates source provenance, confidence, required collections, and fact status.",
+    },
+    {
+        "name": "reverse_bim.source_coverage",
+        "title": "ReverseBimSourceCoverageInput",
+        "path": "/api/v3/reverse-bim/source-coverage",
+        "cli": "bim-ai reverse-bim source-coverage --ir existing-building-ir.json --model model.json",
+        "notes": "Builds a source-fact coverage matrix showing modeled, candidate, conflicting, and deferred facts.",
+    },
+    {
+        "name": "reverse_bim.plan_authoring",
+        "title": "ReverseBimPlanAuthoringInput",
+        "path": "/api/v3/reverse-bim/plan-authoring",
+        "cli": "bim-ai reverse-bim plan-authoring --facts ai-source-facts.json --phase P3",
+        "notes": "Maps validated AI-read source facts to first-class MCP authoring tools or required resolver steps.",
+    },
+    {
+        "name": "reverse_bim.mcp_readiness",
+        "title": "ReverseBimMcpReadinessInput",
+        "path": "/api/v3/reverse-bim/mcp-readiness",
+        "cli": "bim-ai reverse-bim mcp-readiness --facts ai-source-facts.json --phase P3",
+        "notes": "Classifies normalized source facts as directly MCP-authorable, resolver-needed, source-refinement-needed, metadata/reference, conflict, or missing-tool before live modeling.",
+    },
+    {
+        "name": "reverse_bim.folder_output",
+        "title": "ReverseBimFolderOutputInput",
+        "path": "/api/v3/reverse-bim/folder-output",
+        "cli": "bim-ai reverse-bim folder-output --root /path/to/source --output-dir tmp/reverse-bim/run",
+        "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, and package acceptance.",
+    },
+    {
+        "name": "reverse_bim.phase_packet",
+        "title": "ReverseBimPhasePacketInput",
+        "path": "/api/v3/reverse-bim/phase-packet",
+        "cli": "bim-ai reverse-bim phase-packet --phase P1 --advisor advisor.json",
+        "notes": "Aggregates per-phase transactions, source facts, QA payloads, and finding dispositions.",
+    },
+):
+    register(
+        ToolDescriptor(
+            name=_reverse_tool["name"],
+            category="transform",
+            inputSchema={
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": _reverse_tool["title"],
+                "type": "object",
+                "additionalProperties": True,
+            },
+            outputSchema=_GENERIC_JSON_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Reverse-BIM result returned"),
+                "blocked": ExitCode(code=5, meaning="Reverse-BIM blockers remain"),
+            },
+            cliExample=_reverse_tool["cli"],
+            restEndpoint=RestEndpoint(method="POST", path=_reverse_tool["path"]),
+            sideEffects="none",
+            agentSafetyNotes=str(_reverse_tool["notes"]),
+            requiredPermissions=["model:read"],
+            schemaRefs=[f"input:{_reverse_tool['title']}", "output:StructuredJsonResult"],
+            exampleRefs=[f"route:{_reverse_tool['name']}"],
+            resourceGroups=["reverse-bim", "existing-building", "source-ingestion", "mcp"],
+            uiFeatures=["agent-review", "reverse-bim"],
+        )
+    )
+
+
+for _semantic_arch_tool in (
+    {
+        "name": "author.level",
+        "kernel": ["createLevel"],
+        "title": "AuthorLevelInput",
+        "notes": "Generates a typed createLevel bundle for source-derived storey datums.",
+    },
+    {
+        "name": "author.wall",
+        "kernel": ["createWall"],
+        "title": "AuthorWallInput",
+        "notes": "Generates a typed createWall bundle. Use model.dry_run then model.commit_bundle.",
+    },
+    {
+        "name": "author.wall_chain",
+        "kernel": ["createWallChain"],
+        "title": "AuthorWallChainInput",
+        "notes": "Generates a typed createWallChain bundle for source-derived wall graphs.",
+    },
+    {
+        "name": "author.floor_from_boundary",
+        "kernel": ["createFloor"],
+        "title": "AuthorFloorFromBoundaryInput",
+        "notes": "Generates a typed createFloor bundle from an explicit boundary.",
+    },
+    {
+        "name": "author.floor_supports",
+        "kernel": ["updateElementProperty"],
+        "title": "AuthorFloorSupportsInput",
+        "notes": "Generates a typed floor support metadata update from resolved bearing/support ids.",
+    },
+    {
+        "name": "author.room_outline",
+        "kernel": ["createRoomOutline"],
+        "title": "AuthorRoomOutlineInput",
+        "notes": "Generates a typed room outline bundle for source area reconciliation.",
+    },
+    {
+        "name": "author.room_separation",
+        "kernel": ["createRoomSeparation"],
+        "title": "AuthorRoomSeparationInput",
+        "notes": "Generates a typed room separation line for explicit source-derived room topology.",
+    },
+    {
+        "name": "author.roof_from_boundary",
+        "kernel": ["createRoof"],
+        "title": "AuthorRoofFromBoundaryInput",
+        "notes": "Generates a typed createRoof bundle from an explicit source-derived boundary.",
+    },
+    {
+        "name": "author.dormer_on_roof",
+        "kernel": ["createDormer"],
+        "title": "AuthorDormerOnRoofInput",
+        "notes": "Generates a typed createDormer bundle; resolve host roof and roof-local position before calling.",
+    },
+    {
+        "name": "opening.door_on_wall",
+        "kernel": ["insertDoorOnWall"],
+        "title": "OpeningDoorOnWallInput",
+        "notes": "Generates a typed insertDoorOnWall bundle; resolve host wall before calling.",
+    },
+    {
+        "name": "opening.window_on_wall",
+        "kernel": ["insertWindowOnWall"],
+        "title": "OpeningWindowOnWallInput",
+        "notes": "Generates a typed insertWindowOnWall bundle; resolve host wall before calling.",
+    },
+    {
+        "name": "opening.roof_opening",
+        "kernel": ["createRoofOpening"],
+        "title": "OpeningRoofOpeningInput",
+        "notes": "Generates a typed createRoofOpening bundle; resolve host roof before calling.",
+    },
+):
+    register(
+        ToolDescriptor(
+            name=_semantic_arch_tool["name"],
+            category="mutation",
+            inputSchema={
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": _semantic_arch_tool["title"],
+                "type": "object",
+                "additionalProperties": True,
+            },
+            outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Typed semantic authoring bundle generated"),
+                "invalid": ExitCode(code=422, meaning="Invalid semantic authoring payload"),
+            },
+            cliExample=f"bim-ai {_semantic_arch_tool['name'].replace('.', ' ')} --json",
+            restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+            sideEffects="mutates-kernel",
+            agentSafetyNotes=str(_semantic_arch_tool["notes"]),
+            schemaRefs=[f"input:{_semantic_arch_tool['title']}", "output:SemanticAuthoringBundle"],
+            exampleRefs=[f"route:{_semantic_arch_tool['name']}"],
+            kernelCommands=list(_semantic_arch_tool["kernel"]),
+            resourceGroups=[
+                "semantic-authoring",
+                "architecture",
+                "reverse-bim",
+                "kernel-command",
+            ],
+            uiFeatures=["cmd-k:agent-equivalent", "reverse-bim"],
+        )
+    )

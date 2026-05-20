@@ -217,7 +217,6 @@ from bim_ai.commands import (
     SetWallRecessZonesCmd,
     SetWallStackCmd,
     SplitWallAtCmd,
-    TraceImageCmd,
     TrimElementToReferenceCmd,
     TrimExtendToCornerCmd,
     UnbindViewTemplateCmd,
@@ -642,4 +641,3 @@ from bim_ai.engine_authoritative_replay import (  # noqa: E402,F401
     bundle_commands_are_authoritative_replay_v0_only,
     command_bundle_merge_preflight_v1,
 )
-from bim_ai.engine_trace_image import handle_trace_image_cmd as handle_trace_image_cmd  # noqa: E402,F401

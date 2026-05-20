@@ -2011,6 +2011,8 @@ def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
         if not _field_present(element, field):
             continue
         value = _read(element, field)
+        if value is None and _optional_point_list_field(element, field):
+            continue
         if not isinstance(value, list | tuple):
             findings.append(
                 ModelIntegrityFinding(
@@ -2048,6 +2050,13 @@ def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
                 )
     findings.extend(_recursive_unit_coordinate_findings(element, element_id))
     return findings
+
+
+def _optional_point_list_field(element: Any, field: str) -> bool:
+    kind = str(_read(element, "kind", default=""))
+    if kind == "window" and field == "outlineMm":
+        return True
+    return False
 
 
 def _coordinate_point_findings(

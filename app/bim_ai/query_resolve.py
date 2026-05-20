@@ -11,9 +11,11 @@ import math
 from collections import Counter
 from typing import Any
 
+from bim_ai.constraints_wall_geometry import hosted_t_bounds
 from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
 from bim_ai.elements import (
+    DormerElem,
     ElevationViewElem,
     FamilyTypeElem,
     FloorElem,
@@ -22,6 +24,7 @@ from bim_ai.elements import (
     MaterialElem,
     PlanViewElem,
     RoofElem,
+    RoofOpeningElem,
     RoofTypeElem,
     RoomElem,
     ScheduleElem,
@@ -34,6 +37,7 @@ from bim_ai.elements import (
     WallOpeningElem,
     WallTypeElem,
 )
+from bim_ai.room_access_integrity import room_access_graph_v1, room_boundary_edges_report_v1
 
 SUPPORTED_ELEMENT_INCLUDES = {"geometrySummary", "hostRefs", "scheduleSummary", "raw"}
 SUPPORTED_LEVEL_INCLUDES = {"planViews", "constraints"}
@@ -154,6 +158,16 @@ def _bbox_contains(outer: list[float], inner: list[float]) -> bool:
             outer[5] >= inner[5],
         )
     )
+
+
+def _bbox_intersects_xy(a: list[float], b: list[float]) -> bool:
+    return not (a[3] < b[0] or a[0] > b[3] or a[4] < b[1] or a[1] > b[4])
+
+
+def _bbox_xy_overlap_area(a: list[float], b: list[float]) -> float:
+    width = max(0.0, min(a[3], b[3]) - max(a[0], b[0]))
+    height = max(0.0, min(a[4], b[4]) - max(a[1], b[1]))
+    return width * height
 
 
 def _element_level_id(doc: Document, element: Any) -> str | None:
@@ -613,7 +627,16 @@ def query_views(
 
 
 def _host_candidate(
-    doc: Document, wall: WallElem, point: list[float], max_distance: float
+    doc: Document,
+    wall: WallElem,
+    point: list[float],
+    max_distance: float,
+    *,
+    opening_width_mm: float | None = None,
+    endpoint_clearance_mm: float = 0.0,
+    require_opening_fit: bool = False,
+    adjust_opening_to_fit: bool = False,
+    max_adjustment_mm: float | None = None,
 ) -> dict[str, Any] | None:
     start = (wall.start.x_mm, wall.start.y_mm)
     end = (wall.end.x_mm, wall.end.y_mm)
@@ -624,6 +647,48 @@ def _host_candidate(
     nx = 0.0 if length <= 0 else -(end[1] - start[1]) / length
     ny = 0.0 if length <= 0 else (end[0] - start[0]) / length
     score = max(0.0, 1.0 - distance / max(max_distance, 1.0))
+    opening_fit = None
+    authoring_position = None
+    if opening_width_mm is not None:
+        bounds = hosted_t_bounds(wall, opening_width_mm)
+        fits = False
+        adjusted_t = t
+        source_shift_mm = 0.0
+        if bounds is not None:
+            clearance_t = max(0.0, endpoint_clearance_mm) / max(length, 1.0)
+            usable_t0 = bounds[0] + clearance_t
+            usable_t1 = bounds[1] - clearance_t
+            if usable_t1 <= usable_t0:
+                bounds = None
+            else:
+                bounds = (usable_t0, usable_t1)
+        if bounds is not None:
+            usable_t0, usable_t1 = bounds
+            fits = usable_t0 < t < usable_t1
+            if not fits and adjust_opening_to_fit:
+                adjusted_t = max(usable_t0 + 1e-4, min(usable_t1 - 1e-4, t))
+                source_shift_mm = abs(adjusted_t - t) * length
+                if max_adjustment_mm is not None and source_shift_mm > max_adjustment_mm:
+                    adjusted_t = t
+                    source_shift_mm = 0.0
+            ax = start[0] + (end[0] - start[0]) * adjusted_t
+            ay = start[1] + (end[1] - start[1]) * adjusted_t
+            authoring_position = {
+                "t": round(adjusted_t, 6),
+                "distanceAlongMm": round(adjusted_t * length, 4),
+                "pointMm": [round(ax, 4), round(ay, 4), point[2] if len(point) > 2 else 0],
+            }
+        opening_fit = {
+            "requestedWidthMm": opening_width_mm,
+            "fitsAtSourceProjection": fits,
+            "usableT": [round(bounds[0], 6), round(bounds[1], 6)] if bounds else None,
+            "sourceShiftMm": round(source_shift_mm, 4),
+            "adjusted": bool(authoring_position and abs(authoring_position["t"] - t) > 1e-6),
+        }
+        if require_opening_fit and not (fits or (adjust_opening_to_fit and authoring_position)):
+            return None
+        if source_shift_mm:
+            score *= max(0.1, 1.0 - source_shift_mm / max(max_adjustment_mm or max(opening_width_mm, 1.0), 1.0))
     return {
         "elementId": wall.id,
         "kind": "wall",
@@ -635,6 +700,8 @@ def _host_candidate(
             "distanceAlongMm": round(t * length, 4),
             "pointMm": [round(px, 4), round(py, 4), point[2] if len(point) > 2 else 0],
         },
+        "authoringPosition": authoring_position,
+        "openingFit": opening_fit,
         "validFor": ["door", "window", "wall_opening", "family_instance"],
     }
 
@@ -651,6 +718,11 @@ def query_hosts(model_id: str, doc: Document, request: dict[str, Any]) -> dict[s
         return error_envelope("invalid_request", "nearPointMm must be [x,y,z?].", status=400)
     level_id = request.get("levelId")
     max_distance = float(request.get("maxDistanceMm") or 500)
+    opening_width = _optional_float(request.get("openingWidthMm") or request.get("widthMm"))
+    endpoint_clearance = _optional_float(request.get("endpointClearanceMm")) or 0.0
+    require_opening_fit = bool(request.get("requireOpeningFit"))
+    adjust_opening_to_fit = bool(request.get("adjustOpeningToFit"))
+    max_adjustment = _optional_float(request.get("maxAdjustmentMm"))
     candidates = []
     for wall in sorted(
         (e for e in doc.elements.values() if isinstance(e, WallElem)), key=lambda w: w.id
@@ -659,7 +731,17 @@ def query_hosts(model_id: str, doc: Document, request: dict[str, Any]) -> dict[s
             continue
         if wall.wall_curve is not None:
             continue
-        if candidate := _host_candidate(doc, wall, point, max_distance):
+        if candidate := _host_candidate(
+            doc,
+            wall,
+            point,
+            max_distance,
+            opening_width_mm=opening_width,
+            endpoint_clearance_mm=endpoint_clearance,
+            require_opening_fit=require_opening_fit,
+            adjust_opening_to_fit=adjust_opening_to_fit,
+            max_adjustment_mm=max_adjustment,
+        ):
             candidates.append(candidate)
     candidates.sort(key=lambda c: (c["distanceMm"], c["elementId"]))
     return success_envelope(model_id, doc, {"hosts": candidates})
@@ -690,6 +772,8 @@ def query_nearest_wall(model_id: str, doc: Document, request: dict[str, Any]) ->
                 "score": nearest["score"],
             },
             "placement": nearest["position"],
+            "authoringPlacement": nearest.get("authoringPosition") or nearest["position"],
+            "openingFit": nearest.get("openingFit"),
             "normalMm": nearest["normalMm"],
             "resolution": {
                 "strategy": "query_hosts_nearest_wall",
@@ -698,6 +782,357 @@ def query_nearest_wall(model_id: str, doc: Document, request: dict[str, Any]) ->
             "candidates": hosts[:10],
         },
     )
+
+
+def resolve_wall_opening_host(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Resolve an opening source point to a wall-hosted authoring placement that fits."""
+
+    point = request.get("nearPointMm") or request.get("pointMm") or request.get("sourcePointMm")
+    if isinstance(point, dict):
+        point = [point.get("xMm"), point.get("yMm"), point.get("zMm", 0)]
+    width = _optional_float(request.get("widthMm") or request.get("openingWidthMm"))
+    if not isinstance(point, list) or len(point) < 2:
+        return error_envelope("invalid_request", "pointMm/nearPointMm/sourcePointMm is required.", status=400)
+    if width is None or width <= 0:
+        return error_envelope("invalid_request", "widthMm/openingWidthMm must be a positive number.", status=400)
+    resolver_request = dict(request)
+    resolver_request["nearPointMm"] = point
+    resolver_request["openingWidthMm"] = width
+    resolver_request["requireOpeningFit"] = True
+    resolver_request["adjustOpeningToFit"] = bool(request.get("adjustOpeningToFit", True))
+    resolver_request.setdefault("maxDistanceMm", 900)
+    resolver_request.setdefault("endpointClearanceMm", 75)
+    resolver_request.setdefault("maxAdjustmentMm", max(width / 2.0, 150.0))
+    result = query_nearest_wall(model_id, doc, resolver_request)
+    if not result.get("ok"):
+        return result
+    data = result["data"]
+    authoring = data["authoringPlacement"]
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "resolveWallOpeningHost_v1",
+            "host": data["wall"],
+            "sourcePlacement": data["placement"],
+            "authoring": {
+                "wallId": data["wall"]["elementId"],
+                "alongT": authoring["t"],
+                "pointMm": authoring["pointMm"],
+                "widthMm": width,
+            },
+            "openingFit": data.get("openingFit"),
+            "normalMm": data.get("normalMm"),
+            "resolution": {
+                "strategy": "nearest_wall_with_opening_fit",
+                "confidence": data.get("resolution", {}).get("confidence"),
+            },
+            "candidates": data.get("candidates", []),
+        },
+        warnings=[
+            {
+                "code": "opening_source_point_adjusted_to_fit",
+                "message": "Source point was shifted along the wall so the opening width fits.",
+                "details": data.get("openingFit"),
+            }
+        ]
+        if data.get("openingFit", {}).get("adjusted")
+        else [],
+    )
+
+
+def query_room_access_graph(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    room_ids = request.get("roomIds") or request.get("roomId")
+    if isinstance(room_ids, str):
+        room_ids = [room_ids]
+    if room_ids is not None and not isinstance(room_ids, list):
+        return error_envelope("invalid_request", "roomIds must be a list of strings.", status=400)
+    graph = room_access_graph_v1(doc, room_ids=[str(room_id) for room_id in room_ids or []])
+    if not graph.get("ok"):
+        return error_envelope(
+            str(graph.get("error", {}).get("code") or "invalid_request"),
+            str(graph.get("error", {}).get("message") or "Room access graph failed."),
+            status=400,
+        )
+    return success_envelope(model_id, doc, {"graph": graph})
+
+
+def resolve_opening_source_match(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Classify source opening rows as likely same/distinct before authoring."""
+
+    openings = [row for row in request.get("openings") or request.get("sourceOpenings") or [] if isinstance(row, dict)]
+    if len(openings) < 2:
+        return error_envelope(
+            "invalid_request",
+            "At least two source opening rows are required.",
+            status=400,
+        )
+    matches = []
+    for left_idx, left in enumerate(openings):
+        for right in openings[left_idx + 1 :]:
+            score, reasons = _source_opening_match_score(left, right)
+            if score >= float(request.get("minScore") or 0.6):
+                matches.append(
+                    {
+                        "status": "candidate_same_element" if score >= 0.8 else "candidate_needs_review",
+                        "score": round(score, 4),
+                        "sourceFactIds": [
+                            left.get("factId") or left.get("sourceFactId"),
+                            right.get("factId") or right.get("sourceFactId"),
+                        ],
+                        "reasons": reasons,
+                        "requiredDisposition": "same_element | distinct_elements | source_repair_required",
+                    }
+                )
+    matches.sort(key=lambda row: (-row["score"], str(row["sourceFactIds"])))
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "resolveOpeningSourceMatch_v1",
+            "matchCount": len(matches),
+            "matches": matches,
+            "unmatchedSourceFactIds": _unmatched_opening_ids(openings, matches),
+        },
+    )
+
+
+def resolve_dormer_opening_host(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a dormer-hosted opening to the best existing dormer element."""
+
+    dormer_id = request.get("dormerId") or request.get("hostDormerId")
+    host_roof_id = request.get("hostRoofId") or request.get("roofId")
+    position = request.get("positionOnRoof") or request.get("sourcePositionOnRoof")
+    candidates = []
+    for dormer in sorted((e for e in doc.elements.values() if isinstance(e, DormerElem)), key=lambda d: d.id):
+        if dormer_id and dormer.id != dormer_id:
+            continue
+        if host_roof_id and dormer.host_roof_id != host_roof_id:
+            continue
+        score = 1.0
+        distance = None
+        if isinstance(position, dict):
+            dx = float(position.get("alongRidgeMm") or 0) - dormer.position_on_roof.along_ridge_mm
+            dy = float(position.get("acrossRidgeMm") or 0) - dormer.position_on_roof.across_ridge_mm
+            distance = math.hypot(dx, dy)
+            score = max(0.0, 1.0 - distance / float(request.get("maxDistanceMm") or 2000))
+        candidates.append(
+            {
+                "dormerId": dormer.id,
+                "hostRoofId": dormer.host_roof_id,
+                "distanceMm": round(distance, 4) if distance is not None else None,
+                "score": round(score, 4),
+                "positionOnRoof": dormer.position_on_roof.model_dump(by_alias=True),
+            }
+        )
+    candidates.sort(key=lambda row: (-row["score"], row["dormerId"]))
+    if not candidates:
+        return error_envelope("not_found", "No matching dormer host found.", status=404)
+    best = candidates[0]
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "resolveDormerOpeningHost_v1",
+            "host": {
+                "hostKind": "dormer",
+                "hostElementId": best["dormerId"],
+                "hostRoofId": best["hostRoofId"],
+            },
+            "resolution": {
+                "strategy": "dormer_id_or_roof_local_position",
+                "confidence": best["score"],
+            },
+            "authoring": {
+                "status": "blocked_until_dormer_face_or_wall_host_exists",
+                "requiredTools": ["author.dormer_on_roof", "opening.window_on_wall"],
+                "note": "Current kernel resolves the dormer element; hosted window authoring still needs a dormer face/wall element or explicit supported fallback.",
+            },
+            "candidates": candidates[:10],
+        },
+    )
+
+
+def resolve_roof_position_from_source_point(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Project a source point into a simple roof-local coordinate candidate."""
+
+    roof_id = request.get("roofId") or request.get("hostRoofId")
+    roof = doc.elements.get(str(roof_id or ""))
+    if not isinstance(roof, RoofElem):
+        return error_envelope("not_found", "hostRoofId/roofId must reference an existing roof.", status=404)
+    point = _request_point(request, "sourcePointMm") or _request_point(request, "sourcePositionMm") or _request_point(request, "pointMm")
+    if point is None:
+        return error_envelope("invalid_request", "sourcePointMm, sourcePositionMm, or pointMm is required.", status=400)
+    footprint = [_pt2(pt) for pt in roof.footprint_mm]
+    bbox = _bbox_from_points(footprint)
+    center_x = (bbox[0] + bbox[3]) / 2.0
+    center_y = (bbox[1] + bbox[4]) / 2.0
+    inside = bbox[0] <= point[0] <= bbox[3] and bbox[1] <= point[1] <= bbox[4]
+    confidence = 0.7 if inside else 0.35
+    warnings = [] if inside else [{"code": "source_point_outside_roof_bbox", "message": "Projected point lies outside the roof footprint bbox."}]
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "resolveRoofPositionFromSourcePoint_v1",
+            "hostRoofId": roof.id,
+            "positionOnRoof": {
+                "alongRidgeMm": round(point[0] - center_x, 4),
+                "acrossRidgeMm": round(point[1] - center_y, 4),
+            },
+            "sourcePointMm": point,
+            "roofBBoxMm": bbox,
+            "resolution": {
+                "strategy": "roof_footprint_bbox_center_projection",
+                "confidence": confidence,
+            },
+        },
+        warnings=warnings,
+    )
+
+
+def validate_roof_dormer_source_alignment(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Validate modeled roof/dormer/opening elements against source roof facts."""
+
+    facts = [fact for fact in request.get("facts") or request.get("sourceFacts") or [] if isinstance(fact, dict)]
+    findings = []
+    for fact in facts:
+        kind = str(fact.get("kind") or "")
+        value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
+        fact_id = fact.get("factId")
+        if kind == "dormer":
+            host_roof_id = value.get("hostRoofId") or value.get("hostRoofRef")
+            if host_roof_id and not isinstance(doc.elements.get(str(host_roof_id)), RoofElem):
+                findings.append(_roof_alignment_finding("missing_dormer_host_roof", fact_id, "Dormer source host roof is not modeled."))
+            if value.get("depthMm") in (None, ""):
+                findings.append(_roof_alignment_finding("source_dormer_depth_missing", fact_id, "Dormer source fact lacks depthMm."))
+        elif kind in {"opening", "roof_opening"}:
+            opening_text = " ".join(str(value.get(key) or "").lower() for key in ("openingType", "openingKind"))
+            if "roof" in opening_text or "skylight" in opening_text:
+                host_roof_id = value.get("hostRoofId") or value.get("hostRoofRef")
+                if host_roof_id and not isinstance(doc.elements.get(str(host_roof_id)), RoofElem):
+                    findings.append(_roof_alignment_finding("missing_roof_opening_host_roof", fact_id, "Roof opening source host roof is not modeled."))
+                if not host_roof_id:
+                    findings.append(_roof_alignment_finding("source_roof_opening_host_missing", fact_id, "Roof opening source fact lacks host roof reference."))
+    modeled_dormers = [e for e in doc.elements.values() if isinstance(e, DormerElem)]
+    modeled_roof_openings = [e for e in doc.elements.values() if isinstance(e, RoofOpeningElem)]
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "validateRoofDormerSourceAlignment_v1",
+            "accepted": not findings,
+            "summary": {
+                "sourceFactCount": len(facts),
+                "modeledDormerCount": len(modeled_dormers),
+                "modeledRoofOpeningCount": len(modeled_roof_openings),
+                "findingCount": len(findings),
+                "errorCount": len(findings),
+            },
+            "findings": findings,
+        },
+    )
+
+
+def _optional_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _source_opening_match_score(left: dict[str, Any], right: dict[str, Any]) -> tuple[float, list[str]]:
+    left_value = left.get("value") if isinstance(left.get("value"), dict) else left
+    right_value = right.get("value") if isinstance(right.get("value"), dict) else right
+    score = 0.0
+    reasons = []
+    if left_value.get("levelId") and left_value.get("levelId") == right_value.get("levelId"):
+        score += 0.25
+        reasons.append("same_level")
+    left_kind = _source_opening_kind(left, left_value)
+    right_kind = _source_opening_kind(right, right_value)
+    if left_kind == right_kind:
+        score += 0.25
+        reasons.append("same_opening_kind")
+    for field, tolerance, weight in (("widthMm", 200.0, 0.2), ("heightMm", 250.0, 0.15)):
+        lv = _number(left_value.get(field))
+        rv = _number(right_value.get(field))
+        if lv is not None and rv is not None and abs(lv - rv) <= tolerance:
+            score += weight
+            reasons.append(f"similar_{field}")
+    if _different_source_ref(left, right):
+        score += 0.15
+        reasons.append("cross_source_match")
+    return min(score, 1.0), reasons
+
+
+def _source_opening_kind(fact: dict[str, Any], value: dict[str, Any]) -> str:
+    raw = str(
+        value.get("openingKind")
+        or value.get("openingType")
+        or fact.get("kind")
+        or ""
+    ).lower()
+    if "door" in raw or "tuer" in raw or "tur" in raw:
+        return "door"
+    if "roof" in raw or "skylight" in raw or "dachfenster" in raw:
+        return "roof_window"
+    if "window" in raw or "fenster" in raw:
+        return "window"
+    return raw or "opening"
+
+
+def _different_source_ref(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    left_prov = left.get("provenance") if isinstance(left.get("provenance"), dict) else {}
+    right_prov = right.get("provenance") if isinstance(right.get("provenance"), dict) else {}
+    return (
+        left_prov.get("sourceDocumentId") != right_prov.get("sourceDocumentId")
+        or left_prov.get("page") != right_prov.get("page")
+        or left_prov.get("region") != right_prov.get("region")
+    )
+
+
+def _unmatched_opening_ids(openings: list[dict[str, Any]], matches: list[dict[str, Any]]) -> list[Any]:
+    matched = {
+        fact_id
+        for match in matches
+        for fact_id in match.get("sourceFactIds") or []
+        if fact_id
+    }
+    return [
+        opening.get("factId") or opening.get("sourceFactId")
+        for opening in openings
+        if (opening.get("factId") or opening.get("sourceFactId")) not in matched
+    ]
+
+
+def _request_point(request: dict[str, Any], key: str) -> list[float] | None:
+    value = request.get(key)
+    if isinstance(value, list) and len(value) >= 2:
+        return [float(value[0]), float(value[1]), float(value[2]) if len(value) > 2 else 0.0]
+    if isinstance(value, dict):
+        if "xMm" in value and "yMm" in value:
+            return [float(value.get("xMm") or 0), float(value.get("yMm") or 0), float(value.get("zMm") or 0)]
+        if "x" in value and "y" in value:
+            return [float(value.get("x") or 0), float(value.get("y") or 0), float(value.get("z") or 0)]
+    return None
+
+
+def _number(value: Any) -> float | None:
+    if isinstance(value, int | float):
+        return float(value)
+    return None
+
+
+def _roof_alignment_finding(code: str, fact_id: Any, message: str) -> dict[str, Any]:
+    return {
+        "code": code,
+        "severity": "error",
+        "sourceFactId": fact_id,
+        "message": message,
+    }
 
 
 def resolve_host_face(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
@@ -888,6 +1323,119 @@ def resolve_wall_by_line(model_id: str, doc: Document, request: dict[str, Any]) 
             "candidates": candidates[:10],
         },
     )
+
+
+def resolve_floor_supports(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    floor_id = request.get("floorId")
+    if not isinstance(floor_id, str) or not floor_id:
+        return error_envelope("invalid_request", "floorId is required.", status=400)
+    floor = doc.elements.get(floor_id)
+    if not isinstance(floor, FloorElem):
+        return error_envelope(
+            "unresolved_reference", "floorId does not resolve to a floor.", status=422
+        )
+
+    support_kinds = set(request.get("supportKinds") or ["wall"])
+    unsupported = sorted(support_kinds - {"wall"})
+    if unsupported:
+        return error_envelope(
+            "unsupported_filter",
+            "Only wall floor supports are supported by this resolver.",
+            status=400,
+            details={"unsupportedSupportKinds": unsupported, "supportedSupportKinds": ["wall"]},
+        )
+
+    tolerance = float(request.get("toleranceMm") or 250.0)
+    vertical_tolerance = float(request.get("verticalToleranceMm") or 500.0)
+    lower_level_id = request.get("lowerLevelId") or request.get("supportLevelId")
+    floor_bbox = element_bbox_mm(doc, floor)
+    if floor_bbox is None:
+        return error_envelope("invalid_request", "Floor boundary could not be evaluated.", status=400)
+    search_bbox = _expand_bbox_xy(tolerance)(floor_bbox)
+    floor_z = _level_elevation(doc, floor.level_id)
+
+    candidates: list[dict[str, Any]] = []
+    for wall in sorted(
+        (e for e in doc.elements.values() if isinstance(e, WallElem)), key=lambda w: w.id
+    ):
+        if lower_level_id and wall.level_id != lower_level_id:
+            continue
+        if wall.wall_curve is not None:
+            continue
+        wall_bbox = element_bbox_mm(doc, wall)
+        if wall_bbox is None or not _bbox_intersects_xy(search_bbox, wall_bbox):
+            continue
+        wall_base_z = _level_elevation(doc, wall.level_id)
+        wall_top_z = wall_base_z + wall.height_mm
+        vertical_gap = abs(wall_top_z - floor_z)
+        if not lower_level_id and vertical_gap > vertical_tolerance:
+            continue
+        overlap_area = _bbox_xy_overlap_area(search_bbox, wall_bbox)
+        wall_area = max((wall_bbox[3] - wall_bbox[0]) * (wall_bbox[4] - wall_bbox[1]), 1.0)
+        xy_score = min(1.0, overlap_area / wall_area)
+        vertical_score = max(0.0, 1.0 - vertical_gap / max(vertical_tolerance, 1.0))
+        score = 0.7 * xy_score + 0.3 * vertical_score
+        candidates.append(
+            {
+                "kind": "wall",
+                "elementId": wall.id,
+                "levelId": wall.level_id,
+                "score": round(score, 4),
+                "xyOverlapAreaMm2": round(overlap_area, 3),
+                "verticalGapMm": round(vertical_gap, 3),
+                "reason": "wall bbox intersects floor boundary search area and wall top aligns to floor datum",
+            }
+        )
+    candidates.sort(key=lambda c: (-c["score"], c["elementId"]))
+    support_ids = [str(c["elementId"]) for c in candidates if c["score"] > 0]
+    if not support_ids:
+        return error_envelope(
+            "not_found",
+            "No floor supports matched the requested floor.",
+            status=404,
+            details={
+                "floorId": floor.id,
+                "floorLevelId": floor.level_id,
+                "lowerLevelId": lower_level_id,
+            },
+        )
+
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "floor": {
+                "elementId": floor.id,
+                "levelId": floor.level_id,
+                "bboxMm": floor_bbox,
+            },
+            "supportIds": support_ids,
+            "candidates": candidates[:25],
+            "payloadPatch": {"props": {"supportedByIds": support_ids}},
+            "resolution": {
+                "strategy": "bbox_level_wall_support_match",
+                "confidence": candidates[0]["score"],
+            },
+        },
+    )
+
+
+def resolve_room_boundary_edges(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
+    room_ids = request.get("roomIds") or request.get("roomId")
+    if isinstance(room_ids, str):
+        room_ids = [room_ids]
+    if room_ids is not None and not isinstance(room_ids, list):
+        return error_envelope("invalid_request", "roomIds must be a list of strings.", status=400)
+    report = room_boundary_edges_report_v1(doc, room_ids=[str(room_id) for room_id in room_ids or []])
+    if not report.get("ok"):
+        return error_envelope(
+            str(report.get("error", {}).get("code") or "invalid_request"),
+            str(report.get("error", {}).get("message") or "Room boundary edge report failed."),
+            status=400,
+        )
+    return success_envelope(model_id, doc, {"boundaryEdges": report})
 
 
 def _closed_boundary(points: list[list[float]]) -> list[list[float]]:

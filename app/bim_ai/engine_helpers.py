@@ -180,7 +180,6 @@ from bim_ai.commands import (
     SetWallRecessZonesCmd,
     SetWallStackCmd,
     SplitWallAtCmd,
-    TraceImageCmd,
     TrimElementToReferenceCmd,
     TrimExtendToCornerCmd,
     UnbindViewTemplateCmd,

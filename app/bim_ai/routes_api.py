@@ -38,6 +38,7 @@ from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
 from bim_ai.architecture_lens_query import build_architecture_lens_query
+from bim_ai.area_reconciliation import build_area_reconciliation_report
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.command_schemas import export_command_schemas, get_command_schema
@@ -121,16 +122,33 @@ from bim_ai.query_resolve import (
     query_hosts,
     query_levels,
     query_nearest_wall,
+    query_room_access_graph,
     query_types,
     query_views,
+    resolve_dormer_opening_host,
     resolve_active_or_default_level,
     resolve_default_plan_view,
     resolve_family_type,
+    resolve_floor_supports,
     resolve_host_face,
     resolve_loop_for_boundary,
+    resolve_opening_source_match,
+    resolve_roof_position_from_source_point,
+    resolve_room_boundary_edges,
     resolve_room_boundary,
+    resolve_wall_opening_host,
     resolve_wall_by_line,
     success_envelope,
+    validate_roof_dormer_source_alignment,
+)
+from bim_ai.folder_output import build_reverse_bim_folder_output
+from bim_ai.reverse_bim import (
+    build_existing_building_ir_seed,
+    build_mcp_authoring_readiness,
+    build_reverse_bim_phase_packet,
+    build_source_coverage_matrix,
+    plan_mcp_authoring_actions,
+    validate_existing_building_ir,
 )
 from bim_ai.renderer_diagnostic_persistence import (
     append_renderer_diagnostic_packet,
@@ -170,6 +188,25 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.seed_library import is_seed_library_project_id
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
+from bim_ai.source_ingestion import (
+    build_ai_reading_packet,
+    build_ai_visual_trace_packet,
+    build_ai_visual_trace_work_order,
+    build_folder_manifest,
+    classify_documents,
+    detect_scale_from_text,
+    extract_pdf_text,
+    extract_source_facts,
+    render_pdf_pages,
+    validate_ai_visual_trace_completeness,
+    validate_ai_source_facts,
+)
+from bim_ai.source_agent_loop import (
+    build_ai_visual_trace_agent_requests,
+    normalize_ai_visual_trace_reader_responses,
+    prepare_ai_visual_trace_run_from_folder,
+    run_ai_visual_trace_agent_loop,
+)
 from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
 from bim_ai.structure_lens import structure_analysis_export
 from bim_ai.permissions import authorize_command
@@ -1408,6 +1445,19 @@ async def query_nearest_wall_route(
     return _query_resolve_response(query_nearest_wall(mid, doc, body))
 
 
+@api_router.post("/models/{model_id}/query/room-access-graph")
+async def query_room_access_graph_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_room_access_graph(mid, doc, body))
+
+
 @api_router.post("/models/{model_id}/query/enclosed-loops")
 async def query_enclosed_loops_route(
     model_id: UUID,
@@ -1458,6 +1508,84 @@ async def resolve_wall_by_line_route(
         return loaded
     mid, doc = loaded
     return _query_resolve_response(resolve_wall_by_line(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/floor-supports")
+async def resolve_floor_supports_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_floor_supports(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/opening-source-match")
+async def resolve_opening_source_match_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_opening_source_match(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/wall-opening-host")
+async def resolve_wall_opening_host_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_wall_opening_host(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/dormer-opening-host")
+async def resolve_dormer_opening_host_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_dormer_opening_host(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/roof-position-from-source-point")
+async def resolve_roof_position_from_source_point_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_roof_position_from_source_point(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/room-boundary-edges")
+async def resolve_room_boundary_edges_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_room_boundary_edges(mid, doc, body))
 
 
 @api_router.post("/models/{model_id}/resolve/host-face")
@@ -1512,6 +1640,19 @@ async def resolve_loop_for_boundary_route(
     return _query_resolve_response(resolve_loop_for_boundary(mid, doc, body))
 
 
+@api_router.post("/models/{model_id}/validate/roof-dormer-source-alignment")
+async def validate_roof_dormer_source_alignment_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(validate_roof_dormer_source_alignment(mid, doc, body))
+
+
 @api_router.post("/models/{model_id}/qa/advisor")
 async def qa_advisor_route(
     model_id: UUID,
@@ -1537,15 +1678,51 @@ async def qa_bim_requirement_validation_route(
     return build_document_bim_requirement_validation_payload(mid, doc)
 
 
+@api_router.post("/models/{model_id}/qa/area-reconciliation")
+async def qa_area_reconciliation_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    facts = body.get("sourceFacts") or body.get("facts") or []
+    if not isinstance(facts, list):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "ok": False,
+                "error": {
+                    "code": "invalid_request",
+                    "message": "sourceFacts/facts must be a list.",
+                },
+            },
+        )
+    tolerance = float(body.get("toleranceM2") or 0.5)
+    return build_area_reconciliation_report(mid, doc, facts, tolerance_m2=tolerance)
+
+
 _SEMANTIC_SURFACE_ALIASES = {
+    "author.level": "level",
     "author.wall": "wall",
     "author.wall_chain": "wall_chain",
+    "author.floor_from_boundary": "floor_from_boundary",
+    "author.floor_supports": "floor_supports",
+    "author.room_outline": "room_outline",
+    "author.room_separation": "room_separation",
+    "author.roof_from_boundary": "roof_from_boundary",
+    "author.dormer_on_roof": "dormer_on_roof",
     "opening.door_on_wall": "door_on_wall",
     "opening.window_on_wall": "window_on_wall",
     "opening.roof_opening": "roof_opening",
     "opening.slab_opening": "slab_opening",
     "opening.shaft_opening": "shaft_opening",
     "author.stair_between_levels": "stair_between_levels",
+    "author.stair_by_runs": "stair_by_runs",
+    "author.stair_by_sketch": "stair_by_sketch",
+    "author.stair_existing_condition": "stair_existing_condition",
     "author.railing": "railing",
     "structure.column": "structure_column",
     "structure.beam": "structure_beam",
@@ -1589,6 +1766,282 @@ async def semantic_authoring_route(
             detail={"code": "invalid_semantic_payload", "message": str(exc)},
         ) from exc
     return bundle.model_dump(by_alias=True)
+
+
+# ---------------------------------------------------------------------------
+# Existing-building source ingestion and reverse-BIM method surfaces
+# ---------------------------------------------------------------------------
+
+
+def _source_response(payload: dict[str, Any]) -> dict[str, Any] | JSONResponse:
+    if payload.get("ok") is not False:
+        return payload
+    return JSONResponse(status_code=int(payload.pop("status", 400)), content=payload)
+
+
+@api_router.post("/v3/source/folder-manifest")
+async def source_folder_manifest_route(body: dict[str, Any] = Body(default_factory=dict)) -> Any:
+    root_path = body.get("rootPath") or body.get("path")
+    if not root_path:
+        raise HTTPException(status_code=422, detail="rootPath is required")
+    return _source_response(build_folder_manifest(str(root_path)))
+
+
+@api_router.post("/v3/source/classify-documents")
+async def source_classify_documents_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    manifest = body.get("manifest") or body.get("files") or body
+    return classify_documents(manifest)
+
+
+@api_router.post("/v3/source/pdf-text")
+async def source_pdf_text_route(body: dict[str, Any] = Body(default_factory=dict)) -> Any:
+    source_path = body.get("sourcePath") or body.get("path")
+    if not source_path:
+        raise HTTPException(status_code=422, detail="sourcePath is required")
+    return _source_response(
+        extract_pdf_text(str(source_path), max_pages=body.get("maxPages"))
+    )
+
+
+@api_router.post("/v3/source/render-pdf")
+async def source_render_pdf_route(body: dict[str, Any] = Body(default_factory=dict)) -> Any:
+    source_path = body.get("sourcePath") or body.get("path")
+    output_dir = body.get("outputDir") or "tmp/pdfs/source-render"
+    if not source_path:
+        raise HTTPException(status_code=422, detail="sourcePath is required")
+    return _source_response(
+        render_pdf_pages(
+            str(source_path),
+            output_dir=str(output_dir),
+            dpi=int(body.get("dpi") or 200),
+            first_page=body.get("firstPage"),
+            last_page=body.get("lastPage"),
+        )
+    )
+
+
+@api_router.post("/v3/source/detect-scale")
+async def source_detect_scale_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return detect_scale_from_text(
+        str(body.get("text") or ""),
+        source_document_id=body.get("sourceDocumentId"),
+    )
+
+
+@api_router.post("/v3/source/ai-reading-packet")
+async def source_ai_reading_packet_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_ai_reading_packet(
+        manifest=body.get("manifest") or {},
+        classifications=body.get("classifications"),
+        rendered_pages=body.get("renderedPages") or [],
+        text_extractions=body.get("textExtractions") or [],
+    )
+
+
+@api_router.post("/v3/source/ai-visual-trace-packet")
+async def source_ai_visual_trace_packet_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_ai_visual_trace_packet(
+        manifest=body.get("manifest") or {},
+        classifications=body.get("classifications"),
+        rendered_pages=body.get("renderedPages") or [],
+        text_extractions=body.get("textExtractions") or [],
+    )
+
+
+@api_router.post("/v3/source/ai-visual-trace-work-order")
+async def source_ai_visual_trace_work_order_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    packet = body.get("aiVisualTracePacket") or body.get("packet") or body
+    return build_ai_visual_trace_work_order(
+        ai_visual_trace_packet=packet,
+        project_goal=body.get("projectGoal"),
+    )
+
+
+@api_router.post("/v3/source/ai-visual-trace-agent-requests")
+async def source_ai_visual_trace_agent_requests_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    work_order = body.get("workOrder") or body.get("aiVisualTraceWorkOrder") or body
+    return build_ai_visual_trace_agent_requests(
+        work_order=work_order,
+        run_id=body.get("runId"),
+        max_native_text_chars=int(body.get("maxNativeTextChars") or 0),
+    )
+
+
+@api_router.post("/v3/source/prepare-ai-visual-trace-run")
+async def source_prepare_ai_visual_trace_run_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> Any:
+    root_path = body.get("rootPath") or body.get("path")
+    output_dir = body.get("outputDir")
+    if not root_path:
+        raise HTTPException(status_code=422, detail="rootPath is required")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    return _source_response(
+        prepare_ai_visual_trace_run_from_folder(
+            root_path=str(root_path),
+            output_dir=str(output_dir),
+            run_id=body.get("runId"),
+            dpi=int(body.get("dpi") or 200),
+            max_pages_per_pdf=body.get("maxPagesPerPdf"),
+        )
+    )
+
+
+@api_router.post("/v3/source/ai-visual-trace-agent-loop")
+async def source_ai_visual_trace_agent_loop_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    work_order = body.get("workOrder") or body.get("aiVisualTraceWorkOrder") or {}
+    return run_ai_visual_trace_agent_loop(
+        work_order=work_order,
+        responses=body.get("responses") or body.get("readerResponses"),
+        run_id=body.get("runId"),
+        reader_command=body.get("readerCommand"),
+        reader_timeout_seconds=int(body.get("readerTimeoutSeconds") or 300),
+    )
+
+
+@api_router.post("/v3/source/normalize-ai-visual-trace-reader-responses")
+async def source_normalize_ai_visual_trace_reader_responses_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return normalize_ai_visual_trace_reader_responses(
+        body.get("responses") or body.get("readerResponses") or body
+    )
+
+
+@api_router.post("/v3/source/validate-ai-facts")
+async def source_validate_ai_facts_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return validate_ai_source_facts(body.get("facts") or [])
+
+
+@api_router.post("/v3/source/validate-ai-visual-trace-completeness")
+async def source_validate_ai_visual_trace_completeness_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return validate_ai_visual_trace_completeness(
+        body.get("facts") or [],
+        required_kinds=body.get("requiredKinds") or body.get("requiredFactKinds"),
+    )
+
+
+@api_router.post("/v3/source/extract-facts")
+async def source_extract_facts_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return extract_source_facts(
+        body.get("classifications") or body,
+        text_extractions=body.get("textExtractions") or [],
+    )
+
+
+@api_router.post("/v3/reverse-bim/ir/seed")
+async def reverse_bim_ir_seed_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_existing_building_ir_seed(
+        source_manifest=body.get("sourceManifest") or {},
+        source_facts=body.get("sourceFacts"),
+        classifications=body.get("classifications"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/ir/validate")
+async def reverse_bim_ir_validate_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return validate_existing_building_ir(body.get("ir") or body)
+
+
+@api_router.post("/v3/reverse-bim/source-coverage")
+async def reverse_bim_source_coverage_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    facts = body.get("facts") or body.get("extractedFacts") or []
+    return build_source_coverage_matrix(
+        facts=facts,
+        fact_to_element_refs=body.get("factToElementRefs") or {},
+    )
+
+
+@api_router.post("/v3/reverse-bim/plan-authoring")
+async def reverse_bim_plan_authoring_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return plan_mcp_authoring_actions(
+        facts=body.get("facts") or body.get("extractedFacts") or [],
+        target_phase=body.get("phase"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/mcp-readiness")
+async def reverse_bim_mcp_readiness_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_mcp_authoring_readiness(
+        facts=body.get("facts") or body.get("extractedFacts") or [],
+        target_phase=body.get("phase"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/folder-output")
+async def reverse_bim_folder_output_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> Any:
+    root_path = body.get("rootPath") or body.get("sourceFolder") or body.get("path")
+    output_dir = body.get("outputDir")
+    if not root_path:
+        raise HTTPException(status_code=422, detail="rootPath is required")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    return build_reverse_bim_folder_output(
+        root_path=str(root_path),
+        output_dir=str(output_dir),
+        reader_responses=body.get("readerResponses") or body.get("responses"),
+        reader_command=body.get("readerCommand"),
+        reader_timeout_seconds=int(body.get("readerTimeoutSeconds") or 300),
+        conflict_decisions=body.get("conflictDecisions") or body.get("sourceConflictDecisions"),
+        coordinate_frame_alignments=body.get("coordinateFrameAlignments")
+        or body.get("coordinateFrameDecisions"),
+        site_terrain_decisions=body.get("siteTerrainDecisions") or body.get("siteTopologyDecisions"),
+        run_id=body.get("runId"),
+        dpi=int(body.get("dpi") or 200),
+        max_pages_per_pdf=body.get("maxPagesPerPdf"),
+        reset_output=bool(body.get("resetOutput") or False),
+    )
+
+
+@api_router.post("/v3/reverse-bim/phase-packet")
+async def reverse_bim_phase_packet_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_phase_packet(
+        phase_id=str(body.get("phaseId") or "unknown"),
+        start_revision=body.get("startRevision"),
+        end_revision=body.get("endRevision"),
+        source_fact_ids=body.get("sourceFactIds") or [],
+        transactions=body.get("transactions") or [],
+        advisor=body.get("advisor"),
+        constructability=body.get("constructability"),
+        integrity_preflight=body.get("integrityPreflight"),
+        evidence_package=body.get("evidencePackage"),
+        finding_dispositions=body.get("findingDispositions") or [],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -3133,93 +3586,6 @@ def _descriptor_to_dict(d: Any) -> dict[str, Any]:
     from dataclasses import asdict
 
     return asdict(d)
-
-
-@api_router.post("/v3/trace")
-async def v3_trace_image(
-    request: Request,
-    archetypeHint: str | None = Query(default=None),
-) -> dict[str, Any]:
-    """IMG-V3-01 — deterministic CV image → StructuredLayout.
-
-    Accepts multipart/form-data with:
-      - image: binary (JPEG or PNG)
-      - brief: optional text string
-
-    Images > 2 MB are enqueued as image_trace jobs → returns {jobId}.
-    Images ≤ 2 MB are processed inline → returns StructuredLayout.
-    """
-    import base64
-    import io as _io
-    import os
-    import tempfile
-
-    from bim_ai.img.pipeline import trace
-
-    form = await request.form()
-    image_field = form.get("image")
-    if image_field is None:
-        raise HTTPException(status_code=422, detail="Missing required form field: image")
-
-    image_bytes: bytes
-    if hasattr(image_field, "read"):
-        image_bytes = await image_field.read()  # type: ignore[union-attr]
-    else:
-        image_bytes = image_field.encode() if isinstance(image_field, str) else bytes(image_field)  # type: ignore[arg-type]
-
-    brief_text: str | None = None
-    brief_field = form.get("brief")
-    if brief_field is not None:
-        brief_text = str(brief_field)
-
-    _SIZE_LIMIT = 2 * 1024 * 1024  # 2 MB
-    if len(image_bytes) > _SIZE_LIMIT:
-        now = datetime.now(UTC).isoformat()
-        model_id_hint = str(form.get("modelId") or "unassigned")
-        job = Job(
-            modelId=model_id_hint,
-            kind="image_trace",
-            status="queued",
-            inputs={"archetypeHint": archetypeHint},
-            createdAt=now,
-        )
-        job = await get_queue().submit(job)
-        from fastapi.responses import JSONResponse
-
-        return JSONResponse(status_code=202, content={"jobId": job.id})
-
-    suffix = ".jpg" if image_bytes[:2] == b"\xff\xd8" else ".png"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as fh:
-        fh.write(image_bytes)
-        tmp_path = fh.name
-    brief_path: str | None = None
-    try:
-        if brief_text:
-            brief_fh = tempfile.NamedTemporaryFile(
-                suffix=".txt", delete=False, mode="w", encoding="utf-8"
-            )
-            brief_fh.write(brief_text)
-            brief_fh.close()
-            brief_path = brief_fh.name
-        layout = trace(tmp_path, archetype_hint=archetypeHint, brief_path=brief_path)
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-        if brief_path:
-            try:
-                os.unlink(brief_path)
-            except OSError:
-                pass
-
-    result = layout.model_dump(by_alias=True)
-    codes = {a.get("code") for a in result.get("advisories", [])}
-    # 422 if no usable walls could be extracted — either because the image has
-    # no detectable walls (no_walls_detected) or is too low-contrast to process.
-    if codes & {"no_walls_detected", "low_contrast_image"}:
-        raise HTTPException(status_code=422, detail=result)
-    return result
 
 
 # ---------------------------------------------------------------------------

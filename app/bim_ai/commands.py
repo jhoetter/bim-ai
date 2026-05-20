@@ -3153,25 +3153,6 @@ class CreateDecalCmd(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# IMG-V3-01 — Image trace command
-# ---------------------------------------------------------------------------
-
-
-class TraceImageCmd(BaseModel):
-    """IMG-V3-01 — read-only CV trace; does not mutate the kernel.
-
-    Dispatched via engine.handle_trace_image_cmd(), not apply_inplace().
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["TraceImage"] = "TraceImage"
-    image_b64: str = Field(alias="imageB64")
-    archetype_hint: str | None = Field(default=None, alias="archetypeHint")
-    brief_text: str | None = Field(default=None, alias="briefText")
-    assumptions: list = Field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
 # SCH-V3-01 — Custom-properties + schedule view commands
 # ---------------------------------------------------------------------------
 
@@ -3967,7 +3948,6 @@ Command = Annotated[
     | MoveElementsDeltaCmd
     | RotateElementsCmd
     | SetToolPrefCmd
-    | TraceImageCmd
     | UpdateWallCmd
     | UpdateDoorCmd
     | UpdateWindowCmd

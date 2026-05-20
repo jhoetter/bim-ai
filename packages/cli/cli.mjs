@@ -5189,55 +5189,6 @@ async function main() {
       process.exit(1);
     }
 
-    if (cmd === 'trace') {
-      const imageIdx = argv.indexOf('--image');
-      if (imageIdx === -1) {
-        console.error('trace requires --image <path>');
-        process.exit(1);
-      }
-      const imagePath = argv[imageIdx + 1];
-      const briefIdx = argv.indexOf('--brief');
-      const briefPath = briefIdx !== -1 ? argv[briefIdx + 1] : null;
-      const archetypeIdx = argv.indexOf('--archetype-hint');
-      const archetypeHint = archetypeIdx !== -1 ? argv[archetypeIdx + 1] : null;
-      const outIdx = argv.indexOf('-o');
-      const outPath = outIdx !== -1 ? argv[outIdx + 1] : null;
-
-      const imageBytes = await fs.readFile(imagePath);
-      const form = new FormData();
-      form.append('image', new Blob([imageBytes]), path.basename(imagePath));
-      if (briefPath) {
-        const briefText = await fs.readFile(briefPath, 'utf8');
-        form.append('brief', briefText);
-      }
-      let url = `${base}/api/v3/trace`;
-      if (archetypeHint) url += `?archetypeHint=${encodeURIComponent(archetypeHint)}`;
-
-      const res = await fetch(url, { method: 'POST', body: form });
-      const data = await res.json();
-      if (!res.ok) {
-        console.error(JSON.stringify(data, null, 2));
-        process.exit(1);
-      }
-      if (data.jobId) {
-        console.error(
-          `Image >2MB — enqueued job ${data.jobId}. Poll with: bim-ai jobs get ${data.jobId}`,
-        );
-        console.log(JSON.stringify(data, null, 2));
-        process.exit(0);
-      }
-      const hasNoWalls = (data.advisories ?? []).some((a) => a.code === 'no_walls_detected');
-      const output = JSON.stringify(data, null, 2);
-      if (outPath) {
-        await fs.writeFile(outPath, output);
-        console.error(`Wrote ${outPath}`);
-      } else {
-        console.log(output);
-      }
-      if (hasNoWalls) process.exit(1);
-      return;
-    }
-
     if (cmd === 'publish') {
       // OUT-V3-01: create / revoke / list presentation links
       const rest = argv.slice(1);

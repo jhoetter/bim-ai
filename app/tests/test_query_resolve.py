@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
+    DormerElem,
     FamilyTypeElem,
     FloorElem,
     LevelElem,
@@ -14,6 +16,7 @@ from bim_ai.elements import (
     WallElem,
     WallTypeElem,
 )
+from bim_ai.engine import apply_inplace
 from bim_ai.query_resolve import (
     model_summary_resource,
     qa_advisor,
@@ -22,15 +25,23 @@ from bim_ai.query_resolve import (
     query_hosts,
     query_levels,
     query_nearest_wall,
+    query_room_access_graph,
     query_types,
     query_views,
     resolve_active_or_default_level,
     resolve_default_plan_view,
+    resolve_dormer_opening_host,
     resolve_family_type,
+    resolve_floor_supports,
     resolve_host_face,
     resolve_loop_for_boundary,
+    resolve_opening_source_match,
+    resolve_roof_position_from_source_point,
     resolve_room_boundary,
+    resolve_room_boundary_edges,
     resolve_wall_by_line,
+    resolve_wall_opening_host,
+    validate_roof_dormer_source_alignment,
 )
 
 MODEL_ID = "model-query-resolve"
@@ -208,6 +219,28 @@ def test_query_nearest_wall_alias_returns_closest_wall_placement() -> None:
     assert result["data"]["resolution"]["strategy"] == "query_hosts_nearest_wall"
 
 
+def test_resolve_wall_opening_host_adjusts_endpoint_source_point_to_fit_width() -> None:
+    result = resolve_wall_opening_host(
+        MODEL_ID,
+        _doc(),
+        {
+            "levelId": "level-0",
+            "pointMm": [150, 0, 0],
+            "widthMm": 900,
+            "maxDistanceMm": 50,
+            "adjustOpeningToFit": True,
+            "maxAdjustmentMm": 400,
+        },
+    )
+
+    assert result["ok"] is True
+    assert result["data"]["host"]["elementId"] == "w-s"
+    assert result["data"]["sourcePlacement"]["t"] == 0.0125
+    assert result["data"]["authoring"]["alongT"] > result["data"]["sourcePlacement"]["t"]
+    assert result["data"]["openingFit"]["adjusted"] is True
+    assert result["warnings"][0]["code"] == "opening_source_point_adjusted_to_fit"
+
+
 def test_qa_advisor_wraps_constructability_findings_with_limitations() -> None:
     doc = _doc()
     doc.elements["roof-1"] = RoofElem(
@@ -248,6 +281,148 @@ def test_resolve_wall_by_line_and_defaults() -> None:
     assert view["data"]["viewId"] == "plan-level-0"
     assert wall["data"]["wallId"] == "w-s"
     assert wall["data"]["match"]["overlapRatio"] == 1.0
+
+
+def test_resolve_floor_supports_returns_wall_candidates_and_patch() -> None:
+    doc = _doc()
+    doc.elements["level-1"] = LevelElem(id="level-1", name="Upper Floor", elevationMm=3000)
+    doc.elements["floor-2"] = FloorElem(
+        id="floor-2",
+        name="Upper floor",
+        levelId="level-1",
+        boundaryMm=[_pt(0, 0), _pt(12000, 0), _pt(12000, 9000), _pt(0, 9000)],
+        floorTypeId=None,
+    )
+
+    result = resolve_floor_supports(
+        MODEL_ID,
+        doc,
+        {"floorId": "floor-2", "lowerLevelId": "level-0", "toleranceMm": 250},
+    )
+
+    assert result["ok"] is True
+    assert result["data"]["supportIds"] == ["w-e", "w-n", "w-s", "w-w"]
+    assert result["data"]["payloadPatch"] == {
+        "props": {"supportedByIds": ["w-e", "w-n", "w-s", "w-w"]}
+    }
+    assert result["data"]["resolution"]["strategy"] == "bbox_level_wall_support_match"
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="floor-2",
+            key="supportedByIds",
+            value=result["data"]["supportIds"],
+        ),
+    )
+    floor = doc.elements["floor-2"]
+    assert isinstance(floor, FloorElem)
+    assert floor.props == {"supportedByIds": ["w-e", "w-n", "w-s", "w-w"]}
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="floor-2",
+            key="structuralSystem",
+            value="existing bearing walls",
+        ),
+    )
+    floor = doc.elements["floor-2"]
+    assert isinstance(floor, FloorElem)
+    assert floor.props == {
+        "supportedByIds": ["w-e", "w-n", "w-s", "w-w"],
+        "structuralSystem": "existing bearing walls",
+    }
+
+
+def test_reverse_bim_opening_and_roof_resolvers() -> None:
+    doc = _doc()
+    doc.elements["roof-1"] = RoofElem(
+        id="roof-1",
+        name="Main roof",
+        referenceLevelId="level-0",
+        footprintMm=[_pt(0, 0), _pt(12000, 0), _pt(12000, 9000), _pt(0, 9000)],
+    )
+    doc.elements["dormer-1"] = DormerElem(
+        id="dormer-1",
+        hostRoofId="roof-1",
+        positionOnRoof={"alongRidgeMm": 500, "acrossRidgeMm": -1000},
+        widthMm=1800,
+        wallHeightMm=1200,
+        depthMm=1500,
+    )
+
+    match = resolve_opening_source_match(
+        MODEL_ID,
+        doc,
+        {
+            "openings": [
+                {
+                    "factId": "door-plan",
+                    "kind": "opening",
+                    "value": {"levelId": "level-0", "openingType": "door", "widthMm": 900, "heightMm": 2100},
+                    "provenance": {"sourceDocumentId": "plan", "page": 1},
+                },
+                {
+                    "factId": "door-elevation",
+                    "kind": "opening",
+                    "value": {"levelId": "level-0", "openingType": "door", "widthMm": 920, "heightMm": 2100},
+                    "provenance": {"sourceDocumentId": "elevation", "page": 1},
+                },
+            ]
+        },
+    )
+    roof_pos = resolve_roof_position_from_source_point(
+        MODEL_ID,
+        doc,
+        {"hostRoofId": "roof-1", "sourcePointMm": [6500, 3500, 0]},
+    )
+    dormer_host = resolve_dormer_opening_host(
+        MODEL_ID,
+        doc,
+        {"hostRoofId": "roof-1", "positionOnRoof": {"alongRidgeMm": 500, "acrossRidgeMm": -1000}},
+    )
+    validation = validate_roof_dormer_source_alignment(
+        MODEL_ID,
+        doc,
+        {
+            "facts": [
+                {
+                    "factId": "dormer-source",
+                    "kind": "dormer",
+                    "value": {"hostRoofId": "roof-1", "depthMm": 1500},
+                },
+                {
+                    "factId": "skylight-source",
+                    "kind": "opening",
+                    "value": {"openingType": "roof window", "hostRoofId": "roof-1"},
+                },
+            ]
+        },
+    )
+
+    assert match["data"]["matches"][0]["status"] == "candidate_same_element"
+    assert roof_pos["data"]["positionOnRoof"] == {"alongRidgeMm": 500.0, "acrossRidgeMm": -1000.0}
+    assert dormer_host["data"]["host"]["hostElementId"] == "dormer-1"
+    assert dormer_host["data"]["authoring"]["status"] == "blocked_until_dormer_face_or_wall_host_exists"
+    assert validation["data"]["accepted"] is True
+
+
+def test_room_access_graph_and_boundary_edges_queries() -> None:
+    doc = _doc()
+
+    graph = query_room_access_graph(MODEL_ID, doc, {"roomIds": ["room-1"]})
+    edges = resolve_room_boundary_edges(MODEL_ID, doc, {"roomId": "room-1"})
+
+    assert graph["ok"] is True
+    assert graph["data"]["graph"]["rooms"][0]["roomId"] == "room-1"
+    assert graph["data"]["graph"]["rooms"][0]["doorIds"] == ["door-1"]
+    assert edges["ok"] is True
+    assert edges["data"]["boundaryEdges"]["rooms"][0]["edgeCount"] == 4
+    assert set(edges["data"]["boundaryEdges"]["rooms"][0]["edges"][0]) >= {
+        "status",
+        "supportRefs",
+        "unsupportedIntervalsMm",
+    }
 
 
 def test_loop_discovery_and_boundary_resolvers() -> None:

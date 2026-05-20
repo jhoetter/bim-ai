@@ -14,7 +14,6 @@ const KIND_LABELS: Record<string, string> = {
   dxf_import: 'DXF Import',
   gltf_export: 'glTF Export',
   sketch_trace: 'Sketch Trace',
-  image_trace: 'Image Trace',
   render_still: 'Still Render',
   render_video: 'Video Render',
   agent_call: 'Agent Call',

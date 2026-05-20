@@ -91,7 +91,6 @@ RESOURCE_GROUPS_BY_TOOL: dict[str, tuple[str, ...]] = {
     "presentation-create": ("presentation", "share-link"),
     "presentation-revoke": ("presentation", "share-link"),
     "presentation-list": ("presentation", "share-link"),
-    "img-trace": ("image", "sketch"),
     "import-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
     "move-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
     "scale-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),

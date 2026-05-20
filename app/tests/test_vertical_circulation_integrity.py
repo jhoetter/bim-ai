@@ -202,6 +202,51 @@ def test_missing_stair_graph_connection_reports_endpoint_failure() -> None:
     assert "stair_graph_connection_missing" in _codes(elements)
 
 
+def test_source_evidenced_existing_stair_tolerance_suppresses_comfort_proxy_findings() -> None:
+    elements = _clean_elements()
+    elements["S1"] = StairElem(
+        id="S1",
+        baseLevelId="L1",
+        topLevelId="L2",
+        runStartMm=_pt(900, 900),
+        runEndMm=_pt(1400, 900),
+        widthMm=1000,
+        riserMm=183,
+        treadMm=250,
+        authoringMode="by_sketch",
+        boundaryMm=[_pt(700, 700), _pt(1700, 700), _pt(1700, 1800), _pt(700, 1800)],
+        treadLines=[
+            StairTreadLine(fromMm=_pt(700, 700), toMm=_pt(1700, 700), riserHeightMm=183),
+            StairTreadLine(fromMm=_pt(700, 900), toMm=_pt(1700, 900), riserHeightMm=183),
+        ],
+        totalRiseMm=3000,
+        landings=[
+            {
+                "id": "landing-existing",
+                "boundaryMm": [_pt(800, 800), _pt(1600, 800), _pt(1600, 1600), _pt(800, 1600)],
+            }
+        ],
+        props={
+            "existingConditionTolerance": {
+                "accepted": True,
+                "findingCodes": [
+                    "stair_riser_tread_comfort_failure",
+                    "stair_landing_too_small",
+                    "stair_by_sketch_riser_too_high",
+                ],
+                "reason": "Existing stair dimensions are source-documented and retained as existing condition.",
+                "sourceFactIds": ["leo-stair-eg-dg"],
+            }
+        },
+    )
+
+    codes = _codes(elements)
+
+    assert "stair_riser_tread_comfort_failure" not in codes
+    assert "stair_landing_too_small" not in codes
+    assert "stair_by_sketch_riser_too_high" not in codes
+
+
 def test_stair_without_hosted_guard_reports_stair_guardrail_gap() -> None:
     elements = _clean_elements()
     elements.pop("R1")

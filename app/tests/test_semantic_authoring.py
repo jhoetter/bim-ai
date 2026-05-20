@@ -24,6 +24,23 @@ _RECT_POINTS = [
 ]
 
 
+def test_level_payload_generates_valid_create_level() -> None:
+    bundle = build_semantic_authoring_bundle(
+        "level",
+        {
+            "id": "level-eg",
+            "name": "EG",
+            "elevationMm": 0,
+            "alsoCreatePlanView": True,
+        },
+    )
+
+    assert bundle.metadata["kernelCommandTypes"] == ["createLevel"]
+    assert bundle.commands[0]["type"] == "createLevel"
+    assert bundle.commands[0]["id"] == "level-eg"
+    assert bundle.commands[0]["name"] == "EG"
+
+
 def test_wall_chain_closed_payload_generates_valid_create_wall_chain() -> None:
     bundle = build_semantic_authoring_bundle(
         "wall_chain",
@@ -97,6 +114,26 @@ def test_wall_payload_generates_valid_create_wall() -> None:
     assert bundle.commands[0]["heightMm"] == 2700.0
 
 
+def test_dormer_on_roof_payload_generates_valid_create_dormer() -> None:
+    bundle = build_semantic_authoring_bundle(
+        "dormer_on_roof",
+        {
+            "id": "dormer-1",
+            "hostRoofId": "roof-1",
+            "positionOnRoof": {"alongRidgeMm": 1200, "acrossRidgeMm": 900},
+            "widthMm": 2400,
+            "wallHeightMm": 1200,
+            "depthMm": 1800,
+            "dormerRoofKind": "shed",
+        },
+    )
+
+    assert bundle.metadata["kernelCommandTypes"] == ["createDormer"]
+    assert bundle.commands[0]["type"] == "createDormer"
+    assert bundle.commands[0]["hostRoofId"] == "roof-1"
+    assert bundle.commands[0]["dormerRoofKind"] == "shed"
+
+
 def test_floor_from_wall_segments_derives_closed_boundary() -> None:
     bundle = build_semantic_authoring_bundle(
         "floor_from_wall_segments",
@@ -167,6 +204,28 @@ def test_openings_room_stair_view_and_sheet_command_shapes() -> None:
         "room_outline",
         {"id": "room-1", "name": "Living", "levelId": "level-1", "boundaryMm": _RECT_POINTS},
     )
+    room_sep = build_semantic_authoring_bundle(
+        "room_separation",
+        {
+            "id": "sep-1",
+            "levelId": "level-1",
+            "start": {"xMm": 4000, "yMm": 0},
+            "end": {"xMm": 4000, "yMm": 5000},
+        },
+    )
+    room_sep_mm_aliases = build_semantic_authoring_bundle(
+        "room_separation",
+        {
+            "id": "sep-2",
+            "levelId": "level-1",
+            "startMm": {"xMm": 1000, "yMm": 0},
+            "endMm": {"xMm": 1000, "yMm": 5000},
+        },
+    )
+    floor_supports = build_semantic_authoring_bundle(
+        "floor_supports",
+        {"floorId": "floor-2", "supportedByIds": ["wall-1", "wall-2"]},
+    )
     stair = build_semantic_authoring_bundle(
         "stair_between_levels",
         {
@@ -174,6 +233,61 @@ def test_openings_room_stair_view_and_sheet_command_shapes() -> None:
             "topLevelId": "level-2",
             "runStartMm": {"xMm": 1000, "yMm": 1000},
             "runEndMm": {"xMm": 1000, "yMm": 4200},
+        },
+    )
+    stair_runs = build_semantic_authoring_bundle(
+        "stair_by_runs",
+        {
+            "id": "stair-runs",
+            "baseLevelId": "level-1",
+            "topLevelId": "level-2",
+            "shape": "u_shape",
+            "runs": [
+                {
+                    "id": "run-1",
+                    "startMm": {"xMm": 0, "yMm": 0},
+                    "endMm": {"xMm": 2200, "yMm": 0},
+                    "widthMm": 1000,
+                    "riserCount": 8,
+                },
+                {
+                    "id": "run-2",
+                    "startMm": {"xMm": 2200, "yMm": 1500},
+                    "endMm": {"xMm": 0, "yMm": 1500},
+                    "widthMm": 1000,
+                    "riserCount": 8,
+                },
+            ],
+        },
+    )
+    stair_sketch = build_semantic_authoring_bundle(
+        "stair_by_sketch",
+        {
+            "id": "stair-sketch",
+            "baseLevelId": "level-1",
+            "topLevelId": "level-2",
+            "runStartMm": {"xMm": 0, "yMm": 0},
+            "runEndMm": {"xMm": 0, "yMm": 0},
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 1200},
+                {"xMm": 0, "yMm": 1200},
+            ],
+            "treadLines": [
+                {"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 3000, "yMm": 0}},
+                {"fromMm": {"xMm": 0, "yMm": 250}, "toMm": {"xMm": 3000, "yMm": 250}},
+            ],
+            "totalRiseMm": 2800,
+        },
+    )
+    stair_existing = build_semantic_authoring_bundle(
+        "stair_existing_condition",
+        {
+            "stairId": "stair-sketch",
+            "findingCodes": ["stair_riser_tread_comfort_failure"],
+            "reason": "Existing stair dimensions are source documented.",
+            "sourceFactIds": ["src-stair-1"],
         },
     )
     plan = build_semantic_authoring_bundle(
@@ -204,8 +318,21 @@ def test_openings_room_stair_view_and_sheet_command_shapes() -> None:
     assert window.commands[0]["type"] == "insertWindowOnWall"
     assert window.commands[0]["sillHeightMm"] == 850.0
     assert room.commands[0]["type"] == "createRoomOutline"
+    assert room_sep.commands[0]["type"] == "createRoomSeparation"
+    assert room_sep_mm_aliases.commands[0]["start"]["xMm"] == 1000.0
+    assert floor_supports.commands[0]["type"] == "updateElementProperty"
+    assert floor_supports.commands[0]["key"] == "supportedByIds"
+    assert floor_supports.commands[0]["value"] == ["wall-1", "wall-2"]
     assert stair.commands[0]["type"] == "createStair"
     assert stair.commands[0]["shape"] == "straight"
+    assert stair_runs.commands[0]["shape"] == "u_shape"
+    assert len(stair_runs.commands[0]["runs"]) == 2
+    assert stair_sketch.commands[0]["authoringMode"] == "by_sketch"
+    assert stair_sketch.commands[0]["shape"] == "straight"
+    assert stair_sketch.commands[0]["totalRiseMm"] == 2800.0
+    assert stair_existing.commands[0]["type"] == "updateElementProperty"
+    assert stair_existing.commands[0]["key"] == "existingConditionTolerance"
+    assert stair_existing.commands[0]["value"]["sourceFactIds"] == ["src-stair-1"]
     assert plan.commands[0]["type"] == "upsertPlanView"
     assert [command["type"] for command in sheet.commands] == [
         "upsertSheet",
@@ -550,6 +677,10 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             "end": {"xMm": 1000, "yMm": 0},
         },
     )
+    level = client.post(
+        "/api/semantic-authoring/author.level",
+        json={"id": "level-1", "name": "EG", "elevationMm": 0},
+    )
     roof_opening = client.post(
         "/api/semantic-authoring/opening.roof_opening",
         json={
@@ -561,6 +692,28 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             ],
         },
     )
+    dormer = client.post(
+        "/api/semantic-authoring/author.dormer_on_roof",
+        json={
+            "hostRoofId": "roof-1",
+            "positionOnRoof": {"alongRidgeMm": 1200, "acrossRidgeMm": 900},
+            "widthMm": 2400,
+            "wallHeightMm": 1200,
+            "depthMm": 1800,
+        },
+    )
+    room_sep = client.post(
+        "/api/semantic-authoring/author.room_separation",
+        json={
+            "levelId": "level-1",
+            "start": {"xMm": 4000, "yMm": 0},
+            "end": {"xMm": 4000, "yMm": 5000},
+        },
+    )
+    floor_supports = client.post(
+        "/api/semantic-authoring/author.floor_supports",
+        json={"floorId": "floor-2", "supportedByIds": ["wall-1", "wall-2"]},
+    )
     stair = client.post(
         "/api/semantic-authoring/author.stair_between_levels",
         json={
@@ -568,6 +721,44 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             "topLevelId": "level-2",
             "runStartMm": {"xMm": 1000, "yMm": 1000},
             "runEndMm": {"xMm": 1000, "yMm": 4200},
+        },
+    )
+    stair_runs = client.post(
+        "/api/semantic-authoring/author.stair_by_runs",
+        json={
+            "baseLevelId": "level-1",
+            "topLevelId": "level-2",
+            "runs": [
+                {
+                    "id": "run-1",
+                    "startMm": {"xMm": 0, "yMm": 0},
+                    "endMm": {"xMm": 2200, "yMm": 0},
+                    "riserCount": 8,
+                }
+            ],
+        },
+    )
+    stair_sketch = client.post(
+        "/api/semantic-authoring/author.stair_by_sketch",
+        json={
+            "baseLevelId": "level-1",
+            "topLevelId": "level-2",
+            "runStartMm": {"xMm": 0, "yMm": 0},
+            "runEndMm": {"xMm": 0, "yMm": 0},
+            "boundaryMm": _RECT_POINTS,
+            "treadLines": [
+                {"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 8000, "yMm": 0}}
+            ],
+            "totalRiseMm": 2800,
+        },
+    )
+    stair_existing = client.post(
+        "/api/semantic-authoring/author.stair_existing_condition",
+        json={
+            "stairId": "stair-sketch",
+            "findingCodes": ["stair_riser_tread_comfort_failure"],
+            "reason": "Existing stair dimensions are source documented.",
+            "sourceFactIds": ["src-stair-1"],
         },
     )
     shaft = client.post(
@@ -615,10 +806,24 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
 
     assert wall.status_code == 200
     assert wall.json()["commands"][0]["type"] == "createWall"
+    assert level.status_code == 200
+    assert level.json()["commands"][0]["type"] == "createLevel"
     assert roof_opening.status_code == 200
     assert roof_opening.json()["commands"][0]["type"] == "createRoofOpening"
+    assert dormer.status_code == 200
+    assert dormer.json()["commands"][0]["type"] == "createDormer"
+    assert room_sep.status_code == 200
+    assert room_sep.json()["commands"][0]["type"] == "createRoomSeparation"
+    assert floor_supports.status_code == 200
+    assert floor_supports.json()["commands"][0]["type"] == "updateElementProperty"
     assert stair.status_code == 200
     assert stair.json()["commands"][0]["type"] == "createStair"
+    assert stair_runs.status_code == 200
+    assert stair_runs.json()["commands"][0]["type"] == "createStair"
+    assert stair_sketch.status_code == 200
+    assert stair_sketch.json()["commands"][0]["authoringMode"] == "by_sketch"
+    assert stair_existing.status_code == 200
+    assert stair_existing.json()["commands"][0]["key"] == "existingConditionTolerance"
     assert shaft.status_code == 200
     assert shaft.json()["commands"][0]["isShaft"] is True
     assert railing.status_code == 200

@@ -1436,6 +1436,7 @@ class StairElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, LevelElem, WallElem
+from bim_ai.elements import DoorElem, LevelElem, WallElem, WindowElem
 from bim_ai.model_integrity import (
     check_model_integrity_invariants,
     model_integrity_invariant_contract_v1,
@@ -33,6 +33,24 @@ def test_valid_minimal_document_has_no_integrity_findings() -> None:
                 end={"xMm": 4000, "yMm": 0},
             ),
             "door-1": DoorElem(kind="door", id="door-1", wallId="wall-1", alongT=0.5),
+        }
+    )
+
+    assert check_model_integrity_invariants(doc) == []
+
+
+def test_window_optional_outline_is_not_required_for_wall_hosted_window() -> None:
+    doc = Document(
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="Ground"),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl-1",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+            ),
+            "window-1": WindowElem(kind="window", id="window-1", wallId="wall-1", alongT=0.5),
         }
     )
 

@@ -151,6 +151,183 @@ def room_access_integrity_smoke_v1(
     }
 
 
+def room_access_graph_v1(
+    subject: Any,
+    *,
+    room_ids: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    elements = _elements_mapping(subject)
+    if elements is None:
+        return {
+            "format": "roomAccessGraph_v1",
+            "ok": False,
+            "error": {"code": "invalid_subject", "message": "Model input has no elements."},
+        }
+    normalized = {
+        str(_read(element, "id", default=map_id)): element
+        for map_id, element in elements.items()
+        if _read(element, "id", default=map_id)
+    }
+    by_kind = _by_kind(normalized)
+    rooms = by_kind.get("room", {})
+    walls = by_kind.get("wall", {})
+    doors = by_kind.get("door", {})
+    room_separations = by_kind.get("room_separation", {})
+    selected = {str(room_id) for room_id in room_ids or []}
+    room_polygons = {
+        room_id: polygon
+        for room_id, room in rooms.items()
+        if (not selected or room_id in selected)
+        and (polygon := _polygon(room, "outlineMm", "outline_mm"))
+    }
+    all_room_polygons = {
+        room_id: polygon
+        for room_id, room in rooms.items()
+        if (polygon := _polygon(room, "outlineMm", "outline_mm"))
+    }
+    door_evidence, door_findings = _door_room_evidence(doors, walls, rooms, all_room_polygons)
+    open_adjacency = _room_separation_open_adjacency(rooms, all_room_polygons, room_separations)
+    graph: dict[str, set[str]] = {room_id: set() for room_id in room_polygons}
+    room_to_doors: dict[str, list[str]] = defaultdict(list)
+    for door_id, evidence in door_evidence.items():
+        room_pair = [room_id for room_id in evidence["roomIds"] if room_id in graph]
+        for room_id in room_pair:
+            room_to_doors[room_id].append(door_id)
+        for left in room_pair:
+            for right in evidence["roomIds"]:
+                if left != right:
+                    graph[left].add(str(right))
+    for left, rights in open_adjacency.items():
+        if left not in graph:
+            continue
+        graph[left].update(str(right) for right in rights)
+    findings = [finding.to_dict() for finding in check_room_access_integrity(normalized)]
+    inaccessible = sorted(
+        {
+            element_id
+            for finding in findings
+            if finding.get("ruleId") in {"room_access_inaccessible_room", "room_without_door_access"}
+            for element_id in finding.get("elementIds", [])
+            if element_id in graph
+        }
+    )
+    return {
+        "format": "roomAccessGraph_v1",
+        "ok": True,
+        "rooms": [
+            {
+                "roomId": room_id,
+                "levelId": _string(_read(rooms[room_id], "levelId", "level_id")),
+                "doorIds": sorted(room_to_doors.get(room_id, [])),
+                "adjacentRoomIds": sorted(graph[room_id]),
+                "accessible": room_id not in inaccessible and bool(room_to_doors.get(room_id)),
+            }
+            for room_id in sorted(graph)
+        ],
+        "doors": [
+            {
+                "doorId": door_id,
+                "levelId": evidence.get("levelId"),
+                "roomIds": list(evidence.get("roomIds") or []),
+                "midpointMm": {
+                    "xMm": round(evidence["midpoint"][0], 3),
+                    "yMm": round(evidence["midpoint"][1], 3),
+                },
+                "isExit": bool(evidence.get("isExit")),
+            }
+            for door_id, evidence in sorted(door_evidence.items())
+        ],
+        "inaccessibleRoomIds": inaccessible,
+        "openAdjacency": {
+            room_id: sorted(rights)
+            for room_id, rights in sorted(open_adjacency.items())
+            if not selected or room_id in selected
+        },
+        "findings": findings,
+        "doorFindings": [finding.to_dict() for finding in door_findings],
+    }
+
+
+def room_boundary_edges_report_v1(
+    subject: Any,
+    *,
+    room_ids: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    elements = _elements_mapping(subject)
+    if elements is None:
+        return {
+            "format": "roomBoundaryEdgesReport_v1",
+            "ok": False,
+            "error": {"code": "invalid_subject", "message": "Model input has no elements."},
+        }
+    normalized = {
+        str(_read(element, "id", default=map_id)): element
+        for map_id, element in elements.items()
+        if _read(element, "id", default=map_id)
+    }
+    by_kind = _by_kind(normalized)
+    rooms = by_kind.get("room", {})
+    walls = by_kind.get("wall", {})
+    room_separations = by_kind.get("room_separation", {})
+    selected = {str(room_id) for room_id in room_ids or []}
+    room_polygons = {
+        room_id: polygon
+        for room_id, room in rooms.items()
+        if (not selected or room_id in selected)
+        and (polygon := _polygon(room, "outlineMm", "outline_mm"))
+    }
+    segments_by_level = _boundary_segments_by_level(walls, room_separations)
+    room_rows: list[dict[str, Any]] = []
+    for room_id, polygon in sorted(room_polygons.items()):
+        level_id = _string(_read(rooms[room_id], "levelId", "level_id")) or ""
+        segments = segments_by_level.get(level_id, [])
+        edges: list[dict[str, Any]] = []
+        for index, (edge_start, edge_end) in enumerate(
+            zip(polygon, polygon[1:] + polygon[:1], strict=False), start=1
+        ):
+            support_refs = _edge_support_refs(edge_start, edge_end, segments)
+            unsupported = _edge_uncovered_intervals(edge_start, edge_end, segments)
+            if not unsupported:
+                status = "backed"
+            elif support_refs:
+                status = "partial"
+            else:
+                status = "unbacked"
+            edges.append(
+                {
+                    "edgeIndex": index,
+                    "fromMm": {"xMm": edge_start[0], "yMm": edge_start[1]},
+                    "toMm": {"xMm": edge_end[0], "yMm": edge_end[1]},
+                    "status": status,
+                    "supportRefs": support_refs,
+                    "unsupportedIntervalsMm": [
+                        {"startMm": round(start, 3), "endMm": round(end, 3)}
+                        for start, end in unsupported
+                    ],
+                }
+            )
+        room_rows.append(
+            {
+                "roomId": room_id,
+                "levelId": level_id,
+                "edgeCount": len(edges),
+                "unbackedEdgeCount": sum(1 for edge in edges if edge["status"] == "unbacked"),
+                "partialEdgeCount": sum(1 for edge in edges if edge["status"] == "partial"),
+                "edges": edges,
+            }
+        )
+    return {
+        "format": "roomBoundaryEdgesReport_v1",
+        "ok": True,
+        "rooms": room_rows,
+        "summary": {
+            "roomCount": len(room_rows),
+            "unbackedEdgeCount": sum(row["unbackedEdgeCount"] for row in room_rows),
+            "partialEdgeCount": sum(row["partialEdgeCount"] for row in room_rows),
+        },
+    }
+
+
 def _door_room_evidence(
     doors: Mapping[str, Any],
     walls: Mapping[str, Any],
@@ -738,24 +915,11 @@ def _room_wall_topology_findings(
     walls: Mapping[str, Any],
     room_separations: Mapping[str, Any],
 ) -> list[RoomAccessFinding]:
-    boundary_segments_by_level: dict[
-        str, list[tuple[str, str, tuple[float, float], tuple[float, float]]]
-    ] = defaultdict(list)
     walls_by_level: dict[str, dict[str, Any]] = defaultdict(dict)
     for wall_id, wall in walls.items():
-        start = _point(_read(wall, "start"))
-        end = _point(_read(wall, "end"))
-        if start and end:
-            level_id = _string(_read(wall, "levelId", "level_id")) or ""
-            boundary_segments_by_level[level_id].append((wall_id, "wall", start, end))
-            walls_by_level[level_id][wall_id] = wall
-    for separation_id, separation in room_separations.items():
-        start = _point(_read(separation, "start"))
-        end = _point(_read(separation, "end"))
-        if start and end:
-            boundary_segments_by_level[
-                _string(_read(separation, "levelId", "level_id")) or ""
-            ].append((separation_id, "room_separation", start, end))
+        level_id = _string(_read(wall, "levelId", "level_id")) or ""
+        walls_by_level[level_id][wall_id] = wall
+    boundary_segments_by_level = _boundary_segments_by_level(walls, room_separations)
 
     findings: list[RoomAccessFinding] = []
     for room_id, room in sorted(rooms.items()):
@@ -1508,6 +1672,54 @@ def _edge_uncovered_intervals(
         if coverage is not None:
             intervals.append(coverage)
     return _interval_union_uncovered(intervals, edge_length)
+
+
+def _boundary_segments_by_level(
+    walls: Mapping[str, Any],
+    room_separations: Mapping[str, Any],
+) -> dict[str, list[tuple[str, str, tuple[float, float], tuple[float, float]]]]:
+    segments_by_level: dict[
+        str, list[tuple[str, str, tuple[float, float], tuple[float, float]]]
+    ] = defaultdict(list)
+    for wall_id, wall in walls.items():
+        start = _point(_read(wall, "start"))
+        end = _point(_read(wall, "end"))
+        if start and end:
+            level_id = _string(_read(wall, "levelId", "level_id")) or ""
+            segments_by_level[level_id].append((wall_id, "wall", start, end))
+    for separation_id, separation in room_separations.items():
+        start = _point(_read(separation, "start"))
+        end = _point(_read(separation, "end"))
+        if start and end:
+            level_id = _string(_read(separation, "levelId", "level_id")) or ""
+            segments_by_level[level_id].append((separation_id, "room_separation", start, end))
+    return segments_by_level
+
+
+def _edge_support_refs(
+    edge_start: tuple[float, float],
+    edge_end: tuple[float, float],
+    segments: list[tuple[str, str, tuple[float, float], tuple[float, float]]],
+) -> list[dict[str, Any]]:
+    refs: list[dict[str, Any]] = []
+    for segment_id, segment_kind, segment_start, segment_end in segments:
+        coverage = _segment_axis_coverage(
+            edge_start,
+            edge_end,
+            segment_start,
+            segment_end,
+            TOPOLOGY_TOLERANCE_MM,
+        )
+        if coverage is not None:
+            refs.append(
+                {
+                    "elementId": segment_id,
+                    "kind": segment_kind,
+                    "coverageStartMm": round(coverage[0], 3),
+                    "coverageEndMm": round(coverage[1], 3),
+                }
+            )
+    return sorted(refs, key=lambda ref: (ref["coverageStartMm"], ref["elementId"]))
 
 
 def _segment_axis_coverage(

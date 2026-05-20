@@ -32,6 +32,24 @@ _L5 = [
 ]
 
 
+def _doc_with_roof() -> Document:
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r1",
+            name="Roof",
+            reference_level_id="lvl",
+            footprint_mm=list(_RECT),
+            roof_geometry_mode="mass_box",
+        ),
+    )
+    return doc
+
+
 def test_update_roof_roof_type_id_assigns_and_clears() -> None:
     doc = Document(
         revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
@@ -178,6 +196,18 @@ def test_update_roof_roof_type_id_material_assembly_schedule_preserved() -> None
     fp_m2 = 4.0 * 3.0
     r0 = next(r for r in roof_rows if r["layerIndex"] == 0)
     assert abs(float(r0["grossVolumeM3"]) - fp_m2 * 0.022) < 1e-8
+
+
+def test_update_roof_overhang_semantics_sets_props() -> None:
+    doc = _doc_with_roof()
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="r1", key="overhangSemantics", value="eave"))
+
+    assert doc.elements["r1"].props == {"overhangSemantics": "eave"}
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="r1", key="overhangSemantics", value=""))
+
+    assert doc.elements["r1"].props is None
 
 
 def test_update_roof_geometry_mode_to_gable_ok_for_rectangle() -> None:

@@ -10,7 +10,15 @@ from __future__ import annotations
 import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 
 from bim_ai.cmd.types import AssumptionEntry, CommandBundle
 from bim_ai.commands import (
@@ -21,9 +29,11 @@ from bim_ai.commands import (
     CreateConstraintCmd,
     CreateConstructionLogisticsCmd,
     CreateConstructionPackageCmd,
+    CreateDormerCmd,
     CreateDuctCmd,
     CreateFixtureCmd,
     CreateFloorCmd,
+    CreateLevelCmd,
     CreateMepEquipmentCmd,
     CreateMepOpeningRequestCmd,
     CreateMepTerminalCmd,
@@ -32,6 +42,7 @@ from bim_ai.commands import (
     CreateRoofCmd,
     CreateRoofOpeningCmd,
     CreateRoomOutlineCmd,
+    CreateRoomSeparationCmd,
     CreateSavedViewCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
@@ -41,6 +52,7 @@ from bim_ai.commands import (
     InsertWindowOnWallCmd,
     SaveViewpointCmd,
     UpdateColumnCmd,
+    UpdateElementPropertyCmd,
     UpsertConstructionQaChecklistCmd,
     UpsertPlanViewCmd,
     UpsertSheetCmd,
@@ -48,17 +60,24 @@ from bim_ai.commands import (
 )
 
 SemanticOperation = Literal[
+    "level",
     "wall",
     "wall_chain",
     "floor_from_boundary",
     "floor_from_wall_segments",
+    "floor_supports",
     "door_on_wall",
     "window_on_wall",
     "roof_opening",
     "roof_from_boundary",
     "roof_from_wall_segments",
+    "dormer_on_roof",
     "room_outline",
+    "room_separation",
     "stair_between_levels",
+    "stair_by_runs",
+    "stair_by_sketch",
+    "stair_existing_condition",
     "slab_opening",
     "shaft_opening",
     "railing",
@@ -82,17 +101,24 @@ SemanticOperation = Literal[
 ]
 
 SUPPORTED_OPERATIONS: tuple[str, ...] = (
+    "level",
     "wall",
     "wall_chain",
     "floor_from_boundary",
     "floor_from_wall_segments",
+    "floor_supports",
     "door_on_wall",
     "window_on_wall",
     "roof_opening",
     "roof_from_boundary",
     "roof_from_wall_segments",
+    "dormer_on_roof",
     "room_outline",
+    "room_separation",
     "stair_between_levels",
+    "stair_by_runs",
+    "stair_by_sketch",
+    "stair_existing_condition",
     "slab_opening",
     "shaft_opening",
     "railing",
@@ -119,7 +145,6 @@ UNSUPPORTED_M2_OPERATIONS: dict[str, str] = {
     "floor_from_wall_ids": "Requires model-state lookup of wall endpoints before createFloor.",
     "roof_from_wall_ids": "Requires model-state lookup of wall endpoints before createRoof.",
     "room_from_wall_enclosure": "placeRoomAtPoint exists but requires an existing closed model enclosure.",
-    "stair_by_runs": "createStair has run fields, but this helper only covers clear straight stairs.",
     "sheet_auto_layout": "Viewport layout needs view extents/model context; explicit viewports are supported.",
     "save_3d_current_view": "Requires live viewer camera state; provide camera for saveViewpoint or baseViewId for create_saved_view.",
 }
@@ -260,6 +285,26 @@ class SemanticBundle(BaseModel):
         return {"commands": self.commands}
 
 
+class LevelPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Level"
+    elevation_mm: float = Field(default=0, alias="elevationMm")
+    datum_kind: str | None = Field(default=None, alias="datumKind")
+    parent_level_id: str | None = Field(default=None, alias="parentLevelId")
+    offset_from_parent_mm: float = Field(default=0, alias="offsetFromParentMm")
+    also_create_plan_view: bool = Field(default=True, alias="alsoCreatePlanView")
+    plan_view_id: str | None = Field(default=None, alias="planViewId")
+
+    @field_validator("elevation_mm", "offset_from_parent_mm")
+    @classmethod
+    def _finite(cls, value: float) -> float:
+        if not math.isfinite(value):
+            raise ValueError("level elevations must be finite")
+        return value
+
+
 class WallChainPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -304,6 +349,30 @@ class FloorFromWallSegmentsPayload(FloorFromBoundaryPayload):
     @model_validator(mode="after")
     def _derive_boundary(self) -> FloorFromWallSegmentsPayload:
         self.boundary_mm = _polygon_from_wall_segments(self.wall_segments)
+        return self
+
+
+class FloorSupportsPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    floor_id: str = Field(alias="floorId", min_length=1)
+    supported_by_ids: list[str] = Field(default_factory=list, alias="supportedByIds")
+    key: Literal["supportedByIds", "supportIds"] = "supportedByIds"
+    structural_system: str | None = Field(default=None, alias="structuralSystem")
+    support_system: str | None = Field(default=None, alias="supportSystem")
+    span_direction: str | None = Field(default=None, alias="spanDirection")
+    structural_reviewed: bool | None = Field(default=None, alias="structuralReviewed")
+
+    @model_validator(mode="after")
+    def _has_support_metadata(self) -> FloorSupportsPayload:
+        if (
+            not self.supported_by_ids
+            and self.structural_system is None
+            and self.support_system is None
+            and self.span_direction is None
+            and self.structural_reviewed is None
+        ):
+            raise ValueError("floor_supports requires supportedByIds or structural metadata")
         return self
 
 
@@ -372,6 +441,40 @@ class RoofOpeningPayload(BaseModel):
         return self
 
 
+class DormerOnRoofPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Dormer"
+    host_roof_id: str = Field(alias="hostRoofId", min_length=1)
+    position_on_roof: dict[str, float] = Field(alias="positionOnRoof")
+    width_mm: float = Field(alias="widthMm", gt=0)
+    wall_height_mm: float = Field(alias="wallHeightMm", gt=0)
+    depth_mm: float = Field(alias="depthMm", gt=0)
+    dormer_roof_kind: Literal["flat", "shed", "gable", "hipped"] = Field(
+        default="flat", alias="dormerRoofKind"
+    )
+    dormer_roof_pitch_deg: float | None = Field(default=None, alias="dormerRoofPitchDeg")
+    ridge_height_mm: float | None = Field(default=None, alias="ridgeHeightMm")
+    wall_material_key: str | None = Field(default=None, alias="wallMaterialKey")
+    roof_material_key: str | None = Field(default=None, alias="roofMaterialKey")
+    has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
+
+    @model_validator(mode="after")
+    def _valid_position(self) -> DormerOnRoofPayload:
+        if not {
+            "alongRidgeMm",
+            "acrossRidgeMm",
+        } <= set(self.position_on_roof):
+            raise ValueError("dormer positionOnRoof requires alongRidgeMm and acrossRidgeMm")
+        for key in ("alongRidgeMm", "acrossRidgeMm"):
+            if not math.isfinite(float(self.position_on_roof[key])):
+                raise ValueError("dormer positionOnRoof coordinates must be finite")
+        if self.dormer_roof_kind in {"gable", "hipped"} and not self.ridge_height_mm:
+            raise ValueError("gable/hipped dormers require ridgeHeightMm")
+        return self
+
+
 class RoomOutlinePayload(BoundaryPayload):
     name: str = "Room"
     programme_code: str | None = Field(default=None, alias="programmeCode")
@@ -383,6 +486,22 @@ class RoomOutlinePayload(BoundaryPayload):
     @model_validator(mode="after")
     def _valid_room_boundary(self) -> RoomOutlinePayload:
         self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        return self
+
+
+class RoomSeparationPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Room separation"
+    level_id: str = Field(alias="levelId", min_length=1)
+    start: Point2 = Field(validation_alias=AliasChoices("start", "startMm"))
+    end: Point2 = Field(validation_alias=AliasChoices("end", "endMm"))
+
+    @model_validator(mode="after")
+    def _valid_room_separation(self) -> RoomSeparationPayload:
+        if _same_point(self.start, self.end):
+            raise ValueError("room separation start and end must differ")
         return self
 
 
@@ -405,6 +524,148 @@ class StairBetweenLevelsPayload(BaseModel):
             raise ValueError("stair requires distinct baseLevelId and topLevelId")
         if _same_point(self.run_start_mm, self.run_end_mm):
             raise ValueError("stair runStartMm and runEndMm must differ")
+        return self
+
+
+class StairRunPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str = Field(min_length=1)
+    start_mm: Point2 = Field(alias="startMm")
+    end_mm: Point2 = Field(alias="endMm")
+    width_mm: float = Field(default=1000, alias="widthMm", gt=0)
+    riser_count: int = Field(default=8, alias="riserCount", gt=0)
+    polyline_mm: list[Point2] | None = Field(default=None, alias="polylineMm")
+
+    @model_validator(mode="after")
+    def _valid_run(self) -> StairRunPayload:
+        if _same_point(self.start_mm, self.end_mm):
+            raise ValueError("stair run startMm and endMm must differ")
+        if self.polyline_mm is not None and len(self.polyline_mm) < 2:
+            raise ValueError("polylineMm must contain at least two points when provided")
+        return self
+
+    def wire(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "id": self.id,
+            "startMm": self.start_mm.wire(),
+            "endMm": self.end_mm.wire(),
+            "widthMm": self.width_mm,
+            "riserCount": self.riser_count,
+        }
+        if self.polyline_mm is not None:
+            data["polylineMm"] = [p.wire() for p in self.polyline_mm]
+        return data
+
+
+class StairLandingPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str = Field(min_length=1)
+    boundary_mm: list[Point2] = Field(alias="boundaryMm", min_length=3)
+
+    @model_validator(mode="after")
+    def _valid_landing(self) -> StairLandingPayload:
+        self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        return self
+
+    def wire(self) -> dict[str, Any]:
+        return {"id": self.id, "boundaryMm": [p.wire() for p in self.boundary_mm]}
+
+
+class StairTreadLinePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    from_mm: Point2 = Field(alias="fromMm")
+    to_mm: Point2 = Field(alias="toMm")
+    riser_height_mm: float | None = Field(default=None, alias="riserHeightMm", gt=0)
+    manual_override: bool = Field(default=False, alias="manualOverride")
+
+    @model_validator(mode="after")
+    def _valid_tread_line(self) -> StairTreadLinePayload:
+        if _same_point(self.from_mm, self.to_mm):
+            raise ValueError("tread line fromMm and toMm must differ")
+        return self
+
+    def wire(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "fromMm": self.from_mm.wire(),
+            "toMm": self.to_mm.wire(),
+            "manualOverride": self.manual_override,
+        }
+        if self.riser_height_mm is not None:
+            data["riserHeightMm"] = self.riser_height_mm
+        return data
+
+
+class StairByRunsPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Stair"
+    base_level_id: str = Field(alias="baseLevelId", min_length=1)
+    top_level_id: str = Field(alias="topLevelId", min_length=1)
+    run_start_mm: Point2 | None = Field(default=None, alias="runStartMm")
+    run_end_mm: Point2 | None = Field(default=None, alias="runEndMm")
+    width_mm: float = Field(default=1000, alias="widthMm", gt=0)
+    riser_mm: float = Field(default=175, alias="riserMm", gt=0)
+    tread_mm: float = Field(default=275, alias="treadMm", gt=0)
+    shape: Literal["straight", "l_shape", "u_shape", "spiral", "sketch"] | None = None
+    runs: list[StairRunPayload] = Field(min_length=1)
+    landings: list[StairLandingPayload] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _valid_stair_runs(self) -> StairByRunsPayload:
+        if self.base_level_id == self.top_level_id:
+            raise ValueError("stair requires distinct baseLevelId and topLevelId")
+        return self
+
+
+class StairBySketchPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Stair"
+    base_level_id: str = Field(alias="baseLevelId", min_length=1)
+    top_level_id: str = Field(alias="topLevelId", min_length=1)
+    run_start_mm: Point2 = Field(alias="runStartMm")
+    run_end_mm: Point2 = Field(alias="runEndMm")
+    width_mm: float = Field(default=1000, alias="widthMm", gt=0)
+    riser_mm: float = Field(default=175, alias="riserMm", gt=0)
+    tread_mm: float = Field(default=275, alias="treadMm", gt=0)
+    boundary_mm: list[Point2] = Field(alias="boundaryMm", min_length=3)
+    tread_lines: list[StairTreadLinePayload] = Field(alias="treadLines", min_length=1)
+    total_rise_mm: float = Field(alias="totalRiseMm", gt=0)
+    landings: list[StairLandingPayload] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _valid_stair_sketch(self) -> StairBySketchPayload:
+        if self.base_level_id == self.top_level_id:
+            raise ValueError("stair requires distinct baseLevelId and topLevelId")
+        self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        return self
+
+
+class StairExistingConditionPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    stair_id: str = Field(alias="stairId", min_length=1)
+    finding_codes: list[str] = Field(alias="findingCodes", min_length=1)
+    reason: str = Field(min_length=1)
+    source_fact_ids: list[str] = Field(alias="sourceFactIds", min_length=1)
+    reviewer: str | None = None
+    accepted: bool = True
+
+    @model_validator(mode="after")
+    def _valid_existing_condition(self) -> StairExistingConditionPayload:
+        self.finding_codes = [str(code).strip() for code in self.finding_codes if str(code).strip()]
+        self.source_fact_ids = [
+            str(fact_id).strip() for fact_id in self.source_fact_ids if str(fact_id).strip()
+        ]
+        if not self.finding_codes:
+            raise ValueError("stair_existing_condition requires findingCodes")
+        if not self.source_fact_ids:
+            raise ValueError("stair_existing_condition requires sourceFactIds")
         return self
 
 
@@ -751,6 +1012,8 @@ def build_semantic_authoring_bundle(
     if operation not in SUPPORTED_OPERATIONS:
         raise UnsupportedSemanticOperationError(str(operation))
     data = payload.model_dump(by_alias=True) if isinstance(payload, BaseModel) else payload
+    if operation == "level":
+        return level_bundle(LevelPayload.model_validate(data))
     if operation == "wall":
         return wall_bundle(WallPayload.model_validate(data))
     if operation == "wall_chain":
@@ -759,6 +1022,8 @@ def build_semantic_authoring_bundle(
         return floor_from_boundary_bundle(FloorFromBoundaryPayload.model_validate(data))
     if operation == "floor_from_wall_segments":
         return floor_from_boundary_bundle(FloorFromWallSegmentsPayload.model_validate(data))
+    if operation == "floor_supports":
+        return floor_supports_bundle(FloorSupportsPayload.model_validate(data))
     if operation == "door_on_wall":
         return door_on_wall_bundle(DoorOnWallPayload.model_validate(data))
     if operation == "window_on_wall":
@@ -769,10 +1034,20 @@ def build_semantic_authoring_bundle(
         return roof_from_boundary_bundle(RoofFromBoundaryPayload.model_validate(data))
     if operation == "roof_from_wall_segments":
         return roof_from_boundary_bundle(RoofFromWallSegmentsPayload.model_validate(data))
+    if operation == "dormer_on_roof":
+        return dormer_on_roof_bundle(DormerOnRoofPayload.model_validate(data))
     if operation == "room_outline":
         return room_outline_bundle(RoomOutlinePayload.model_validate(data))
+    if operation == "room_separation":
+        return room_separation_bundle(RoomSeparationPayload.model_validate(data))
     if operation == "stair_between_levels":
         return stair_between_levels_bundle(StairBetweenLevelsPayload.model_validate(data))
+    if operation == "stair_by_runs":
+        return stair_by_runs_bundle(StairByRunsPayload.model_validate(data))
+    if operation == "stair_by_sketch":
+        return stair_by_sketch_bundle(StairBySketchPayload.model_validate(data))
+    if operation == "stair_existing_condition":
+        return stair_existing_condition_bundle(StairExistingConditionPayload.model_validate(data))
     if operation == "slab_opening":
         return slab_opening_bundle(SlabOpeningPayload.model_validate(data))
     if operation == "shaft_opening":
@@ -820,6 +1095,20 @@ def build_semantic_authoring_bundle(
 
 def unsupported_semantic_operation(operation: str) -> None:
     raise UnsupportedSemanticOperationError(operation)
+
+
+def level_bundle(payload: LevelPayload) -> SemanticBundle:
+    command = CreateLevelCmd(
+        id=payload.id,
+        name=payload.name,
+        elevationMm=payload.elevation_mm,
+        datumKind=payload.datum_kind,
+        parentLevelId=payload.parent_level_id,
+        offsetFromParentMm=payload.offset_from_parent_mm,
+        alsoCreatePlanView=payload.also_create_plan_view,
+        planViewId=payload.plan_view_id,
+    )
+    return _bundle("level", [command])
 
 
 def wall_bundle(payload: WallPayload) -> SemanticBundle:
@@ -887,6 +1176,27 @@ def floor_from_boundary_bundle(payload: FloorFromBoundaryPayload) -> SemanticBun
     return _bundle("floor_from_boundary", [command])
 
 
+def floor_supports_bundle(payload: FloorSupportsPayload) -> SemanticBundle:
+    commands: list[Command] = []
+    if payload.supported_by_ids:
+        commands.append(
+            UpdateElementPropertyCmd(
+                elementId=payload.floor_id,
+                key=payload.key,
+                value=payload.supported_by_ids,
+            )
+        )
+    for key, value in (
+        ("structuralSystem", payload.structural_system),
+        ("supportSystem", payload.support_system),
+        ("spanDirection", payload.span_direction),
+        ("structuralReviewed", payload.structural_reviewed),
+    ):
+        if value is not None:
+            commands.append(UpdateElementPropertyCmd(elementId=payload.floor_id, key=key, value=value))
+    return _bundle("floor_supports", commands)
+
+
 def door_on_wall_bundle(payload: DoorOnWallPayload) -> SemanticBundle:
     command = InsertDoorOnWallCmd(
         id=payload.id,
@@ -938,6 +1248,25 @@ def roof_from_boundary_bundle(payload: RoofFromBoundaryPayload) -> SemanticBundl
     return _bundle("roof_from_boundary", [command])
 
 
+def dormer_on_roof_bundle(payload: DormerOnRoofPayload) -> SemanticBundle:
+    command = CreateDormerCmd(
+        id=payload.id,
+        name=payload.name,
+        hostRoofId=payload.host_roof_id,
+        positionOnRoof=payload.position_on_roof,
+        widthMm=payload.width_mm,
+        wallHeightMm=payload.wall_height_mm,
+        depthMm=payload.depth_mm,
+        dormerRoofKind=payload.dormer_roof_kind,
+        dormerRoofPitchDeg=payload.dormer_roof_pitch_deg,
+        ridgeHeightMm=payload.ridge_height_mm,
+        wallMaterialKey=payload.wall_material_key,
+        roofMaterialKey=payload.roof_material_key,
+        hasFloorOpening=payload.has_floor_opening,
+    )
+    return _bundle("dormer_on_roof", [command])
+
+
 def room_outline_bundle(payload: RoomOutlinePayload) -> SemanticBundle:
     command = CreateRoomOutlineCmd(
         id=payload.id,
@@ -953,6 +1282,17 @@ def room_outline_bundle(payload: RoomOutlinePayload) -> SemanticBundle:
     return _bundle("room_outline", [command])
 
 
+def room_separation_bundle(payload: RoomSeparationPayload) -> SemanticBundle:
+    command = CreateRoomSeparationCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        start=payload.start.wire(),
+        end=payload.end.wire(),
+    )
+    return _bundle("room_separation", [command])
+
+
 def stair_between_levels_bundle(payload: StairBetweenLevelsPayload) -> SemanticBundle:
     command = CreateStairCmd(
         id=payload.id,
@@ -966,6 +1306,62 @@ def stair_between_levels_bundle(payload: StairBetweenLevelsPayload) -> SemanticB
         treadMm=payload.tread_mm,
     )
     return _bundle("stair_between_levels", [command])
+
+
+def stair_by_runs_bundle(payload: StairByRunsPayload) -> SemanticBundle:
+    shape = payload.shape or ("straight" if len(payload.runs) == 1 else "l_shape")
+    run_start = payload.run_start_mm or payload.runs[0].start_mm
+    run_end = payload.run_end_mm or payload.runs[-1].end_mm
+    command = CreateStairCmd(
+        id=payload.id,
+        name=payload.name,
+        baseLevelId=payload.base_level_id,
+        topLevelId=payload.top_level_id,
+        runStartMm=run_start.wire(),
+        runEndMm=run_end.wire(),
+        widthMm=payload.width_mm,
+        riserMm=payload.riser_mm,
+        treadMm=payload.tread_mm,
+        shape=shape,
+        runs=[run.wire() for run in payload.runs],
+        landings=[landing.wire() for landing in payload.landings],
+    )
+    return _bundle("stair_by_runs", [command])
+
+
+def stair_by_sketch_bundle(payload: StairBySketchPayload) -> SemanticBundle:
+    command = CreateStairCmd(
+        id=payload.id,
+        name=payload.name,
+        baseLevelId=payload.base_level_id,
+        topLevelId=payload.top_level_id,
+        runStartMm=payload.run_start_mm.wire(),
+        runEndMm=payload.run_end_mm.wire(),
+        widthMm=payload.width_mm,
+        riserMm=payload.riser_mm,
+        treadMm=payload.tread_mm,
+        authoringMode="by_sketch",
+        boundaryMm=[p.wire() for p in payload.boundary_mm],
+        treadLines=[line.wire() for line in payload.tread_lines],
+        totalRiseMm=payload.total_rise_mm,
+        landings=[landing.wire() for landing in payload.landings],
+    )
+    return _bundle("stair_by_sketch", [command])
+
+
+def stair_existing_condition_bundle(payload: StairExistingConditionPayload) -> SemanticBundle:
+    command = UpdateElementPropertyCmd(
+        elementId=payload.stair_id,
+        key="existingConditionTolerance",
+        value={
+            "accepted": payload.accepted,
+            "findingCodes": payload.finding_codes,
+            "reason": payload.reason,
+            "sourceFactIds": payload.source_fact_ids,
+            **({"reviewer": payload.reviewer} if payload.reviewer else {}),
+        },
+    )
+    return _bundle("stair_existing_condition", [command])
 
 
 def slab_opening_bundle(

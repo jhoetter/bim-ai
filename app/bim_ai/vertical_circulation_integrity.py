@@ -401,7 +401,11 @@ def _stair_comfort_headroom_findings(
 ) -> list[VerticalCirculationFinding]:
     findings: list[VerticalCirculationFinding] = []
     for stair in stairs:
-        if stair.riser_mm > DEFAULT_MAX_RISER_MM or stair.tread_mm < DEFAULT_MIN_TREAD_MM:
+        if (
+            stair.riser_mm > DEFAULT_MAX_RISER_MM or stair.tread_mm < DEFAULT_MIN_TREAD_MM
+        ) and not _stair_existing_condition_tolerates(
+            stair, "stair_riser_tread_comfort_failure"
+        ):
             findings.append(
                 _finding(
                     "BIR-E04",
@@ -424,24 +428,27 @@ def _stair_comfort_headroom_findings(
 def _by_sketch_stair_comfort_findings(stair: StairElem) -> list[VerticalCirculationFinding]:
     findings: list[VerticalCirculationFinding] = []
     if not stair.landings:
-        findings.append(
-            _finding(
-                "BIR-E04",
-                "stair_landing_missing",
-                "error",
-                "P1",
-                f"By-sketch stair '{stair.id}' has no modeled landing footprint.",
-                [stair.id],
-                "Add landing polygons for by-sketch stair runs or switch to a component stair with generated landings.",
+        if not _stair_existing_condition_tolerates(stair, "stair_landing_missing"):
+            findings.append(
+                _finding(
+                    "BIR-E04",
+                    "stair_landing_missing",
+                    "error",
+                    "P1",
+                    f"By-sketch stair '{stair.id}' has no modeled landing footprint.",
+                    [stair.id],
+                    "Add landing polygons for by-sketch stair runs or switch to a component stair with generated landings.",
+                )
             )
-        )
     else:
         for landing in stair.landings:
             landing_area = _polygon_area_abs(
                 [(point.x_mm, point.y_mm) for point in landing.boundary_mm]
             )
             min_area = max(stair.width_mm, DEFAULT_MIN_LANDING_DEPTH_MM) * stair.width_mm
-            if landing_area + 1e-6 < min_area:
+            if landing_area + 1e-6 < min_area and not _stair_existing_condition_tolerates(
+                stair, "stair_landing_too_small"
+            ):
                 findings.append(
                     _finding(
                         "BIR-E04",
@@ -482,17 +489,18 @@ def _by_sketch_stair_comfort_findings(stair: StairElem) -> list[VerticalCirculat
         if (line.riser_height_mm or 0.0) > DEFAULT_MAX_RISER_MM
     ]
     if high_risers:
-        findings.append(
-            _finding(
-                "BIR-E04",
-                "stair_by_sketch_riser_too_high",
-                "error",
-                "P1",
-                f"By-sketch stair '{stair.id}' has riser lines above {DEFAULT_MAX_RISER_MM:g} mm.",
-                [stair.id],
-                "Rebalance the by-sketch stair tread lines or increase the run count.",
+        if not _stair_existing_condition_tolerates(stair, "stair_by_sketch_riser_too_high"):
+            findings.append(
+                _finding(
+                    "BIR-E04",
+                    "stair_by_sketch_riser_too_high",
+                    "error",
+                    "P1",
+                    f"By-sketch stair '{stair.id}' has riser lines above {DEFAULT_MAX_RISER_MM:g} mm.",
+                    [stair.id],
+                    "Rebalance the by-sketch stair tread lines or increase the run count.",
+                )
             )
-        )
     return findings
 
 
@@ -883,6 +891,26 @@ def _finding(
 def _props(element: Any) -> Mapping[str, Any]:
     props = getattr(element, "props", None)
     return props if isinstance(props, Mapping) else {}
+
+
+def _stair_existing_condition_tolerates(stair: StairElem, code: str) -> bool:
+    tolerance = _props(stair).get("existingConditionTolerance")
+    if not isinstance(tolerance, Mapping):
+        return False
+    if tolerance.get("accepted") is not True and tolerance.get("tolerated") is not True:
+        return False
+    raw_codes = tolerance.get("findingCodes") or tolerance.get("codes") or []
+    if isinstance(raw_codes, str):
+        codes = {raw_codes}
+    elif isinstance(raw_codes, list | tuple | set):
+        codes = {str(item) for item in raw_codes}
+    else:
+        return False
+    if code not in codes and "*" not in codes:
+        return False
+    source_refs = tolerance.get("sourceFactIds") or tolerance.get("sourceRefs") or []
+    has_source = bool(source_refs) if isinstance(source_refs, list | tuple | set) else bool(source_refs)
+    return bool(str(tolerance.get("reason") or "").strip()) and has_source
 
 
 def _typed_elements(elements: Mapping[str, Any]) -> dict[str, Any]:
