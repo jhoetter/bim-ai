@@ -94,6 +94,7 @@ A-territory target:
 | GFR-2026-18 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract material browser target resolution helpers                 | Workspace below `5,700` LOC with focused tests green.       |
 | GFR-2026-19 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract type and monitor-source inspector helpers                  | Inspector below `5,600` LOC with focused tests green.       |
 | GFR-2026-20 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract main plan render/rebuild effect into hook                  | PlanCanvas below `6,300` LOC with focused tests green.      |
+| GFR-2026-21 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract phase, floor type, and wall parts inspector sections       | Inspector below `5,400` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -334,4 +335,12 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/plan/planCanvasRenderPasses.ts`. Local `wc -l` reports
   `packages/web/src/plan/PlanCanvas.tsx` at `6,206` lines. Focused
   PlanCanvas/render/projection tests pass (`100 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-21` is Done. The slice moved phase created/demolished
+  controls, the floor type creation row, and wall parts editing into
+  `packages/web/src/workspace/inspector/phaseInspectorSection.tsx`,
+  `packages/web/src/workspace/inspector/floorTypeInspectorSections.tsx`, and
+  `packages/web/src/workspace/inspector/wallPartsPanel.tsx`. Local `wc -l`
+  reports `packages/web/src/workspace/inspector/InspectorContent.tsx` at
+  `5,319` lines. Focused inspector tests pass (`61 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
