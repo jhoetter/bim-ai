@@ -343,6 +343,12 @@ CI chooses one canonical quality gate.
 - JavaScript lint remains automated as `pnpm lint` / `make lint-js`, but is
   intentionally tracked as a separate backlog instead of silently weakening or
   blocking the B-grade gate.
+- 2026-05-20: reduced the `@bim-ai/web` lint backlog with a focused token and
+  unused-disable cleanup in `CanvasMount`, `InteriorElevationViewport`,
+  `FamilyLibraryPanel`, `PlanCanvasAuthoringOverlays`, and
+  `PlanCanvasStatusOverlays`. Targeted ESLint is green for those files, and the
+  global web lint backlog moved from `286` errors / `161` warnings to `273`
+  errors / `159` warnings.
 
 ---
 

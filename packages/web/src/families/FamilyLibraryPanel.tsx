@@ -23,7 +23,7 @@ import type {
   ParamSchemaEntry,
 } from '@bim-ai/core';
 
-import { BIMOBJECT_CATALOG, searchBimobjectCatalog, type BimobjectItem } from './bimobjectCatalog';
+import { searchBimobjectCatalog, type BimobjectItem } from './bimobjectCatalog';
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { validateFormula } from '../lib/expressionEvaluator';
@@ -1146,8 +1146,8 @@ export function FamilyLibraryPanel({
                     data-testid={`family-category-count-${id}`}
                     style={{
                       fontSize: 10,
-                      background: '#888',
-                      color: '#fff',
+                      background: 'var(--color-surface-strong)',
+                      color: 'var(--color-foreground)',
                       borderRadius: 8,
                       padding: '1px 5px',
                       marginLeft: 4,
@@ -1224,8 +1224,8 @@ export function FamilyLibraryPanel({
                     data-testid={`family-category-count-${id}`}
                     style={{
                       fontSize: 10,
-                      background: '#888',
-                      color: '#fff',
+                      background: 'var(--color-surface-strong)',
+                      color: 'var(--color-foreground)',
                       borderRadius: 8,
                       padding: '1px 5px',
                       marginLeft: 4,
@@ -1324,8 +1324,8 @@ export function FamilyLibraryPanel({
               <span
                 style={{
                   fontSize: 10,
-                  background: '#888',
-                  color: '#fff',
+                  background: 'var(--color-surface-strong)',
+                  color: 'var(--color-foreground)',
                   borderRadius: 8,
                   padding: '1px 5px',
                   marginLeft: 4,

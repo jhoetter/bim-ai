@@ -173,7 +173,7 @@ export function InteriorElevationViewport({
             width={width}
             height={height}
             fill={`url(#hatch-iel-${w.materialKey})`}
-            stroke="#333"
+            stroke="var(--color-border-strong)"
             strokeWidth={1}
           />
         );
@@ -201,7 +201,7 @@ export function InteriorElevationViewport({
             y1={heightPx - margin}
             x2={widthPx - 20}
             y2={margin}
-            stroke="#555"
+            stroke="var(--color-muted-foreground)"
             strokeWidth={1}
             strokeDasharray="4 2"
           />
@@ -210,7 +210,7 @@ export function InteriorElevationViewport({
             x={widthPx - 8}
             y={heightPx / 2}
             fontSize={9}
-            fill="#555"
+            fill="var(--color-muted-foreground)"
             textAnchor="middle"
             transform={`rotate(-90, ${widthPx - 8}, ${heightPx / 2})`}
           >
