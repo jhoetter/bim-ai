@@ -203,3 +203,8 @@ typecheck` and focused viewport tests pass.
   `wc -l` now reports `PlanCanvas.tsx` at `8,345` lines. `pnpm --filter
 @bim-ai/web typecheck` and focused PlanCanvas overlay/readout source tests
   pass.
+- 2026-05-20: the next `GFR-2026-12` slice moved measure readout chips and
+  multi-selection filter controls into
+  `packages/web/src/plan/PlanCanvasWorkflowOverlays.tsx`. Local `wc -l` now
+  reports `PlanCanvas.tsx` at `8,202` lines. `pnpm --filter @bim-ai/web
+typecheck` and focused workflow/tool/readout PlanCanvas tests pass.

@@ -22,6 +22,8 @@ Target modules:
   input, snap override, and scale instruction overlays.
 - `plan/PlanCanvasStatusOverlays.tsx`: pinned-element glyphs, loop-mode cursor
   chip, boundary validation banner, and component placement preview wrapper.
+- `plan/PlanCanvasWorkflowOverlays.tsx`: measure readouts, multi-selection
+  status chip, and selection filter controls.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -47,6 +49,7 @@ First landed slices:
 - `plan/PlanCanvasReadouts.tsx`
 - `plan/PlanCanvasToolOverlays.tsx`
 - `plan/PlanCanvasStatusOverlays.tsx`
+- `plan/PlanCanvasWorkflowOverlays.tsx`
 
 ## InspectorContent.tsx
 

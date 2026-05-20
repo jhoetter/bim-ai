@@ -185,6 +185,7 @@ import { guessGridLabel, readPlanToken, type Draft } from './planCanvasHelpers';
 import { PlanCanvasReadouts } from './PlanCanvasReadouts';
 import { PlanCanvasToolOverlays } from './PlanCanvasToolOverlays';
 import { PlanCanvasStatusOverlays } from './PlanCanvasStatusOverlays';
+import { PlanCanvasWorkflowOverlays } from './PlanCanvasWorkflowOverlays';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -7925,175 +7926,31 @@ export function PlanCanvas({
           />
         </div>
       )}
-      {/* Measure readout chip — shown after a two-click distance measurement */}
-      {measureReadout && planTool === 'measure' ? (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 48,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto',
-            zIndex: 20,
-          }}
-          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
-          data-testid="measure-readout"
-        >
-          <span className="font-mono">
-            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp; (
-            {Math.round(measureReadout.distMm)} mm)
-          </span>
-          <button
-            type="button"
-            className="text-muted hover:text-foreground"
-            onClick={() => setMeasureReadout(null)}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-      {/* Measure angle readout chip */}
-      {measureAngleReadout && planTool === 'measure-angle' ? (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 48,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto',
-            zIndex: 20,
-          }}
-          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
-          data-testid="measure-angle-readout"
-        >
-          <span className="font-mono">∠ {measureAngleReadout.angleDeg.toFixed(1)}°</span>
-          <button
-            type="button"
-            className="text-muted hover:text-foreground"
-            onClick={() => setMeasureAngleReadout(null)}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-      {/* Measure arc readout chip */}
-      {measureArcReadout && planTool === 'measure-arc' ? (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 48,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto',
-            zIndex: 20,
-          }}
-          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
-          data-testid="measure-arc-readout"
-        >
-          <span className="font-mono">
-            Arc: {(measureArcReadout.arcLengthMm / 1000).toFixed(3)} m &nbsp; R:{' '}
-            {(measureArcReadout.radiusMm / 1000).toFixed(3)} m
-          </span>
-          <button
-            type="button"
-            className="text-muted hover:text-foreground"
-            onClick={() => setMeasureArcReadout(null)}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-      {/* F-100: multi-select count chip + Filter dialog */}
-      {selectedIds.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 80,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto',
-            zIndex: 20,
-          }}
-          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
-          data-testid="multi-select-count"
-        >
-          <span>{(selectedId ? 1 : 0) + selectedIds.length} elements selected</span>
-          <button
-            type="button"
-            className="rounded px-2 py-0.5 text-xs font-medium text-accent hover:underline"
-            data-testid="filter-selection-button"
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            Filter
-          </button>
-          <button
-            type="button"
-            className="text-muted hover:text-foreground"
-            onClick={() => {
-              useBimStore.getState().clearSelectedIds();
-              setFilterOpen(false);
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-      {filterOpen && selectedIds.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 116,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto',
-            zIndex: 30,
-          }}
-          className="flex flex-col gap-2 rounded border border-border bg-surface p-3 shadow-lg"
-          data-testid="filter-selection-dialog"
-        >
-          <div className="text-[11px] font-semibold text-foreground">Filter Selection</div>
-          {(() => {
-            const allIds = [...(selectedId ? [selectedId] : []), ...selectedIds];
-            const kindCounts: Record<string, number> = {};
-            for (const eid of allIds) {
-              const el = elementsById[eid];
-              if (el) {
-                kindCounts[el.kind] = (kindCounts[el.kind] ?? 0) + 1;
-              }
-            }
-            return Object.entries(kindCounts).map(([kind, count]) => (
-              <label
-                key={kind}
-                className="flex items-center gap-2 text-xs cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  onChange={(e) => {
-                    if (!e.target.checked) {
-                      // Remove all selectedIds of this kind (but leave selectedId alone)
-                      const toRemove = new Set(
-                        selectedIds.filter((eid) => elementsById[eid]?.kind === kind),
-                      );
-                      useBimStore.setState((s) => ({
-                        selectedIds: s.selectedIds.filter((eid) => !toRemove.has(eid)),
-                      }));
-                    }
-                  }}
-                />
-                {kind} ({count})
-              </label>
-            ));
-          })()}
-          <button
-            type="button"
-            className="mt-1 rounded bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
-            onClick={() => setFilterOpen(false)}
-          >
-            Close
-          </button>
-        </div>
-      )}
+      <PlanCanvasWorkflowOverlays
+        planTool={planTool}
+        measureReadout={measureReadout}
+        measureAngleReadout={measureAngleReadout}
+        measureArcReadout={measureArcReadout}
+        onDismissMeasureReadout={() => setMeasureReadout(null)}
+        onDismissMeasureAngleReadout={() => setMeasureAngleReadout(null)}
+        onDismissMeasureArcReadout={() => setMeasureArcReadout(null)}
+        selectedId={selectedId ?? null}
+        selectedIds={selectedIds}
+        elementsById={elementsById}
+        filterOpen={filterOpen}
+        onToggleFilter={() => setFilterOpen((v) => !v)}
+        onCloseFilter={() => setFilterOpen(false)}
+        onClearSelection={() => {
+          useBimStore.getState().clearSelectedIds();
+          setFilterOpen(false);
+        }}
+        onFilterOutKind={(kind) => {
+          const toRemove = new Set(selectedIds.filter((eid) => elementsById[eid]?.kind === kind));
+          useBimStore.setState((s) => ({
+            selectedIds: s.selectedIds.filter((eid) => !toRemove.has(eid)),
+          }));
+        }}
+      />
       {pendingPlanRegion && (
         <div
           style={{

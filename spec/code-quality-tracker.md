@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                               |
 | ----------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.3k       | High-churn plan interaction monolith after extracted status overlays. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.2k       | High-churn plan interaction monolith after extracted overlay modules. |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                               |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
@@ -552,6 +552,9 @@ impact of small changes.
 - 2026-05-20: a follow-up PlanCanvas overlay extraction moved status overlays
   into `plan/PlanCanvasStatusOverlays.tsx`, reducing `PlanCanvas.tsx` to
   `8,345` local lines while keeping focused plan overlay/readout tests green.
+- 2026-05-20: the next PlanCanvas extraction moved measure readouts and
+  multi-selection filter controls into `plan/PlanCanvasWorkflowOverlays.tsx`,
+  reducing `PlanCanvas.tsx` to `8,202` local lines with focused component tests.
 
 ---
 
@@ -1132,6 +1135,8 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: the next PlanCanvas extraction slice moved pinned glyphs,
   loop-mode chip, boundary validation banner, and component placement preview
   wrapper into `plan/PlanCanvasStatusOverlays.tsx`.
+- 2026-05-20: another PlanCanvas extraction slice moved measure readouts and
+  multi-selection filter controls into `plan/PlanCanvasWorkflowOverlays.tsx`.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
