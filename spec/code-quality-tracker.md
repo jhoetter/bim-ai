@@ -183,7 +183,7 @@ Largest current source files observed:
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,326      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
 | `packages/web/src/Viewport.tsx`                             | 3,801      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
-| `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
+| `scripts/audit-ui-mcp-parity.mjs`                           | 3,622      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,813      | Family editor state shell after extracted workbench and properties panel modules.                  |
 
 ## Status Model
@@ -1303,6 +1303,10 @@ Initial thresholds can be advisory before becoming blocking:
   property editors into `inspector/wallFloorInspectorSections.tsx`, reducing
   `InspectorContent.tsx` to `3,856` local lines with focused wall/floor
   inspector tests and web typecheck passing.
+- 2026-05-20: an audit tooling extraction moved benchmark evidence discovery
+  and proof helpers into `scripts/audit-ui-mcp-parity.evidence.mjs`, reducing
+  `scripts/audit-ui-mcp-parity.mjs` to `3,622` local lines with syntax checks
+  passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to

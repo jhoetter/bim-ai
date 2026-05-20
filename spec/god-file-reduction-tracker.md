@@ -132,6 +132,7 @@ A-territory target:
 | GFR-2026-56 | P0       | Done   | `packages/web/src/Viewport.tsx`                             | Extract post-mount scene synchronization effects                   | Viewport below `4,000` LOC with focused tests green.        |
 | GFR-2026-57 | P0       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract semantic command dispatcher hook                           | Workspace below `4,000` LOC with focused tests green.       |
 | GFR-2026-58 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract wall and floor inspector sections                          | Inspector below `4,000` LOC with focused tests green.       |
+| GFR-2026-59 | P1       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract benchmark evidence parsing and proof helpers               | Audit script below `4,000` LOC with syntax checks green.    |
 
 ## Progress Log
 
@@ -621,3 +622,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   and the new section module at `1,162` lines. Focused wall/floor/material/
   graphics inspector tests pass (`97 passed` across the focused runs), and
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-59` is Done. The slice moved benchmark evidence
+  discovery, proof, and signal helpers into
+  `scripts/audit-ui-mcp-parity.evidence.mjs`. Local `wc -l` reports
+  `scripts/audit-ui-mcp-parity.mjs` at `3,622` lines and the new evidence
+  module at `1,081` lines. `node --check` passes for both modules. The full
+  audit command still stops on the existing readiness validation gate for
+  missing `sketch.ir.validate` in the API ledger.
