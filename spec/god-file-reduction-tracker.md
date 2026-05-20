@@ -120,6 +120,7 @@ A-territory target:
 | GFR-2026-44 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract overlay saved-view and work-plane controls                 | Viewport below `5,210` LOC with focused tests green.        |
 | GFR-2026-45 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract viewport command dispatch adapters                         | Viewport below `5,160` LOC with focused tests green.        |
 | GFR-2026-46 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract context-menu command and zoom actions                       | PlanCanvas below `5,200` LOC with focused tests green.      |
+| GFR-2026-47 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract dimension inspector sections                               | Inspector below `4,900` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -525,4 +526,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   dispatch into `packages/web/src/plan/usePlanCanvasContextActions.ts`. Local
   `wc -l` reports `packages/web/src/plan/PlanCanvas.tsx` at `5,191` lines.
   Focused PlanCanvas context/tool tests pass (`34 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-47` is Done. The slice moved angular, radial,
+  diameter, arc-length, and permanent dimension inspector sections into
+  `packages/web/src/workspace/inspector/dimensionInspectorSections.tsx`.
+  Local `wc -l` reports
+  `packages/web/src/workspace/inspector/InspectorContent.tsx` at `4,891`
+  lines. Focused inspector tests pass (`51 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.

@@ -179,7 +179,7 @@ Largest current source files observed:
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 5,191      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction/action modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,116      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text-annotation sections. |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 5,110      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette action modules. |
 | `packages/web/src/Viewport.tsx`                             | 5,150      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, and command-handler hooks. |
 | `packages/core/src/index.ts`                                | 4.9k       | Public barrel after extracted resource type module.                                               |
@@ -1271,6 +1271,11 @@ Initial thresholds can be advisory before becoming blocking:
   canvas context zoom actions, and wall context command dispatch into
   `plan/usePlanCanvasContextActions.ts`, reducing `PlanCanvas.tsx` to `5,191`
   local lines with focused PlanCanvas context/tool tests and web typecheck
+  passing.
+- 2026-05-20: an InspectorContent extraction slice moved angular, radial,
+  diameter, arc-length, and permanent dimension editors into
+  `inspector/dimensionInspectorSections.tsx`, reducing `InspectorContent.tsx`
+  to `4,891` local lines with focused inspector tests and web typecheck
   passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest

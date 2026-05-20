@@ -16,7 +16,6 @@ import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } fro
 import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 import { stairBoundaryMm } from '../../plan/stairBoundingBox';
-import { angleBetweenVectors } from '../../plan/measureGeometry';
 import { FamilyInspectorSection } from './familyInspectorSections';
 import {
   FaceMaterialOverridesSection,
@@ -47,6 +46,12 @@ import {
   LeaderTextInspectorSection,
   TextNoteInspectorSection,
 } from './textAnnotationInspectorSections';
+import {
+  AngularDimensionInspectorSection,
+  ArcLengthDimensionInspectorSection,
+  PermanentDimensionInspectorSection,
+  RadialDimensionInspectorSection,
+} from './dimensionInspectorSections';
 import { FamilyTypeParameterTable, TypeLayerSummary, TypeTextInput } from './typeInspectorSections';
 import { MonitorSourceRows } from './monitorSourceRows';
 import { PhaseSection } from './phaseInspectorSection';
@@ -3439,249 +3444,19 @@ export function InspectorPropertiesFor(
     }
     case 'angular_dimension': {
       const { onPropertyChange: angPropChange } = options ?? {};
-      const rayA = {
-        xMm: el.rayAMm.xMm - el.vertexMm.xMm,
-        yMm: el.rayAMm.yMm - el.vertexMm.yMm,
-      };
-      const rayB = {
-        xMm: el.rayBMm.xMm - el.vertexMm.xMm,
-        yMm: el.rayBMm.yMm - el.vertexMm.yMm,
-      };
-      const angleDeg = angleBetweenVectors(rayA, rayB);
-      const offsetMag = el.offsetMm ? Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm).toFixed(0) : '0';
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
-            <span className="text-xs text-muted">Angle</span>
-            <span
-              className="text-sm text-foreground"
-              data-testid="inspector-angular-dim-angle"
-            >{`${angleDeg.toFixed(1)}°`}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
-            <span className="text-xs text-muted">Offset</span>
-            <span
-              className="text-sm text-foreground"
-              data-testid="inspector-angular-dim-offset"
-            >{`${offsetMag} mm`}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
-            <span className="text-xs text-muted">Arc Radius</span>
-            <span
-              className="text-sm text-foreground"
-              data-testid="inspector-angular-dim-arc-radius"
-            >{`${el.arcRadiusMm ?? 400} mm`}</span>
-          </div>
-          {angPropChange ? (
-            <>
-              <div className="flex flex-col gap-1 border-t border-border pt-2">
-                <span className="text-xs font-medium text-muted">Text decoration</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-20 shrink-0 text-xs text-muted">Prefix</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                    defaultValue={el.textPrefix ?? ''}
-                    key={`${el.id}-prefix`}
-                    placeholder="e.g. ≈"
-                    aria-label="Angular dimension text prefix"
-                    data-testid="inspector-angular-dim-prefix"
-                    onBlur={(e) => angPropChange('textPrefix', e.currentTarget.value || null)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-20 shrink-0 text-xs text-muted">Suffix</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                    defaultValue={el.textSuffix ?? ''}
-                    key={`${el.id}-suffix`}
-                    placeholder="e.g. °"
-                    aria-label="Angular dimension text suffix"
-                    data-testid="inspector-angular-dim-suffix"
-                    onBlur={(e) => angPropChange('textSuffix', e.currentTarget.value || null)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-20 shrink-0 text-xs text-muted">Override</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                    defaultValue={el.textOverride ?? ''}
-                    key={`${el.id}-override`}
-                    placeholder="replaces computed angle"
-                    aria-label="Angular dimension text override"
-                    data-testid="inspector-angular-dim-override"
-                    onBlur={(e) => angPropChange('textOverride', e.currentTarget.value || null)}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 py-0.5">
-                <button
-                  type="button"
-                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
-                  data-testid="inspector-angular-dim-flip"
-                  onClick={() =>
-                    angPropChange('offsetMm', {
-                      xMm: el.offsetMm?.xMm ?? 0,
-                      yMm: -(el.offsetMm?.yMm ?? 0),
-                    })
-                  }
-                >
-                  Flip
-                </button>
-              </div>
-            </>
-          ) : null}
-          {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
-        </div>
-      );
+      return <AngularDimensionInspectorSection element={el} onPropertyChange={angPropChange} />;
     }
     case 'radial_dimension':
     case 'diameter_dimension': {
       const { onPropertyChange: radPropChange } = options ?? {};
-      const computedRadiusMm = Math.hypot(
-        el.arcPointMm.xMm - el.centerMm.xMm,
-        el.arcPointMm.yMm - el.centerMm.yMm,
-      );
-      const displayRadiusMm = el.radiusMm ?? computedRadiusMm;
-      const isDiameter = el.kind === 'diameter_dimension';
-      const valueTestId = isDiameter
-        ? 'inspector-diameter-dim-value'
-        : 'inspector-radial-dim-value';
-      const displayValue = isDiameter ? displayRadiusMm * 2 : displayRadiusMm;
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
-            <span className="text-xs text-muted">{isDiameter ? 'Diameter' : 'Radius'}</span>
-            <span
-              className="text-sm text-foreground"
-              data-testid={valueTestId}
-            >{`${Math.round(displayValue)} mm`}</span>
-          </div>
-          {radPropChange ? (
-            <>
-              <div className="flex flex-col gap-1 border-t border-border pt-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-20 shrink-0 text-xs text-muted">Prefix</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                    defaultValue={el.textPrefix ?? ''}
-                    key={`${el.id}-prefix`}
-                    placeholder={isDiameter ? 'Ø' : 'R'}
-                    aria-label="Dimension text prefix"
-                    data-testid="inspector-radial-dim-prefix"
-                    onBlur={(e) => radPropChange('textPrefix', e.currentTarget.value || null)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-20 shrink-0 text-xs text-muted">Override</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                    defaultValue={el.textOverride ?? ''}
-                    key={`${el.id}-override`}
-                    placeholder="replaces computed value"
-                    aria-label="Dimension text override"
-                    data-testid="inspector-radial-dim-override"
-                    onBlur={(e) => radPropChange('textOverride', e.currentTarget.value || null)}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 py-0.5">
-                <button
-                  type="button"
-                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
-                  data-testid="inspector-radial-dim-flip"
-                  onClick={() => radPropChange('flipped', !el.flipped)}
-                >
-                  Flip
-                </button>
-              </div>
-            </>
-          ) : null}
-          {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
-        </div>
-      );
+      return <RadialDimensionInspectorSection element={el} onPropertyChange={radPropChange} />;
     }
     case 'arc_length_dimension': {
-      const arcAngleDeg = Math.abs(el.endAngleDeg - el.startAngleDeg);
-      const arcLengthMm = (arcAngleDeg / 360) * 2 * Math.PI * el.radiusMm;
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow label="Radius" value={`${Math.round(el.radiusMm)} mm`} mono />
-          <FieldRow label="Arc Angle" value={`${arcAngleDeg.toFixed(1)}°`} mono />
-          <FieldRow label="Arc Length" value={`${Math.round(arcLengthMm)} mm`} mono />
-          {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
-        </div>
-      );
+      return <ArcLengthDimensionInspectorSection element={el} />;
     }
     case 'permanent_dimension': {
       const { onPropertyChange: pdPropChange } = options ?? {};
-      const offsetMag = Math.round(Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm));
-      return (
-        <div className="flex flex-col gap-2">
-          <FieldRow label="Segments" value={String(el.witnessPointsMm.length - 1)} />
-          <FieldRow label="Level" value={el.levelId} mono />
-          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
-            <span className="text-xs text-muted">Offset</span>
-            <span
-              className="text-sm text-foreground"
-              data-testid="inspector-dim-offset"
-            >{`${offsetMag} mm from chain`}</span>
-          </div>
-          {pdPropChange ? (
-            <div className="flex items-center gap-2 py-0.5">
-              <button
-                type="button"
-                className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
-                data-testid="inspector-permanent-dimension-eq"
-                onClick={() => pdPropChange('eqEnabled', !el.eqEnabled)}
-              >
-                {el.eqEnabled ? 'EQ On' : 'EQ Off'}
-              </button>
-              <button
-                type="button"
-                className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
-                data-testid="inspector-dim-flip"
-                onClick={() => pdPropChange('flipped', !el.flipped)}
-              >
-                Flip
-              </button>
-            </div>
-          ) : (
-            <FieldRow label="EQ" value={el.eqEnabled ? 'On' : 'Off'} />
-          )}
-          {/* Dimension element references */}
-          {(el as any).witnessPointsMm?.some((pt: any) => pt.referencedElementId) && (
-            <details style={{ marginTop: 8 }}>
-              <summary
-                data-testid="inspector-dim-references-summary"
-                style={{ cursor: 'pointer', fontSize: 12 }}
-              >
-                Element References (
-                {(el as any).witnessPointsMm.filter((pt: any) => pt.referencedElementId).length})
-              </summary>
-              <div style={{ marginTop: 4 }}>
-                {(el as any).witnessPointsMm
-                  .filter((pt: any) => pt.referencedElementId)
-                  .map((pt: any, i: number) => (
-                    <div
-                      key={i}
-                      data-testid={`inspector-dim-ref-${i}`}
-                      style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}
-                    >
-                      Pt {i + 1}: {pt.referencedElementId?.slice(-8)} ({pt.referenceEdge ?? 'auto'})
-                    </div>
-                  ))}
-              </div>
-            </details>
-          )}
-        </div>
-      );
+      return <PermanentDimensionInspectorSection element={el} onPropertyChange={pdPropChange} />;
     }
     case 'interior_elevation_marker': {
       return (
