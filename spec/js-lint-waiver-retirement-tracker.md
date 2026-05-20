@@ -39,9 +39,9 @@ Latest ratcheted budget after JSL-2026-05:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 3              |
+| Errors         | 2              |
 | Warnings       | 0              |
-| Affected files | 3              |
+| Affected files | 2              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -53,7 +53,7 @@ Rule budgets:
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 0              |
 | `fatal`                              | 0              |
-| `@typescript-eslint/ban-ts-comment`  | 3              |
+| `@typescript-eslint/ban-ts-comment`  | 2              |
 | `react/no-danger`                    | 0              |
 
 ## Workpackages
@@ -159,3 +159,9 @@ Rule budgets:
   wall profile editor with the percent-based wall model and command contract.
   The lint budget moved to `3` errors / `0` warnings / `3` files;
   `@typescript-eslint/ban-ts-comment` moved from `4` to `3`.
+- 2026-05-20: removed `@ts-nocheck` from
+  `workspace/useWorkspaceSemanticCommand.ts` by adding a typed injected-helper
+  contract and fixing hidden model-shape mismatches for drafting views,
+  dimension stacking, cut geometry, snapshot hydration, and quick-access pins.
+  The lint budget moved to `2` errors / `0` warnings / `2` files;
+  `@typescript-eslint/ban-ts-comment` moved from `3` to `2`.

@@ -1,8 +1,38 @@
-// @ts-nocheck
-import { useCallback } from 'react';
+import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import type { Element, ModelDelta, Violation } from '@bim-ai/core';
+import type {
+  ApiHttpError as ApiHttpErrorClass,
+  applyCommand as applyCommandApi,
+} from '../lib/api';
+import type {
+  buildCollaborationConflictQueueV1 as buildCollaborationConflictQueueV1Fn,
+  CollaborationConflictQueueV1,
+} from '../lib/collaborationConflictQueue';
+import type { autoDimensionWalls as autoDimensionWallsFn } from '../plan/autoDimensionWalls';
+import type { createSimilarPayload as createSimilarPayloadFn } from '../plan/createSimilar';
+import type { equalizeWitnessSpacing as equalizeWitnessSpacingFn } from '../plan/equalizeWitnessSpacing';
+import type { applyFamilyParameters as applyFamilyParametersFn } from '../plan/familyParameterEval';
+import type { computeShaftCutFloors as computeShaftCutFloorsFn } from '../plan/shaftCutFloors';
+import type { shaftBoundaryFromStair as shaftBoundaryFromStairFn } from '../plan/stairShaft';
+import type { stackDimensions as stackDimensionsFn } from '../plan/stackDimensions';
 import { useBimStore } from '../state/store';
+import type {
+  generateCurtainWallsFromMass as generateCurtainWallsFromMassFn,
+  generateFloorsFromMass as generateFloorsFromMassFn,
+  generateRoofFromMass as generateRoofFromMassFn,
+  generateWallsFromMass as generateWallsFromMassFn,
+} from '../tools/massGenerateBim';
+import type { MassNewElem } from '../tools/massToFloors';
+import type { ToolId } from '../tools/toolRegistry';
+import type {
+  applyHideInView as applyHideInViewFn,
+  applyIsolateInView as applyIsolateInViewFn,
+  applyResetHiddenInView as applyResetHiddenInViewFn,
+} from './hideInView';
+import type { syncLastLevelElevationPropagationFromApplyResponse as syncLastLevelElevationPropagationFromApplyResponseFn } from './authoring/levelDatumPropagationSync';
+import type { materializeOptimisticHostedOpening as materializeOptimisticHostedOpeningFn } from './semanticCommands/optimisticHostedOpening';
+import type { rememberLocalClientOp as rememberLocalClientOpFn } from './useWorkspaceSnapshot';
 
 type ElementWithLevel = Element & { levelId?: string | null };
 type PaintableElement = Element & { faceOverrides?: Record<string, string> };
@@ -27,9 +57,62 @@ type WorkPlaneHostElement = Element & {
 type DxfLayerSettingsElement = Element & {
   dxfLayerMapping?: Record<string, string>;
 };
+type PlanViewCropRegion = NonNullable<Extract<Element, { kind: 'plan_view' }>['cropRegionMm']>;
+type EditableStairRun = {
+  runIndex: number;
+  riserCount: number;
+  runWidthMm: number;
+};
+type EditableStairElement = Extract<Element, { kind: 'stair' }> & {
+  runs?: EditableStairRun[];
+  editStairActive?: boolean;
+  linkedShaftId?: string;
+};
+type Saved3dViewElement = Extract<Element, { kind: 'saved_3d_view' }> & {
+  locked?: boolean;
+  perspective?: boolean;
+};
+type WorkspaceSemanticCommandArgs = {
+  [key: string]: unknown;
+  activeLevelId?: string | null;
+  activePlanViewId?: string | null;
+  ApiHttpError: typeof ApiHttpErrorClass;
+  applyCommand: typeof applyCommandApi;
+  applyFamilyParameters: typeof applyFamilyParametersFn;
+  applyHideInView: typeof applyHideInViewFn;
+  applyIsolateInView: typeof applyIsolateInViewFn;
+  applyResetHiddenInView: typeof applyResetHiddenInViewFn;
+  autoDimensionWallsCmd: typeof autoDimensionWallsFn;
+  buildCollaborationConflictQueueV1: typeof buildCollaborationConflictQueueV1Fn;
+  computeShaftCutFloors: typeof computeShaftCutFloorsFn;
+  createSimilarPayload: typeof createSimilarPayloadFn;
+  equalizeWitnessSpacing: typeof equalizeWitnessSpacingFn;
+  generateCurtainWallsFromMass: typeof generateCurtainWallsFromMassFn;
+  generateFloorsFromMass: typeof generateFloorsFromMassFn;
+  generateRoofFromMass: typeof generateRoofFromMassFn;
+  generateWallsFromMass: typeof generateWallsFromMassFn;
+  hydrateFromSnapshot: (snapshot: {
+    modelId: string;
+    revision: number;
+    elements: Record<string, Element>;
+    violations: Violation[];
+  }) => void;
+  log: { error: (label: string, message: string, ...args: unknown[]) => void };
+  materializeOptimisticHostedOpening: typeof materializeOptimisticHostedOpeningFn;
+  rememberLocalClientOp: typeof rememberLocalClientOpFn;
+  setCollaborationConflictQueue: (queue: CollaborationConflictQueueV1 | null) => void;
+  setPlanTool: (toolId: ToolId) => void;
+  setRedoDepth: Dispatch<SetStateAction<number>>;
+  setSeedError: (message: string | null) => void;
+  setUndoDepth: Dispatch<SetStateAction<number>>;
+  shaftBoundaryFromStair: typeof shaftBoundaryFromStairFn;
+  stackDimensions: typeof stackDimensionsFn;
+  syncLastLevelElevationPropagationFromApplyResponse: typeof syncLastLevelElevationPropagationFromApplyResponseFn;
+};
 
-export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
+export function useWorkspaceSemanticCommand(args: WorkspaceSemanticCommandArgs) {
   const {
+    activeLevelId,
     activePlanViewId,
     ApiHttpError,
     applyCommand,
@@ -460,7 +543,16 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
         const offsets = stackDimensions(targetDims, (cmd.spacingMm as number | undefined) ?? 7);
         const updates: Record<string, Element> = { ...cur };
         for (const [id, offsetMm] of offsets) {
-          updates[id] = { ...cur[id], offsetMm };
+          const dim = cur[id];
+          if (dim?.kind !== 'permanent_dimension') continue;
+          const prev = dim.offsetMm;
+          const vertical = Math.abs(prev.yMm) >= Math.abs(prev.xMm);
+          updates[id] = {
+            ...dim,
+            offsetMm: vertical
+              ? { xMm: 0, yMm: Math.sign(prev.yMm || 1) * offsetMm }
+              : { xMm: Math.sign(prev.xMm || 1) * offsetMm, yMm: 0 },
+          };
         }
         useBimStore.setState({ elementsById: updates });
         return;
@@ -1160,7 +1252,7 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
               id,
               name: (cmd.name as string) || 'Drafting View',
               planViewSubtype: 'drafting' as const,
-              levelId: null,
+              levelId: typeof activeLevelId === 'string' ? activeLevelId : '',
               cropRegionEnabled: false,
             },
           },
@@ -1471,7 +1563,7 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
               [host.id]: {
                 ...host,
                 cutBy: [...new Set([...(host.cutBy ?? []), cmd.cutterId as string])],
-              },
+              } as Element,
             },
           });
         }
@@ -1488,7 +1580,7 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
               [host.id]: {
                 ...host,
                 cutBy: (host.cutBy ?? []).filter((id: string) => id !== (cmd.cutterId as string)),
-              },
+              } as Element,
             },
           });
         }
@@ -1584,10 +1676,11 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
 
       // §1.6.3: addToQuickAccess — pin a command to the Quick Access Toolbar
       if (cmd.type === 'addToQuickAccess') {
+        const commandId = cmd.commandId as string;
         useBimStore.setState((s: QuickAccessState) => {
           const existing = s.quickAccessItems ?? [];
-          if (existing.includes(cmd.commandId)) return s;
-          return { quickAccessItems: [...existing, cmd.commandId as string] };
+          if (existing.includes(commandId)) return s;
+          return { quickAccessItems: [...existing, commandId] };
         });
         return;
       }
@@ -1742,7 +1835,7 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
             hydrateFromSnapshot({
               modelId: mid,
               revision: r.revision,
-              elements: r.elements ?? {},
+              elements: (r.elements ?? {}) as Record<string, Element>,
               violations: (r.violations ?? []) as Violation[],
             });
           }
@@ -1773,6 +1866,7 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
     },
     [
       ApiHttpError,
+      activeLevelId,
       activePlanViewId,
       applyCommand,
       applyFamilyParameters,

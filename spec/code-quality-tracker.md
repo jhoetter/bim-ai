@@ -424,6 +424,11 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
   the model's percent-based profile points; `pnpm js-lint:budget` is now
   ratcheted to `3` errors / `0` warnings / `3` files, with
   `@typescript-eslint/ban-ts-comment` down to `3`.
+- 2026-05-20: removed `@ts-nocheck` from workspace semantic command handling
+  by typing the injected command helpers and fixing the hidden drafting-view,
+  dimension stacking, cut-geometry, snapshot, and quick-access model shapes;
+  `pnpm js-lint:budget` is now ratcheted to `2` errors / `0` warnings /
+  `2` files, with `@typescript-eslint/ban-ts-comment` down to `2`.
 
 ---
 
