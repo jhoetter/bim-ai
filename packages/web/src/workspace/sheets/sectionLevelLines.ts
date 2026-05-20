@@ -14,8 +14,8 @@ export function extractLevelData(elementsById: Record<string, Element>): LevelDa
   for (const el of Object.values(elementsById)) {
     if (el.kind === 'level') {
       levels.push({
-        name: (el as any).name ?? (el as any).id,
-        elevationMm: (el as any).elevationMm ?? 0,
+        name: el.name ?? el.id,
+        elevationMm: el.elevationMm ?? 0,
       });
     }
   }

@@ -353,6 +353,9 @@ CI chooses one canonical quality gate.
   test fixtures and the family-parameter constraint helper. Targeted ESLint,
   web typecheck, and focused tests pass; the global web lint backlog moved to
   `240` errors / `158` warnings.
+- 2026-05-20: typed the stack-dimension and section-level datum helpers.
+  Targeted ESLint, web typecheck, and focused tests pass; the global web lint
+  backlog moved to `233` errors / `158` warnings.
 
 ---
 
@@ -1063,6 +1066,9 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
 - 2026-05-20: typed the family-parameter constraint helper and related focused
   fixtures. `pnpm quality:report -- --json` now reports `9` frontend hotspot
   files / `86` total matches.
+- 2026-05-20: typed the stack-dimension and section-level datum helpers.
+  `pnpm quality:report -- --json` now reports `7` frontend hotspot files /
+  `79` total matches.
 
 ---
 
