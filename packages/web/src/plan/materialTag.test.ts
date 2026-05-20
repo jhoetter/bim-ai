@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
+type MaterialTagFixture = {
+  kind?: 'material_tag';
+  id?: string;
+  targetElementId?: string;
+  positionMm?: { xMm: number; yMm: number };
+  levelId?: string;
+  textOverride?: string;
+  layerIndex?: number;
+  leaderEndMm?: { xMm: number; yMm: number };
+};
+
 describe('Material tag completion — §4.11.3', () => {
   it('material_tag shape includes required fields', () => {
-    const tag: any = {
+    const tag: MaterialTagFixture = {
       kind: 'material_tag',
       id: 'mt1',
       targetElementId: 'wall-01',
@@ -14,13 +25,13 @@ describe('Material tag completion — §4.11.3', () => {
   });
 
   it('textOverride takes precedence over auto-resolved material', () => {
-    const tag: any = { textOverride: 'Custom Material', layerIndex: 0 };
+    const tag: MaterialTagFixture = { textOverride: 'Custom Material', layerIndex: 0 };
     const resolved = tag.textOverride ?? 'fallback';
     expect(resolved).toBe('Custom Material');
   });
 
   it('leaderEndMm is optional', () => {
-    const tag: any = {
+    const tag: MaterialTagFixture = {
       kind: 'material_tag',
       id: 'mt1',
       targetElementId: 'w1',
@@ -31,7 +42,7 @@ describe('Material tag completion — §4.11.3', () => {
   });
 
   it('layerIndex defaults to 0', () => {
-    const tag: any = {
+    const tag: MaterialTagFixture = {
       kind: 'material_tag',
       id: 'mt1',
       targetElementId: 'w1',

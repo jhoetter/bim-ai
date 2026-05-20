@@ -39,16 +39,16 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 159            |
+| Errors         | 104            |
 | Warnings       | 30             |
-| Affected files | 42             |
+| Affected files | 29             |
 | Fatal findings | 0              |
 
 Rule budgets:
 
 | Rule                                 | Current budget |
 | ------------------------------------ | -------------- |
-| `@typescript-eslint/no-explicit-any` | 154            |
+| `@typescript-eslint/no-explicit-any` | 99             |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
@@ -108,3 +108,8 @@ Rule budgets:
   constants so the chrome-literal gate stays enforceable. The lint budget moved
   to `159` errors / `30` warnings / `42` files; `bim-ai/no-hex-in-chrome` moved
   from `64` to `0`.
+- 2026-05-20: typed fixture-only `any` usage across small plan, viewport, and
+  workspace tests without changing runtime code. The lint budget moved to `104`
+  errors / `30` warnings / `29` files; `@typescript-eslint/no-explicit-any`
+  moved from `154` to `99`. Non-test type-escape budgets are unchanged for this
+  slice and remain part of JSL-2026-04.

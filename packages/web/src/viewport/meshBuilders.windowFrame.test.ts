@@ -26,36 +26,36 @@ const baseGlazing: FamilyExtrusion & { widthMm: number; heightMm: number } = {
 
 describe('buildWindowFrameMesh — §15.1.4', () => {
   it('returns a Mesh instance', () => {
-    const mesh = buildWindowFrameMesh(baseFrame as any);
+    const mesh = buildWindowFrameMesh(baseFrame);
     expect(mesh).toBeInstanceOf(THREE.Mesh);
   });
 
   it('sets bimPickId on userData', () => {
-    const mesh = buildWindowFrameMesh(baseFrame as any);
+    const mesh = buildWindowFrameMesh(baseFrame);
     expect(mesh.userData.bimPickId).toBe('frame-test-1');
   });
 
   it('frame with zero inner width still renders', () => {
     const zeroFrame = { ...baseFrame, frameInnerWidthMm: 0 };
-    const mesh = buildWindowFrameMesh(zeroFrame as any);
+    const mesh = buildWindowFrameMesh(zeroFrame);
     expect(mesh).toBeInstanceOf(THREE.Mesh);
   });
 });
 
 describe('buildGlazingMesh — §15.1.5', () => {
   it('returns a Mesh instance', () => {
-    const mesh = buildGlazingMesh(baseGlazing as any);
+    const mesh = buildGlazingMesh(baseGlazing);
     expect(mesh).toBeInstanceOf(THREE.Mesh);
   });
 
   it('material is transparent', () => {
-    const mesh = buildGlazingMesh(baseGlazing as any);
+    const mesh = buildGlazingMesh(baseGlazing);
     const mat = mesh.material as THREE.MeshPhysicalMaterial;
     expect(mat.transparent).toBe(true);
   });
 
   it('sets bimPickId on userData', () => {
-    const mesh = buildGlazingMesh(baseGlazing as any);
+    const mesh = buildGlazingMesh(baseGlazing);
     expect(mesh.userData.bimPickId).toBe('glazing-test-1');
   });
 });

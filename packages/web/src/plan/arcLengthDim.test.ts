@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+type ArcDimensionFixture = { radiusMm: number; offsetMm?: number };
+type WallProfileFixture = {
+  kind: 'wall';
+  id: string;
+  profilePoints: Array<{ xMm: number; yMm: number }>;
+};
+
 describe('Arc length dimension curved renderer — §4.6', () => {
   it('arc length is computed from angles and radius', () => {
     const radiusMm = 3000;
@@ -17,7 +24,7 @@ describe('Arc length dimension curved renderer — §4.6', () => {
   });
 
   it('offsetMm defaults to 200mm when not set', () => {
-    const dim: any = { radiusMm: 3000 };
+    const dim: ArcDimensionFixture = { radiusMm: 3000 };
     expect(dim.offsetMm ?? 200).toBe(200);
   });
 
@@ -35,7 +42,7 @@ describe('Arc length dimension curved renderer — §4.6', () => {
 
 describe('Wall edit profile 3D — §3.5.5', () => {
   it('profilePoints field exists on wall type signature', () => {
-    const wall: any = {
+    const wall: WallProfileFixture = {
       kind: 'wall',
       id: 'w1',
       profilePoints: [

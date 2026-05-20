@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
+type PdfLinkFixture = {
+  kind: 'link_pdf';
+  id: string;
+  url: string;
+  pageIndex: number;
+  opacity: number;
+  positionMm: { xMm: number; yMm: number };
+  scaleMm: number;
+  levelId: string;
+};
+type AddPdfLinkCmdFixture = {
+  type: 'addPdfLink';
+  url: string;
+  levelId: string;
+  opacity?: number;
+};
+type LinkVisibilityFixture = { hidden: boolean };
+
 describe('PDF link underlay — §12.1.1', () => {
   it('AddPdfLinkCmd has correct shape', () => {
     const cmd = { type: 'addPdfLink' as const, url: 'data:image/png;base64,...', levelId: 'l1' };
@@ -8,7 +26,7 @@ describe('PDF link underlay — §12.1.1', () => {
   });
 
   it('link_pdf element has required fields', () => {
-    const el: any = {
+    const el: PdfLinkFixture = {
       kind: 'link_pdf',
       id: 'pdf-01',
       url: 'data:image/png;base64,...',
@@ -23,13 +41,13 @@ describe('PDF link underlay — §12.1.1', () => {
   });
 
   it('opacity defaults to 0.5 when not specified', () => {
-    const cmd: any = { type: 'addPdfLink', url: 'x', levelId: 'l1' };
+    const cmd: AddPdfLinkCmdFixture = { type: 'addPdfLink', url: 'x', levelId: 'l1' };
     const opacity = (cmd.opacity as number | undefined) ?? 0.5;
     expect(opacity).toBe(0.5);
   });
 
   it('toggle flips hidden flag', () => {
-    const link: any = { hidden: false };
+    const link: LinkVisibilityFixture = { hidden: false };
     const toggled = !link.hidden;
     expect(toggled).toBe(true);
   });

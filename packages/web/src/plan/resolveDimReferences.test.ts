@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { resolveDimReferences } from './resolveDimReferences';
-import type { DimWitnessPoint } from '@bim-ai/core';
+import type { DimWitnessPoint, Element } from '@bim-ai/core';
 
-const wallElem: any = {
+const wallElem = {
   id: 'w1',
   kind: 'wall',
   startMm: { xMm: 0, yMm: 0 },
   endMm: { xMm: 5000, yMm: 0 },
-};
-const colElem: any = {
+} as unknown as Element;
+const colElem = {
   id: 'c1',
   kind: 'column',
   positionMm: { xMm: 2500, yMm: 1000 },
-};
+} as unknown as Element;
 
-const elementsById: any = { w1: wallElem, c1: colElem };
+const elementsById: Record<string, Element> = { w1: wallElem, c1: colElem };
 
 describe('resolveDimReferences — §4.1', () => {
   it('returns unmodified point when no referencedElementId', () => {

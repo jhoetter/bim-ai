@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+type FamilyComponentFixture = {
+  kind?: 'family_component';
+  id?: string;
+  familyId?: string;
+  componentTypeId: string;
+  label?: string;
+  originMm: { xMm: number; yMm: number; zMm: number };
+};
+
 describe('FamilyComponent — §15.1.2', () => {
   it('AddFamilyComponentCmd has correct shape', () => {
     const cmd = {
@@ -33,7 +42,7 @@ describe('FamilyComponent — §15.1.2', () => {
   });
 
   it('family_component element has familyId and componentTypeId', () => {
-    const el: any = {
+    const el: FamilyComponentFixture = {
       kind: 'family_component',
       id: 'fc-01',
       familyId: 'fam-01',
@@ -46,7 +55,9 @@ describe('FamilyComponent — §15.1.2', () => {
   });
 
   it('label falls back to componentTypeId when not set', () => {
-    const el: any = { componentTypeId: 'generic-hardware' };
+    const el: Pick<FamilyComponentFixture, 'componentTypeId' | 'label'> = {
+      componentTypeId: 'generic-hardware',
+    };
     expect(el.label ?? el.componentTypeId).toBe('generic-hardware');
   });
 });
