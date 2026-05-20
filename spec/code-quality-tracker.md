@@ -471,6 +471,10 @@ impact of small changes.
   shaft side-wall action state; these moved to
   `workspace/inspector/stairAssemblyInspector.tsx` and
   `workspace/inspector/shaftInspectorSections.tsx`.
+- 2026-05-20: `InspectorContent.tsx` no longer owns family-editor inspector
+  branches for family solids, nested components, definitions, parameters,
+  constraints, or reference planes; these moved to
+  `workspace/inspector/familyInspectorSections.tsx`.
 - 2026-05-19: focused tests cover the extracted plan camera and nearest-wall
   helpers.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns snap-override keyboard sequence
@@ -787,6 +791,10 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   non-test frontend baseline for `as any`, `: any`, `Record<string, any>`,
   `@ts-ignore`, and `@ts-expect-error`, including top hotspot files and total
   match count.
+- 2026-05-20: extracting `workspace/inspector/familyInspectorSections.tsx`
+  removed the family inspector casts from `InspectorContent.tsx`, reducing the
+  top hotspot while preserving the family editor controls behind typed element
+  branches.
 - 2026-05-20: this remains Partial until the top hotspot files are reduced with
   type guards, discriminated-union helpers, or core type exports.
 
