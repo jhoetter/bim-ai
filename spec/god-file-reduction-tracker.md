@@ -139,6 +139,7 @@ A-territory target:
 | GFR-2026-63 | P1       | Done   | `app/bim_ai/commands.py`                                    | Extract site, output, and MEP command schema families              | Commands module below `3,600` LOC with focused command tests green. |
 | GFR-2026-64 | P1       | Done   | `packages/web/src/workspace/project/ProjectBrowser.tsx`     | Extract family browser and section/context-menu primitives         | Project browser below `3,600` LOC with focused browser tests green. |
 | GFR-2026-65 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract MEP element model family                                  | Elements module below `3,800` LOC with focused MEP/schema tests green. |
+| GFR-2026-66 | P1       | Done   | `packages/web/src/viewport/meshBuilders.ts`                 | Extract balcony and structural mesh builders                       | Mesh builders below `3,750` LOC with focused viewport tests green. |
 
 ## Progress Log
 
@@ -676,3 +677,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `wc -l` reports `app/bim_ai/elements.py` at `3,714` lines and the new MEP
   module at `280` lines. Python compile, ruff, and focused MEP/schema tests
   pass (`45 passed`).
+- 2026-05-20: `GFR-2026-66` is Done. The slice moved balcony mesh rendering
+  into `meshBuilders.balcony.ts` and column, beam, and steel-connection mesh
+  rendering into `meshBuilders.structural.ts`, while preserving the
+  `meshBuilders.ts` public exports. Local `wc -l` reports `meshBuilders.ts` at
+  `3,728` lines and the new modules at `74` and `152` lines. Full web
+  typecheck, focused viewport ESLint, and focused mesh tests pass (`20 passed`).
