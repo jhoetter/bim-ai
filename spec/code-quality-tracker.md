@@ -180,7 +180,7 @@ Largest current source files observed:
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |
-| `packages/web/src/workspace/Workspace.tsx`                  | 5.8k       | Shell/workflow orchestration monolith after extracted pure helper modules.                        |
+| `packages/web/src/workspace/Workspace.tsx`                  | 5.7k       | Shell/workflow orchestration monolith after extracted pure/material helper modules.               |
 | `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                               |
 | `packages/core/src/index.ts`                                | 4.9k       | Public barrel after extracted resource type module.                                               |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |

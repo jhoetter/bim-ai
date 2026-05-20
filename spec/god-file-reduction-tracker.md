@@ -91,6 +91,7 @@ A-territory target:
 | GFR-2026-15 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting annotation render passes                       | PlanCanvas below `6,600` LOC with plan tests passing.       |
 | GFR-2026-16 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract crop and column-at-grids render passes                     | PlanCanvas below `6,500` LOC with focused plan tests green. |
 | GFR-2026-17 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract pure presentation and hosted-opening helper modules        | Workspace below `5,900` LOC with focused tests green.       |
+| GFR-2026-18 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract material browser target resolution helpers                 | Workspace below `5,700` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -311,4 +312,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/workspace/workspacePresentation.ts`. Local `wc -l` reports
   `packages/web/src/workspace/Workspace.tsx` at `5,809` lines. Focused
   workspace helper/semantic-command tests pass (`17 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-18` is Done. The slice moved material browser target
+  resolution, current-key lookup, and label helpers into
+  `packages/web/src/workspace/materialTargets.ts`. Local `wc -l` reports
+  `packages/web/src/workspace/Workspace.tsx` at `5,697` lines. Focused
+  material/right-rail/helper tests pass (`32 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
