@@ -3567,12 +3567,20 @@ export function PlanCanvas({
     worldToScreen,
     activeCropState,
     activePlanViewId,
+    arrayPhase,
+    clearSubdivisionDraft,
+    display,
     display.hiddenElementIds,
     display.hiddenSemanticKinds,
+    groupRegistry,
+    modelId,
     revealHiddenMode,
+    scalePhase,
     selectedId,
     selectedIds,
+    selectLinkedEnabled,
     setPlanTool,
+    wallLocationLine,
   ]);
 
   const resetComponentRotation = useCallback(() => setPendingComponentRotationDeg(0), []);

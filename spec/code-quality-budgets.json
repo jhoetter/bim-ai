@@ -51,14 +51,14 @@
   "jsLintBudgets": {
     "scope": "@bim-ai/web/src",
     "maxErrorCount": 4,
-    "maxWarningCount": 21,
-    "maxAffectedFileCount": 6,
+    "maxWarningCount": 18,
+    "maxAffectedFileCount": 4,
     "maxFatalCount": 0,
     "maxRuleCounts": {
       "@typescript-eslint/no-explicit-any": 0,
       "@typescript-eslint/no-unused-vars": 0,
       "bim-ai/no-hex-in-chrome": 0,
-      "react-hooks/exhaustive-deps": 21,
+      "react-hooks/exhaustive-deps": 18,
       "fatal": 0,
       "@typescript-eslint/ban-ts-comment": 4,
       "react/no-danger": 0

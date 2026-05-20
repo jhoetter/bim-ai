@@ -40,8 +40,8 @@ Latest ratcheted budget after JSL-2026-03:
 | Metric         | Current budget |
 | -------------- | -------------- |
 | Errors         | 4              |
-| Warnings       | 21             |
-| Affected files | 6              |
+| Warnings       | 18             |
+| Affected files | 4              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -51,7 +51,7 @@ Rule budgets:
 | `@typescript-eslint/no-explicit-any` | 0              |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
-| `react-hooks/exhaustive-deps`        | 21             |
+| `react-hooks/exhaustive-deps`        | 18             |
 | `fatal`                              | 0              |
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 0              |
@@ -144,3 +144,7 @@ Rule budgets:
   workspace left rail, then added stable ref dependencies to small viewport
   effects. The lint budget moved to `4` errors / `21` warnings / `6` files;
   `react-hooks/exhaustive-deps` moved from `30` to `21`.
+- 2026-05-20: completed the non-viewport hook dependency slice by declaring the
+  existing plan-canvas activation, canvas listener, and workspace semantic
+  command dependencies. The lint budget moved to `4` errors / `18` warnings /
+  `4` files; `react-hooks/exhaustive-deps` moved from `21` to `18`.

@@ -1771,7 +1771,36 @@ export function useWorkspaceSemanticCommand(args: Record<string, unknown>) {
         }
       }
     },
-    [hydrateFromSnapshot, setSeedError],
+    [
+      ApiHttpError,
+      activePlanViewId,
+      applyCommand,
+      applyFamilyParameters,
+      applyHideInView,
+      applyIsolateInView,
+      applyResetHiddenInView,
+      autoDimensionWallsCmd,
+      buildCollaborationConflictQueueV1,
+      computeShaftCutFloors,
+      createSimilarPayload,
+      equalizeWitnessSpacing,
+      generateCurtainWallsFromMass,
+      generateFloorsFromMass,
+      generateRoofFromMass,
+      generateWallsFromMass,
+      hydrateFromSnapshot,
+      log,
+      materializeOptimisticHostedOpening,
+      rememberLocalClientOp,
+      setCollaborationConflictQueue,
+      setPlanTool,
+      setRedoDepth,
+      setSeedError,
+      setUndoDepth,
+      shaftBoundaryFromStair,
+      stackDimensions,
+      syncLastLevelElevationPropagationFromApplyResponse,
+    ],
   );
 
   return onSemanticCommand;

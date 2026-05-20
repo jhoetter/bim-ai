@@ -411,6 +411,10 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
 - 2026-05-20: trimmed the first hook dependency slice; `pnpm js-lint:budget` is
   now ratcheted to `4` errors / `21` warnings / `6` files, with
   `react-hooks/exhaustive-deps` down to `21`.
+- 2026-05-20: declared the plan-canvas activation/listener and workspace
+  semantic command hook dependencies; `pnpm js-lint:budget` is now ratcheted to
+  `4` errors / `18` warnings / `4` files, with `react-hooks/exhaustive-deps`
+  down to `18`.
 
 ---
 
