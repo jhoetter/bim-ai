@@ -64,6 +64,13 @@ import { roofSlopeArrowPlanThree } from './roofSlopeArrowPlanThree';
 import { ceilingGridPlanThree } from './ceilingGridPlanThree';
 import { mergeOverrides } from './categoryOverrideMerge';
 
+type PlanViewElement = Extract<Element, { kind: 'plan_view' }>;
+type WallElement = Extract<Element, { kind: 'wall' }>;
+type WallWithLegacyEndpoints = WallElement & {
+  startMm?: { xMm: number; yMm: number };
+  endMm?: { xMm: number; yMm: number };
+};
+
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
 export const PLAN_Y = 0.02;
@@ -1391,7 +1398,7 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
   const hw = bM / 2;
   const hh = hM / 2;
   // §9.1.3: non-structural columns render with a dashed outline only (no solid fill/cross)
-  const isNonStruct = (col as any).isNonStructural ?? false;
+  const isNonStruct = col.isNonStructural ?? false;
   if (isNonStruct) {
     const nonStructDashedMat = new THREE.LineDashedMaterial({
       color: 0x6b7280,
@@ -1758,7 +1765,8 @@ export function rebuildPlanMeshes(
 
   // §6.4.2: drafting views show only 2D detail components, not 3D model geometry
   const activePlanView = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
-  const isDraftingView = (activePlanView as any)?.planViewSubtype === 'drafting';
+  const isDraftingView =
+    activePlanView?.kind === 'plan_view' && activePlanView.planViewSubtype === 'drafting';
 
   /** Tint all mesh/line children of obj to magenta at 55% opacity. */
   function tintMagenta(obj: THREE.Object3D): void {
@@ -2320,7 +2328,7 @@ export function rebuildPlanMeshes(
     const dimStyle = projSettings?.dimensionStyle ?? null;
     const activePv = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
     const showConstraints =
-      activePv?.kind === 'plan_view' ? ((activePv as any).showConstraints ?? false) : false;
+      activePv?.kind === 'plan_view' ? (activePv.showConstraints ?? false) : false;
     for (const dm of Object.values(elementsById)) {
       if (dm.kind !== 'permanent_dimension') continue;
       if (kindHidden('dimension')) continue;
@@ -2598,13 +2606,15 @@ export function rebuildPlanMeshes(
   // §2.9.4: underlay — render walls from underlayLevelId as ghost dashed purple lines
   {
     const activePlanViewEl = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
-    const underlayLevelId = (activePlanViewEl as any)?.underlayLevelId as string | undefined;
-    const underlayEnabled = (activePlanViewEl as any)?.showUnderlay ?? false;
+    const underlayLevelId =
+      activePlanViewEl?.kind === 'plan_view' ? activePlanViewEl.underlayLevelId : undefined;
+    const underlayEnabled =
+      activePlanViewEl?.kind === 'plan_view' ? (activePlanViewEl.showUnderlay ?? false) : false;
     if (underlayEnabled && underlayLevelId) {
       for (const el of Object.values(elementsById)) {
         if (el.kind !== 'wall') continue;
-        if ((el as any).levelId !== underlayLevelId) continue;
-        const wall = el as any;
+        if (el.levelId !== underlayLevelId) continue;
+        const wall = el as WallWithLegacyEndpoints;
         const startMm = wall.startMm ?? wall.start;
         const endMm = wall.endMm ?? wall.end;
         if (!startMm || !endMm) continue;
@@ -2632,8 +2642,9 @@ export function rebuildPlanMeshes(
     const before = holder.children.length;
     for (const el of Object.values(elementsById)) {
       if (el.kind !== 'plan_view') continue;
-      if ((el as any).planViewSubtype !== 'callout') continue;
-      const sym = calloutSymbolThree(el as any);
+      const planView = el as PlanViewElement;
+      if (planView.planViewSubtype !== 'callout') continue;
+      const sym = calloutSymbolThree(planView);
       holder.add(sym);
     }
     tintNewChildren(before, 'plan_view');

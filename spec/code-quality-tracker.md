@@ -915,6 +915,10 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   discriminated element types or typed legacy intersections. The generated
   scorecard now reports `21` non-test frontend hotspot files / `137` total
   matches, down from `29` files / `179` matches.
+- 2026-05-20: reduced the original top-five hotspots further by replacing
+  broad casts in `plan/symbology.ts` and `cmdPalette/defaultCommands.ts` with
+  typed plan-view, shaft, cuttable-selection, and legacy wall endpoint helpers.
+  The generated scorecard now reports `19` hotspot files / `120` total matches.
 - 2026-05-20: this remains Partial until the top hotspot files are reduced with
   type guards, discriminated-union helpers, or core type exports.
 

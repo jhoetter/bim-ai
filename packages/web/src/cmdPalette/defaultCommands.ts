@@ -1,4 +1,5 @@
 import { useBimStore, type PlanTool } from '../state/store';
+import type { Element } from '@bim-ai/core';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
@@ -77,6 +78,34 @@ function hasActiveViewpoint(ctx: PaletteContext): boolean {
 
 function hasSelection(ctx: PaletteContext): boolean {
   return ctx.selectedElementIds.length > 0;
+}
+
+type ActivePlanViewContext = {
+  id?: string;
+  cropRegionEnabled?: boolean;
+};
+type FamilyPaletteContext = PaletteContext & { activeFamilyId?: string };
+type ShaftSelection = Extract<Element, { kind: 'shaft' }>;
+type CuttableSelection = { id?: string; cutBy?: string[] };
+
+function activePlanViewContext(ctx: PaletteContext): ActivePlanViewContext | null {
+  return (ctx.activePlanView as ActivePlanViewContext | null | undefined) ?? null;
+}
+
+function activeFamilyId(ctx: PaletteContext): string | undefined {
+  return (ctx as FamilyPaletteContext).activeFamilyId;
+}
+
+function isShaftSelection(element: { id?: string; kind?: string }): element is ShaftSelection {
+  return element.kind === 'shaft';
+}
+
+function hasCutBy(
+  element: { id?: string; kind?: string } & Record<string, unknown>,
+): element is
+  | ({ id?: string; kind?: string } & CuttableSelection)
+  | (Record<string, unknown> & CuttableSelection) {
+  return Array.isArray(element.cutBy) && element.cutBy.length > 0;
 }
 
 function modelHasWall(): boolean {
@@ -2475,13 +2504,14 @@ registerCommand({
   keywords: ['crop', 'region', 'boundary', 'clip', 'view', 'frame'],
   category: 'command',
   invoke: (ctx) => {
-    const pvId = ctx.activePlanView?.id;
+    const activePlanView = activePlanViewContext(ctx);
+    const pvId = activePlanView?.id;
     if (pvId)
       ctx.dispatchCommand?.({
         type: 'updateElementProperty',
         elementId: pvId,
         key: 'cropRegionEnabled',
-        value: !(ctx.activePlanView as any)?.cropRegionEnabled,
+        value: !(activePlanView?.cropRegionEnabled ?? false),
       });
   },
 });
@@ -2504,9 +2534,9 @@ registerCommand({
   label: 'Resize Crop Region',
   keywords: ['crop', 'region', 'resize', 'boundary', 'clip', 'view', 'handle', 'drag'],
   category: 'command',
-  isAvailable: (ctx) => !!(ctx.activePlanView as any)?.cropRegionEnabled,
+  isAvailable: (ctx) => activePlanViewContext(ctx)?.cropRegionEnabled === true,
   invoke: (ctx) => {
-    const pvId = ctx.activePlanView?.id;
+    const pvId = activePlanViewContext(ctx)?.id;
     if (pvId)
       ctx.dispatchCommand?.({
         type: 'updateElementProperty',
@@ -2951,13 +2981,13 @@ registerCommand({
   label: 'Add Family Reference Plane',
   keywords: ['reference plane', 'family', 'parametric', 'axis', 'construction plane', 'ref plane'],
   category: 'command',
-  isAvailable: (ctx) => !!(ctx as any).activeFamilyId,
+  isAvailable: (ctx) => Boolean(activeFamilyId(ctx)),
   invoke: (ctx) => {
-    const activeFamilyId = (ctx as any).activeFamilyId;
-    if (activeFamilyId) {
+    const familyId = activeFamilyId(ctx);
+    if (familyId) {
       ctx.dispatchCommand?.({
         type: 'addFamilyReferencePlane',
-        familyId: activeFamilyId,
+        familyId,
         name: 'Reference Plane',
         axis: 'x',
         offsetMm: 0,
@@ -3166,9 +3196,9 @@ registerCommand({
   label: 'Add Shaft Side Walls',
   keywords: ['shaft', 'side wall', 'stair', 'enclosure', 'Treppenseitenwand'],
   category: 'command',
-  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'shaft') ?? false,
+  isAvailable: (ctx) => ctx.selectedElements?.some(isShaftSelection) ?? false,
   invoke: (ctx) => {
-    const shaft = ctx.selectedElements?.find((e) => e.kind === 'shaft') as any;
+    const shaft = ctx.selectedElements?.find(isShaftSelection);
     if (!shaft) return;
     const walls = buildShaftSideWalls(shaft, shaft.baseLevelId ?? 'L1');
     for (const wall of walls) {
@@ -3195,9 +3225,9 @@ registerCommand({
   label: 'Uncut Geometry',
   keywords: ['uncut', 'remove cut', 'void', 'geometry'],
   category: 'command',
-  isAvailable: (ctx) => ctx.selectedElements?.some((e) => (e as any).cutBy?.length > 0) ?? false,
+  isAvailable: (ctx) => ctx.selectedElements?.some(hasCutBy) ?? false,
   invoke: (ctx) => {
-    const el = ctx.selectedElements?.find((e) => (e as any).cutBy?.length > 0) as any;
+    const el = ctx.selectedElements?.find(hasCutBy);
     if (el?.cutBy?.[0]) {
       ctx.dispatchCommand?.({ type: 'removeCutGeometry', cutterId: el.cutBy[0], hostId: el.id });
     }
