@@ -45,6 +45,10 @@ Target modules:
   synchronization.
 - `plan/usePlanCanvasToolCleanupEffects.ts`: tool-exit cleanup effects for
   readouts, query state, wall hints, component ghost, and context menus.
+- `plan/usePlanCanvasCameraControls.ts`: camera resize, fit-to-view, UI scale,
+  and external camera snapshot handle wiring.
+- `plan/usePlanCanvasSceneLifecycle.ts`: Three renderer, scene, camera, sketch
+  coordinate mapping, resize observer, and render loop lifecycle.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -84,6 +88,8 @@ First landed slices:
 - `plan/planCanvasSelectionState.ts`
 - `plan/usePlanProjectionWireSync.ts`
 - `plan/usePlanCanvasToolCleanupEffects.ts`
+- `plan/usePlanCanvasCameraControls.ts`
+- `plan/usePlanCanvasSceneLifecycle.ts`
 
 ## InspectorContent.tsx
 

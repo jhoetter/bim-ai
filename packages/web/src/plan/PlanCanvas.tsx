@@ -201,6 +201,8 @@ import {
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
 import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
 import { usePlanCanvasToolCleanupEffects } from './usePlanCanvasToolCleanupEffects';
+import { usePlanCanvasCameraControls } from './usePlanCanvasCameraControls';
+import { usePlanCanvasSceneLifecycle } from './usePlanCanvasSceneLifecycle';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -543,7 +545,6 @@ export function PlanCanvas({
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const hudMmRef = useRef<{ xMm: number; yMm: number } | undefined>(undefined);
   hudMmRef.current = hudMm;
-  const [halfUi, setHalfUi] = useState(22);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu.
   const [wallContextMenu, setWallContextMenu] = useState<{
     wall: Extract<Element, { kind: 'wall' }>;
@@ -835,66 +836,14 @@ export function PlanCanvas({
     setWireTagStyleHints,
   });
 
-  const resizeCam = useCallback(() => {
-    const host = mountRef.current;
-    const renderer = rendererRef.current;
-    const camera = cameraRef.current;
-    if (!host || !renderer || !camera) return;
-    const w = Math.max(1, host.clientWidth);
-    const h = Math.max(1, host.clientHeight);
-    renderer.setSize(w, h);
-    const asp = w / h;
-    const hh = camRef.current.half;
-    camera.left = -hh * asp;
-    camera.right = hh * asp;
-    camera.top = hh;
-    camera.bottom = -hh;
-    camera.position.set(camRef.current.camX, 320, camRef.current.camZ);
-    camera.lookAt(camRef.current.camX, 0, camRef.current.camZ);
-    camera.updateProjectionMatrix();
-    setHalfUi(camRef.current.half);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraHandleRef) return;
-    cameraHandleRef.current = {
-      getSnapshot: () => ({
-        centerMm: { xMm: camRef.current.camX * 1000, yMm: camRef.current.camZ * 1000 },
-        halfMm: camRef.current.half * 1000,
-      }),
-      applySnapshot: (snap) => {
-        if (snap.centerMm) {
-          camRef.current.camX = (snap.centerMm.xMm ?? camRef.current.camX * 1000) / 1000;
-          camRef.current.camZ = (snap.centerMm.yMm ?? camRef.current.camZ * 1000) / 1000;
-        }
-        if (snap.halfMm !== undefined) {
-          camRef.current.half = snap.halfMm / 1000;
-        }
-        resizeCam();
-      },
-    };
-    return () => {
-      if (cameraHandleRef) cameraHandleRef.current = null;
-    };
-  }, [cameraHandleRef, resizeCam]);
-
-  const handleFitToView = useCallback(() => {
-    const grp = rootRef.current;
-    const rnd = rendererRef.current;
-    if (!grp || !rnd) return;
-    const box = new THREE.Box3().setFromObject(grp);
-    if (!Number.isFinite(box.min.x)) return;
-    const cx = (box.min.x + box.max.x) / 2;
-    const cz = (box.min.z + box.max.z) / 2;
-    const halfX = (box.max.x - box.min.x) / 2;
-    const halfZ = (box.max.z - box.min.z) / 2;
-    const asp = rnd.domElement.clientWidth / Math.max(1, rnd.domElement.clientHeight);
-    const half = Math.max(halfX / asp, halfZ) * 1.15;
-    camRef.current.camX = cx;
-    camRef.current.camZ = cz;
-    camRef.current.half = THREE.MathUtils.clamp(half, HALF_MIN, HALF_MAX);
-    resizeCam();
-  }, [resizeCam]);
+  const { halfUi, resizeCam, handleFitToView } = usePlanCanvasCameraControls({
+    mountRef,
+    rendererRef,
+    cameraRef,
+    rootRef,
+    camRef,
+    cameraHandleRef,
+  });
 
   useEffect(() => {
     draftRef.current = undefined;
@@ -1019,54 +968,17 @@ export function PlanCanvas({
     }
   }, [planTool]);
 
-  useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, 2));
-    renderer.setClearColor(readPlanToken('--draft-paper', '#0b1220'), 1);
-    mount.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.76));
-    const grp = new THREE.Group();
-    rootRef.current = grp;
-    scene.add(grp);
-    const oc = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.03, 5000);
-    oc.up.set(0, 1, 0);
-    cameraRef.current = oc;
-    // SKT-01: install coordinate-mapping callbacks for the SketchCanvas overlay.
-    sketchPointerToMmRef.current = (cx, cy) => rayToPlanMm(renderer, oc, cx, cy);
-    sketchMmToScreenRef.current = (pt) => {
-      const v = new THREE.Vector3(pt.xMm / 1000, 0, pt.yMm / 1000);
-      v.project(oc);
-      const rect = renderer.domElement.getBoundingClientRect();
-      return {
-        x: (v.x * 0.5 + 0.5) * rect.width,
-        y: (-v.y * 0.5 + 0.5) * rect.height,
-      };
-    };
-    const ro = new ResizeObserver(() => resizeCam());
-    ro.observe(mount);
-    resizeCam();
-    let raf = 0;
-    const tick = () => {
-      renderer.render(scene, oc);
-      raf = requestAnimationFrame(tick);
-    };
-    tick();
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      sketchPointerToMmRef.current = null;
-      sketchMmToScreenRef.current = null;
-      renderer.dispose();
-      mount.removeChild(renderer.domElement);
-    };
-    // `theme` triggers a renderer rebuild on light/dark toggle so paper/grid
-    // tokens are re-read. Spec §32 V11.
-  }, [resizeCam, theme]);
+  usePlanCanvasSceneLifecycle({
+    mountRef,
+    rendererRef,
+    sceneRef,
+    rootRef,
+    cameraRef,
+    sketchPointerToMmRef,
+    sketchMmToScreenRef,
+    resizeCam,
+    theme,
+  });
 
   // §5.4.2 — apply planViewAngleDeg rotation to the root group when the active
   // plan view has a stored true-north rotation.
