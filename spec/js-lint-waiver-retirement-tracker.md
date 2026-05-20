@@ -72,3 +72,7 @@ Rule budgets:
   tests, viewport helpers, workspace overlays, and right-rail modules. The lint
   budget moved to `223` errors / `112` warnings / `66` files;
   `@typescript-eslint/no-unused-vars` moved from `104` to `82`.
+- 2026-05-20: removed stale destructured arguments and imports from extracted
+  plan/workspace orchestration modules. The lint budget moved to `223` errors /
+  `80` warnings / `66` files; `@typescript-eslint/no-unused-vars` moved from
+  `82` to `50`.

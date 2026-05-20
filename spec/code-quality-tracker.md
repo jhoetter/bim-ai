@@ -372,6 +372,9 @@ CI chooses one canonical quality gate.
 - 2026-05-20: continued the mechanical unused-variable slice across small
   frontend tests and helpers; `pnpm js-lint:budget` is now ratcheted to `223`
   errors / `112` warnings / `66` files.
+- 2026-05-20: removed stale destructured orchestration arguments from extracted
+  plan/workspace modules; `pnpm js-lint:budget` is now ratcheted to `223`
+  errors / `80` warnings / `66` files.
 
 ---
 
