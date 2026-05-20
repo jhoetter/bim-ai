@@ -177,7 +177,7 @@ Largest current source files observed:
 | ----------------------------------------------------------- | ---------- | ------------------------------------------ |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 9.3k       | High-churn plan interaction monolith.      |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.7k       | Shell/workflow orchestration monolith.     |
-| `packages/core/src/index.ts`                                | 5.8k       | Central type and command registry surface. |
+| `packages/core/src/index.ts`                                | 5.7k       | Central type and command registry surface. |
 | `app/bim_ai/api/registry.py`                                | 5.9k       | Central API descriptor registry.           |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.6k       | Inspector rendering and editing monolith.  |
 | `packages/web/src/Viewport.tsx`                             | 6.1k       | 3D viewport orchestration monolith.        |
@@ -206,7 +206,7 @@ Largest current source files observed:
 | CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
 | CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
-| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has first thematic slice and compile-time union fixture.                    |
+| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.         |
 | CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline. |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
@@ -475,7 +475,7 @@ impact of small changes.
 ## CQ-2026-05 - Repair Core Type Model Hygiene
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: `packages/core`
 
 ### Problem
@@ -526,6 +526,12 @@ a public re-export facade:
 - 2026-05-20: `packages/core/src/type-tests/siteElementTypes.ts` compiles as a
   fixture proving extracted site element types still belong to the exported
   `Element` union.
+- 2026-05-20: `packages/core/src/elements/building.ts` owns the base building
+  slice for project settings, room color schemes, wall/floor/roof type
+  definitions, and level elements.
+- 2026-05-20: `packages/core/src/type-tests/buildingBaseElementTypes.ts`
+  compiles as a fixture proving the extracted base building element types still
+  belong to the exported `Element` union.
 - 2026-05-20: `spec/core-type-extraction-map.md` documents the remaining core
   type slices and guardrails.
 - 2026-05-20: `pnpm --filter @bim-ai/core typecheck` and

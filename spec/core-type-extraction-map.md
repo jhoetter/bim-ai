@@ -11,12 +11,14 @@ facade without changing imports for frontend, CLI, or tests.
 - `packages/core/src/elements/site.ts`: toposolids, subdivisions, graded
   regions, excavation, pads, shafts, hatch definitions, neighborhood massing,
   and concept seed handoff types.
+- `packages/core/src/elements/building.ts`: project settings, room color
+  schemes, wall/floor/roof type definitions, and level elements.
 
 ## Next Type Slices
 
-- `elements/building.ts`: levels, grids, walls, wall types, floors, floor types,
-  roofs, roof types, ceilings, rooms, openings, stairs, railings, ramps, columns,
-  beams, beam systems, braces, structural connections, and building services.
+- `elements/building.ts`: continue moving grids, walls, floors, roofs, rooms,
+  openings, stairs, railings, ramps, columns, beams, beam systems, braces,
+  structural connections, and building services.
 - `elements/family.ts`: family definitions, family types, family instances,
   family editor solids, nested instances, custom materials, and placed assets.
 - `elements/documentation.ts`: views, sheets, titleblocks, schedules, tags,
