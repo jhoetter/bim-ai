@@ -128,7 +128,6 @@ import {
   resolveHostedFamilyPlacement,
   type HostedFamilyTool,
 } from './families/hostedFamilySelection';
-import type { WallContextMenuCommand } from './workspace/viewport';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import { useSunStore } from './sunStore';
@@ -167,11 +166,7 @@ import {
 } from './viewport/renderStyles';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
-import {
-  projectAlongT,
-  type WallFaceRadialCommand,
-  type WallFaceRadialMenuOpen,
-} from './viewport/wallFaceRadialMenu';
+import { projectAlongT, type WallFaceRadialMenuOpen } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
 import { wallWith3dJoinDisallowGaps } from './viewport/wallJoinDisplay';
@@ -207,6 +202,7 @@ import {
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
+import { useViewportCommandHandlers } from './viewport/useViewportCommandHandlers';
 import { useViewportOverlayControls } from './viewport/useViewportOverlayControls';
 import { useViewportViewCubeHandlers } from './viewport/useViewportViewCubeHandlers';
 import {
@@ -483,61 +479,17 @@ export function Viewport({
   const onSemanticCommandRef = useRef(onSemanticCommand);
   onSemanticCommandRef.current = onSemanticCommand;
 
-  const handleWallContextMenuCommand = useCallback(
-    (next: WallContextMenuCommand) => {
-      onSemanticCommandRef.current?.(next.cmd);
-      if (next.kind === 'elevation_view') {
-        activateElevationView(next.elevationViewId);
-      } else {
-        selectStoreEl(next.sectionCutId);
-      }
-    },
-    [activateElevationView, selectStoreEl],
-  );
-
-  // EDT-03: dispatch slice grip commands as engine commands. Slice
-  // payloads use `{ elementId, property, valueMm | value, ... }`; the
-  // engine's UpdateElementPropertyCmd uses `{ elementId, key, value }`.
-  // Translate here so providers stay decoupled from the engine schema.
-  const handleGripCommand = useCallback(
-    (cmd: { type: string; payload: Record<string, unknown> }) => {
-      if (!onSemanticCommand) return;
-      if (cmd.type === 'updateElementProperty') {
-        const p = cmd.payload;
-        const key = String(p.property ?? '');
-        const value = p.value !== undefined ? p.value : p.valueMm;
-        onSemanticCommand({
-          type: 'updateElementProperty',
-          elementId: p.elementId,
-          key,
-          value,
-        });
-        return;
-      }
-      if (cmd.type === 'moveBeamEndpoints') {
-        const p = cmd.payload;
-        onSemanticCommand({
-          type: 'moveBeamEndpoints',
-          beamId: p.beamId,
-          startMm: p.startMm,
-          endMm: p.endMm,
-        });
-        return;
-      }
-      // Forward unknown slice types verbatim — the engine will reject
-      // with a clear error rather than silently dropping.
-      onSemanticCommand({ type: cmd.type, ...cmd.payload });
-    },
-    [onSemanticCommand],
-  );
+  const { handleGripCommand, handleWallContextMenuCommand, handleWallFaceRadialCommand } =
+    useViewportCommandHandlers({
+      activateElevationView,
+      onSemanticCommand,
+      onSemanticCommandRef,
+      selectStoreEl,
+    });
   // Keep a ref-copy so the mount-effect closure (registered once) reads
   // the latest dispatcher.
   const handleGripCommandRef = useRef(handleGripCommand);
   handleGripCommandRef.current = handleGripCommand;
-
-  const handleWallFaceRadialCommand = useCallback((next: WallFaceRadialCommand) => {
-    onSemanticCommandRef.current?.(next.cmd as unknown as Record<string, unknown>);
-  }, []);
 
   const direct3dDraftLevelName = useMemo(() => {
     const levels = Object.values(elementsById)
