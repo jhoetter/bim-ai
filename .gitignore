@@ -19,6 +19,7 @@ app/.venv/
 .codex/
 .gemini/
 .DS_Store
+**/.DS_Store
 .cursor/hooks.json
 *.local
 packages/web/playwright-report/
