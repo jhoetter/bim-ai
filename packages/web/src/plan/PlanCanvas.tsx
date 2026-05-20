@@ -143,7 +143,7 @@ import {
   type SnapHit,
   type SnapKind,
 } from './snapEngine';
-import { classifyPointerStart, PlanCamera, SnapEngine } from './planCanvasState';
+import { PlanCamera, SnapEngine } from './planCanvasState';
 import { SnapGlyphLayer } from './SnapGlyphLayer';
 import { loadSnapSettings, type SnapSettings, type ToggleableSnapKind } from './snapSettings';
 import { bumpSnapTabCycle, initialSnapTabCycle, type SnapTabCycleState } from './snapTabCycle';
@@ -233,6 +233,7 @@ import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { createPlanCanvasPreviewHelpers } from './planCanvasPreviewHelpers';
 import { createPlanCanvasPickHelpers } from './planCanvasPickHelpers';
 import { handleGripPointerUp } from './planCanvasGripPointerUp';
+import { handleSelectClick } from './planCanvasSelectClick';
 import { updatePlanCanvasSnapHover } from './planCanvasSnapHover';
 import {
   updateColumnAtGridsHover,
@@ -1383,55 +1384,16 @@ export function PlanCanvas({
         setSnapOverrideDisplay(null);
       }
       if (planTool === 'select') {
-        const rectBox = rnd.domElement.getBoundingClientRect();
-        const ray = new THREE.Raycaster();
-        ray.setFromCamera(
-          new THREE.Vector2(
-            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
-            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
-          ),
-          camNow,
-        );
-        const hits = ray.intersectObjects(grp.children, true);
-        // Handle EQ toggle button click
-        const eqHit = hits.find(
-          (x) => (x.object.userData as { eqToggle?: boolean }).eqToggle === true,
-        );
-        if (eqHit) {
-          const dimId = (eqHit.object.userData as { bimPickId?: string }).bimPickId;
-          if (dimId) {
-            void onSemanticCommand({ type: 'toggle_dim_eq', dimensionId: dimId });
-            return;
-          }
-        }
-        const h = hits.find(
-          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
-        );
-        const rawPickId =
-          typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
-            ? (h!.object.userData as { bimPickId: string }).bimPickId
-            : undefined;
-        // Skip link_model elements when selectLinkedEnabled is false
-        const id =
-          rawPickId && !selectLinkedEnabled && elementsById[rawPickId]?.kind === 'link_model'
-            ? undefined
-            : rawPickId;
-        const clickIntent = classifyPointerStart({
-          button: ev.button,
-          shiftKey: ev.shiftKey,
-          altKey: ev.altKey,
-          ctrlKey: ev.ctrlKey,
-          metaKey: ev.metaKey,
-          activeTool: 'select',
-          dragDirection: null,
+        handleSelectClick({
+          renderer: rnd,
+          camera: camNow,
+          group: grp,
+          event: ev,
+          elementsById,
+          selectLinkedEnabled,
+          selectElement: selectEl,
+          onSemanticCommand,
         });
-        if ((clickIntent === 'add-to-selection' || clickIntent === 'toggle-selection') && id) {
-          useBimStore.getState().toggleSelectedId(id);
-        } else if (clickIntent === 'add-to-selection' || clickIntent === 'toggle-selection') {
-          return;
-        } else {
-          selectEl(id);
-        }
         return;
       }
       if (planTool === 'query') {
