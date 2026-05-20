@@ -15,7 +15,10 @@ export function buildShaftSideWalls(
   levelId: string,
   wallThicknessMm = 200,
 ): Array<Extract<Element, { kind: 'wall' }>> {
-  const pts: PointMm[] = shaft.boundaryMm ?? [];
+  const pts: PointMm[] =
+    shaft.boundaryMm ??
+    (shaft as Extract<Element, { kind: 'shaft' }> & { perimeterMm?: PointMm[] }).perimeterMm ??
+    [];
   if (pts.length < 3) return [];
 
   // Compute bounding box

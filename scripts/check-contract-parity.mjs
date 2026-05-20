@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const API_DESCRIPTOR_ROOT = join(REPO_ROOT, 'app', 'bim_ai', 'api');
-const CLI_PATH = join(REPO_ROOT, 'packages', 'cli', 'cli.mjs');
+const CLI_ROOT = join(REPO_ROOT, 'packages', 'cli');
 const BASELINE_PATH = join(REPO_ROOT, 'spec', 'contract-parity-baseline.json');
 
 function readText(path) {
@@ -26,8 +26,24 @@ function pythonFiles(root) {
   });
 }
 
+function cliRuntimeFiles(root) {
+  return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) return cliRuntimeFiles(path);
+    return entry.isFile() && entry.name.endsWith('.mjs') && !entry.name.endsWith('.test.mjs')
+      ? [path]
+      : [];
+  });
+}
+
 function readApiDescriptorText() {
   return pythonFiles(API_DESCRIPTOR_ROOT)
+    .map((path) => readText(path))
+    .join('\n');
+}
+
+function readCliRuntimeText() {
+  return cliRuntimeFiles(CLI_ROOT)
     .map((path) => readText(path))
     .join('\n');
 }
@@ -77,7 +93,7 @@ function loadBaseline() {
 
 function main() {
   const apiDescriptorText = readApiDescriptorText();
-  const cliText = readText(CLI_PATH);
+  const cliText = readCliRuntimeText();
   const baseline = loadBaseline();
 
   const allRegistryNames = [...apiDescriptorText.matchAll(/\bname\s*=\s*['"]([^'"]+)['"]/g)].map(

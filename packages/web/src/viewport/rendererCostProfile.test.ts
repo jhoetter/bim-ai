@@ -9,6 +9,12 @@ import {
   RENDERER_WORKLOAD_KINDS,
 } from './rendererCostProfile';
 
+const TARGET_HOUSE_SNAPSHOT_PATH = path.join(
+  path.resolve(__dirname, '../../../..'),
+  'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+);
+const targetHouseIt = fs.existsSync(TARGET_HOUSE_SNAPSHOT_PATH) ? it : it.skip;
+
 function wall(id: string): Element {
   return {
     kind: 'wall',
@@ -184,60 +190,58 @@ describe('renderer cost profile — BIR-L02/BIR-J10', () => {
     expect(fullScene.workloads.update.dominantFactors).toContain('full-scene elements:81');
   });
 
-  it('accepts target-house orbit/select/lens-switch/advisor-open budgets deterministically — BIR-N07', () => {
-    const repoRoot = path.resolve(__dirname, '../../../..');
-    const snapshotPath = path.join(
-      repoRoot,
-      'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
-    );
-    const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')) as {
-      elements: Record<string, Element>;
-    };
-    const elements = Object.values(snapshot.elements);
-    const rendered3dKinds = new Set([
-      'wall',
-      'floor',
-      'roof',
-      'door',
-      'window',
-      'wall_opening',
-      'roof_opening',
-      'slab_opening',
-      'stair',
-      'railing',
-      'placed_asset',
-      'family_instance',
-      'sweep',
-    ]);
+  targetHouseIt(
+    'accepts target-house orbit/select/lens-switch/advisor-open budgets deterministically — BIR-N07',
+    () => {
+      const snapshot = JSON.parse(fs.readFileSync(TARGET_HOUSE_SNAPSHOT_PATH, 'utf8')) as {
+        elements: Record<string, Element>;
+      };
+      const elements = Object.values(snapshot.elements);
+      const rendered3dKinds = new Set([
+        'wall',
+        'floor',
+        'roof',
+        'door',
+        'window',
+        'wall_opening',
+        'roof_opening',
+        'slab_opening',
+        'stair',
+        'railing',
+        'placed_asset',
+        'family_instance',
+        'sweep',
+      ]);
 
-    const profile = profileRendererCost({
-      elements,
-      visibleElementIds: elements
-        .filter((element) => rendered3dKinds.has(element.kind))
-        .map((element) => element.id),
-      selectedElementIds: ['entry-door'],
-      changedElementIds: ['entry-door'],
-      previousLensMode: 'architecture',
-      lensMode: 'coordination',
-      advisorOpen: true,
-      advisorFindingCount: 0,
-      viewId: 'main_front_left',
-    });
+      const profile = profileRendererCost({
+        elements,
+        visibleElementIds: elements
+          .filter((element) => rendered3dKinds.has(element.kind))
+          .map((element) => element.id),
+        selectedElementIds: ['entry-door'],
+        changedElementIds: ['entry-door'],
+        previousLensMode: 'architecture',
+        lensMode: 'coordination',
+        advisorOpen: true,
+        advisorFindingCount: 0,
+        viewId: 'main_front_left',
+      });
 
-    expect(profile.counts.elementCount).toBe(elements.length);
-    expect(profile.counts.renderedElementCount).toBe(
-      elements.filter((element) => rendered3dKinds.has(element.kind)).length,
-    );
-    expect(profile.counts.openingCount).toBe(
-      elements.filter((element) =>
-        ['door', 'window', 'wall_opening', 'roof_opening', 'slab_opening'].includes(element.kind),
-      ).length,
-    );
-    expect(profile.counts.evidenceViewCount).toBeGreaterThanOrEqual(10);
-    expect(profile.workloads.orbit.status).not.toBe('over_budget');
-    expect(profile.workloads.select.status).toBe('within_budget');
-    expect(profile.workloads['lens-switch'].status).toBe('within_budget');
-    expect(profile.workloads['advisor-toggle'].status).toBe('within_budget');
-    expect(profile.summary.overBudgetWorkloads).toEqual([]);
-  });
+      expect(profile.counts.elementCount).toBe(elements.length);
+      expect(profile.counts.renderedElementCount).toBe(
+        elements.filter((element) => rendered3dKinds.has(element.kind)).length,
+      );
+      expect(profile.counts.openingCount).toBe(
+        elements.filter((element) =>
+          ['door', 'window', 'wall_opening', 'roof_opening', 'slab_opening'].includes(element.kind),
+        ).length,
+      );
+      expect(profile.counts.evidenceViewCount).toBeGreaterThanOrEqual(10);
+      expect(profile.workloads.orbit.status).not.toBe('over_budget');
+      expect(profile.workloads.select.status).toBe('within_budget');
+      expect(profile.workloads['lens-switch'].status).toBe('within_budget');
+      expect(profile.workloads['advisor-toggle'].status).toBe('within_budget');
+      expect(profile.summary.overBudgetWorkloads).toEqual([]);
+    },
+  );
 });

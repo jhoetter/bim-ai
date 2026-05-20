@@ -718,6 +718,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             run_start_mm=Vec2Mm(x_mm=geo_st["start_x_mm"], y_mm=geo_st["start_y_mm"]),
             run_end_mm=Vec2Mm(x_mm=geo_st["end_x_mm"], y_mm=geo_st["end_y_mm"]),
             width_mm=geo_st["thickness_mm"],
+            allow_detached=True,
         ).model_dump(mode="json", by_alias=True, exclude={"riser_mm", "tread_mm"})
         stair_cmd["totalHeightMm"] = float(geo_st["height_mm"])
         riser_count_qto = stair_qto.get("NumberOfRisers")
