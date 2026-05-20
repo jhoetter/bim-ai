@@ -348,6 +348,13 @@ for _reverse_tool in (
         "notes": "Builds wall/floor/roof material and layer-stack readiness from source facts; blocks generic type authoring unless assemblies are captured or explicitly source-unavailable.",
     },
     {
+        "name": "reverse_bim.source_level_completeness",
+        "title": "ReverseBimSourceLevelCompletenessInput",
+        "path": "/api/v3/reverse-bim/source-level-completeness",
+        "cli": "bim-ai reverse-bim source-level-completeness --facts ai-source-facts.json",
+        "notes": "Checks that every source-required level/storey has physical wall, floor, room, opening, or stair facts before MCP authoring.",
+    },
+    {
         "name": "reverse_bim.folder_output",
         "title": "ReverseBimFolderOutputInput",
         "path": "/api/v3/reverse-bim/folder-output",

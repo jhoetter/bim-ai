@@ -40,6 +40,7 @@ from bim_ai.source_ingestion import (
     extract_pdf_text,
     render_pdf_pages,
 )
+from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_openings import build_source_opening_reconciliation
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
@@ -198,6 +199,7 @@ def build_reverse_bim_folder_output(
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
     facts = _facts_for_handoff(loop=loop, normalized=normalized)
+    source_level_completeness = build_source_level_completeness_report(facts)
     room_topology = build_source_room_topology_report(facts)
     source_area_consistency = build_source_area_consistency_report(facts)
     opening_reconciliation = build_source_opening_reconciliation(facts)
@@ -260,6 +262,7 @@ def build_reverse_bim_folder_output(
         conflicts=conflicts,
         source_completeness=source_completeness,
         room_topology=room_topology,
+        source_level_completeness=source_level_completeness,
         source_area_consistency=source_area_consistency,
         coordinate_frame_alignment_report=coordinate_frame_alignment_report,
         site_terrain=site_terrain,
@@ -312,6 +315,7 @@ def build_reverse_bim_folder_output(
         "coordinateFrames": out_dir / "understanding" / "coordinate-frames.json",
         "coordinateFrameWorklist": out_dir / "understanding" / "coordinate-frame-worklist.json",
         "sourceFactLedger": out_dir / "understanding" / "source-fact-ledger.json",
+        "sourceLevelCompleteness": out_dir / "understanding" / "source-level-completeness.json",
         "roomTopology": out_dir / "understanding" / "room-topology.json",
         "sourceAreaConsistency": out_dir / "understanding" / "source-area-consistency.json",
         "sourceMaterialAssemblies": out_dir / "understanding" / "material-assemblies.json",
@@ -358,6 +362,7 @@ def build_reverse_bim_folder_output(
             "format": "reverseBimOpenRepairRequests_v1",
             "requests": _build_open_repair_requests(
                 loop=loop,
+                source_level_completeness=source_level_completeness,
                 room_topology=room_topology,
                 source_area_consistency=source_area_consistency,
                 site_terrain=site_terrain,
@@ -368,6 +373,7 @@ def build_reverse_bim_folder_output(
         "coordinateFrames": coordinate_frames,
         "coordinateFrameWorklist": coordinate_frame_worklist,
         "sourceFactLedger": fact_ledger,
+        "sourceLevelCompleteness": source_level_completeness,
         "roomTopology": room_topology,
         "sourceAreaConsistency": source_area_consistency,
         "sourceMaterialAssemblies": source_material_assemblies,
@@ -1018,12 +1024,40 @@ def _build_open_repair_requests(
     *,
     loop: dict[str, Any],
     room_topology: dict[str, Any],
+    source_level_completeness: dict[str, Any] | None = None,
     source_area_consistency: dict[str, Any] | None = None,
     site_terrain: dict[str, Any] | None = None,
     source_material_assemblies: dict[str, Any] | None = None,
     reader_consensus: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     requests = [row for row in loop.get("repairRequests") or [] if isinstance(row, dict)]
+    source_level_completeness = source_level_completeness or {}
+    for level in source_level_completeness.get("blockers") or []:
+        if not isinstance(level, dict):
+            continue
+        requests.append(
+            {
+                "repairRequestId": f"source-level-{level.get('levelId') or level.get('status')}",
+                "kind": "source_level_completeness_repair",
+                "workPackageId": "wp-dimensional-floorplans",
+                "sourceFactId": level.get("sourceFactId"),
+                "levelId": level.get("levelId"),
+                "status": "open",
+                "requiredFields": [
+                    "physical wall chains or floor boundary facts for the level",
+                    "room boundary facts for all visible rooms on the level",
+                    "opening/stair/slab-opening facts where visible",
+                    "explicit source disposition if the level has no physical modeled content",
+                ],
+                "findingsToFix": level.get("blockingReasons") or [],
+                "sourcePrompt": (
+                    "Re-read the floor plan, basement/cellar documents, sections, and area schedule "
+                    "for this level. Return physical wall/room/floor/opening/stair facts for the level, "
+                    "or explicitly state with provenance that the source contains no modeled content."
+                ),
+                "provenance": level.get("provenance"),
+            }
+        )
     for room in room_topology.get("rooms") or []:
         if not isinstance(room, dict) or not room.get("requiredBeforeMcp"):
             continue
@@ -1169,6 +1203,7 @@ def _build_package_acceptance_report(
     site_terrain: dict[str, Any] | None = None,
     source_material_assemblies: dict[str, Any] | None = None,
     reader_consensus: dict[str, Any] | None = None,
+    source_level_completeness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     findings = []
     if int(raw_responses.get("responseCount") or 0) == 0:
@@ -1205,6 +1240,25 @@ def _build_package_acceptance_report(
                 "code": "folder_output_conflicts_open",
                 "severity": "error",
                 "message": "Open source conflicts remain.",
+            }
+        )
+    source_level_completeness = source_level_completeness or {}
+    source_level_summary = (
+        source_level_completeness.get("summary")
+        if isinstance(source_level_completeness.get("summary"), dict)
+        else {}
+    )
+    empty_source_level_count = int(source_level_summary.get("emptySourceLevelCount") or 0)
+    missing_source_level_facts = int(source_level_summary.get("missingSourceLevelFacts") or 0)
+    if empty_source_level_count or missing_source_level_facts:
+        findings.append(
+            {
+                "code": "folder_output_source_levels_incomplete",
+                "severity": "error",
+                "message": (
+                    f"{empty_source_level_count} source-required level(s) lack physical source facts; "
+                    f"missing source level fact set={missing_source_level_facts}."
+                ),
             }
         )
     room_topology_summary = room_topology.get("summary") if isinstance(room_topology.get("summary"), dict) else {}
@@ -1320,6 +1374,8 @@ def _build_package_acceptance_report(
             "openConflictCount": conflicts.get("openConflictCount", 0),
             "mcpReadinessBlockerCount": (readiness.get("summary") or {}).get("blockerCount", 0),
             "hardMcpReadinessBlockerCount": hard_mcp_blocker_count,
+            "emptySourceLevelCount": empty_source_level_count,
+            "missingSourceLevelFacts": missing_source_level_facts,
             "roomsNeedingBoundaryBackingCount": rooms_needing_backing,
             "roomsNeedingAccessFactCount": rooms_needing_access,
             "missingRoomAccessRefCount": missing_access_ref_count,

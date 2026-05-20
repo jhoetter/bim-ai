@@ -1077,6 +1077,22 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["summary"]["blockedAssemblyCount"] == 1
 
     resp = client.post(
+        "/api/v3/reverse-bim/source-level-completeness",
+        json={
+            "facts": [
+                {
+                    "factId": "level-kg",
+                    "kind": "level",
+                    "value": {"levelId": "KG", "name": "KG"},
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimSourceLevelCompleteness_v1"
+    assert resp.json()["summary"]["emptySourceLevelCount"] == 1
+
+    resp = client.post(
         "/api/v3/reverse-bim/phase-run",
         json={
             "phaseAuthoringSpec": {
@@ -1155,6 +1171,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.plan_authoring",
         "reverse_bim.mcp_readiness",
         "reverse_bim.source_material_assemblies",
+        "reverse_bim.source_level_completeness",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",
         "reverse_bim.phase_run",

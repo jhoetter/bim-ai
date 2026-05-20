@@ -339,7 +339,7 @@ Implementation status:
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
 | RBM4-001 | Physical wall graph facts | Partial | Wall graph includes all walls/partitions by level with thickness and joins. |
-| RBM4-002 | Basement/KG completeness | Not started | Source package blocks if KG source exists but KG model facts are missing. |
+| RBM4-002 | Basement/KG completeness | Partial | `reverse_bim.source_level_completeness` and folder output now block source-required levels like KG when no physical wall/floor/room/opening/stair facts exist. Model-side final completeness gates remain separate. |
 | RBM4-003 | Physical room topology facts | Partial | Room topology distinguishes real walls, openings, open-plan boundaries, and analytical separators. |
 | RBM4-004 | Opening host/swing facts | Partial | Every door/window has source host candidate, side, width, swing/clearance intent. |
 | RBM4-005 | Stair facts | Partial | Runs/landings/slab openings/headroom/clearance are source-derived. |
@@ -655,6 +655,7 @@ Implemented first-pass surfaces:
 - `reverse_bim.ui_evidence`
 - `reverse_bim.final_acceptance` with `reverseBimFinalAcceptancePolicy_v2`
 - `reverse_bim.source_material_assemblies`
+- `reverse_bim.source_level_completeness`
 - `source.reader_consensus`
 - `reverse_bim.phase_run`
 - `reverse_bim.evidence_requirements`
@@ -696,6 +697,7 @@ Tests must encode the failure so it cannot regress.
 | TEST-010 | Single or conflicting critical AI-reader passes | Reader consensus blocks source handoff. |
 | TEST-011 | Phase packet omits expected model readback evidence | Phase run fails before next phase. |
 | TEST-012 | UI screenshot lacks/fails visual inspection checklist | UI evidence fails even when screenshot file exists. |
+| TEST-013 | Source-required KG/level has no physical source facts | Folder output acceptance fails and emits level repair request. |
 
 ## Done Definition For The Overall Goal
 
