@@ -326,6 +326,7 @@ function packageScripts() {
       lintPy: /^lint-py:/m.test(makefile),
       qualityWaivers: /^quality-waivers:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
+      testPyRealPath: /^test-py-real-path:/m.test(makefile),
       codeQualityReport: /^code-quality-report:/m.test(makefile),
     },
   };

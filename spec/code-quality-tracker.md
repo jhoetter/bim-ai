@@ -218,7 +218,7 @@ Largest current source files observed:
 | CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
 | CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
 | CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
-| CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
+| CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
 | CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
 | CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.            |
 | CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.          |
@@ -1113,7 +1113,7 @@ interaction smoke flows, bundle size, and basic render performance.
 ## CQ-2026-17 - Cover Real Deployed Paths
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: backend integration, frontend e2e, collaboration
 
 ### Problem
@@ -1144,6 +1144,19 @@ browser rendering.
 This overlaps with `spec/backend-testing-hardening.md`, but this item is the
 A-grade code-quality gate: the real-path smoke lane must be part of the normal
 quality story, not only a future hardening aspiration.
+
+### Progress Notes
+
+- 2026-05-20: `app/tests/integration/test_real_path_smoke.py` mounts the real
+  FastAPI app/router through `TestClient`, overrides only persistence with an
+  in-memory async session, and exercises `/api/bootstrap`, snapshot load,
+  `/api/models/{model_id}/commands/bundle`, stale revision rejection, activity
+  readback, comment create/list, and `/ws/{model_id}` delta delivery through
+  the actual `Hub` path.
+- 2026-05-20: `make test-py-real-path` provides a reproducible marked backend
+  real-path lane without requiring local focused Python runs to start Postgres.
+  This remains Partial until DB-backed schema/session coverage and frontend
+  proxy-to-backend browser coverage are added.
 
 ---
 
