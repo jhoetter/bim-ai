@@ -23,6 +23,7 @@ const DEFAULT_FILE_BUDGETS = {
 };
 const BUDGET_CONFIG_PATH = 'spec/code-quality-budgets.json';
 const SECURITY_WAIVERS_PATH = 'spec/security-waivers.json';
+const UI_QUALITY_BUDGETS_PATH = 'spec/ui-quality-budgets.json';
 
 const GRADE_FLOORS = {
   C: 6.0,
@@ -359,6 +360,7 @@ function packageScripts() {
       lintPy: /^lint-py:/m.test(makefile),
       qualityWaivers: /^quality-waivers:/m.test(makefile),
       maintainabilityBudgets: /^maintainability-budgets:/m.test(makefile),
+      uiQualityBudgets: /^ui-quality-budgets:/m.test(makefile),
       securityHygiene: /^security-hygiene:/m.test(makefile),
       testEnvPolicy: /^test-env-policy:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
@@ -436,6 +438,26 @@ function frontendTestEnvironmentSummary(scripts) {
   };
 }
 
+function uiQualityBudgetSummary(scripts) {
+  const configured = existsSync(join(REPO_ROOT, UI_QUALITY_BUDGETS_PATH));
+  const config = configured ? JSON.parse(readText(UI_QUALITY_BUDGETS_PATH)) : null;
+  const ci = existsSync(join(REPO_ROOT, '.github/workflows/ci.yml'))
+    ? readText('.github/workflows/ci.yml')
+    : '';
+  return {
+    configured,
+    path: UI_QUALITY_BUDGETS_PATH,
+    script: scripts.root['ui:quality-budgets'] ?? null,
+    strictIncludesBudget: Boolean(scripts.root['verify:strict']?.includes('ui:quality-budgets')),
+    makeTarget: scripts.make.uiQualityBudgets,
+    ciRunsPolicy: ci.includes('ui:quality-budgets'),
+    owner: config?.owner ?? null,
+    trackerId: config?.trackerId ?? null,
+    smokePath: config?.playwrightSmoke?.path ?? null,
+    bundleBudgets: config?.bundleBudgets ?? null,
+  };
+}
+
 function trackerRows() {
   const tracker = readText('spec/code-quality-tracker.md');
   const rowRe =
@@ -465,6 +487,7 @@ function computeGrade({
   securityGates,
   frontendTestEnvironments,
   contractParity,
+  uiQualityBudgets,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -503,6 +526,14 @@ function computeGrade({
   }
   if (!contractParity.configured || !contractParity.ok) {
     blockersToNextGrade.push('contract parity gate is not green or not wired');
+  }
+  if (
+    !uiQualityBudgets.configured ||
+    !uiQualityBudgets.script ||
+    !uiQualityBudgets.strictIncludesBudget ||
+    !uiQualityBudgets.ciRunsPolicy
+  ) {
+    blockersToNextGrade.push('UI quality budgets are not fully wired');
   }
   if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
@@ -575,6 +606,7 @@ function buildReport() {
   const contractParity = contractParitySummary(scripts);
   const securityGates = securityGateSummary(scripts);
   const frontendTestEnvironments = frontendTestEnvironmentSummary(scripts);
+  const uiQualityBudgets = uiQualityBudgetSummary(scripts);
   const grade = computeGrade({
     tracker,
     waivers,
@@ -586,6 +618,7 @@ function buildReport() {
     securityGates,
     frontendTestEnvironments,
     contractParity,
+    uiQualityBudgets,
   });
 
   return {
@@ -614,12 +647,14 @@ function buildReport() {
         maintainabilityBudgets: scripts.root['maintainability:budgets'] ?? null,
         contractParity: scripts.root['contract:parity'] ?? null,
         securityHygiene: scripts.root['security:hygiene'] ?? null,
+        uiQualityBudgets: scripts.root['ui:quality-budgets'] ?? null,
         architecture: scripts.root.architecture ?? null,
       },
       make: scripts.make,
       contractParity,
       security: securityGates,
       frontendTestEnvironments,
+      uiQualityBudgets,
     },
     maintainability: {
       budgetConfig: {
@@ -733,6 +768,9 @@ function renderMarkdown(report) {
   );
   lines.push(
     `| Frontend test environments | ${report.gates.frontendTestEnvironments.policyScript ? 'configured' : 'missing'} | strict: ${report.gates.frontendTestEnvironments.strictIncludesPolicy ? 'yes' : 'no'} |`,
+  );
+  lines.push(
+    `| UI quality budgets | ${report.gates.uiQualityBudgets.configured ? 'configured' : 'missing'} | strict: ${report.gates.uiQualityBudgets.strictIncludesBudget ? 'yes' : 'no'}, CI: ${report.gates.uiQualityBudgets.ciRunsPolicy ? 'yes' : 'no'} |`,
   );
   lines.push('');
   lines.push('## Maintainability Budgets');

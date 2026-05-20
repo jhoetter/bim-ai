@@ -217,7 +217,7 @@ Largest current source files observed:
 | CQ-2026-13 | P1       | Done    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
 | CQ-2026-14 | P1       | Done    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
 | CQ-2026-15 | P1       | Done    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
-| CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
+| CQ-2026-16 | P1       | Done    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
 | CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
 | CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
 | CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.            |
@@ -1144,7 +1144,7 @@ can import across layers in ways that make extraction harder.
 ## CQ-2026-16 - Add Product-Quality UI Budgets
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: frontend CI, Playwright, accessibility, performance
 
 ### Problem
@@ -1186,9 +1186,14 @@ interaction smoke flows, bundle size, and basic render performance.
   workspace/plan/3D/tab-switch timing budgets, opens the command palette through
   the keyboard path, selects a seeded wall through the real store for inspector
   coverage, and verifies the 3D canvas has a live nonzero WebGL drawing buffer.
-- 2026-05-20: this remains Partial until accessibility checks and bundle-size
-  budgets are wired into the normal gate instead of relying only on the cockpit
-  smoke's landmark/dialog assertions and render timing limits.
+- 2026-05-20: added `spec/ui-quality-budgets.json` and
+  `scripts/check-ui-quality-budgets.mjs`, covering cockpit smoke workflow
+  tokens, accessibility landmark/dialog contracts, Playwright visual baseline
+  policy, and built `packages/web/dist` bundle-size limits.
+- 2026-05-20: wired `pnpm ui:quality-budgets` into `pnpm verify:strict`, Make,
+  CI policy checks, and the generated code-quality scorecard. Verification
+  passed with bundle totals: `4949.8KB` JS, `4172.9KB` largest JS chunk,
+  `76.3KB` CSS, and `5856.8KB` total dist assets.
 
 ---
 

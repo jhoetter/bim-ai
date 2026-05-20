@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "owner": "frontend-quality",
+  "trackerId": "CQ-2026-16",
+  "playwrightSmoke": {
+    "path": "packages/web/e2e/cockpit-smoke.spec.ts",
+    "requiredWorkflowTokens": [
+      "app-shell",
+      "plan-canvas",
+      "Command palette",
+      "inspector-wall-base-offset",
+      "orbit-3d-canvas",
+      "sheet-mode-shell",
+      "schedule-mode-shell",
+      "hasLiveViewportCanvas"
+    ],
+    "requiredBudgetKeys": [
+      "initialWorkspaceLoad",
+      "planCanvasReady",
+      "threeDViewportReady",
+      "tabSwitchReady"
+    ],
+    "accessibilityContractTokens": [
+      "getByRole('banner'",
+      "getByRole('main'",
+      "getByRole('dialog'",
+      "getByLabel('Command palette search')"
+    ]
+  },
+  "visualBaselines": {
+    "playwrightConfig": "packages/web/playwright.config.ts",
+    "requiredTokens": ["snapshotPathTemplate", "toHaveScreenshot"]
+  },
+  "bundleBudgets": {
+    "distDir": "packages/web/dist",
+    "maxTotalJsKb": 5500,
+    "maxLargestJsKb": 4500,
+    "maxTotalCssKb": 900,
+    "maxTotalAssetKb": 9000
+  }
+}

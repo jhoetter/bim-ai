@@ -45,6 +45,9 @@ jobs:
       - name: Security hygiene
         run: pnpm --silent security:hygiene -- --json
 
+      - name: UI quality budget policy
+        run: pnpm --silent ui:quality-budgets -- --json --skip-dist
+
       - name: JavaScript dependency audit
         run: pnpm audit --audit-level=high
 
