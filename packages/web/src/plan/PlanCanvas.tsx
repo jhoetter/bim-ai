@@ -205,15 +205,7 @@ import {
   resolvePlanViewDisplay,
   type PlanSemanticKind,
 } from './planProjection';
-import {
-  applyCropHandleDrag,
-  cropDragCommands,
-  pickCropHandle,
-  pointInsideCrop,
-  type CropBounds,
-  type CropHandleId,
-} from './cropRegionDragHandles';
-import { getCropRegionGrips, applyCropGripDrag } from './cropRegionGrips';
+import { type CropBounds, type CropHandleId } from './cropRegionDragHandles';
 import { findAreaPlacementBoundary } from './areaPlacement';
 import { placeTagByCategoryCommand } from './manualTags';
 import {
@@ -246,6 +238,11 @@ import {
   updateComponentGhostHover,
   updateSplitWallHover,
 } from './planCanvasHoverHandlers';
+import {
+  handleCropPointerDown,
+  handleCropPointerMove,
+  handleCropPointerUp,
+} from './planCanvasCropInteractions';
 import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
@@ -1021,44 +1018,18 @@ export function PlanCanvas({
       const xy = snapped(ev.clientX, ev.clientY);
       setHudMm(xy);
       useBimStore.getState().setPlanHud(xy);
-      // PLN-02 — live crop frame drag update
-      if (cropDragRef.current) {
-        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (ptr) {
-          const dx = ptr.xMm - cropDragRef.current.startPointerMm.xMm;
-          const dy = ptr.yMm - cropDragRef.current.startPointerMm.yMm;
-          cropDragRef.current.currentBounds = applyCropHandleDrag(
-            cropDragRef.current.handle,
-            cropDragRef.current.startBounds,
-            dx,
-            dy,
-          );
-          // Trigger a re-render of the overlay (cheap — only rebuilds frame).
-          bumpGeom((x) => x + 1);
-          skipClickRef.current = true;
-        }
-        return;
-      }
-      // §1.6.10: live update for crop grip drag (getCropRegionGrips / applyCropGripDrag)
-      if (cropGripDragRef.current) {
-        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (ptr) {
-          const deltaMm = {
-            xMm: ptr.xMm - cropGripDragRef.current.startPlanPt.xMm,
-            yMm: ptr.yMm - cropGripDragRef.current.startPlanPt.yMm,
-          };
-          const newCrop = applyCropGripDrag(
-            cropGripDragRef.current.cropAtStart,
-            cropGripDragRef.current.gripId,
-            deltaMm,
-          );
-          void onSemanticCommand({
-            type: 'updateCropRegion',
-            planViewId: cropGripDragRef.current.planViewId,
-            cropRegionMm: newCrop,
-          });
-          skipClickRef.current = true;
-        }
+      if (
+        handleCropPointerMove({
+          renderer: rnd,
+          camera: camNow,
+          event: ev,
+          cropDragRef,
+          cropGripDragRef,
+          skipClickRef,
+          onSemanticCommand,
+          bumpGeom,
+        })
+      ) {
         return;
       }
       if (dragRef.current.dragging) {
@@ -1318,104 +1289,22 @@ export function PlanCanvas({
     };
 
     const onDown = (ev: PointerEvent) => {
-      // PLN-02 — first chance: crop frame interaction. Only applies when a
-      // plan_view with crop bounds is active and the frame is visible.
       if (
-        ev.button === 0 &&
-        !spaceDownRef.current &&
-        activeCropState &&
-        (activeCropState.cropRegionVisible || activeCropState.cropEnabled)
+        handleCropPointerDown({
+          renderer: rnd,
+          camera: camNow,
+          group: grp,
+          event: ev,
+          activeCropState,
+          spaceDownRef,
+          planTool,
+          cameraHalf: camRef.current.half,
+          cropDragRef,
+          cropGripDragRef,
+          skipClickRef,
+        })
       ) {
-        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (ptr) {
-          const pixH = rnd.domElement.clientHeight || 1;
-          const handleToleranceMm = (14 / pixH) * 2 * camRef.current.half * 1000;
-          const handleId = pickCropHandle(
-            activeCropState.cropMinMm,
-            activeCropState.cropMaxMm,
-            ptr.xMm,
-            ptr.yMm,
-            handleToleranceMm,
-          );
-          if (handleId) {
-            cropDragRef.current = {
-              handle: handleId,
-              planViewId: activeCropState.planViewId,
-              startBounds: {
-                cropMinMm: activeCropState.cropMinMm,
-                cropMaxMm: activeCropState.cropMaxMm,
-              },
-              startPointerMm: ptr,
-              currentBounds: {
-                cropMinMm: activeCropState.cropMinMm,
-                cropMaxMm: activeCropState.cropMaxMm,
-              },
-            };
-            skipClickRef.current = true;
-            return;
-          }
-          // §1.6.10: crop region grip hit-test via getCropRegionGrips (4-edge midpoint grips)
-          {
-            const cropMinMax = {
-              minXMm: activeCropState.cropMinMm.xMm,
-              minYMm: activeCropState.cropMinMm.yMm,
-              maxXMm: activeCropState.cropMaxMm.xMm,
-              maxYMm: activeCropState.cropMaxMm.yMm,
-            };
-            const cropGrips = getCropRegionGrips(cropMinMax);
-            const HIT_RADIUS_MM = handleToleranceMm;
-            const hit = cropGrips.find(
-              (g) =>
-                Math.hypot(g.positionMm.xMm - ptr.xMm, g.positionMm.yMm - ptr.yMm) < HIT_RADIUS_MM,
-            );
-            if (hit) {
-              cropGripDragRef.current = {
-                gripId: hit.id,
-                startPlanPt: ptr,
-                cropAtStart: cropMinMax,
-                planViewId: activeCropState.planViewId,
-              };
-              skipClickRef.current = true;
-              return;
-            }
-          }
-          // Body drag: only when select-tool active and no element under cursor.
-          if (
-            planTool === 'select' &&
-            pointInsideCrop(activeCropState.cropMinMm, activeCropState.cropMaxMm, ptr.xMm, ptr.yMm)
-          ) {
-            const rectBox = rnd.domElement.getBoundingClientRect();
-            const ray = new THREE.Raycaster();
-            ray.setFromCamera(
-              new THREE.Vector2(
-                ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
-                -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
-              ),
-              camNow,
-            );
-            const hits = ray.intersectObjects(grp.children, true);
-            const hasElementHit = hits.some(
-              (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
-            );
-            if (!hasElementHit && ev.shiftKey) {
-              cropDragRef.current = {
-                handle: 'body',
-                planViewId: activeCropState.planViewId,
-                startBounds: {
-                  cropMinMm: activeCropState.cropMinMm,
-                  cropMaxMm: activeCropState.cropMaxMm,
-                },
-                startPointerMm: ptr,
-                currentBounds: {
-                  cropMinMm: activeCropState.cropMinMm,
-                  cropMaxMm: activeCropState.cropMaxMm,
-                },
-              };
-              skipClickRef.current = true;
-              return;
-            }
-          }
-        }
+        return;
       }
 
       const intent = classifyPointerStart({
@@ -1509,27 +1398,14 @@ export function PlanCanvas({
       if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
       setSnapLabel(null);
 
-      // PLN-02 — commit crop frame drag if one is active.
-      if (cropDragRef.current) {
-        const drag = cropDragRef.current;
-        cropDragRef.current = undefined;
-        const sameMin =
-          drag.currentBounds.cropMinMm.xMm === drag.startBounds.cropMinMm.xMm &&
-          drag.currentBounds.cropMinMm.yMm === drag.startBounds.cropMinMm.yMm;
-        const sameMax =
-          drag.currentBounds.cropMaxMm.xMm === drag.startBounds.cropMaxMm.xMm &&
-          drag.currentBounds.cropMaxMm.yMm === drag.startBounds.cropMaxMm.yMm;
-        if (!(sameMin && sameMax)) {
-          for (const cmd of cropDragCommands(drag.planViewId, drag.currentBounds)) {
-            onSemanticCommand(cmd);
-          }
-        }
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      // §1.6.10: commit/clear crop grip drag (applyCropGripDrag)
-      if (cropGripDragRef.current) {
-        cropGripDragRef.current = null;
+      if (
+        handleCropPointerUp({
+          cropDragRef,
+          cropGripDragRef,
+          onSemanticCommand,
+          bumpGeom,
+        })
+      ) {
         return;
       }
 
