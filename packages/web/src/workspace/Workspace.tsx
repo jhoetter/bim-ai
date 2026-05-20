@@ -34,7 +34,7 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { LensMode, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
+import type { LensMode, ModelDelta, Violation } from '@bim-ai/core';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useStructuralValidationViolations } from '../advisor/structuralAdvisorViolations';
 import {
@@ -102,16 +102,7 @@ import {
   upsertTabInstance,
   type WorkspaceCompositionState,
 } from './compositions';
-import {
-  buildSnapshotPayload,
-  downloadSnapshot,
-  findRecentProject,
-  type ProjectMenuItemRecent,
-  pushRollingSnapshotBackup,
-  pushRecentProject,
-  readRecentProjects,
-  readSnapshotFile,
-} from './project';
+import { type ProjectMenuItemRecent, readRecentProjects } from './project';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -138,10 +129,6 @@ import {
 } from '../families/catalogFamilyReload';
 import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
-import { exportToIfc } from '../export/ifcExporter';
-import { exportToDxf } from '../export/dxfExporter';
-import { exportSceneToDwg } from '../viewport/dwgExport';
-import { exportSceneToDgn } from '../export/dgnExporter';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { CanvasMount } from './viewport';
 import {
@@ -158,6 +145,7 @@ import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './h
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
+import { useWorkspaceProjectActions } from './useWorkspaceProjectActions';
 import {
   WorkspaceCanvasSlot,
   WorkspaceFooterSlot,
@@ -217,7 +205,6 @@ type RailOverride = 'open' | 'collapsed' | null;
 
 const PANE_SECONDARY_SIDEBAR_WIDTH = 'min(248px, 34%)';
 
-type LevelElement = Extract<Element, { kind: 'level' }>;
 type PlanViewElement = Extract<Element, { kind: 'plan_view' }>;
 type PlanViewCropRegion = NonNullable<PlanViewElement['cropRegionMm']>;
 type EditableStairRun = {
@@ -1062,144 +1049,25 @@ export function Workspace(): JSX.Element {
     }));
   }, []);
 
-  /* ── Project menu handlers (T-03) ─────────────────────────────────── */
-  const handleSaveSnapshot = useCallback(() => {
-    const st = useBimStore.getState();
-    if (!st.modelId) {
-      setSeedError('Nothing to save — bootstrap a model first.');
-      return;
-    }
-    const snap: Snapshot = {
-      modelId: st.modelId,
-      revision: st.revision ?? 0,
-      elements: st.elementsById as unknown as Record<string, unknown>,
-      violations: [],
-    };
-    const payload = buildSnapshotPayload(snap, undefined, {
-      maximumBackups: saveAsMaximumBackups,
-    });
-    const { payload: rollingPayload } = pushRollingSnapshotBackup(payload, saveAsMaximumBackups);
-    downloadSnapshot(rollingPayload);
-    const next = pushRecentProject(rollingPayload);
-    setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
-  }, [saveAsMaximumBackups, setSeedError]);
-
-  const handleExportIfc = useCallback(() => {
-    const els = useBimStore.getState().elementsById;
-    const step = exportToIfc(els as Parameters<typeof exportToIfc>[0]);
-    const blob = new Blob([step], { type: 'application/step' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${activeSeedLabel ?? 'project'}.ifc`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [activeSeedLabel]);
-
-  const handleExportDxf = useCallback(
-    (opts: { levelId?: string; units: 'mm' | 'm' }) => {
-      const els = useBimStore.getState().elementsById;
-      const views = exportToDxf(els as Parameters<typeof exportToDxf>[0], {
-        levelId: opts.levelId,
-        units: opts.units,
-      });
-      for (const view of views) {
-        const blob = new Blob([view.dxfContent], { type: 'application/dxf' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${activeSeedLabel ?? 'project'}-${view.levelName}.dxf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    },
-    [activeSeedLabel],
-  );
-
-  const handleExportDwg = useCallback(() => {
-    const els = useBimStore.getState().elementsById;
-    exportSceneToDwg(els as Parameters<typeof exportSceneToDwg>[0]);
-  }, []);
-
-  const handleExportDgn = useCallback(() => {
-    const { elementsById } = useBimStore.getState();
-    const levels = Object.values(elementsById)
-      .filter((e): e is LevelElement => e.kind === 'level')
-      .sort((a, b) => a.elevationMm - b.elevationMm);
-    const content = exportSceneToDgn(elementsById, levels);
-    const blob = new Blob([content], { type: 'application/dgn' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'export.dgn';
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const handleRestoreSnapshot = useCallback(
-    async (file: File): Promise<void> => {
-      try {
-        const payload = await readSnapshotFile(file);
-        hydrateFromSnapshot(payload.snapshot);
-        const next = pushRecentProject(payload);
-        setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
-      } catch (err) {
-        setSeedError(err instanceof Error ? err.message : 'Failed to read snapshot');
-      }
-    },
-    [hydrateFromSnapshot, setSeedError],
-  );
-
-  const handlePickRecent = useCallback(
-    (id: string) => {
-      const found = findRecentProject(id);
-      if (!found) return;
-      hydrateFromSnapshot(found.payload.snapshot);
-    },
-    [hydrateFromSnapshot],
-  );
-
-  const handleNewClear = useCallback(() => {
-    hydrateFromSnapshot({ modelId: 'empty', revision: 0, elements: {}, violations: [] });
-    setTabsState(EMPTY_TABS);
-  }, [hydrateFromSnapshot]);
-
-  /* ── §1.6.2: Save As / Revert handlers ─────────────────────────── */
-  const handleDuplicateProject = useCallback(
-    (newName: string) => {
-      const st = useBimStore.getState();
-      if (!st.modelId) {
-        setSeedError('Nothing to duplicate — bootstrap a model first.');
-        return;
-      }
-      const newId = crypto.randomUUID();
-      const snap: Snapshot = {
-        modelId: newId,
-        revision: 0,
-        elements: st.elementsById as unknown as Record<string, unknown>,
-        violations: [],
-      };
-      const payload = buildSnapshotPayload(snap, newName);
-      const next = pushRecentProject(payload);
-      setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
-    },
-    [setSeedError],
-  );
-
-  const handleRevertProject = useCallback(() => {
-    const recent = readRecentProjects();
-    const st = useBimStore.getState();
-    const currentModelId = st.modelId;
-    // Find the most recent snapshot for the current project
-    const match =
-      recent.find(
-        (r) =>
-          r.payload.snapshot.modelId === currentModelId || r.payload.snapshot.modelId === 'empty',
-      ) ?? recent[0];
-    if (match) {
-      hydrateFromSnapshot(match.payload.snapshot);
-    }
-  }, [hydrateFromSnapshot]);
+  const {
+    handleSaveSnapshot,
+    handleExportIfc,
+    handleExportDxf,
+    handleExportDwg,
+    handleExportDgn,
+    handleRestoreSnapshot,
+    handlePickRecent,
+    handleNewClear,
+    handleDuplicateProject,
+    handleRevertProject,
+  } = useWorkspaceProjectActions({
+    activeSeedLabel,
+    saveAsMaximumBackups,
+    hydrateFromSnapshot,
+    setSeedError,
+    setRecentProjects,
+    setTabsState,
+  });
 
   /* ── Comments + presence handlers (T-16) ─────────────────────────── */
   const handleCommentPost = useCallback(
