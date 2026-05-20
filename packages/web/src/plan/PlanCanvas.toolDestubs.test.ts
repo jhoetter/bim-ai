@@ -18,6 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const readSource = (filename: string) => readFileSync(path.join(__dirname, filename), 'utf8');
 const SRC = readSource('PlanCanvas.tsx');
+const KEYBOARD_AUX_SRC = readSource('planCanvasKeyboardAuxHandlers.ts');
+const PLAN_CANVAS_INTERACTION_SRC = `${SRC}\n${KEYBOARD_AUX_SRC}`;
 const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
 const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
@@ -49,7 +51,10 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
       const pattern = new RegExp(
         String.raw`onSemanticCommand\(\s*\{\s*type:\s*['"]` + cmdType + String.raw`['"]`,
       );
-      const source = cmdType === 'createWallOpening' ? WALL_OPENING_INTERACTION_SRC : SRC;
+      const source =
+        cmdType === 'createWallOpening'
+          ? WALL_OPENING_INTERACTION_SRC
+          : PLAN_CANVAS_INTERACTION_SRC;
       expect(source).toMatch(pattern);
     });
   }
@@ -111,18 +116,22 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   });
 
   it('clears draft preview artifacts on Escape for wall lifecycle stability', () => {
-    expect(SRC).toMatch(
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
       /if\s*\(\s*hadDraft[\s\S]{0,300}planTool === ['"]wall['"][\s\S]{0,240}clearPreview\(\)/,
     );
   });
 
   it('cycles the visible wall location-line setting with Tab while the wall tool is active', () => {
-    expect(SRC).toMatch(/ev\.key\s*===\s*['"]Tab['"][\s\S]{0,80}planTool\s*===\s*['"]wall['"]/);
-    expect(SRC).toMatch(/setWallLocationLine\(cycleWallLocationLine\(st\.wallLocationLine\)\)/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /ev\.key\s*===\s*['"]Tab['"][\s\S]{0,80}planTool\s*===\s*['"]wall['"]/,
+    );
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /setWallLocationLine\(cycleWallLocationLine\(st\.wallLocationLine\)\)/,
+    );
   });
 
   it('passes the Wall-Join variant through unchanged from the reducer effect', () => {
-    expect(SRC).toMatch(
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
       /type:\s*['"]setWallJoinVariant['"][\s\S]{0,200}variant:\s*effect\.commitJoin\.variant/,
     );
   });
@@ -144,7 +153,7 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('keeps Rotate on the reference-ray and typed-angle workflow', () => {
     expect(SRC).toMatch(/rotateReferenceRef/);
     expect(SRC).toMatch(/rotateDeltaAngleFromReference/);
-    expect(SRC).toMatch(/parseTypedRotateAngle/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/parseTypedRotateAngle/);
     expect(TOOL_OVERLAYS_SRC).toContain('Click end ray or type angle + Enter');
   });
 });

@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 5,191      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction/action modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 3,913      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules. |
 | `packages/cli/cli.mjs`                                      | 3,920      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `app/bim_ai/api/registry.py`                                | 3,267      | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
@@ -1290,6 +1290,10 @@ Initial thresholds can be advisory before becoming blocking:
   `plan/usePlanCanvasContextActions.ts`, reducing `PlanCanvas.tsx` to `5,191`
   local lines with focused PlanCanvas context/tool tests and web typecheck
   passing.
+- 2026-05-20: a PlanCanvas extraction slice moved wheel, keyboard, context-menu,
+  and double-click canvas handlers into `plan/planCanvasKeyboardAuxHandlers.ts`,
+  reducing `PlanCanvas.tsx` to `3,913` local lines with focused PlanCanvas
+  padlock/tool/state/overlay tests and web typecheck passing.
 - 2026-05-20: an InspectorContent extraction slice moved angular, radial,
   diameter, arc-length, and permanent dimension editors into
   `inspector/dimensionInspectorSections.tsx`, reducing `InspectorContent.tsx`

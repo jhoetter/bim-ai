@@ -21,6 +21,15 @@ import { wallTempDimensions, type Wall } from './tempDimensions';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SRC = readFileSync(path.join(__dirname, 'PlanCanvas.tsx'), 'utf8');
+const KEYBOARD_AUX_SRC = readFileSync(
+  path.join(__dirname, 'planCanvasKeyboardAuxHandlers.ts'),
+  'utf8',
+);
+const GRIP_HANDLERS_SRC = readFileSync(
+  path.join(__dirname, 'usePlanCanvasGripHandlers.ts'),
+  'utf8',
+);
+const PLAN_CANVAS_INTERACTION_SRC = `${SRC}\n${KEYBOARD_AUX_SRC}\n${GRIP_HANDLERS_SRC}`;
 
 afterEach(() => {
   cleanup();
@@ -40,13 +49,15 @@ const wall = (id: string, x: number): Wall => ({
 const identity = (xy: { xMm: number; yMm: number }) => ({ pxX: xy.xMm, pxY: xy.yMm });
 
 describe('EDT-02 — handleTempDimLockClick dispatches createConstraint', () => {
-  it('PlanCanvas.tsx contains the createConstraint dispatch with the right shape', () => {
-    expect(SRC).toMatch(/onSemanticCommand\(\s*\{\s*type:\s*['"]createConstraint['"]/);
-    expect(SRC).toMatch(/rule:\s*['"]equal_distance['"]/);
-    expect(SRC).toMatch(/refsA:\s*\[\{\s*elementId:\s*target\.aId/);
-    expect(SRC).toMatch(/refsB:\s*\[\{\s*elementId:\s*target\.bId/);
-    expect(SRC).toMatch(/lockedValueMm:\s*target\.distanceMm/);
-    expect(SRC).toMatch(/severity:\s*['"]error['"]/);
+  it('PlanCanvas interaction source contains the createConstraint dispatch with the right shape', () => {
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /onSemanticCommand\(\s*\{\s*type:\s*['"]createConstraint['"]/,
+    );
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/rule:\s*['"]equal_distance['"]/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/refsA:\s*\[\{\s*elementId:\s*target\.aId/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/refsB:\s*\[\{\s*elementId:\s*target\.bId/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/lockedValueMm:\s*target\.distanceMm/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/severity:\s*['"]error['"]/);
   });
 
   it('PlanCanvas.tsx no longer carries the EDT-02 stub comment', () => {

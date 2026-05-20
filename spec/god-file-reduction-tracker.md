@@ -128,6 +128,7 @@ A-territory target:
 | GFR-2026-52 | P1       | Done   | `app/bim_ai/api/registry.py`                                | Extract source/reverse-BIM descriptor module                       | Registry reduced with descriptor import checks green.       |
 | GFR-2026-53 | P0       | Done   | `app/bim_ai/api/registry.py`                                | Extract QA/query/resolve resource descriptors                      | Registry below `4,000` LOC with descriptor import checks green. |
 | GFR-2026-54 | P0       | Done   | `packages/cli/cli.mjs`                                      | Extract CLI command families and shared helpers                    | CLI below `4,000` LOC with focused CLI tests green.         |
+| GFR-2026-55 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract keyboard and auxiliary canvas handlers                     | PlanCanvas below `4,000` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -586,3 +587,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   initiation tests pass (`54 passed`). The full `@bim-ai/cli` suite still has
   pre-existing target-house fixture failures from missing `seed-artifacts`
   inputs.
+- 2026-05-20: `GFR-2026-55` is Done. The slice moved wheel, keyboard,
+  context-menu, and double-click canvas handlers into
+  `packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts`. Local `wc -l`
+  reports `packages/web/src/plan/PlanCanvas.tsx` at `3,913` lines and the new
+  handler module at `1,662` lines. Focused PlanCanvas padlock/tool/state/
+  overlay tests pass (`71 passed`), and `pnpm --filter @bim-ai/web typecheck`
+  passes.
