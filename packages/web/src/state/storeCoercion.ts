@@ -1,5 +1,12 @@
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
+import { coerceSiteElement } from './coercion/siteElements';
+import {
+  coerceLoop as coerceWireLoop,
+  coerceXY,
+  coerceXYZ,
+  type WireRecord,
+} from './coercion/primitives';
 import type { ViewFilter } from './storeTypes';
 
 export function coerceViolation(v: unknown): Violation {
@@ -59,13 +66,6 @@ export function coerceViolation(v: unknown): Violation {
   };
 }
 
-function coerceXY(raw: Record<string, unknown>): { xMm: number; yMm: number } {
-  return {
-    xMm: Number(raw.xMm ?? raw.x_mm ?? 0),
-    yMm: Number(raw.yMm ?? raw.y_mm ?? 0),
-  };
-}
-
 function coerceWallCurve(raw: unknown): Extract<Element, { kind: 'wall' }>['wallCurve'] {
   if (!raw || typeof raw !== 'object') return null;
   const row = raw as Record<string, unknown>;
@@ -102,14 +102,6 @@ function coerceWallCurve(raw: unknown): Extract<Element, { kind: 'wall' }>['wall
     startAngleDeg,
     endAngleDeg,
     sweepDeg,
-  };
-}
-
-function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zMm: number } {
-  return {
-    xMm: Number(raw.xMm ?? raw.x_mm ?? 0),
-    yMm: Number(raw.yMm ?? raw.y_mm ?? 0),
-    zMm: Number(raw.zMm ?? raw.z_mm ?? 0),
   };
 }
 
@@ -816,9 +808,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   }
 
   const coerceLoop = (keyA: string, keyS: string): XY[] => {
-    const arr = raw[keyA] ?? raw[keyS];
-    if (!Array.isArray(arr)) return [];
-    return arr.map((p) => coerceXY((p ?? {}) as Record<string, unknown>));
+    return coerceWireLoop(raw, keyA, keyS);
   };
 
   if (kind === 'project_settings') {
@@ -981,113 +971,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
-  if (kind === 'toposolid') {
-    const samplesRaw = raw.heightSamples ?? raw.height_samples;
-    const heightSamples = Array.isArray(samplesRaw)
-      ? samplesRaw.map((sample) => coerceXYZ((sample ?? {}) as Record<string, unknown>))
-      : [];
-    const gridRaw = raw.heightmapGridMm ?? raw.heightmap_grid_mm;
-    const grid =
-      gridRaw && typeof gridRaw === 'object' ? (gridRaw as Record<string, unknown>) : null;
-    return {
-      kind: 'toposolid',
-      id,
-      name,
-      boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
-      heightSamples,
-      ...(grid
-        ? {
-            heightmapGridMm: {
-              stepMm: Number(grid.stepMm ?? grid.step_mm ?? 0),
-              rows: Number(grid.rows ?? 0),
-              cols: Number(grid.cols ?? 0),
-              values: Array.isArray(grid.values) ? grid.values.map((value) => Number(value)) : [],
-            },
-          }
-        : {}),
-      thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 1500),
-      ...(raw.baseElevationMm !== undefined || raw.base_elevation_mm !== undefined
-        ? { baseElevationMm: Number(raw.baseElevationMm ?? raw.base_elevation_mm) }
-        : {}),
-      ...(raw.defaultMaterialKey || raw.default_material_key
-        ? { defaultMaterialKey: String(raw.defaultMaterialKey ?? raw.default_material_key) }
-        : {}),
-      pinned: Boolean(raw.pinned ?? false),
-      ...(raw.phaseCreated || raw.phase_created
-        ? { phaseCreated: String(raw.phaseCreated ?? raw.phase_created) }
-        : {}),
-      ...(raw.phaseDemolished || raw.phase_demolished
-        ? { phaseDemolished: String(raw.phaseDemolished ?? raw.phase_demolished) }
-        : {}),
-      ...(raw.discipline ? { discipline: String(raw.discipline) } : {}),
-    };
-  }
-
-  if (kind === 'toposolid_subdivision') {
-    return {
-      kind: 'toposolid_subdivision',
-      id,
-      name,
-      hostToposolidId: String(raw.hostToposolidId ?? raw.host_toposolid_id ?? ''),
-      boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
-      finishCategory: String(raw.finishCategory ?? raw.finish_category ?? 'other') as
-        | 'paving'
-        | 'lawn'
-        | 'road'
-        | 'planting'
-        | 'other',
-      materialKey: String(raw.materialKey ?? raw.material_key ?? ''),
-    };
-  }
-
-  if (kind === 'graded_region') {
-    return {
-      kind: 'graded_region',
-      id,
-      hostToposolidId: String(raw.hostToposolidId ?? raw.host_toposolid_id ?? ''),
-      boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
-      targetMode: String(raw.targetMode ?? raw.target_mode ?? 'flat') as 'flat' | 'slope',
-      ...(raw.targetZMm !== undefined || raw.target_z_mm !== undefined
-        ? { targetZMm: Number(raw.targetZMm ?? raw.target_z_mm) }
-        : {}),
-      ...(raw.slopeAxisDeg !== undefined || raw.slope_axis_deg !== undefined
-        ? { slopeAxisDeg: Number(raw.slopeAxisDeg ?? raw.slope_axis_deg) }
-        : {}),
-      ...(raw.slopeDegPercent !== undefined || raw.slope_deg_percent !== undefined
-        ? { slopeDegPercent: Number(raw.slopeDegPercent ?? raw.slope_deg_percent) }
-        : {}),
-    };
-  }
-
-  if (kind === 'toposolid_excavation') {
-    return {
-      kind: 'toposolid_excavation',
-      id,
-      hostToposolidId: String(raw.hostToposolidId ?? raw.host_toposolid_id ?? ''),
-      cutterElementId: String(raw.cutterElementId ?? raw.cutter_element_id ?? ''),
-      cutMode: String(raw.cutMode ?? raw.cut_mode ?? 'to_bottom_of_cutter') as
-        | 'to_top_of_cutter'
-        | 'to_bottom_of_cutter'
-        | 'custom_depth',
-      offsetMm: Number(raw.offsetMm ?? raw.offset_mm ?? 0),
-      ...(raw.customDepthMm !== undefined || raw.custom_depth_mm !== undefined
-        ? { customDepthMm: Number(raw.customDepthMm ?? raw.custom_depth_mm) }
-        : {}),
-      ...(raw.estimatedVolumeM3 !== undefined || raw.estimated_volume_m3 !== undefined
-        ? { estimatedVolumeM3: Number(raw.estimatedVolumeM3 ?? raw.estimated_volume_m3) }
-        : {}),
-      ...(Array.isArray(raw.boundaryMm) || Array.isArray(raw.boundary_mm)
-        ? {
-            boundaryMm: ((raw.boundaryMm ?? raw.boundary_mm) as unknown[]).map((p) =>
-              coerceXY((p ?? {}) as Record<string, unknown>),
-            ),
-          }
-        : {}),
-      ...(raw.depthMm !== undefined || raw.depth_mm !== undefined
-        ? { depthMm: Number(raw.depthMm ?? raw.depth_mm) }
-        : {}),
-    };
-  }
+  const siteElement = coerceSiteElement(id, name, raw as WireRecord);
+  if (siteElement) return siteElement;
 
   if (kind === 'roof') {
     const rawMode = String(raw.roofGeometryMode ?? raw.roof_geometry_mode ?? 'mass_box');

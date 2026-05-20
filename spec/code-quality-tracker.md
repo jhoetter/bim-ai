@@ -207,7 +207,7 @@ Largest current source files observed:
 | CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
 | CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has first thematic slice and compile-time union fixture.                    |
-| CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
+| CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline. |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
 | CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
@@ -536,7 +536,7 @@ a public re-export facade:
 ## CQ-2026-06 - Strengthen Runtime Data Coercion Boundaries
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: frontend state/API boundary
 
 ### Problem
@@ -565,6 +565,22 @@ more defensive `as any` logic.
 - `packages/web/src/state/storeCoercion*.test.ts`
 - `packages/web/src/lib/api.ts`
 - `packages/core/src/*`
+
+### Completion Evidence
+
+- 2026-05-20: extracted site/toposolid wire coercion into
+  `packages/web/src/state/coercion/siteElements.ts`, backed by reusable wire
+  primitives in `packages/web/src/state/coercion/primitives.ts`.
+- 2026-05-20: added focused site coercion coverage in
+  `packages/web/src/state/coercion/siteElements.test.ts` for camelCase input,
+  snake_case input, invalid numeric defaulting, toposolid height/grid data,
+  subdivisions, graded regions, and excavations.
+- 2026-05-20: `packages/web/src/state/storeCoercion.ts` reduced from `2,290`
+  to `2,175` lines while keeping `coerceElement` as the stable public entry
+  point.
+- 2026-05-20: verification passed:
+  `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/siteElements.test.ts src/state/store.test.ts`,
+  `pnpm --filter @bim-ai/web typecheck`, and `pnpm format:check`.
 
 ---
 
