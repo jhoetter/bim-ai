@@ -1,23 +1,6 @@
-import {
-  type ComponentType,
-  type JSX,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AssetLibraryEntry, Element, Saved3dViewElement } from '@bim-ai/core';
-import {
-  type BimIconHifiProps,
-  ElevationViewHifi,
-  OrbitViewHifi,
-  PlanViewHifi,
-  ScheduleViewHifi,
-  SectionViewHifi,
-  SheetHifi,
-} from '@bim-ai/icons';
+import type { Element, Saved3dViewElement } from '@bim-ai/core';
 import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
@@ -161,7 +144,16 @@ import { exportSceneToDwg } from '../viewport/dwgExport';
 import { exportSceneToDgn } from '../export/dgnExporter';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { CanvasMount } from './viewport';
-import { defaultTabFallbackForKind, resolvePlanTabTarget } from './WorkspaceHelpers';
+import {
+  defaultTabFallbackForKind,
+  hifiIconForTabKind,
+  resolvePlanTabTarget,
+} from './WorkspaceHelpers';
+import {
+  assetPreviewElementFromEntry,
+  indexAssetCommandFromEntry,
+  shouldPlaceCatalogFamilyAsAsset,
+} from './catalogPlacementHelpers';
 import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './hideInView';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
@@ -210,24 +202,6 @@ import {
 } from '../tools/massGenerateBim';
 import type { MassNewElem } from '../tools/massToFloors';
 
-function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHifiProps> {
-  switch (kind) {
-    case '3d':
-      return OrbitViewHifi;
-    case 'section':
-      return SectionViewHifi;
-    case 'sheet':
-      return SheetHifi;
-    case 'schedule':
-      return ScheduleViewHifi;
-    case 'elevation':
-      return ElevationViewHifi;
-    case 'plan':
-    default:
-      return PlanViewHifi;
-  }
-}
-
 /**
  * Workspace — composition root for the §11–§17 chrome.
  *
@@ -257,67 +231,6 @@ type EditableStairElement = Extract<Element, { kind: 'stair' }> & {
   runWidthMm?: number;
   editStairActive?: boolean;
 };
-
-function shouldPlaceCatalogFamilyAsAsset(placement: ExternalCatalogPlacement): boolean {
-  const category = placement.assetEntry?.category;
-  return (
-    placement.family.discipline === 'generic' &&
-    (category === 'furniture' ||
-      category === 'kitchen' ||
-      category === 'bathroom' ||
-      category === 'casework')
-  );
-}
-
-function indexAssetCommandFromEntry(entry: AssetLibraryEntry): Record<string, unknown> {
-  return {
-    type: 'IndexAsset',
-    id: entry.id,
-    assetKind: entry.assetKind ?? 'family_instance',
-    name: entry.name,
-    tags: entry.tags,
-    category: entry.category,
-    disciplineTags: entry.disciplineTags ?? [],
-    thumbnailKind: entry.thumbnailKind,
-    ...(entry.thumbnailMm
-      ? {
-          thumbnailWidthMm: entry.thumbnailMm.widthMm,
-          thumbnailHeightMm: entry.thumbnailMm.heightMm,
-        }
-      : {}),
-    ...(entry.planSymbolKind ? { planSymbolKind: entry.planSymbolKind } : {}),
-    ...(entry.renderProxyKind ? { renderProxyKind: entry.renderProxyKind } : {}),
-    ...(entry.paramSchema ? { paramSchema: entry.paramSchema } : {}),
-    ...(entry.publishedFromOrgId ? { publishedFromOrgId: entry.publishedFromOrgId } : {}),
-    ...(entry.description ? { description: entry.description } : {}),
-  };
-}
-
-function assetPreviewElementFromEntry(
-  entry: AssetLibraryEntry,
-): Extract<Element, { kind: 'asset_library_entry' }> {
-  return {
-    kind: 'asset_library_entry',
-    id: entry.id,
-    assetKind: entry.assetKind ?? 'family_instance',
-    name: entry.name,
-    tags: entry.tags,
-    category: entry.category,
-    disciplineTags: entry.disciplineTags ?? [],
-    thumbnailKind: entry.thumbnailKind,
-    ...(entry.thumbnailMm
-      ? {
-          thumbnailWidthMm: entry.thumbnailMm.widthMm,
-          thumbnailHeightMm: entry.thumbnailMm.heightMm,
-        }
-      : {}),
-    ...(entry.planSymbolKind ? { planSymbolKind: entry.planSymbolKind } : {}),
-    ...(entry.renderProxyKind ? { renderProxyKind: entry.renderProxyKind } : {}),
-    ...(entry.paramSchema ? { paramSchema: entry.paramSchema } : {}),
-    ...(entry.publishedFromOrgId ? { publishedFromOrgId: entry.publishedFromOrgId } : {}),
-    ...(entry.description ? { description: entry.description } : {}),
-  };
-}
 
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();

@@ -103,6 +103,7 @@ A-territory target:
 | GFR-2026-27 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract snap hover and glyph candidate pipeline                    | PlanCanvas below `5,800` LOC with focused tests green.      |
 | GFR-2026-28 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract split-wall, component, and column hover handlers           | PlanCanvas at or below `5,700` LOC with focused tests green. |
 | GFR-2026-29 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract crop-region pointer interaction lifecycle                  | PlanCanvas below `5,600` LOC with focused tests green.      |
+| GFR-2026-30 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract tab icon and catalog asset placement helpers               | Workspace below `5,650` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -403,4 +404,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   into `packages/web/src/plan/planCanvasCropInteractions.ts`. Local `wc -l`
   reports `packages/web/src/plan/PlanCanvas.tsx` at `5,576` lines. Focused
   crop and PlanCanvas tool tests pass (`42 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-30` is Done. The slice moved tab hifi icon resolution
+  into `packages/web/src/workspace/WorkspaceHelpers.tsx` and catalog asset
+  placement/index/preview helpers into
+  `packages/web/src/workspace/catalogPlacementHelpers.ts`. Local `wc -l`
+  reports `packages/web/src/workspace/Workspace.tsx` at `5,610` lines. Focused
+  workspace/catalog helper tests pass (`10 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.

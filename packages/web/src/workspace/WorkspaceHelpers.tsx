@@ -1,12 +1,38 @@
 import type { ComponentType, JSX } from 'react';
 
 import type { Element } from '@bim-ai/core';
-import type { BimIconHifiProps } from '@bim-ai/icons';
+import {
+  type BimIconHifiProps,
+  ElevationViewHifi,
+  OrbitViewHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+} from '@bim-ai/icons';
 
 import { ToolPalette } from '../tools/ToolPalette';
 import type { ToolDisabledContext, ToolId } from '../tools/toolRegistry';
 import type { WorkspaceMode } from './shell';
 import type { TabKind } from './tabsModel';
+
+export function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHifiProps> {
+  switch (kind) {
+    case '3d':
+      return OrbitViewHifi;
+    case 'section':
+      return SectionViewHifi;
+    case 'sheet':
+      return SheetHifi;
+    case 'schedule':
+      return ScheduleViewHifi;
+    case 'elevation':
+      return ElevationViewHifi;
+    case 'plan':
+    default:
+      return PlanViewHifi;
+  }
+}
 
 export function FloatingPalette({
   mode,
