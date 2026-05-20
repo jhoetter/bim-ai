@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                               |
 | ----------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.2k       | High-churn plan interaction monolith after extracted overlay modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,993      | High-churn plan interaction monolith after extracted overlay modules. |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                               |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
@@ -555,6 +555,9 @@ impact of small changes.
 - 2026-05-20: the next PlanCanvas extraction moved measure readouts and
   multi-selection filter controls into `plan/PlanCanvasWorkflowOverlays.tsx`,
   reducing `PlanCanvas.tsx` to `8,202` local lines with focused component tests.
+- 2026-05-20: the follow-up PlanCanvas extraction moved authoring overlays and
+  the room-colour legend into focused modules, bringing `PlanCanvas.tsx` below
+  the `8,000` local LOC target at `7,993` lines.
 
 ---
 
@@ -1137,6 +1140,9 @@ Initial thresholds can be advisory before becoming blocking:
   wrapper into `plan/PlanCanvasStatusOverlays.tsx`.
 - 2026-05-20: another PlanCanvas extraction slice moved measure readouts and
   multi-selection filter controls into `plan/PlanCanvasWorkflowOverlays.tsx`.
+- 2026-05-20: a final PlanCanvas overlay slice for the current tracker target
+  moved reveal-hidden, annotation entry, cut-plane, subdivision palette, and
+  room-colour legend UI into dedicated plan overlay modules.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.

@@ -186,6 +186,8 @@ import { PlanCanvasReadouts } from './PlanCanvasReadouts';
 import { PlanCanvasToolOverlays } from './PlanCanvasToolOverlays';
 import { PlanCanvasStatusOverlays } from './PlanCanvasStatusOverlays';
 import { PlanCanvasWorkflowOverlays } from './PlanCanvasWorkflowOverlays';
+import { PlanCanvasAuthoringOverlays } from './PlanCanvasAuthoringOverlays';
+import { PlanCanvasRoomColorLegend } from './PlanCanvasRoomColorLegend';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -302,7 +304,6 @@ import {
   pendingComponentRotationDeg,
   setPendingComponentRotationDeg,
   setDispatchColumnAtGridsSelectAll,
-  SubdivisionPalette,
   type SubdivisionCategory,
   lineworkColorHex,
   lineworkLineWeightPx,
@@ -7769,37 +7770,7 @@ export function PlanCanvas({
           {snapLabel}
         </div>
       )}
-      <div className="pointer-events-none absolute right-3 top-14 z-10 max-w-[min(260px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-2 text-[10px] text-muted backdrop-blur">
-        {planPresentation === 'room_scheme' && roomColorLegend.length ? (
-          <div data-testid="plan-room-color-legend">
-            <div className="mb-1 font-semibold text-foreground">Room colour legend</div>
-            <ul className="space-y-1">
-              {roomColorLegend.map((row) => {
-                const subtitle = [row.programmeCode, row.department, row.functionLabel]
-                  .filter((x): x is string => Boolean(x && x.trim()))
-                  .filter((x, i, a) => a.indexOf(x) === i)
-                  .filter((x) => x !== row.label)
-                  .join(' · ');
-                return (
-                  <li key={`${row.label}-${row.schemeColorHex}`} className="flex items-start gap-2">
-                    <span
-                      className="mt-0.5 inline-block size-3 shrink-0 rounded-sm border border-border"
-                      style={{ backgroundColor: row.schemeColorHex }}
-                      title={row.programmeCode ?? row.label}
-                    />
-                    <span className="leading-tight">
-                      <span className="text-foreground">{row.label}</span>
-                      {subtitle ? (
-                        <span className="mt-0.5 block text-[9px] text-muted">{subtitle}</span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
-      </div>
+      <PlanCanvasRoomColorLegend planPresentation={planPresentation} rows={roomColorLegend} />
       {/* §13.1.3 — color fill legend panel overlay */}
       <ColorSchemeLegend
         rows={colorSchemeLegendRows}
@@ -7817,115 +7788,46 @@ export function PlanCanvas({
           <p className="text-muted text-[10px] mt-1">Use PageUp / PageDown to switch levels.</p>
         </div>
       )}
-      {/* F-014 — Reveal Hidden mode chip: shown while reveal mode is active. */}
-      {revealHiddenMode && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 48,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#ff00ff',
-            color: '#fff',
-            padding: '2px 10px',
-            borderRadius: 4,
-            fontSize: 11,
-            fontWeight: 600,
-            pointerEvents: 'none',
-            zIndex: 20,
-          }}
-          data-testid="reveal-hidden-chip"
-        >
-          Reveal Hidden Elements — hidden categories visible
-        </div>
-      )}
-      {/* ANN-01 text annotation typing overlay */}
-      {textAnnotOverlay && (
-        <div
-          style={{
-            position: 'absolute',
-            left: textAnnotOverlay.screenX,
-            top: textAnnotOverlay.screenY,
-            pointerEvents: 'auto',
-            zIndex: 30,
-          }}
-        >
-          <input
-            autoFocus
-            type="text"
-            value={textAnnotOverlay.draft}
-            className="rounded border border-accent bg-surface px-1 py-0.5 text-xs shadow outline-none"
-            placeholder="Type text…"
-            onChange={(e) =>
-              setTextAnnotOverlay((prev) => prev && { ...prev, draft: e.target.value })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const draft = textAnnotOverlay.draft.trim();
-                if (draft && activePlanViewId) {
-                  void onSemanticCommand({
-                    type: 'createTextNote',
-                    hostViewId: activePlanViewId,
-                    positionMm: textAnnotOverlay.positionMm,
-                    text: draft,
-                    fontSizeMm: 200,
-                    anchor: 'tl',
-                  });
-                }
-                textAnnotStateRef.current = initialTextAnnotationState();
-                setTextAnnotOverlay(null);
-              } else if (e.key === 'Escape') {
-                textAnnotStateRef.current = initialTextAnnotationState();
-                setTextAnnotOverlay(null);
-              }
-            }}
-          />
-        </div>
-      )}
-      {/* ANN-16 leader-text typing overlay */}
-      {leaderTextOverlay && (
-        <div
-          style={{
-            position: 'absolute',
-            left: leaderTextOverlay.screenX,
-            top: leaderTextOverlay.screenY,
-            pointerEvents: 'auto',
-            zIndex: 30,
-          }}
-        >
-          <input
-            autoFocus
-            type="text"
-            value={leaderTextOverlay.draft}
-            className="rounded border border-accent bg-surface px-1 py-0.5 text-xs shadow outline-none"
-            placeholder="Leader text…"
-            onChange={(e) =>
-              setLeaderTextOverlay((prev) => prev && { ...prev, draft: e.target.value })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const draft = leaderTextOverlay.draft.trim();
-                if (draft && activePlanViewId) {
-                  void onSemanticCommand({
-                    type: 'createLeaderText',
-                    hostViewId: activePlanViewId,
-                    anchorMm: leaderTextOverlay.anchorMm,
-                    elbowMm: leaderTextOverlay.elbowMm,
-                    textMm: leaderTextOverlay.textMm,
-                    content: draft,
-                    arrowStyle: 'arrow',
-                  });
-                }
-                leaderTextStateRef.current = initialLeaderTextState();
-                setLeaderTextOverlay(null);
-              } else if (e.key === 'Escape') {
-                leaderTextStateRef.current = initialLeaderTextState();
-                setLeaderTextOverlay(null);
-              }
-            }}
-          />
-        </div>
-      )}
+      <PlanCanvasAuthoringOverlays
+        revealHiddenMode={revealHiddenMode}
+        activePlanViewId={activePlanViewId}
+        onSemanticCommand={onSemanticCommand}
+        textAnnotOverlay={textAnnotOverlay}
+        onTextAnnotationDraftChange={(draft) =>
+          setTextAnnotOverlay((prev) => prev && { ...prev, draft })
+        }
+        onTextAnnotationDone={() => {
+          textAnnotStateRef.current = initialTextAnnotationState();
+          setTextAnnotOverlay(null);
+        }}
+        leaderTextOverlay={leaderTextOverlay}
+        onLeaderTextDraftChange={(draft) =>
+          setLeaderTextOverlay((prev) => prev && { ...prev, draft })
+        }
+        onLeaderTextDone={() => {
+          leaderTextStateRef.current = initialLeaderTextState();
+          setLeaderTextOverlay(null);
+        }}
+        pendingPlanRegion={pendingPlanRegion}
+        onPlanRegionDraftChange={(draft) =>
+          setPendingPlanRegion((prev) => prev && { ...prev, cutPlaneDraft: draft })
+        }
+        onPlanRegionDone={() => setPendingPlanRegion(null)}
+        planTool={planTool}
+        subdivisionDraft={subdivisionDraft}
+        onSetSubdivisionDraft={setSubdivisionDraft}
+        onUpdateCurrentSubdivisionDraftCategory={(category) => {
+          const draft = draftRef.current;
+          if (draft && draft.kind === 'toposolid-subdivision') {
+            draft.finishCategory = category;
+          }
+        }}
+        onCancelSubdivision={() => {
+          draftRef.current = undefined;
+          clearSubdivisionDraft();
+          setPlanTool('select');
+        }}
+      />
       <PlanCanvasWorkflowOverlays
         planTool={planTool}
         measureReadout={measureReadout}
@@ -7951,87 +7853,6 @@ export function PlanCanvas({
           }));
         }}
       />
-      {pendingPlanRegion && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'auto',
-            zIndex: 40,
-          }}
-          className="flex flex-col gap-2 rounded border border-border bg-surface p-3 shadow-lg"
-          data-testid="cut-plane-dialog"
-        >
-          <label htmlFor="cut-plane-height" className="text-[11px] font-medium text-foreground">
-            Cut-plane height (mm above level)
-          </label>
-          <input
-            id="cut-plane-height"
-            autoFocus
-            type="number"
-            value={pendingPlanRegion.cutPlaneDraft}
-            onChange={(e) =>
-              setPendingPlanRegion((p) => p && { ...p, cutPlaneDraft: e.target.value })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                const r = pendingPlanRegion;
-                setPendingPlanRegion(null);
-                const offsetMm = parseFloat(r.cutPlaneDraft);
-                onSemanticCommand({
-                  type: 'createPlanRegion',
-                  levelId: r.lvlId,
-                  outlineMm: [
-                    { xMm: r.x0, yMm: r.y0 },
-                    { xMm: r.x1, yMm: r.y0 },
-                    { xMm: r.x1, yMm: r.y1 },
-                    { xMm: r.x0, yMm: r.y1 },
-                  ],
-                  cutPlaneOffsetMm: Number.isFinite(offsetMm) ? offsetMm : 900,
-                });
-              } else if (e.key === 'Escape') {
-                setPendingPlanRegion(null);
-              }
-            }}
-            className="rounded border border-border bg-background px-2 py-1 text-xs font-mono text-foreground"
-            placeholder="900"
-          />
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded border border-border px-2 py-0.5 text-[11px] text-muted hover:text-foreground"
-              onClick={() => setPendingPlanRegion(null)}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="rounded border border-accent bg-accent/20 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/40"
-              onClick={() => {
-                const r = pendingPlanRegion;
-                setPendingPlanRegion(null);
-                const offsetMm = parseFloat(r.cutPlaneDraft);
-                onSemanticCommand({
-                  type: 'createPlanRegion',
-                  levelId: r.lvlId,
-                  outlineMm: [
-                    { xMm: r.x0, yMm: r.y0 },
-                    { xMm: r.x1, yMm: r.y0 },
-                    { xMm: r.x1, yMm: r.y1 },
-                    { xMm: r.x0, yMm: r.y1 },
-                  ],
-                  cutPlaneOffsetMm: Number.isFinite(offsetMm) ? offsetMm : 900,
-                });
-              }}
-            >
-              Place Region
-            </button>
-          </div>
-        </div>
-      )}
       <PlanCanvasToolOverlays
         planTool={planTool}
         snapOverrideDisplay={snapOverrideDisplay}
@@ -8166,36 +7987,6 @@ export function PlanCanvas({
           }}
           onCancelled={() => setPlanTool('select')}
         />
-      ) : null}
-      {/* TOP-V3-03 — Subdivision palette: shown when toposolid_subdivision tool
-          is active.  Lets the user pick a finish category before / during sketch. */}
-      {planTool === 'toposolid_subdivision' ? (
-        <div className="pointer-events-auto absolute top-3 left-1/2 z-20 -translate-x-1/2">
-          <SubdivisionPalette
-            activeCategory={subdivisionDraft?.finishCategory ?? 'paving'}
-            onSelect={(cat) => {
-              if (subdivisionDraft) {
-                setSubdivisionDraft({ ...subdivisionDraft, finishCategory: cat });
-              } else {
-                setSubdivisionDraft({
-                  hostToposolidId: null,
-                  boundaryPts: [],
-                  finishCategory: cat,
-                });
-              }
-              // If a draft polygon is in progress, update its category.
-              const d = draftRef.current;
-              if (d && d.kind === 'toposolid-subdivision') {
-                d.finishCategory = cat;
-              }
-            }}
-            onCancel={() => {
-              draftRef.current = undefined;
-              clearSubdivisionDraft();
-              setPlanTool('select');
-            }}
-          />
-        </div>
       ) : null}
     </div>
   );
