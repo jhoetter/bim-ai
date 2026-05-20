@@ -10,13 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
-import {
-  parseDimensionInput,
-  type Element,
-  type LensMode,
-  type SavedViewElem,
-  type Saved3dViewElement,
-} from '@bim-ai/core';
+import { parseDimensionInput, type Element, type LensMode, type SavedViewElem } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
@@ -213,6 +207,7 @@ import {
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
+import { useViewportOverlayControls } from './viewport/useViewportOverlayControls';
 import { useViewportViewCubeHandlers } from './viewport/useViewportViewCubeHandlers';
 import {
   initialWalkthroughState,
@@ -5141,49 +5136,18 @@ export function Viewport({
     },
   );
 
-  const saved3dViewsList = useMemo(
-    () =>
-      Object.values(elementsById).filter(
-        (el): el is Saved3dViewElement => el.kind === 'saved_3d_view',
-      ),
-    [elementsById],
-  );
-
-  const direct3dLevelOptions = useMemo(
-    () =>
-      Object.values(elementsById)
-        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-        .map((level) => ({ id: level.id, name: level.name, elevationMm: level.elevationMm }))
-        .sort((a, b) => a.elevationMm - b.elevationMm),
-    [elementsById],
-  );
-  const activeWorkPlaneLevel = useMemo(
-    () => resolve3dDraftLevel(direct3dLevelOptions, activeLevelId),
-    [activeLevelId, direct3dLevelOptions],
-  );
-  const setAuthoringWorkPlaneLevel = useCallback(
-    (levelId: string): void => {
-      if (!levelId) return;
-      setActiveLevelId(levelId);
-      selectStoreEl(levelId);
-    },
-    [selectStoreEl, setActiveLevelId],
-  );
-  const stepAuthoringWorkPlaneLevel = useCallback(
-    (direction: -1 | 1): void => {
-      if (direct3dLevelOptions.length === 0) return;
-      const activeIndex = activeWorkPlaneLevel
-        ? direct3dLevelOptions.findIndex((level) => level.id === activeWorkPlaneLevel.id)
-        : -1;
-      const fallbackIndex = direction > 0 ? 0 : direct3dLevelOptions.length - 1;
-      const nextIndex =
-        activeIndex < 0
-          ? fallbackIndex
-          : Math.max(0, Math.min(direct3dLevelOptions.length - 1, activeIndex + direction));
-      setAuthoringWorkPlaneLevel(direct3dLevelOptions[nextIndex]!.id);
-    },
-    [activeWorkPlaneLevel, direct3dLevelOptions, setAuthoringWorkPlaneLevel],
-  );
+  const {
+    saved3dViewsList,
+    direct3dLevelOptions,
+    activeWorkPlaneLevel,
+    setAuthoringWorkPlaneLevel,
+    stepAuthoringWorkPlaneLevel,
+  } = useViewportOverlayControls({
+    elementsById,
+    activeLevelId,
+    setActiveLevelId,
+    selectElement: selectStoreEl,
+  });
 
   return (
     <div
