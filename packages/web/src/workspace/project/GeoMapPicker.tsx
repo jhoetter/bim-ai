@@ -47,6 +47,9 @@ function defaultBbox(lat: number, lon: number, radiusM = 300): Omit<GeoAnchor, '
 }
 
 type Suggestion = { lat: string; lon: string; display_name: string };
+type LeafletDefaultIconPrototype = {
+  _getIconUrl?: unknown;
+};
 
 export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -83,8 +86,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     import('leaflet').then((LMod) => {
       const Leaflet = LMod.default ?? LMod;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (Leaflet.Icon.Default.prototype as any)._getIconUrl;
+      delete (Leaflet.Icon.Default.prototype as LeafletDefaultIconPrototype)._getIconUrl;
       Leaflet.Icon.Default.mergeOptions({
         iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
         iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,

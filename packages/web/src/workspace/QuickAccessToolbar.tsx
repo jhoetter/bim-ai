@@ -11,7 +11,7 @@ export function QuickAccessToolbar({
   onInvokeCommand,
   onRemoveFromQAT,
 }: QuickAccessToolbarProps): ReactElement | null {
-  const quickAccessItems = useBimStore((s: any) => s.quickAccessItems ?? []);
+  const quickAccessItems = useBimStore((s) => s.quickAccessItems);
 
   if (quickAccessItems.length === 0) return null;
 

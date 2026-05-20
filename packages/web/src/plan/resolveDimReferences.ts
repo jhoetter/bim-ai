@@ -1,4 +1,10 @@
-import type { DimWitnessPoint, Element } from '@bim-ai/core';
+import type { DimWitnessPoint, Element, XY } from '@bim-ai/core';
+
+type DimensionReferenceElement = Element & {
+  startMm?: XY;
+  endMm?: XY;
+  positionMm?: XY;
+};
 
 /**
  * For any witness point that has a referencedElementId, re-compute its position
@@ -10,7 +16,7 @@ export function resolveDimReferences(
 ): DimWitnessPoint[] {
   return witnessPoints.map((pt) => {
     if (!pt.referencedElementId) return pt;
-    const el = elementsById[pt.referencedElementId] as any;
+    const el = elementsById[pt.referencedElementId] as DimensionReferenceElement | undefined;
     if (!el) return pt;
 
     // For walls: use startMm or endMm depending on referenceEdge

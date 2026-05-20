@@ -358,7 +358,7 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     /** §1.5: IDs of recently opened projects (max 10, LRU order). */
     recentProjectIds: [],
     addRecentProject: (id: string) =>
-      set((s: any) => ({
+      set((s) => ({
         recentProjectIds: [id, ...(s.recentProjectIds ?? []).filter((x: string) => x !== id)].slice(
           0,
           10,

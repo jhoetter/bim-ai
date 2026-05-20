@@ -1,6 +1,12 @@
-import type { Element } from '@bim-ai/core';
+import type { Element, XY } from '@bim-ai/core';
 
 type BoundaryMm = { xMm: number; yMm: number; widthMm: number; heightMm: number };
+type SpatialElement = Element & {
+  startMm?: XY;
+  endMm?: XY;
+  positionMm?: XY;
+  perimeterMm?: XY[];
+};
 
 /**
  * Returns true if the element's centroid or any key point is inside (or overlaps) the callout boundary.
@@ -19,7 +25,7 @@ export function elementOverlapsBoundary(el: Element, boundary: BoundaryMm): bool
 }
 
 function getElementKeyPoints(el: Element): { xMm: number; yMm: number }[] {
-  const e = el as any;
+  const e = el as SpatialElement;
   const pts: { xMm: number; yMm: number }[] = [];
   if (e.startMm) pts.push(e.startMm);
   if (e.endMm) pts.push(e.endMm);

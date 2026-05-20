@@ -1387,7 +1387,7 @@ export function SectionViewportSvg(props: {
           {/* §6.1.6: showLevelLines — horizontal datum lines from client-side elementsById */}
           {(() => {
             const sectionEl = elementsById[props.sectionCutId];
-            if (!sectionEl || (sectionEl as any).showLevelLines !== true) return null;
+            if (sectionEl?.kind !== 'section_cut' || sectionEl.showLevelLines !== true) return null;
             const levelData = extractLevelData(elementsById);
             if (levelData.length === 0) return null;
             const svgStr = buildLevelLineSvg(

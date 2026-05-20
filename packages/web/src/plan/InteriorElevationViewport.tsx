@@ -99,7 +99,7 @@ function buildWallRegions(
     const hRight = Math.max(-halfW, Math.min(halfW, Math.max(hStart, hEnd)));
     if (hRight <= hLeft) continue;
 
-    const materialKey = (el as any).materialKey ?? 'concrete';
+    const materialKey = el.materialKey ?? 'concrete';
     regions.push({ hLeft, hRight, yBot, yTop, materialKey });
   }
 

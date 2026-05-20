@@ -415,7 +415,7 @@ export function Viewport({
   const [skyPanelOpen, setSkyPanelOpen] = useState(false);
   const [renderQualityOpen, setRenderQualityOpen] = useState(false);
   // §1.6.12: split plan/3D view toggle
-  const splitViewEnabled = useBimStore((s: any) => s.splitViewEnabled ?? false);
+  const splitViewEnabled = useBimStore((s) => s.splitViewEnabled);
   const draftPlaneAngleWarningRef = useRef(draftPlaneAngleWarning);
   draftPlaneAngleWarningRef.current = draftPlaneAngleWarning;
   const planToolRef = useRef(planTool);

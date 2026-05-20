@@ -148,7 +148,7 @@ export function CanvasMount({
 }): JSX.Element {
   // §1.6.12: split plan/3D view
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const splitViewEnabled = useBimStore((s: any) => s.splitViewEnabled ?? false);
+  const splitViewEnabled = useBimStore((s) => s.splitViewEnabled);
 
   if (
     splitViewEnabled &&

@@ -22,9 +22,10 @@ verification gates are aligned, frontend test noise is materially quieter,
 backend focused/full test paths are explicit, quality waivers are
 machine-readable and expiring, contract parity is green across extracted
 descriptor modules, and no hand-written source file is above 4,000 LOC. The
-score is still held down by the frontend type-escape budget, the active
-JavaScript lint waiver, and A-grade budgets that are present but still early in
-their enforcement history.
+generated scorecard currently has no `blockersToNextGrade` entries; the score is
+still held at B by the active JavaScript lint waiver, remaining type-escape
+hotspots, and A-grade budgets that are present but still early in their
+enforcement history.
 
 The practical target is:
 
@@ -1043,6 +1044,12 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   the current type-escape budget, `scripts/code-quality-report.mjs` reports
   budget pass/fail in JSON/Markdown, and the original top hotspot set has been
   reduced with typed helpers instead of broad `any` casts.
+- 2026-05-20: removed one-off frontend type escapes from typed store selectors,
+  section-cut level-line checks, wall material access, dimension reference
+  helpers, callout spatial point extraction, Leaflet icon setup, and family
+  parameter formulas. `pnpm --filter @bim-ai/web typecheck` passes, and
+  `pnpm quality:report -- --json` reports `10` frontend hotspot files / `88`
+  total matches, below the configured `18` files / `106` matches budget.
 
 ---
 

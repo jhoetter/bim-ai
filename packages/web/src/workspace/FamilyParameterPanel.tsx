@@ -60,7 +60,7 @@ export function FamilyParameterPanel({
                   data-testid={`family-param-formula-${p.name}`}
                   type="text"
                   placeholder="= formula (e.g. Width / 2)"
-                  value={(p as any).formula ?? ''}
+                  value={p.formula ?? ''}
                   onChange={(e) =>
                     onUpdateParam?.(p.name, { formula: e.target.value || undefined })
                   }
