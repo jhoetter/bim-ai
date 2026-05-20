@@ -163,6 +163,7 @@ from bim_ai.routes_deps import (
 )
 from bim_ai.routes_exports import exports_router
 from bim_ai.routes_integrity import integrity_router
+from bim_ai.routes_markups import markups_router
 from bim_ai.routes_sketch import sketch_router
 from bim_ai.routes_sketch_product import sketch_product_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
@@ -203,6 +204,7 @@ api_router.include_router(commands_router)
 api_router.include_router(activity_router)
 api_router.include_router(catalogs_router)
 api_router.include_router(integrity_router)
+api_router.include_router(markups_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
 
@@ -3328,96 +3330,6 @@ async def v3_api_version() -> dict[str, str]:
     except Exception:
         build_ref = "unknown"
     return {"schemaVersion": "api-v3.0", "buildRef": build_ref}
-
-
-# ---------------------------------------------------------------------------
-# MRK-V3-02 — Markup CRUD routes
-# ---------------------------------------------------------------------------
-
-# Module-level in-memory store keyed by model_id (simplest pattern; no
-# DB migration required for this WP).
-_markups_store: dict[str, list[dict]] = {}
-
-
-def _get_markups(model_id: str) -> list[dict]:
-    return _markups_store.setdefault(model_id, [])
-
-
-class MarkupCreateBody(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    view_id: str | None = Field(default=None, alias="viewId")
-    anchor: dict = Field(...)
-    shape: dict = Field(...)
-    author_id: str = Field(alias="authorId")
-
-
-@api_router.post("/models/{model_id}/markups")
-async def create_markup(model_id: UUID, body: MarkupCreateBody) -> dict[str, Any]:
-    import time as _time
-
-    from bim_ai.markups import Markup, Vec2Px, _rdp_simplify, sanitize_color
-
-    mid = str(uuid4())
-    shape = dict(body.shape)
-    if shape.get("kind") == "freehand":
-        path = shape.get("pathPx", [])
-        simplified = _rdp_simplify([Vec2Px.model_validate(p) for p in path])
-        shape["pathPx"] = [p.model_dump(by_alias=True) for p in simplified]
-        shape["color"] = sanitize_color(shape.get("color", "var(--cat-edit)"))
-    elif shape.get("kind") == "arrow":
-        shape["color"] = sanitize_color(shape.get("color", "var(--cat-edit)"))
-
-    raw: dict[str, Any] = {
-        "id": mid,
-        "modelId": str(model_id),
-        "viewId": body.view_id,
-        "anchor": body.anchor,
-        "shape": shape,
-        "authorId": body.author_id,
-        "createdAt": int(_time.time() * 1000),
-        "resolvedAt": None,
-    }
-    markup = Markup.model_validate(raw)
-    _get_markups(str(model_id)).append(markup.model_dump(by_alias=True))
-    return markup.model_dump(by_alias=True)
-
-
-@api_router.get("/models/{model_id}/markups")
-async def list_markups(
-    model_id: UUID,
-    view_id: Annotated[str | None, Query(alias="viewId")] = None,
-    resolved: Annotated[str | None, Query(alias="resolved")] = None,
-) -> dict[str, Any]:
-    markups = list(_get_markups(str(model_id)))
-    if view_id is not None:
-        markups = [m for m in markups if m.get("viewId") == view_id]
-    if resolved is not None and resolved.lower() == "false":
-        markups = [m for m in markups if m.get("resolvedAt") is None]
-    return {"markups": markups}
-
-
-@api_router.patch("/models/{model_id}/markups/{markup_id}/resolve")
-async def resolve_markup(model_id: UUID, markup_id: str) -> dict[str, Any]:
-    import time as _time
-
-    markups = _get_markups(str(model_id))
-    for i, m in enumerate(markups):
-        if m.get("id") == markup_id:
-            m = dict(m)
-            m["resolvedAt"] = int(_time.time() * 1000)
-            markups[i] = m
-            return m
-    raise HTTPException(status_code=404, detail="Markup not found")
-
-
-@api_router.delete("/models/{model_id}/markups/{markup_id}")
-async def delete_markup(model_id: UUID, markup_id: str) -> dict[str, Any]:
-    markups = _get_markups(str(model_id))
-    for i, m in enumerate(markups):
-        if m.get("id") == markup_id:
-            markups.pop(i)
-            return {"deleted": True, "id": markup_id}
-    raise HTTPException(status_code=404, detail="Markup not found")
 
 
 # ---------------------------------------------------------------------------

@@ -737,6 +737,12 @@ for merge conflicts and stale descriptor drift.
   `/api/family-catalogs/{catalog_id}`, and `/api/v3/catalog` paths mounted via
   `api_router.include_router(catalogs_router)` while reducing
   `app/bim_ai/routes_api.py` to `4,091` lines.
+- 2026-05-20: extracted markup CRUD API routes into
+  `app/bim_ai/routes_markups.py`, preserving the existing `/api/models/{model_id}/markups`
+  paths through `api_router.include_router(markups_router)`.
+- 2026-05-20: route split verification passed:
+  `cd app && uv run pytest -q tests/test_api_v3_registry.py tests/api/test_markups_route.py --no-cov`
+  and `cd app && uv run ruff check bim_ai/routes_api.py bim_ai/routes_markups.py`.
 - 2026-05-20: focused registry verification passed:
   `cd app && uv run pytest -q tests/test_api_v3_registry.py --no-cov` and
   `cd app && uv run ruff check bim_ai/api/registry.py bim_ai/api/registry_metadata.py`.
