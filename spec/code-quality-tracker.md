@@ -984,6 +984,10 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
+- 2026-05-20: a CLI extraction slice moved evidence freshness metadata,
+  current-head digesting, and tool-run summary writing into
+  `packages/cli/lib/evidence-freshness.mjs`, reducing the CLI entrypoint to
+  `6,784` lines.
 
 ---
 
@@ -1037,6 +1041,10 @@ Start with parity checks before full generation:
   `packages/cli/lib/advisor-summary.mjs`, so live advisor evidence and
   refinement reports share a smaller contract-owned module instead of adding to
   the CLI entrypoint.
+- 2026-05-20: extracted CLI evidence freshness and tool-run summary contracts
+  into `packages/cli/lib/evidence-freshness.mjs`, keeping current-head
+  evidence metadata reusable outside the CLI entrypoint while preserving the
+  existing sketch-to-BIM evidence schemas.
 - 2026-05-20: `scripts/check-contract-parity.mjs` compares API descriptor names
   against CLI-generated `toolId` values, validates API introspection CLI rows,
   rejects duplicate descriptor names, and consumes
