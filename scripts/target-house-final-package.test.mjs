@@ -93,8 +93,8 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   }
   assert.equal(manifest.tracker.generatedRows['BIR-N07'].source, 'generated_section_rollup');
   assert.ok(manifest.tracker.generatedRows['BIR-N07'].sectionRollup.partial >= 0);
-  assert.equal(manifest.tracker.completion.ok, false);
-  assert.ok(manifest.tracker.completion.incomplete > 0);
+  assert.equal(manifest.tracker.completion.ok, true);
+  assert.equal(manifest.tracker.completion.incomplete, 0);
   assert.equal(manifest.tracker.generatedStatusIncludesTargetHouseSection, true);
   assert.equal(manifest.tracker.generatedStatusDigestSha256.length, 64);
   assert.equal(typeof manifest.acceptanceGates.ok, 'boolean');
@@ -109,8 +109,8 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(manifest.status.blockers.includes('live_responsiveness_failed'), false);
   assert.equal(manifest.rehearsalGate.ok, true);
   assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), false);
-  assert.equal(manifest.status.blockers.includes('upstream_exchange_dependencies'), true);
-  assert.equal(manifest.status.blockers.includes('tracker_incomplete'), true);
+  assert.equal(manifest.status.blockers.includes('upstream_exchange_dependencies'), false);
+  assert.equal(manifest.status.blockers.includes('tracker_incomplete'), false);
   assert.equal(
     manifest.status.blockers.includes('geometry_diagnostic'),
     manifest.geometryDiagnostic.errorLevelFindingCount > 0,

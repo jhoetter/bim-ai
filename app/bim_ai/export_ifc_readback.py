@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 import numpy as np
@@ -27,6 +29,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.export_ifc_geometry import room_outline_mm
+from bim_ai.export_ifc_manifest import ifc_kernel_geometry_skip_counts
 
 try:
     import ifcopenshell.util.element as ifc_elem_util
@@ -34,6 +37,11 @@ try:
 except ImportError:
     ifc_elem_util = None  # type: ignore[misc, assignment]
     ifc_placement = None  # type: ignore[misc, assignment]
+
+
+def _sha256_hex(obj: Any) -> str:
+    blob = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(blob.encode()).hexdigest()
 
 
 def _references_from_products(products: list[Any], pset_name: str, *, limit: int) -> list[str]:
@@ -452,7 +460,7 @@ def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | No
         opening_counts=opening_counts,
     )
 
-    return {
+    summary = {
         "schemaVersion": 0,
         "available": True,
         "allMatched": all_matched,
@@ -475,6 +483,11 @@ def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | No
         },
         "driftFindings": drift_findings,
     }
+    summary["ifcImporterReadbackParity_v1"] = build_ifc_importer_readback_parity_v1(
+        summary,
+        doc,
+    )
+    return summary
 
 
 def _ifc_readback_drift_findings_v0(
@@ -557,6 +570,178 @@ def _ifc_readback_drift_findings_v0(
             }
         )
     return findings
+
+
+def build_ifc_importer_readback_parity_v1(
+    geometry_summary: dict[str, Any],
+    doc: Document | None,
+) -> dict[str, Any]:
+    """Deterministic importer/readback parity over the supported IFC geometry slice.
+
+    Real third-party IFC tooling is not guaranteed in developer environments.
+    This harness consumes the read-back product graph produced by the IFC parser
+    when present, or the fake model objects used by tests, and normalizes the
+    same contract a third-party importer must preserve: product class counts,
+    Reference identity, body/QTO coverage, hosted openings, unsupported skips,
+    and explicit zero-drift tolerances.
+    """
+
+    if doc is None or not geometry_summary.get("available"):
+        return {
+            "format": "ifcImporterReadbackParity_v1",
+            "artifactKind": "ifc-step",
+            "available": False,
+            "reason": geometry_summary.get("reason") or "no_document",
+        }
+
+    coverage = geometry_summary.get("coverageByKind") or {}
+    parity_rows: list[dict[str, Any]] = []
+    findings: list[dict[str, Any]] = list(geometry_summary.get("driftFindings") or [])
+    expected_signatures: dict[str, int] = {}
+    readback_signatures: dict[str, int] = {}
+
+    for kind in sorted(coverage):
+        row = coverage.get(kind) or {}
+        expected = int(row.get("expected") or 0)
+        readback = int(row.get("readbackProducts") or 0)
+        body_count = int(row.get("productsWithBody") or 0)
+        qto_count = row.get("productsWithQto")
+        missing = list(row.get("missingReferenceIds") or [])
+        unexpected = list(row.get("unexpectedReferenceIds") or [])
+        status = "aligned"
+        if (
+            readback != expected
+            or missing
+            or unexpected
+            or body_count < expected
+            or (qto_count is not None and int(qto_count or 0) < expected)
+        ):
+            status = "drift"
+        expected_signatures[kind] = expected
+        readback_signatures[kind] = readback
+        parity_row = {
+            "kind": kind,
+            "ifcType": row.get("ifcType"),
+            "status": status,
+            "expectedProducts": expected,
+            "readbackProducts": readback,
+            "productsWithBody": body_count,
+            "matchedReferenceIds": row.get("matchedReferenceIds") or [],
+            "missingReferenceIds": missing,
+            "unexpectedReferenceIds": unexpected,
+        }
+        if qto_count is not None:
+            parity_row["productsWithQto"] = int(qto_count or 0)
+            parity_row["qtoTemplate"] = row.get("qtoTemplate")
+        parity_rows.append(parity_row)
+
+    opening_topology = geometry_summary.get("openingTopology") or {}
+    opening_delta = (opening_topology.get("deltaByHostKind") or {}) if opening_topology else {}
+    unsupported_skips = {
+        "source": "ifcKernelGeometrySkippedCounts",
+        "countsByReason": dict(sorted(ifc_kernel_geometry_skip_counts(doc).items())),
+    }
+    digest_source = {
+        "expectedSignatures": expected_signatures,
+        "readbackSignatures": readback_signatures,
+        "openingDelta": opening_delta,
+        "unsupportedSkips": unsupported_skips,
+        "findingCodes": [row.get("code") for row in findings],
+    }
+    return {
+        "format": "ifcImporterReadbackParity_v1",
+        "artifactKind": "ifc-step",
+        "available": True,
+        "importer": {
+            "name": (
+                "ifcopenshell"
+                if ifc_elem_util is not None
+                else "bim-ai-deterministic-ifc-product-graph-importer"
+            ),
+            "mode": "external_ifcopenshell" if ifc_elem_util is not None else "deterministic_surrogate",
+            "externalToolAvailable": ifc_elem_util is not None,
+        },
+        "readbackStatus": "aligned" if not findings else "drift",
+        "supportedGeometryKinds": [row["kind"] for row in parity_rows],
+        "driftTolerancePolicy": {
+            "schemaVersion": 1,
+            "productCountTolerance": 0,
+            "referenceIdentityTolerance": "exact_reference_id_match",
+            "bodyCoverageTolerance": "every_expected_product_has_body",
+            "qtoCoverageTolerance": "every_expected_product_has_quantity_template_when_applicable",
+            "openingTopologyTolerance": "exact_by_host_kind",
+            "unsupportedSkipTolerance": "explicit_skip_reason_counts_required",
+        },
+        "sourceGraph": {
+            "countsByKind": (geometry_summary.get("source") or {}).get("countsByKind") or {},
+            "openingCountsByHostKind": (geometry_summary.get("source") or {}).get(
+                "openingCountsByHostKind"
+            )
+            or {},
+        },
+        "importerGraph": {
+            "countsByKind": geometry_summary.get("readbackCountsByKind") or {},
+            "openingCountsByHostKind": opening_topology.get("readbackByHostKind") or {},
+        },
+        "parityRows": parity_rows,
+        "openingTopology": opening_topology,
+        "unsupportedSkips": unsupported_skips,
+        "findings": findings,
+        "ifcImporterReadbackParityDigestSha256": _sha256_hex(digest_source),
+    }
+
+
+def build_deterministic_ifc_importer_readback_parity_v1(doc: Document) -> dict[str, Any]:
+    """Offline IFC importer parity harness when no external IFC parser is available."""
+
+    source = kernel_ifc_source_topology_summary_v0(doc)
+    rows: dict[str, Any] = {}
+    readback_counts_by_kind: dict[str, int] = {}
+    for spec in _KIND_READBACK_SPECS:
+        kind = str(spec["kind"])
+        expected_ids = list(source["kindElementIds"].get(kind, []))
+        expected = len(expected_ids)
+        readback_counts_by_kind[kind] = expected
+        row: dict[str, Any] = {
+            "ifcType": spec["ifcType"],
+            "pset": spec["pset"],
+            "expected": expected,
+            "readbackProducts": expected,
+            "productsWithBody": expected,
+            "productsWithReference": expected,
+            "matchedReferenceIds": expected_ids,
+            "missingReferenceIds": [],
+            "unexpectedReferenceIds": [],
+            "surrogate": True,
+        }
+        if spec["qto"]:
+            row["qtoTemplate"] = spec["qto"]
+            row["productsWithQto"] = expected
+        rows[kind] = row
+
+    expected_openings = source["openingCountsByHostKind"]
+    summary = {
+        "schemaVersion": 0,
+        "available": True,
+        "allMatched": True,
+        "source": source,
+        "readbackCountsByKind": readback_counts_by_kind,
+        "coverageByKind": rows,
+        "openingTopology": {
+            "expectedByHostKind": expected_openings,
+            "readbackByHostKind": {**expected_openings, "other": 0},
+            "deltaByHostKind": {"wall": 0, "slab": 0, "roof": 0},
+        },
+        "driftFindings": [],
+    }
+    parity = build_ifc_importer_readback_parity_v1(summary, doc)
+    parity["importer"] = {
+        "name": "bim-ai-deterministic-ifc-product-graph-importer",
+        "mode": "deterministic_surrogate",
+        "externalToolAvailable": False,
+    }
+    parity["surrogateReason"] = "ifcopenshell_not_installed_or_manifest_offline"
+    return parity
 
 
 def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:

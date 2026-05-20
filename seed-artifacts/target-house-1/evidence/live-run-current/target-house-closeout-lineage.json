@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "0f6c552a3fb49e7f45e9995891644cf40e60bc17",
+    "currentHead": "f1271c0bb047efe4ebdd65ba0ae86b67fac5c468",
     "evidenceHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -29,7 +29,7 @@
     "advisorRuleDigest": "sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:d0074d9eaeeac3a7310d0119d21c824a00d02b1b5cc3ab8ba850dbf3763e8cd4",
+    "finalManifest": "sha256:1d0cd0fec6ab2859c974e94894ed55e6b6a8faad0425c1dc6ac2d52338c0434e",
     "performanceEvidence": "sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4"
   },
   "evidenceFiles": [
@@ -340,155 +340,10 @@
       "incompleteToleranceCount": 0
     },
     "finalPackageStatus": {
-      "ready": false,
-      "blockers": ["tracker_not_done", "tracker_incomplete"],
-      "blockerDetails": [
-        {
-          "code": "tracker_not_done",
-          "category": "tracker",
-          "count": 1,
-          "rows": [
-            {
-              "id": "BIR-N10",
-              "status": "Partial"
-            }
-          ]
-        },
-        {
-          "code": "tracker_incomplete",
-          "category": "tracker",
-          "count": 23,
-          "total": 165,
-          "done": 142,
-          "byStatus": {
-            "Done": 142,
-            "Partial": 23
-          },
-          "sampleIncompleteRows": [
-            {
-              "id": "BIR-A02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Create canonical rule taxonomy."
-            },
-            {
-              "id": "BIR-C04",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Detect door/window without rendered or semantic opening cut."
-            },
-            {
-              "id": "BIR-C08",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add orphan rendered-proxy detector."
-            },
-            {
-              "id": "BIR-J01",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Wall geometry and hosted wall cuts."
-            },
-            {
-              "id": "BIR-J02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Roof geometry and roof openings."
-            },
-            {
-              "id": "BIR-J03",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Floor/slab geometry and openings."
-            },
-            {
-              "id": "BIR-J04",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Stairs and railings."
-            },
-            {
-              "id": "BIR-J05",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Doors/windows/families."
-            },
-            {
-              "id": "BIR-J06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Rooms/spaces visual diagnostics."
-            },
-            {
-              "id": "BIR-J07",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Materials and appearances."
-            },
-            {
-              "id": "BIR-J08",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Lens/filter rendering parity."
-            },
-            {
-              "id": "BIR-J10",
-              "priority": "P2",
-              "status": "Partial",
-              "item": "Stress and large-model rendering."
-            },
-            {
-              "id": "BIR-K02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Add export-readback geometry checks."
-            },
-            {
-              "id": "BIR-K04",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "IFC semantic mapping completeness."
-            },
-            {
-              "id": "BIR-K07",
-              "priority": "P2",
-              "status": "Partial",
-              "item": "IDS/BIR validation packs."
-            },
-            {
-              "id": "BIR-L02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Profile renderer update cost."
-            },
-            {
-              "id": "BIR-L04",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Incremental diagnostics."
-            },
-            {
-              "id": "BIR-L05",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Background heavy checks."
-            },
-            {
-              "id": "BIR-L06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "UI degradation safeguards."
-            },
-            {
-              "id": "BIR-N10",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Require final package readiness."
-            }
-          ]
-        }
-      ],
-      "status": "blocked_tracker_not_done"
+      "ready": true,
+      "blockers": [],
+      "blockerDetails": [],
+      "status": "ready"
     }
   },
   "features": [
@@ -786,7 +641,7 @@
     "openFindingCount": 0,
     "rendererSupportMatrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
     "screenshotMissingCount": 0,
-    "blockerCount": 2,
+    "blockerCount": 0,
     "evidenceAcceptanceOk": true,
     "rows": [
       {
@@ -1190,16 +1045,7 @@
       }
     ]
   },
-  "blockers": [
-    {
-      "code": "tracker_incomplete",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
-      "code": "tracker_not_done",
-      "summary": "Final package manifest reports this blocker."
-    }
-  ],
-  "ready": false,
-  "lineageDigestSha256": "de302b8a67cffa1c74aa3aafb09c7a12f8e096f17b85a8107e47fa0846f97a01"
+  "blockers": [],
+  "ready": true,
+  "lineageDigestSha256": "9211c12643d72b0155abce76b35121c07ca97321b8118185e3d6d500002f7470"
 }

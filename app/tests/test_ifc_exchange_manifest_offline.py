@@ -145,6 +145,7 @@ def test_ifc_semantic_scope_mentions_material_layer_readback_evidence() -> None:
     blob = "\n".join(str(x) for x in supported)
     assert "materialLayerSetReadback_v0" in blob
     assert "geometryReadbackSummary_v0" in blob
+    assert "ifcImporterReadbackParity_v1" in blob
     assert "ifcMaterialLayerSetReadbackEvidence_v0" in blob
     assert "propertySetCoverageEvidence_v0" in blob
 
@@ -790,6 +791,19 @@ def test_ifc_manifest_includes_unsupported_merge_map_stub_offline() -> None:
     assert "mergeConstraints" in mm
     constraints = mm.get("mergeConstraints") or []
     assert len(constraints) >= 1
+
+
+def test_ifc_manifest_includes_importer_readback_parity_offline() -> None:
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    parity = mf.get("ifcImporterReadbackParity_v1")
+
+    assert isinstance(parity, dict)
+    assert parity["format"] == "ifcImporterReadbackParity_v1"
+    assert parity["readbackStatus"] == "aligned"
+    assert parity["driftTolerancePolicy"]["productCountTolerance"] == 0
+    assert parity["sourceGraph"]["countsByKind"]["wall"] == 1
+    assert parity["importerGraph"]["countsByKind"]["wall"] == 1
 
 
 def test_ifc_manifest_import_preview_for_manifest_stub_when_kernel_not_eligible() -> None:

@@ -25,6 +25,7 @@ from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import (
     _collect_geom_boxes,
     build_glb_binary_readback_fidelity_v1,
+    build_glb_importer_readback_parity_v1,
     build_gltf_json_readback_fidelity_v1,
     build_visual_export_manifest,
     document_to_glb_bytes,
@@ -144,6 +145,7 @@ def test_document_to_gltf_embeds_json_readback_fidelity_evidence() -> None:
     gltf = document_to_gltf(doc)
     manifest = gltf["extensions"]["BIM_AI_exportManifest_v0"]
     readback = manifest["gltfJsonReadbackFidelity_v1"]
+    importer = manifest["gltfImporterReadbackParity_v1"]
 
     assert readback["format"] == "gltfJsonReadbackFidelity_v1"
     assert readback["readbackStatus"] == "aligned"
@@ -160,6 +162,13 @@ def test_document_to_gltf_embeds_json_readback_fidelity_evidence() -> None:
     assert readback["bufferByteLength"] > 0
     assert readback["findings"] == []
     assert len(readback["gltfJsonReadbackFidelityDigestSha256"]) == 64
+    assert importer["format"] == "gltfImporterReadbackParity_v1"
+    assert importer["readbackStatus"] == "aligned"
+    assert importer["driftTolerancePolicy"]["graphSignatureTolerance"] == 0
+    assert importer["sourceGraph"]["nodeCountsByKind"] == {"wall": 1}
+    assert importer["importerGraph"]["nodeCountsByKind"] == {"wall": 1}
+    assert importer["unsupportedSkips"]["countsByKind"] == {}
+    assert importer["findings"] == []
 
 
 def test_gltf_readback_preserves_type_and_material_fallback_semantics() -> None:
@@ -238,6 +247,34 @@ def test_gltf_json_readback_fidelity_detects_mesh_node_drift() -> None:
     assert readback["meshCount"] == 1
     assert readback["geometryNodeCount"] == 0
     assert any(f["code"] == "mesh_count_node_count_mismatch" for f in readback["findings"])
+
+
+def test_gltf_importer_readback_parity_records_unsupported_skips() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch-1", name="S"),
+        },
+    )
+
+    manifest = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]
+    parity = manifest["gltfImporterReadbackParity_v1"]
+
+    assert parity["readbackStatus"] == "aligned"
+    assert parity["unsupportedSkips"]["countsByKind"] == {"schedule": 1}
+    assert parity["sourceGraph"]["nodeCountsByKind"] == {"wall": 1}
+    assert parity["importerGraph"]["nodeCountsByKind"] == {"wall": 1}
 
 
 def test_build_visual_export_manifest_includes_material_assembly_evidence_with_layered_wall_type():
@@ -634,6 +671,36 @@ def test_glb_binary_readback_validates_container_and_embedded_gltf_contract() ->
     assert readback["embeddedGltfJsonReadback"]["geometryNodeCountsByKind"] == {"wall": 1}
     assert readback["findings"] == []
     assert len(readback["glbBinaryReadbackFidelityDigestSha256"]) == 64
+
+
+def test_glb_importer_readback_parity_validates_embedded_graph() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+
+    parity = build_glb_importer_readback_parity_v1(document_to_glb_bytes(doc), doc)
+
+    assert parity["format"] == "gltfImporterReadbackParity_v1"
+    assert parity["artifactKind"] == "glb-binary"
+    assert parity["readbackStatus"] == "aligned"
+    assert parity["importer"]["mode"] == "deterministic_surrogate"
+    assert parity["sourceGraph"]["nodeCountsByKind"] == {"wall": 1}
+    assert parity["importerGraph"]["nodeCountsByKind"] == {"wall": 1}
+    assert parity["parityRows"][0]["status"] == "aligned"
+    assert len(parity["gltfImporterReadbackParityDigestSha256"]) == 64
 
 
 def test_glb_binary_readback_detects_header_length_drift() -> None:

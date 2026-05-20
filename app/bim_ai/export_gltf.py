@@ -508,6 +508,276 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
     }
 
 
+def _gltf_geometry_node_vertex_count(gltf: dict[str, Any], node: dict[str, Any]) -> int | None:
+    meshes = gltf.get("meshes") if isinstance(gltf.get("meshes"), list) else []
+    accessors = gltf.get("accessors") if isinstance(gltf.get("accessors"), list) else []
+    mesh_ix = node.get("mesh")
+    if not isinstance(mesh_ix, int) or mesh_ix < 0 or mesh_ix >= len(meshes):
+        return None
+    mesh = meshes[mesh_ix]
+    if not isinstance(mesh, dict):
+        return None
+    primitives = mesh.get("primitives")
+    if not isinstance(primitives, list) or not primitives or not isinstance(primitives[0], dict):
+        return None
+    attrs = primitives[0].get("attributes")
+    if not isinstance(attrs, dict):
+        return None
+    pos_ix = attrs.get("POSITION")
+    if not isinstance(pos_ix, int) or pos_ix < 0 or pos_ix >= len(accessors):
+        return None
+    accessor = accessors[pos_ix]
+    if not isinstance(accessor, dict):
+        return None
+    try:
+        return int(accessor.get("count") or 0)
+    except (TypeError, ValueError):
+        return None
+
+
+def _gltf_importer_graph_from_json(gltf: dict[str, Any]) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    counts_by_kind: dict[str, int] = {}
+    element_ids_by_kind: dict[str, set[str]] = {}
+
+    for node in _gltf_nodes_with_mesh(gltf):
+        kind, elem_id = _gltf_node_kind_and_element_id(node)
+        if not kind:
+            kind = "unknown"
+        vertex_count = _gltf_geometry_node_vertex_count(gltf, node)
+        row = {
+            "kind": kind,
+            "elementId": elem_id,
+            "nodeName": str(node.get("name") or ""),
+            "mesh": node.get("mesh"),
+            "vertexCount": vertex_count,
+        }
+        rows.append(row)
+        counts_by_kind[kind] = counts_by_kind.get(kind, 0) + 1
+        if elem_id:
+            element_ids_by_kind.setdefault(kind, set()).add(elem_id)
+
+    rows.sort(
+        key=lambda row: (
+            str(row.get("kind") or ""),
+            str(row.get("elementId") or ""),
+            str(row.get("nodeName") or ""),
+            int(row.get("mesh") or 0),
+        )
+    )
+    return {
+        "nodeCount": len(rows),
+        "nodeCountsByKind": dict(sorted(counts_by_kind.items())),
+        "elementIdsByKind": {
+            kind: sorted(ids) for kind, ids in sorted(element_ids_by_kind.items())
+        },
+        "nodes": rows,
+    }
+
+
+def _expected_gltf_importer_graph_from_document(doc: Document) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    counts_by_kind: dict[str, int] = {}
+    element_ids_by_kind: dict[str, set[str]] = {}
+
+    for tag, payload in _collect_visual_geom_entries(doc):
+        if tag == "box":
+            gb = cast(_GeomBox, payload)
+            kind = gb.kind
+            elem_id = gb.elem_id
+            vertex_count = 36
+        elif tag == "site_pad":
+            sp = cast(_SitePadVisual, payload)
+            kind = "site"
+            elem_id = sp.elem_id
+            vertex_count = int(sp.vertex_count)
+        else:
+            gv = cast(_GableRoofVisual, payload)
+            kind = "roof"
+            elem_id = gv.elem_id
+            _vbytes, vertex_count = _gable_roof_interleaved_world_m(gv)
+
+        row = {
+            "kind": kind,
+            "elementId": elem_id,
+            "vertexCount": vertex_count,
+        }
+        rows.append(row)
+        counts_by_kind[kind] = counts_by_kind.get(kind, 0) + 1
+        element_ids_by_kind.setdefault(kind, set()).add(elem_id)
+
+    rows.sort(
+        key=lambda row: (
+            str(row.get("kind") or ""),
+            str(row.get("elementId") or ""),
+            int(row.get("vertexCount") or 0),
+        )
+    )
+    return {
+        "nodeCount": len(rows),
+        "nodeCountsByKind": dict(sorted(counts_by_kind.items())),
+        "elementIdsByKind": {
+            kind: sorted(ids) for kind, ids in sorted(element_ids_by_kind.items())
+        },
+        "nodes": rows,
+    }
+
+
+def _gltf_graph_signature_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        signature = "|".join(
+            [
+                str(row.get("kind") or ""),
+                str(row.get("elementId") or ""),
+                str(row.get("vertexCount") if row.get("vertexCount") is not None else "missing"),
+            ]
+        )
+        counts[signature] = counts.get(signature, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _gltf_unsupported_skips_from_manifest(manifest: dict[str, Any] | None) -> dict[str, Any]:
+    unsupported = []
+    if isinstance(manifest, dict):
+        raw = manifest.get("unsupportedDocumentKindsDetailed")
+        if isinstance(raw, list):
+            unsupported = [row for row in raw if isinstance(row, dict)]
+    return {
+        "source": "BIM_AI_exportManifest_v0.unsupportedDocumentKindsDetailed",
+        "rows": unsupported,
+        "countsByKind": {
+            str(row.get("kind")): int(row.get("count") or 0)
+            for row in unsupported
+            if row.get("kind")
+        },
+    }
+
+
+def build_gltf_importer_readback_parity_v1(
+    gltf: dict[str, Any],
+    doc: Document | None = None,
+    *,
+    artifact_kind: Literal["gltf-json", "glb-embedded-gltf"] = "gltf-json",
+) -> dict[str, Any]:
+    """Deterministic third-party importer surrogate for glTF scene-graph parity.
+
+    The harness intentionally reads the exchange artifact graph, not exporter
+    internals. When a real importer is unavailable, this gives executable proof
+    for the same contract third-party tools expose: nodes, meshes, accessors,
+    element identity extras, unsupported skips, and zero-drift graph tolerances.
+    """
+
+    manifest = _gltf_manifest_extension(gltf)
+    importer_graph = _gltf_importer_graph_from_json(gltf)
+    artifact_readback = build_gltf_json_readback_fidelity_v1(gltf)
+    expected_graph = (
+        _expected_gltf_importer_graph_from_document(doc)
+        if doc is not None
+        else {"nodeCount": None, "nodeCountsByKind": {}, "elementIdsByKind": {}, "nodes": []}
+    )
+    expected_signatures = _gltf_graph_signature_counts(expected_graph["nodes"])
+    importer_signatures = _gltf_graph_signature_counts(importer_graph["nodes"])
+
+    findings: list[dict[str, Any]] = []
+    if artifact_readback.get("readbackStatus") != "aligned":
+        findings.append(
+            {
+                "code": "gltf_artifact_readback_drift",
+                "severity": "error",
+                "artifactFindingCodes": [
+                    row.get("code") for row in artifact_readback.get("findings") or []
+                ],
+                "trackerItems": ["BIR-K02"],
+            }
+        )
+    if doc is not None and expected_signatures != importer_signatures:
+        findings.append(
+            {
+                "code": "gltf_importer_graph_signature_drift",
+                "severity": "error",
+                "expectedSignatures": expected_signatures,
+                "readbackSignatures": importer_signatures,
+                "trackerItems": ["BIR-K02"],
+            }
+        )
+
+    parity_rows: list[dict[str, Any]] = []
+    expected_ids = expected_graph.get("elementIdsByKind") or {}
+    readback_ids = importer_graph.get("elementIdsByKind") or {}
+    for kind in sorted(set(expected_ids) | set(readback_ids)):
+        exp = set(expected_ids.get(kind) or [])
+        got = set(readback_ids.get(kind) or [])
+        missing = sorted(exp - got)
+        unexpected = sorted(got - exp)
+        if missing:
+            findings.append(
+                {
+                    "code": "gltf_importer_missing_element_ids",
+                    "severity": "error",
+                    "kind": kind,
+                    "elementIds": missing,
+                    "trackerItems": ["BIR-K02"],
+                }
+            )
+        if unexpected:
+            findings.append(
+                {
+                    "code": "gltf_importer_unexpected_element_ids",
+                    "severity": "warning",
+                    "kind": kind,
+                    "elementIds": unexpected,
+                    "trackerItems": ["BIR-K02"],
+                }
+            )
+        parity_rows.append(
+            {
+                "kind": kind,
+                "expectedElementIds": sorted(exp),
+                "readbackElementIds": sorted(got),
+                "missingElementIds": missing,
+                "unexpectedElementIds": unexpected,
+                "status": "aligned" if not missing and not unexpected else "drift",
+            }
+        )
+
+    unsupported_skips = _gltf_unsupported_skips_from_manifest(manifest)
+    digest_source = {
+        "artifactKind": artifact_kind,
+        "expectedSignatures": expected_signatures,
+        "readbackSignatures": importer_signatures,
+        "unsupportedSkips": unsupported_skips,
+        "findingCodes": [row["code"] for row in findings],
+    }
+    return {
+        "format": "gltfImporterReadbackParity_v1",
+        "artifactKind": artifact_kind,
+        "importer": {
+            "name": "bim-ai-deterministic-gltf-graph-importer",
+            "mode": "deterministic_surrogate",
+            "externalToolAvailable": False,
+        },
+        "readbackStatus": "aligned" if not findings else "drift",
+        "driftTolerancePolicy": {
+            "schemaVersion": 1,
+            "graphSignatureTolerance": 0,
+            "elementIdentityTolerance": "exact_element_id_match",
+            "vertexCountTolerance": 0,
+            "meshPrimitiveTolerance": "one_position_primitive_per_geometry_node",
+            "unsupportedSkipTolerance": "explicit_manifest_rows_required",
+        },
+        "sourceGraph": expected_graph,
+        "importerGraph": importer_graph,
+        "parityRows": parity_rows,
+        "unsupportedSkips": unsupported_skips,
+        "artifactReadbackDigestSha256": artifact_readback.get(
+            "gltfJsonReadbackFidelityDigestSha256"
+        ),
+        "findings": findings,
+        "gltfImporterReadbackParityDigestSha256": _sha256_hex(digest_source),
+    }
+
+
 def build_glb_binary_readback_fidelity_v1(blob: bytes) -> dict[str, Any]:
     """Read back a GLB binary artifact and validate its container + embedded glTF contract."""
 
@@ -719,6 +989,118 @@ def build_glb_binary_readback_fidelity_v1(blob: bytes) -> dict[str, Any]:
         "findings": findings,
         "glbBinaryReadbackFidelityDigestSha256": _sha256_hex(digest_source),
     }
+
+
+def _decode_first_glb_json_chunk(blob: bytes) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    findings: list[dict[str, Any]] = []
+    if len(blob) < 20:
+        return None, [{"code": "glb_header_too_short", "severity": "error"}]
+    try:
+        magic, version, declared_len = struct.unpack_from("<III", blob, 0)
+    except struct.error as exc:
+        return None, [{"code": "glb_header_decode_failed", "severity": "error", "message": str(exc)}]
+    if magic != _GLTF_MAGIC:
+        findings.append({"code": "glb_invalid_magic", "severity": "error", "magic": magic})
+    if version != 2:
+        findings.append({"code": "glb_unsupported_version", "severity": "error", "version": version})
+    if declared_len != len(blob):
+        findings.append(
+            {
+                "code": "glb_declared_length_mismatch",
+                "severity": "error",
+                "declaredLength": declared_len,
+                "actualLength": len(blob),
+            }
+        )
+
+    offset = 12
+    while offset + 8 <= len(blob):
+        chunk_len, chunk_type = struct.unpack_from("<II", blob, offset)
+        chunk_start = offset + 8
+        chunk_end = chunk_start + chunk_len
+        if chunk_end > len(blob):
+            findings.append({"code": "glb_chunk_overruns_artifact", "severity": "error"})
+            return None, findings
+        if chunk_type == _GLB_JSON_CHUNK_TYPE:
+            try:
+                parsed = json.loads(blob[chunk_start:chunk_end].decode("utf-8").rstrip(" \t\r\n\0"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                findings.append(
+                    {"code": "glb_json_chunk_invalid", "severity": "error", "message": str(exc)}
+                )
+                return None, findings
+            if isinstance(parsed, dict):
+                return parsed, findings
+            findings.append({"code": "glb_json_root_not_object", "severity": "error"})
+            return None, findings
+        offset = chunk_end
+
+    findings.append({"code": "glb_json_chunk_missing", "severity": "error"})
+    return None, findings
+
+
+def build_glb_importer_readback_parity_v1(
+    blob: bytes,
+    doc: Document | None = None,
+) -> dict[str, Any]:
+    """Deterministic importer/readback graph parity for a GLB container."""
+
+    gltf, container_findings = _decode_first_glb_json_chunk(blob)
+    if gltf is None:
+        digest_source = {
+            "artifactKind": "glb-binary",
+            "containerFindingCodes": [row["code"] for row in container_findings],
+        }
+        return {
+            "format": "gltfImporterReadbackParity_v1",
+            "artifactKind": "glb-binary",
+            "importer": {
+                "name": "bim-ai-deterministic-glb-graph-importer",
+                "mode": "deterministic_surrogate",
+                "externalToolAvailable": False,
+            },
+            "readbackStatus": "drift",
+            "driftTolerancePolicy": {
+                "schemaVersion": 1,
+                "graphSignatureTolerance": 0,
+                "elementIdentityTolerance": "exact_element_id_match",
+                "vertexCountTolerance": 0,
+                "meshPrimitiveTolerance": "one_position_primitive_per_geometry_node",
+                "unsupportedSkipTolerance": "explicit_manifest_rows_required",
+            },
+            "sourceGraph": {"nodeCount": None, "nodeCountsByKind": {}, "elementIdsByKind": {}, "nodes": []},
+            "importerGraph": {"nodeCount": 0, "nodeCountsByKind": {}, "elementIdsByKind": {}, "nodes": []},
+            "parityRows": [],
+            "unsupportedSkips": {"source": "unavailable", "rows": [], "countsByKind": {}},
+            "findings": [
+                {
+                    "code": "glb_container_importer_readback_failed",
+                    "severity": "error",
+                    "containerFindingCodes": [row["code"] for row in container_findings],
+                    "trackerItems": ["BIR-K02"],
+                }
+            ],
+            "gltfImporterReadbackParityDigestSha256": _sha256_hex(digest_source),
+        }
+
+    parity = build_gltf_importer_readback_parity_v1(
+        gltf,
+        doc,
+        artifact_kind="glb-embedded-gltf",
+    )
+    parity["artifactKind"] = "glb-binary"
+    parity["glbContainerFindings"] = container_findings
+    if container_findings:
+        parity["readbackStatus"] = "drift"
+        parity.setdefault("findings", []).append(
+            {
+                "code": "glb_container_readback_drift",
+                "severity": "error",
+                "containerFindingCodes": [row["code"] for row in container_findings],
+                "trackerItems": ["BIR-K02"],
+            }
+        )
+    return parity
 
 
 def _kind_counts(doc: Document) -> dict[str, int]:
@@ -2064,6 +2446,10 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
         "scenes": [{"nodes": scene_children}],
         "scene": 0,
     }
+    mf_payload["gltfImporterReadbackParity_v1"] = build_gltf_importer_readback_parity_v1(
+        tree,
+        doc,
+    )
     mf_payload["gltfJsonReadbackFidelity_v1"] = build_gltf_json_readback_fidelity_v1(tree)
     return tree, bytes(bins)
 

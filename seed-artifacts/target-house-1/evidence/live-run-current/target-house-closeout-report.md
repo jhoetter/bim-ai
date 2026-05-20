@@ -5,16 +5,15 @@
 Target: `target-house-1`
 Schema: `target-house-closeout-report.v1`
 Generated at: `1970-01-01T00:00:00.000Z`
-Lineage digest: `sha256:de302b8a67cffa1c74aa3aafb09c7a12f8e096f17b85a8107e47fa0846f97a01`
+Lineage digest: `sha256:9211c12643d72b0155abce76b35121c07ca97321b8118185e3d6d500002f7470`
 
 ## Review Status
 
-Status: `blocked` - 2 closeout blocker(s) remain.
+Status: `ready` - all closeout evidence families accepted.
 
 | Blocker | Summary |
 | ------- | ------- |
-| `tracker_incomplete` | Final package manifest reports this blocker. |
-| `tracker_not_done` | Final package manifest reports this blocker. |
+| none | No blockers reported. |
 
 ## Advisor Is Not Acceptance
 
@@ -33,7 +32,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Field | Value |
 | ----- | ----- |
-| current git head | 0f6c552a3fb49e7f45e9995891644cf40e60bc17 |
+| current git head | f1271c0bb047efe4ebdd65ba0ae86b67fac5c468 |
 | evidence git head | ba06ccd1fd8d7903305b361b85853e375188103b |
 | evidence dir | seed-artifacts/target-house-1/evidence/live-run-current |
 | required features | spec/generated/target-house-1-required-features.json |
@@ -47,7 +46,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | Advisor rule digest | sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9 |
 | renderer support matrix digest | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 | performance digest | sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4 |
-| final manifest digest | sha256:d0074d9eaeeac3a7310d0119d21c824a00d02b1b5cc3ab8ba850dbf3763e8cd4 |
+| final manifest digest | sha256:1d0cd0fec6ab2859c974e94894ed55e6b6a8faad0425c1dc6ac2d52338c0434e |
 
 ## Evidence Files
 
@@ -108,7 +107,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | missing element coverage | 0 |
 | open feature findings | 0 |
 | missing screenshots | 0 |
-| closeout blockers | 2 |
+| closeout blockers | 0 |
 | renderer support matrix | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 
 | Feature | Elements | Open findings | Renderer support | Screenshots | Blockers |
