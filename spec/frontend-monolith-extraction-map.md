@@ -153,3 +153,7 @@ Target modules:
   section box, and render-quality decisions.
 - `viewport/overlays/*`: HUD, view cube, labels, sun/shadow controls, and
   transient authoring overlays.
+
+First landed slice:
+
+- `viewport/ViewportOverlays.tsx`

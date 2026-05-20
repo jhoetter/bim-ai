@@ -77,7 +77,7 @@ A-territory target:
 | GFR-2026-02 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
 | GFR-2026-03 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
 | GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
-| GFR-2026-05 | P1       | Open   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
+| GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
 | GFR-2026-07 | P2       | Open   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with quality tests green.  |
 | GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.     |
@@ -143,3 +143,8 @@ A-territory target:
   `packages/web/src/workspace/WorkspaceAppShellSlots.tsx`.
   `pnpm --filter @bim-ai/web typecheck` passes; focused workspace tests are
   tracked in the verification notes for the commit.
+- 2026-05-20: `GFR-2026-05` is Done. Local `wc -l` reports
+  `Viewport.tsx` at `5,470` lines, below the `5,500` target. The slice moved
+  the ViewCube, walk hints, section-box badge, sky/render buttons, saved-view
+  lock badges, and transient 3D authoring cursor overlays into
+  `packages/web/src/viewport/ViewportOverlays.tsx`.

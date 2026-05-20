@@ -3,7 +3,15 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const planCanvasSource = readFileSync(resolve(process.cwd(), 'src/plan/PlanCanvas.tsx'), 'utf8');
+const planCanvasToolOverlaysSource = readFileSync(
+  resolve(process.cwd(), 'src/plan/PlanCanvasToolOverlays.tsx'),
+  'utf8',
+);
 const viewportSource = readFileSync(resolve(process.cwd(), 'src/Viewport.tsx'), 'utf8');
+const viewportOverlaysSource = readFileSync(
+  resolve(process.cwd(), 'src/viewport/ViewportOverlays.tsx'),
+  'utf8',
+);
 const sheetReviewSurfaceSource = readFileSync(
   resolve(process.cwd(), 'src/plan/SheetReviewSurface.tsx'),
   'utf8',
@@ -23,13 +31,16 @@ describe('canvas overlay ownership — UX-WP-07', () => {
     expect(planCanvasSource).toContain('<SnapGlyphLayer');
     expect(planCanvasSource).toContain('<TempDimLayer');
     expect(planCanvasSource).toContain('data-testid="reveal-hidden-chip"');
-    expect(planCanvasSource).toContain('data-testid="snap-override-chip"');
+    expect(planCanvasToolOverlaysSource).toContain('data-testid="snap-override-chip"');
   });
 
   it('keeps the 3D view cube but removes the saved-view HUD from the viewport canvas', () => {
-    expect(viewportSource).toContain('<ViewCube');
+    expect(viewportSource).toContain('<ViewportOverlays');
+    expect(viewportOverlaysSource).toContain('<ViewCube');
     expect(viewportSource).not.toContain('<OrbitViewpointPersistedHud');
     expect(viewportSource).not.toContain('data-testid="orbit-viewpoint-persisted-hud"');
+    expect(viewportOverlaysSource).not.toContain('<OrbitViewpointPersistedHud');
+    expect(viewportOverlaysSource).not.toContain('data-testid="orbit-viewpoint-persisted-hud"');
   });
 
   it('does not mount a persistent sheet review toolbar inside the canvas region', () => {
