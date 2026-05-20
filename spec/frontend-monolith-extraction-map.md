@@ -6,6 +6,9 @@ Scope: CQ-2026-04. This map defines the ownership direction for the current
 high-churn frontend files so extraction work can continue in small, testable
 slices without creating circular dependencies back into the original files.
 
+Related non-frontend god-file slices are tracked directly in
+`spec/code-quality-tracker.md`.
+
 ## PlanCanvas.tsx
 
 Current role: plan-view orchestration, camera math, pointer and keyboard input,

@@ -990,6 +990,13 @@ Start with parity checks before full generation:
 3. Compare UI command capability IDs against backend-supported command kinds
    where an agent-equivalent command exists.
 
+### Progress Notes
+
+- 2026-05-20: extracted CLI API transport concerns into
+  `packages/cli/lib/api-client.mjs`, giving schema, descriptor, snapshot, and
+  bundle calls a shared client boundary and reducing `packages/cli/cli.mjs`
+  from `7,412` to `7,327` lines. This is still Open until parity checks exist.
+
 ---
 
 ## CQ-2026-15 - Enforce Feature and Layer Dependency Boundaries
