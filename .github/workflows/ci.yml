@@ -56,7 +56,7 @@ jobs:
       - name: Python dependency audit
         run: |
           cd app
-          uv export --frozen --all-extras --no-hashes --format requirements-txt > /tmp/bim-ai-requirements.txt
+          uv export --frozen --all-extras --no-hashes --no-emit-project --format requirements-txt > /tmp/bim-ai-requirements.txt
           uvx pip-audit -r /tmp/bim-ai-requirements.txt --strict
 
       - name: Upload code quality scorecard
