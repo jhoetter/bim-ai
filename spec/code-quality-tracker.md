@@ -178,7 +178,7 @@ Largest current source files observed:
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 5,191      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction/action modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
-| `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
+| `app/bim_ai/api/registry.py`                                | 5,273      | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 4,981      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette/composition action modules. |
 | `packages/web/src/Viewport.tsx`                             | 5,101      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, command-handler, and camera-orientation hooks. |
@@ -847,6 +847,12 @@ for merge conflicts and stale descriptor drift.
   `127` tools and passes focused descriptor tests with `--no-cov`; the dirty
   worktree still reports `5,481` lines because unrelated parallel-agent registry
   additions are intentionally left unstaged.
+- 2026-05-20: extracted external model-call audit, source ingestion,
+  reverse-BIM, and reverse-BIM semantic-authoring descriptor registrations into
+  `app/bim_ai/api/descriptors/source_reverse_bim.py`, reducing
+  `app/bim_ai/api/registry.py` to `5,273` lines. `PYTHONPATH=app python -m
+  py_compile` passes for the registry and descriptor module, and a focused
+  registry smoke check confirms the extracted descriptors still register.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path

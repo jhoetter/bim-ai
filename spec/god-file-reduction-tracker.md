@@ -125,6 +125,7 @@ A-territory target:
 | GFR-2026-49 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract camera orientation sync hook                               | Viewport below `5,110` LOC with focused tests green.        |
 | GFR-2026-50 | P1       | Done   | `packages/core/src/index.ts`                                | Extract late model contract types                                  | Core index below `4,000` LOC with core/web typechecks green. |
 | GFR-2026-51 | P1       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract family editor properties panels                            | Workbench below `4,000` LOC with focused tests green.       |
+| GFR-2026-52 | P1       | Done   | `app/bim_ai/api/registry.py`                                | Extract source/reverse-BIM descriptor module                       | Registry reduced with descriptor import checks green.       |
 
 ## Progress Log
 
@@ -562,3 +563,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx` at `3,813` lines.
   Focused family editor tests pass (`64 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-52` is Done. The slice moved external model-call audit,
+  source ingestion, reverse-BIM, and reverse-BIM semantic-authoring descriptor
+  registrations into `app/bim_ai/api/descriptors/source_reverse_bim.py`. Local
+  `wc -l` reports `app/bim_ai/api/registry.py` at `5,273` lines. Python
+  compile checks pass, and a focused registry import smoke check confirms the
+  extracted audit/source/reverse/authoring descriptors are still registered.
