@@ -158,6 +158,15 @@ def test_source_coverage_and_phase_packet_blockers() -> None:
     assert warning_packet["acceptedForNextPhase"] is False
     assert warning_packet["summary"]["blockingWarningCount"] == 1
 
+    clean_packet = build_reverse_bim_phase_packet(
+        phase_id="P7-openings",
+        advisor={"data": {"summary": {"severityCounts": {"error": 0, "warning": 0}}}},
+        constructability={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+        integrity_preflight={"summary": {"severityCounts": {"error": 0, "warning": 0}}},
+    )
+    assert clean_packet["acceptedForNextPhase"] is True
+    assert clean_packet["summary"]["missingRequiredReportCount"] == 0
+
 
 def test_authoring_plan_maps_ai_facts_to_mcp_tools() -> None:
     plan = plan_mcp_authoring_actions(
@@ -788,6 +797,25 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0
 
 
+def test_reverse_bim_folder_output_rejects_seed_artifact_source_roots(tmp_path: Path) -> None:
+    source_dir = tmp_path / "seed-artifacts" / "target-house-3"
+    output_dir = tmp_path / "folder-output"
+    source_dir.mkdir(parents=True)
+    (source_dir / "bundle.json").write_text("{}", encoding="utf-8")
+
+    package = build_reverse_bim_folder_output(
+        root_path=source_dir,
+        output_dir=output_dir,
+        run_id="folder-output-seed-rejected",
+        reset_output=True,
+    )
+
+    assert package["ok"] is False
+    assert package["packageState"] == "source_rejected"
+    assert package["acceptance"]["findings"][0]["code"] == "folder_output_generated_source_rejected"
+    assert (output_dir / "validation" / "package-acceptance-report.json").exists()
+
+
 def test_reverse_bim_folder_output_captures_reader_command_responses(
     tmp_path: Path,
     monkeypatch,
@@ -914,6 +942,43 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["format"] == "sourceAiVisualTraceReaderResponsesNormalization_v1"
     assert resp.json()["responses"][0]["facts"][0]["value"]["observation"] == "dark tiled roof visible"
 
+    resp = client.post(
+        "/api/v3/source/reader-consensus",
+        json={
+            "responses": [
+                {
+                    "workPackageId": "wp-dimensional-floorplans",
+                    "readerId": "reader-a",
+                    "facts": [
+                        {
+                            "factId": "reader-a-level-eg",
+                            "kind": "level",
+                            "value": {"name": "EG", "elevationMm": 0},
+                            "confidence": 0.9,
+                            "provenance": {"sourceDocumentId": "srcdoc-1", "page": 1},
+                        }
+                    ],
+                },
+                {
+                    "workPackageId": "wp-dimensional-floorplans",
+                    "readerId": "reader-b",
+                    "facts": [
+                        {
+                            "factId": "reader-b-level-eg",
+                            "kind": "level",
+                            "value": {"name": "EG", "elevationMm": 0},
+                            "confidence": 0.9,
+                            "provenance": {"sourceDocumentId": "srcdoc-1", "page": 1},
+                        }
+                    ],
+                },
+            ]
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimSourceReaderConsensus_v1"
+    assert resp.json()["ok"] is True
+
     output_dir = tmp_path / "prepared"
     resp = client.post(
         "/api/v3/source/prepare-ai-visual-trace-run",
@@ -985,6 +1050,27 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["format"] == "reverseBimMcpAuthoringReadiness_v1"
     assert resp.json()["summary"]["metadataForAuthoringCount"] == 1
 
+    resp = client.post(
+        "/api/v3/reverse-bim/source-material-assemblies",
+        json={
+            "facts": [
+                {
+                    "factId": "wall-chain-eg-north",
+                    "kind": "wall_chain",
+                    "value": {
+                        "elementScope": "wall-chain-eg-north",
+                        "levelId": "EG",
+                        "points": [{"xMm": 0, "yMm": 0}, {"xMm": 5000, "yMm": 0}],
+                        "thicknessMm": 240,
+                    },
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimSourceMaterialAssemblies_v1"
+    assert resp.json()["summary"]["blockedAssemblyCount"] == 1
+
     folder_output_dir = tmp_path / "folder-output-route"
     resp = client.post(
         "/api/v3/reverse-bim/folder-output",
@@ -1011,11 +1097,13 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "source.prepare_ai_visual_trace_run",
         "source.ai_visual_trace_agent_loop",
         "source.normalize_ai_visual_trace_reader_responses",
+        "source.reader_consensus",
         "source.validate_ai_visual_trace_completeness",
         "source.validate_ai_facts",
         "reverse_bim.ir_validate",
         "reverse_bim.plan_authoring",
         "reverse_bim.mcp_readiness",
+        "reverse_bim.source_material_assemblies",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",
         "reverse_bim.level_completeness",

@@ -126,6 +126,8 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
+from bim_ai.source_material_assemblies import build_source_material_assembly_report
+from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 from bim_ai.renderer_diagnostic_persistence import (
     append_renderer_diagnostic_packet,
     latest_renderer_diagnostic_packet_for_evidence,
@@ -1526,6 +1528,18 @@ async def source_normalize_ai_visual_trace_reader_responses_route(
     )
 
 
+@api_router.post("/v3/source/reader-consensus")
+async def source_reader_consensus_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_source_reader_consensus_report(
+        body.get("responses") or body.get("readerResponses") or body,
+        min_independent_readers=int(body.get("minIndependentReaders") or 2)
+        if isinstance(body, dict)
+        else 2,
+    )
+
+
 @api_router.post("/v3/source/validate-ai-facts")
 async def source_validate_ai_facts_route(
     body: dict[str, Any] = Body(default_factory=dict),
@@ -1599,6 +1613,15 @@ async def reverse_bim_mcp_readiness_route(
     return build_mcp_authoring_readiness(
         facts=body.get("facts") or body.get("extractedFacts") or [],
         target_phase=body.get("phase"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/source-material-assemblies")
+async def reverse_bim_source_material_assemblies_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_source_material_assembly_report(
+        body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
     )
 
 

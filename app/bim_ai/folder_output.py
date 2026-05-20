@@ -39,7 +39,9 @@ from bim_ai.source_ingestion import (
     extract_pdf_text,
     render_pdf_pages,
 )
+from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_openings import build_source_opening_reconciliation
+from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 from bim_ai.source_roof_dormer import build_source_roof_dormer_report
 from bim_ai.source_room_topology import build_source_room_topology_report
 from bim_ai.source_site_terrain import (
@@ -125,6 +127,39 @@ def build_reverse_bim_folder_output(
         shutil.rmtree(out_dir)
     _ensure_tree(out_dir)
 
+    forbidden_source_reason = _forbidden_source_root_reason(source_root)
+    if forbidden_source_reason:
+        result = {
+            "ok": False,
+            "format": "reverseBimFolderOutputPackage_v1",
+            "packageState": "source_rejected",
+            "sourceFolder": str(source_root),
+            "outputDir": str(out_dir),
+            "summary": {
+                "sourceDocumentCount": 0,
+                "renderedPageCount": 0,
+                "workPackageCount": 0,
+                "openBlockerCount": 1,
+            },
+            "acceptance": {
+                "ok": False,
+                "format": "reverseBimFolderOutputAcceptanceReport_v1",
+                "packageState": "source_rejected",
+                "summary": {"errorCount": 1, "warningCount": 0},
+                "findings": [
+                    {
+                        "code": "folder_output_generated_source_rejected",
+                        "severity": "error",
+                        "message": forbidden_source_reason,
+                    }
+                ],
+            },
+            "nextStep": "Use the original source-document folder, not seed-artifacts or generated reverse-BIM outputs.",
+        }
+        _write_json(out_dir / "run-summary.json", result)
+        _write_json(out_dir / "validation" / "package-acceptance-report.json", result["acceptance"])
+        return result
+
     manifest = build_folder_manifest(source_root)
     if manifest.get("ok") is False:
         _write_json(out_dir / "run-summary.json", manifest)
@@ -158,6 +193,7 @@ def build_reverse_bim_folder_output(
         reader_timeout_seconds=reader_timeout_seconds,
     )
     raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
+    reader_consensus = build_source_reader_consensus_report(raw_responses)
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
     facts = _facts_for_handoff(loop=loop, normalized=normalized)
@@ -178,6 +214,7 @@ def build_reverse_bim_folder_output(
     )
     conflicts = conflict_disposition_report["conflictLedger"]
     facts = _apply_conflict_dispositions_to_facts(facts, conflicts)
+    source_material_assemblies = build_source_material_assembly_report(facts)
     fact_ledger = _build_source_fact_ledger(facts)
     conflict_dispositions = build_source_conflict_disposition_worklist(conflicts)
     coordinate_frames = _build_coordinate_frames(
@@ -225,6 +262,8 @@ def build_reverse_bim_folder_output(
         source_area_consistency=source_area_consistency,
         coordinate_frame_alignment_report=coordinate_frame_alignment_report,
         site_terrain=site_terrain,
+        source_material_assemblies=source_material_assemblies,
+        reader_consensus=reader_consensus,
     )
     run_summary = _build_run_summary(
         source_folder=source_root,
@@ -260,6 +299,7 @@ def build_reverse_bim_folder_output(
         "aiVisualAgentRequests": out_dir / "ai-reading" / "ai-visual-agent-requests.json",
         "readerResponsesRaw": out_dir / "ai-reading" / "reader-responses.raw.json",
         "readerResponseIndex": out_dir / "ai-reading" / "reader-response-index.json",
+        "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
         "readerResponsesNormalized": out_dir / "ai-reading" / "reader-responses.normalized.json",
         "agentLoopAccepted": out_dir / "ai-reading" / "agent-loop.accepted.json",
         "repairRequestsOpen": out_dir / "ai-reading" / "repair-requests.open.json",
@@ -268,6 +308,7 @@ def build_reverse_bim_folder_output(
         "sourceFactLedger": out_dir / "understanding" / "source-fact-ledger.json",
         "roomTopology": out_dir / "understanding" / "room-topology.json",
         "sourceAreaConsistency": out_dir / "understanding" / "source-area-consistency.json",
+        "sourceMaterialAssemblies": out_dir / "understanding" / "material-assemblies.json",
         "openingReconciliation": out_dir / "understanding" / "opening-reconciliation.json",
         "roofDormer": out_dir / "understanding" / "roof-dormer.json",
         "siteTerrain": out_dir / "understanding" / "site-terrain.json",
@@ -303,6 +344,7 @@ def build_reverse_bim_folder_output(
         "aiVisualAgentRequests": requests,
         "readerResponsesRaw": raw_responses,
         "readerResponseIndex": reader_response_index,
+        "readerConsensus": reader_consensus,
         "readerResponsesNormalized": normalized,
         "agentLoopAccepted": loop,
         "repairRequestsOpen": {
@@ -312,6 +354,8 @@ def build_reverse_bim_folder_output(
                 room_topology=room_topology,
                 source_area_consistency=source_area_consistency,
                 site_terrain=site_terrain,
+                source_material_assemblies=source_material_assemblies,
+                reader_consensus=reader_consensus,
             ),
         },
         "coordinateFrames": coordinate_frames,
@@ -319,6 +363,7 @@ def build_reverse_bim_folder_output(
         "sourceFactLedger": fact_ledger,
         "roomTopology": room_topology,
         "sourceAreaConsistency": source_area_consistency,
+        "sourceMaterialAssemblies": source_material_assemblies,
         "openingReconciliation": opening_reconciliation,
         "roofDormer": roof_dormer,
         "siteTerrain": site_terrain,
@@ -371,6 +416,22 @@ def _ensure_tree(out_dir: Path) -> None:
         "evidence/page-crops",
     ):
         (out_dir / relative).mkdir(parents=True, exist_ok=True)
+
+
+def _forbidden_source_root_reason(source_root: Path) -> str | None:
+    parts = set(source_root.parts)
+    if "seed-artifacts" in parts:
+        return (
+            "Reverse-BIM source ingestion refuses seed-artifacts paths. "
+            "Generated seed bundles are export/inspection artifacts, not source truth."
+        )
+    for parent in source_root.parents:
+        if parent.name.startswith("reverse-bim-") and source_root.name.startswith("target-house-"):
+            return (
+                "Reverse-BIM source ingestion refuses generated target-house outputs. "
+                "Use the original source-document folder for a fresh run."
+            )
+    return None
 
 
 def _render_and_extract(
@@ -945,6 +1006,8 @@ def _build_open_repair_requests(
     room_topology: dict[str, Any],
     source_area_consistency: dict[str, Any] | None = None,
     site_terrain: dict[str, Any] | None = None,
+    source_material_assemblies: dict[str, Any] | None = None,
+    reader_consensus: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     requests = [row for row in loop.get("repairRequests") or [] if isinstance(row, dict)]
     for room in room_topology.get("rooms") or []:
@@ -1023,6 +1086,59 @@ def _build_open_repair_requests(
                 "provenance": action.get("provenance"),
             }
         )
+    source_material_assemblies = source_material_assemblies or {}
+    for scope in source_material_assemblies.get("assemblyScopes") or []:
+        if not isinstance(scope, dict) or scope.get("status") != "blocked_needs_source_or_disposition":
+            continue
+        requests.append(
+            {
+                "repairRequestId": f"source-material-{scope.get('scopeKey')}",
+                "kind": "source_material_assembly_repair",
+                "workPackageId": "wp-current-condition",
+                "sourceFactIds": scope.get("sourceFactIds") or [],
+                "modelableFactIds": scope.get("modelableFactIds") or [],
+                "status": "open",
+                "requiredFields": [
+                    "material.elementScope matching the wall/floor/roof source fact id or scope label",
+                    "material.materialName and construction/assembly name when visible",
+                    "material.layerStack/layers with thicknessMm per layer when available",
+                    "wall_thickness.thicknessMm for wall scopes",
+                    "explicit disposition.decision=tolerate_unavailable with reason when sources lack layer details",
+                    "source-page region/provenance for every material or unavailable-source decision",
+                ],
+                "findingsToFix": scope.get("requiredBeforeMcp") or [],
+                "sourcePrompt": (
+                    "Re-read construction descriptions, energy documents, plans, sections, and photos for this "
+                    "wall/floor/roof scope. Return material facts that reference the exact elementScope, "
+                    "including layerStack where the source gives it. If the source folder does not contain "
+                    "the layer stack, return a material fact with disposition.decision=tolerate_unavailable "
+                    "and a concrete source-backed reason instead of guessing."
+                ),
+                "provenance": scope.get("provenance") or [],
+            }
+        )
+    reader_consensus = reader_consensus or {}
+    for blocker in reader_consensus.get("blockers") or []:
+        if not isinstance(blocker, dict):
+            continue
+        requests.append(
+            {
+                "repairRequestId": f"reader-consensus-{blocker.get('code')}-{blocker.get('workPackageId') or blocker.get('matchKey')}",
+                "kind": "reader_consensus_repair",
+                "workPackageId": blocker.get("workPackageId"),
+                "status": "open",
+                "requiredFields": [
+                    "a second independent reader response for each critical work package",
+                    "or a deterministic cross-check/disposition that explains why one reader pass is sufficient",
+                    "reconciled critical fact values when readers disagree",
+                ],
+                "findingsToFix": [blocker],
+                "sourcePrompt": (
+                    "Dispatch another independent multimodal reader for the affected work package, "
+                    "then reconcile any disagreed critical facts explicitly before MCP authoring."
+                ),
+            }
+        )
     return requests
 
 
@@ -1037,6 +1153,8 @@ def _build_package_acceptance_report(
     source_area_consistency: dict[str, Any],
     coordinate_frame_alignment_report: dict[str, Any],
     site_terrain: dict[str, Any] | None = None,
+    source_material_assemblies: dict[str, Any] | None = None,
+    reader_consensus: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     findings = []
     if int(raw_responses.get("responseCount") or 0) == 0:
@@ -1141,6 +1259,42 @@ def _build_package_acceptance_report(
                 ),
             }
         )
+    source_material_assemblies = source_material_assemblies or {}
+    source_material_summary = (
+        source_material_assemblies.get("summary")
+        if isinstance(source_material_assemblies.get("summary"), dict)
+        else {}
+    )
+    source_material_blocker_count = int(source_material_summary.get("blockedAssemblyCount") or 0)
+    if source_material_blocker_count:
+        findings.append(
+            {
+                "code": "folder_output_material_assemblies_incomplete",
+                "severity": "error",
+                "message": (
+                    f"{source_material_blocker_count} wall/floor/roof material assembly scope(s) "
+                    "need source-backed material/layer facts or an explicit source-unavailable disposition."
+                ),
+            }
+        )
+    reader_consensus = reader_consensus or {}
+    reader_consensus_summary = (
+        reader_consensus.get("summary")
+        if isinstance(reader_consensus.get("summary"), dict)
+        else {}
+    )
+    reader_consensus_blocker_count = int(reader_consensus_summary.get("blockingCount") or 0)
+    if reader_consensus_blocker_count:
+        findings.append(
+            {
+                "code": "folder_output_reader_consensus_blocked",
+                "severity": "error",
+                "message": (
+                    f"{reader_consensus_blocker_count} reader consensus blocker(s) remain. "
+                    "Critical source facts need independent agreement or explicit deterministic disposition."
+                ),
+            }
+        )
     error_count = sum(1 for row in findings if row.get("severity") == "error")
     return {
         "ok": error_count == 0,
@@ -1159,6 +1313,8 @@ def _build_package_acceptance_report(
             "sourceAreaConsistencyBlockerCount": source_area_blocker_count,
             "coordinateFrameAlignmentBlockerCount": blocking_alignment_count,
             "siteTerrainBlockerCount": site_terrain_blocker_count,
+            "sourceMaterialAssemblyBlockerCount": source_material_blocker_count,
+            "readerConsensusBlockerCount": reader_consensus_blocker_count,
             "readerResponseCount": raw_responses.get("responseCount", 0),
         },
         "findings": findings,

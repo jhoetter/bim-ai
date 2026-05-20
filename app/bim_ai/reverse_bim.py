@@ -503,6 +503,21 @@ def build_reverse_bim_phase_packet(
 ) -> dict[str, Any]:
     dispositions = finding_dispositions or []
     findings: list[dict[str, Any]] = []
+    required_reports = {
+        "advisor": advisor,
+        "constructability": constructability,
+        "integrityPreflight": integrity_preflight,
+    }
+    for report_name, report_payload in required_reports.items():
+        if not _has_report_payload(report_payload):
+            findings.append(
+                {
+                    "code": "phase_required_report_missing",
+                    "severity": "error",
+                    "field": report_name,
+                    "message": f"Phase packet is missing required {report_name} report.",
+                }
+            )
     for idx, disposition in enumerate(dispositions):
         value = str(disposition.get("disposition") or "")
         if value not in FINDING_DISPOSITIONS:
@@ -560,6 +575,9 @@ def build_reverse_bim_phase_packet(
             "blockingWarningCount": blocking_warning_count,
             "openBlockerCount": len(open_blockers),
             "packetErrorCount": sum(1 for row in findings if row.get("severity") == "error"),
+            "missingRequiredReportCount": sum(
+                1 for row in findings if row.get("code") == "phase_required_report_missing"
+            ),
         },
     }
     payload["acceptedForNextPhase"] = (
@@ -777,6 +795,15 @@ def _severity_counts_from_payload(payload: dict[str, Any]) -> dict[str, int]:
     if isinstance(findings, list):
         return dict(Counter(str(row.get("severity") or "warning") for row in findings if isinstance(row, dict)))
     return {}
+
+
+def _has_report_payload(payload: dict[str, Any] | None) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    if payload.get("summary") or payload.get("findings"):
+        return True
+    data = payload.get("data")
+    return isinstance(data, dict) and bool(data.get("summary") or data.get("findings"))
 
 
 def _digest(payload: dict[str, Any]) -> str:

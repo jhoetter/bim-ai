@@ -28,6 +28,7 @@ function usage() {
     --source <folder-with-user-inputs> \\
     --bundle <cmd-v3-bundle.json> \\
     [--live-evidence <dir>] [--require-live-evidence] \\
+    [--final-acceptance <reverseBimFinalAcceptance.json>] [--require-final-acceptance] \\
     [--title <label>] [--description <text>] [--created-at <iso8601>] \\
     [--out <artifact-root>] [--force]
 `);
@@ -40,6 +41,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--force') out.force = true;
     else if (arg === '--require-live-evidence') out.requireLiveEvidence = true;
+    else if (arg === '--require-final-acceptance') out.requireFinalAcceptance = true;
     else if (arg.startsWith('--') && argv[i + 1]) out[arg.slice(2)] = argv[++i];
     else usage();
   }
@@ -166,6 +168,39 @@ async function ensureLiveEvidence(evidenceDir, bundlePath) {
   };
 }
 
+function isTargetHouseArtifactName(name) {
+  return /^target-house-\d+$/.test(String(name || ''));
+}
+
+async function ensureFinalAcceptance(finalAcceptancePath, bundlePath) {
+  if (!finalAcceptancePath) return null;
+  const absPath = path.resolve(finalAcceptancePath);
+  const payload = await readJson(absPath);
+  if (payload.format !== 'reverseBimFinalAcceptance_v1') {
+    throw new Error(`${absPath} must use format reverseBimFinalAcceptance_v1.`);
+  }
+  if (payload.policyVersion !== 'reverseBimFinalAcceptancePolicy_v2') {
+    throw new Error(`${absPath} must use policyVersion reverseBimFinalAcceptancePolicy_v2.`);
+  }
+  const summary = payload.summary && typeof payload.summary === 'object' ? payload.summary : {};
+  const gates = Array.isArray(payload.gates) ? payload.gates : [];
+  const failedGates = gates.filter((gate) => gate && gate.passed !== true);
+  const blockingGateIds = Array.isArray(summary.blockingGateIds)
+    ? summary.blockingGateIds.filter(Boolean)
+    : [];
+  if (payload.accepted !== true || failedGates.length || blockingGateIds.length) {
+    throw new Error(
+      `${absPath} is not accepted; seed/export packaging is blocked until final acceptance passes.`,
+    );
+  }
+  return {
+    path: absPath,
+    payload,
+    sha256: await sha256File(absPath),
+    bundleSha256: await sha256File(bundlePath),
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const sourceDir = path.resolve(args.source);
@@ -175,9 +210,17 @@ async function main() {
   const liveEvidence = args['live-evidence']
     ? await ensureLiveEvidence(args['live-evidence'], bundlePath)
     : null;
+  const finalAcceptance = args['final-acceptance']
+    ? await ensureFinalAcceptance(args['final-acceptance'], bundlePath)
+    : null;
   if (args.requireLiveEvidence && !liveEvidence) {
     throw new Error(
       'Final live evidence is required. Run sketch_bim.py accept first and pass --live-evidence <dir>.',
+    );
+  }
+  if ((args.requireFinalAcceptance || isTargetHouseArtifactName(args.name)) && !finalAcceptance) {
+    throw new Error(
+      `Accepted reverse-BIM final acceptance is required for '${args.name}'. Pass --final-acceptance <reverseBimFinalAcceptance.json>.`,
     );
   }
 
@@ -209,6 +252,9 @@ async function main() {
       filter: (src) => shouldCopy(src),
     });
   }
+  if (finalAcceptance) {
+    await fs.copyFile(finalAcceptance.path, path.join(artifactDir, 'evidence', 'final-acceptance.json'));
+  }
   await fs.writeFile(
     path.join(artifactDir, 'evidence', 'README.md'),
     '# Evidence\n\nPlace advisor JSON, screenshots, validation output, and acceptance notes here. Keep files portable and scoped to this artifact.\n',
@@ -229,9 +275,23 @@ async function main() {
       tool: 'scripts/create-seed-artifact.mjs',
       version: 1,
     },
-    acceptance: liveEvidence
+    acceptance: finalAcceptance
       ? {
           status: 'accepted',
+          layer: 'reverse-bim',
+          evidenceRoot: 'evidence',
+          finalAcceptance: 'evidence/final-acceptance.json',
+          finalAcceptanceSha256: finalAcceptance.sha256,
+          finalAcceptancePolicyVersion: finalAcceptance.payload.policyVersion,
+          modelId: finalAcceptance.payload.modelId,
+          passedGateCount: finalAcceptance.payload.summary?.passedGateCount,
+          gateCount: finalAcceptance.payload.summary?.gateCount,
+          bundleSha256: finalAcceptance.bundleSha256,
+        }
+      : liveEvidence
+        ? {
+          status: 'accepted',
+          layer: 'sketch-to-bim',
           evidenceRoot: 'evidence/live-run-current',
           gitHead: liveEvidence.summary.gitHead,
           bundleSha256: liveEvidence.summary.bundleSha256,
@@ -240,9 +300,9 @@ async function main() {
           advisorRuleDigest: liveEvidence.summary.advisorRuleDigest,
           generatedAtEpochMs: liveEvidence.summary.generatedAtEpochMs,
         }
-      : {
-          status: args.requireLiveEvidence ? 'missing' : 'not-provided',
-        },
+        : {
+            status: args.requireLiveEvidence || args.requireFinalAcceptance ? 'missing' : 'not-provided',
+          },
     inputPaths: {
       source: portablePath(sourceDir),
       bundle: portablePath(bundlePath),

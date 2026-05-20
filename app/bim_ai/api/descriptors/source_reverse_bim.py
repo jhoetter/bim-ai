@@ -225,6 +225,19 @@ for _source_tool in (
         "notes": "Normalizes flexible AI/subagent visual-reading responses into structured, provenance-preserving source facts that can be validated and mapped to MCP authoring surfaces.",
     },
     {
+        "name": "source.reader_consensus",
+        "title": "SourceReaderConsensusInput",
+        "path": "/api/v3/source/reader-consensus",
+        "required": ["responses"],
+        "properties": {
+            "responses": {"type": "array", "items": {"type": "object"}},
+            "readerResponses": {"type": "array", "items": {"type": "object"}},
+            "minIndependentReaders": {"type": "integer", "default": 2},
+        },
+        "cli": "bim-ai source reader-consensus --responses responses.json --output json",
+        "notes": "Compares critical source facts across independent AI-reader passes and blocks source handoff on insufficient passes or conflicting values.",
+    },
+    {
         "name": "source.validate_ai_facts",
         "title": "SourceValidateAiFactsInput",
         "path": "/api/v3/source/validate-ai-facts",
@@ -326,6 +339,13 @@ for _reverse_tool in (
         "path": "/api/v3/reverse-bim/mcp-readiness",
         "cli": "bim-ai reverse-bim mcp-readiness --facts ai-source-facts.json --phase P3",
         "notes": "Classifies normalized source facts as directly MCP-authorable, resolver-needed, source-refinement-needed, metadata/reference, conflict, or missing-tool before live modeling.",
+    },
+    {
+        "name": "reverse_bim.source_material_assemblies",
+        "title": "ReverseBimSourceMaterialAssembliesInput",
+        "path": "/api/v3/reverse-bim/source-material-assemblies",
+        "cli": "bim-ai reverse-bim source-material-assemblies --facts ai-source-facts.json",
+        "notes": "Builds wall/floor/roof material and layer-stack readiness from source facts; blocks generic type authoring unless assemblies are captured or explicitly source-unavailable.",
     },
     {
         "name": "reverse_bim.folder_output",

@@ -461,6 +461,7 @@ def build_ai_visual_trace_packet(
         "Prefer explicit dimensions and labels from the drawing over pixel measurement. Use pixel/visual geometry only as secondary evidence and mark confidence accordingly.",
         "For mirrored semi-detached halves, report each modeled half separately and record symmetry/mirroring relationships instead of collapsing them silently.",
         "Cross-check plan facts against sections, elevations, area calculations, site/legal documents, and photos where available.",
+        "For materials and assemblies, return source-backed wall/floor/roof layer stacks when present; if unavailable, return an explicit source-unavailable disposition with provenance instead of guessing.",
         "Mark conflicts, uncertain readings, illegible dimensions, and scan/crop limitations explicitly.",
     ]
     packet["expectedFactSchema"]["kind"] = (
@@ -520,7 +521,7 @@ def build_ai_visual_trace_work_order(
             "id": "wp-current-condition",
             "title": "Current condition and photos",
             "classes": ("photo", "unknown", "construction_description", "energy_doc"),
-            "task": "Read photos, expose/current-condition pages, construction descriptions, and energy/material documents. Return current-condition observations and current-vs-historical conflicts.",
+            "task": "Read photos, expose/current-condition pages, construction descriptions, and energy/material documents. Return current-condition observations, material/assembly evidence, wall/floor/roof layer stacks when source-backed, and current-vs-historical conflicts.",
             "factKinds": [
                 "photo_observation",
                 "material",
@@ -763,6 +764,7 @@ def _checklist_for_work_package(work_package_id: str) -> list[str]:
         "wp-current-condition": [
             "Identify every exterior face/photo viewpoint when possible.",
             "Record current materials, roof/window/door state, visible renovations, dormers, skylights, downpipes, and terrain clues.",
+            "For wall/floor/roof materials, include layerStack/layers with thickness where the source provides it, or disposition.decision=tolerate_unavailable with reason where it does not.",
             "Flag differences between current photos and historical drawings.",
         ],
         "wp-dimensional-floorplans": [

@@ -154,7 +154,7 @@ Implementation status:
 | --- | --- | --- | --- |
 | RBM0-001 | Reproducible run directory | Partial | A single command creates a fresh run directory with manifest/config/tool snapshot. |
 | RBM0-002 | Baseline live model snapshot | Partial | Every modeling run records starting model id/revision and full snapshot. |
-| RBM0-003 | Seed reuse guard | Not started | Pipeline refuses to treat `seed-artifacts/*` or old `tmp/*` as source truth. |
+| RBM0-003 | Seed reuse guard | Done | `reverse_bim.folder_output` rejects `seed-artifacts/*` and generated target-house output roots as source truth. |
 
 ## Phase 1: Source Inventory And Rendering
 
@@ -253,7 +253,7 @@ Implementation status:
 | --- | --- | --- | --- |
 | RBM2-001 | AI work-package schema | Partial | Work packages require source pages, expected facts, coordinate needs, and unknown policy. |
 | RBM2-002 | Reader response normalization | Partial | Flexible AI output normalizes into typed source facts. |
-| RBM2-003 | Reader consensus | Not started | Critical facts are compared across passes and flagged if inconsistent. |
+| RBM2-003 | Reader consensus | Partial | `source.reader_consensus` and folder output now compare critical facts across independent reader passes and block insufficient/conflicting source readings. Deterministic cross-check disposition support is still pending. |
 | RBM2-004 | Repair loop | Partial | Missing/conflicting facts produce actionable reader repair requests. |
 | RBM2-005 | Fixture-free Leo rerun | Not started | Leo source understanding can be regenerated from folder without manually repaired JSON fixtures. |
 
@@ -344,7 +344,7 @@ Implementation status:
 | RBM4-004 | Opening host/swing facts | Partial | Every door/window has source host candidate, side, width, swing/clearance intent. |
 | RBM4-005 | Stair facts | Partial | Runs/landings/slab openings/headroom/clearance are source-derived. |
 | RBM4-006 | Roof/dormer facts | Partial | Roof and dormer geometry is source-aligned, not provisional. |
-| RBM4-007 | Materials/layer stacks | Not started | Wall/floor/roof assemblies are captured or explicitly unknown. |
+| RBM4-007 | Materials/layer stacks | Partial | `reverse_bim.source_material_assemblies` and folder output now block generic wall/floor/roof type authoring unless source facts include material/layer data or an explicit source-unavailable disposition. MCP type creation/readback still needs phase-runner integration. |
 | RBM4-008 | Area formula facts | Partial | Area calculations preserve basis and formulas, not only target totals. |
 
 ## Phase 5: MCP Authoring Plan
@@ -443,7 +443,7 @@ Implementation status:
 | --- | --- | --- | --- |
 | RBM6-001 | Transactional phase runner | Not started | A runner executes authoring phases, QA, repairs, and stop conditions. |
 | RBM6-002 | Phase readback queries | Partial | Query endpoints return enough structured geometry for all modeled objects. |
-| RBM6-003 | Advisor/constructability gating | Partial | Existing routes exist, but acceptance still permits too many warnings. |
+| RBM6-003 | Advisor/constructability gating | Done | Phase packets and final acceptance block Advisor/constructability warnings by default. |
 | RBM6-004 | Screenshot evidence capture | Not started | Runner captures plan/3D/elevation screenshots after each phase. |
 | RBM6-005 | Source overlay compare | Not started | Model geometry is compared against registered source drawings. |
 
@@ -595,7 +595,7 @@ Implementation status:
 
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
-| RBM-SEED-001 | Seed packaging guard | Not started | Packaging requires accepted final report and fails otherwise. |
+| RBM-SEED-001 | Seed packaging guard | Done | `scripts/create-seed-artifact.mjs` blocks `target-house-*` packaging unless an accepted `reverseBimFinalAcceptancePolicy_v2` report is supplied and copied into evidence. |
 | RBM-SEED-002 | Seed provenance | Partial | Seed manifest points to acceptance evidence, not just a bundle. |
 | RBM-SEED-003 | Local artifact hygiene | Done | `tmp/`, `app/data/`, and generated target-house seed artifacts are ignored. |
 
@@ -642,7 +642,7 @@ These are the tool gaps that matter most for the goal.
 | GAP-004 | Door swing/room-side resolver | Door clearance warnings remain. | `resolve.door_side_and_swing` plus `validate.door_clearance`. |
 | GAP-005 | Stair vertical package authoring | Stairs can clash with walls/floors. | Atomic stair + slab opening + railing + clearance authoring/check. |
 | GAP-006 | Roof/dormer source alignment | Provisional dormer passes. | `validate.roof_dormer_overlay_alignment`. |
-| GAP-007 | Material/layer extraction and authoring | Schedules/material QA remain weak. | AI-reader facts plus wall/floor/roof type authoring. |
+| GAP-007 | Material/layer extraction and authoring | Schedules/material QA remain weak. | Partial: source package now emits `understanding/material-assemblies.json`, repair requests, and `reverse_bim.source_material_assemblies`; wall/floor/roof type authoring/readback gates still need implementation. |
 | GAP-008 | Phase runner | Agent can skip iterative feedback. | MCP phase runner enforcing dry-run/commit/query/QA/repair. |
 | GAP-009 | Seed/export guard | Bad diagnostic models can be packaged. | Export/seed command requires final acceptance report. |
 | GAP-010 | UI evidence capture | Human-visible failures discovered too late. | Automated screenshot capture from named views. |
@@ -654,10 +654,12 @@ Implemented first-pass surfaces:
 - `qa.source_overlay_compare` / `reverse_bim.source_overlay_evidence`
 - `reverse_bim.ui_evidence`
 - `reverse_bim.final_acceptance` with `reverseBimFinalAcceptancePolicy_v2`
+- `reverse_bim.source_material_assemblies`
+- `source.reader_consensus`
 
 These enforce the new gates with structured reports. The remaining work is
 automatic source/model overlay rendering, screenshot capture, phase-runner
-orchestration, seed/export guarding, and a fresh Leo benchmark.
+orchestration, material type authoring/readback gates, and a fresh Leo benchmark.
 
 ## Implementation Waves
 
@@ -669,10 +671,10 @@ orchestration, seed/export guarding, and a fresh Leo benchmark.
 | W3 | Door/stair validation hardening | Door clearance and stair clashes become blocking. | Partial |
 | W4 | Source overlay infrastructure | Registered source pages compare against live model geometry. | Partial |
 | W5 | Phase runner | Agent cannot proceed without phase QA evidence. | Partial |
-| W6 | Reader consensus and fixture-free source rerun | Leo source package regenerates without manual repaired fixtures. | Not started |
-| W7 | Materials/schedules | Required room/opening/material schedule metadata is modeled or source-blocked. | Not started |
+| W6 | Reader consensus and fixture-free source rerun | Leo source package regenerates without manual repaired fixtures. | Partial |
+| W7 | Materials/schedules | Required room/opening/material schedule metadata is modeled or source-blocked. | Partial |
 | W8 | Leo target-house-4 benchmark | Fresh run produces clean model or stops with exact blockers. | Not started |
-| W9 | Seed/export after acceptance only | Seed packaging is gated by final report. | Not started |
+| W9 | Seed/export after acceptance only | Seed packaging is gated by final report. | Partial |
 
 ## Required Tests
 
@@ -688,6 +690,8 @@ Tests must encode the failure so it cannot regress.
 | TEST-006 | Provisional roof/dormer without source alignment | Final acceptance fails. |
 | TEST-007 | Seed packaging without accepted final report | Packaging fails. |
 | TEST-008 | Fixture-only source facts | Source package is not accepted as reproducible. |
+| TEST-009 | Wall/floor/roof scope without material/layer source facts or explicit unavailable disposition | Folder output acceptance fails and emits material repair request. |
+| TEST-010 | Single or conflicting critical AI-reader passes | Reader consensus blocks source handoff. |
 
 ## Done Definition For The Overall Goal
 
