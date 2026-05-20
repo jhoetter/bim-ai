@@ -157,3 +157,26 @@ Target modules:
 First landed slice:
 
 - `viewport/ViewportOverlays.tsx`
+
+## FamilyEditorWorkbench.tsx
+
+Current role: family editor shell, template/category state, reference planes,
+parameter/type state, symbolic-line authoring, sweep/array authoring, preview
+visibility, material assignment, nested family loading, and persistence handoff.
+
+Target modules:
+
+- `familyEditor/FamilyEditorWorkbenchPanels.tsx`: self-contained dialogs and
+  authoring panels that are driven entirely by props.
+- `familyEditor/familyEditorTypes.ts`: shared workbench-specific type aliases
+  once a second extraction needs to share more state shapes.
+- `familyEditor/familyEditorSymbolicLines.ts`: symbolic-line canvas helpers,
+  alignment, mirroring, and object-style mapping.
+- `familyEditor/familyEditorSweepState.ts`: sweep draft lifecycle and profile
+  editing callbacks.
+- `familyEditor/familyEditorPersistenceState.ts`: template loading, catalog
+  document hydration, family type reset, and load-into-project handoff.
+
+First landed slice:
+
+- `familyEditor/FamilyEditorWorkbenchPanels.tsx`

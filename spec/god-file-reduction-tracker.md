@@ -38,6 +38,7 @@ Largest files at tracker start:
 | 6    | `packages/web/src/Viewport.tsx`                             | 5,470 | frontend-viewport  | Scene lifecycle, picking, overlays              |
 | 7    | `packages/core/src/index.ts`                                | 5,301 | core-contracts     | Public type and command barrel                  |
 | 8    | `scripts/audit-ui-mcp-parity.mjs`                           | 4,663 | quality-tooling    | Audit orchestration                             |
+| 9    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4,313 | frontend-family    | Family editor shell and state orchestration     |
 
 ## Operating Rules
 
@@ -81,6 +82,7 @@ A-territory target:
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
 | GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.  |
 | GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.     |
+| GFR-2026-09 | P2       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract self-contained family editor panels                        | Workbench below `4,500` LOC with focused tests passing.   |
 
 ## Progress Log
 
@@ -159,3 +161,10 @@ A-territory target:
   `author.stair_between_levels`, `opening.shaft_opening`, and
   `opening.slab_opening`, so the tracker records the narrower syntax gate for
   this mechanical split.
+- 2026-05-20: `GFR-2026-09` is Done. Local `wc -l` reports
+  `FamilyEditorWorkbench.tsx` at `4,313` lines, below the `4,500` slice target.
+  The family types dialog, material default editor, array draft panel, and sweep
+  sketch panels now live in
+  `packages/web/src/familyEditor/FamilyEditorWorkbenchPanels.tsx`.
+  `pnpm --filter @bim-ai/web typecheck` and focused family editor Vitest
+  coverage pass.
