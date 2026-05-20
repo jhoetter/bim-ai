@@ -16,17 +16,17 @@ and sketch-to-BIM readiness remain in their dedicated trackers.
 
 ## Current Rating
 
-Current assessment: **7.5/10 (B)**.
+Current assessment: **8.0/10 (B)**.
 
 The project is now in B territory: strict TypeScript is green, the canonical
 verification gates are aligned, frontend test noise is materially quieter,
 backend focused/full test paths are explicit, quality waivers are
 machine-readable and expiring, contract parity is green across extracted
 descriptor modules, and no hand-written source file is above 4,000 LOC. The
-generated scorecard currently has no `blockersToNextGrade` entries; the score is
-still held at B by the active JavaScript lint waiver, remaining type-escape
-hotspots, and A-grade budgets that are present but still early in their
-enforcement history.
+generated scorecard currently has no `blockersToNextGrade` entries. The active
+JavaScript lint waiver has been retired; the score remains B because the
+A-grade budgets and real-path quality lanes are present but still early in
+their enforcement history.
 
 The practical target is:
 
@@ -154,17 +154,17 @@ make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"
 
 Observed results:
 
-| Gate                      | Result | Notes                                                                                                              |
-| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| Package architecture      | Pass   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                                  |
-| Prettier check            | Pass   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                                  |
-| Quality waivers           | Pass   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.                   |
-| Python ruff via `uv run`  | Pass   | `uv run ruff check bim_ai tests scripts` is green.                                                                 |
-| Frontend lint             | Fail   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked by `CQW-2026-001` while outside the B gate.   |
-| Frontend unit tests       | Pass   | `671` test files / `5466` tests pass with test i18n, fetch, canvas, and React key warnings quieted.                |
-| Frontend typecheck        | Pass   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                    |
-| Narrow backend test       | Pass   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
-| Makefile Python ruff path | Pass   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.       |
+| Gate                      | Result | Notes                                                                                                               |
+| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| Package architecture      | Pass   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                                   |
+| Prettier check            | Pass   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                                   |
+| Quality waivers           | Pass   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.                    |
+| Python ruff via `uv run`  | Pass   | `uv run ruff check bim_ai tests scripts` is green.                                                                  |
+| Frontend lint             | Pass   | `pnpm lint` is green and strict verification now runs the full lint gate instead of the temporary lint-budget gate. |
+| Frontend unit tests       | Pass   | `671` test files / `5466` tests pass with test i18n, fetch, canvas, and React key warnings quieted.                 |
+| Frontend typecheck        | Pass   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                     |
+| Narrow backend test       | Pass   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`.  |
+| Makefile Python ruff path | Pass   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.        |
 
 Code scale snapshot:
 
@@ -429,6 +429,11 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
   dimension stacking, cut-geometry, snapshot, and quick-access model shapes;
   `pnpm js-lint:budget` is now ratcheted to `2` errors / `0` warnings /
   `2` files, with `@typescript-eslint/ban-ts-comment` down to `2`.
+- 2026-05-20: removed the final `@ts-nocheck` headers from the extracted plan
+  keyboard aux handler and viewport scene-effects hook by typing their injected
+  refs, helpers, builder functions, and store-derived values. `pnpm lint` is
+  green, `CQW-2026-001` is removed, `pnpm verify:strict` runs full lint, and
+  the zeroed `pnpm js-lint:budget` remains as a regression tripwire.
 
 ---
 

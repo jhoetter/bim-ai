@@ -1,17 +1,4 @@
 {
   "schemaVersion": 1,
-  "waivers": [
-    {
-      "id": "CQW-2026-001",
-      "check": "javascript-eslint-gate",
-      "paths": ["packages/**/*.ts", "packages/**/*.tsx"],
-      "owner": "frontend-quality",
-      "reason": "Existing frontend ESLint backlog is bounded by the JavaScript lint budget gate while the B-grade gate keeps strict typecheck, tests, and build green.",
-      "trackerId": "CQ-2026-02",
-      "created": "2026-05-19",
-      "expires": "2026-06-30",
-      "severity": "P1",
-      "replacementPlan": "Keep pnpm js-lint:budget green so the backlog cannot grow, reduce the remaining frontend lint counts, then replace the budget waiver with the full lint-js gate."
-    }
-  ]
+  "waivers": []
 }

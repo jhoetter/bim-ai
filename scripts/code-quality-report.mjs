@@ -672,11 +672,15 @@ function computeGrade({
   const hasSecurityHygiene = Boolean(securityGates.hygieneScript);
   const hasMaintainabilityBudgetGate = Boolean(scripts.root['maintainability:budgets']);
   const hasJsLintBudgetGate = Boolean(scripts.root['js-lint:budget']);
+  const hasJsLintFullGate = Boolean(scripts.root.lint);
   const strictIncludesJsLintBudget = Boolean(
     scripts.root['verify:strict']?.includes('js-lint:budget'),
   );
+  const strictIncludesJsLintFullGate = Boolean(
+    scripts.root['verify:strict']?.includes('pnpm lint'),
+  );
 
-  let score = 7.5;
+  let score = 8.0;
   const blockersToNextGrade = [];
 
   if (!hasStrictGate || p0Open.length > 0 || expiredBlockingWaivers.length > 0) {
@@ -692,8 +696,11 @@ function computeGrade({
   if (!hasMaintainabilityBudgetGate) {
     blockersToNextGrade.push('maintainability budget gate is not wired into package scripts');
   }
-  if (!hasJsLintBudgetGate || !strictIncludesJsLintBudget || !jsLintBudgets) {
-    blockersToNextGrade.push('JavaScript lint budget gate is not wired into strict verification');
+  if (
+    !(hasJsLintFullGate && strictIncludesJsLintFullGate) &&
+    !(hasJsLintBudgetGate && strictIncludesJsLintBudget && jsLintBudgets)
+  ) {
+    blockersToNextGrade.push('JavaScript lint gate is not wired into strict verification');
   }
   if (!hasSecurityHygiene || !securityGates.ciRunsJsAudit || !securityGates.ciRunsPythonAudit) {
     blockersToNextGrade.push('security hygiene and dependency audit gates are not fully wired');
@@ -912,7 +919,9 @@ function buildReport() {
     jsLint: {
       budget: budgetConfig.jsLintBudgets ?? null,
       script: scripts.root['js-lint:budget'] ?? null,
+      fullLintScript: scripts.root.lint ?? null,
       strictIncludesBudget: Boolean(scripts.root['verify:strict']?.includes('js-lint:budget')),
+      strictIncludesFullLint: Boolean(scripts.root['verify:strict']?.includes('pnpm lint')),
     },
     repositoryHygiene: {
       trackedArtifactCount: artifacts.length,

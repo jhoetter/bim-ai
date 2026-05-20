@@ -4,12 +4,12 @@ Last updated: 2026-05-20
 
 Purpose: retire `CQW-2026-001` by reducing the `@bim-ai/web` ESLint backlog to
 zero, ratcheting the automated lint budget downward after each safe slice, and
-then replacing `pnpm js-lint:budget` with the full `pnpm lint` / `make lint-js`
-gate in strict verification.
+then replacing the temporary `pnpm js-lint:budget` waiver gate with the full
+`pnpm lint` gate in strict verification.
 
-The source of truth for pass/fail is `spec/code-quality-budgets.json` plus
-`pnpm js-lint:budget`. This tracker records the execution plan and completion
-evidence only.
+The source of truth for pass/fail is now the full `pnpm lint` gate. The zeroed
+`spec/code-quality-budgets.json` JavaScript lint budget remains as a
+machine-readable regression tripwire and historical trend record.
 
 ## Current Baseline
 
@@ -35,13 +35,13 @@ Rule budgets:
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 1              |
 
-Latest ratcheted budget after JSL-2026-05:
+Latest ratcheted budget after JSL-2026-07:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 2              |
+| Errors         | 0              |
 | Warnings       | 0              |
-| Affected files | 2              |
+| Affected files | 0              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -53,7 +53,7 @@ Rule budgets:
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 0              |
 | `fatal`                              | 0              |
-| `@typescript-eslint/ban-ts-comment`  | 2              |
+| `@typescript-eslint/ban-ts-comment`  | 0              |
 | `react/no-danger`                    | 0              |
 
 ## Workpackages
@@ -65,8 +65,8 @@ Rule budgets:
 | JSL-2026-03 | Done   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget is `0`.                                                    |
 | JSL-2026-04 | Done   | Type escapes                | `@typescript-eslint/no-explicit-any` and non-test type-escape budgets are `0`.              |
 | JSL-2026-05 | Done   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget is `0`.                                                |
-| JSL-2026-06 | Open   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
-| JSL-2026-07 | Open   | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
+| JSL-2026-06 | Done   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
+| JSL-2026-07 | Done   | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
 
 ## Execution Rules
 
@@ -165,3 +165,11 @@ Rule budgets:
   dimension stacking, cut geometry, snapshot hydration, and quick-access pins.
   The lint budget moved to `2` errors / `0` warnings / `2` files;
   `@typescript-eslint/ban-ts-comment` moved from `3` to `2`.
+- 2026-05-20: removed the final `@ts-nocheck` headers from
+  `plan/planCanvasKeyboardAuxHandlers.ts` and
+  `viewport/useViewportSceneEffects.ts` by replacing their unknown injected
+  argument maps with concrete ref, helper, builder, and store-derived types.
+  Full `pnpm lint` is green, `CQW-2026-001` is removed from
+  `spec/quality-waivers.json`, and `pnpm verify:strict` now runs the full lint
+  gate instead of the temporary lint-budget waiver gate. The lint budget is
+  locked at `0` errors / `0` warnings / `0` files.

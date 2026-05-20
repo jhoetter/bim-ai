@@ -1,10 +1,350 @@
-// @ts-nocheck
 import * as THREE from 'three';
-import type { Element, FamilyDefinition } from '@bim-ai/core';
+import type { Element, XY } from '@bim-ai/core';
+import type {
+  AlignState,
+  ArrayState,
+  BeamState,
+  BeamSystemState,
+  CeilingState,
+  ColumnAtGridsState,
+  ColumnState,
+  ConicalRoofState,
+  DetailFilledRegionState,
+  DetailLineState,
+  DomeRoofState,
+  ExcavationState,
+  GradedRegionState,
+  LineworkState,
+  MeasureAngleState,
+  MeasureArcState,
+  ModelLineState,
+  PermanentDimState,
+  PlaceGroupState,
+  RampState,
+  RevisionCloudState,
+  RoofByExtrusionState,
+  ScaleState,
+  ShaftState,
+  SpireRoofState,
+  SplitState,
+  SplitWallState,
+  StairLandingState,
+  StairRunState,
+  SteelConnectionState,
+  TerrainPadState,
+  TerrainPointState,
+  TerrainSplitState,
+  TrimState,
+  WallJoinState,
+  WallOpeningState,
+  cycleWallLocationLine as cycleWallLocationLineFn,
+  reduceAlign as reduceAlignFn,
+  reduceAreaBoundary as reduceAreaBoundaryFn,
+  reduceArray as reduceArrayFn,
+  reduceColumnAtGrids as reduceColumnAtGridsFn,
+  reduceConicalRoof as reduceConicalRoofFn,
+  reduceDetailFilledRegion as reduceDetailFilledRegionFn,
+  reduceDetailLine as reduceDetailLineFn,
+  reduceDomeRoof as reduceDomeRoofFn,
+  reduceExcavation as reduceExcavationFn,
+  reduceGradedRegion as reduceGradedRegionFn,
+  reduceLinework as reduceLineworkFn,
+  reduceMeasureAngle as reduceMeasureAngleFn,
+  reduceMeasureArc as reduceMeasureArcFn,
+  reducePermanentDim as reducePermanentDimFn,
+  reducePlaceGroup as reducePlaceGroupFn,
+  reduceRoofByExtrusion as reduceRoofByExtrusionFn,
+  reduceScale as reduceScaleFn,
+  reduceSpireRoof as reduceSpireRoofFn,
+  reduceSplit as reduceSplitFn,
+  reduceSplitWall as reduceSplitWallFn,
+  reduceStairLanding as reduceStairLandingFn,
+  reduceSteelConnection as reduceSteelConnectionFn,
+  reduceTerrainPad as reduceTerrainPadFn,
+  reduceTerrainPoint as reduceTerrainPointFn,
+  reduceTerrainSplit as reduceTerrainSplitFn,
+  reduceTrim as reduceTrimFn,
+  reduceWallJoin as reduceWallJoinFn,
+} from '../tools/toolGrammar';
+import type { ToggleableSnapKind } from './snapSettings';
 import { useBimStore } from '../state/store';
+import type { PlanTool } from '../state/store';
 import { useToolPrefs } from '../tools/toolPrefsStore';
+import type { FamilyDefinition } from '../families/types';
+import type {
+  copyElementsToClipboard as copyElementsToClipboardFn,
+  pasteElementsFromClipboard as pasteElementsFromClipboardFn,
+  pasteFromOSClipboard as pasteFromOSClipboardFn,
+} from '../clipboard/copyPaste';
+import type { buildScaleCommand as buildScaleCommandFn } from './scaleTool';
+import type {
+  linearArrayOffsets as linearArrayOffsetsFn,
+  radialArrayAngles as radialArrayAnglesFn,
+  radialOffsetForElement as radialOffsetForElementFn,
+} from './arrayTool';
+import type { columnPositionsAtGridIntersections as columnPositionsAtGridIntersectionsFn } from './columnAtGrids';
+import { createSimilarPayload } from './createSimilar';
+import type { handleDblClickDispatch as handleDblClickDispatchFn } from './doubleClickDispatch';
+import type { DraftMutation, GripDescriptor } from './gripProtocol';
+import { HALF_MAX, HALF_MIN } from './interaction/planCameraMath';
+import type { rayToPlanMm as rayToPlanMmFn } from './interaction/planCameraMath';
+import type {
+  resolveSnapOverrideShortcut as resolveSnapOverrideShortcutFn,
+  SnapOverrideKeyState,
+} from './interaction/snapOverrideShortcuts';
+import type { Draft } from './planCanvasHelpers';
+import type {
+  PlanCanvasElementContextMenuState,
+  PlanCanvasUnhideContextMenuState,
+  PlanCanvasWallContextMenuState,
+  PlanCanvasWallJoinContextMenuState,
+} from './PlanCanvasContextOverlays';
+import { PlanCamera } from './planCanvasState';
+import type { PlanSemanticKind, PlanViewResolvedDisplay } from './planProjection';
+import type { parseTypedRotateAngle as parseTypedRotateAngleFn } from './rotateTool';
+import type { selectNextConnectedWallByTab as selectNextConnectedWallByTabFn } from './wallChainSelection';
+import type { nextTabSelection as nextTabSelectionFn } from './tabCycleSelection';
+import type { bumpSnapTabCycle as bumpSnapTabCycleFn, SnapTabCycleState } from './snapTabCycle';
+import type { SnapHit, SnapKind } from './snapEngine';
+import type { splitToposolid as splitToposolidFn } from './terrainSplit';
 
-export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown>) {
+type MutableRef<T> = { current: T };
+type StateSetter<T> = (value: T | ((prev: T) => T)) => void;
+type NumericInputState = { value: string; pxX: number; pxY: number };
+type ScreenPoint = { pxX: number; pxY: number };
+type SemanticCommand = Record<string, unknown>;
+type ParseDimensionResult = { ok: true; mm: number } | { ok: false; error?: string };
+type ParseDimensionInput = (value: string) => ParseDimensionResult;
+type PlanCameraMutableState = { camX: number; camZ: number; half: number };
+type PlanDragState = {
+  dragging: boolean;
+  lastXmm: number;
+  lastZmm: number;
+  camX: number;
+  camZ: number;
+};
+type PlanMarqueeState = {
+  active: boolean;
+  sx: number;
+  sy: number;
+  ex: number;
+  ey: number;
+  direction: 'left-to-right' | 'right-to-left' | null;
+};
+type SnapGlyphState = {
+  candidates: Array<{
+    kind: SnapKind;
+    pxX: number;
+    pxY: number;
+    extensionFromPxX?: number;
+    extensionFromPxY?: number;
+    associative?: boolean;
+  }>;
+  activeIndex: number;
+};
+type GripDragState = {
+  grip: GripDescriptor;
+  startWorldMm: XY;
+  lastDeltaMm: XY;
+};
+type MeasureAngleReadout = { angleDeg: number };
+type MeasureArcReadout = { arcLengthMm: number; radiusMm: number };
+
+function familyIdForElement(element: Element): string | undefined {
+  return 'familyId' in element && typeof element.familyId === 'string'
+    ? element.familyId
+    : undefined;
+}
+
+export interface PlanCanvasKeyboardAuxHandlerArgs {
+  activateElevationView: (id: string) => void;
+  activatePlanView: (id: string) => void;
+  activeLevelResolvedId: string | undefined;
+  activePlanViewId: string | null | undefined;
+  alignStateRef: MutableRef<AlignState>;
+  arrayPhase: ArrayState['phase'];
+  arrayStateRef: MutableRef<ArrayState>;
+  beamStateRef: MutableRef<BeamState>;
+  beamSystemStateRef: MutableRef<BeamSystemState>;
+  buildScaleCommand: typeof buildScaleCommandFn;
+  bumpGeom: StateSetter<number>;
+  bumpSnapTabCycle: typeof bumpSnapTabCycleFn;
+  camNow: THREE.Camera;
+  camRef: MutableRef<PlanCameraMutableState>;
+  ceilingStateRef: MutableRef<CeilingState>;
+  clearMarqueeLine: () => void;
+  clearPreview: () => void;
+  columnAtGridsStateRef: MutableRef<ColumnAtGridsState>;
+  columnPositionsAtGridIntersections: typeof columnPositionsAtGridIntersectionsFn;
+  columnStateRef: MutableRef<ColumnState>;
+  commitAreaBoundary: (boundaryMm: XY[]) => void;
+  conicalRoofStateRef: MutableRef<ConicalRoofState>;
+  copyAnchorRef: MutableRef<XY | null>;
+  copyElementsToClipboard: typeof copyElementsToClipboardFn;
+  cycleWallLocationLine: typeof cycleWallLocationLineFn;
+  detailFilledRegionStateRef: MutableRef<DetailFilledRegionState>;
+  detailLineStateRef: MutableRef<DetailLineState>;
+  dimSnapCirclesRef: MutableRef<THREE.Mesh[]>;
+  display: PlanViewResolvedDisplay;
+  displayLevelId: string | undefined;
+  domeRoofStateRef: MutableRef<DomeRoofState>;
+  draftRef: MutableRef<Draft | undefined>;
+  dragRef: MutableRef<PlanDragState>;
+  elementsById: Record<string, Element>;
+  elementInSelectionBoxMm: (
+    el: Element,
+    boxMinMm: XY,
+    boxMaxMm: XY,
+    mode: 'window' | 'crossing',
+  ) => boolean;
+  excavationStateRef: MutableRef<ExcavationState>;
+  getBuiltInFamilyById: (id: string) => FamilyDefinition | undefined;
+  gradedRegionStateRef: MutableRef<GradedRegionState>;
+  gripDragRef: MutableRef<GripDragState | null>;
+  grp: THREE.Group;
+  handleDblClickDispatch: typeof handleDblClickDispatchFn;
+  hudMmRef: MutableRef<XY | undefined>;
+  initialBeamState: () => BeamState;
+  initialBeamSystemState: () => BeamSystemState;
+  initialCeilingState: () => CeilingState;
+  initialColumnState: () => ColumnState;
+  initialExcavationState: () => ExcavationState;
+  initialModelLineState: () => ModelLineState;
+  initialRampState: () => RampState;
+  initialRevisionCloudState: () => RevisionCloudState;
+  initialShaftState: () => ShaftState;
+  initialStairLandingState: () => StairLandingState;
+  initialStairRunState: () => StairRunState;
+  initialTerrainPadState: () => TerrainPadState;
+  initialTerrainPointState: () => TerrainPointState;
+  initialWallOpeningState: () => WallOpeningState;
+  lastKeyRef: MutableRef<SnapOverrideKeyState>;
+  lastPlotScaleRef: MutableRef<number>;
+  lastSnapHitsRef: MutableRef<SnapHit[]>;
+  linearArrayOffsets: typeof linearArrayOffsetsFn;
+  lineworkStateRef: MutableRef<LineworkState>;
+  lvlId: string | undefined;
+  marqueeRef: MutableRef<PlanMarqueeState>;
+  measureAngleStateRef: MutableRef<MeasureAngleState>;
+  measureArcStateRef: MutableRef<MeasureArcState>;
+  mirrorAxisStartRef: MutableRef<XY | null>;
+  modelLineStateRef: MutableRef<ModelLineState>;
+  moveAnchorRef: MutableRef<XY | null>;
+  nextTabSelection: typeof nextTabSelectionFn;
+  numericInputRef: MutableRef<NumericInputState | null>;
+  onSemanticCommand: (cmd: SemanticCommand) => void | Promise<void>;
+  parseDimensionInput: ParseDimensionInput;
+  parseTypedRotateAngle: typeof parseTypedRotateAngleFn;
+  pasteElementsFromClipboard: typeof pasteElementsFromClipboardFn;
+  pasteFromOSClipboard: typeof pasteFromOSClipboardFn;
+  pendingComponentRotationDeg: number;
+  pendingCsChordRef: MutableRef<ReturnType<typeof setTimeout> | null>;
+  pendingPinChordRef: MutableRef<ReturnType<typeof setTimeout> | null>;
+  permanentDimStateRef: MutableRef<PermanentDimState>;
+  placeGroupStateRef: MutableRef<PlaceGroupState>;
+  planTool: PlanTool;
+  previewRef: MutableRef<THREE.Line | null>;
+  radialArrayAngles: typeof radialArrayAnglesFn;
+  radialOffsetForElement: typeof radialOffsetForElementFn;
+  rampStateRef: MutableRef<RampState>;
+  rayToPlanMm: typeof rayToPlanMmFn;
+  reduceAlign: typeof reduceAlignFn;
+  reduceAreaBoundary: typeof reduceAreaBoundaryFn;
+  reduceArray: typeof reduceArrayFn;
+  reduceColumnAtGrids: typeof reduceColumnAtGridsFn;
+  reduceConicalRoof: typeof reduceConicalRoofFn;
+  reduceDetailFilledRegion: typeof reduceDetailFilledRegionFn;
+  reduceDetailLine: typeof reduceDetailLineFn;
+  reduceDomeRoof: typeof reduceDomeRoofFn;
+  reduceExcavation: typeof reduceExcavationFn;
+  reduceGradedRegion: typeof reduceGradedRegionFn;
+  reduceLinework: typeof reduceLineworkFn;
+  reduceMeasureAngle: typeof reduceMeasureAngleFn;
+  reduceMeasureArc: typeof reduceMeasureArcFn;
+  reducePermanentDim: typeof reducePermanentDimFn;
+  reducePlaceGroup: typeof reducePlaceGroupFn;
+  reduceRoofByExtrusion: typeof reduceRoofByExtrusionFn;
+  reduceScale: typeof reduceScaleFn;
+  reduceSpireRoof: typeof reduceSpireRoofFn;
+  reduceSplit: typeof reduceSplitFn;
+  reduceSplitWall: typeof reduceSplitWallFn;
+  reduceStairLanding: typeof reduceStairLandingFn;
+  reduceSteelConnection: typeof reduceSteelConnectionFn;
+  reduceTerrainPad: typeof reduceTerrainPadFn;
+  reduceTerrainPoint: typeof reduceTerrainPointFn;
+  reduceTerrainSplit: typeof reduceTerrainSplitFn;
+  reduceTrim: typeof reduceTrimFn;
+  reduceWallJoin: typeof reduceWallJoinFn;
+  resizeCam: () => void;
+  resolveSnapOverrideShortcut: typeof resolveSnapOverrideShortcutFn;
+  revealHiddenMode: boolean;
+  revisionCloudStateRef: MutableRef<RevisionCloudState>;
+  rnd: THREE.WebGLRenderer;
+  roofByExtrusionStateRef: MutableRef<RoofByExtrusionState>;
+  rotateAnchorRef: MutableRef<XY | null>;
+  rotateReferenceRef: MutableRef<XY | null>;
+  scalePhase: ScaleState['phase'];
+  scaleStateRef: MutableRef<ScaleState>;
+  selectEl: (id: string | undefined) => void;
+  selectNextConnectedWallByTab: typeof selectNextConnectedWallByTabFn;
+  selectedId: string | undefined;
+  selectedIds: string[];
+  setActiveGripId: StateSetter<string | null>;
+  setActiveLevelId: (id: string) => void;
+  setAlignReferenceMm: StateSetter<XY | null>;
+  setArrayPhase: StateSetter<ArrayState['phase']>;
+  setCanvasCtxMenu: StateSetter<{ x: number; y: number } | null>;
+  setCopyAnchorSet: StateSetter<boolean>;
+  setDispatchColumnAtGridsSelectAll: (value: null) => void;
+  setDraftMutation: StateSetter<DraftMutation | null>;
+  setElementCtxMenu: StateSetter<PlanCanvasElementContextMenuState | null>;
+  setMeasureAngleReadout: StateSetter<MeasureAngleReadout | null>;
+  setMeasureArcReadout: StateSetter<MeasureArcReadout | null>;
+  setMirrorAxisSet: StateSetter<boolean>;
+  setMoveAnchorSet: StateSetter<boolean>;
+  setNumericInput: StateSetter<NumericInputState | null>;
+  setPendingComponentRotationDeg: (value: number) => void;
+  setPlanTool: (tool: PlanTool) => void;
+  setRoofByExtrusionPhase: StateSetter<RoofByExtrusionState['phase']>;
+  setRotateAnchorSet: StateSetter<boolean>;
+  setRotateReferenceSet: StateSetter<boolean>;
+  setScalePhase: StateSetter<ScaleState['phase']>;
+  setSnapGlyphState: StateSetter<SnapGlyphState>;
+  setSnapOverrideDisplay: StateSetter<ToggleableSnapKind | null>;
+  setTrimExtendFirstWallSet: StateSetter<boolean>;
+  setUnhideContextMenu: StateSetter<PlanCanvasUnhideContextMenuState | null>;
+  setWallContextMenu: StateSetter<PlanCanvasWallContextMenuState | null>;
+  setWallDraftNotice: StateSetter<string | null>;
+  setWallJoinCtxMenu: StateSetter<PlanCanvasWallJoinContextMenuState | null>;
+  setWallPickLineHint: (value: null) => void;
+  shaftStateRef: MutableRef<ShaftState>;
+  snapOverrideRef: MutableRef<ToggleableSnapKind | null>;
+  snapTabCycleRef: MutableRef<SnapTabCycleState>;
+  spaceDownRef: MutableRef<boolean>;
+  spireRoofStateRef: MutableRef<SpireRoofState>;
+  splitStateRef: MutableRef<SplitState>;
+  splitToposolid: typeof splitToposolidFn;
+  splitWallStateRef: MutableRef<SplitWallState>;
+  stairLandingStateRef: MutableRef<StairLandingState>;
+  stairRunStateRef: MutableRef<StairRunState>;
+  stairStateRef: MutableRef<BeamState>;
+  steelConnectionStateRef: MutableRef<SteelConnectionState>;
+  terrainPadStateRef: MutableRef<TerrainPadState>;
+  terrainPointStateRef: MutableRef<TerrainPointState>;
+  terrainSplitStateRef: MutableRef<TerrainSplitState>;
+  trimExtendFirstWallRef: MutableRef<string | null>;
+  trimStateRef: MutableRef<TrimState>;
+  wallFlipRef: MutableRef<boolean>;
+  wallJoinStateRef: MutableRef<WallJoinState>;
+  wallOpeningAnchorRef: MutableRef<XY | null>;
+  wallOpeningStateRef: MutableRef<WallOpeningState>;
+  wallTabCycleIndexRef: MutableRef<{ selId: string; index: number }>;
+  worldToScreen: (point: XY) => ScreenPoint;
+}
+
+export function createPlanCanvasKeyboardAuxHandlers<T extends PlanCanvasKeyboardAuxHandlerArgs>(
+  args: T,
+) {
   const {
     activateElevationView,
     activatePlanView,
@@ -38,10 +378,12 @@ export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown
     displayLevelId,
     domeRoofStateRef,
     draftRef,
+    dragRef,
     elementsById,
     elementInSelectionBoxMm,
     excavationStateRef,
     getBuiltInFamilyById,
+    gradedRegionStateRef,
     gripDragRef,
     grp,
     handleDblClickDispatch,
@@ -362,13 +704,12 @@ export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown
         setScalePhase(state.phase);
         setNumericInput(null);
         if (effect.commitScale && selectedId) {
-          void onSemanticCommand(
-            buildScaleCommand(
-              selectedId,
-              effect.commitScale.originMm,
-              effect.commitScale.factor,
-            ) as unknown as Record<string, unknown>,
+          const scaleCommand = buildScaleCommand(
+            selectedId,
+            effect.commitScale.originMm,
+            effect.commitScale.factor,
           );
+          void onSemanticCommand({ ...scaleCommand });
         }
         bumpGeom((x) => x + 1);
         return;
@@ -523,7 +864,7 @@ export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown
         void onSemanticCommand({ type: 'finishEditGroup' });
         return;
       }
-      // Cancel any active snap override.
+      // Cancel the active snap override.
       snapOverrideRef.current = null;
       setSnapOverrideDisplay(null);
       const hadDraft = Boolean(draftRef.current);
@@ -1224,9 +1565,9 @@ export function createPlanCanvasKeyboardAuxHandlers(args: Record<string, unknown
       const localUserFamilies = Object.values(st.userFamilies ?? {});
       const localBuiltins: FamilyDefinition[] = [];
       for (const id of Object.keys(st.elementsById)) {
-        const el = st.elementsById[id] as unknown as { familyId?: string };
-        if (typeof el.familyId === 'string') {
-          const def = getBuiltInFamilyById(el.familyId);
+        const familyId = familyIdForElement(st.elementsById[id]);
+        if (familyId) {
+          const def = getBuiltInFamilyById(familyId);
           if (def && !localBuiltins.some((b) => b.id === def.id)) localBuiltins.push(def);
         }
       }
