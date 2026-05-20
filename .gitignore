@@ -24,7 +24,10 @@ app/.venv/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
-# Seed artifacts are intentionally versioned. Each checked-in folder must be a
-# self-contained, portable seed package consumable by `make seed name=<name>`.
+tmp/
+app/data/
+# Generated/local seed artifacts are not committed by default. Promote a seed
+# package deliberately by force-adding a reviewed, portable artifact.
+seed-artifacts/target-house-*/
 .entire/
 .superset/
