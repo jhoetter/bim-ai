@@ -903,6 +903,7 @@ def _build_phase_authoring_spec(
             str(fact.get("factId") or "")
         )
     actions_by_phase: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    readback_by_phase: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for action in authoring_plan.get("actions") or []:
         if not isinstance(action, dict):
             continue
@@ -910,6 +911,8 @@ def _build_phase_authoring_spec(
         fact = next((row for row in facts if str(row.get("factId") or "") == fact_id), {})
         phase = PHASE_BY_FACT_KIND.get(str(fact.get("kind") or ""), "P0-source-inventory")
         actions_by_phase[phase].append(action)
+        if isinstance(action.get("expectedReadback"), dict):
+            readback_by_phase[phase].append(action["expectedReadback"])
     resolvers_by_phase: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for item in resolver_worklist.get("items") or []:
         if not isinstance(item, dict):
@@ -931,6 +934,7 @@ def _build_phase_authoring_spec(
         status = "ready" if fact_ids and not blocker_rows else "partial" if fact_ids else "blocked"
         if phase_id in {"P14-validation", "P15-final-acceptance"} and conflicts.get("openConflictCount"):
             status = "blocked"
+        expected_readback = readback_by_phase.get(phase_id, [])
         phases.append(
             {
                 "phaseId": phase_id,
@@ -939,6 +943,8 @@ def _build_phase_authoring_spec(
                 "authoringActions": actions_by_phase.get(phase_id, []),
                 "resolverItems": resolvers_by_phase.get(phase_id, []),
                 "requiredQueriesBefore": ["model.summary", "query.levels", "query.types"],
+                "requiredQueriesAfter": _required_queries_after_for_phase(expected_readback),
+                "expectedReadback": expected_readback,
                 "requiredQaAfter": ["qa.advisor", "qa.constructability", "qa.integrity_preflight"],
                 "acceptanceChecks": _acceptance_checks_for_phase(phase_id),
                 "blockers": blocker_rows,
@@ -1453,6 +1459,17 @@ def _expected_resolver_output(resolver: str) -> list[str]:
     if "level" in resolver:
         return ["levelId", "confidence", "candidates"]
     return ["resolvedValue", "confidence", "candidates"]
+
+
+def _required_queries_after_for_phase(expected_readback: list[dict[str, Any]]) -> list[str]:
+    queries = {"model.summary"}
+    for expectation in expected_readback:
+        if not isinstance(expectation, dict):
+            continue
+        for query in expectation.get("querySurfaces") or []:
+            if query:
+                queries.add(str(query))
+    return sorted(queries)
 
 
 def _acceptance_checks_for_phase(phase_id: str) -> list[str]:

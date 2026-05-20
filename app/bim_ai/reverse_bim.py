@@ -323,6 +323,7 @@ def plan_mcp_authoring_actions(
             continue
 
         requirements = _requirements_for_tool(tool, value)
+        payload_draft = _payload_draft_for_tool(tool, value)
         ready = not requirements
         action = {
             "factId": fact_id,
@@ -333,7 +334,13 @@ def plan_mcp_authoring_actions(
             "sourceConfidence": fact.get("confidence"),
             "sourceProvenance": fact.get("provenance"),
             "requiredBeforeDryRun": requirements,
-            "payloadDraft": _payload_draft_for_tool(tool, value),
+            "payloadDraft": payload_draft,
+            "expectedReadback": _expected_readback_for_tool(
+                tool=tool,
+                payload=payload_draft,
+                source_value=value,
+                fact_id=fact_id,
+            ),
             "transactionPolicy": {
                 "dryRunFirst": True,
                 "commitVia": "model.commit_bundle",
@@ -435,6 +442,7 @@ def build_mcp_authoring_readiness(
             "readyForMcpAuthoring": status == "ready_for_mcp_authoring",
             "mcpTool": action.get("tool"),
             "mcpInputDraft": action.get("payloadDraft"),
+            "expectedReadback": action.get("expectedReadback"),
             "requiredBeforeMcp": requirements,
             "sourceConfidence": fact.get("confidence"),
             "sourceProvenance": fact.get("provenance"),
@@ -704,6 +712,176 @@ def _payload_draft_for_tool(tool: str, value: dict[str, Any]) -> dict[str, Any]:
         draft.setdefault("heightMm", 1200)
         draft.setdefault("sillHeightMm", 900)
     return draft
+
+
+def _expected_readback_for_tool(
+    *,
+    tool: str,
+    payload: dict[str, Any],
+    source_value: dict[str, Any],
+    fact_id: str,
+) -> dict[str, Any]:
+    element_kind = _expected_element_kind(tool, payload)
+    element_count = _expected_element_count(tool, payload)
+    geometry_fields = _expected_geometry_fields(tool, payload)
+    parameter_fields = _expected_parameter_fields(tool, payload)
+    host_fields = _expected_host_fields(tool, payload)
+    return {
+        "format": "reverseBimExpectedReadback_v1",
+        "expectationId": f"readback:{fact_id}",
+        "sourceFactId": fact_id,
+        "mcpTool": tool,
+        "querySurfaces": _query_surfaces_for_tool(tool),
+        "expected": {
+            "elementKind": element_kind,
+            "elementCount": element_count,
+            "elementId": payload.get("id") or payload.get("elementId"),
+            "levelId": payload.get("levelId") or payload.get("referenceLevelId"),
+            "hostIds": host_fields,
+            "geometry": geometry_fields,
+            "parameters": parameter_fields,
+        },
+        "tolerances": _readback_tolerances(tool),
+        "sourceComparison": {
+            "sourceValueKeys": sorted(source_value.keys()),
+            "requiresOverlayCheck": tool
+            in {
+                "author.wall",
+                "author.wall_chain",
+                "author.floor_from_boundary",
+                "author.room_outline",
+                "author.roof_from_boundary",
+                "author.dormer_on_roof",
+                "opening.door_on_wall",
+                "opening.window_on_wall",
+                "opening.roof_opening",
+                "opening.slab_opening",
+                "author.stair_between_levels",
+                "site.property-line-create",
+                "toposolid-create",
+            },
+        },
+        "requiredAfterCommit": [
+            "created_or_modified_element_ids_present",
+            "source_fact_reference_preserved",
+            "query_readback_matches_expected_kind_count_and_geometry",
+        ],
+        "blockingFailureCodes": [
+            "readback_expected_element_missing",
+            "readback_kind_mismatch",
+            "readback_geometry_mismatch",
+            "readback_host_mismatch",
+            "readback_source_fact_ref_missing",
+        ],
+    }
+
+
+def _expected_element_kind(tool: str, payload: dict[str, Any]) -> str:
+    mapping = {
+        "author.level": "level",
+        "author.wall": "wall",
+        "author.wall_chain": "wall",
+        "author.floor_from_boundary": "floor",
+        "author.room_outline": "room",
+        "opening.door_on_wall": "door",
+        "opening.window_on_wall": "window",
+        "opening.roof_opening": "roof_opening",
+        "author.roof_from_boundary": "roof",
+        "author.dormer_on_roof": "dormer",
+        "author.stair_between_levels": "stair",
+        "opening.slab_opening": "slab_opening",
+        "site.property-line-create": "property_line",
+        "toposolid-create": "toposolid",
+    }
+    return mapping.get(tool, str(payload.get("kind") or "element"))
+
+
+def _expected_element_count(tool: str, payload: dict[str, Any]) -> dict[str, int]:
+    if tool == "author.wall_chain":
+        points = payload.get("points")
+        if isinstance(points, list):
+            segment_count = max(len(points) - 1, 0)
+            if payload.get("closed") and len(points) > 2:
+                segment_count += 1
+            return {"min": segment_count, "max": segment_count}
+    return {"min": 1, "max": 1}
+
+
+def _expected_geometry_fields(tool: str, payload: dict[str, Any]) -> dict[str, Any]:
+    fields = [
+        "start",
+        "end",
+        "points",
+        "boundaryMm",
+        "boundary",
+        "position",
+        "positionOnRoof",
+        "runStartMm",
+        "runEndMm",
+        "elevationPoints",
+        "contours",
+        "mesh",
+    ]
+    out = {field: payload[field] for field in fields if payload.get(field) is not None}
+    if tool in {"opening.door_on_wall", "opening.window_on_wall"} and payload.get("alongT") is not None:
+        out["alongT"] = payload.get("alongT")
+    return out
+
+
+def _expected_parameter_fields(tool: str, payload: dict[str, Any]) -> dict[str, Any]:
+    fields = [
+        "name",
+        "elevationMm",
+        "thicknessMm",
+        "widthMm",
+        "heightMm",
+        "depthMm",
+        "wallHeightMm",
+        "sillHeightMm",
+        "stepCount",
+        "pitchDeg",
+        "eaveHeightMm",
+        "ridgeHeightMm",
+        "roofType",
+        "dormerRoofKind",
+        "materialKey",
+        "wallTypeId",
+        "roofTypeId",
+        "floorTypeId",
+    ]
+    return {field: payload[field] for field in fields if payload.get(field) is not None}
+
+
+def _expected_host_fields(tool: str, payload: dict[str, Any]) -> dict[str, Any]:
+    fields = ["wallId", "hostWallRef", "hostRoofId", "hostFloorRef", "baseLevelId", "topLevelId"]
+    return {field: payload[field] for field in fields if payload.get(field) is not None}
+
+
+def _query_surfaces_for_tool(tool: str) -> list[str]:
+    if tool.startswith("opening."):
+        return ["model.summary", "query.elements", "query.hosted_openings", "qa.physical_topology"]
+    if tool in {"author.stair_between_levels", "opening.slab_opening"}:
+        return ["model.summary", "query.elements", "query.vertical_circulation", "qa.physical_topology"]
+    if tool in {"author.room_outline"}:
+        return ["model.summary", "query.rooms", "qa.physical_topology"]
+    if tool in {"site.property-line-create", "toposolid-create"}:
+        return ["model.summary", "query.site", "qa.source_overlay_compare"]
+    return ["model.summary", "query.elements"]
+
+
+def _readback_tolerances(tool: str) -> dict[str, float]:
+    tolerances = {
+        "lengthMm": 25.0,
+        "pointMm": 25.0,
+        "areaM2": 0.25,
+        "angleDeg": 0.75,
+        "positionAlongT": 0.02,
+    }
+    if tool in {"opening.door_on_wall", "opening.window_on_wall", "opening.roof_opening"}:
+        tolerances["lengthMm"] = 15.0
+    if tool in {"author.room_outline"}:
+        tolerances["areaM2"] = 0.15
+    return tolerances
 
 
 def _non_authoring_status(kind: str, value: dict[str, Any] | None = None) -> str:

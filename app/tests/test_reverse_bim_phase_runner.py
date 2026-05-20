@@ -88,3 +88,58 @@ def test_phase_run_blocks_skipped_or_incomplete_packets() -> None:
     later_codes = {row["code"] for row in report["phases"][1]["blockers"]}
     assert "phase_previous_phase_blocked" in later_codes
     assert "phase_packet_missing_source_facts" in later_codes
+
+
+def test_phase_run_requires_expected_readback_evidence() -> None:
+    spec = {
+        "format": "reverseBimPhaseAuthoringSpec_v1",
+        "phases": [
+            {
+                "phaseId": "P4-floor-plan-topology",
+                "sourceFactIds": ["wall-1"],
+                "authoringActions": [{"factId": "wall-1"}],
+                "expectedReadback": [
+                    {
+                        "expectationId": "readback:wall-1",
+                        "sourceFactId": "wall-1",
+                        "expected": {"elementKind": "wall", "elementCount": {"min": 1, "max": 1}},
+                    }
+                ],
+            }
+        ],
+    }
+    missing = build_reverse_bim_phase_run_report(
+        phase_authoring_spec=spec,
+        phase_packets=[
+            {
+                "phaseId": "P4-floor-plan-topology",
+                "acceptedForNextPhase": True,
+                "sourceFactIds": ["wall-1"],
+            }
+        ],
+    )
+    accepted = build_reverse_bim_phase_run_report(
+        phase_authoring_spec=spec,
+        phase_packets=[
+            {
+                "phaseId": "P4-floor-plan-topology",
+                "acceptedForNextPhase": True,
+                "sourceFactIds": ["wall-1"],
+                "evidencePackage": {
+                    "readback": [
+                        {
+                            "expectationId": "readback:wall-1",
+                            "sourceFactId": "wall-1",
+                            "status": "matched",
+                        }
+                    ]
+                },
+            }
+        ],
+    )
+
+    assert missing["ok"] is False
+    assert missing["summary"]["missingReadbackExpectationPhaseCount"] == 1
+    assert missing["phases"][0]["blockers"][0]["code"] == "phase_packet_missing_readback_expectations"
+    assert accepted["ok"] is True
+    assert accepted["phases"][0]["readbackEvidenceCount"] == 1

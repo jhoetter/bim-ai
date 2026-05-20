@@ -196,9 +196,12 @@ def test_authoring_plan_maps_ai_facts_to_mcp_tools() -> None:
     assert plan["format"] == "reverseBimMcpAuthoringPlan_v1"
     assert plan["actions"][0]["tool"] == "author.wall"
     assert plan["actions"][0]["readyForDryRun"] is True
+    assert plan["actions"][0]["expectedReadback"]["expected"]["elementKind"] == "wall"
+    assert "query.elements" in plan["actions"][0]["expectedReadback"]["querySurfaces"]
     assert plan["actions"][1]["tool"] == "opening.door_on_wall"
     assert plan["actions"][1]["readyForDryRun"] is False
     assert plan["actions"][1]["requiredBeforeDryRun"][0]["resolver"] == "resolve.wall_by_line"
+    assert plan["actions"][1]["expectedReadback"]["expected"]["elementKind"] == "door"
 
 
 def test_ai_visual_reader_normalization_builds_mcp_feedable_facts() -> None:
@@ -349,6 +352,7 @@ def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinem
 
     rows = {row["factId"]: row for row in readiness["rows"]}
     assert rows["ai-srcfact-room-1"]["status"] == "ready_for_mcp_authoring"
+    assert rows["ai-srcfact-room-1"]["expectedReadback"]["expected"]["elementKind"] == "room"
     assert rows["ai-srcfact-opening-1"]["status"] == "needs_mcp_resolver"
     assert rows["ai-srcfact-opening-1"]["requiredBeforeMcp"][0]["resolver"] == "resolve.wall_by_line"
     assert rows["ai-srcfact-roof-opening-1"]["mcpTool"] == "opening.roof_opening"

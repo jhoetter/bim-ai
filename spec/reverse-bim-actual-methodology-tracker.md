@@ -380,10 +380,10 @@ Implementation status:
 
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
-| RBM5-001 | Authoring phase compiler | Partial | Source facts become phase actions with tool names, payloads, source refs, expected readback. |
+| RBM5-001 | Authoring phase compiler | Partial | Source facts become phase actions with tool names, payloads, source refs, and expected readback contracts. |
 | RBM5-002 | Host resolver worklist | Partial | Doors/windows/slab openings/dormers/stairs list resolver calls and ambiguity policy. |
 | RBM5-003 | Missing tool contract ledger | Partial | Any raw bundle/unsupported operation is surfaced as a product gap. |
-| RBM5-004 | Expected readback spec | Not started | Each action has expected element ids/kinds/geometry after commit. |
+| RBM5-004 | Expected readback spec | Partial | Each authoring action now carries `reverseBimExpectedReadback_v1`; `reverse_bim.phase_run` blocks missing/failed readback evidence. Full model-query diffing is still pending. |
 
 ## Phase 6: Live MCP Authoring
 
@@ -442,7 +442,7 @@ Implementation status:
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
 | RBM6-001 | Transactional phase runner | Partial | `reverse_bim.phase_run` now blocks skipped source-bearing phases and missing/unaccepted phase packets. Actual command execution/orchestration is still pending. |
-| RBM6-002 | Phase readback queries | Partial | Query endpoints return enough structured geometry for all modeled objects. |
+| RBM6-002 | Phase readback queries | Partial | Phase specs now list required post-commit query surfaces and expected readback rows; concrete query/diff adapters still need completion. |
 | RBM6-003 | Advisor/constructability gating | Done | Phase packets and final acceptance block Advisor/constructability warnings by default. |
 | RBM6-004 | Screenshot evidence capture | Not started | Runner captures plan/3D/elevation screenshots after each phase. |
 | RBM6-005 | Source overlay compare | Not started | Model geometry is compared against registered source drawings. |
@@ -693,6 +693,7 @@ Tests must encode the failure so it cannot regress.
 | TEST-008 | Fixture-only source facts | Source package is not accepted as reproducible. |
 | TEST-009 | Wall/floor/roof scope without material/layer source facts or explicit unavailable disposition | Folder output acceptance fails and emits material repair request. |
 | TEST-010 | Single or conflicting critical AI-reader passes | Reader consensus blocks source handoff. |
+| TEST-011 | Phase packet omits expected model readback evidence | Phase run fails before next phase. |
 
 ## Done Definition For The Overall Goal
 
