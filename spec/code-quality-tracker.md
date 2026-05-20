@@ -200,28 +200,28 @@ Largest current source files observed:
 
 ## Summary Board
 
-| ID         | Priority | Status  | Theme                                     | Exit signal                                                                              |
-| ---------- | -------- | ------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
-| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
-| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
-| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
-| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
-| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.         |
-| CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline. |
+| ID         | Priority | Status  | Theme                                     | Exit signal                                                                               |
+| ---------- | -------- | ------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                             |
+| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.           |
+| CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                        |
+| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.          |
+| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.           |
+| CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline.  |
 | CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices. |
-| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
-| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
-| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
-| CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                 |
-| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                            |
-| CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                |
-| CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.  |
-| CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.        |
-| CQ-2026-16 | P1       | Open    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                |
-| CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                 |
-| CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.         |
-| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.           |
-| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.         |
+| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.      |
+| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                      |
+| CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                        |
+| CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                  |
+| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                             |
+| CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
+| CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
+| CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
+| CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
+| CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
+| CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
+| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.            |
+| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.          |
 
 ---
 
@@ -1062,7 +1062,7 @@ can import across layers in ways that make extraction harder.
 ## CQ-2026-16 - Add Product-Quality UI Budgets
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: frontend CI, Playwright, accessibility, performance
 
 ### Problem
@@ -1096,6 +1096,17 @@ interaction smoke flows, bundle size, and basic render performance.
 - `packages/web/playwright.config.ts`
 - `packages/web/e2e/*`
 - `scripts/code-quality-report.mjs`
+
+### Progress Notes
+
+- 2026-05-20: `packages/web/e2e/cockpit-smoke.spec.ts` now seeds canonical
+  plan, 3D, sheet, and schedule tabs in the CI smoke path, enforces automated
+  workspace/plan/3D/tab-switch timing budgets, opens the command palette through
+  the keyboard path, selects a seeded wall through the real store for inspector
+  coverage, and verifies the 3D canvas has a live nonzero WebGL drawing buffer.
+- 2026-05-20: this remains Partial until accessibility checks and bundle-size
+  budgets are wired into the normal gate instead of relying only on the cockpit
+  smoke's landmark/dialog assertions and render timing limits.
 
 ---
 
