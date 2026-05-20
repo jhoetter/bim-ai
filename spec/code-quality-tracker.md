@@ -1204,6 +1204,10 @@ Initial thresholds can be advisory before becoming blocking:
   budget disposition alongside waivers, reports tracker IDs in the
   maintainability table, and adds ownership rows for top frontend hotspots that
   were previously unowned.
+- 2026-05-20: retired the broad frontend/backend file-size waivers
+  `CQW-2026-002` and `CQW-2026-003` after the god-file reductions and
+  tracker-owned budget dispositions made them redundant. `pnpm
+  maintainability:budgets` remains green without those waivers.
 - 2026-05-20: another PlanCanvas extraction slice moved repeated annotation
   label sprite canvas setup into `plan/planTextSprites.ts`; this keeps the file
   trending downward under its CQ-2026-04/CQ-2026-13 owner disposition.
@@ -1812,6 +1816,10 @@ must be data, not memory.
   `make quality-waivers`, and `make verify` consume the waiver validator.
 - 2026-05-19: `pnpm verify:strict` passes with the waiver validator included in
   the strict gate.
+- 2026-05-20: retired stale file-size waivers after their replacement plan
+  moved into `spec/code-quality-budgets.json` ownership/tracker dispositions.
+  `spec/quality-waivers.json` now contains only the active JavaScript ESLint
+  gate waiver, and the generated scorecard reports `1` active quality waiver.
 
 ---
 

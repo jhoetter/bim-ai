@@ -12,35 +12,6 @@
       "expires": "2026-06-30",
       "severity": "P1",
       "replacementPlan": "Reduce the frontend lint backlog, then add make lint-js to the canonical strict verification gate."
-    },
-    {
-      "id": "CQW-2026-002",
-      "check": "frontend-file-size-budget",
-      "paths": [
-        "packages/web/src/plan/PlanCanvas.tsx",
-        "packages/web/src/workspace/Workspace.tsx",
-        "packages/web/src/workspace/inspector/InspectorContent.tsx",
-        "packages/web/src/Viewport.tsx"
-      ],
-      "owner": "frontend-architecture",
-      "reason": "High-churn frontend monoliths need extraction maps and first slices before file-size budgets become blocking.",
-      "trackerId": "CQ-2026-04",
-      "created": "2026-05-19",
-      "expires": "2026-06-30",
-      "severity": "P1",
-      "replacementPlan": "Land the CQ-2026-04 extraction maps and first PlanCanvas and InspectorContent slices, then replace this waiver with per-file budgets."
-    },
-    {
-      "id": "CQW-2026-003",
-      "check": "backend-file-size-budget",
-      "paths": ["app/bim_ai/api/registry.py", "app/bim_ai/routes_api.py"],
-      "owner": "backend-api",
-      "reason": "Large backend registry and route surfaces are known maintainability risks pending thematic split or generation.",
-      "trackerId": "CQ-2026-07",
-      "created": "2026-05-19",
-      "expires": "2026-06-30",
-      "severity": "P1",
-      "replacementPlan": "Split registry descriptors and route surfaces by product domain, with descriptor tests protecting public API stability."
     }
   ]
 }
