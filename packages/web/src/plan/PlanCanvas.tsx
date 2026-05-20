@@ -178,6 +178,11 @@ import {
   componentPreviewSymbolKind,
   resolveActiveComponentAsset,
 } from './planCanvasComponentPreview';
+import {
+  handleDoorWindowToolClick,
+  handleQueryToolClick,
+  handleTagToolClick,
+} from './planCanvasClickHandlers';
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
 import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
 import { usePlanCanvasToolCleanupEffects } from './usePlanCanvasToolCleanupEffects';
@@ -207,7 +212,6 @@ import {
 } from './planProjection';
 import { type CropBounds, type CropHandleId } from './cropRegionDragHandles';
 import { findAreaPlacementBoundary } from './areaPlacement';
-import { placeTagByCategoryCommand } from './manualTags';
 import {
   dxfViewOverrideKey,
   isDxfLinkVisibleInView,
@@ -1397,76 +1401,52 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'query') {
-        const dxfLevelId = displayLevelId || activeLevelResolvedId;
-        const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
-        const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
-        const viewOverrides =
-          activePlanView?.kind === 'plan_view'
-            ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
-            : {};
-        const rect = rnd.domElement.getBoundingClientRect();
-        const toleranceMm = (12 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000;
-        const hit = queryDxfPrimitiveAtPoint(dxfUnderlays, sp, {
-          toleranceMm,
+        handleQueryToolClick({
+          renderer: rnd,
+          cameraHalf: camRef.current.half,
+          event: ev,
+          pointMm: sp,
           elementsById,
-          viewOverridesByLinkId: Object.fromEntries(
-            dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
-          ),
+          activeLevelResolvedId,
+          displayLevelId,
+          activePlanViewId,
+          setDxfQueryHover,
+          setDxfQueryDialog,
         });
-        setDxfQueryHover(hit);
-        setDxfQueryDialog(hit ? { hit, position: { x: ev.clientX, y: ev.clientY } } : null);
         return;
       }
       if (planTool === 'tag') {
-        const rectBox = rnd.domElement.getBoundingClientRect();
-        const ray = new THREE.Raycaster();
-        ray.setFromCamera(
-          new THREE.Vector2(
-            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
-            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
-          ),
-          camNow,
-        );
-        const hits = ray.intersectObjects(grp.children, true);
-        const h = hits.find(
-          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
-        );
-        const id =
-          typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
-            ? (h!.object.userData as { bimPickId: string }).bimPickId
-            : undefined;
-        const cmd = placeTagByCategoryCommand(elementsById, activePlanViewId, id, {
-          xMm: sp.xMm,
-          yMm: sp.yMm,
+        handleTagToolClick({
+          renderer: rnd,
+          camera: camNow,
+          group: grp,
+          event: ev,
+          pointMm: sp,
+          elementsById,
+          activePlanViewId,
+          onSemanticCommand,
         });
-        if (cmd) {
-          onSemanticCommand(cmd);
-        }
         return;
       }
       if (planTool === 'door') {
-        const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
-        if (!n || n.distMm > 900) return;
-        onSemanticCommand({
-          type: 'insertDoorOnWall',
-          wallId: n.wall.id,
-          alongT: n.alongT,
-          widthMm: 900,
-          ...(activeComponentFamilyTypeId ? { familyTypeId: activeComponentFamilyTypeId } : {}),
+        handleDoorWindowToolClick({
+          tool: 'door',
+          pointMm: sp,
+          elementsById,
+          displayLevelId,
+          activeComponentFamilyTypeId,
+          onSemanticCommand,
         });
         return;
       }
       if (planTool === 'window') {
-        const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
-        if (!n || n.distMm > 900) return;
-        onSemanticCommand({
-          type: 'insertWindowOnWall',
-          wallId: n.wall.id,
-          alongT: n.alongT,
-          widthMm: 1200,
-          sillHeightMm: 900,
-          heightMm: 1500,
-          ...(activeComponentFamilyTypeId ? { familyTypeId: activeComponentFamilyTypeId } : {}),
+        handleDoorWindowToolClick({
+          tool: 'window',
+          pointMm: sp,
+          elementsById,
+          displayLevelId,
+          activeComponentFamilyTypeId,
+          onSemanticCommand,
         });
         return;
       }

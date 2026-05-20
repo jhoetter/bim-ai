@@ -110,6 +110,7 @@ A-territory target:
 | GFR-2026-34 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract comments and composition-loading side-effect hooks         | Workspace below `5,450` LOC with focused tests green.       |
 | GFR-2026-35 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract grip pointer-up commit handling                            | PlanCanvas at or below `5,450` LOC with focused tests green. |
 | GFR-2026-36 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract select-tool click picking and command handling             | PlanCanvas below `5,425` LOC with focused tests green.      |
+| GFR-2026-37 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract query, tag, door, and window click handlers                | PlanCanvas below `5,400` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -455,3 +456,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `wc -l` reports `packages/web/src/plan/PlanCanvas.tsx` at `5,412` lines.
   Focused PlanCanvas, EQ dimension, and select-linked tests pass (`36 passed`),
   and `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-37` is Done. The slice moved query, tag, door, and
+  window click handling into
+  `packages/web/src/plan/planCanvasClickHandlers.ts`. Local `wc -l` reports
+  `packages/web/src/plan/PlanCanvas.tsx` at `5,392` lines. Focused
+  PlanCanvas/manual-tag/DXF/select-linked tests pass (`51 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.

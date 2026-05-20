@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 5,412      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 5,392      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.3k       | Inspector rendering and editing monolith after extracted phase/type/wall-part helper sections.    |
@@ -1227,6 +1227,10 @@ Initial thresholds can be advisory before becoming blocking:
   handling into `plan/planCanvasSelectClick.ts`, reducing `PlanCanvas.tsx` to
   `5,412` local lines with focused PlanCanvas, EQ dimension, select-linked
   tests, and web typecheck passing.
+- 2026-05-20: a follow-up PlanCanvas extraction slice moved query, tag, door,
+  and window click handling into `plan/planCanvasClickHandlers.ts`, reducing
+  `PlanCanvas.tsx` to `5,392` local lines with focused PlanCanvas, manual-tag,
+  DXF, select-linked tests, and web typecheck passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
