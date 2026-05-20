@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "id": "web-state-no-workspace-shell",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/state/**"],
+      "disallow": ["packages/web/src/workspace/**"],
+      "allow": ["packages/web/src/workspace/readouts/**"],
+      "reason": "State modules may depend on domain/runtime helpers, not workspace shell UI."
+    },
+    {
+      "id": "web-cmd-palette-no-workspace-shell",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/cmdPalette/**"],
+      "disallow": ["packages/web/src/workspace/**"],
+      "allow": ["packages/web/src/workspace/commandCapabilities.ts"],
+      "reason": "Command palette metadata should not reach into workspace shell internals."
+    },
+    {
+      "id": "web-viewport-no-workspace-shell",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/viewport/**"],
+      "disallow": ["packages/web/src/workspace/**"],
+      "allow": [],
+      "reason": "3D rendering modules should stay independent from workspace chrome."
+    },
+    {
+      "id": "web-pure-plan-helpers-no-ui-shell",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/plan/interaction/**", "packages/web/src/plan/selection/**"],
+      "disallow": ["packages/web/src/workspace/**", "packages/web/src/state/**"],
+      "allow": [],
+      "reason": "Pure plan interaction and selection helpers should remain reusable and UI-free."
+    },
+    {
+      "id": "backend-api-no-route-module-import",
+      "owner": "CQ-2026-15",
+      "source": ["app/bim_ai/api/**"],
+      "disallow": ["app/bim_ai/routes_api.py"],
+      "allow": [],
+      "reason": "API descriptor modules must not import the monolithic route layer."
+    },
+    {
+      "id": "backend-core-no-route-layer-import",
+      "owner": "CQ-2026-15",
+      "source": ["app/bim_ai/cmd/**", "app/bim_ai/site/**", "app/bim_ai/skb/**"],
+      "disallow": ["app/bim_ai/routes_api.py"],
+      "allow": [],
+      "reason": "Backend command/domain helpers must stay independent from route handlers."
+    }
+  ]
+}
