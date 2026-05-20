@@ -113,6 +113,7 @@ A-territory target:
 | GFR-2026-37 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract query, tag, door, and window click handlers                | PlanCanvas below `5,400` LOC with focused tests green.      |
 | GFR-2026-38 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract create-view action handlers                                | Workspace below `5,300` LOC with focused tests green.       |
 | GFR-2026-39 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract room/grid/measure draft-click handlers                     | PlanCanvas below `5,350` LOC with focused tests green.      |
+| GFR-2026-40 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract text annotation inspector sections                         | Inspector below `5,150` LOC with focused tests green.       |
 
 ## Progress Log
 
@@ -475,4 +476,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/plan/planCanvasMeasureDraftClicks.ts`. Local `wc -l`
   reports `packages/web/src/plan/PlanCanvas.tsx` at `5,316` lines. Focused
   PlanCanvas/measure tests pass (`35 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-40` is Done. The slice moved text-note and leader-text
+  inspector sections into
+  `packages/web/src/workspace/inspector/textAnnotationInspectorSections.tsx`.
+  Local `wc -l` reports
+  `packages/web/src/workspace/inspector/InspectorContent.tsx` at `5,116`
+  lines. Focused inspector text/content tests pass (`56 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.

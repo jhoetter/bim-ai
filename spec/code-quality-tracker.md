@@ -179,7 +179,7 @@ Largest current source files observed:
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 5,316      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.3k       | Inspector rendering and editing monolith after extracted phase/type/wall-part helper sections.    |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5,116      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text-annotation sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 5,248      | Shell/workflow orchestration monolith after extracted pure/material/catalog/project/comment/loading/view-action modules. |
 | `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                               |
 | `packages/core/src/index.ts`                                | 4.9k       | Public barrel after extracted resource type module.                                               |
@@ -1240,6 +1240,10 @@ Initial thresholds can be advisory before becoming blocking:
   linear-measure, angle-measure, and arc-measure click handling into
   `plan/planCanvasMeasureDraftClicks.ts`, reducing `PlanCanvas.tsx` to `5,316`
   local lines with focused PlanCanvas/measure tests and web typecheck passing.
+- 2026-05-20: an InspectorContent extraction slice moved text-note and
+  leader-text editor sections into `inspector/textAnnotationInspectorSections.tsx`,
+  reducing `InspectorContent.tsx` to `5,116` local lines with focused inspector
+  text/content tests and web typecheck passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
