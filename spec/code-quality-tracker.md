@@ -497,6 +497,11 @@ impact of small changes.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns repeated canvas-texture label
   sprite construction for plan annotation labels; this moved to
   `plan/planTextSprites.ts`, reducing the plan canvas file to `9,056` lines.
+- 2026-05-20: `InspectorContent.tsx` no longer owns shared field-row rendering,
+  millimetre formatting, or the MEP duct/pipe/cable/equipment/fixture/terminal
+  inspector block; these moved to `workspace/inspector/inspectorRows.tsx` and
+  `workspace/inspector/mepInspectorSections.tsx`, reducing the inspector file
+  to `6,885` lines.
 
 ---
 
@@ -976,6 +981,9 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: another PlanCanvas extraction slice moved repeated annotation
   label sprite canvas setup into `plan/planTextSprites.ts`; this keeps the file
   trending downward under its CQ-2026-04/CQ-2026-13 owner disposition.
+- 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
+  MEP inspector rows into dedicated modules, keeping the second-largest
+  frontend monolith on the same downward trend.
 
 ---
 

@@ -59,6 +59,10 @@ Target modules:
   nested family, custom family, and material-slot editing.
 - `workspace/inspector/renderers/documentationInspector.tsx`: text, tags,
   dimensions, sheets, views, and view templates.
+- `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
+  equipment, fixture, terminal, and opening request rows.
+- `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
+  formatting helpers.
 - `workspace/inspector/inspectorRendererRegistry.ts`: `Element.kind` to
   renderer mapping with a typed fallback.
 
@@ -68,6 +72,8 @@ First landed slice:
 - `workspace/inspector/stairAssemblyInspector.tsx`
 - `workspace/inspector/shaftInspectorSections.tsx`
 - `workspace/inspector/familyInspectorSections.tsx`
+- `workspace/inspector/inspectorRows.tsx`
+- `workspace/inspector/mepInspectorSections.tsx`
 
 ## Workspace.tsx
 
