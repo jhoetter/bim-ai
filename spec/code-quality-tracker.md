@@ -208,7 +208,7 @@ Largest current source files observed:
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.                  |
 | CQ-2026-05 | P1       | Done    | Core type model hygiene                   | Core facade has thematic type slices, public re-exports, and compile-time union fixtures.         |
 | CQ-2026-06 | P1       | Done    | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
-| CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices.         |
+| CQ-2026-07 | P1       | Done    | Python route and registry maintainability | Registry core/metadata and route surfaces are split with descriptor and route tests.              |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
 | CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
 | CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
@@ -703,7 +703,7 @@ more defensive `as any` logic.
 ## CQ-2026-07 - Split Backend API Registry and Route Surfaces
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: backend API
 
 ### Problem
@@ -740,6 +740,9 @@ for merge conflicts and stale descriptor drift.
   and resource groups into `app/bim_ai/api/registry_metadata.py`, reducing
   `app/bim_ai/api/registry.py` from `6,291` to `6,151` lines without changing
   the public registry entry points.
+- 2026-05-20: extracted registry dataclasses, descriptor defaults, alias
+  normalization, and public accessors into `app/bim_ai/api/registry_core.py`,
+  keeping `app/bim_ai/api/registry.py` focused on descriptor registration.
 - 2026-05-20: extracted family/catalog API routes into
   `app/bim_ai/routes_catalogs.py`, keeping the existing `/api/family-catalogs`,
   `/api/family-catalogs/{catalog_id}`, and `/api/v3/catalog` paths mounted via
@@ -754,6 +757,10 @@ for merge conflicts and stale descriptor drift.
 - 2026-05-20: focused registry verification passed:
   `cd app && uv run pytest -q tests/test_api_v3_registry.py --no-cov` and
   `cd app && uv run ruff check bim_ai/api/registry.py bim_ai/api/registry_metadata.py`.
+- 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
+  are split from descriptor declarations, catalog/markup routes are mounted
+  through dedicated route modules, and descriptor/route tests cover public path
+  stability.
 
 ---
 
