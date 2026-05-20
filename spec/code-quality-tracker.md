@@ -177,7 +177,7 @@ Largest current source files observed:
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 5,191      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass/interaction/action modules. |
-| `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
+| `packages/cli/cli.mjs`                                      | 3,920      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `app/bim_ai/api/registry.py`                                | 3,267      | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 4,981      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette/composition action modules. |
@@ -1215,6 +1215,12 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: the CLI god-file slice moved the sketch phase/evidence workflow
   into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing `cli.mjs` under
   `6,000` LOC.
+- 2026-05-20: a further CLI god-file slice moved shared argument parsing,
+  generated-bundle helpers, QA commands, query/resolve commands, documentation
+  commands, site commands, and family/material commands into
+  `packages/cli/lib/*`, bringing `cli.mjs` to `3,920` LOC. Syntax checks and
+  focused CLI parity/link/initiation tests pass; the full CLI suite remains
+  blocked by existing target-house fixture files missing from `seed-artifacts`.
 - 2026-05-20: the core barrel slice moved resource-oriented public types into
   `packages/core/src/resources.ts`, bringing `index.ts` under `5,000` LOC.
 - 2026-05-20: a further PlanCanvas slice moved wall-opening pointer-up commit

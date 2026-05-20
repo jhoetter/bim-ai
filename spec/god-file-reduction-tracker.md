@@ -127,6 +127,7 @@ A-territory target:
 | GFR-2026-51 | P1       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract family editor properties panels                            | Workbench below `4,000` LOC with focused tests green.       |
 | GFR-2026-52 | P1       | Done   | `app/bim_ai/api/registry.py`                                | Extract source/reverse-BIM descriptor module                       | Registry reduced with descriptor import checks green.       |
 | GFR-2026-53 | P0       | Done   | `app/bim_ai/api/registry.py`                                | Extract QA/query/resolve resource descriptors                      | Registry below `4,000` LOC with descriptor import checks green. |
+| GFR-2026-54 | P0       | Done   | `packages/cli/cli.mjs`                                      | Extract CLI command families and shared helpers                    | CLI below `4,000` LOC with focused CLI tests green.         |
 
 ## Progress Log
 
@@ -576,3 +577,12 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `app/bim_ai/api/registry.py` at `3,267` lines. Python compile checks pass,
   and a focused registry smoke check confirms representative QA, query, resolve,
   lens, and downstream registry descriptors are still registered.
+- 2026-05-20: `GFR-2026-54` is Done. The slice moved shared CLI argument
+  parsing, generated-bundle submission helpers, QA commands, query/resolve
+  commands, documentation bundle commands, site commands, and family/material
+  commands into `packages/cli/lib/*`. Local `wc -l` reports
+  `packages/cli/cli.mjs` at `3,920` lines. `node --check` passes for the CLI
+  and extracted modules, usage import smoke passes, and focused CLI parity/link/
+  initiation tests pass (`54 passed`). The full `@bim-ai/cli` suite still has
+  pre-existing target-house fixture failures from missing `seed-artifacts`
+  inputs.
