@@ -37,6 +37,7 @@ First landed slices:
 - `plan/selection/nearestWall.ts`
 - `plan/interaction/snapOverrideShortcuts.ts`
 - `plan/planCanvasHelpers.tsx`
+- `plan/componentGhost.ts`
 
 ## InspectorContent.tsx
 

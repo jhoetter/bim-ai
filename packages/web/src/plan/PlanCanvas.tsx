@@ -285,7 +285,7 @@ import {
   familyTypeRequiresWallHost,
 } from '../families/familyPlacementRuntime';
 import type { FamilyDefinition } from '../families/types';
-import { makePlacedAssetPlanSymbol } from '../viewport/placedAssetRendering';
+import { buildComponentGhost } from './componentGhost';
 import {
   copyElementsToClipboard,
   pasteElementsFromClipboard,
@@ -2678,101 +2678,6 @@ export function PlanCanvas({
       grp.add(fill);
     };
 
-    const tintComponentGhost = (ghost: THREE.Group): THREE.Group => {
-      ghost.traverse((child) => {
-        const material = (child as THREE.Mesh | THREE.Line).material;
-        if (!material) return;
-        const materials = Array.isArray(material) ? material : [material];
-        for (const mat of materials) {
-          if ('transparent' in mat) mat.transparent = true;
-          if ('opacity' in mat) mat.opacity = Math.min(Number(mat.opacity) || 1, 0.68);
-          if ('depthWrite' in mat) mat.depthWrite = false;
-        }
-      });
-      return ghost;
-    };
-
-    const buildComponentGhost = ({
-      entry,
-      widthMm,
-      heightMm,
-      rotDeg,
-    }: {
-      entry?: Extract<Element, { kind: 'asset_library_entry' }>;
-      widthMm: number;
-      heightMm: number;
-      rotDeg: number;
-    }): THREE.Group => {
-      if (entry) {
-        const asset: Extract<Element, { kind: 'placed_asset' }> = {
-          kind: 'placed_asset',
-          id: '__component_ghost__',
-          name: entry.name,
-          assetId: entry.id,
-          levelId: activeLevelResolvedId,
-          positionMm: { xMm: 0, yMm: 0 },
-          rotationDeg: rotDeg,
-          paramValues: {},
-        };
-        return tintComponentGhost(
-          makePlacedAssetPlanSymbol(asset, entry, {
-            y: SLICE_Y + 0.018,
-            color: readPlanToken('--draft-construction-blue', '#2563eb'),
-            minFootprintM: 1.8,
-          }),
-        );
-      }
-      const g = new THREE.Group();
-      const hw = widthMm / 2000;
-      const hd = heightMm / 2000;
-      const pts = [
-        -hw,
-        SLICE_Y,
-        -hd,
-        hw,
-        SLICE_Y,
-        -hd,
-        hw,
-        SLICE_Y,
-        -hd,
-        hw,
-        SLICE_Y,
-        hd,
-        hw,
-        SLICE_Y,
-        hd,
-        -hw,
-        SLICE_Y,
-        hd,
-        -hw,
-        SLICE_Y,
-        hd,
-        -hw,
-        SLICE_Y,
-        -hd,
-        // diagonal cross
-        -hw,
-        SLICE_Y,
-        -hd,
-        hw,
-        SLICE_Y,
-        hd,
-        hw,
-        SLICE_Y,
-        -hd,
-        -hw,
-        SLICE_Y,
-        hd,
-      ];
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-      const mat = new THREE.LineBasicMaterial({ color: 0x8b7355, opacity: 0.6, transparent: true });
-      const mesh = new THREE.LineSegments(geo, mat);
-      g.add(mesh);
-      g.rotation.y = (rotDeg * Math.PI) / 180;
-      return tintComponentGhost(g);
-    };
-
     const onMove = (ev: PointerEvent) => {
       // EDT-01 — grip drag takes priority over every other interaction.
       if (gripDragRef.current) {
@@ -3250,6 +3155,7 @@ export function PlanCanvas({
             componentGhostRef.current = null;
           }
           const ghost = buildComponentGhost({
+            activeLevelId: activeLevelResolvedId,
             entry,
             widthMm: w,
             heightMm: h,
