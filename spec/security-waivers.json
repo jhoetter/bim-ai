@@ -34,7 +34,7 @@
       "check": "security-hygiene",
       "code": "react_dangerously_set_inner_html",
       "path": "packages/web/src/workspace/sheets/sectionViewportSvg.tsx",
-      "line": 1405,
+      "line": 1404,
       "owner": "frontend-rendering",
       "reason": "Section viewport level-line rendering injects internally generated SVG group markup.",
       "trackerId": "CQ-2026-18",
