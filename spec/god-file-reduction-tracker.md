@@ -97,6 +97,7 @@ A-territory target:
 | GFR-2026-21 | P1       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract phase, floor type, and wall parts inspector sections       | Inspector below `5,400` LOC with focused tests green.       |
 | GFR-2026-22 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract tool activation/reset effect into hook                     | PlanCanvas below `6,150` LOC with focused tests green.      |
 | GFR-2026-23 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract view rotation, column overlay, and auto-fit effects        | PlanCanvas below `6,110` LOC with focused tests green.      |
+| GFR-2026-24 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer preview and marquee drawing helpers                | PlanCanvas below `6,050` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -358,4 +359,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `packages/web/src/plan/usePlanCanvasViewEffects.ts`. Local `wc -l` reports
   `packages/web/src/plan/PlanCanvas.tsx` at `6,103` lines. Focused
   PlanCanvas/projection/column tests pass (`66 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-24` is Done. The slice moved pointer preview line,
+  area-boundary preview, room-rectangle preview, and marquee drawing helpers
+  into `packages/web/src/plan/planCanvasPreviewHelpers.ts`, keeping pointer
+  event branching in `PlanCanvas.tsx`. Local `wc -l` reports
+  `packages/web/src/plan/PlanCanvas.tsx` at `6,019` lines. Focused PlanCanvas
+  overlay/tool tests pass (`29 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
