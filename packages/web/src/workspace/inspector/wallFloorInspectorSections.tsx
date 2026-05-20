@@ -10,6 +10,7 @@ import {
   FaceMaterialOverridesSection,
   MaterialAssignmentRow,
   faceMaterialOverrideLabel,
+  type OpenMaterialBrowser,
   wallTypeExteriorMaterialKey,
 } from './materialInspectorSections';
 import { PhaseSection } from './phaseInspectorSection';
@@ -17,6 +18,38 @@ import { FloorNewTypeRow } from './floorTypeInspectorSections';
 import { WallPartsPanel } from './wallPartsPanel';
 
 const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
+
+type InspectorCommandHandler = (cmd: Record<string, unknown>) => void;
+type InspectorSectionOptions = {
+  elementsById?: Record<string, Element>;
+  onPropertyChange?: (property: string, value: unknown) => void;
+};
+type WallFloorInspectorArgs = {
+  el: Element;
+  t: TFunction;
+  options?: InspectorSectionOptions;
+  elementsById?: Record<string, Element>;
+  onDisciplineChange?: (discipline: DisciplineTag | null) => void;
+  onEditType?: (typeId: string) => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
+  onEditCurtainGrid?: (wallId: string) => void;
+  onDispatchCommand?: InspectorCommandHandler;
+};
+type MmPoint = { xMm: number; yMm: number };
+type WallProfileInspectorElement = Extract<Element, { kind: 'wall' }> & {
+  profilePoints?: MmPoint[];
+  cutBy?: string[];
+};
+type FloorSlopePointDraft = MmPoint & {
+  id: string;
+  elevationOffsetMm: number;
+};
+type FloorInspectorElement = Extract<Element, { kind: 'floor' }> & {
+  slopePoints?: FloorSlopePointDraft[];
+  subFloorThicknessMm?: number;
+  cutBy?: string[];
+};
 
 function InspectorDisciplineDropdown({
   value,
@@ -55,7 +88,7 @@ function resolveElName(id: string | null | undefined, eb: Record<string, Element
     : id;
 }
 
-export function WallInspectorSection(args: any): JSX.Element {
+export function WallInspectorSection(args: WallFloorInspectorArgs): JSX.Element {
   const {
     el,
     t,
@@ -66,7 +99,7 @@ export function WallInspectorSection(args: any): JSX.Element {
     onOpenAppearanceAssetBrowser,
     onEditCurtainGrid,
     onDispatchCommand,
-  } = args as { el: Element; t: TFunction } & Record<string, any>;
+  } = args;
   const onSemanticCommand = onDispatchCommand;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
@@ -223,11 +256,11 @@ export function WallInspectorSection(args: any): JSX.Element {
             <summary
               style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}
             >
-              Profile Points ({((el as any).profilePoints ?? []).length})
+              Profile Points ({((el as WallProfileInspectorElement).profilePoints ?? []).length})
             </summary>
             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {/* Mini SVG preview */}
-              {((el as any).profilePoints ?? []).length >= 3 && (
+              {((el as WallProfileInspectorElement).profilePoints ?? []).length >= 3 && (
                 <svg
                   data-testid="wall-profile-preview"
                   width={120}
@@ -239,7 +272,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                   }}
                 >
                   {(() => {
-                    const pts: { xMm: number; yMm: number }[] = (el as any).profilePoints;
+                    const pts = (el as WallProfileInspectorElement).profilePoints ?? [];
                     const xs = pts.map((p) => p.xMm);
                     const ys = pts.map((p) => p.yMm);
                     const minX = Math.min(...xs);
@@ -267,8 +300,8 @@ export function WallInspectorSection(args: any): JSX.Element {
                 </svg>
               )}
               {/* Point list */}
-              {((el as any).profilePoints ?? []).map(
-                (pt: { xMm: number; yMm: number }, i: number) => (
+              {((el as WallProfileInspectorElement).profilePoints ?? []).map(
+                (pt: MmPoint, i: number) => (
                   <div
                     key={i}
                     style={{
@@ -286,7 +319,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                       type="number"
                       value={pt.xMm}
                       onChange={(e) => {
-                        const pts = [...((el as any).profilePoints ?? [])];
+                        const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
                         pts[i] = { ...pts[i], xMm: Number(e.target.value) };
                         onDispatchCommand?.({
                           type: 'updateWallProfile',
@@ -308,7 +341,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                       type="number"
                       value={pt.yMm}
                       onChange={(e) => {
-                        const pts = [...((el as any).profilePoints ?? [])];
+                        const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
                         pts[i] = { ...pts[i], yMm: Number(e.target.value) };
                         onDispatchCommand?.({
                           type: 'updateWallProfile',
@@ -333,7 +366,7 @@ export function WallInspectorSection(args: any): JSX.Element {
                 <button
                   data-testid="wall-profile-add-point"
                   onClick={() => {
-                    const pts = [...((el as any).profilePoints ?? [])];
+                    const pts = [...((el as WallProfileInspectorElement).profilePoints ?? [])];
                     pts.push({ xMm: 0, yMm: 0 });
                     onDispatchCommand?.({
                       type: 'updateWallProfile',
@@ -348,7 +381,9 @@ export function WallInspectorSection(args: any): JSX.Element {
                 <button
                   data-testid="wall-profile-remove-last"
                   onClick={() => {
-                    const pts = [...((el as any).profilePoints ?? [])].slice(0, -1);
+                    const pts = [
+                      ...((el as WallProfileInspectorElement).profilePoints ?? []),
+                    ].slice(0, -1);
                     onDispatchCommand?.({
                       type: 'updateWallProfile',
                       wallId: el.id,
@@ -666,16 +701,16 @@ export function WallInspectorSection(args: any): JSX.Element {
             </div>
           </div>
           {/* Cut geometry readout */}
-          {(el as any).cutBy?.length > 0 && (
+          {((el as WallProfileInspectorElement).cutBy?.length ?? 0) > 0 && (
             <details style={{ marginTop: 8 }}>
               <summary
                 data-testid="inspector-cut-by-summary"
                 style={{ cursor: 'pointer', fontSize: 12 }}
               >
-                Cut By ({(el as any).cutBy.length})
+                Cut By ({(el as WallProfileInspectorElement).cutBy?.length ?? 0})
               </summary>
               <div style={{ marginTop: 4 }}>
-                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                {((el as WallProfileInspectorElement).cutBy ?? []).map((cutterId, i) => (
                   <div
                     key={cutterId}
                     style={{
@@ -715,7 +750,7 @@ export function WallInspectorSection(args: any): JSX.Element {
   }
 }
 
-export function FloorInspectorSection(args: any): JSX.Element {
+export function FloorInspectorSection(args: WallFloorInspectorArgs): JSX.Element {
   const {
     el,
     t,
@@ -726,7 +761,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
     onOpenMaterialBrowser,
     onOpenAppearanceAssetBrowser,
     onDispatchCommand,
-  } = args as { el: Element; t: TFunction } & Record<string, any>;
+  } = args;
   const onSemanticCommand = onDispatchCommand;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
@@ -1035,10 +1070,10 @@ export function FloorInspectorSection(args: any): JSX.Element {
               data-testid="inspector-floor-slope-points-summary"
               style={{ cursor: 'pointer', fontWeight: 600 }}
             >
-              Drainage Slope Points ({(el as any).slopePoints?.length ?? 0})
+              Drainage Slope Points ({(el as FloorInspectorElement).slopePoints?.length ?? 0})
             </summary>
             <div style={{ marginTop: 6 }}>
-              {((el as any).slopePoints ?? []).map((pt: any, idx: number) => (
+              {((el as FloorInspectorElement).slopePoints ?? []).map((pt, idx) => (
                 <div
                   key={pt.id}
                   style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}
@@ -1107,7 +1142,7 @@ export function FloorInspectorSection(args: any): JSX.Element {
               min={0}
               step={10}
               className="w-20 text-sm bg-transparent border-b border-border/40 focus:outline-none"
-              value={(el as any).subFloorThicknessMm ?? 0}
+              value={(el as FloorInspectorElement).subFloorThicknessMm ?? 0}
               onChange={(e) =>
                 onDispatchCommand?.({
                   type: 'setSubFloorThickness',
@@ -1119,16 +1154,16 @@ export function FloorInspectorSection(args: any): JSX.Element {
             <span className="text-xs text-muted">mm</span>
           </div>
           {/* Cut geometry readout */}
-          {(el as any).cutBy?.length > 0 && (
+          {((el as FloorInspectorElement).cutBy?.length ?? 0) > 0 && (
             <details style={{ marginTop: 8 }}>
               <summary
                 data-testid="inspector-cut-by-summary"
                 style={{ cursor: 'pointer', fontSize: 12 }}
               >
-                Cut By ({(el as any).cutBy.length})
+                Cut By ({(el as FloorInspectorElement).cutBy?.length ?? 0})
               </summary>
               <div style={{ marginTop: 4 }}>
-                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                {((el as FloorInspectorElement).cutBy ?? []).map((cutterId, i) => (
                   <div
                     key={cutterId}
                     style={{

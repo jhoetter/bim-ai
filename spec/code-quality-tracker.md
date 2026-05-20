@@ -394,6 +394,10 @@ CI chooses one canonical quality gate.
   ratcheted to `63` errors / `30` warnings / `9` files, with
   `@typescript-eslint/no-explicit-any` down to `58`, and the non-test
   type-escape budget is down to `2` files / `58` matches.
+- 2026-05-20: typed the wall/floor inspector section args and readout helpers;
+  `pnpm js-lint:budget` is now ratcheted to `41` errors / `30` warnings /
+  `9` files, with `@typescript-eslint/no-explicit-any` down to `36`, and the
+  non-test type-escape budget is down to `1` file / `36` matches.
 
 ---
 

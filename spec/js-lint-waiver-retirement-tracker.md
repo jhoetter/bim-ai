@@ -39,7 +39,7 @@ Latest ratcheted budget after JSL-2026-03:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
-| Errors         | 63             |
+| Errors         | 41             |
 | Warnings       | 30             |
 | Affected files | 9              |
 | Fatal findings | 0              |
@@ -48,7 +48,7 @@ Rule budgets:
 
 | Rule                                 | Current budget |
 | ------------------------------------ | -------------- |
-| `@typescript-eslint/no-explicit-any` | 58             |
+| `@typescript-eslint/no-explicit-any` | 36             |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
 | `react-hooks/exhaustive-deps`        | 30             |
@@ -125,3 +125,8 @@ Rule budgets:
   `@typescript-eslint/no-explicit-any` moved from `71` to `58`, and the
   machine-readable non-test type-escape budget moved to `2` files / `58`
   matches.
+- 2026-05-20: typed the wall/floor inspector section args, wall profile readout,
+  floor slope readout, cut-geometry readouts, and material browser callbacks.
+  The lint budget moved to `41` errors / `30` warnings / `9` files;
+  `@typescript-eslint/no-explicit-any` moved from `58` to `36`, and the
+  non-test type-escape budget moved to `1` file / `36` matches.
