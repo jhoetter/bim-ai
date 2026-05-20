@@ -81,7 +81,7 @@ A-territory target:
 | GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.     |
 | GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
 | GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.    |
-| GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.       |
+| GFR-2026-08 | P2       | Done   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.       |
 | GFR-2026-09 | P2       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract self-contained family editor panels                        | Workbench below `4,500` LOC with focused tests passing.     |
 | GFR-2026-10 | P2       | Done   | `packages/web/src/tools/toolGrammar.ts`                     | Extract late-stage reducer groups                                  | Tool grammar below `4,000` LOC with focused tests passing.  |
 | GFR-2026-11 | P2       | Done   | `packages/web/src/viewport/meshBuilders.ts`                 | Extract family/detail mesh helpers                                 | Mesh builders below `4,000` LOC with focused tests passing. |
@@ -261,9 +261,9 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   `packages/web/src/plan/planCanvasRenderPasses.ts`. Local `wc -l` reports
   `PlanCanvas.tsx` at `6,597` lines. Focused PlanCanvas tests pass;
   `pnpm --filter @bim-ai/web typecheck` passes.
-- 2026-05-20: the remaining open rows (`GFR-2026-06` and `GFR-2026-08`)
-  currently touch files that already contain unrelated uncommitted
-  parallel-agent changes (`app/bim_ai/api/registry.py` and
+- 2026-05-20: after `GFR-2026-04`, the remaining open rows
+  (`GFR-2026-06` and `GFR-2026-08`) both touched files with unrelated
+  uncommitted parallel-agent changes (`app/bim_ai/api/registry.py` and
   `packages/core/src/index.ts`). Continue those rows carefully so tracker
   commits do not accidentally include unrelated work.
 - 2026-05-20: `GFR-2026-04` is Done. The slice moved sketch phase apply/run,
@@ -276,3 +276,15 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   the CLI entrypoint and extracted workflow module. Focused CLI initiation/link
   tests pass. The full `@bim-ai/cli` test suite still fails on pre-existing
   missing `seed-artifacts/target-house-1` fixtures.
+- 2026-05-20: `GFR-2026-08` is Done. The slice moved job/comment/markup,
+  activity, asset-library, kitchen-kit, material, image asset, and decal public
+  types into `packages/core/src/resources.ts` while preserving re-exports from
+  `packages/core/src/index.ts`. Current worktree `wc -l` reports
+  `index.ts` at `4,936` lines; the staged commit preserves the unrelated
+  pre-existing `StructuredLayout` removal outside this commit, so the committed
+  barrel remains below the `5,000` LOC target. `pnpm --filter @bim-ai/core
+typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
+- 2026-05-20: the remaining open row (`GFR-2026-06`) still touches
+  `app/bim_ai/api/registry.py`, which contains unrelated uncommitted
+  parallel-agent descriptor work. Continue that row with patch staging to avoid
+  committing unrelated registry changes.

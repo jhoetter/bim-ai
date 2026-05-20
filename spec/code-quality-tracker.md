@@ -182,7 +182,7 @@ Largest current source files observed:
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                                            |
 | `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                               |
-| `packages/core/src/index.ts`                                | 5.3k       | Public type and command barrel.                                                                   |
+| `packages/core/src/index.ts`                                | 4.9k       | Public barrel after extracted resource type module.                                               |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 4.3k       | Family editor state shell after extracted panel module.                                           |
 
@@ -587,6 +587,10 @@ impact of small changes.
   collection, initiation-run packaging, bundle application, and JSON artifact
   helpers into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing
   `packages/cli/cli.mjs` below the `6,000` LOC tracker target.
+- 2026-05-20: the core barrel extraction moved jobs/comments/activity,
+  asset-library, kitchen-kit, material, image asset, and decal types into
+  `packages/core/src/resources.ts`, bringing `packages/core/src/index.ts` below
+  the `5,000` LOC tracker target.
 
 ---
 
@@ -1191,6 +1195,8 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: the CLI god-file slice moved the sketch phase/evidence workflow
   into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing `cli.mjs` under
   `6,000` LOC.
+- 2026-05-20: the core barrel slice moved resource-oriented public types into
+  `packages/core/src/resources.ts`, bringing `index.ts` under `5,000` LOC.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
