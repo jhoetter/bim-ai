@@ -525,6 +525,10 @@ impact of small changes.
   `spec/god-file-reduction-tracker.md`; the next InspectorContent slice moved
   site terrain rows into `workspace/inspector/siteTerrainInspectorSections.tsx`.
   The inspector file is now about `6,428` scorecard-counted lines.
+- 2026-05-20: the next InspectorContent slice moved placed tag, room tag, and
+  material tag rows into `workspace/inspector/annotationTagInspectorSections.tsx`
+  with focused material tag coverage, reducing the inspector file to about
+  `6,309` scorecard-counted lines.
 
 ---
 

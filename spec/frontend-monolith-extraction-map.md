@@ -68,6 +68,8 @@ Target modules:
   position and shared-coordinate rows.
 - `workspace/inspector/siteTerrainInspectorSections.tsx`: toposolid, graded
   region, excavation, and terrain pad site rows.
+- `workspace/inspector/annotationTagInspectorSections.tsx`: placed tag, room
+  tag, and material tag rows.
 - `workspace/inspector/mepInspectorSections.tsx`: duct, pipe, cable tray,
   equipment, fixture, terminal, and opening request rows.
 - `workspace/inspector/inspectorRows.tsx`: shared inspector field rows and
@@ -88,6 +90,7 @@ First landed slice:
 - `workspace/inspector/decalInspectorSection.tsx`
 - `workspace/inspector/projectBasePointInspectorSection.tsx`
 - `workspace/inspector/siteTerrainInspectorSections.tsx`
+- `workspace/inspector/annotationTagInspectorSections.tsx`
 
 ## Workspace.tsx
 

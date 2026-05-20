@@ -44,6 +44,7 @@ import { DetailDocumentationInspectorSection } from './detailDocumentationInspec
 import { DecalInspectorSection } from './decalInspectorSection';
 import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSection';
 import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
+import { AnnotationTagInspectorSection } from './annotationTagInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -4649,134 +4650,14 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'placed_tag': {
-      const { onPropertyChange } = options ?? {};
-      const tagEl = el as Extract<Element, { kind: 'placed_tag' }>;
-      const targetEl = elementsById[tagEl.hostElementId];
-      const targetName = targetEl
-        ? ((targetEl as { name?: string }).name ?? tagEl.hostElementId)
-        : tagEl.hostElementId;
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Mark</span>
-            <input
-              type="text"
-              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={tagEl.fields?.mark ?? ''}
-              key={`${tagEl.id}-mark`}
-              data-testid="inspector-tag-mark"
-              onBlur={(e) =>
-                onPropertyChange?.('fields', {
-                  ...tagEl.fields,
-                  mark: e.currentTarget.value || null,
-                })
-              }
-            />
-          </div>
-          {tagEl.fields?.typeName ? <FieldRow label="Type" value={tagEl.fields.typeName} /> : null}
-          <div data-testid="inspector-tag-type" style={{ display: 'none' }}>
-            {tagEl.fields?.typeName ?? ''}
-          </div>
-          <FieldRow label="Target" value={targetName} />
-          <div data-testid="inspector-tag-target" style={{ display: 'none' }}>
-            {targetName}
-          </div>
-          {tagEl.categoryKind === 'room' ? (
-            <div className="flex flex-col gap-2">
-              <div className="text-xs font-semibold text-muted">Room Tag Fields</div>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  data-testid="inspector-tag-show-number"
-                  checked={tagEl.showRoomNumber !== false}
-                  onChange={(e) => onPropertyChange?.('showRoomNumber', e.target.checked)}
-                />
-                Show Room Number
-              </label>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  data-testid="inspector-tag-show-name"
-                  checked={tagEl.showRoomName !== false}
-                  onChange={(e) => onPropertyChange?.('showRoomName', e.target.checked)}
-                />
-                Show Room Name
-              </label>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  data-testid="inspector-tag-show-area"
-                  checked={tagEl.showRoomArea === true}
-                  onChange={(e) => onPropertyChange?.('showRoomArea', e.target.checked)}
-                />
-                Show Area (m²)
-              </label>
-              <FieldRow
-                label="Area"
-                value={
-                  tagEl.fields?.roomArea != null
-                    ? `${(tagEl.fields.roomArea / 1e6).toFixed(2)} m²`
-                    : '—'
-                }
-              />
-            </div>
-          ) : null}
-        </div>
-      );
-    }
+    case 'placed_tag':
     case 'material_tag': {
-      const { onPropertyChange } = options ?? {};
-      const tagEl = el as Extract<Element, { kind: 'material_tag' }>;
-      const resolvedMaterial = (() => {
-        if (tagEl.textOverride) return tagEl.textOverride;
-        const target = elementsById[tagEl.hostElementId];
-        if (!target) return '—';
-        const wallTypeId = (target as any).wallTypeId;
-        const wallType = wallTypeId ? elementsById[wallTypeId] : null;
-        const layers = (wallType as any)?.layers;
-        if (layers && layers.length > 0) {
-          const idx = tagEl.layerIndex ?? 0;
-          return layers[idx]?.materialKey ?? '—';
-        }
-        return (target as any).materialKey ?? '—';
-      })();
       return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Material</span>
-            <span data-testid="inspector-material-tag-resolved" className="text-xs font-semibold">
-              {resolvedMaterial}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Override</span>
-            <input
-              data-testid="inspector-material-tag-override"
-              type="text"
-              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={tagEl.textOverride ?? ''}
-              key={`${tagEl.id}-override`}
-              placeholder="(auto)"
-              onBlur={(e) => onPropertyChange?.('textOverride', e.currentTarget.value || null)}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Layer index</span>
-            <input
-              data-testid="inspector-material-tag-layer"
-              type="number"
-              min={0}
-              className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={tagEl.layerIndex ?? 0}
-              key={`${tagEl.id}-layer`}
-              onBlur={(e) => {
-                const v = parseInt(e.currentTarget.value, 10);
-                if (!isNaN(v)) onPropertyChange?.('layerIndex', v);
-              }}
-            />
-          </div>
-        </div>
+        <AnnotationTagInspectorSection
+          el={el}
+          elementsById={elementsById}
+          onPropertyChange={options?.onPropertyChange}
+        />
       );
     }
     case 'detail_group': {

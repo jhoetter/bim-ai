@@ -95,3 +95,10 @@ A-territory target:
   `packages/web/src/workspace/inspector/siteTerrainInspectorSections.tsx` with
   focused coverage in `siteTerrainInspector.test.tsx`, reducing
   `InspectorContent.tsx` to about `6,428` scorecard-counted lines.
+- 2026-05-20: the next `GFR-2026-01` slice moved placed tag, room tag, and
+  material tag inspector rows into
+  `packages/web/src/workspace/inspector/annotationTagInspectorSections.tsx`.
+  Existing tag inspector tests continue to cover placed and room tags, and
+  `materialTagInspector.test.tsx` covers the material tag branch. The scorecard
+  now counts `InspectorContent.tsx` at about `6,309` lines, and this slice also
+  reduced non-test frontend type-escape matches from `106` to `103`.
