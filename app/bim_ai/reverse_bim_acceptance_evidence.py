@@ -287,6 +287,7 @@ def build_ui_evidence_report(
     *,
     required_views: list[dict[str, Any]] | None = None,
     screenshots: list[dict[str, Any]] | None = None,
+    require_visual_checklist: bool = True,
 ) -> dict[str, Any]:
     """Require human-inspectable UI evidence from the live model."""
 
@@ -306,12 +307,25 @@ def build_ui_evidence_report(
             blockers.append("UI screenshot did not pass review")
         if screenshot and not (screenshot.get("path") or screenshot.get("screenshotPath")):
             blockers.append("UI screenshot path is missing")
+        checklist_rows = _ui_visual_checklist_rows(
+            required_view=required_view,
+            screenshot=screenshot,
+            require_visual_checklist=require_visual_checklist,
+        )
+        checklist_blockers = [
+            row
+            for row in checklist_rows
+            if row.get("status") in {"missing", "failed", "blocked"}
+        ]
+        if checklist_blockers:
+            blockers.append("UI visual checklist has missing or failed items")
         rows.append(
             {
                 "viewId": key,
                 "kind": required_view.get("kind"),
                 "status": "passed" if not blockers else "blocked",
                 "blockingReasons": blockers,
+                "visualChecklist": checklist_rows,
             }
         )
     if not required:
@@ -322,6 +336,18 @@ def build_ui_evidence_report(
             }
         )
     blockers = [row for row in rows if row.get("blockingReasons")]
+    missing_checklist_count = sum(
+        1
+        for row in rows
+        for item in row.get("visualChecklist") or []
+        if item.get("status") == "missing"
+    )
+    failed_checklist_count = sum(
+        1
+        for row in rows
+        for item in row.get("visualChecklist") or []
+        if item.get("status") == "failed"
+    )
     return {
         "format": "reverseBimUiEvidence_v1",
         "ok": not blockers,
@@ -334,6 +360,142 @@ def build_ui_evidence_report(
                 for row in rows
                 if "required UI screenshot is missing" in (row.get("blockingReasons") or [])
             ),
+            "missingVisualChecklistItemCount": missing_checklist_count,
+            "failedVisualChecklistItemCount": failed_checklist_count,
         },
         "views": rows,
     }
+
+
+def _ui_visual_checklist_rows(
+    *,
+    required_view: dict[str, Any],
+    screenshot: dict[str, Any],
+    require_visual_checklist: bool,
+) -> list[dict[str, Any]]:
+    items = _required_visual_checklist_items(required_view)
+    if not require_visual_checklist:
+        return []
+    provided = _provided_visual_checklist(screenshot)
+    rows = []
+    for item in items:
+        raw = provided.get(item["id"])
+        if raw is None:
+            status = "missing"
+            note = "Checklist item was not reviewed."
+        elif raw is True or str(raw).lower() in {"passed", "accepted", "ok", "true"}:
+            status = "passed"
+            note = ""
+        elif raw is False or str(raw).lower() in {"failed", "blocked", "false"}:
+            status = "failed"
+            note = "Checklist item failed visual review."
+        else:
+            status = "blocked"
+            note = "Checklist item has an unsupported value."
+        rows.append(
+            {
+                "id": item["id"],
+                "label": item["label"],
+                "status": status,
+                "note": note,
+            }
+        )
+    return rows
+
+
+def _required_visual_checklist_items(required_view: dict[str, Any]) -> list[dict[str, str]]:
+    explicit = required_view.get("visualChecklistItems") or required_view.get("checklistItems")
+    if isinstance(explicit, list) and explicit:
+        return [
+            {
+                "id": str(item.get("id") if isinstance(item, dict) else item),
+                "label": str((item.get("label") if isinstance(item, dict) else item) or item),
+            }
+            for item in explicit
+            if str(item.get("id") if isinstance(item, dict) else item).strip()
+        ]
+    kind = str(required_view.get("kind") or "").lower()
+    common = [
+        {
+            "id": "no_placeholder_or_rough_massing_visible",
+            "label": "No placeholder or rough massing is visible.",
+        },
+        {
+            "id": "advisor_visible_state_not_showing_errors",
+            "label": "Visible UI state does not show unresolved errors/warnings.",
+        },
+    ]
+    by_kind = {
+        "floor_plan": [
+            {
+                "id": "floorplan_topology_matches_source",
+                "label": "Floor plan topology, rooms, walls, and partitions match the source.",
+            },
+            {
+                "id": "doors_windows_hosted_in_walls",
+                "label": "Doors/windows are visibly hosted in walls.",
+            },
+            {
+                "id": "required_level_not_empty",
+                "label": "Required level is not empty or purely analytical.",
+            },
+        ],
+        "section": [
+            {
+                "id": "levels_sections_align",
+                "label": "Levels, floors, roof, and vertical openings align in section.",
+            }
+        ],
+        "elevation": [
+            {
+                "id": "openings_roof_dormers_match_elevation",
+                "label": "Facade openings, roof, and dormers match source elevation.",
+            }
+        ],
+        "3d": [
+            {
+                "id": "roof_dormers_openings_physically_coherent",
+                "label": "Roof, dormers, openings, and shell are physically coherent.",
+            },
+            {
+                "id": "site_and_topology_visible_and_aligned",
+                "label": "House placement, terrain/topology, and parcel context are aligned.",
+            },
+        ],
+        "3d_cutaway": [
+            {
+                "id": "stairs_openings_and_rooms_physically_coherent",
+                "label": "Stairs, slab openings, rooms, and interior walls are physically coherent.",
+            },
+            {
+                "id": "no_assets_or_openings_on_stairs",
+                "label": "No assets, doors, windows, or furniture conflict with stairs.",
+            },
+        ],
+        "site": [
+            {
+                "id": "house_centered_on_source_site",
+                "label": "House is correctly placed on the source site/topology.",
+            }
+        ],
+    }
+    return common + by_kind.get(kind, [])
+
+
+def _provided_visual_checklist(screenshot: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(screenshot, dict):
+        return {}
+    raw = (
+        screenshot.get("visualChecklist")
+        or screenshot.get("checklist")
+        or screenshot.get("inspection")
+    )
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, list):
+        out = {}
+        for row in raw:
+            if isinstance(row, dict) and row.get("id"):
+                out[str(row["id"])] = row.get("status") or row.get("passed")
+        return out
+    return {}

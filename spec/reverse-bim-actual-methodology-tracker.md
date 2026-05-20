@@ -518,8 +518,8 @@ Implementation status:
 | RBM8-001 | Source underlay import | Partial | Source pages can be imported/aligned as visual underlays. |
 | RBM8-002 | Overlay renderer | Not started | Registered source drawing and model geometry produce comparison images. |
 | RBM8-003 | Overlay deviation metrics | Partial | `reverse_bim.source_overlay_evidence` now enforces required overlay result rows and deviation thresholds; actual model/source rendering comparison still pending. |
-| RBM8-004 | UI screenshot gate | Partial | `reverse_bim.ui_evidence` now requires named screenshot evidence before final acceptance; automated capture still pending. |
-| RBM8-005 | Human-visible failure checklist | Not started | Acceptance report has explicit visual inspection questions. |
+| RBM8-004 | UI screenshot gate | Partial | `reverse_bim.ui_evidence` now requires named screenshot evidence and per-view visual checklist evidence before final acceptance; automated capture still pending. |
+| RBM8-005 | Human-visible failure checklist | Partial | UI evidence now checks structured items for placeholder massing, visible Advisor state, topology, hosted openings, empty levels, stairs, roof/dormers, and site placement. |
 
 ## Phase 9: Final Acceptance
 
@@ -694,6 +694,7 @@ Tests must encode the failure so it cannot regress.
 | TEST-009 | Wall/floor/roof scope without material/layer source facts or explicit unavailable disposition | Folder output acceptance fails and emits material repair request. |
 | TEST-010 | Single or conflicting critical AI-reader passes | Reader consensus blocks source handoff. |
 | TEST-011 | Phase packet omits expected model readback evidence | Phase run fails before next phase. |
+| TEST-012 | UI screenshot lacks/fails visual inspection checklist | UI evidence fails even when screenshot file exists. |
 
 ## Done Definition For The Overall Goal
 

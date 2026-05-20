@@ -394,7 +394,7 @@ for _reverse_tool in (
         "title": "ReverseBimUiEvidenceInput",
         "path": "/api/v3/reverse-bim/ui-evidence",
         "cli": "bim-ai reverse-bim ui-evidence --required-views required-views.json --screenshots screenshots.json",
-        "notes": "Validates human-inspectable live UI screenshot evidence so failures visible in the UI cannot pass JSON-only acceptance.",
+        "notes": "Validates human-inspectable live UI screenshot evidence plus per-view visual checklist items so failures visible in the UI cannot pass JSON-only acceptance.",
     },
     {
         "name": "reverse_bim.final_acceptance",

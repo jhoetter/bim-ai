@@ -1748,9 +1748,16 @@ async def qa_source_overlay_compare_route(
 async def reverse_bim_ui_evidence_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
+    require_checklist_raw = body.get("requireVisualChecklist", True)
+    require_checklist = (
+        require_checklist_raw
+        if isinstance(require_checklist_raw, bool)
+        else str(require_checklist_raw).lower() not in {"0", "false", "no"}
+    )
     return build_ui_evidence_report(
         required_views=body.get("requiredViews") or body.get("required_views"),
         screenshots=body.get("screenshots"),
+        require_visual_checklist=require_checklist,
     )
 
 
