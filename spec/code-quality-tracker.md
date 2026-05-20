@@ -206,7 +206,7 @@ Largest current source files observed:
 | CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.                   |
 | CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                                |
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.                  |
-| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.                   |
+| CQ-2026-05 | P1       | Done    | Core type model hygiene                   | Core facade has thematic type slices, public re-exports, and compile-time union fixtures.         |
 | CQ-2026-06 | P1       | Done    | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
 | CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices.         |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
@@ -515,7 +515,7 @@ impact of small changes.
 ## CQ-2026-05 - Repair Core Type Model Hygiene
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: `packages/core`
 
 ### Problem
@@ -591,6 +591,10 @@ a public re-export facade:
   membership.
 - 2026-05-20: `spec/core-type-extraction-map.md` documents the remaining core
   type slices and guardrails.
+- 2026-05-20: CQ-2026-05 is closed: `packages/core/src/index.ts` remains the
+  stable public facade, thematic element modules are re-exported, and
+  compile-time fixtures protect extracted type membership while command-slice
+  follow-up stays documented in `spec/core-type-extraction-map.md`.
 - 2026-05-20: `pnpm --filter @bim-ai/core typecheck` and
   `pnpm --filter @bim-ai/web typecheck` pass after the split.
 
