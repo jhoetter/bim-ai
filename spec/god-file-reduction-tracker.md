@@ -104,6 +104,7 @@ A-territory target:
 | GFR-2026-28 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract split-wall, component, and column hover handlers           | PlanCanvas at or below `5,700` LOC with focused tests green. |
 | GFR-2026-29 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract crop-region pointer interaction lifecycle                  | PlanCanvas below `5,600` LOC with focused tests green.      |
 | GFR-2026-30 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract tab icon and catalog asset placement helpers               | Workspace below `5,650` LOC with focused tests green.       |
+| GFR-2026-31 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pan and marquee-selection pointer lifecycle                | PlanCanvas below `5,550` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -412,3 +413,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   reports `packages/web/src/workspace/Workspace.tsx` at `5,610` lines. Focused
   workspace/catalog helper tests pass (`10 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-31` is Done. The slice moved pan drag, marquee drag,
+  marquee hit selection, and pointer-down pan/marquee intent handling into
+  `packages/web/src/plan/planCanvasPanMarqueeInteractions.ts`. Local `wc -l`
+  reports `packages/web/src/plan/PlanCanvas.tsx` at `5,507` lines. Focused
+  PlanCanvas, box-selection, and plan-canvas state tests pass (`68 passed`),
+  and `pnpm --filter @bim-ai/web typecheck` passes.

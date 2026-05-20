@@ -244,6 +244,11 @@ import {
   handleCropPointerUp,
 } from './planCanvasCropInteractions';
 import {
+  handleMarqueePointerUp,
+  handlePanMarqueePointerDown,
+  handlePanMarqueePointerMove,
+} from './planCanvasPanMarqueeInteractions';
+import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
   WALL_CROP_BLOCK_MESSAGE,
@@ -1032,31 +1037,19 @@ export function PlanCanvas({
       ) {
         return;
       }
-      if (dragRef.current.dragging) {
-        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (!rr) return;
-        camRef.current.camX = dragRef.current.camX - (rr.xMm - dragRef.current.lastXmm) / 1000;
-        camRef.current.camZ = dragRef.current.camZ - (rr.yMm - dragRef.current.lastZmm) / 1000;
-        resizeCam();
-        skipClickRef.current = true;
-        return;
-      }
-      if (marqueeRef.current.active) {
-        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (rr) {
-          const dir = rr.xMm > marqueeRef.current.sx ? 'left-to-right' : 'right-to-left';
-          marqueeRef.current.direction = dir;
-          marqueeRef.current.ex = rr.xMm;
-          marqueeRef.current.ey = rr.yMm;
-          redrawMarqueeRect(
-            marqueeRef.current.sx,
-            marqueeRef.current.sy,
-            rr.xMm,
-            rr.yMm,
-            dir === 'right-to-left',
-          );
-          skipClickRef.current = true;
-        }
+      if (
+        handlePanMarqueePointerMove({
+          renderer: rnd,
+          camera: camNow,
+          event: ev,
+          dragRef,
+          camRef,
+          marqueeRef,
+          redrawMarqueeRect,
+          resizeCam,
+          skipClickRef,
+        })
+      ) {
         return;
       }
       const v = snapped(ev.clientX, ev.clientY);
@@ -1307,61 +1300,18 @@ export function PlanCanvas({
         return;
       }
 
-      const intent = classifyPointerStart({
-        button: ev.button,
-        spacePressed: spaceDownRef.current,
-        shiftKey: ev.shiftKey,
-        altKey: ev.altKey,
-        activeTool: planTool === 'select' ? 'select' : planTool ? 'wall' : undefined,
-        dragDirection: null,
+      handlePanMarqueePointerDown({
+        renderer: rnd,
+        camera: camNow,
+        group: grp,
+        event: ev,
+        planTool,
+        spaceDownRef,
+        dragRef,
+        camRef,
+        marqueeRef,
+        skipClickRef,
       });
-
-      const startPan = () => {
-        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (!rr) return;
-        dragRef.current = {
-          dragging: true,
-          lastXmm: rr.xMm,
-          lastZmm: rr.yMm,
-          camX: camRef.current.camX,
-          camZ: camRef.current.camZ,
-        };
-      };
-
-      if (intent === 'pan' || ev.button === 2) {
-        startPan();
-      } else if (intent === 'drag-move' && planTool === 'select') {
-        // LMB + select tool: pan on element hit, start marquee on empty space.
-        const rectBox = rnd.domElement.getBoundingClientRect();
-        const ray = new THREE.Raycaster();
-        ray.setFromCamera(
-          new THREE.Vector2(
-            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
-            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
-          ),
-          camNow,
-        );
-        const hits = ray.intersectObjects(grp.children, true);
-        const hasHit = hits.some(
-          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
-        );
-        if (hasHit) {
-          startPan();
-        } else {
-          const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-          if (rr) {
-            marqueeRef.current = {
-              active: true,
-              sx: rr.xMm,
-              sy: rr.yMm,
-              ex: rr.xMm,
-              ey: rr.yMm,
-              direction: null,
-            };
-          }
-        }
-      }
-      skipClickRef.current = false;
     };
 
     const onUpWindow = (ev: PointerEvent) => {
@@ -1409,37 +1359,18 @@ export function PlanCanvas({
         return;
       }
 
-      if (marqueeRef.current.active && marqueeRef.current.direction) {
-        const { sx, sy, ex, ey, direction } = marqueeRef.current;
-        clearMarqueeLine();
-        marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
-
-        const xMin = Math.min(sx, ex);
-        const xMax = Math.max(sx, ex);
-        const yMin = Math.min(sy, ey);
-        const yMax = Math.max(sy, ey);
-        const boxMin = { xMm: xMin, yMm: yMin };
-        const boxMax = { xMm: xMax, yMm: yMax };
-        const selMode = direction === 'left-to-right' ? 'window' : 'crossing';
-
-        const ids: string[] = [];
-        for (const el of Object.values(elementsById)) {
-          // Level filter — use optional chaining since not all kinds have levelId.
-          if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
-          // Skip link_model elements when selectLinkedEnabled is false
-          if (!selectLinkedEnabled && el.kind === 'link_model') continue;
-          if (elementInSelectionBoxMm(el, boxMin, boxMax, selMode)) ids.push(el.id);
-        }
-        if (ids.length >= 1) {
-          selectEl(ids[0]);
-          for (const id of ids.slice(1)) {
-            useBimStore.getState().toggleSelectedId(id);
-          }
-        }
+      if (
+        handleMarqueePointerUp({
+          marqueeRef,
+          clearMarqueeLine,
+          elementsById,
+          displayLevelId,
+          selectLinkedEnabled,
+          selectElement: selectEl,
+        })
+      ) {
         return;
       }
-      clearMarqueeLine();
-      marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
       if (
         planTool === 'wall-opening' &&
         wallOpeningStateRef.current.phase === 'define-rect' &&
