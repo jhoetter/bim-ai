@@ -52,7 +52,13 @@ describe('nearestWallAt', () => {
 
   it('does not select helper or nonphysical walls as opening hosts', () => {
     const elementsById: Record<string, Element> = {
-      helper: wall('helper', 'level-1', { xMm: 0, yMm: 0 }, { xMm: 10000, yMm: 0 }, { helper: true }),
+      helper: wall(
+        'helper',
+        'level-1',
+        { xMm: 0, yMm: 0 },
+        { xMm: 10000, yMm: 0 },
+        { helper: true },
+      ),
       physical: wall('physical', 'level-1', { xMm: 0, yMm: 500 }, { xMm: 10000, yMm: 500 }),
     };
 

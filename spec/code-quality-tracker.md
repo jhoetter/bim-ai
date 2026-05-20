@@ -136,7 +136,7 @@ dependent on discipline.
 
 ## Baseline Snapshot
 
-Commands sampled on 2026-05-19:
+Commands sampled on 2026-05-20:
 
 ```sh
 pnpm architecture
@@ -177,7 +177,7 @@ Largest current source files observed:
 | ----------------------------------------------------------- | ---------- | ------------------------------------------ |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 9.3k       | High-churn plan interaction monolith.      |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.7k       | Shell/workflow orchestration monolith.     |
-| `packages/core/src/index.ts`                                | 6.0k       | Central type and command registry surface. |
+| `packages/core/src/index.ts`                                | 5.8k       | Central type and command registry surface. |
 | `app/bim_ai/api/registry.py`                                | 5.9k       | Central API descriptor registry.           |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.6k       | Inspector rendering and editing monolith.  |
 | `packages/web/src/Viewport.tsx`                             | 6.1k       | 3D viewport orchestration monolith.        |
@@ -206,7 +206,7 @@ Largest current source files observed:
 | CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
 | CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
-| CQ-2026-05 | P1       | Open    | Core type model hygiene                   | Shared element/command types compile without stale aliases or unreachable discriminants. |
+| CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has first thematic slice and compile-time union fixture.                    |
 | CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
@@ -515,6 +515,21 @@ a public re-export facade:
 - `commands/viewsheets.ts`
 - `commands/site.ts`
 - `commands/family.ts`
+
+### Completion Evidence
+
+- 2026-05-20: `packages/core/src/elements/site.ts` owns the first thematic slice:
+  toposolid, graded region, shaft, hatch pattern, neighborhood massing, and
+  concept-seed types.
+- 2026-05-20: `packages/core/src/index.ts` remains the public facade and
+  re-exports the site slice while dropping from about `6.0k` to `5.8k` LOC.
+- 2026-05-20: `packages/core/src/type-tests/siteElementTypes.ts` compiles as a
+  fixture proving extracted site element types still belong to the exported
+  `Element` union.
+- 2026-05-20: `spec/core-type-extraction-map.md` documents the remaining core
+  type slices and guardrails.
+- 2026-05-20: `pnpm --filter @bim-ai/core typecheck` and
+  `pnpm --filter @bim-ai/web typecheck` pass after the split.
 
 ---
 

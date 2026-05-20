@@ -2566,8 +2566,8 @@ function Selected3dElementActions({
   const hostWallId = element.kind === 'door' || element.kind === 'window' ? element.wallId : null;
   const canSelectHost = Boolean(
     hostWallId &&
-      elementsById[hostWallId]?.kind === 'wall' &&
-      isPhysicalHostedOpeningWall(elementsById[hostWallId] as Extract<Element, { kind: 'wall' }>),
+    elementsById[hostWallId]?.kind === 'wall' &&
+    isPhysicalHostedOpeningWall(elementsById[hostWallId] as Extract<Element, { kind: 'wall' }>),
   );
   const canEditType = Boolean(typeId && elementsById[typeId]);
 

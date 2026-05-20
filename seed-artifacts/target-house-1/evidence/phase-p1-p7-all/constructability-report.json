@@ -10,136 +10,65 @@
       "id": "construction_readiness",
       "label": "Construction Readiness",
       "defaultSeverityFloor": "error",
-      "disciplineFocus": [
-        "architecture",
-        "structure",
-        "mep",
-        "coordination"
-      ],
-      "ruleMembership": [
-        "geometry",
-        "constructability",
-        "support",
-        "penetration"
-      ]
+      "disciplineFocus": ["architecture", "structure", "mep", "coordination"],
+      "ruleMembership": ["geometry", "constructability", "support", "penetration"]
     },
     "availableProfilePresets": [
       {
         "id": "accessibility",
         "label": "Accessibility",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "architecture"
-        ],
-        "ruleMembership": [
-          "door",
-          "room",
-          "stair",
-          "clearance"
-        ]
+        "disciplineFocus": ["architecture"],
+        "ruleMembership": ["door", "room", "stair", "clearance"]
       },
       {
         "id": "architecture",
         "label": "Architecture",
         "defaultSeverityFloor": "info",
-        "disciplineFocus": [
-          "architecture",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "architecture",
-          "coordination",
-          "documentation"
-        ]
+        "disciplineFocus": ["architecture", "coordination"],
+        "ruleMembership": ["architecture", "coordination", "documentation"]
       },
       {
         "id": "construction_readiness",
         "label": "Construction Readiness",
         "defaultSeverityFloor": "error",
-        "disciplineFocus": [
-          "architecture",
-          "structure",
-          "mep",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "geometry",
-          "constructability",
-          "support",
-          "penetration"
-        ]
+        "disciplineFocus": ["architecture", "structure", "mep", "coordination"],
+        "ruleMembership": ["geometry", "constructability", "support", "penetration"]
       },
       {
         "id": "exchange",
         "label": "Exchange",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "exchange",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "exchange",
-          "documentation",
-          "metadata"
-        ]
+        "disciplineFocus": ["exchange", "coordination"],
+        "ruleMembership": ["exchange", "documentation", "metadata"]
       },
       {
         "id": "fire",
         "label": "Fire",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "architecture",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "egress",
-          "door",
-          "stair",
-          "metadata"
-        ]
+        "disciplineFocus": ["architecture", "coordination"],
+        "ruleMembership": ["egress", "door", "stair", "metadata"]
       },
       {
         "id": "mep",
         "label": "MEP",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "mep",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "mep",
-          "coordination",
-          "penetration"
-        ]
+        "disciplineFocus": ["mep", "coordination"],
+        "ruleMembership": ["mep", "coordination", "penetration"]
       },
       {
         "id": "sketch_acceptance",
         "label": "Sketch Acceptance",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "agent",
-          "coordination",
-          "architecture"
-        ],
-        "ruleMembership": [
-          "evidence",
-          "renderer",
-          "methodology"
-        ]
+        "disciplineFocus": ["agent", "coordination", "architecture"],
+        "ruleMembership": ["evidence", "renderer", "methodology"]
       },
       {
         "id": "structure",
         "label": "Structure",
         "defaultSeverityFloor": "warning",
-        "disciplineFocus": [
-          "structure",
-          "coordination"
-        ],
-        "ruleMembership": [
-          "structure",
-          "coordination",
-          "geometry"
-        ]
+        "disciplineFocus": ["structure", "coordination"],
+        "ruleMembership": ["structure", "coordination", "geometry"]
       }
     ],
     "scope": {
@@ -167,35 +96,12 @@
     },
     "reviewWorkflow": {
       "schemaVersion": "advisor.false-positive-review-workflow.v1",
-      "classifications": [
-        "rule_defect",
-        "accepted_tolerance",
-        "profile_mismatch",
-        "model_defect"
-      ],
+      "classifications": ["rule_defect", "accepted_tolerance", "profile_mismatch", "model_defect"],
       "requiredFieldsByClassification": {
-        "rule_defect": [
-          "owner",
-          "evidenceRefs",
-          "reviewNote"
-        ],
-        "accepted_tolerance": [
-          "owner",
-          "expiresRevision",
-          "evidenceRefs",
-          "reviewNote"
-        ],
-        "profile_mismatch": [
-          "owner",
-          "profileId",
-          "evidenceRefs",
-          "reviewNote"
-        ],
-        "model_defect": [
-          "owner",
-          "fixPlan",
-          "reviewNote"
-        ]
+        "rule_defect": ["owner", "evidenceRefs", "reviewNote"],
+        "accepted_tolerance": ["owner", "expiresRevision", "evidenceRefs", "reviewNote"],
+        "profile_mismatch": ["owner", "profileId", "evidenceRefs", "reviewNote"],
+        "model_defect": ["owner", "fixPlan", "reviewNote"]
       },
       "statusMapping": {
         "rule_defect": "not_an_issue",
@@ -206,18 +112,8 @@
     },
     "learningCorpus": {
       "schemaVersion": "advisor.learning-corpus-hook.v1",
-      "fixtureKeyFields": [
-        "ruleId",
-        "classification",
-        "profileId",
-        "elementKinds",
-        "evidenceRefs"
-      ],
-      "allowedLabels": [
-        "true_positive",
-        "false_positive",
-        "profile_mismatch"
-      ]
+      "fixtureKeyFields": ["ruleId", "classification", "profileId", "elementKinds", "evidenceRefs"],
+      "allowedLabels": ["true_positive", "false_positive", "profile_mismatch"]
     },
     "profiling": {
       "format": "advisorDiagnosticsProfile_v1",

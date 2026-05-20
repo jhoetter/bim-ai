@@ -18,8 +18,12 @@ export function ElementRenderStatusPanel(props: {
     evidence: { source: 'viewport' },
   }).filter((diagnostic) => diagnostic.elementIds.includes(props.element.id));
   const summary = summarizeRendererDiagnostics(diagnostics);
-  const modelInvalid = diagnostics.filter((diagnostic) => diagnostic.issueClass === 'model-invalid');
-  const rendererIssues = diagnostics.filter((diagnostic) => diagnostic.issueClass !== 'model-invalid');
+  const modelInvalid = diagnostics.filter(
+    (diagnostic) => diagnostic.issueClass === 'model-invalid',
+  );
+  const rendererIssues = diagnostics.filter(
+    (diagnostic) => diagnostic.issueClass !== 'model-invalid',
+  );
 
   return (
     <div className="mt-3 rounded border border-border bg-surface p-2 text-[10px]">

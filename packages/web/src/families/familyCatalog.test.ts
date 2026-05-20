@@ -102,7 +102,9 @@ describe('BUILT_IN_FAMILIES', () => {
 
   it('exports strict family-content metadata for every built-in type', () => {
     const rows = builtinFamilyTypeIntegrityRows();
-    const typeIds = BUILT_IN_FAMILIES.flatMap((family) => family.defaultTypes.map((type) => type.id));
+    const typeIds = BUILT_IN_FAMILIES.flatMap((family) =>
+      family.defaultTypes.map((type) => type.id),
+    );
 
     expect(rows.map((row) => row.id).sort()).toEqual(typeIds.sort());
     for (const row of rows) {
