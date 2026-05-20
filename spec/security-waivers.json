@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "waivers": [
+    {
+      "id": "SECW-2026-001",
+      "check": "security-hygiene",
+      "code": "react_dangerously_set_inner_html",
+      "path": "packages/web/src/plan/HatchPicker.tsx",
+      "line": 39,
+      "owner": "frontend-rendering",
+      "reason": "Hatch thumbnails currently reuse generated SVG pattern markup from the internal hatch renderer.",
+      "trackerId": "CQ-2026-18",
+      "created": "2026-05-20",
+      "expires": "2026-06-30",
+      "severity": "P1",
+      "replacementPlan": "Replace string-injected SVG defs with React-created pattern elements or a sanitized SVG builder."
+    },
+    {
+      "id": "SECW-2026-002",
+      "check": "security-hygiene",
+      "code": "react_dangerously_set_inner_html",
+      "path": "packages/web/src/plan/InteriorElevationViewport.tsx",
+      "line": 152,
+      "owner": "frontend-rendering",
+      "reason": "Interior elevation hatch fills currently compose internal material hatch SVG defs as strings.",
+      "trackerId": "CQ-2026-18",
+      "created": "2026-05-20",
+      "expires": "2026-06-30",
+      "severity": "P1",
+      "replacementPlan": "Move hatch definition generation to typed React SVG elements or sanitize at the hatch renderer boundary."
+    },
+    {
+      "id": "SECW-2026-003",
+      "check": "security-hygiene",
+      "code": "react_dangerously_set_inner_html",
+      "path": "packages/web/src/workspace/sheets/sectionViewportSvg.tsx",
+      "line": 1405,
+      "owner": "frontend-rendering",
+      "reason": "Section viewport level-line rendering injects internally generated SVG group markup.",
+      "trackerId": "CQ-2026-18",
+      "created": "2026-05-20",
+      "expires": "2026-06-30",
+      "severity": "P1",
+      "replacementPlan": "Return structured SVG nodes from buildLevelLineSvg instead of string markup."
+    }
+  ]
+}

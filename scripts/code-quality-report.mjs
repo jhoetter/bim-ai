@@ -22,6 +22,7 @@ const DEFAULT_FILE_BUDGETS = {
   py: { advisory: 1_000, blocking: 1_500, label: 'Python module' },
 };
 const BUDGET_CONFIG_PATH = 'spec/code-quality-budgets.json';
+const SECURITY_WAIVERS_PATH = 'spec/security-waivers.json';
 
 const GRADE_FLOORS = {
   C: 6.0,
@@ -200,6 +201,36 @@ function loadWaivers() {
   return { path, waivers, active, expired, soon, missing: false };
 }
 
+function loadSecurityWaivers() {
+  if (!existsSync(join(REPO_ROOT, SECURITY_WAIVERS_PATH))) {
+    return {
+      path: SECURITY_WAIVERS_PATH,
+      waivers: [],
+      active: [],
+      expired: [],
+      soon: [],
+      missing: true,
+    };
+  }
+  const parsed = JSON.parse(readText(SECURITY_WAIVERS_PATH));
+  const today = new Date(`${TODAY}T00:00:00Z`);
+  const waivers = Array.isArray(parsed.waivers) ? parsed.waivers : [];
+  const active = [];
+  const expired = [];
+  const soon = [];
+  for (const waiver of waivers) {
+    const expires = new Date(`${waiver.expires}T00:00:00Z`);
+    const daysUntilExpiry = Math.floor((expires - today) / 86_400_000);
+    const row = { ...waiver, daysUntilExpiry };
+    if (daysUntilExpiry < 0) expired.push(row);
+    else {
+      active.push(row);
+      if (daysUntilExpiry <= 14) soon.push(row);
+    }
+  }
+  return { path: SECURITY_WAIVERS_PATH, waivers, active, expired, soon, missing: false };
+}
+
 function loadBudgetConfig() {
   if (!existsSync(join(REPO_ROOT, BUDGET_CONFIG_PATH))) {
     return {
@@ -325,6 +356,7 @@ function packageScripts() {
       verify: /^verify:/m.test(makefile),
       lintPy: /^lint-py:/m.test(makefile),
       qualityWaivers: /^quality-waivers:/m.test(makefile),
+      securityHygiene: /^security-hygiene:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
       testPyRealPath: /^test-py-real-path:/m.test(makefile),
       codeQualityReport: /^code-quality-report:/m.test(makefile),
@@ -355,6 +387,20 @@ function frontendGateSummary(scripts) {
   };
 }
 
+function securityGateSummary(scripts) {
+  const ci = existsSync(join(REPO_ROOT, '.github/workflows/ci.yml'))
+    ? readText('.github/workflows/ci.yml')
+    : '';
+  return {
+    hygieneScript: scripts.root['security:hygiene'] ?? null,
+    strictIncludesHygiene: Boolean(scripts.root['verify:strict']?.includes('security:hygiene')),
+    makeTarget: scripts.make.securityHygiene,
+    ciRunsHygiene: ci.includes('security:hygiene'),
+    ciRunsJsAudit: /pnpm audit\b/.test(ci),
+    ciRunsPythonAudit: /pip-audit\b/.test(ci),
+  };
+}
+
 function trackerRows() {
   const tracker = readText('spec/code-quality-tracker.md');
   const rowRe =
@@ -373,7 +419,16 @@ function trackerRows() {
   return rows;
 }
 
-function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEscapes, scripts }) {
+function computeGrade({
+  tracker,
+  waivers,
+  securityWaivers,
+  budgetRows: budgets,
+  artifacts,
+  typeEscapes,
+  scripts,
+  securityGates,
+}) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
   const expiredBlockingWaivers = waivers.expired.filter(
@@ -384,6 +439,7 @@ function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEs
   );
   const hasQualityReportScript = Boolean(scripts.root['quality:report']);
   const hasStrictGate = Boolean(scripts.root['verify:strict']);
+  const hasSecurityHygiene = Boolean(securityGates.hygieneScript);
 
   let score = 7.0;
   const blockersToNextGrade = [];
@@ -397,6 +453,9 @@ function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEs
   }
   if (!hasQualityReportScript) {
     blockersToNextGrade.push('quality report script is not wired into package scripts');
+  }
+  if (!hasSecurityHygiene || !securityGates.ciRunsJsAudit || !securityGates.ciRunsPythonAudit) {
+    blockersToNextGrade.push('security hygiene and dependency audit gates are not fully wired');
   }
   if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
@@ -419,6 +478,11 @@ function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEs
   if (expiredBlockingWaivers.length > 0) {
     blockersToNextGrade.push(
       `${expiredBlockingWaivers.length} expired P0/P1 waiver(s) block quality`,
+    );
+  }
+  if (securityWaivers.expired.length > 0) {
+    blockersToNextGrade.push(
+      `${securityWaivers.expired.length} expired security waiver(s) block quality`,
     );
   }
 
@@ -453,6 +517,7 @@ function buildReport() {
   const budgetConfig = loadBudgetConfig();
   const sourceRows = loadSourceInventory(files, budgetConfig.fileSizeBudgets);
   const waivers = loadWaivers();
+  const securityWaivers = loadSecurityWaivers();
   const budgets = budgetRows(sourceRows, waivers.active, budgetConfig);
   const artifacts = trackedArtifactRows(files, budgetConfig);
   const typeEscapes = typeEscapeHotspots(files);
@@ -460,13 +525,16 @@ function buildReport() {
   const tracker = trackerRows();
   const backendCoverage = backendCoverageSummary();
   const frontendGates = frontendGateSummary(scripts);
+  const securityGates = securityGateSummary(scripts);
   const grade = computeGrade({
     tracker,
     waivers,
+    securityWaivers,
     budgetRows: budgets,
     artifacts,
     typeEscapes,
     scripts,
+    securityGates,
   });
 
   return {
@@ -492,9 +560,11 @@ function buildReport() {
         verifyStrict: scripts.root['verify:strict'] ?? null,
         qualityReport: scripts.root['quality:report'] ?? null,
         qualityWaivers: scripts.root['quality:waivers'] ?? null,
+        securityHygiene: scripts.root['security:hygiene'] ?? null,
         architecture: scripts.root.architecture ?? null,
       },
       make: scripts.make,
+      security: securityGates,
     },
     maintainability: {
       budgetConfig: {
@@ -539,6 +609,17 @@ function buildReport() {
       expired: waivers.expired,
       expiringSoon: waivers.soon,
     },
+    security: {
+      waivers: {
+        path: securityWaivers.path,
+        activeCount: securityWaivers.active.length,
+        expiredCount: securityWaivers.expired.length,
+        expiringSoonCount: securityWaivers.soon.length,
+        active: securityWaivers.active,
+        expired: securityWaivers.expired,
+        expiringSoon: securityWaivers.soon,
+      },
+    },
   };
 }
 
@@ -579,6 +660,15 @@ function renderMarkdown(report) {
   lines.push(
     `| Quality report | ${report.gates.rootScripts.qualityReport ? 'configured' : 'missing'} | ${escapeCell(report.gates.rootScripts.qualityReport ?? '')} |`,
   );
+  lines.push(
+    `| Security hygiene | ${report.gates.security.hygieneScript ? 'configured' : 'missing'} | strict: ${report.gates.security.strictIncludesHygiene ? 'yes' : 'no'}, CI: ${report.gates.security.ciRunsHygiene ? 'yes' : 'no'} |`,
+  );
+  lines.push(
+    `| JS dependency audit | ${report.gates.security.ciRunsJsAudit ? 'configured' : 'missing'} | pnpm audit in CI |`,
+  );
+  lines.push(
+    `| Python dependency audit | ${report.gates.security.ciRunsPythonAudit ? 'configured' : 'missing'} | pip-audit in CI |`,
+  );
   lines.push('');
   lines.push('## Maintainability Budgets');
   lines.push('');
@@ -596,8 +686,7 @@ function renderMarkdown(report) {
       `| ${row.lines} | ${row.kind} | ${row.severity} | ${row.owner} | ${row.trackerIds.join(', ') || '-'} | ${row.waiverIds.join(', ') || '-'} | ${escapeCell(row.path)} |`,
     );
   }
-  if (report.maintainability.overBudget.length === 0)
-    lines.push('| - | - | - | - | - | - | - |');
+  if (report.maintainability.overBudget.length === 0) lines.push('| - | - | - | - | - | - | - |');
   lines.push('');
   lines.push('## Type Escape Hotspots');
   lines.push('');
@@ -624,6 +713,21 @@ function renderMarkdown(report) {
     lines.push(`| ${row.code} | ${escapeCell(row.path)} |`);
   }
   if (report.repositoryHygiene.trackedArtifacts.length === 0) lines.push('| - | - |');
+  lines.push('');
+  lines.push('## Security');
+  lines.push('');
+  lines.push(
+    `Security waivers: active ${report.security.waivers.activeCount}; expiring soon ${report.security.waivers.expiringSoonCount}; expired ${report.security.waivers.expiredCount}.`,
+  );
+  lines.push('');
+  lines.push('| ID | Severity | Code | Expires | Path |');
+  lines.push('| -- | -------- | ---- | ------- | ---- |');
+  for (const row of report.security.waivers.active) {
+    lines.push(
+      `| ${row.id} | ${row.severity} | ${escapeCell(row.code)} | ${row.expires} | ${escapeCell(row.path)} |`,
+    );
+  }
+  if (report.security.waivers.active.length === 0) lines.push('| - | - | - | - | - |');
   lines.push('');
   lines.push('## Waivers');
   lines.push('');

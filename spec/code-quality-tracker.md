@@ -219,7 +219,7 @@ Largest current source files observed:
 | CQ-2026-15 | P1       | Partial | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.         |
 | CQ-2026-16 | P1       | Partial | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                 |
 | CQ-2026-17 | P1       | Partial | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                  |
-| CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
+| CQ-2026-18 | P2       | Done    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.          |
 | CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.            |
 | CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.          |
 
@@ -1178,7 +1178,7 @@ quality story, not only a future hardening aspiration.
 ## CQ-2026-18 - Add Security and Dependency Hygiene Gates
 
 Priority: P2
-Status: Open
+Status: Done
 Owner area: CI, dependency management
 
 ### Problem
@@ -1205,6 +1205,22 @@ being introduced.
 - `pip-audit` or equivalent for Python
 - `gitleaks` or equivalent secret scanner
 - ESLint rules for unsafe DOM usage
+
+### Progress Notes
+
+- 2026-05-20: `pnpm security:hygiene` now runs
+  `scripts/check-security-hygiene.mjs`, scanning tracked files for high-signal
+  secret patterns and production frontend dangerous APIs. The command also
+  performs a bounded recent-history secret probe so the normal strict gate is
+  practical for AI-driven local development.
+- 2026-05-20: `spec/security-waivers.json` records expiring, owned security
+  exceptions for the three existing SVG `dangerouslySetInnerHTML` rendering
+  paths. New unwaived unsafe browser APIs or secret findings fail the gate.
+- 2026-05-20: `.github/workflows/ci.yml` runs `pnpm audit --audit-level=high`
+  and a locked Python `pip-audit` export path in the governance job.
+- 2026-05-20: `spec/security-dependency-policy.md` documents the automated
+  dependency update workflow for pnpm and uv, and `pnpm quality:report` includes
+  security gate and waiver state in the generated scorecard.
 
 ---
 

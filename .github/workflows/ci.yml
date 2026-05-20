@@ -42,6 +42,18 @@ jobs:
         run: |
           pnpm --silent quality:report -- --out-json spec/generated/code-quality-report.json --out-md spec/generated/code-quality-report.md --fail-below B-
 
+      - name: Security hygiene
+        run: pnpm --silent security:hygiene -- --json
+
+      - name: JavaScript dependency audit
+        run: pnpm audit --audit-level=high
+
+      - name: Python dependency audit
+        run: |
+          cd app
+          uv export --frozen --all-extras --no-hashes --format requirements-txt > /tmp/bim-ai-requirements.txt
+          uvx pip-audit -r /tmp/bim-ai-requirements.txt --strict
+
       - name: Upload code quality scorecard
         if: always()
         uses: actions/upload-artifact@v7.0.1
