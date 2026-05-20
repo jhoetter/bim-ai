@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 OVERLAY_CLASSIFICATIONS = {"floor_plan", "section", "elevation", "site_plan"}
 
 
