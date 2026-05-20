@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "targetBlockingDate": "2026-06-30",
+  "fileSizeBudgets": {
+    "tsx": {
+      "label": "React component file",
+      "advisory": 1000,
+      "blocking": 1500
+    },
+    "ts": {
+      "label": "TypeScript module",
+      "advisory": 1500,
+      "blocking": 2000
+    },
+    "js": {
+      "label": "JavaScript module",
+      "advisory": 1500,
+      "blocking": 2000
+    },
+    "mjs": {
+      "label": "JavaScript module",
+      "advisory": 1500,
+      "blocking": 2000
+    },
+    "py": {
+      "label": "Python module",
+      "advisory": 1000,
+      "blocking": 1500
+    }
+  },
+  "ownership": [
+    {
+      "pattern": "packages/web/src/plan/**",
+      "owner": "frontend-plan",
+      "trackerId": "CQ-2026-04"
+    },
+    {
+      "pattern": "packages/web/src/workspace/inspector/**",
+      "owner": "frontend-inspector",
+      "trackerId": "CQ-2026-04"
+    },
+    {
+      "pattern": "packages/web/src/workspace/**",
+      "owner": "frontend-workspace",
+      "trackerId": "CQ-2026-04"
+    },
+    {
+      "pattern": "packages/web/src/viewport/**",
+      "owner": "frontend-viewport",
+      "trackerId": "CQ-2026-16"
+    },
+    {
+      "pattern": "packages/core/src/**",
+      "owner": "core-contracts",
+      "trackerId": "CQ-2026-05"
+    },
+    {
+      "pattern": "packages/cli/**",
+      "owner": "cli-contracts",
+      "trackerId": "CQ-2026-14"
+    },
+    {
+      "pattern": "app/bim_ai/api/**",
+      "owner": "backend-api",
+      "trackerId": "CQ-2026-07"
+    },
+    {
+      "pattern": "app/bim_ai/routes_*.py",
+      "owner": "backend-routes",
+      "trackerId": "CQ-2026-07"
+    },
+    {
+      "pattern": "app/bim_ai/**",
+      "owner": "backend-core",
+      "trackerId": "CQ-2026-13"
+    },
+    {
+      "pattern": "scripts/**",
+      "owner": "quality-tooling",
+      "trackerId": "CQ-2026-12"
+    }
+  ],
+  "generatedArtifactPolicy": {
+    "trackedLocalArtifactPatterns": [
+      "^tmp/",
+      "^packages/[^/]+/tmp/",
+      "(^|/)\\.coverage$",
+      "(^|/)\\.DS_Store$",
+      "(^|/)\\.venv/",
+      "(^|/)__pycache__/"
+    ],
+    "intentionalEvidencePrefixes": [
+      "seed-artifacts/",
+      "spec/benchmarks/",
+      "packages/web/e2e/__screenshots__/",
+      "app/tests/fixtures/evidence/"
+    ]
+  }
+}

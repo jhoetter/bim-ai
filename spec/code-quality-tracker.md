@@ -841,6 +841,9 @@ Initial thresholds can be advisory before becoming blocking:
   files for Python, TS, TSX, JS, and MJS, applies advisory/blocking LOC
   thresholds, and correlates over-budget rows with active
   `spec/quality-waivers.json` entries.
+- 2026-05-20: `spec/code-quality-budgets.json` owns advisory/blocking file-size
+  thresholds, target blocking date, high-risk file ownership patterns, and
+  tracked local artifact policy consumed by the scorecard.
 - 2026-05-20: the scorecard exposes blocking over-budget files without an
   active waiver. This remains Partial because modified-file budget enforcement,
   complexity budgets, and ownership metadata are not yet blocking CI policy.

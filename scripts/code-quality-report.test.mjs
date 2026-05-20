@@ -15,6 +15,8 @@ test('code quality report emits scorecard sections from tracked repo state', () 
   assert.ok(report.gates.frontend.typecheckScript?.includes('tsc'));
   assert.equal(report.gates.backendCoverage.configured, true);
   assert.equal(report.gates.backendCoverage.failUnder, 65);
+  assert.equal(report.maintainability.budgetConfig.path, 'spec/code-quality-budgets.json');
+  assert.ok(report.maintainability.budgetConfig.ownershipCount > 0);
   assert.ok(report.maintainability.largestFiles.length > 0);
   assert.equal(typeof report.repositoryHygiene.trackedArtifactCount, 'number');
   assert.equal(report.waivers.activeCount >= 0, true);
