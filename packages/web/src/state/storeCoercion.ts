@@ -1,5 +1,6 @@
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
+import { coerceLinkElement } from './coercion/linkElements';
 import { coerceSiteElement } from './coercion/siteElements';
 import {
   coerceLoop as coerceWireLoop,
@@ -1911,123 +1912,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     return { kind: 'selection_set', id, name, filterRules };
   }
 
-  if (kind === 'link_model') {
-    const pos = coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>);
-    const sourceModelId = String(raw.sourceModelId ?? raw.source_model_id ?? '');
-    if (!sourceModelId) return null;
-    const rev = raw.sourceModelRevision ?? raw.source_model_revision;
-    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
-    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
-      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
-    const visRaw = String(raw.visibilityMode ?? raw.visibility_mode ?? '');
-    const visibilityMode: 'host_view' | 'linked_view' =
-      visRaw === 'linked_view' ? 'linked_view' : 'host_view';
-    return {
-      kind: 'link_model',
-      id,
-      name,
-      sourceModelId,
-      ...(rev == null ? {} : { sourceModelRevision: Number(rev) }),
-      positionMm: pos,
-      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
-      originAlignmentMode: align,
-      visibilityMode,
-      ...(raw.hidden != null ? { hidden: Boolean(raw.hidden) } : {}),
-      ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
-    };
-  }
-
-  if (kind === 'link_dxf') {
-    const levelId = String(raw.levelId ?? raw.level_id ?? '');
-    if (!levelId) return null;
-    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
-    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
-      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
-    const colorRaw = raw.colorMode ?? raw.color_mode;
-    const colorMode: 'black_white' | 'custom' | 'native' =
-      colorRaw === 'custom' || colorRaw === 'native' ? colorRaw : 'black_white';
-    const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
-    const hiddenLayerNamesRaw = raw.hiddenLayerNames ?? raw.hidden_layer_names;
-    const out: Record<string, unknown> = {
-      kind: 'link_dxf',
-      id,
-      name,
-      levelId,
-      originMm: coerceXY((raw.originMm ?? raw.origin_mm) as Record<string, unknown>),
-      originAlignmentMode: align,
-      unitOverride: raw.unitOverride ?? raw.unit_override ?? undefined,
-      unitScaleToMm:
-        raw.unitScaleToMm != null || raw.unit_scale_to_mm != null
-          ? Number(raw.unitScaleToMm ?? raw.unit_scale_to_mm)
-          : undefined,
-      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
-      scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
-      linework: Array.isArray(raw.linework) ? raw.linework : [],
-      dxfLayers: Array.isArray(raw.dxfLayers ?? raw.dxf_layers)
-        ? (raw.dxfLayers ?? raw.dxf_layers)
-        : [],
-      hiddenLayerNames: Array.isArray(hiddenLayerNamesRaw)
-        ? hiddenLayerNamesRaw.map((v: unknown) => String(v))
-        : [],
-      colorMode,
-      loaded: raw.loaded == null ? true : Boolean(raw.loaded),
-    };
-    if (typeof raw.customColor === 'string' || typeof raw.custom_color === 'string') {
-      out.customColor = String(raw.customColor ?? raw.custom_color);
-    }
-    if (opacityRaw != null) out.overlayOpacity = Number(opacityRaw);
-    if (typeof raw.sourcePath === 'string' || typeof raw.source_path === 'string') {
-      out.sourcePath = String(raw.sourcePath ?? raw.source_path);
-    }
-    if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
-    return out as Element;
-  }
-
-  if (kind === 'link_external') {
-    const typeRaw = raw.externalLinkType ?? raw.external_link_type;
-    const externalLinkType: 'ifc' | 'pdf' | 'image' =
-      typeRaw === 'pdf' || typeRaw === 'image' ? typeRaw : 'ifc';
-    const sourcePath = String(raw.sourcePath ?? raw.source_path ?? '');
-    if (!sourcePath) return null;
-    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
-    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
-      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
-    const statusRaw = raw.reloadStatus ?? raw.reload_status;
-    const reloadStatus: 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error' =
-      statusRaw === 'ok' || statusRaw === 'source_missing' || statusRaw === 'parse_error'
-        ? statusRaw
-        : 'not_reloaded';
-    const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
-    const out: Record<string, unknown> = {
-      kind: 'link_external',
-      id,
-      name: name || String(raw.sourceName ?? raw.source_name ?? sourcePath.split('/').pop() ?? ''),
-      externalLinkType,
-      sourcePath,
-      reloadStatus,
-      loaded: raw.loaded == null ? true : Boolean(raw.loaded),
-      hidden: Boolean(raw.hidden ?? false),
-      originAlignmentMode: align,
-      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
-      scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
-    };
-    if (typeof raw.sourceName === 'string' || typeof raw.source_name === 'string') {
-      out.sourceName = String(raw.sourceName ?? raw.source_name);
-    }
-    if (raw.sourceMetadata != null || raw.source_metadata != null) {
-      const meta = raw.sourceMetadata ?? raw.source_metadata;
-      out.sourceMetadata = meta && typeof meta === 'object' ? meta : {};
-    }
-    if (typeof raw.lastReloadMessage === 'string' || typeof raw.last_reload_message === 'string') {
-      out.lastReloadMessage = String(raw.lastReloadMessage ?? raw.last_reload_message);
-    }
-    if (raw.originMm != null || raw.origin_mm != null) {
-      out.originMm = coerceXY((raw.originMm ?? raw.origin_mm) as Record<string, unknown>);
-    }
-    if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
-    if (opacityRaw != null) out.overlayOpacity = Number(opacityRaw);
-    return out as Element;
-  }
+  const linkElement = coerceLinkElement(id, name, raw as WireRecord);
+  if (linkElement) return linkElement;
 
   if (kind === 'project_base_point') {
     return {

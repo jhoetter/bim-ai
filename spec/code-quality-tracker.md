@@ -623,12 +623,20 @@ more defensive `as any` logic.
 - 2026-05-20: extracted site/toposolid wire coercion into
   `packages/web/src/state/coercion/siteElements.ts`, backed by reusable wire
   primitives in `packages/web/src/state/coercion/primitives.ts`.
+- 2026-05-20: extracted model/DXF/external link wire coercion into
+  `packages/web/src/state/coercion/linkElements.ts`, including predictable
+  rejection for missing link sources/levels and finite-number defaults for link
+  placement/display metadata.
 - 2026-05-20: added focused site coercion coverage in
   `packages/web/src/state/coercion/siteElements.test.ts` for camelCase input,
   snake_case input, invalid numeric defaulting, toposolid height/grid data,
   subdivisions, graded regions, and excavations.
+- 2026-05-20: added focused link coercion coverage in
+  `packages/web/src/state/coercion/linkElements.test.ts` for model, DXF, and
+  external links across camelCase input, snake_case input, missing required
+  fields, invalid enum values, and numeric defaulting.
 - 2026-05-20: `packages/web/src/state/storeCoercion.ts` reduced from `2,290`
-  to `2,175` lines while keeping `coerceElement` as the stable public entry
+  to `2,061` lines while keeping `coerceElement` as the stable public entry
   point.
 - 2026-05-20: verification passed:
   `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/siteElements.test.ts src/state/store.test.ts`,
