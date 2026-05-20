@@ -1071,6 +1071,25 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["format"] == "reverseBimSourceMaterialAssemblies_v1"
     assert resp.json()["summary"]["blockedAssemblyCount"] == 1
 
+    resp = client.post(
+        "/api/v3/reverse-bim/phase-run",
+        json={
+            "phaseAuthoringSpec": {
+                "phases": [
+                    {
+                        "phaseId": "P2-levels",
+                        "sourceFactIds": ["level-eg"],
+                        "authoringActions": [{"factId": "level-eg"}],
+                    }
+                ]
+            },
+            "phasePackets": [],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimPhaseRunReport_v1"
+    assert resp.json()["ok"] is False
+
     folder_output_dir = tmp_path / "folder-output-route"
     resp = client.post(
         "/api/v3/reverse-bim/folder-output",
@@ -1106,6 +1125,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.source_material_assemblies",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",
+        "reverse_bim.phase_run",
         "reverse_bim.level_completeness",
         "reverse_bim.physical_topology",
         "reverse_bim.source_overlay_evidence",

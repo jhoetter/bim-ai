@@ -362,6 +362,13 @@ for _reverse_tool in (
         "notes": "Aggregates per-phase transactions, source facts, QA payloads, and finding dispositions.",
     },
     {
+        "name": "reverse_bim.phase_run",
+        "title": "ReverseBimPhaseRunInput",
+        "path": "/api/v3/reverse-bim/phase-run",
+        "cli": "bim-ai reverse-bim phase-run --phase-spec phase-authoring-spec.json --packets phase-packets.json",
+        "notes": "Checks that source-bearing reverse-BIM phases have accepted phase packets and prevents skipping earlier blocked phases.",
+    },
+    {
         "name": "reverse_bim.level_completeness",
         "title": "ReverseBimLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/level-completeness",

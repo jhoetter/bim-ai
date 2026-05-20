@@ -126,6 +126,7 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
+from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 from bim_ai.renderer_diagnostic_persistence import (
@@ -1667,6 +1668,16 @@ async def reverse_bim_phase_packet_route(
         integrity_preflight=body.get("integrityPreflight"),
         evidence_package=body.get("evidencePackage"),
         finding_dispositions=body.get("findingDispositions") or [],
+    )
+
+
+@api_router.post("/v3/reverse-bim/phase-run")
+async def reverse_bim_phase_run_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_phase_run_report(
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or body,
+        phase_packets=body.get("phasePackets") or body.get("packets"),
     )
 
 

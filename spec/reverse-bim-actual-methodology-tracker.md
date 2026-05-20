@@ -441,7 +441,7 @@ Implementation status:
 
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
-| RBM6-001 | Transactional phase runner | Not started | A runner executes authoring phases, QA, repairs, and stop conditions. |
+| RBM6-001 | Transactional phase runner | Partial | `reverse_bim.phase_run` now blocks skipped source-bearing phases and missing/unaccepted phase packets. Actual command execution/orchestration is still pending. |
 | RBM6-002 | Phase readback queries | Partial | Query endpoints return enough structured geometry for all modeled objects. |
 | RBM6-003 | Advisor/constructability gating | Done | Phase packets and final acceptance block Advisor/constructability warnings by default. |
 | RBM6-004 | Screenshot evidence capture | Not started | Runner captures plan/3D/elevation screenshots after each phase. |
@@ -643,7 +643,7 @@ These are the tool gaps that matter most for the goal.
 | GAP-005 | Stair vertical package authoring | Stairs can clash with walls/floors. | Atomic stair + slab opening + railing + clearance authoring/check. |
 | GAP-006 | Roof/dormer source alignment | Provisional dormer passes. | `validate.roof_dormer_overlay_alignment`. |
 | GAP-007 | Material/layer extraction and authoring | Schedules/material QA remain weak. | Partial: source package now emits `understanding/material-assemblies.json`, repair requests, and `reverse_bim.source_material_assemblies`; wall/floor/roof type authoring/readback gates still need implementation. |
-| GAP-008 | Phase runner | Agent can skip iterative feedback. | MCP phase runner enforcing dry-run/commit/query/QA/repair. |
+| GAP-008 | Phase runner | Agent can skip iterative feedback. | Partial: `reverse_bim.phase_run` enforces phase-packet order/acceptance; live dry-run/commit/query orchestration remains. |
 | GAP-009 | Seed/export guard | Bad diagnostic models can be packaged. | Export/seed command requires final acceptance report. |
 | GAP-010 | UI evidence capture | Human-visible failures discovered too late. | Automated screenshot capture from named views. |
 
@@ -656,9 +656,10 @@ Implemented first-pass surfaces:
 - `reverse_bim.final_acceptance` with `reverseBimFinalAcceptancePolicy_v2`
 - `reverse_bim.source_material_assemblies`
 - `source.reader_consensus`
+- `reverse_bim.phase_run`
 
 These enforce the new gates with structured reports. The remaining work is
-automatic source/model overlay rendering, screenshot capture, phase-runner
+automatic source/model overlay rendering, screenshot capture, live phase
 orchestration, material type authoring/readback gates, and a fresh Leo benchmark.
 
 ## Implementation Waves
