@@ -22,6 +22,7 @@ const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
 const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
 const SKETCH_OVERLAY_SRC = readSource('PlanCanvasSketchOverlay.tsx');
+const PICK_HELPERS_SRC = readSource('planCanvasPickHelpers.ts');
 
 describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('removes every "stub:" console.warn from PlanCanvas.tsx', () => {
@@ -88,8 +89,8 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   });
 
   it('lets the Wall tool pick floor edges and imported CAD/reference lines directly', () => {
-    expect(SRC).toContain('pickFloorBoundaryEdgeForWall(');
-    expect(SRC).toContain('pickDxfLineForWall(');
+    expect(PICK_HELPERS_SRC).toContain('pickFloorBoundaryEdgeForWall(');
+    expect(PICK_HELPERS_SRC).toContain('pickDxfLineForWall(');
     expect(SRC).toContain('createWallFromPickedLineCommand(');
     expect(WALL_DRAFT_OVERLAYS_SRC).toContain('data-testid="wall-pick-line-preview"');
   });

@@ -230,7 +230,7 @@ import {
   type CropHandleId,
 } from './cropRegionDragHandles';
 import { getCropRegionGrips, applyCropGripDrag } from './cropRegionGrips';
-import { areaPlanPlacementContext, findAreaPlacementBoundary } from './areaPlacement';
+import { findAreaPlacementBoundary } from './areaPlacement';
 import { placeTagByCategoryCommand } from './manualTags';
 import {
   dxfViewOverrideKey,
@@ -247,7 +247,6 @@ import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import type { WallContextMenuCommand } from '../workspace/viewport/WallContextMenu';
 import { createSimilarPayload } from './createSimilar';
 import { type MmToScreen, type PointerToMm } from './SketchCanvas';
-import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
 import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
@@ -256,6 +255,7 @@ import { elementInSelectionBoxMm } from './boxSelection';
 import { nextTabSelection } from './tabCycleSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { createPlanCanvasPreviewHelpers } from './planCanvasPreviewHelpers';
+import { createPlanCanvasPickHelpers } from './planCanvasPickHelpers';
 import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
@@ -264,8 +264,6 @@ import {
 import {
   createWallFromPickedLineCommand,
   hasOverlappingWallLine,
-  pickDxfLineForWall,
-  pickFloorBoundaryEdgeForWall,
   type PickedWallLine,
 } from './wallPickLines';
 import {
@@ -990,82 +988,26 @@ export function PlanCanvas({
       marqueeFillRef,
     });
 
-    const activeAreaPlanContext = () =>
-      areaPlanPlacementContext(elementsById, activePlanViewId, lvlId);
-
-    const areaSnapPoint = (pointMm: { xMm: number; yMm: number }) => {
-      const ctx = activeAreaPlanContext();
-      if (!ctx) return pointMm;
-      const wallsForAreaSnap = Object.values(elementsById)
-        .filter(
-          (el): el is Extract<Element, { kind: 'wall' }> =>
-            el.kind === 'wall' && el.levelId === ctx.levelId,
-        )
-        .map((w) => ({
-          id: w.id,
-          startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
-          endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
-          thicknessMm: w.thicknessMm,
-        }));
-      return snapPointToNearestWallFaceMm(wallsForAreaSnap, pointMm) ?? pointMm;
-    };
-
-    const wallPickToleranceMm = () => {
-      const rect = rnd.domElement.getBoundingClientRect();
-      return Math.min(
-        350,
-        Math.max(120, (10 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000),
-      );
-    };
-
-    const dxfHitAt = (pointMm: { xMm: number; yMm: number }, toleranceMm: number) => {
-      const liveElementsById = useBimStore.getState().elementsById;
-      const dxfLevelId = displayLevelId || activeLevelResolvedId;
-      const dxfUnderlays = selectDxfUnderlaysForLevel(liveElementsById, dxfLevelId || undefined);
-      if (dxfUnderlays.length === 0) return null;
-      const activePlanView = activePlanViewId ? liveElementsById[activePlanViewId] : undefined;
-      const viewOverrides =
-        activePlanView?.kind === 'plan_view'
-          ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
-          : {};
-      return queryDxfPrimitiveAtPoint(dxfUnderlays, pointMm, {
-        toleranceMm,
-        elementsById: liveElementsById,
-        viewOverridesByLinkId: Object.fromEntries(
-          dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
-        ),
-      });
-    };
-
-    const pickedWallLineAt = (
-      pointMm: { xMm: number; yMm: number },
-      toleranceMm: number,
-    ): PickedWallLine | null => {
-      const liveElementsById = useBimStore.getState().elementsById;
-      const pickLevelId = displayLevelId || activeLevelResolvedId || lvlId;
-      return (
-        pickFloorBoundaryEdgeForWall(liveElementsById, pickLevelId, pointMm, toleranceMm) ??
-        pickDxfLineForWall(dxfHitAt(pointMm, toleranceMm), pointMm, liveElementsById)
-      );
-    };
-
-    const commitAreaBoundary = (boundaryMm: Array<{ xMm: number; yMm: number }>) => {
-      const ctx = activeAreaPlanContext();
-      if (!ctx || !ctx.levelId || boundaryMm.length < 3) return false;
-      onSemanticCommand({
-        type: 'createArea',
-        name: 'Area',
-        levelId: ctx.levelId,
-        boundaryMm,
-        ruleSet: ctx.ruleSet,
-        areaScheme: ctx.areaScheme,
-        applyAreaRules: useBimStore.getState().applyAreaRules,
-      });
-      draftRef.current = undefined;
-      clearPreview();
-      bumpGeom((x) => x + 1);
-      return true;
-    };
+    const {
+      activeAreaPlanContext,
+      areaSnapPoint,
+      commitAreaBoundary,
+      dxfHitAt,
+      pickedWallLineAt,
+      wallPickToleranceMm,
+    } = createPlanCanvasPickHelpers({
+      renderer: rnd,
+      camRef,
+      displayLevelId,
+      activeLevelResolvedId,
+      activePlanViewId,
+      lvlId,
+      elementsById,
+      draftRef,
+      onSemanticCommand,
+      clearPreview,
+      bumpGeom,
+    });
 
     const onMove = (ev: PointerEvent) => {
       // EDT-01 — grip drag takes priority over every other interaction.

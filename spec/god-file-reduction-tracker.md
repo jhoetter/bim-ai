@@ -99,6 +99,7 @@ A-territory target:
 | GFR-2026-23 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract view rotation, column overlay, and auto-fit effects        | PlanCanvas below `6,110` LOC with focused tests green.      |
 | GFR-2026-24 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer preview and marquee drawing helpers                | PlanCanvas below `6,050` LOC with focused tests green.      |
 | GFR-2026-25 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract grip and temp-dimension callback handlers                  | PlanCanvas below `6,000` LOC with focused tests green.      |
+| GFR-2026-26 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract wall/DXF/area pick helper cluster                          | PlanCanvas below `5,950` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -373,4 +374,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   handlers into `packages/web/src/plan/usePlanCanvasGripHandlers.ts`. Local
   `wc -l` reports `packages/web/src/plan/PlanCanvas.tsx` at `5,975` lines.
   Focused grip/temp-dimension/PlanCanvas tests pass (`48 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-26` is Done. The slice moved wall pick tolerance,
+  floor-edge/DXF wall-line picking, area-plan context lookup, area snap, and
+  area-boundary commit helpers into
+  `packages/web/src/plan/planCanvasPickHelpers.ts`. Local `wc -l` reports
+  `packages/web/src/plan/PlanCanvas.tsx` at `5,917` lines. Focused wall-pick,
+  area, DXF, and PlanCanvas tool tests pass (`56 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
