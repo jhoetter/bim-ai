@@ -1208,6 +1208,10 @@ Initial thresholds can be advisory before becoming blocking:
   `CQW-2026-002` and `CQW-2026-003` after the god-file reductions and
   tracker-owned budget dispositions made them redundant. `pnpm
   maintainability:budgets` remains green without those waivers.
+- 2026-05-20: added ownership rows for frontend platform i18n, design-system,
+  schedule, and family-library modules that were still reported as unowned
+  advisory over-budget files. The generated scorecard now reports `0` unowned
+  over-budget files.
 - 2026-05-20: another PlanCanvas extraction slice moved repeated annotation
   label sprite canvas setup into `plan/planTextSprites.ts`; this keeps the file
   trending downward under its CQ-2026-04/CQ-2026-13 owner disposition.

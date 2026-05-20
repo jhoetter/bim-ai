@@ -69,9 +69,29 @@
       "trackerId": "CQ-2026-16"
     },
     {
+      "pattern": "packages/web/src/design-systems/**",
+      "owner": "frontend-design-system",
+      "trackerId": "CQ-2026-16"
+    },
+    {
+      "pattern": "packages/web/src/families/**",
+      "owner": "frontend-family-library",
+      "trackerId": "CQ-2026-13"
+    },
+    {
       "pattern": "packages/web/src/familyEditor/**",
       "owner": "frontend-family-editor",
       "trackerId": "CQ-2026-13"
+    },
+    {
+      "pattern": "packages/web/src/i18n.ts",
+      "owner": "frontend-platform",
+      "trackerId": "CQ-2026-03"
+    },
+    {
+      "pattern": "packages/web/src/schedules/**",
+      "owner": "frontend-schedules",
+      "trackerId": "CQ-2026-17"
     },
     {
       "pattern": "packages/web/src/tools/**",
