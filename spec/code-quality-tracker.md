@@ -572,13 +572,17 @@ a public re-export facade:
 - 2026-05-20: `packages/core/src/type-tests/buildingBaseElementTypes.ts`
   compiles as a fixture proving the extracted base building element types still
   belong to the exported `Element` union.
+- 2026-05-20: expanded `packages/core/src/elements/building.ts` to own rooms,
+  grid lines, and linear dimensions, with
+  `packages/core/src/type-tests/buildingBaseElementTypes.ts` proving those
+  extracted types remain in the public `Element` union.
 - 2026-05-20: `packages/core/src/elements/family.ts` owns the family element
   slice for family types, placed instances, editor solids, nested components,
   reference planes, family definitions, parameters, and constraints.
 - 2026-05-20: `packages/core/src/type-tests/familyElementTypes.ts` compiles as
   a fixture proving the extracted family element types still belong to the
   exported `Element` union.
-- 2026-05-20: `packages/core/src/index.ts` reduced from `5,666` to `5,484`
+- 2026-05-20: `packages/core/src/index.ts` reduced from `5,666` to `5,355`
   lines while preserving `@bim-ai/core` public re-exports.
 - 2026-05-20: `packages/core/src/elements/documentation.ts` owns the first
   documentation slice for sheets, titleblock types, window legend views, sheet

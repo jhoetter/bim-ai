@@ -12,7 +12,8 @@ facade without changing imports for frontend, CLI, or tests.
   regions, excavation, pads, shafts, hatch definitions, neighborhood massing,
   and concept seed handoff types.
 - `packages/core/src/elements/building.ts`: project settings, room color
-  schemes, wall/floor/roof type definitions, and level elements.
+  schemes, wall/floor/roof type definitions, levels, rooms, grid lines, and
+  linear dimensions.
 - `packages/core/src/elements/documentation.ts`: sheets, titleblock types,
   window legend views, sheet metadata, and viewport placement rows.
 - `packages/core/src/elements/family.ts`: family types, family instances,
@@ -21,9 +22,9 @@ facade without changing imports for frontend, CLI, or tests.
 
 ## Next Type Slices
 
-- `elements/building.ts`: continue moving grids, walls, floors, roofs, rooms,
-  openings, stairs, railings, ramps, columns, beams, beam systems, braces,
-  structural connections, and building services.
+- `elements/building.ts`: continue moving walls, floors, roofs, openings,
+  stairs, railings, ramps, columns, beams, beam systems, braces, structural
+  connections, and building services.
 - `elements/family.ts`: continue moving family editor commands, custom
   materials, family kits, library assets, and placed assets.
 - `elements/documentation.ts`: continue moving views, schedules, tags,
