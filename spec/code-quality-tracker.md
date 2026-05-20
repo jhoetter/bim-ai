@@ -178,7 +178,7 @@ Largest current source files observed:
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 6,597      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
-| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                                                  |
+| `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.0k       | Shell/workflow orchestration monolith.                                                            |
 | `packages/web/src/Viewport.tsx`                             | 5.3k       | 3D viewport orchestration monolith.                                                               |
@@ -839,6 +839,14 @@ for merge conflicts and stale descriptor drift.
 - 2026-05-20: focused registry verification passed:
   `cd app && uv run pytest -q tests/test_api_v3_registry.py --no-cov` and
   `cd app && uv run ruff check bim_ai/api/registry.py bim_ai/api/registry_metadata.py`.
+- 2026-05-20: extracted the toposolid, site, comparison/catalog,
+  family/assets/materials, site context, material PBR, and sketch descriptor
+  groups into `app/bim_ai/api/descriptors/*`, reducing the exact staged
+  `app/bim_ai/api/registry.py` commit file to `4,723` lines while keeping
+  registry imports as the registration mechanism. The staged snapshot imports
+  `127` tools and passes focused descriptor tests with `--no-cov`; the dirty
+  worktree still reports `5,481` lines because unrelated parallel-agent registry
+  additions are intentionally left unstaged.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path

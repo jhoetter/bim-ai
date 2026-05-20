@@ -79,7 +79,7 @@ A-territory target:
 | GFR-2026-03 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing.   |
 | GFR-2026-04 | P1       | Done   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.         |
 | GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.     |
-| GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
+| GFR-2026-06 | P1       | Done   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
 | GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.    |
 | GFR-2026-08 | P2       | Done   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.       |
 | GFR-2026-09 | P2       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract self-contained family editor panels                        | Workbench below `4,500` LOC with focused tests passing.     |
@@ -284,7 +284,15 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   pre-existing `StructuredLayout` removal outside this commit, so the committed
   barrel remains below the `5,000` LOC target. `pnpm --filter @bim-ai/core
 typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
-- 2026-05-20: the remaining open row (`GFR-2026-06`) still touches
-  `app/bim_ai/api/registry.py`, which contains unrelated uncommitted
-  parallel-agent descriptor work. Continue that row with patch staging to avoid
-  committing unrelated registry changes.
+- 2026-05-20: `GFR-2026-06` is Done. The slice moved the toposolid, site,
+  comparison/catalog, family/assets/materials, site context, material PBR, and
+  sketch descriptor groups into `app/bim_ai/api/descriptors/*`, preserving the
+  existing registration order through imported descriptor modules. The exact
+  staged registry file for this commit is `4,723` lines and imports `127` tools;
+  the dirty worktree still reports `5,481` lines because unrelated
+  parallel-agent registry additions are intentionally left unstaged. Ruff
+  format/check passes for the registry and descriptor modules; the focused
+  descriptor suite passes with the coverage gate disabled (`116 passed`). The
+  same focused tests without `--no-cov` executed all `116` tests successfully
+  but failed the repository-wide coverage threshold, so the no-cov run is the
+  slice-level signal.
