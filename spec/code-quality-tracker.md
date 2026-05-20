@@ -1,6 +1,6 @@
 # BIM AI - Code Quality Tracker
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 Purpose: track the current code-quality risks that block the repository from
 being a healthy production-grade codebase. This is the active successor to the
@@ -150,17 +150,17 @@ make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"
 
 Observed results:
 
-| Gate                      | Result                                 | Notes                                                                                                          |
-| ------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Package architecture      | Pass                                   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                              |
-| Prettier check            | Pass                                   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                              |
-| Quality waivers           | Pass                                   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.               |
-| Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
-| Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked by `CQW-2026-001` while outside the B gate. |
-| Frontend unit tests       | Pass                                   | `671` test files / `5466` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
-| Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
-| Narrow backend test       | Pass                                   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
-| Makefile Python ruff path | Pass                                   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.   |
+| Gate                      | Result | Notes                                                                                                              |
+| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| Package architecture      | Pass   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                                  |
+| Prettier check            | Pass   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                                  |
+| Quality waivers           | Pass   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.                   |
+| Python ruff via `uv run`  | Pass   | `uv run ruff check bim_ai tests scripts` is green.                                                                 |
+| Frontend lint             | Fail   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked by `CQW-2026-001` while outside the B gate.   |
+| Frontend unit tests       | Pass   | `671` test files / `5466` tests pass with test i18n, fetch, canvas, and React key warnings quieted.                |
+| Frontend typecheck        | Pass   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                    |
+| Narrow backend test       | Pass   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
+| Makefile Python ruff path | Pass   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.       |
 
 Code scale snapshot:
 
@@ -213,14 +213,14 @@ Largest current source files observed:
 | CQ-2026-09 | P2       | Open    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
 | CQ-2026-10 | P2       | Open    | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
 | CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                 |
-| CQ-2026-12 | P2       | Open    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                            |
-| CQ-2026-13 | P1       | Open    | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                |
+| CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                            |
+| CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                |
 | CQ-2026-14 | P1       | Open    | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.  |
 | CQ-2026-15 | P1       | Open    | Feature dependency boundaries             | Cross-feature and cross-layer imports are linted beyond package-level DAG checks.        |
 | CQ-2026-16 | P1       | Open    | Product-quality UI budgets                | Accessibility, performance, and bundle budgets protect primary workflows.                |
 | CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                 |
 | CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.         |
-| CQ-2026-19 | P2       | Open    | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.           |
+| CQ-2026-19 | P2       | Partial | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.           |
 | CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.         |
 
 ---
@@ -747,7 +747,7 @@ environment than production rendering.
 ## CQ-2026-12 - Add CI Quality Budget Reporting
 
 Priority: P2
-Status: Open
+Status: Done
 Owner area: CI, scripts
 
 ### Problem
@@ -778,12 +778,24 @@ tracked generated artifacts.
 
 `scripts/code-quality-report.mjs`
 
+### Completion Evidence
+
+- 2026-05-20: `scripts/code-quality-report.mjs` emits deterministic Markdown
+  and JSON reports from tracked repo state.
+- 2026-05-20: `pnpm quality:report` and `make code-quality-report` expose the
+  scorecard locally.
+- 2026-05-20: `.github/workflows/ci.yml` writes
+  `spec/generated/code-quality-report.{json,md}` in the governance job and
+  uploads them as a CI artifact.
+- 2026-05-20: `scripts/code-quality-report.test.mjs` covers report sections,
+  JSON CLI output, and grade threshold failure behavior.
+
 ---
 
 ## CQ-2026-13 - Enforce Maintainability Budgets
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: architecture scripts, frontend/backend module ownership
 
 ### Problem
@@ -822,6 +834,16 @@ Initial thresholds can be advisory before becoming blocking:
 - `scripts/code-quality-report.mjs`
 - `scripts/check-architecture.mjs`
 - `spec/code-quality-tracker.md`
+
+### Progress Notes
+
+- 2026-05-20: `scripts/code-quality-report.mjs` reports largest tracked source
+  files for Python, TS, TSX, JS, and MJS, applies advisory/blocking LOC
+  thresholds, and correlates over-budget rows with active
+  `spec/quality-waivers.json` entries.
+- 2026-05-20: the scorecard exposes blocking over-budget files without an
+  active waiver. This remains Partial because modified-file budget enforcement,
+  complexity budgets, and ownership metadata are not yet blocking CI policy.
 
 ---
 
@@ -1022,7 +1044,7 @@ being introduced.
 ## CQ-2026-19 - Publish a Release-Readiness Scorecard
 
 Priority: P2
-Status: Open
+Status: Partial
 Owner area: scripts, CI, docs
 
 ### Problem
@@ -1055,6 +1077,18 @@ machine-readable waiver consumed by the report.
 - The scorecard lists top regressions and top improvements since the previous
   baseline.
 - Release notes can link to the scorecard for quality claims.
+
+### Progress Notes
+
+- 2026-05-20: `scripts/code-quality-report.mjs` computes a B-/B/A-style grade
+  from tracker status, configured verification gates, backend coverage
+  configuration, maintainability budgets, type escape hotspots, tracked local
+  artifact rows, and active/expired waivers.
+- 2026-05-20: the CLI supports `--json`, `--out-json`, `--out-md`, and
+  `--fail-below`, so release jobs can fail below a configured grade.
+- 2026-05-20: CI uploads the generated scorecard. This remains Partial until
+  trend comparison against a previous baseline and release-note handoff are
+  implemented.
 
 ### Suggested Output
 

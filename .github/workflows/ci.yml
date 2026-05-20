@@ -38,6 +38,20 @@ jobs:
       - name: Governance drift gates
         run: node scripts/governance-drift-gates.mjs
 
+      - name: Code quality scorecard
+        run: |
+          pnpm --silent quality:report -- --out-json spec/generated/code-quality-report.json --out-md spec/generated/code-quality-report.md --fail-below B-
+
+      - name: Upload code quality scorecard
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: code-quality-${{ github.run_id }}
+          retention-days: 14
+          path: |
+            spec/generated/code-quality-report.json
+            spec/generated/code-quality-report.md
+
   js:
     # Keep Playwright screenshot tests off `ubuntu-latest`, whose image churn
     # can shift flex layout/heights against committed Linux baselines.
