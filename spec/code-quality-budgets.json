@@ -45,9 +45,34 @@
       "trackerId": "CQ-2026-04"
     },
     {
+      "pattern": "packages/web/src/Viewport.tsx",
+      "owner": "frontend-viewport",
+      "trackerId": "CQ-2026-16"
+    },
+    {
       "pattern": "packages/web/src/viewport/**",
       "owner": "frontend-viewport",
       "trackerId": "CQ-2026-16"
+    },
+    {
+      "pattern": "packages/web/src/familyEditor/**",
+      "owner": "frontend-family-editor",
+      "trackerId": "CQ-2026-13"
+    },
+    {
+      "pattern": "packages/web/src/tools/**",
+      "owner": "frontend-tooling",
+      "trackerId": "CQ-2026-14"
+    },
+    {
+      "pattern": "packages/web/src/cmdPalette/**",
+      "owner": "frontend-command-surface",
+      "trackerId": "CQ-2026-14"
+    },
+    {
+      "pattern": "packages/web/src/state/**",
+      "owner": "frontend-state",
+      "trackerId": "CQ-2026-06"
     },
     {
       "pattern": "packages/core/src/**",

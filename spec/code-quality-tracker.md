@@ -905,6 +905,10 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: the scorecard exposes blocking over-budget files without an
   active waiver. This remains Partial because modified-file budget enforcement,
   complexity budgets, and ownership metadata are not yet blocking CI policy.
+- 2026-05-20: the scorecard now treats a machine-readable owner tracker ID as a
+  budget disposition alongside waivers, reports tracker IDs in the
+  maintainability table, and adds ownership rows for top frontend hotspots that
+  were previously unowned.
 
 ---
 

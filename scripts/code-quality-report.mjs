@@ -244,17 +244,25 @@ function budgetRows(sourceRows, waivers, budgetConfig) {
     .filter((row) => row.overAdvisory || row.overBlocking)
     .map((row) => {
       const matchingWaivers = waivers.filter((waiver) => waiverMatchesPath(waiver, row.path));
+      const ownership = ownershipForPath(budgetConfig, row.path);
+      const trackerIds = [
+        ...new Set(
+          [
+            ownership.trackerId,
+            ...matchingWaivers.map((waiver) => waiver.trackerId).filter(Boolean),
+          ].filter(Boolean),
+        ),
+      ].sort();
       return {
         path: row.path,
         lines: row.lines,
         kind: row.kind,
         budget: row.budget,
-        ...ownershipForPath(budgetConfig, row.path),
+        ...ownership,
         severity: row.overBlocking ? 'blocking' : 'advisory',
         waiverIds: matchingWaivers.map((waiver) => waiver.id).sort(),
-        trackerIds: [
-          ...new Set(matchingWaivers.map((waiver) => waiver.trackerId).filter(Boolean)),
-        ].sort(),
+        trackerIds,
+        hasDisposition: matchingWaivers.length > 0 || trackerIds.length > 0,
       };
     });
 }
@@ -370,8 +378,8 @@ function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEs
   const expiredBlockingWaivers = waivers.expired.filter(
     (waiver) => waiver.severity === 'P0' || waiver.severity === 'P1',
   );
-  const blockingBudgetsWithoutWaiver = budgets.filter(
-    (row) => row.severity === 'blocking' && row.waiverIds.length === 0,
+  const blockingBudgetsWithoutDisposition = budgets.filter(
+    (row) => row.severity === 'blocking' && !row.hasDisposition,
   );
   const hasQualityReportScript = Boolean(scripts.root['quality:report']);
   const hasStrictGate = Boolean(scripts.root['verify:strict']);
@@ -389,10 +397,10 @@ function computeGrade({ tracker, waivers, budgetRows: budgets, artifacts, typeEs
   if (!hasQualityReportScript) {
     blockersToNextGrade.push('quality report script is not wired into package scripts');
   }
-  if (blockingBudgetsWithoutWaiver.length > 0) {
+  if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
     blockersToNextGrade.push(
-      `${blockingBudgetsWithoutWaiver.length} blocking file-size budget row(s) lack a waiver`,
+      `${blockingBudgetsWithoutDisposition.length} blocking file-size budget row(s) lack a waiver or tracker disposition`,
     );
   }
   if (artifacts.length > 0) {
@@ -504,6 +512,9 @@ function buildReport() {
       overBudget: budgets,
       overBudgetCount: budgets.length,
       unownedOverBudgetCount: budgets.filter((row) => row.owner === 'unowned').length,
+      blockingWithoutDispositionCount: budgets.filter(
+        (row) => row.severity === 'blocking' && !row.hasDisposition,
+      ).length,
       blockingWithoutWaiverCount: budgets.filter(
         (row) => row.severity === 'blocking' && row.waiverIds.length === 0,
       ).length,
@@ -571,20 +582,21 @@ function renderMarkdown(report) {
   lines.push('## Maintainability Budgets');
   lines.push('');
   lines.push(
-    `Over-budget files: ${report.maintainability.overBudgetCount}; blocking without waiver: ${report.maintainability.blockingWithoutWaiverCount}; unowned over budget: ${report.maintainability.unownedOverBudgetCount}.`,
+    `Over-budget files: ${report.maintainability.overBudgetCount}; blocking without waiver/tracker: ${report.maintainability.blockingWithoutDispositionCount}; unowned over budget: ${report.maintainability.unownedOverBudgetCount}.`,
   );
   lines.push(
     `Budget config: \`${report.maintainability.budgetConfig.path}\`; target blocking date: ${report.maintainability.budgetConfig.targetBlockingDate ?? 'n/a'}.`,
   );
   lines.push('');
-  lines.push('| Lines | Kind | Severity | Owner | Waivers | Path |');
-  lines.push('| ----- | ---- | -------- | ----- | ------- | ---- |');
+  lines.push('| Lines | Kind | Severity | Owner | Trackers | Waivers | Path |');
+  lines.push('| ----- | ---- | -------- | ----- | -------- | ------- | ---- |');
   for (const row of report.maintainability.overBudget.slice(0, 25)) {
     lines.push(
-      `| ${row.lines} | ${row.kind} | ${row.severity} | ${row.owner} | ${row.waiverIds.join(', ') || '-'} | ${escapeCell(row.path)} |`,
+      `| ${row.lines} | ${row.kind} | ${row.severity} | ${row.owner} | ${row.trackerIds.join(', ') || '-'} | ${row.waiverIds.join(', ') || '-'} | ${escapeCell(row.path)} |`,
     );
   }
-  if (report.maintainability.overBudget.length === 0) lines.push('| - | - | - | - | - | - |');
+  if (report.maintainability.overBudget.length === 0)
+    lines.push('| - | - | - | - | - | - | - |');
   lines.push('');
   lines.push('## Type Escape Hotspots');
   lines.push('');
