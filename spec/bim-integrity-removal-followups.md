@@ -15,10 +15,10 @@ Rules:
 
 ## Current Candidates
 
-| ID | Status | Candidate | Reason | Safe Action |
-| -- | ------ | --------- | ------ | ----------- |
-| `RM-001` | Pending review | `spec/.DS_Store` | Local macOS metadata, unrelated to tracker implementation. | Remove after confirming no other agent intentionally staged it. |
-| `RM-002` | Pending review | `/tmp/bim-ai-w25b-origin` | Temporary isolated worktree used by Wave 25-B for renderer closure. | Remove after Wave 25 integration is pushed and no longer needs inspection. |
-| `RM-003` | Pending review | Untracked `spec/*prompt*.md` and norms/code-quality planning files | These appear to be parallel planning artifacts outside the active BIM integrity tracker. | Leave untouched until user/owning agent confirms whether to keep or move. |
-| `RM-004` | Pending review | Pre-existing dirty files outside current wave ownership | Multiple app/web files were dirty before the current wave and may belong to other agents. | Leave untouched; do not include in BIM integrity commits unless a wave explicitly owns and tests them. |
-| `RM-005` | Pending review | `tmp/target-house-final-package/` | Disposable final-package output created by local closeout/reporting checks. | Remove after integration notes no longer need the local manifest/performance artifacts. |
+| ID       | Status         | Candidate                                                          | Reason                                                                                    | Safe Action                                                                                            |
+| -------- | -------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `RM-001` | Pending review | `spec/.DS_Store`                                                   | Local macOS metadata, unrelated to tracker implementation.                                | Remove after confirming no other agent intentionally staged it.                                        |
+| `RM-002` | Pending review | `/tmp/bim-ai-w25b-origin`                                          | Temporary isolated worktree used by Wave 25-B for renderer closure.                       | Remove after Wave 25 integration is pushed and no longer needs inspection.                             |
+| `RM-003` | Pending review | Untracked `spec/*prompt*.md` and norms/code-quality planning files | These appear to be parallel planning artifacts outside the active BIM integrity tracker.  | Leave untouched until user/owning agent confirms whether to keep or move.                              |
+| `RM-004` | Pending review | Pre-existing dirty files outside current wave ownership            | Multiple app/web files were dirty before the current wave and may belong to other agents. | Leave untouched; do not include in BIM integrity commits unless a wave explicitly owns and tests them. |
+| `RM-005` | Pending review | `tmp/target-house-final-package/`                                  | Disposable final-package output created by local closeout/reporting checks.               | Remove after integration notes no longer need the local manifest/performance artifacts.                |

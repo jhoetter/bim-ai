@@ -210,7 +210,7 @@ Largest current source files observed:
 | CQ-2026-06 | P1       | Done    | Runtime data coercion boundary            | Major wire coercion domains are localized with focused tests; `storeCoercion.ts` is under budget. |
 | CQ-2026-07 | P1       | Done    | Python route and registry maintainability | Registry core/metadata and route surfaces are split with descriptor and route tests.              |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.              |
-| CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
+| CQ-2026-09 | P2       | Done    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                              |
 | CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                                |
 | CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                          |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                                     |
@@ -816,7 +816,7 @@ cd app && uv run pytest -q -m 'not integration' --no-cov
 ## CQ-2026-09 - Clean Repository Hygiene
 
 Priority: P2
-Status: Partial
+Status: Done
 Owner area: repository policy
 
 ### Problem
@@ -854,6 +854,13 @@ Move long-lived visual baselines into one of:
   `trackedArtifactCount` plus sample artifact rows in JSON/Markdown and CI
   artifacts. This remains Partial until tracked local-only files are removed or
   migrated into intentional evidence/baseline locations.
+- 2026-05-20: legacy UX evidence was moved from generic `tmp/` and
+  `packages/web/tmp/` paths into `spec/generated/visual-evidence/`, `.coverage`
+  was removed from the index, and the generated scorecard now excludes only
+  configured intentional evidence prefixes.
+- 2026-05-20: CQ-2026-09 is closed: the tracked local-artifact query returns
+  zero rows, and `pnpm quality:report -- --json` reports
+  `repositoryHygiene.trackedArtifactCount: 0`.
 
 ---
 

@@ -532,7 +532,7 @@ Implementation steps:
    - transparent glass,
    - no wall-filled window opening,
    - material not category fallback when explicit material exists.
-4. Store evidence under `packages/web/tmp/material-parity-*`.
+4. Store evidence under `spec/generated/visual-evidence/packages-web/material-parity-*`.
 
 Acceptance:
 

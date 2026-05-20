@@ -319,6 +319,8 @@ function typeEscapeHotspots(files) {
 function trackedArtifactRows(files, budgetConfig) {
   const configuredPatterns =
     budgetConfig.generatedArtifactPolicy?.trackedLocalArtifactPatterns ?? [];
+  const intentionalEvidencePrefixes =
+    budgetConfig.generatedArtifactPolicy?.intentionalEvidencePrefixes ?? [];
   const patterns =
     configuredPatterns.length > 0
       ? configuredPatterns.map((pattern) => ({
@@ -340,6 +342,9 @@ function trackedArtifactRows(files, budgetConfig) {
           { code: 'pycache_tracked', regex: /(^|\/)__pycache__\// },
         ];
   return files
+    .filter(
+      (path) => !intentionalEvidencePrefixes.some((prefix) => prefix && path.startsWith(prefix)),
+    )
     .map((path) => {
       const match = patterns.find((pattern) => pattern.regex.test(path));
       return match ? { path, code: match.code } : null;

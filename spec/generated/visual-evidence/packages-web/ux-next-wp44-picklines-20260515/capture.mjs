@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const outDir = path.resolve('packages/web/tmp/ux-next-wp44-picklines-20260515');
+const outDir = path.resolve('spec/generated/visual-evidence/packages-web/ux-next-wp44-picklines-20260515');
 await mkdir(outDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });

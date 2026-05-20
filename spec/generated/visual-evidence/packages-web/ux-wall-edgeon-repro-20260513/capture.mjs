@@ -45,13 +45,13 @@ await page.mouse.move(end.x, end.y, { steps: 8 });
 await page.waitForTimeout(250);
 const wallVolumePreviewVisible = (await page.locator('svg polygon').count()) > 0;
 await page.screenshot({
-  path: 'tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png',
+  path: 'spec/generated/visual-evidence/root/ux-wall-edgeon-repro-20260513/01-before-commit.png',
   fullPage: true,
 });
 await page.mouse.click(end.x, end.y);
 await page.waitForTimeout(700);
 await page.screenshot({
-  path: 'tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png',
+  path: 'spec/generated/visual-evidence/root/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png',
   fullPage: true,
 });
 
@@ -71,7 +71,7 @@ const summary = {
   commands,
 };
 await fs.writeFile(
-  'tmp/ux-wall-edgeon-repro-20260513/summary.json',
+  'spec/generated/visual-evidence/root/ux-wall-edgeon-repro-20260513/summary.json',
   JSON.stringify(summary, null, 2),
 );
 console.log(JSON.stringify(summary, null, 2));

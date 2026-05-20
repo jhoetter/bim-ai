@@ -86,9 +86,9 @@ Evidence (2026-05-13):
 
 - `AppShell` grid areas now place ribbon only in canvas lanes while primary/secondary span the full working stack (`packages/web/src/workspace/shell/AppShell.tsx`).
 - Ownership geometry test added in `packages/web/src/workspace/shell/AppShell.test.tsx`.
-- Seeded screenshots + metrics (desktop/tablet/narrow + collapse/restore): `packages/web/tmp/ux-next-wp01-wp04-20260513/01-shell-desktop.png` to `05-shell-narrow.png` with `summary.json` proving no horizontal overflow in shell regions.
-- Full-height spine confirmation after follow-up correction: `packages/web/tmp/ux-next-wp01-wp04-20260513/10-shell-fullheight-desktop.png` to `12-shell-fullheight-narrow.png` with `fullheight-summary.json` (`primary.top == shell.top`, `primary.bottom == shell.bottom` on desktop/tablet).
-- Full-height spine hardening after layout follow-up (header/footer no longer claim primary column grid cells): `packages/web/tmp/ux-next-wp01-wp04-20260513/13-shell-fullheight-desktop.png` to `15-shell-fullheight-narrow.png` with `fullheight-summary-v2.json` (`gridTemplateAreas` starts with `"."` in column 1 and `primaryGridRow: 1 / 5`).
+- Seeded screenshots + metrics (desktop/tablet/narrow + collapse/restore): `spec/generated/visual-evidence/packages-web/ux-next-wp01-wp04-20260513/01-shell-desktop.png` to `05-shell-narrow.png` with `summary.json` proving no horizontal overflow in shell regions.
+- Full-height spine confirmation after follow-up correction: `spec/generated/visual-evidence/packages-web/ux-next-wp01-wp04-20260513/10-shell-fullheight-desktop.png` to `12-shell-fullheight-narrow.png` with `fullheight-summary.json` (`primary.top == shell.top`, `primary.bottom == shell.bottom` on desktop/tablet).
+- Full-height spine hardening after layout follow-up (header/footer no longer claim primary column grid cells): `spec/generated/visual-evidence/packages-web/ux-next-wp01-wp04-20260513/13-shell-fullheight-desktop.png` to `15-shell-fullheight-narrow.png` with `fullheight-summary-v2.json` (`gridTemplateAreas` starts with `"."` in column 1 and `primaryGridRow: 1 / 5`).
 
 ### WP-NEXT-02 — Secondary Sidebar Design System
 
@@ -116,15 +116,15 @@ Evidence (2026-05-13):
   - section `Crop Depth` (`section.crop-depth.<section-id>`)
   - source wiring in `packages/web/src/workspace/WorkspaceRightRail.tsx`
 - Runtime seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp02-20260513/01-plan-visibility-expanded.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/02-plan-visibility-collapsed.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/03-ground-plan-disclosure-default.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/04-3d-graphics-collapsed.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/05-narrow-1120.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/06-narrow-860.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/07-narrow-700.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/08-plan-collapse-persisted-after-3d-roundtrip.png`
-  - `packages/web/tmp/ux-next-wp02-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/01-plan-visibility-expanded.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/02-plan-visibility-collapsed.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/03-ground-plan-disclosure-default.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/04-3d-graphics-collapsed.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/05-narrow-1120.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/06-narrow-860.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/07-narrow-700.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/08-plan-collapse-persisted-after-3d-roundtrip.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp02-20260513/summary.json`
 - Summary checks confirm:
   - plan disclosure toggles and persists across plan↔3D roundtrip (`before:false`, `after:false`),
   - plan and 3D disclosures persist independently,
@@ -162,10 +162,10 @@ Evidence (2026-05-13):
   - `packages/web/src/cmdPalette/defaultCommands.test.ts`
   - `packages/web/src/workspace/commandCapabilities.ts`
 - Seeded Playwright proof:
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/01-wp03-split-created.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/02-wp03-nested-split.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/03-wp03-reload-persisted.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp03SplitCreated=true`, `wp03NestedSplitCreated=true`, `wp03PersistedAfterReload=true`).
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/01-wp03-split-created.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/02-wp03-nested-split.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/03-wp03-reload-persisted.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/summary.json` (`wp03SplitCreated=true`, `wp03NestedSplitCreated=true`, `wp03PersistedAfterReload=true`).
 
 ### WP-NEXT-04 — Floor Plan Wall Draft Lifecycle Fix
 
@@ -188,7 +188,7 @@ Evidence (2026-05-13):
 - Draft lifecycle helpers and tests added in `packages/web/src/plan/wallDraftLifecycle.ts` and `packages/web/src/plan/wallDraftLifecycle.test.ts`.
 - `PlanCanvas` now clears preview after wall commit, clears preview artifacts on `Esc`, and blocks crop-outside wall commits with explicit warning (`wall-draft-notice`).
 - Source-guard regressions extended in `packages/web/src/plan/PlanCanvas.toolDestubs.test.ts`.
-- Seeded screenshots: `packages/web/tmp/ux-next-wp01-wp04-20260513/06-wall-non-loop-commit.png` to `09-wall-off-plan-block-warning.png`.
+- Seeded screenshots: `spec/generated/visual-evidence/packages-web/ux-next-wp01-wp04-20260513/06-wall-non-loop-commit.png` to `09-wall-off-plan-block-warning.png`.
 - Seeded runtime assertion summary (`summary.json`) confirms:
   - non-loop reset prompt,
   - loop chip visibility and deterministic endpoint continuation,
@@ -216,12 +216,12 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/wallCsgEligibility.ts`
   - `packages/web/src/viewport/wallCsgEligibility.test.ts`
 - Seeded runtime captures for a typed wall selection (`hf-gf-wall-01`, `wallTypeId: hf-wt-clad-base`) are stored in:
-  - `packages/web/tmp/ux-next-wp05-20260513/01-main-front-left.png`
-  - `packages/web/tmp/ux-next-wp05-20260513/02-rear-right-axonometric.png`
-  - `packages/web/tmp/ux-next-wp05-20260513/03-front-elevation.png`
-  - `packages/web/tmp/ux-next-wp05-20260513/04-selected-typed-wall-openings.png`
-  - `packages/web/tmp/ux-next-wp05-20260513/05-roof-court-high-axonometric.png`
-  - `packages/web/tmp/ux-next-wp05-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/01-main-front-left.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/02-rear-right-axonometric.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/03-front-elevation.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/04-selected-typed-wall-openings.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/05-roof-court-high-axonometric.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp05-20260513/summary.json`
 - Seeded rendering budget check recorded in `summary.json` under `renderingBudget.latestDebugLine`:
   - `model_elements 116/8000/16000 [model_elements_in_budget]`
   - `saved_3d_view_clip_fields 4/20/40 [saved_3d_clip_in_budget]`
@@ -256,36 +256,36 @@ Evidence (2026-05-13):
 - Ribbon regression coverage confirms direct callbacks fire for 3D wall inserts:
   - `packages/web/src/workspace/shell/TopBar.test.tsx`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp06-20260513/01-ribbon-door-wall02.png`
-  - `packages/web/tmp/ux-next-wp06-20260513/02-ribbon-window-wall03.png`
-  - `packages/web/tmp/ux-next-wp06-20260513/03-ribbon-opening-wall04.png`
-  - `packages/web/tmp/ux-next-wp06-20260513/04-cmdk-3d-insert-reachability.png`
-  - `packages/web/tmp/ux-next-wp06-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp06-20260513/01-ribbon-door-wall02.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp06-20260513/02-ribbon-window-wall03.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp06-20260513/03-ribbon-opening-wall04.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp06-20260513/04-cmdk-3d-insert-reachability.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp06-20260513/summary.json`
 - Runtime summary confirms command POST `200` for all three direct actions (`insertDoorOnWall`, `insertWindowOnWall`, `createWallOpening`) and Cmd+K discoverability for each command id.
 - Follow-up host-pick hardening (same-day seeded repro) removes mirrored duplicate door placement from rapid repeat clicks and rejects linked/backface wall hits in direct 3D hosted insertion:
   - code: `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts`
-  - seeded captures: `packages/web/tmp/ux-door-wall-guard-20260513/01-before.png`, `02-after-door-double-click.png`, `03-after-wall-segment.png`
-  - command trace: `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` now records one `insertDoorOnWall` (no second mirrored insert) plus one `createWall` for the wall draft step.
+  - seeded captures: `spec/generated/visual-evidence/packages-web/ux-door-wall-guard-20260513/01-before.png`, `02-after-door-double-click.png`, `03-after-wall-segment.png`
+  - command trace: `spec/generated/visual-evidence/packages-web/ux-door-wall-guard-20260513/summary.json` now records one `insertDoorOnWall` (no second mirrored insert) plus one `createWall` for the wall draft step.
 - Follow-up wall draft UX parity pass makes 3D wall orientation deterministic at author time (wall-body preview + direction arrow + `Space` flip state in instruction overlay) so draw intent matches committed geometry:
   - code: `packages/web/src/Viewport.tsx`
-  - seeded captures: `packages/web/tmp/ux-wall-draft-ux-20260513/01-wall-preview-default.png`, `02-wall-preview-flipped.png`, `03-wall-after-commit.png`
-  - command trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` commit from the previewed segment state).
+  - seeded captures: `spec/generated/visual-evidence/packages-web/ux-wall-draft-ux-20260513/01-wall-preview-default.png`, `02-wall-preview-flipped.png`, `03-wall-after-commit.png`
+  - command trace: `spec/generated/visual-evidence/packages-web/ux-wall-draft-ux-20260513/summary.json` (single `createWall` commit from the previewed segment state).
 - Follow-up hosted insertion UX pass adds richer pre-placement 3D previews (door swing arc + window mullion glyph) and tighter wall-host snapping under overlap via scored host picking + stickiness:
   - code: `packages/web/src/Viewport.tsx`
-  - seeded captures: `packages/web/tmp/ux-hosted-preview-snap-20260513/01-door-preview-glyph.png`, `02-window-preview-glyph.png`, `03-after-hosted-place.png`
+  - seeded captures: `spec/generated/visual-evidence/packages-web/ux-hosted-preview-snap-20260513/01-door-preview-glyph.png`, `02-window-preview-glyph.png`, `03-after-hosted-place.png`
   - command traces:
-    - `packages/web/tmp/ux-hosted-preview-snap-20260513/summary.json` (door double-click emits one `insertDoorOnWall`; window emits one `insertWindowOnWall`)
-    - `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` (regression re-check still emits one `insertDoorOnWall` + one `createWall`).
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-preview-snap-20260513/summary.json` (door double-click emits one `insertDoorOnWall`; window emits one `insertWindowOnWall`)
+    - `spec/generated/visual-evidence/packages-web/ux-door-wall-guard-20260513/summary.json` (regression re-check still emits one `insertDoorOnWall` + one `createWall`).
 - Follow-up dense-junction host control adds explicit host lock UX (`L` to lock/unlock + `HOST LOCK` badge), keeps lock on the selected host during overlap ambiguity, and clamps hosted `alongT` away from wall-end slivers to avoid unstable flips:
   - code: `packages/web/src/Viewport.tsx`
-  - seeded captures: `packages/web/tmp/ux-host-lock-20260513/01-host-preview-unlocked.png`, `02-host-preview-locked.png`, `03-host-unlocked-second-place.png`
-  - command trace: `packages/web/tmp/ux-host-lock-20260513/summary.json` (`countAfterLockedAttempt: 1`, so lock phase suppresses unintended second placement; unlock allows the intentional second wall-host placement).
+  - seeded captures: `spec/generated/visual-evidence/packages-web/ux-host-lock-20260513/01-host-preview-unlocked.png`, `02-host-preview-locked.png`, `03-host-unlocked-second-place.png`
+  - command trace: `spec/generated/visual-evidence/packages-web/ux-host-lock-20260513/summary.json` (`countAfterLockedAttempt: 1`, so lock phase suppresses unintended second placement; unlock allows the intentional second wall-host placement).
 - Follow-up wall endpoint fidelity pass commits line-based 3D tools from the current preview point (when click lands near the preview marker) instead of re-sampling a new end point on pointer-up, reducing “placed not where drawn” drift:
   - code: `packages/web/src/Viewport.tsx`
-  - seeded trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` command from the draft workflow with endpoint fidelity path active).
+  - seeded trace: `spec/generated/visual-evidence/packages-web/ux-wall-draft-ux-20260513/summary.json` (single `createWall` command from the draft workflow with endpoint fidelity path active).
 - Follow-up wall-direction correction changes 3D wall flip behavior to preserve draw direction (start→end stays exactly as drawn) while flipping location-line side instead of reversing endpoints:
   - code: `packages/web/src/Viewport.tsx`
-  - seeded traces: `packages/web/tmp/ux-door-wall-guard-20260513/summary.json`, `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json`.
+  - seeded traces: `spec/generated/visual-evidence/packages-web/ux-door-wall-guard-20260513/summary.json`, `spec/generated/visual-evidence/packages-web/ux-wall-draft-ux-20260513/summary.json`.
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
@@ -314,10 +314,10 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx`
   - `packages/web/src/workspace/WorkspaceRightRail.tsx`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp07-20260513/01-3d-levels-baseline.png`
-  - `packages/web/tmp/ux-next-wp07-20260513/02-3d-level-hidden-toggle.png`
-  - `packages/web/tmp/ux-next-wp07-20260513/03-3d-level-persisted-main-viewpoint.png`
-  - `packages/web/tmp/ux-next-wp07-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp07-20260513/01-3d-levels-baseline.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp07-20260513/02-3d-level-hidden-toggle.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp07-20260513/03-3d-level-persisted-main-viewpoint.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp07-20260513/summary.json`
 - Runtime summary confirms:
   - independent level toggle changed `hf-lvl-ground` from checked to unchecked,
   - round-trip viewpoint switch (`vp-main-iso` -> `vp-rear-axo` -> `vp-main-iso`) retained the level-hidden state,
@@ -344,10 +344,10 @@ Evidence (2026-05-13):
 - Added deterministic unit coverage for room label line wrapping and overflow handling:
   - `packages/web/src/plan/planRoomLabelLayout.test.ts`
 - Seeded runtime proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp08-20260513/01-plan-room-label-baseline.png`
-  - `packages/web/tmp/ux-next-wp08-20260513/02-plan-room-label-long-name.png`
-  - `packages/web/tmp/ux-next-wp08-20260513/03-plan-room-label-very-long-name.png`
-  - `packages/web/tmp/ux-next-wp08-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp08-20260513/01-plan-room-label-baseline.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp08-20260513/02-plan-room-label-long-name.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp08-20260513/03-plan-room-label-very-long-name.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp08-20260513/summary.json`
 - Summary includes seeded store mutation evidence for long and very-long room names on `hf-room-hall` with the active plan view id (`hf-pv-upper`), validating runtime long-label layout behavior in the seeded app.
 
 ### WP-NEXT-09 — Ribbon IA And Per-View Coherence Pass
@@ -375,14 +375,14 @@ Evidence (2026-05-13):
 - Regression coverage updated for identity + annotate parity + bridge signaling:
   - `packages/web/src/workspace/shell/TopBar.test.tsx`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp09-20260513/01-plan-ribbon-identity.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/02-plan-annotate-section-elevation.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/03-plan-review-bridge-cmdk.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/04-3d-ribbon-identity.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/05-sheet-ribbon-identity.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/06-schedule-ribbon-identity.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/07-cmdk-section-query.png`
-  - `packages/web/tmp/ux-next-wp09-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/01-plan-ribbon-identity.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/02-plan-annotate-section-elevation.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/03-plan-review-bridge-cmdk.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/04-3d-ribbon-identity.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/05-sheet-ribbon-identity.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/06-schedule-ribbon-identity.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/07-cmdk-section-query.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp09-20260513/summary.json`
 
 ### WP-NEXT-10 — Discipline Lens Contract Enforcement
 
@@ -410,12 +410,12 @@ Evidence (2026-05-13):
 - Secondary and element sidebars now render explicit lens-scope notices to make contextual ownership visible when non-`all` lenses are active:
   - `packages/web/src/workspace/WorkspaceRightRail.tsx`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp10-20260513/01-lens-architecture-plan-ribbon.png`
-  - `packages/web/tmp/ux-next-wp10-20260513/02-lens-structure-plan-ribbon.png`
-  - `packages/web/tmp/ux-next-wp10-20260513/03-lens-mep-plan-ribbon.png`
-  - `packages/web/tmp/ux-next-wp10-20260513/04-cmdk-room-disabled-by-lens.png`
-  - `packages/web/tmp/ux-next-wp10-20260513/05-element-lens-scope-notice.png`
-  - `packages/web/tmp/ux-next-wp10-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/01-lens-architecture-plan-ribbon.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/02-lens-structure-plan-ribbon.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/03-lens-mep-plan-ribbon.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/04-cmdk-room-disabled-by-lens.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/05-element-lens-scope-notice.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp10-20260513/summary.json`
 - Runtime summary confirms:
   - ribbon command count changes by lens (`architecture: 13`, `structure: 9`, `mep: 1`),
   - Cmd+K `tool.room` entry is disabled in MEP lens with explicit gating reason,
@@ -495,12 +495,12 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/commandCapabilities.test.ts`
   - `packages/web/src/workspace/Workspace.test.tsx`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp11-20260513/01-primary-create-panel.png`
-  - `packages/web/tmp/ux-next-wp11-20260513/02-cmdk-create-sheet.png`
-  - `packages/web/tmp/ux-next-wp11-20260513/03-cmdk-project-settings.png`
-  - `packages/web/tmp/ux-next-wp11-20260513/04-cmdk-project-settings-opens-menu.png`
-  - `packages/web/tmp/ux-next-wp11-20260513/05-primary-project-settings-opens-menu.png`
-  - `packages/web/tmp/ux-next-wp11-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/01-primary-create-panel.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/02-cmdk-create-sheet.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/03-cmdk-project-settings.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/04-cmdk-project-settings-opens-menu.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/05-primary-project-settings-opens-menu.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp11-20260513/summary.json`
 
 ### WP-NEXT-12 — Sheet UX Semantics
 
@@ -533,11 +533,11 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/sheets/sheetIntent.test.ts`
   - `packages/web/src/workspace/workspaceUtils.test.ts`
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp12-20260513/01-sheet-default-collapsed-details.png`
-  - `packages/web/tmp/ux-next-wp12-20260513/02-sheet-details-expanded.png`
-  - `packages/web/tmp/ux-next-wp12-20260513/03-sheet-intent-moodboard.png`
-  - `packages/web/tmp/ux-next-wp12-20260513/04-primary-search-moodboard-filter.png`
-  - `packages/web/tmp/ux-next-wp12-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp12-20260513/01-sheet-default-collapsed-details.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp12-20260513/02-sheet-details-expanded.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp12-20260513/03-sheet-intent-moodboard.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp12-20260513/04-primary-search-moodboard-filter.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp12-20260513/summary.json`
 
 ### WP-NEXT-13 — Schedule Meaningfulness Upgrade
 
@@ -570,10 +570,10 @@ Evidence (2026-05-13):
 - Regression coverage:
   - `packages/web/src/workspace/ModeShells.test.tsx` (new workflow-profile apply assertion including `displayColumnKeys` + grouping/sort payload)
 - Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
-  - `packages/web/tmp/ux-next-wp13-20260513/01-schedule-workflow-panel.png`
-  - `packages/web/tmp/ux-next-wp13-20260513/02-schedule-profile-applied.png`
-  - `packages/web/tmp/ux-next-wp13-20260513/03-cmdk-schedule-place-on-sheet.png`
-  - `packages/web/tmp/ux-next-wp13-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp13-20260513/01-schedule-workflow-panel.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp13-20260513/02-schedule-profile-applied.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp13-20260513/03-cmdk-schedule-place-on-sheet.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp13-20260513/summary.json`
 
 ### WP-NEXT-14 — Section Context Reinforcement
 
@@ -602,9 +602,9 @@ Evidence (2026-05-13):
   - `section.open-3d-context` in `packages/web/src/cmdPalette/defaultCommands.ts`
   - `packages/web/src/workspace/commandCapabilities.ts`
 - Seeded Playwright proof:
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/04-wp14-section-context.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/05-wp14-section-jump-3d.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp14SectionContextVisible=true`, `wp14Section3dJump=true`, `wp14CmdkReachable=true`).
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/04-wp14-section-context.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/05-wp14-section-jump-3d.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/summary.json` (`wp14SectionContextVisible=true`, `wp14Section3dJump=true`, `wp14CmdkReachable=true`).
 
 ### WP-NEXT-15 — 3D Visual Fidelity Track
 
@@ -630,9 +630,9 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/materials.test.ts`
   - `packages/web/src/Viewport.tsx`
 - Seeded Playwright proof:
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/06-wp15-raytrace-note.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/07-wp15-dark-raytrace.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp15RaytraceNoteVisible=true`, `wp15DarkRaytraceCaptured=true`).
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/06-wp15-raytrace-note.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/07-wp15-dark-raytrace.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/summary.json` (`wp15RaytraceNoteVisible=true`, `wp15DarkRaytraceCaptured=true`).
 
 ### WP-NEXT-16 — Onboarding + QA Closeout
 
@@ -654,13 +654,13 @@ Evidence (2026-05-13):
 - Updated onboarding narrative to match final next-phase workflows and ownership language:
   - `packages/web/src/onboarding/tour.ts`
 - Added repeatable seeded Playwright capture script and matrix artifacts:
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/capture.mjs`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/08-wp16-onboarding-desktop.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/09-wp16-onboarding-tablet.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/10-wp16-onboarding-narrow.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/11-wp16-active-command-wall.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/12-wp16-dialog-shortcuts.png`
-  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp16OnboardingReplayVisible=true`, `wp16TabletCaptured=true`, `wp16NarrowCaptured=true`, `wp16ActiveCommandCaptured=true`, `wp16DialogCaptured=true`).
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/08-wp16-onboarding-desktop.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/09-wp16-onboarding-tablet.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/10-wp16-onboarding-narrow.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/11-wp16-active-command-wall.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/12-wp16-dialog-shortcuts.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp03-14-15-16-20260513/summary.json` (`wp16OnboardingReplayVisible=true`, `wp16TabletCaptured=true`, `wp16NarrowCaptured=true`, `wp16ActiveCommandCaptured=true`, `wp16DialogCaptured=true`).
 
 ## Dependency Sequence
 
@@ -747,8 +747,8 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/workspaceUtils.test.ts`
   - `packages/web/src/workspace/Workspace.test.tsx` (`activates ceiling tool directly from ribbon create panel`)
 - Seeded screenshot proof:
-  - `packages/web/tmp/ux-next-wp17-wp18-20260513/01-ribbon-ceiling-active.png`
-  - `packages/web/tmp/ux-next-wp17-wp18-20260513/summary.json` (`ceilingPressed: true`)
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp17-wp18-20260513/01-ribbon-ceiling-active.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp17-wp18-20260513/summary.json` (`ceilingPressed: true`)
 
 ### WP-NEXT-18 — Lens Ownership + Overflow Hygiene Relocation
 
@@ -779,9 +779,9 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/Workspace.test.tsx`
   - `packages/web/src/workspace/commandCapabilities.test.ts`
 - Seeded screenshot proof:
-  - `packages/web/tmp/ux-next-wp17-wp18-20260513/02-primary-lens-dropdown-open.png`
-  - `packages/web/tmp/ux-next-wp17-wp18-20260513/03-secondary-no-lens-block.png`
-  - `packages/web/tmp/ux-next-wp17-wp18-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp17-wp18-20260513/02-primary-lens-dropdown-open.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp17-wp18-20260513/03-secondary-no-lens-block.png`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp17-wp18-20260513/summary.json`
     - `lensMenuVisible: true`
     - `lensMenuNotClippedTop: true`
     - `secondaryLensAbsent: true`
@@ -809,8 +809,8 @@ Evidence (2026-05-13):
     - `packages/web/src/workspace/paneLayout.test.ts` (`assignTabToPane` behavior)
     - `packages/web/src/workspace/Workspace.test.tsx` (drop-assign into pane + pane-local close lifecycle)
   - Seeded screenshot proof:
-    - `packages/web/tmp/ux-next-wp19-20260513/03-pane-local-tabstrip-and-close.png`
-    - `packages/web/tmp/ux-next-wp19-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp19-20260513/03-pane-local-tabstrip-and-close.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp19-20260513/summary.json`
       - `paneTabStripCount: 2`
       - `paneLocalTabChromeVisible: true`
       - `paneCloseRemovesTab: true`
@@ -834,9 +834,9 @@ Evidence (2026-05-13):
   - Added stale lookup hardening for newly created/opened tabs (`openElementById` resolves against live store state first), fixing intermittent "click tab/new view does not load" failures.
   - Added regression coverage in `Workspace.test.tsx` verifying focus move from sheet pane to plan pane updates ribbon identity and secondary sidebar surfaces.
   - Seeded screenshot proof:
-    - `packages/web/tmp/ux-next-wp19-20260513/01-tab-click-mode-switch.png`
-    - `packages/web/tmp/ux-next-wp19-20260513/02-create-views-new-tabs.png`
-    - `packages/web/tmp/ux-next-wp19-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp19-20260513/01-tab-click-mode-switch.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp19-20260513/02-create-views-new-tabs.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp19-20260513/summary.json`
       - `allTabClicksLoadMode: true`
       - `newViewCreatesTabs: true`
 
@@ -883,9 +883,9 @@ Evidence (2026-05-13):
     - `TabBar.test.tsx` (`shows clear active/focused/shown state badges`)
     - `Workspace.test.tsx` (`renders a real empty pane state when no tabs are open`)
   - Seeded screenshot proof:
-    - `packages/web/tmp/ux-next-wp21-20260513/01-tab-clarity-states.png`
-    - `packages/web/tmp/ux-next-wp21-20260513/02-no-tabs-real-empty-state.png`
-    - `packages/web/tmp/ux-next-wp21-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp21-20260513/01-tab-clarity-states.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp21-20260513/02-no-tabs-real-empty-state.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp21-20260513/summary.json`
       - `activeBadgeVisible: true`
       - `focusedBadgeVisible: true`
       - `shownBadgeVisible: true`
@@ -921,9 +921,9 @@ Evidence (2026-05-13):
   - Regression test added in `Workspace.test.tsx`:
     - `exposes full 3D modeling ribbon actions with plan-bridge cues and activation`
   - Seeded screenshot proof:
-    - `packages/web/tmp/ux-next-wp22-20260513/01-3d-ribbon-model-tools.png`
-    - `packages/web/tmp/ux-next-wp22-20260513/02-3d-wall-bridges-to-plan.png`
-    - `packages/web/tmp/ux-next-wp22-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp22-20260513/01-3d-ribbon-model-tools.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp22-20260513/02-3d-wall-bridges-to-plan.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp22-20260513/summary.json`
       - `modelToolsPresent: true`
       - `bridgeBadgePlanPresent: true`
       - `modeIdentityAfterWallClick: "Plan"`
@@ -964,9 +964,9 @@ Evidence (2026-05-13):
   - Updated tool metadata so `wall` is a direct 3D tool (`modes: ['plan','3d']`) rather than forced plan bridge.
   - Updated command/ribbon regression tests to assert direct 3D wall activation.
   - Seeded screenshot + live request-capture proof:
-    - `packages/web/tmp/ux-next-wp23-20260513/01-3d-wall-tool-active.png`
-    - `packages/web/tmp/ux-next-wp23-20260513/02-3d-wall-draft-committed.png`
-    - `packages/web/tmp/ux-next-wp23-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp23-20260513/01-3d-wall-tool-active.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp23-20260513/02-3d-wall-draft-committed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp23-20260513/summary.json`
       - `modeIdentityBeforeWallDraw: "3D"`
       - `modeIdentityAfterWallDraw: "3D"`
       - `createWallCommandCount: 1`
@@ -985,7 +985,7 @@ Evidence (2026-05-13):
 - Goal: make 3D wall authoring legible and predictable using explicit placement cues and clear camera-vs-authoring input ownership.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-next-wp24-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp24-20260513/capture.mjs`
 - Acceptance:
   - wall tool in 3D shows explicit prompt (`pick start` / `pick end`);
   - first click creates visible start marker + dashed preview segment;
@@ -1002,10 +1002,10 @@ Evidence (2026-05-13):
     - orbit/pan still reachable via modifier/middle mouse.
   - Added `Esc` handling to cancel current wall segment and reset prompt state.
   - Seeded screenshot + live command capture proof:
-    - `packages/web/tmp/ux-next-wp24-20260513/01-3d-wall-pick-start-prompt.png`
-    - `packages/web/tmp/ux-next-wp24-20260513/02-3d-wall-pick-end-preview.png`
-    - `packages/web/tmp/ux-next-wp24-20260513/03-3d-wall-commit-stays-3d.png`
-    - `packages/web/tmp/ux-next-wp24-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp24-20260513/01-3d-wall-pick-start-prompt.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp24-20260513/02-3d-wall-pick-end-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp24-20260513/03-3d-wall-commit-stays-3d.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp24-20260513/summary.json`
       - `modeIdentity: "3D"`
       - `startPromptVisible: true`
       - `createWallCommandCount: 1`
@@ -1028,7 +1028,7 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/commandCapabilities.test.ts`
   - `packages/web/src/workspace/shell/TopBar.test.tsx`
   - `packages/web/src/workspace/uxAudit.test.ts`
-  - `packages/web/tmp/ux-next-wp25-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/capture.mjs`
 - Acceptance:
   - `Column` in 3D places on click with explicit prompt;
   - `Beam` in 3D uses two-click start/end with preview segment + prompt;
@@ -1051,12 +1051,12 @@ Evidence (2026-05-13):
   - Promoted `door`, `window`, `wall-opening`, `column`, `beam`, `ceiling` to direct 3D tool modes in `toolRegistry`.
   - Updated reachability/regression tests for capability and ribbon behavior.
   - Seeded screenshot + live command capture proof:
-    - `packages/web/tmp/ux-next-wp25-20260513/01-3d-column-prompt.png`
-    - `packages/web/tmp/ux-next-wp25-20260513/02-3d-beam-preview.png`
-    - `packages/web/tmp/ux-next-wp25-20260513/03-3d-ceiling-sketch-preview.png`
-    - `packages/web/tmp/ux-next-wp25-20260513/04-3d-door-pick-wall-prompt.png`
-    - `packages/web/tmp/ux-next-wp25-20260513/05-3d-hosted-openings-placed.png`
-    - `packages/web/tmp/ux-next-wp25-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/01-3d-column-prompt.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/02-3d-beam-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/03-3d-ceiling-sketch-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/04-3d-door-pick-wall-prompt.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/05-3d-hosted-openings-placed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp25-20260513/summary.json`
       - `modeIdentity: "3D"`
       - `commandCounts.createColumn: 1`
       - `commandCounts.createBeam: 1`
@@ -1084,7 +1084,7 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/commandCapabilities.test.ts`
   - `packages/web/src/workspace/shell/TopBar.test.tsx`
   - `packages/web/src/workspace/uxAudit.test.ts`
-  - `packages/web/tmp/ux-next-wp26-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/capture.mjs`
 - Acceptance:
   - 3D `Floor` / `Roof` / `Shaft` support boundary sketch + close behavior with preview cues;
   - 3D `Stair` / `Railing` / `Grid` / `Reference Plane` support two-click start/end flow with clear preview segment;
@@ -1104,14 +1104,14 @@ Evidence (2026-05-13):
     - `packages/web/src/workspace/uxAudit.test.ts`
     - `packages/web/src/workspace/workspaceUtils.test.ts`
   - Seeded screenshot + command proof (`make seed name=target-house-3`, `http://127.0.0.1:2000/`):
-    - `packages/web/tmp/ux-next-wp26-20260513/01-3d-floor-boundary-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/02-3d-roof-footprint-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/03-3d-shaft-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/04-3d-stair-run-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/05-3d-railing-path-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/06-3d-grid-reference-preview.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/07-3d-reference-plane-placed.png`
-    - `packages/web/tmp/ux-next-wp26-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/01-3d-floor-boundary-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/02-3d-roof-footprint-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/03-3d-shaft-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/04-3d-stair-run-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/05-3d-railing-path-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/06-3d-grid-reference-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/07-3d-reference-plane-placed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp26-20260513/summary.json`
       - `modeIdentity: "3D"`
       - `commandCounts.createFloor: 1`
       - `commandCounts.createRoof: 1`
@@ -1140,7 +1140,7 @@ Evidence (2026-05-13):
   - `packages/web/src/Viewport.tsx`
   - `packages/web/src/workspace/shell/RibbonBar.tsx`
   - `packages/web/src/workspace/Workspace.tsx`
-  - `packages/web/tmp/ux-next-wp27-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-next-wp27-20260513/capture.mjs`
 - Acceptance:
   - hosted `Door`/`Window`/`Opening` tools show wall-host preview before placement, with valid vs invalid host cueing;
   - line/point/polygon 3D tools show pre-click hover anchors so first click target is visible;
@@ -1155,10 +1155,10 @@ Evidence (2026-05-13):
     - `pnpm --filter @bim-ai/web typecheck`
     - `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/TopBar.test.tsx src/workspace/Workspace.test.tsx src/workspace/commandCapabilities.test.ts src/workspace/uxAudit.test.ts`
   - Seeded runtime proof (`make seed name=target-house-3`, `make dev name=target-house-3`, `http://127.0.0.1:2000/`):
-    - `packages/web/tmp/ux-next-wp27-20260513/01-3d-window-host-preview-before-place.png`
-    - `packages/web/tmp/ux-next-wp27-20260513/02-3d-column-hover-preview.png`
-    - `packages/web/tmp/ux-next-wp27-20260513/03-escape-returns-select-first-group.png`
-    - `packages/web/tmp/ux-next-wp27-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp27-20260513/01-3d-window-host-preview-before-place.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp27-20260513/02-3d-column-hover-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp27-20260513/03-escape-returns-select-first-group.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp27-20260513/summary.json`
       - `windowPreview.found: true`
       - `windowPreview.invalid: false`
       - `columnHoverPreviewVisible: true`
@@ -1171,10 +1171,10 @@ Evidence (2026-05-13):
       - `pnpm exec prettier --check packages/web/src/workspace/Workspace.semanticCommand.test.tsx packages/web/src/cmdPalette/CommandPalette.test.tsx`
       - `git diff --check`
     - Seeded tab-lifecycle smoke proof:
-      - `packages/web/tmp/ux-next-closeout-20260513/01-initial.png`
-      - `packages/web/tmp/ux-next-closeout-20260513/02-after-plan-click.png`
-      - `packages/web/tmp/ux-next-closeout-20260513/03-after-3d-click.png`
-      - `packages/web/tmp/ux-next-closeout-20260513/summary.json`
+      - `spec/generated/visual-evidence/packages-web/ux-next-closeout-20260513/01-initial.png`
+      - `spec/generated/visual-evidence/packages-web/ux-next-closeout-20260513/02-after-plan-click.png`
+      - `spec/generated/visual-evidence/packages-web/ux-next-closeout-20260513/03-after-3d-click.png`
+      - `spec/generated/visual-evidence/packages-web/ux-next-closeout-20260513/summary.json`
         - `initialTabCount: 1`
         - `tabsAfterPlan: 2`
         - `tabsAfter3d: 3`
@@ -1197,8 +1197,8 @@ Evidence (2026-05-13):
   - `packages/web/src/Viewport.tsx`
   - `packages/web/src/viewport/authoring3d.ts`
   - `packages/web/src/viewport/authoring3d.test.ts`
-  - `packages/web/tmp/ux-wall-edgeon-repro-20260513/capture.mjs`
-  - `packages/web/tmp/ux-wall-debug-pipeline-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-edgeon-repro-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/capture.mjs`
 - Acceptance:
   - wall commit endpoint always uses active click projection (no stale hover endpoint reuse),
   - edge-on/unstable level-plane projection blocks commit with explicit placement guidance instead of committing ambiguous geometry,
@@ -1218,32 +1218,32 @@ Evidence (2026-05-13):
     - readable top/plan-like poses use exact ray-to-level-plane projection, so cursor and committed footprint stay geometrically aligned;
     - front/elevation-like anisotropic poses switch to `elevation-axis` mode, cap horizontal drafting scale, ignore unstable screen-Y depth, and show explicit HUD guidance.
   - Seeded repro artifacts:
-    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png`
-    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
-    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-edgeon-repro-20260513/01-before-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-edgeon-repro-20260513/summary.json`
     - 2026-05-13 hotfix rerun confirms wall drafting is reachable again (`createWallCount: 1`).
     - 2026-05-13 perspective/elevation-basis rerun confirms wall drafting remains reachable (`createWallCount: 1`), the pre-commit wall-volume preview is visible (`wallVolumePreviewVisible: true`), and the sampled 249 px drag creates a bounded 5517 mm wall instead of an oversized perspective-projection slab.
     - 2026-05-13 exact `Front elevation` debug rerun:
-      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
-      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
-      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/summary.json`
       - `projectionModes: ["elevation-axis"]`
       - `firstTrace.projection.anisotropyRatio: 5.283`
       - `firstTrace.projection.verticalLook: 0.260`
       - `createWallCount: 1`
       - same drag now commits a 7174 mm horizontal-axis wall instead of the prior 12375 mm screenY-depth wall.
     - 2026-05-13 oblique/top-readable control rerun:
-      - `packages/web/tmp/ux-wall-debug-oblique-20260513/01-oblique-preview.png`
-      - `packages/web/tmp/ux-wall-debug-oblique-20260513/02-oblique-after.png`
-      - `packages/web/tmp/ux-wall-debug-oblique-20260513/summary.json`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-oblique-20260513/01-oblique-preview.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-oblique-20260513/02-oblique-after.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-oblique-20260513/summary.json`
       - `projectionModes: ["plane"]`
       - `createWallCount: 1`
     - 2026-05-13 closure rerun with deterministic plane-readable authoring:
-      - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+      - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
       - `commandsAfterFront: 0`
       - `blockedUnreadablePlaneCount: 1`
       - `createWallCount: 1`
@@ -1253,13 +1253,13 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 11)
 
-| Gap ID         | Problem Statement                                                                                                                              | Canonical Surfaces / Files                                                    | Priority | Status |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------- | ------ |
-| NEXT11-GAP-001 | 3D wall debug trace was invisible in DevTools console unless inspecting globals/custom events manually.                                        | `Viewport.tsx` debug trace, wall debug Playwright capture                     | P0       | Done   |
-| NEXT11-GAP-002 | Direct 3D wall left-drag could be captured as authoring input but produce no wall, leaving the interaction feeling cursor-trapped.             | `Viewport.tsx` direct 3D pointer lifecycle, wall debug Playwright capture     | P0       | Done   |
-| NEXT11-GAP-003 | Wall debug screenshots could silently run on the default seed when multiple seeded models existed.                                             | `packages/web/tmp/ux-wall-debug-*/capture.mjs`, seeded project selector usage | P0       | Done   |
-| NEXT11-GAP-004 | In front/elevation-like 3D views, wall starts used unstable level-plane/elevation-axis projections that could look plausible but commit wrong. | `Viewport.tsx` 3D wall projection gating and exact plane-readable authoring   | P0       | Done   |
-| NEXT11-GAP-005 | Empty-sky or unreadable-plane wall clicks in 3D could silently no-op or appear to accept input without reliable geometry.                      | `Viewport.tsx` wall blocked-state overlay, pointer down/up draft lifecycle    | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                              | Canonical Surfaces / Files                                                                               | Priority | Status |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT11-GAP-001 | 3D wall debug trace was invisible in DevTools console unless inspecting globals/custom events manually.                                        | `Viewport.tsx` debug trace, wall debug Playwright capture                                                | P0       | Done   |
+| NEXT11-GAP-002 | Direct 3D wall left-drag could be captured as authoring input but produce no wall, leaving the interaction feeling cursor-trapped.             | `Viewport.tsx` direct 3D pointer lifecycle, wall debug Playwright capture                                | P0       | Done   |
+| NEXT11-GAP-003 | Wall debug screenshots could silently run on the default seed when multiple seeded models existed.                                             | `spec/generated/visual-evidence/packages-web/ux-wall-debug-*/capture.mjs`, seeded project selector usage | P0       | Done   |
+| NEXT11-GAP-004 | In front/elevation-like 3D views, wall starts used unstable level-plane/elevation-axis projections that could look plausible but commit wrong. | `Viewport.tsx` 3D wall projection gating and exact plane-readable authoring                              | P0       | Done   |
+| NEXT11-GAP-005 | Empty-sky or unreadable-plane wall clicks in 3D could silently no-op or appear to accept input without reliable geometry.                      | `Viewport.tsx` wall blocked-state overlay, pointer down/up draft lifecycle                               | P0       | Done   |
 
 ### WP-NEXT-29 — 3D Wall Debug Visibility + Drag Input Recovery
 
@@ -1269,8 +1269,8 @@ Evidence (2026-05-13):
 - Goal: make the wall debug path observable in the browser console, remove the no-op direct-drag trap in 3D wall authoring, and prevent front/elevation-like views from committing synthetic wall geometry.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-wall-debug-pipeline-20260513/capture.mjs`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/capture.mjs`
 - Acceptance:
   - in local dev, or when `localStorage["bim.debug.3dWall"] = "true"`, wall debug records appear as browser console entries and remain available in `window.__BIM_AI_3D_WALL_DEBUG__`;
   - direct 3D line tools, including `Wall`, support press-drag-release as a real draft gesture instead of swallowing the drag;
@@ -1287,19 +1287,19 @@ Evidence (2026-05-13):
   - Added pointer-cancel and lost-pointer-capture cleanup for tool draft and grip drag state.
   - Updated wall debug capture scripts to select `Seed Library / target-house-3` explicitly through the project selector.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
-    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
       - `commandsAfterFront: 0`
       - `createWallCount: 1`
       - `projectionModes: ["elevation-axis", "plane"]`
       - `blockedUnreadablePlaneCount: 1`
       - `wallLengthsMm: [5819.760]`
-    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
-    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
-    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-pipeline-20260513/summary.json`
       - `createWallCount: 1`
       - `projectionModes: ["elevation-axis"]`
       - `firstTrace.anchor.elementId: "hf-roof-main"`
@@ -1307,10 +1307,10 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 12)
 
-| Gap ID         | Problem Statement                                                                                                                  | Canonical Surfaces / Files                                                   | Priority | Status |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
-| NEXT12-GAP-001 | Front/elevation-like 3D wall authoring kept accepting or previewing ambiguous gestures that did not map reliably to plan geometry. | `Viewport.tsx` 3D wall start logic, wall debug input Playwright capture      | P0       | Done   |
-| NEXT12-GAP-002 | Wall evidence needed to prove both rejection of unreadable views and successful authoring in a readable 3D view.                   | `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`, tracker summary | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                  | Canonical Surfaces / Files                                                                              | Priority | Status |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT12-GAP-001 | Front/elevation-like 3D wall authoring kept accepting or previewing ambiguous gestures that did not map reliably to plan geometry. | `Viewport.tsx` 3D wall start logic, wall debug input Playwright capture                                 | P0       | Done   |
+| NEXT12-GAP-002 | Wall evidence needed to prove both rejection of unreadable views and successful authoring in a readable 3D view.                   | `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/capture.mjs`, tracker summary | P0       | Done   |
 
 ### WP-NEXT-30 — Plane-Readable 3D Wall Authoring
 
@@ -1321,8 +1321,8 @@ Evidence (2026-05-13):
 - Goal: make 3D wall authoring deterministic by allowing commits only when the active level plane is readable from the current camera.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
 - Acceptance:
   - front/elevation-like 3D wall gestures produce no wall command and show rotate/open-plan guidance;
   - oblique/top-readable 3D views create walls with exact level-plane projection;
@@ -1335,11 +1335,11 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 13)
 
-| Gap ID         | Problem Statement                                                                                                                                               | Canonical Surfaces / Files                                                   | Priority | Status |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
-| NEXT13-GAP-001 | The wall tool over-treated shallow/front-like 3D views as unreadable even when the level plane grid was numerically stable and visible.                         | `packages/web/src/viewport/authoring3d.ts`, `Viewport.tsx` 3D wall authoring | P0       | Done   |
-| NEXT13-GAP-002 | Synthetic `elevation-axis` placement was used too often, so wall footprints could feel detached from the cursor path and appear to land in the wrong direction. | `Viewport.tsx` wall basis selection, wall debug Playwright capture           | P0       | Done   |
-| NEXT13-GAP-003 | Evidence still encoded the old blocked-front behavior instead of proving exact front/elevation placement and oblique placement in the seeded app.               | `packages/web/tmp/ux-wall-debug-input-20260513/*`, tracker evidence          | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                               | Canonical Surfaces / Files                                                                     | Priority | Status |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT13-GAP-001 | The wall tool over-treated shallow/front-like 3D views as unreadable even when the level plane grid was numerically stable and visible.                         | `packages/web/src/viewport/authoring3d.ts`, `Viewport.tsx` 3D wall authoring                   | P0       | Done   |
+| NEXT13-GAP-002 | Synthetic `elevation-axis` placement was used too often, so wall footprints could feel detached from the cursor path and appear to land in the wrong direction. | `Viewport.tsx` wall basis selection, wall debug Playwright capture                             | P0       | Done   |
+| NEXT13-GAP-003 | Evidence still encoded the old blocked-front behavior instead of proving exact front/elevation placement and oblique placement in the seeded app.               | `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/*`, tracker evidence | P0       | Done   |
 
 ### WP-NEXT-31 — Exact 3D Wall Plane Priority
 
@@ -1351,8 +1351,8 @@ Evidence (2026-05-13):
   - `packages/web/src/Viewport.tsx`
   - `packages/web/src/viewport/authoring3d.ts`
   - `packages/web/src/viewport/authoring3d.test.ts`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
 - Acceptance:
   - stable visible 3D level-plane hits use exact ray-to-level-plane projection, not synthetic screen-axis placement, regardless of shallow camera angle;
   - the seeded `Front elevation` wall drag creates one wall with `projection.mode === "plane"`;
@@ -1364,12 +1364,12 @@ Evidence (2026-05-13):
   - Removed the hard `verticalLook >= 0.35` requirement from wall draft projection classification. Plane readability is now determined by measured level-plane screen scale and anisotropy.
   - Kept constrained `elevation-axis` as a fallback only for genuinely unstable/unreadable projections instead of using it for stable front-like views.
   - Replaced stale blocked-front evidence with exact-placement proof:
-    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
       - `commandsAfterFront: 1`
       - `createWallCount: 2`
       - `projectionModes: ["plane"]`
@@ -1380,11 +1380,11 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 14)
 
-| Gap ID         | Problem Statement                                                                                                                                            | Canonical Surfaces / Files                                                           | Priority | Status |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------- | ------ |
-| NEXT14-GAP-001 | 3D wall placement could still feel like it flipped because the preview only showed the projected wall volume, not the exact cursor path and cursor endpoint. | `packages/web/src/Viewport.tsx` 3D wall overlay                                      | P0       | Done   |
-| NEXT14-GAP-002 | Wall debug logs exposed model-coordinate deltas but not screen-coordinate deltas, making valid camera projection sign changes look like placement reversals. | `Viewport.tsx` 3D wall debug trace                                                   | P0       | Done   |
-| NEXT14-GAP-003 | Left-edge/shallow-view wall repro evidence needed to prove both constrained and exact modes remain visible and command-producing after the UX correction.    | `packages/web/tmp/ux-wall-plane-fidelity-20260514/*`, wall debug input capture proof | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                            | Canonical Surfaces / Files                                                                                      | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT14-GAP-001 | 3D wall placement could still feel like it flipped because the preview only showed the projected wall volume, not the exact cursor path and cursor endpoint. | `packages/web/src/Viewport.tsx` 3D wall overlay                                                                 | P0       | Done   |
+| NEXT14-GAP-002 | Wall debug logs exposed model-coordinate deltas but not screen-coordinate deltas, making valid camera projection sign changes look like placement reversals. | `Viewport.tsx` 3D wall debug trace                                                                              | P0       | Done   |
+| NEXT14-GAP-003 | Left-edge/shallow-view wall repro evidence needed to prove both constrained and exact modes remain visible and command-producing after the UX correction.    | `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/*`, wall debug input capture proof | P0       | Done   |
 
 ### WP-NEXT-32 — 3D Wall Cursor Direction Legibility
 
@@ -1394,10 +1394,10 @@ Evidence (2026-05-13):
 - Goal: make 3D wall placement direction unambiguous in shallow/perspective views by showing the cursor path separately from the projected wall volume and logging both screen and model deltas.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
-  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-  - `packages/web/tmp/ux-wall-plane-fidelity-20260514/capture.mjs`
-  - `packages/web/tmp/ux-wall-plane-fidelity-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/summary.json`
 - Acceptance:
   - wall preview always renders an explicit cursor path from the picked start to the current cursor point;
   - wall preview always renders an explicit cursor endpoint handle;
@@ -1409,12 +1409,12 @@ Evidence (2026-05-13):
   - Added a `wall-cursor-end` endpoint ring so the current cursor target is always visible before commit.
   - Added `screenDelta` and `modelDelta` to wall preview/commit debug records and compact console output.
   - Seeded exact-placement proof (`target-house-3`):
-    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-debug-input-20260513/summary.json`
       - `createWallCount: 2`
       - `projectionModes: ["plane"]`
       - `frontCursorPathVisible: true`
@@ -1422,11 +1422,11 @@ Evidence (2026-05-13):
       - `obliqueCursorPathVisible: true`
       - `obliqueCursorEndVisible: true`
   - Seeded left-edge/shallow-view proof:
-    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-preview.png`
-    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-commit.png`
-    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/02-left-edge-steep-preview.png`
-    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/02-left-edge-steep-commit.png`
-    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/02-left-edge-steep-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/02-left-edge-steep-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-plane-fidelity-20260514/summary.json`
       - `createWallCount: 2`
       - `projectionModes: ["elevation-axis", "plane"]`
       - `previewChecks[*].cursorPathVisible: true`
@@ -1434,11 +1434,11 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 15)
 
-| Gap ID         | Problem Statement                                                                                                                                          | Canonical Surfaces / Files                                                                | Priority | Status  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------- |
-| NEXT15-GAP-001 | Exact ray-to-level-plane wall placement is still UX-hostile in shallow/front 3D views: a rightward screen gesture can map to negative model-axis movement. | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft UX | P0       | Blocked |
-| NEXT15-GAP-002 | ViewCube/manual camera pose updates could leave camera matrices stale for immediate authoring raycasts.                                                    | `Viewport.tsx`, `packages/web/src/viewport/cameraMatrixSync.ts`                           | P0       | Done    |
-| NEXT15-GAP-003 | Seeded proof needed to cover both no-rotation and post-ViewCube-rotation wall placement with command responses, not just outgoing commands.                | `packages/web/tmp/ux-wall-post-viewcube-20260514/*`, tracker evidence                     | P0       | Blocked |
+| Gap ID         | Problem Statement                                                                                                                                          | Canonical Surfaces / Files                                                                       | Priority | Status  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------- | ------- |
+| NEXT15-GAP-001 | Exact ray-to-level-plane wall placement is still UX-hostile in shallow/front 3D views: a rightward screen gesture can map to negative model-axis movement. | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft UX        | P0       | Blocked |
+| NEXT15-GAP-002 | ViewCube/manual camera pose updates could leave camera matrices stale for immediate authoring raycasts.                                                    | `Viewport.tsx`, `packages/web/src/viewport/cameraMatrixSync.ts`                                  | P0       | Done    |
+| NEXT15-GAP-003 | Seeded proof needed to cover both no-rotation and post-ViewCube-rotation wall placement with command responses, not just outgoing commands.                | `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/*`, tracker evidence | P0       | Blocked |
 
 ### WP-NEXT-33 — Shallow 3D Wall Screen-Axis Canonicalization
 
@@ -1457,8 +1457,8 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/authoring3d.test.ts`
   - `packages/web/src/viewport/cameraMatrixSync.ts`
   - `packages/web/src/viewport/cameraMatrixSync.test.ts`
-  - `packages/web/tmp/ux-wall-post-viewcube-20260514/capture.mjs`
-  - `packages/web/tmp/ux-wall-post-viewcube-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/summary.json`
 - Acceptance:
   - shallow/front 3D wall placement no longer enters `projection.mode === "plane"` merely because the numeric level-plane sample is stable;
   - top/plan-like readable 3D placement remains exact `plane`;
@@ -1472,14 +1472,14 @@ Evidence (2026-05-13):
   - Added matrix sync before all camera-dependent raycast/projection input paths in `Viewport`.
   - Updated `authoring3d` regression tests to assert the new shallow/front canonical behavior.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/01-front-elevation-before-cube.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/02-front-no-cube-empty-grid-preview.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/02-front-no-cube-empty-grid-commit.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/03-after-viewcube-axis-rotate.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/04-post-viewcube-empty-grid-preview.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/04-post-viewcube-empty-grid-commit.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/06-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-post-viewcube-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/01-front-elevation-before-cube.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/02-front-no-cube-empty-grid-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/02-front-no-cube-empty-grid-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/03-after-viewcube-axis-rotate.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/04-post-viewcube-empty-grid-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/04-post-viewcube-empty-grid-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/06-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-post-viewcube-20260514/summary.json`
       - `createWallCount: 2`
       - `commandResponses: [{ status: 200 }, { status: 200 }]`
       - `projectionModes: ["elevation-axis"]`
@@ -1491,11 +1491,11 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 16)
 
-| Gap ID         | Problem Statement                                                                                                                                                    | Canonical Surfaces / Files                                                                     | Priority | Status |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------- | ------ |
-| NEXT16-GAP-001 | The screen-axis fallback made 3D walls feel detached from the actual model work plane after rotation and did not solve the reported placement reversals.             | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft path    | P0       | Done   |
-| NEXT16-GAP-002 | 3D wall starts could still be accepted through visible model geometry, so the wall appeared to be authored somewhere different from the clicked building/sky region. | `Viewport.tsx` visible draft-plane hit testing                                                 | P0       | Done   |
-| NEXT16-GAP-003 | Seeded proof must show exact work-plane placement before and after ViewCube rotation, plus a blocked hidden-work-plane click that creates no command.                | `packages/web/tmp/ux-wall-visible-workplane-20260514/*`, `authoring3d.test.ts`, seeded browser | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                                    | Canonical Surfaces / Files                                                                                                | Priority | Status |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT16-GAP-001 | The screen-axis fallback made 3D walls feel detached from the actual model work plane after rotation and did not solve the reported placement reversals.             | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft path                               | P0       | Done   |
+| NEXT16-GAP-002 | 3D wall starts could still be accepted through visible model geometry, so the wall appeared to be authored somewhere different from the clicked building/sky region. | `Viewport.tsx` visible draft-plane hit testing                                                                            | P0       | Done   |
+| NEXT16-GAP-003 | Seeded proof must show exact work-plane placement before and after ViewCube rotation, plus a blocked hidden-work-plane click that creates no command.                | `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/*`, `authoring3d.test.ts`, seeded browser | P0       | Done   |
 
 ### WP-NEXT-34 — 3D Wall Visible Work-Plane Placement
 
@@ -1508,8 +1508,8 @@ Evidence (2026-05-13):
   - `packages/web/src/Viewport.tsx`
   - `packages/web/src/viewport/authoring3d.ts`
   - `packages/web/src/viewport/authoring3d.test.ts`
-  - `packages/web/tmp/ux-wall-visible-workplane-20260514/capture.mjs`
-  - `packages/web/tmp/ux-wall-visible-workplane-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/summary.json`
 - Acceptance:
   - readable 3D wall placement uses `projection.mode === "plane"` before and after ViewCube rotation;
   - synthetic `elevation-axis` walls are not committed in the seeded proof;
@@ -1524,15 +1524,15 @@ Evidence (2026-05-13):
   - Added `wallPlaneOccluded` overlay messaging so the user gets a direct explanation instead of an invisible or detached wall.
   - Added `isDraftPlaneHitOccluded` unit coverage.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/01-front-elevation-initial.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-preview.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-commit.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/03-hidden-plane-blocked-on-building.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/04-after-viewcube-axis-rotate.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-preview.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-commit.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/06-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-visible-workplane-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/01-front-elevation-initial.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/03-hidden-plane-blocked-on-building.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/04-after-viewcube-axis-rotate.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/06-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-visible-workplane-20260514/summary.json`
       - `createWallCount: 2`
       - `commandResponses: [{ status: 200 }, { status: 200 }]`
       - `projectionModes: ["plane"]`
@@ -1549,7 +1549,7 @@ Evidence (2026-05-13):
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT17-GAP-001 | 3D wall placement still used an SVG/projected wall-volume preview, so the pre-commit affordance could look like a broad detached sheet while the committed wall was a real 3D slab. | `packages/web/src/Viewport.tsx` 3D wall preview path                                                                             | P0       | Done   |
 | NEXT17-GAP-002 | 3D `createWall` commands sent `locationLine`, but the engine did not persist it into `WallElem`, leaving preview/commit semantics vulnerable to drift.                              | `app/bim_ai/commands.py`, `app/bim_ai/elements.py`, `app/bim_ai/engine_dispatch_core.py`, `app/tests/test_engine_constraints.py` | P0       | Done   |
-| NEXT17-GAP-003 | Seeded 3D wall proof must be run from a reset seed model; otherwise repeated browser captures can fail with wall-overlap conflicts from previous evidence walls.                    | `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/*`                                                                     | P0       | Done   |
+| NEXT17-GAP-003 | Seeded 3D wall proof must be run from a reset seed model; otherwise repeated browser captures can fail with wall-overlap conflicts from previous evidence walls.                    | `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/*`                                          | P0       | Done   |
 
 ### WP-NEXT-35 — 3D Wall Mesh Preview Parity
 
@@ -1564,8 +1564,8 @@ Evidence (2026-05-13):
   - `app/bim_ai/elements.py`
   - `app/bim_ai/engine_dispatch_core.py`
   - `app/tests/test_engine_constraints.py`
-  - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/capture.mjs`
-  - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
 - Acceptance:
   - legacy SVG wall-volume preview path is removed for 3D wall placement;
   - wall preview is a real `makeWallMesh` ghost generated from the same start/end, level, wall type, height, and location-line values used by the commit command;
@@ -1580,14 +1580,14 @@ Evidence (2026-05-13):
   - Added `locationLine` to `CreateWallCmd` and `WallElem`, and dispatch now copies it into newly created walls.
   - Added engine regression coverage proving `createWall.locationLine` persists and serializes by alias.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`, reset with `make seed-clear && make seed name=target-house-3` before final capture):
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/01-front-elevation-initial.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-preview.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-commit.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/03-after-viewcube-rotate.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-preview.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-commit.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/05-after-escape-navigation-drag.png`
-    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/01-front-elevation-initial.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/03-after-viewcube-rotate.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/05-after-escape-navigation-drag.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
       - `createWallCount: 2`
       - `commandResponses: [{ status: 200 }, { status: 200 }]`
       - `projectionModes: ["plane"]`
@@ -1601,7 +1601,7 @@ Evidence (2026-05-13):
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT18-GAP-001 | Diagonal 3D walls could still commit as mirrored/off-line slabs because wall mesh yaw used the wrong Three.js Y-rotation sign for semantic plan +Y/world +Z mapping.           | `packages/web/src/viewport/meshBuilders.ts`, `packages/web/src/viewport/meshBuilders.layeredWall.ts`, `packages/web/src/Viewport.tsx` | P0       | Done   |
 | NEXT18-GAP-002 | CSG-cut walls and typed/layered wall previews needed the same segment-orientation contract as regular walls so preview, commit, and aperture rendering do not diverge.         | `Viewport.tsx` CSG request yaw, layered/sloped/recessed/curtain wall builders, orientation unit tests                                 | P0       | Done   |
-| NEXT18-GAP-003 | Seeded evidence needed a clean diagonal 3D wall case proving the visible authored path, mesh preview, and committed wall body agree in the real app after the orientation fix. | `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/*`                                                                              | P0       | Done   |
+| NEXT18-GAP-003 | Seeded evidence needed a clean diagonal 3D wall case proving the visible authored path, mesh preview, and committed wall body agree in the real app after the orientation fix. | `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/*`                                                   | P0       | Done   |
 
 ### WP-NEXT-36 — 3D Wall Segment Orientation Fidelity
 
@@ -1618,8 +1618,8 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/meshBuilders.locationLine.test.ts`
   - `packages/web/src/viewport/meshBuilders.layeredWall.test.ts`
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/capture.mjs`
-  - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/capture.mjs`
+  - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
 - Acceptance:
   - diagonal wall mesh local +X maps to authored start-to-end vector, not the mirrored vector;
   - layered wall mesh local +X maps to the authored start-to-end vector;
@@ -1633,10 +1633,10 @@ Evidence (2026-05-13):
   - Replaced the old `Math.atan2(dz, dx)` wall yaw in plain, layered, sloped, recessed, curtain, balcony-attached, beam, and CSG wall paths with the shared helper.
   - Added regression tests proving diagonal plain and layered walls align local +X with `(dx, dz)` and local +Z with the left normal.
   - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`, reset again after capture):
-    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/01-rear-axo-initial.png`
-    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/02-diagonal-wall-preview.png`
-    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/03-diagonal-wall-commit.png`
-    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/01-rear-axo-initial.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/02-diagonal-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/03-diagonal-wall-commit.png`
+    - `spec/generated/visual-evidence/packages-web/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
       - `health: { ok: true, status: 200 }`
       - `createWallCount: 1`
       - `commandResponses: [{ status: 200, ok: true }]`
@@ -1653,7 +1653,7 @@ Evidence (2026-05-13):
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT19-GAP-001 | 3D hosted door/window placement still felt like a refresh because semantic commands hydrated the full returned model snapshot instead of applying the returned delta incrementally. | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/useWorkspaceSnapshot.ts`, `packages/web/src/lib/api.ts` | P0       | Done   |
 | NEXT19-GAP-002 | The 3D hosted placement click selected the host wall, opening the element inspector and changing the canvas layout while the user was still in a placement command.                 | `packages/web/src/Viewport.tsx` hosted placement path                                                                           | P0       | Done   |
-| NEXT19-GAP-003 | Seeded proof needed to cover wall + door + window placement through the actual 3D ribbon without main-frame navigation, canvas-width jumps, or selection-sidebar takeover.          | `packages/web/tmp/ux-host-placement-no-refresh-20260514/*`, seeded browser                                                      | P0       | Done   |
+| NEXT19-GAP-003 | Seeded proof needed to cover wall + door + window placement through the actual 3D ribbon without main-frame navigation, canvas-width jumps, or selection-sidebar takeover.          | `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/*`, seeded browser                           | P0       | Done   |
 
 ### WP-NEXT-37 — 3D Hosted Placement No-Refresh Flow
 
@@ -1668,7 +1668,7 @@ Evidence (2026-05-13):
   - `packages/web/src/workspace/Workspace.tsx`
   - `packages/web/src/workspace/Workspace.semanticCommand.test.tsx`
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-host-placement-no-refresh-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/summary.json`
 - Acceptance:
   - semantic command responses with `delta` use `applyDelta` instead of full `hydrateFromSnapshot`;
   - local websocket echo deltas with the same `clientOpId` are ignored to avoid duplicate UI churn;
@@ -1682,14 +1682,14 @@ Evidence (2026-05-13):
   - Removed automatic host-wall selection from 3D hosted placement clicks so Door/Window can continue without shifting the canvas/sidebar contract.
   - Added regression coverage proving response deltas preserve unchanged element references.
   - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`, reset again after capture):
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/00-initial-3d.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/01-wall-preview.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/02-wall-committed.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/03-door-preview.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/05-window-preview.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png`
-    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/00-initial-3d.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/01-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/02-wall-committed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/03-door-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/05-window-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png`
+    - `spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/summary.json`
       - `commandTypes: ["createWall", "insertDoorOnWall", "insertWindowOnWall"]`
       - `commandModelIds: ["9bb9a145-d9ce-5a2f-a748-bb5be3301b30", "9bb9a145-d9ce-5a2f-a748-bb5be3301b30", "9bb9a145-d9ce-5a2f-a748-bb5be3301b30"]`
       - `mainFrameNavigations: 0`
@@ -1699,11 +1699,11 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 20)
 
-| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                             | Priority | Status |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
-| NEXT20-GAP-001 | 3D hosted door/window meshes on diagonal walls used the opposite signed yaw from wall bodies and CSG cuts, so the placed family could look detached or rotated off the opening. | `packages/web/src/viewport/meshBuilders.ts`, `packages/web/src/viewport/meshBuilders.locationLine.test.ts`                             | P0       | Done   |
-| NEXT20-GAP-002 | Door/window placement still produced a visual wall refresh because the dirty host wall was removed and replaced by a solid placeholder while the CSG worker recalculated cuts.  | `packages/web/src/Viewport.tsx`                                                                                                        | P0       | Done   |
-| NEXT20-GAP-003 | Seeded proof needed to cover a diagonal 3D wall with hosted door and window through the actual 3D ribbon, including stable canvas bounds and no navigation/console regressions. | `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + `http://127.0.0.1:8500/api/*` | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                                                        | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT20-GAP-001 | 3D hosted door/window meshes on diagonal walls used the opposite signed yaw from wall bodies and CSG cuts, so the placed family could look detached or rotated off the opening. | `packages/web/src/viewport/meshBuilders.ts`, `packages/web/src/viewport/meshBuilders.locationLine.test.ts`                                                        | P0       | Done   |
+| NEXT20-GAP-002 | Door/window placement still produced a visual wall refresh because the dirty host wall was removed and replaced by a solid placeholder while the CSG worker recalculated cuts.  | `packages/web/src/Viewport.tsx`                                                                                                                                   | P0       | Done   |
+| NEXT20-GAP-003 | Seeded proof needed to cover a diagonal 3D wall with hosted door and window through the actual 3D ribbon, including stable canvas bounds and no navigation/console regressions. | `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + `http://127.0.0.1:8500/api/*` | P0       | Done   |
 
 ### WP-NEXT-38 — 3D Hosted Diagonal Alignment + No-Flicker CSG
 
@@ -1716,7 +1716,7 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/meshBuilders.ts`
   - `packages/web/src/viewport/meshBuilders.locationLine.test.ts`
   - `packages/web/src/Viewport.tsx`
-  - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/summary.json`
 - Acceptance:
   - hosted door/window mesh rotation uses the same signed wall yaw as wall meshes and CSG wall bodies;
   - hosted door/window mesh positions include the same single-body location-line offset as the wall body;
@@ -1729,14 +1729,14 @@ Evidence (2026-05-13):
   - Retained the existing wall object during pending CSG work and swapped it only when the worker returns a successful cut mesh.
   - Added a diagonal hosted alignment regression that verifies door/window local axes and positions against the host wall.
   - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`):
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/00-initial-3d.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/01-wall-preview.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/02-wall-committed.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/03-door-preview.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/04-door-placed.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/05-window-preview.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/06-window-placed.png`
-    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/00-initial-3d.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/01-wall-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/02-wall-committed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/03-door-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/04-door-placed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/05-window-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/06-window-placed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-hosted-diagonal-alignment-20260514/summary.json`
       - `commandTypes: ["createWall", "insertDoorOnWall", "insertWindowOnWall"]`
       - hosted door/window `wallId` equals the new diagonal wall id
       - `mainFrameNavigations: 0`
@@ -1746,13 +1746,13 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 21)
 
-| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                                       | Priority | Status |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ------ |
-| NEXT21-GAP-001 | Clicking a primary-browser 3D view could update the left/secondary context while the focused canvas stayed on the previous plan pane, making tab/view creation feel unreliable. | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                      | P0       | Done   |
-| NEXT21-GAP-002 | 3D hosted Window/Door/Opening placement allowed occupied spans to look placeable, then failed only as a backend 409 with no in-canvas explanation.                              | `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts` | P0       | Done   |
-| NEXT21-GAP-003 | Load Family built-in door/window rows activated the hosted tool but lost the built-in family type id and dimensions when dispatching the 3D hosted command.                     | `packages/web/src/families/hostedFamilySelection.ts`, `packages/web/src/families/hostedFamilySelection.test.ts`, `packages/web/src/Viewport.tsx` | P0       | Done   |
-| NEXT21-GAP-004 | Seeded proof needed to cover the exact user-facing failure: blocked occupied window placement, valid free-span placement, Load Family reachability, and no page refresh.        | `packages/web/tmp/ux-ribbon-hosted-placement-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + API at `http://127.0.0.1:8500/api/*`      | P0       | Done   |
-| NEXT21-GAP-005 | `Cmd/Ctrl+R` could fall through into the roof/tool hotkey path instead of staying reserved for browser refresh.                                                                 | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                      | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                                                             | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT21-GAP-001 | Clicking a primary-browser 3D view could update the left/secondary context while the focused canvas stayed on the previous plan pane, making tab/view creation feel unreliable. | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                                            | P0       | Done   |
+| NEXT21-GAP-002 | 3D hosted Window/Door/Opening placement allowed occupied spans to look placeable, then failed only as a backend 409 with no in-canvas explanation.                              | `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts`                       | P0       | Done   |
+| NEXT21-GAP-003 | Load Family built-in door/window rows activated the hosted tool but lost the built-in family type id and dimensions when dispatching the 3D hosted command.                     | `packages/web/src/families/hostedFamilySelection.ts`, `packages/web/src/families/hostedFamilySelection.test.ts`, `packages/web/src/Viewport.tsx`                       | P0       | Done   |
+| NEXT21-GAP-004 | Seeded proof needed to cover the exact user-facing failure: blocked occupied window placement, valid free-span placement, Load Family reachability, and no page refresh.        | `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + API at `http://127.0.0.1:8500/api/*` | P0       | Done   |
+| NEXT21-GAP-005 | `Cmd/Ctrl+R` could fall through into the roof/tool hotkey path instead of staying reserved for browser refresh.                                                                 | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                                            | P0       | Done   |
 
 ### WP-NEXT-39 — 3D Hosted Placement Feedback + Load Family Command Fidelity
 
@@ -1769,7 +1769,7 @@ Evidence (2026-05-13):
   - `packages/web/src/viewport/directAuthoringGuards.test.ts`
   - `packages/web/src/families/hostedFamilySelection.ts`
   - `packages/web/src/families/hostedFamilySelection.test.ts`
-  - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json`
+  - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/summary.json`
 - Acceptance:
   - primary-browser tab/view activation assigns the opened tab to the focused pane so metadata and mounted canvas stay in sync;
   - hovering/clicking an occupied wall span renders invalid red hosted preview feedback and does not dispatch an `insert*OnWall` command;
@@ -1787,13 +1787,13 @@ Evidence (2026-05-13):
     - `pnpm --filter @bim-ai/web typecheck`
     - `pnpm --filter @bim-ai/web exec vitest run src/families/hostedFamilySelection.test.ts src/viewport/directAuthoringGuards.test.ts src/workspace/Workspace.test.tsx`
   - Seeded proof (`make seed name=target-house-3`, existing `make dev name=target-house-3` at `http://127.0.0.1:2000/`):
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png`
-    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png`
+    - `spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/summary.json`
       - `activeRibbonAfterFamily: "true"`
       - `invalidClickSentCommand: false`
       - `commandTypes: ["insertWindowOnWall"]`
@@ -1879,8 +1879,8 @@ Revit behavior to emulate where it maps cleanly:
   - `commandCapabilities.ts`, `defaultCommands.ts`, and `RibbonBar.tsx` now expose command lifecycle/preview metadata and direct bridge actions; tests fail if a visible ribbon command lacks executable, disabled, or bridge metadata.
   - `Workspace.tsx`, `CanvasMount.tsx`, `PlanCanvas.tsx`, and `Viewport.tsx` now carry pane-local active plan tools so split panes do not bleed authoring state into each other.
   - `Workspace.test.tsx` covers pane-local active command state and browser-native shortcut safety, including `Cmd/Ctrl+R` staying browser-owned instead of activating Roof.
-  - Seeded screenshots captured under `packages/web/tmp/ux-next-wp40-20260514/`: plan wall, floor sketch, 3D wall, hosted window, and sheet command states on `target-house-3`.
-  - Playwright screenshots captured 2026-05-16 (round 2): `01-wp40-plan-ribbon-lifecycle.png` (plan ribbon — all commands have metadata), `02-wp40-wall-command-active.png` (wall tool active — pane-local state), `03-wp40-select-after-esc.png` (Select is default after Esc) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Seeded screenshots captured under `spec/generated/visual-evidence/packages-web/ux-next-wp40-20260514/`: plan wall, floor sketch, 3D wall, hosted window, and sheet command states on `target-house-3`.
+  - Playwright screenshots captured 2026-05-16 (round 2): `01-wp40-plan-ribbon-lifecycle.png` (plan ribbon — all commands have metadata), `02-wp40-wall-command-active.png` (wall tool active — pane-local state), `03-wp40-select-after-esc.png` (Select is default after Esc) — `spec/generated/visual-evidence/packages-web/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
   - Remaining before `Done`: none — all acceptance criteria met. The shared transaction state machine is implemented via `authoringCommandContract.ts` + pane-local tool state in Workspace/CanvasMount/PlanCanvas/Viewport; downstream WP-NEXT-41 through 50 all Done confirms the contract is live end-to-end.
 - Dependencies: none. This is the foundation for every following package.
 
@@ -1913,11 +1913,11 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/Viewport.tsx` consumes that kernel for 3D line tools and floor/roof/ceiling/area sketch commits, including active work-plane badges, snap glyph feedback, numeric line input, and preview-to-command dispatch for committed geometry.
   - `packages/web/src/plan/PlanCanvas.tsx` exposes the active plan work plane as a testable badge so plan/3D both answer "where am I drawing?"
   - `packages/web/src/viewport/authoring3d.test.ts` covers snap tolerance, wall/beam/railing/grid/reference-plane preview-command parity, floor/roof polygon preview-command parity, and numeric length resizing.
-  - Seeded proof captured under `packages/web/tmp/ux-next-wp41-20260514/` shows plan work-plane badge, 3D work-plane badge, snap glyph, numeric input, wall preview, wall commit, `Esc` cancel back to Select, and no full document reload during the commit flow.
+  - Seeded proof captured under `spec/generated/visual-evidence/packages-web/ux-next-wp41-20260514/` shows plan work-plane badge, 3D work-plane badge, snap glyph, numeric input, wall preview, wall commit, `Esc` cancel back to Select, and no full document reload during the commit flow.
   - `packages/web/src/viewport/cameraMatrixSync.test.ts` extended 2026-05-16 with two new tests: "screen-to-model is stable across successive ViewCube-like rotations" (proves `matrixWorldNeedsUpdate === false` after each of 3 sequential pose changes) and "per-pane mirror sync keeps orthographic matrix current independently" (proves pane-A and pane-B ortho cameras are updated independently with different positions).
   - `packages/web/src/plan/snapEngine.test.ts` extended 2026-05-16 with 3 new tests under "WP-NEXT-41 — per-pane work-plane isolation via level-scoped snap anchors": proves `collectWallAnchors` scoped to `lvl-ground` returns only ground-level endpoints, scoped to `lvl-first` returns only first-floor endpoints, and unscoped returns both — proving each pane's work plane filters the snap engine independently. 78/78 tests pass across all related files.
   - Full snap families implemented in `snapEngine.ts`: endpoint, midpoint, center, intersection, perpendicular, extension, tangent, parallel, workplane, nearest — all wired into `snapPlanCandidates` and all covered by tests.
-  - Playwright screenshots captured 2026-05-16: `04-wp41-plan-workplane-badge.png` (plan view with work-plane badge + snap engine active), `05-wp41-floor-sketch-preview.png` (floor sketch mode boundary preview), `06-wp41-roof-sketch-preview.png` (roof sketch footprint preview) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Playwright screenshots captured 2026-05-16: `04-wp41-plan-workplane-badge.png` (plan view with work-plane badge + snap engine active), `05-wp41-floor-sketch-preview.png` (floor sketch mode boundary preview), `06-wp41-roof-sketch-preview.png` (roof sketch footprint preview) — `spec/generated/visual-evidence/packages-web/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
   - Remaining before `Done`: none — all acceptance criteria met by tests + screenshots.
 - Dependencies: `WP-NEXT-40`.
 
@@ -1964,7 +1964,7 @@ Revit behavior to emulate where it maps cleanly:
   - Disallow join proof (plan): `wallConnectivity.test.ts` — "carries disallowed joins into plan records as explicit skip reasons" proves `skipReason === 'join_disallowed'` for the disallowed endpoint; "unjoin: toggling disallow on one corner yields skip_reason join_disallowed for that pair only" isolates per-corner disallow state.
   - Disallow join proof (3D): `wallJoinDisplay.test.ts` — "shortens only the disallowed joined endpoint for 3D rendering" proves the gap shortening; `meshBuilders.layeredWall.ts` routes typed walls through the same cleanup footprints.
   - Modify command completion: `joinGeometry.test.ts` covers `buildJoinCommand`, `buildUnjoinCommand`, `canJoin`, `selectionSupportsJoin`, and `buildJoinCommandsForSelection` (14 tests). `modifyAvailability.ts` covers unjoin/attach/detach availability across view modes.
-  - Playwright screenshots captured 2026-05-16: `07-wp42-plan-wall-joins.png` (plan L/T corner joins), `08-wp42-wall-selected-join-controls.png` (wall selected, join controls in ribbon), `09-wp42-modify-tab-join-commands.png` (Modify tab with join/unjoin/attach/detach), `10-wp42-wall-join-tool-active.png` (Wall Join tool active), `11-wp42-3d-wall-join-render.png` (3D wall join mesh cleanup), `12-wp42-cmdk-join-commands.png` (Cmd+K join commands) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Playwright screenshots captured 2026-05-16: `07-wp42-plan-wall-joins.png` (plan L/T corner joins), `08-wp42-wall-selected-join-controls.png` (wall selected, join controls in ribbon), `09-wp42-modify-tab-join-commands.png` (Modify tab with join/unjoin/attach/detach), `10-wp42-wall-join-tool-active.png` (Wall Join tool active), `11-wp42-3d-wall-join-render.png` (3D wall join mesh cleanup), `12-wp42-cmdk-join-commands.png` (Cmd+K join commands) — `spec/generated/visual-evidence/packages-web/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
   - Remaining before `Done`: none — rectangle topology, disallow separation, join controls, modify completion, and seeded screenshot proof all complete.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
@@ -2002,16 +2002,16 @@ Revit behavior to emulate where it maps cleanly:
 - Evidence 2026-05-15:
   - `packages/web/src/plan/SketchCanvas.tsx` keeps sketch-session open/hydration stable across parent callback rerenders and performs Pick Walls hit-testing in screen space before falling back to model-space distance, so visible walls can be picked reliably after pan/zoom and after seeded view changes.
   - `packages/web/src/plan/SketchCanvasPickWalls.tsx` adds a pure projected-wall hit-test helper with bounded pixel tolerance; `packages/web/src/plan/SketchCanvas.pickWalls.test.tsx` covers projected hit-testing, hover wall id fidelity, pick-wall API dispatch, and the no-reopen regression.
-  - Seeded UI proof in `packages/web/tmp/ux-next-wp43-20260515/summary.json` confirms invalid open-loop, duplicate/reversed-edge, and existing-floor-overlap validation keep `Finish` disabled with visible reasons; drawn-boundary floor creation reaches `Ready to Finish`; picked-wall floor creation picks four proof walls, reaches `Ready to Finish`, and remains selected with `Edit Boundary`; Sketch ribbon and Cmd+K floor command reachability are preserved without main-frame reloads.
+  - Seeded UI proof in `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/summary.json` confirms invalid open-loop, duplicate/reversed-edge, and existing-floor-overlap validation keep `Finish` disabled with visible reasons; drawn-boundary floor creation reaches `Ready to Finish`; picked-wall floor creation picks four proof walls, reaches `Ready to Finish`, and remains selected with `Edit Boundary`; Sketch ribbon and Cmd+K floor command reachability are preserved without main-frame reloads.
   - Screenshots captured for the seeded proof:
-    - `packages/web/tmp/ux-next-wp43-20260515/01-invalid-open-loop-finish-disabled.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/02-duplicate-reversed-edge-validation.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/03-existing-floor-overlap-validation.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/04-drawn-boundary-ready-to-finish.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/05-drawn-boundary-floor-selected-edit-boundary.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/06-picked-walls-ready-to-finish.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/07-picked-wall-floor-selected-edit-boundary.png`
-    - `packages/web/tmp/ux-next-wp43-20260515/08-cmd-k-floor-command-reachability.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/01-invalid-open-loop-finish-disabled.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/02-duplicate-reversed-edge-validation.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/03-existing-floor-overlap-validation.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/04-drawn-boundary-ready-to-finish.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/05-drawn-boundary-floor-selected-edit-boundary.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/06-picked-walls-ready-to-finish.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/07-picked-wall-floor-selected-edit-boundary.png`
+    - `spec/generated/visual-evidence/packages-web/ux-next-wp43-20260515/08-cmd-k-floor-command-reachability.png`
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
@@ -2037,7 +2037,7 @@ Revit behavior to emulate where it maps cleanly:
   - `app/bim_ai/commands.py` and `app/bim_ai/engine_dispatch_core.py` extend `createWallChain` with wall type, location line, and base/top constraint metadata so generated walls preserve authored BIM constraints.
   - Selected floor/room element sidebars expose `Create Walls from Floor Boundary` and `Create Walls from Room Boundary` preview/commit actions; Cmd+K exposes `generate.walls-from-boundary`; command capability metadata records `cmd-k` plus `element-sidebar` surfaces and MEP-lens disablement.
   - Unit/DOM tests cover floor generation, room generation, duplicate-overlap conflict blocking, backend wall-chain metadata, selected-floor sidebar commit, Cmd+K dispatch, and command capability metadata.
-  - Seeded UI proof on `target-house-3` captured in `packages/web/tmp/ux-next-wp44-20260515/`:
+  - Seeded UI proof on `target-house-3` captured in `spec/generated/visual-evidence/packages-web/ux-next-wp44-20260515/`:
     - `01-floor-boundary-wall-preview.png`
     - `02-floor-boundary-walls-created.png`
     - `03-duplicate-overlap-conflict-preview.png`
@@ -2050,7 +2050,7 @@ Revit behavior to emulate where it maps cleanly:
   - `PlanCanvas.tsx` wires pick-lines into the Wall tool: hovering snapped cursor near a floor edge or DXF line shows a `[data-testid="wall-pick-line-preview"]` highlight ribbon; clicking creates a `createWall` command from the picked segment; a second click on the same segment shows `[data-testid="wall-draft-notice"]` with an "already overlaps" message instead of creating a duplicate.
   - Wall tool `onMove` and `onClick` handlers read `planTool` and `elementsById` from the live Zustand store (not React closure) so pick-line state updates correctly after `hydrateFromSnapshot`.
   - `authoringCommandContract.ts` records `pick-lines` as a Wall tool control surface.
-  - Seeded UI proof on `target-house-3` captured in `packages/web/tmp/ux-next-wp44-picklines-20260515/`:
+  - Seeded UI proof on `target-house-3` captured in `spec/generated/visual-evidence/packages-web/ux-next-wp44-picklines-20260515/`:
     - `01-wall-tool-pick-floor-edge-preview.png`
     - `02-wall-tool-pick-floor-edge-created.png`
     - `03-wall-tool-pick-floor-edge-duplicate-blocked.png`
@@ -2086,7 +2086,7 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/cmdPalette/defaultCommands.ts` adds `'tool.roof-from-walls'` Cmd+K command: `isAvailable` requires ≥ 3 selected wall elements; `invoke` calls `roofParamsFromWallLoop(walls, levelId, 500 mm overhang, 30° slope)` and dispatches `{ type: 'createRoof', ... }` — wall-loop → footprint derivation path wired without opening a sketch session.
   - `packages/web/src/workspace/inspector/InspectorContent.tsx`: `onEditBoundary` prop extended to `Extract<Element, { kind: 'floor' | 'roof' | 'ceiling' }>` union; "Edit Boundary" / "Edit Footprint" action cards added to the `roof` and `ceiling` inspector cases (`data-testid="inspector-roof-edit-boundary"`, `data-testid="inspector-ceiling-edit-boundary"`).
   - `packages/web/src/workspace/WorkspaceRightRail.tsx`: `beginPlanBoundaryEdit` callback updated to resolve `levelId` from `referenceLevelId` for roofs and `levelId` for floor/ceiling, then switch to plan mode and select the element — wires the new inspector actions end-to-end.
-  - Playwright screenshots (round 2) captured 2026-05-16: `28-wp45-plan-structural-stack-clean.png` (plan view full structural model, no orphaned constraints), `21-wp47-inspector-boundary-card.png` (inspector showing Edit Boundary card); 25 total screenshots in `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors in round-2 run.
+  - Playwright screenshots (round 2) captured 2026-05-16: `28-wp45-plan-structural-stack-clean.png` (plan view full structural model, no orphaned constraints), `21-wp47-inspector-boundary-card.png` (inspector showing Edit Boundary card); 25 total screenshots in `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors in round-2 run.
   - Seeded proof: `authoringPipeline.integration.test.ts` 12 tests prove the full floor → 4-wall rectangle → door/wall → roof footprint → no orphan chain; `runStructuralValidation` on the same model returns zero issues (clean model); `validateShaftSpan` proves contiguous 2-level span valid. This constitutes the machine-verifiable floor → walls → roof → ceiling → shaft → attach-top → no-orphan proof.
   - Remaining before `Done`: none — all acceptance criteria met by integration tests + Playwright screenshots.
 - Dependencies: `WP-NEXT-43`, `WP-NEXT-44`.
@@ -2119,11 +2119,11 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/tools/authoringCommandContract.ts` covers every `ToolId` in `AUTHORING_COMMAND_CONTRACTS satisfies Record<ToolId, AuthoringCommandContract>`, including all new 3D structural and massing tools.
   - `packages/web/src/workspace/commandCapabilities.test.ts` asserts `evaluateCommandInMode('tool.X', '3d')?.state === 'enabled'` for unjoin, attach, detach, brace, mass-box, mass-extrusion, and mass-revolution (in addition to the 17 pre-existing 3D tools); all 20 capability tests pass.
   - `packages/web/src/cmdPalette/defaultCommands.ts` registers Cmd+K entries for all 3D structural/massing/annotation/modify tools so Cmd+K mirrors 3D command states.
-  - Playwright screenshots captured 2026-05-16: `03-wp46-3d-view-default.png` (3D canvas loaded, no errors), `04-wp46-3d-ribbon.png` (3D ribbon visible with model commands) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
+  - Playwright screenshots captured 2026-05-16: `03-wp46-3d-view-default.png` (3D canvas loaded, no errors), `04-wp46-3d-ribbon.png` (3D ribbon visible with model commands) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`.
   - `packages/web/src/workspace/commandCapabilities.3dTools.test.ts` (commit `dbf67130d`) adds three data-driven per-tool tests: (1) `evaluateCommandInMode` returns non-null for every registered tool in both plan and 3d mode; (2) every tool with `'3d'` in `modes` returns `state: 'enabled'` in 3d mode (32 tools); (3) every plan-only tool returns `state !== 'enabled'` in 3d mode — confirming mode gating is correct across the full tool registry.
   - `packages/web/src/viewport/authoring3d.ts` (commit `f7c0e9e7f`) adds `validateWorkPlane3d(toolId, snapKind, hasActiveLevelPlane)` → `{ valid, reason, previewTint: 'red' | null }`: wall/floor/ceiling/stair require `level-plane` snap; door/window/wall-opening require `wall-face` snap; component and unknown tools are `any-host`. Eight new tests in `authoring3d.test.ts` cover all branches.
   - `validateWorkPlane3d` is wired into `Viewport.tsx` at line 3062 — renders the red ghost preview tint for invalid work-plane snaps in all 3D authoring commands.
-  - Playwright screenshots (round 2) captured 2026-05-16: `22-wp46-3d-wall-tool-active.png` (3D view with wall tool active, no console errors) — `packages/web/tmp/ux-next-wp45-50-20260516/`. Round-2 run: 0 console errors, 0 page errors.
+  - Playwright screenshots (round 2) captured 2026-05-16: `22-wp46-3d-wall-tool-active.png` (3D view with wall tool active, no console errors) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`. Round-2 run: 0 console errors, 0 page errors.
   - Remaining before `Done`: none — `validateWorkPlane3d` is wired, all tool contracts have 3D mode gating, Playwright screenshots confirm the 3D ribbon state.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
 
@@ -2153,11 +2153,11 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/modifyAvailability.ts` — `getModifyAvailability(selectedKinds, viewMode)` returns the complete 17-verb availability matrix for plan, 3D, section, sheet, and schedule; `getEnabledVerbs` is a filtered helper. 17 unit tests cover no-selection, per-view gating, solid-kind constraints for join/unjoin, wall-only constraints for attach/detach, and align/mirror selection requirements.
   - `packages/web/src/workspace/shell/RibbonBar.tsx` expanded `buildPlanModifyTab` (Selection, Edit, Constraints panels with unjoin/attach/detach gated by `SOLID_MODIFY_KINDS`) and `build3dModifyTab` (adds Constraints panel when isSolid || isWall).
   - `buildSectionModifyTab` added: move/copy/rotate plus pin/unpin (per `getModifyAvailability` section spec); `buildSheetModifyTab` added: move/copy/delete plus scale; `buildScheduleRibbonTabs` removes the contextual modify tab entirely (all verbs disabled in schedule per spec). All wired into `buildSectionRibbonTabs` / `buildSheetRibbonTabs`. (commit `243349d85`)
-  - Playwright screenshot captured 2026-05-16: `07-wp47-plan-selection-modify.png` (plan canvas with element selected, modify tab visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
+  - Playwright screenshot captured 2026-05-16: `07-wp47-plan-selection-modify.png` (plan canvas with element selected, modify tab visible) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`.
   - `packages/web/src/plan/modifyPreview.test.ts` (9 tests, commit `<next>`): proves the canvas move-tool dashed-line overlay delta equals the `moveElementsDelta` committed payload for unconstrained, shift-horizontal, and shift-vertical cases; proves `rotateDeltaAngleFromReference` and `parseTypedRotateAngle` round-trip; proves the two-Esc state machine (first Esc clears anchor → stay in tool; second Esc → select; rotate Esc → immediate select).
   - `PlanCanvas.tsx` move-tool overlay (SVG dashed line + anchor dot from `anchor → cursor`) already renders via `data-testid="move-tool-overlay"` when `moveAnchorSet`; the committed delta is `sp.xMm - anchor.xMm / sp.yMm - anchor.yMm` matching the `moveElementsDelta` payload exactly.
   - `PlanCanvas.tsx` Esc→Select: lines 4798-4806 implement the two-Esc protocol for move; single-Esc exits rotate/offset/split/trim/wall-join tools immediately via `setPlanTool('select')`.
-  - Playwright screenshots (round 2) captured 2026-05-16: `20-wp47-mirror-overlay.png` (mirror tool axis overlay after first-click — mirrorAxisSet React state + SVG dashed-line overlay visible), `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons) — `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
+  - Playwright screenshots (round 2) captured 2026-05-16: `20-wp47-mirror-overlay.png` (mirror tool axis overlay after first-click — mirrorAxisSet React state + SVG dashed-line overlay visible), `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
   - Mirror overlay: `PlanCanvas.tsx` `mirrorAxisSet` state triggers the `data-testid="mirror-axis-overlay"` SVG element and `data-testid="mirror-axis-chip"` status chip; round-2 screenshot confirms the dashed axis line from first click to cursor renders correctly.
   - Remaining before `Done`: none — all modify verbs, preview overlays, Esc protocol, and ribbon tab evidence are complete.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
@@ -2187,7 +2187,7 @@ Revit behavior to emulate where it maps cleanly:
   - `commandCapabilities.test.ts` "every Cmd+K command capability is in the palette registry" test passes — zero missing Cmd+K registrations.
   - `commandCapabilities.test.ts` "unique command ids and no unreachable registered commands" test passes.
   - All 20 `commandCapabilities.test.ts` tests pass.
-  - Playwright screenshots captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon), `15-wp48-section-ribbon.png` (section view ribbon showing Detail Line / Dimension / Tag / Text / Crop panels), `16-wp48-sheet-ribbon.png` (sheet view ribbon showing Place Views / Edit Viewports / Titleblock / Revisions / Publish panels), `17-wp48-schedule-ribbon.png` (schedule view ribbon showing Rows / Columns / Fields / Filters / Sort-Group / Formatting panels) — all in `packages/web/tmp/ux-next-wp45-50-20260516/` (commit `474579a61`).
+  - Playwright screenshots captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon), `15-wp48-section-ribbon.png` (section view ribbon showing Detail Line / Dimension / Tag / Text / Crop panels), `16-wp48-sheet-ribbon.png` (sheet view ribbon showing Place Views / Edit Viewports / Titleblock / Revisions / Publish panels), `17-wp48-schedule-ribbon.png` (schedule view ribbon showing Rows / Columns / Fields / Filters / Sort-Group / Formatting panels) — all in `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/` (commit `474579a61`).
   - Playwright screenshots (round 2) captured 2026-05-16: `23-wp48-concept-ribbon.png` (concept/current view ribbon state; concept tab not separately navigable in plan-first shell, current ribbon shown as fallback — no inert commands visible); `commandCapabilities.test.ts` "every visible ribbon command has executable/disabled/bridge metadata" confirms no dead-chrome items for any CAPABILITY_VIEW_MODES including concept. Bridge-action labels open correct pane/tab proven by `evaluateCommandInMode` returning `state: 'bridge'` with `bridgeTarget` field for cross-view commands. 0 console errors, 0 page errors.
   - Remaining before `Done`: none — all view ribbons covered, bridge-action metadata proven by tests, no inert commands.
 - Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
@@ -2219,14 +2219,14 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/roofByFootprint.ts` adds `validateShaftSpan` — contiguous level-span check (base-not-found, top-not-found, base-not-below-top, top-not-above-base, valid span) with 4 passing tests.
   - `packages/web/src/advisor/structuralAdvisorViolations.ts` implements `validationIssuesToViolations` (converts `ValidationIssue[]` → `Violation[]` with `ruleId: 'structural_authoring.*'`, severity, blocking flag, `quickFixCommand: { type: 'deleteElement' }` for duplicates/orphans, `discipline: 'architecture'`) and `useStructuralValidationViolations` (memoized React hook).
   - `packages/web/src/workspace/Workspace.tsx` wires `useStructuralValidationViolations(elementsById)` into the unified advisor violation merge, so structural issues appear in the advisor channel immediately after model changes.
-  - Playwright screenshot captured 2026-05-16: `11-wp49-advisor-panel.png` (advisor panel open, structural validation violations channel visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
+  - Playwright screenshot captured 2026-05-16: `11-wp49-advisor-panel.png` (advisor panel open, structural validation violations channel visible) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`.
   - `packages/web/src/plan/SketchCanvas.tsx` (commit `73895793e`) wires pre-commit boundary validation into `handleFinish`: `orderedPolygonFromLines` converts unordered `session.lines` into an ordered polygon (adjacency-walk, 0.5 mm epsilon), then `validateBoundary` runs open-loop / self-intersection / too-small-edge checks; blocking `error`-severity issues surface in the sketch error banner before any server call.
   - `packages/web/src/workspace/commandCapabilities.ts` (commit `52d1ff244`) adds `structural.delete-duplicate-wall` and `structural.detach-orphan` capability entries (`surfaces: ['cmd-k']`, `intendedModes: ['plan','3d']`, `usabilityScore: 8`); `defaultCommands.ts` registers both as Cmd+K repair commands invoking `ctx.applyFirstAdvisorFix?.()`.
   - `packages/web/src/plan/PlanCanvas.tsx` (commit `f7c0e9e7f`): imports `validateBoundary`; adds `boundaryValidationError` state; runs `validateBoundary('shaft-sketch', ...)` before `createSlabOpening` and `validateBoundary('ceiling-sketch', ...)` before `createCeiling` — blocks commit and shows a red dismissable error banner (`data-testid="boundary-validation-error"`) for degenerate/self-intersecting boundaries.
   - `packages/web/src/workspace/shell/RibbonBar.tsx` (commit `f7c0e9e7f`): adds `structural-delete-duplicate-wall` and `structural-detach-orphan` to `RibbonActionId`; adds `onRepairDuplicateWall` / `onRepairOrphan` props; adds a Repair panel (Delete Duplicate + Detach Orphan) to `buildPlanModifyTab`; adds both to `ribbonCapabilityId` mapping `structural.delete-duplicate-wall` / `structural.detach-orphan`.
   - `packages/web/src/workspace/Workspace.tsx` (commit `f7c0e9e7f`): derives `firstDuplicateWallFix` and `firstOrphanFix` from `structuralViolations` and passes them as `onRepairDuplicateWall` / `onRepairOrphan` to each pane's `RibbonBar`.
   - `packages/web/src/plan/structuralValidation.ts` adds `findJoinCleanupFailures(walls)`: calls `collectWallConnectivity` + `wallConnectivityToPlanJoinRecords`, filters for `joinKind === 'unsupported_skew'`, and emits `{ code: 'join_cleanup_failure', severity: 'warning' }` issues. Called from `runStructuralValidation`. `structuralAdvisorViolations.ts` maps `join_cleanup_failure → null` (no auto-fix command). 21/21 tests pass.
-  - Playwright screenshots (round 2) captured 2026-05-16: `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons active), `25-wp49-advisor-structural-violations.png` (advisor panel with structural violations channel) — `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
+  - Playwright screenshots (round 2) captured 2026-05-16: `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons active), `25-wp49-advisor-structural-violations.png` (advisor panel with structural violations channel) — `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
   - Seeded proof per category: (1) boundary error — `SketchCanvas.handleFinish` + PlanCanvas ceiling/shaft gates block degenerate/self-intersecting polygons and surface `data-testid="boundary-validation-error"` dismissable banner; `structuralValidation.test.ts` proves `open_loop` / `self_intersecting` / `too_small_edge` detection. (2) duplicate wall — `findDuplicateWalls` detects and `firstDuplicateWallFix` from advisor violations triggers Repair panel Delete Duplicate button; proved by `advisorStructuralViolations.test.ts`. (3) orphan — `findOrphanedHostedElements` detects and `firstOrphanFix` triggers Repair panel Detach Orphan button; proved by `authoringPipeline.integration.test.ts`.
   - Remaining before `Done`: none — all three fix categories proven by tests + ribbon repair panel + advisor integration + Playwright screenshots.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
@@ -2257,7 +2257,7 @@ Revit behavior to emulate where it maps cleanly:
   - `pnpm --filter @bim-ai/web typecheck` passes (zero TS errors in changed files; pre-existing errors in unrelated files not introduced by this work).
   - All 20 `commandCapabilities.test.ts` tests pass — no missing metadata, no dead-chrome ribbon items, no unreachable commands, no missing Cmd+K registrations.
   - Cmd+K workflow: `defaultCommands.ts` registers every structural command; `evaluateCommandInMode` returns `enabled`/`disabled`/`bridge` with reasons for all registered tools across all view modes.
-  - Playwright screenshots round 1+2 (25 total in `packages/web/tmp/ux-next-wp45-50-20260516/`): `12-wp50-plan-full-model.png`, `13-wp50-cmdk-roof-command.png`, `14-wp50-3d-full-model.png`, `18-wp50-advisor-violations.png`, `19-wp47-ribbon-state.png`, `26-wp50-split-pane.png` (split-pane view), `27-wp50-cmdk-palette.png` (Cmd+K palette), `28-wp45-plan-structural-stack-clean.png`, `29-wp50-session-final.png`; round-2: 0 console errors, 0 page errors.
+  - Playwright screenshots round 1+2 (25 total in `spec/generated/visual-evidence/packages-web/ux-next-wp45-50-20260516/`): `12-wp50-plan-full-model.png`, `13-wp50-cmdk-roof-command.png`, `14-wp50-3d-full-model.png`, `18-wp50-advisor-violations.png`, `19-wp47-ribbon-state.png`, `26-wp50-split-pane.png` (split-pane view), `27-wp50-cmdk-palette.png` (Cmd+K palette), `28-wp45-plan-structural-stack-clean.png`, `29-wp50-session-final.png`; round-2: 0 console errors, 0 page errors.
   - Invalid-workflow blocking proof: `SketchCanvas.handleFinish` + PlanCanvas ceiling/shaft commit gates block degenerate/self-intersecting polygons and surface `data-testid="boundary-validation-error"` red dismissable banner; plan Modify tab Repair panel (Delete Duplicate + Detach Orphan) wired to `firstDuplicateWallFix`/`firstOrphanFix` from advisor violations (commit `f7c0e9e7f`).
   - Split-pane + shared model proof: `26-wp50-split-pane.png` captures split-pane state; `authoringPipeline.integration.test.ts` 12-test suite proves the end-to-end Plan workflow chain (floor → walls → roof → door/window → no orphans → clean validation → advisor violations on bad model → modifier availability per view). Command trace: `evaluateCommandInMode` covers `enabled`/`disabled`/`bridge` for all registered commands across plan/3d/section/sheet/schedule; all 20 `commandCapabilities.test.ts` tests pass.
   - Remaining before `Done`: none — all acceptance criteria met across integration tests, unit test suites, Playwright screenshots (25 total), and code evidence.

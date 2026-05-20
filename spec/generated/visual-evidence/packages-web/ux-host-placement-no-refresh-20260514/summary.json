@@ -64,13 +64,13 @@
   "consoleErrors": [],
   "consoleWarnings": [],
   "screenshots": [
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/00-initial-3d.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/01-wall-preview.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/02-wall-committed.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/03-door-preview.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/05-window-preview.png",
-    "packages/web/tmp/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png"
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/00-initial-3d.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/01-wall-preview.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/02-wall-committed.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/03-door-preview.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/05-window-preview.png",
+    "spec/generated/visual-evidence/packages-web/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png"
   ],
   "pass": true
 }

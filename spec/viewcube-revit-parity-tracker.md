@@ -114,7 +114,7 @@ Implementation options:
   - `packages/web/src/viewport/ViewCube.tsx`
   - `packages/web/src/viewport/viewCubeAlignment.ts`
   - new `packages/web/src/viewport/viewcube/*`
-  - `packages/web/tmp/viewcube-*` screenshot outputs
+  - `spec/generated/visual-evidence/packages-web/viewcube-*` screenshot outputs
 - Implementation:
   - Define canonical test orientations: home/isometric, top, front, right, edge view, corner view, arbitrary orbit.
   - Capture screenshots at 1x and 2x DPR for default, hover face, hover edge, hover corner, drag, exact snap, inactive.

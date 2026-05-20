@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const outDir = 'packages/web/tmp/ux-ribbon-hosted-placement-20260514';
+const outDir = 'spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514';
 mkdirSync(outDir, { recursive: true });
 
 const commands = [];

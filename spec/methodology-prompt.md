@@ -99,7 +99,7 @@ If the app shows `500 Internal Server Error` empty states, do not treat that as 
 Known dynamic audit screenshots live in:
 
 ```text
-tmp/ux-rework-dynamic-audit-seeded/
+spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/
 ```
 
 These screenshots are evidence, not a replacement for fresh validation after implementation.

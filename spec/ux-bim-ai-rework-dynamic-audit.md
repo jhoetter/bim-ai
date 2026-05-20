@@ -8,33 +8,33 @@ This document records the live UI audit performed after the static specification
 
 ## Audit Setup
 
-| Item                 | Value                                                     |
-| -------------------- | --------------------------------------------------------- |
-| Web                  | `http://127.0.0.1:2000/`                                  |
-| API                  | `http://127.0.0.1:8500/`                                  |
-| Correct seed command | `make seed name=target-house-3`                           |
-| Seed result          | `target-house-3:9bb9a145-d9ce-5a2f-a748-bb5be3301b30`     |
-| Screenshot output    | `tmp/ux-rework-dynamic-audit-seeded/`                     |
-| Summary JSON         | `tmp/ux-rework-dynamic-audit-seeded/dynamic-summary.json` |
+| Item                 | Value                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Web                  | `http://127.0.0.1:2000/`                                                                  |
+| API                  | `http://127.0.0.1:8500/`                                                                  |
+| Correct seed command | `make seed name=target-house-3`                                                           |
+| Seed result          | `target-house-3:9bb9a145-d9ce-5a2f-a748-bb5be3301b30`                                     |
+| Screenshot output    | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/`                     |
+| Summary JSON         | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/dynamic-summary.json` |
 
 Important correction: the first live audit was run against the Vite frontend without the proper seeded API state. That produced `500 Internal Server Error` empty states. This is useful for fallback-state coverage, but it is not a valid primary UX audit state. The seeded audit supersedes it for normal workspace behavior.
 
 ## Captured States
 
-| State                       | Screenshot                                                           | Why captured                                       |
-| --------------------------- | -------------------------------------------------------------------- | -------------------------------------------------- |
-| Initial seeded workspace    | `tmp/ux-rework-dynamic-audit-seeded/01-initial-seeded.png`           | Baseline populated workspace                       |
-| Primary sidebar collapsed   | `tmp/ux-rework-dynamic-audit-seeded/02-primary-collapsed-seeded.png` | Collapse/recovery behavior                         |
-| Plan mode                   | `tmp/ux-rework-dynamic-audit-seeded/03-plan-seeded.png`              | Floor plan chrome and overlays                     |
-| 3D mode                     | `tmp/ux-rework-dynamic-audit-seeded/04-3d-seeded.png`                | 3D view controls and right rail behavior           |
-| Sheet mode                  | `tmp/ux-rework-dynamic-audit-seeded/05-sheet-seeded.png`             | Sheet/review surface and sheet manifest behavior   |
-| Schedule mode               | `tmp/ux-rework-dynamic-audit-seeded/06-schedule-seeded.png`          | Schedule table and schedule actions                |
-| Agent mode                  | `tmp/ux-rework-dynamic-audit-seeded/07-agent-seeded.png`             | Advisor workflow in canvas/right rail              |
-| Concept mode                | `tmp/ux-rework-dynamic-audit-seeded/08-concept-seeded.png`           | Concept board shell                                |
-| Plan click attempt          | `tmp/ux-rework-dynamic-audit-seeded/09-plan-click-selection.png`     | Plan selection behavior and status feedback        |
-| 3D selected element         | `tmp/ux-rework-dynamic-audit-seeded/10-3d-click-selection.png`       | Selected roof inspector and mixed right rail state |
-| Active wall command         | `tmp/ux-rework-dynamic-audit-seeded/11-wall-command-seeded.png`      | Active command modifiers/options                   |
-| Cmd+K during active command | `tmp/ux-rework-dynamic-audit-seeded/12-command-palette-seeded.png`   | Command palette grouping and availability          |
+| State                       | Screenshot                                                                                           | Why captured                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Initial seeded workspace    | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/01-initial-seeded.png`           | Baseline populated workspace                       |
+| Primary sidebar collapsed   | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/02-primary-collapsed-seeded.png` | Collapse/recovery behavior                         |
+| Plan mode                   | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/03-plan-seeded.png`              | Floor plan chrome and overlays                     |
+| 3D mode                     | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/04-3d-seeded.png`                | 3D view controls and right rail behavior           |
+| Sheet mode                  | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/05-sheet-seeded.png`             | Sheet/review surface and sheet manifest behavior   |
+| Schedule mode               | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/06-schedule-seeded.png`          | Schedule table and schedule actions                |
+| Agent mode                  | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/07-agent-seeded.png`             | Advisor workflow in canvas/right rail              |
+| Concept mode                | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/08-concept-seeded.png`           | Concept board shell                                |
+| Plan click attempt          | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/09-plan-click-selection.png`     | Plan selection behavior and status feedback        |
+| 3D selected element         | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/10-3d-click-selection.png`       | Selected roof inspector and mixed right rail state |
+| Active wall command         | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/11-wall-command-seeded.png`      | Active command modifiers/options                   |
+| Cmd+K during active command | `spec/generated/visual-evidence/root/ux-rework-dynamic-audit-seeded/12-command-palette-seeded.png`   | Command palette grouping and availability          |
 
 ## High-Confidence Live Findings
 

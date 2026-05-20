@@ -25,11 +25,11 @@
   "mainFrameNavigationUrls": [],
   "consoleErrors": [],
   "screenshots": [
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png",
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png",
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png",
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png",
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png",
-    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png"
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png",
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png",
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png",
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png",
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png",
+    "spec/generated/visual-evidence/packages-web/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png"
   ]
 }
