@@ -1,6 +1,7 @@
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
 import { coerceAssetElement } from './coercion/assetElements';
+import { coerceCoordinationElement } from './coercion/coordinationElements';
 import { coerceLinkElement } from './coercion/linkElements';
 import { coerceSiteElement } from './coercion/siteElements';
 import {
@@ -1939,29 +1940,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   const assetElement = coerceAssetElement(id, name, raw as WireRecord);
   if (assetElement) return assetElement;
 
-  if (kind === 'clash_test') {
-    const coerceIds = (v: unknown): string[] =>
-      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-    const resultsRaw = raw.results ?? [];
-    const results = Array.isArray(resultsRaw)
-      ? resultsRaw
-          .filter((r): r is Record<string, unknown> => r != null && typeof r === 'object')
-          .map((r) => ({
-            elementIdA: String(r.elementIdA ?? r.element_id_a ?? ''),
-            elementIdB: String(r.elementIdB ?? r.element_id_b ?? ''),
-            distanceMm: Number(r.distanceMm ?? r.distance_mm ?? 0),
-          }))
-      : [];
-    return {
-      kind: 'clash_test',
-      id,
-      name,
-      setAIds: coerceIds(raw.setAIds ?? raw.set_a_ids),
-      setBIds: coerceIds(raw.setBIds ?? raw.set_b_ids),
-      toleranceMm: Number(raw.toleranceMm ?? raw.tolerance_mm ?? 50),
-      ...(results.length ? { results } : {}),
-    };
-  }
+  const coordinationElement = coerceCoordinationElement(id, name, raw as WireRecord);
+  if (coordinationElement) return coordinationElement;
 
   return null;
 }
