@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 5,507      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 5,462      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.3k       | Inspector rendering and editing monolith after extracted phase/type/wall-part helper sections.    |
@@ -1205,6 +1205,11 @@ Initial thresholds can be advisory before becoming blocking:
   `6,000` LOC.
 - 2026-05-20: the core barrel slice moved resource-oriented public types into
   `packages/core/src/resources.ts`, bringing `index.ts` under `5,000` LOC.
+- 2026-05-20: a further PlanCanvas slice moved wall-opening pointer-up commit
+  projection and command dispatch into
+  `plan/planCanvasWallOpeningInteraction.ts`, reducing `PlanCanvas.tsx` to
+  `5,462` local lines with focused PlanCanvas tool tests and web typecheck
+  passing.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.

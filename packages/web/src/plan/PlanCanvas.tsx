@@ -248,6 +248,7 @@ import {
   handlePanMarqueePointerDown,
   handlePanMarqueePointerMove,
 } from './planCanvasPanMarqueeInteractions';
+import { handleWallOpeningPointerUp } from './planCanvasWallOpeningInteraction';
 import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
@@ -1371,60 +1372,14 @@ export function PlanCanvas({
       ) {
         return;
       }
-      if (
-        planTool === 'wall-opening' &&
-        wallOpeningStateRef.current.phase === 'define-rect' &&
-        wallOpeningAnchorRef.current
-      ) {
-        const sp = snapped(ev.clientX, ev.clientY);
-        if (sp) {
-          const { effect } = reduceWallOpening(wallOpeningStateRef.current, {
-            kind: 'drag-end',
-            cornerMm: sp,
-          });
-          wallOpeningStateRef.current = initialWallOpeningState();
-          wallOpeningAnchorRef.current = null;
-          if (effect.commitWallOpening) {
-            const host = elementsById[effect.commitWallOpening.hostWallId];
-            if (host && host.kind === 'wall') {
-              // Project anchor + corner onto host wall's basis line to get
-              // alongTStart / alongTEnd; sill / head come from the rect's
-              // vertical extent (anchor & corner share Z via raycast on the
-              // ground plane; for a 2D rectangle both Y components project
-              // onto the wall, so derive sill/head from the absolute heights
-              // of the top and bottom edges of the drawn rect — here we use
-              // a default 200/2000mm window since plan rectangles don't
-              // carry vertical info).
-              const ax = host.start.xMm;
-              const ay = host.start.yMm;
-              const bx = host.end.xMm;
-              const by = host.end.yMm;
-              const abx = bx - ax;
-              const aby = by - ay;
-              const len2 = Math.max(abx * abx + aby * aby, 1e-9);
-              const project = (p: { xMm: number; yMm: number }) =>
-                Math.max(
-                  0.0001,
-                  Math.min(0.9999, ((p.xMm - ax) * abx + (p.yMm - ay) * aby) / len2),
-                );
-              const t0 = project(effect.commitWallOpening.anchorMm);
-              const t1 = project(effect.commitWallOpening.cornerMm);
-              const tStart = Math.min(t0, t1);
-              const tEnd = Math.max(t0, t1);
-              if (tEnd - tStart >= 0.005) {
-                onSemanticCommand({
-                  type: 'createWallOpening',
-                  hostWallId: effect.commitWallOpening.hostWallId,
-                  alongTStart: tStart,
-                  alongTEnd: tEnd,
-                  sillHeightMm: 200,
-                  headHeightMm: Math.min(host.heightMm - 100, 2400),
-                });
-              }
-            }
-          }
-        }
-      }
+      handleWallOpeningPointerUp({
+        planTool,
+        pointerMm: snapped(ev.clientX, ev.clientY),
+        wallOpeningStateRef,
+        wallOpeningAnchorRef,
+        elementsById,
+        onSemanticCommand,
+      });
     };
 
     const onClick = (ev: MouseEvent) => {

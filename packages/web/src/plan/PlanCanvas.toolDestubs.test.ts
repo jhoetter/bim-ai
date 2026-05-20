@@ -23,6 +23,7 @@ const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
 const SKETCH_OVERLAY_SRC = readSource('PlanCanvasSketchOverlay.tsx');
 const PICK_HELPERS_SRC = readSource('planCanvasPickHelpers.ts');
+const WALL_OPENING_INTERACTION_SRC = readSource('planCanvasWallOpeningInteraction.ts');
 
 describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('removes every "stub:" console.warn from PlanCanvas.tsx', () => {
@@ -48,7 +49,8 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
       const pattern = new RegExp(
         String.raw`onSemanticCommand\(\s*\{\s*type:\s*['"]` + cmdType + String.raw`['"]`,
       );
-      expect(SRC).toMatch(pattern);
+      const source = cmdType === 'createWallOpening' ? WALL_OPENING_INTERACTION_SRC : SRC;
+      expect(source).toMatch(pattern);
     });
   }
 
