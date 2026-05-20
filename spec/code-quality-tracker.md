@@ -521,6 +521,10 @@ impact of small changes.
   name, or shared-coordinate rows; these moved to
   `workspace/inspector/projectBasePointInspectorSection.tsx`, reducing the
   inspector file to about `6,590` lines.
+- 2026-05-20: ongoing post-B god-file reduction is tracked in
+  `spec/god-file-reduction-tracker.md`; the next InspectorContent slice moved
+  site terrain rows into `workspace/inspector/siteTerrainInspectorSections.tsx`.
+  The inspector file is now about `6,428` scorecard-counted lines.
 
 ---
 

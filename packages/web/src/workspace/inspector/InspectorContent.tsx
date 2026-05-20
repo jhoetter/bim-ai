@@ -43,6 +43,7 @@ import { MepInspectorSection, fmtMepRecord } from './mepInspectorSections';
 import { DetailDocumentationInspectorSection } from './detailDocumentationInspectorSections';
 import { DecalInspectorSection } from './decalInspectorSection';
 import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSection';
+import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';
 export { FieldRow } from './inspectorRows';
@@ -4591,175 +4592,16 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'toposolid': {
-      const { onPropertyChange } = options ?? {};
-      const samples = el.heightSamples ?? [];
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Contour interval (mm)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.contourIntervalMm ?? 0}
-              key={`${el.id}-contour`}
-              step={250}
-              min={0}
-              max={10000}
-              data-testid="inspector-topo-contour-interval"
-              onBlur={(e) => {
-                const v = Number(e.currentTarget.value);
-                onPropertyChange?.('contourIntervalMm', v > 0 ? v : null);
-              }}
-            />
-          </div>
-          <div className="border-t border-border pt-1">
-            <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Control Points
-            </div>
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-xs text-muted" data-testid="inspector-topo-point-count">
-                {samples.length} control points
-              </span>
-              <button
-                type="button"
-                data-testid="inspector-topo-clear-points"
-                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
-                onClick={() =>
-                  onDispatchCommand?.({
-                    type: 'update_toposolid',
-                    id: el.id,
-                    patch: { heightSamples: [] },
-                  })
-                }
-              >
-                Clear
-              </button>
-            </div>
-            {samples.map((s, i) => (
-              <div key={i} className="flex items-center gap-2 py-0.5">
-                <span className="text-xs text-muted w-28 shrink-0">
-                  ({Math.round(s.xMm)}, {Math.round(s.yMm)})
-                </span>
-                <input
-                  type="number"
-                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-                  defaultValue={s.zMm}
-                  key={`${el.id}-pt-${i}`}
-                  step={100}
-                  data-testid={`inspector-topo-point-${i}-z`}
-                  onBlur={(e) => {
-                    const updated = samples.map((pt, j) =>
-                      j === i ? { ...pt, zMm: Number(e.currentTarget.value) } : pt,
-                    );
-                    onDispatchCommand?.({
-                      type: 'update_toposolid',
-                      id: el.id,
-                      patch: { heightSamples: updated },
-                    });
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    case 'graded_region': {
-      const { onPropertyChange } = options ?? {};
-      return (
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Lower Elevation (mm)</span>
-            <input
-              type="number"
-              data-testid="inspector-graded-region-lower"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.lowerElevationMm ?? 0}
-              key={`${el.id}-lower`}
-              step={100}
-              onBlur={(e) => onPropertyChange?.('lowerElevationMm', +e.currentTarget.value)}
-            />
-          </label>
-          <label className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Upper Elevation (mm)</span>
-            <input
-              type="number"
-              data-testid="inspector-graded-region-upper"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.upperElevationMm ?? 500}
-              key={`${el.id}-upper`}
-              step={100}
-              onBlur={(e) => onPropertyChange?.('upperElevationMm', +e.currentTarget.value)}
-            />
-          </label>
-        </div>
-      );
-    }
-    case 'toposolid_excavation': {
-      const { onPropertyChange } = options ?? {};
-      const pts = el.boundaryMm ?? [];
-      const shoelace = pts.reduce((acc, p, i) => {
-        const q = pts[(i + 1) % pts.length]!;
-        return acc + p.xMm * q.yMm - q.xMm * p.yMm;
-      }, 0);
-      const areaMm2 = Math.abs(shoelace) / 2;
-      const areaM2 = areaMm2 / 1_000_000;
-      const depth = el.depthMm ?? el.customDepthMm ?? 1500;
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Depth (mm)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={depth}
-              key={`${el.id}-depth`}
-              step={100}
-              min={100}
-              max={50000}
-              data-testid="inspector-excavation-depth"
-              onBlur={(e) => {
-                const raw = Number(e.currentTarget.value);
-                const clamped = Math.max(100, Math.min(50000, raw));
-                onPropertyChange?.('depthMm', clamped);
-              }}
-            />
-          </div>
-          <FieldRow label="Area" value={`${areaM2.toFixed(2)} m²`} />
-        </div>
-      );
-    }
+    case 'toposolid':
+    case 'graded_region':
+    case 'toposolid_excavation':
     case 'toposolid_pad': {
-      const { onPropertyChange } = options ?? {};
-      const pts = el.boundaryMm ?? [];
-      const shoelace = pts.reduce((acc, p, i) => {
-        const q = pts[(i + 1) % pts.length]!;
-        return acc + p.xMm * q.yMm - q.xMm * p.yMm;
-      }, 0);
-      const areaM2 = Math.abs(shoelace) / 2 / 1_000_000;
       return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.elevationMm}
-              key={`${el.id}-elevation`}
-              step={100}
-              data-testid="inspector-pad-elevation"
-              onBlur={(e) => {
-                const raw = Number(e.currentTarget.value);
-                onPropertyChange?.('elevationMm', raw);
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 py-0.5" data-testid="inspector-pad-area">
-            <span className="text-xs text-muted w-28 shrink-0">Area</span>
-            <span className="text-xs">{areaM2.toFixed(1)} m²</span>
-          </div>
-        </div>
+        <SiteTerrainInspectorSection
+          el={el}
+          onPropertyChange={options?.onPropertyChange}
+          onDispatchCommand={onDispatchCommand}
+        />
       );
     }
     case 'mass_box':

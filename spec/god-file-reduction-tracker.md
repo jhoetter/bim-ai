@@ -71,16 +71,16 @@ A-territory target:
 
 ## Work Packages
 
-| ID          | Priority | Status | File                                                        | Target slice                                                       | Exit signal                                               |
-| ----------- | -------- | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
-| GFR-2026-01 | P0       | Open   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.   |
-| GFR-2026-02 | P0       | Open   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
-| GFR-2026-03 | P1       | Open   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
-| GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
-| GFR-2026-05 | P1       | Open   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
-| GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
-| GFR-2026-07 | P2       | Open   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with quality tests green.  |
-| GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.     |
+| ID          | Priority | Status  | File                                                        | Target slice                                                       | Exit signal                                               |
+| ----------- | -------- | ------- | ----------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
+| GFR-2026-01 | P0       | Partial | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.   |
+| GFR-2026-02 | P0       | Open    | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
+| GFR-2026-03 | P1       | Open    | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
+| GFR-2026-04 | P1       | Open    | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
+| GFR-2026-05 | P1       | Open    | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
+| GFR-2026-06 | P1       | Open    | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing. |
+| GFR-2026-07 | P2       | Open    | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with quality tests green.  |
+| GFR-2026-08 | P2       | Open    | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.     |
 
 ## Progress Log
 
@@ -89,3 +89,9 @@ A-territory target:
   `InspectorContent.tsx` has many self-contained renderer branches with existing
   focused tests, making it the lowest-risk way to keep shrinking a top-three
   god file while preserving behavior.
+- 2026-05-20: `GFR-2026-01` moved to Partial. The site terrain inspector slice
+  moves `toposolid`, `graded_region`, `toposolid_excavation`, and
+  `toposolid_pad` rows into
+  `packages/web/src/workspace/inspector/siteTerrainInspectorSections.tsx` with
+  focused coverage in `siteTerrainInspector.test.tsx`, reducing
+  `InspectorContent.tsx` to about `6,428` scorecard-counted lines.
