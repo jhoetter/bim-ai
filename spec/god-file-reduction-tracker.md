@@ -134,6 +134,7 @@ A-territory target:
 | GFR-2026-58 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Extract wall and floor inspector sections                          | Inspector below `4,000` LOC with focused tests green.       |
 | GFR-2026-59 | P1       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract benchmark evidence parsing and proof helpers               | Audit script below `4,000` LOC with syntax checks green.    |
 | GFR-2026-60 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract query, resolve, and QA route cluster                       | Routes API below `4,000` LOC with focused tests green.      |
+| GFR-2026-61 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract primitive geometry and shared literal types                 | Elements module below `4,000` LOC with focused tests green. |
 
 ## Progress Log
 
@@ -636,3 +637,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `app/bim_ai/routes_api.py` at `3,963` lines and the new route module at
   `424` lines. Python compile, ruff, and focused query/advisor/activity tests
   pass (`32 passed`).
+- 2026-05-20: `GFR-2026-61` is Done. The slice moved `Vec2Mm`, `Vec3Mm`,
+  wall curve primitives, evidence references, and shared discipline/energy/
+  structural literal aliases into `app/bim_ai/element_primitives.py`, while
+  keeping the legacy `bim_ai.elements` imports available. Local `wc -l`
+  reports `app/bim_ai/elements.py` at `3,957` lines and the new primitive
+  module at `191` lines. Python compile, ruff, and focused area/query/IFC/wall
+  geometry tests pass (`52 passed`, `37 skipped`).

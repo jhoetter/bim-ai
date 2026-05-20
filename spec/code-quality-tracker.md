@@ -176,16 +176,24 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 3,913      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules. |
-| `packages/cli/cli.mjs`                                      | 3,920      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
-| `app/bim_ai/api/registry.py`                                | 3,267      | Central API descriptor registry after extracted descriptor modules.                               |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 3,856      | Inspector switchboard after extracted wall/floor, phase/type/wall-part/text/dimension, and specialist element sections. |
-| `packages/web/src/workspace/Workspace.tsx`                  | 3,326      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
-| `packages/web/src/Viewport.tsx`                             | 3,801      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
-| `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
-| `scripts/audit-ui-mcp-parity.mjs`                           | 3,622      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
-| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,813      | Family editor state shell after extracted workbench and properties panel modules.                  |
-| `app/bim_ai/routes_api.py`                                  | 3,963      | API route aggregator after extracted query/resolve/QA routes.                                      |
+| `app/bim_ai/commands.py`                                    | 3,996      | Command execution module, now the largest hand-written file and just below the 4,000 LOC cap.     |
+| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,980      | Project browser shell near the cap; should be watched for new feature growth.                     |
+| `app/bim_ai/routes_api.py`                                  | 3,964      | API route aggregator after extracted query/resolve/QA routes.                                      |
+| `app/bim_ai/elements.py`                                    | 3,958      | Element model aggregator after extracted primitive geometry, evidence, and shared literal types.   |
+| `packages/web/src/viewport/meshBuilders.ts`                 | 3,950      | Mesh builder collection after prior helper extractions; near-cap growth should trigger another split. |
+| `packages/cli/cli.mjs`                                      | 3,921      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 3,914      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules. |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 3,857      | Inspector switchboard after extracted wall/floor, phase/type/wall-part/text/dimension, and specialist element sections. |
+| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,814      | Family editor state shell after extracted workbench and properties panel modules.                  |
+| `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,807      | Workspace side rail remains large but below the current cap.                                      |
+| `packages/web/src/Viewport.tsx`                             | 3,802      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
+| `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                 |
+| `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
+| `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
+| `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                             |
+| `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                           |
+| `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
+| `app/bim_ai/api/registry.py`                                | 3,268      | Central API descriptor registry after extracted descriptor modules.                               |
 
 ## Status Model
 
