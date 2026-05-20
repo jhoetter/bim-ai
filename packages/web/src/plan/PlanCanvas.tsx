@@ -262,6 +262,7 @@ import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { elementInSelectionBoxMm } from './boxSelection';
 import { nextTabSelection } from './tabCycleSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
+import { buildMarqueePreview, disposeMarqueePreview } from './marqueeSelectionPreview';
 import {
   nextWallDraftAfterCommit,
   shouldBlockWallCommitOutsideCrop,
@@ -2621,16 +2622,12 @@ export function PlanCanvas({
     };
 
     const clearMarqueeLine = () => {
-      if (marqueeLineRef.current) {
-        grp.remove(marqueeLineRef.current);
-        marqueeLineRef.current.geometry.dispose();
-        marqueeLineRef.current = null;
-      }
-      if (marqueeFillRef.current) {
-        grp.remove(marqueeFillRef.current);
-        marqueeFillRef.current.geometry.dispose();
-        marqueeFillRef.current = null;
-      }
+      disposeMarqueePreview(grp, {
+        line: marqueeLineRef.current,
+        fill: marqueeFillRef.current,
+      });
+      marqueeLineRef.current = null;
+      marqueeFillRef.current = null;
     };
 
     const redrawMarqueeRect = (
@@ -2641,39 +2638,9 @@ export function PlanCanvas({
       crossing: boolean,
     ) => {
       clearMarqueeLine();
-      const xMn = Math.min(x0Mm, x1Mm) / 1000;
-      const xMx = Math.max(x0Mm, x1Mm) / 1000;
-      const zMn = Math.min(y0Mm, y1Mm) / 1000;
-      const zMx = Math.max(y0Mm, y1Mm) / 1000;
-      const pts = [
-        new THREE.Vector3(xMn, SLICE_Y, zMn),
-        new THREE.Vector3(xMx, SLICE_Y, zMn),
-        new THREE.Vector3(xMx, SLICE_Y, zMx),
-        new THREE.Vector3(xMn, SLICE_Y, zMx),
-        new THREE.Vector3(xMn, SLICE_Y, zMn),
-      ];
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      const borderColor = readPlanToken('--draft-construction-blue', '#2563eb');
-      const mat = crossing
-        ? new THREE.LineDashedMaterial({ color: borderColor, dashSize: 0.3, gapSize: 0.15 })
-        : new THREE.LineBasicMaterial({ color: borderColor });
-      const line = new THREE.Line(geo, mat);
-      if (crossing) line.computeLineDistances();
+      const { line, fill } = buildMarqueePreview(x0Mm, y0Mm, x1Mm, y1Mm, crossing);
       marqueeLineRef.current = line;
       grp.add(line);
-
-      // Semi-transparent fill plane (blue for window, green for crossing).
-      const fillGeo = new THREE.PlaneGeometry(xMx - xMn, zMx - zMn);
-      const fillMat = new THREE.MeshBasicMaterial({
-        color: crossing ? 0x22c55e : 0x2563eb,
-        transparent: true,
-        opacity: 0.1,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      const fill = new THREE.Mesh(fillGeo, fillMat);
-      fill.rotation.x = -Math.PI / 2;
-      fill.position.set((xMn + xMx) / 2, SLICE_Y - 0.001, (zMn + zMx) / 2);
       marqueeFillRef.current = fill;
       grp.add(fill);
     };

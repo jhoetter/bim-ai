@@ -38,6 +38,7 @@ First landed slices:
 - `plan/interaction/snapOverrideShortcuts.ts`
 - `plan/planCanvasHelpers.tsx`
 - `plan/componentGhost.ts`
+- `plan/marqueeSelectionPreview.ts`
 
 ## InspectorContent.tsx
 

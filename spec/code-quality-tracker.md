@@ -492,6 +492,8 @@ impact of small changes.
   construction or ghost material tinting; these moved to
   `plan/componentGhost.ts`, keeping the next plan extraction slice isolated from
   pointer event behavior.
+- 2026-05-20: `PlanCanvas.tsx` no longer owns selection marquee preview mesh
+  construction or disposal; these moved to `plan/marqueeSelectionPreview.ts`.
 
 ---
 
