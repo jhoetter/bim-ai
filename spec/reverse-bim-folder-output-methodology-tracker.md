@@ -2,8 +2,16 @@
 
 Last updated: 2026-05-20
 
-Status: **Implementation runway. This is the handoff contract between source
-understanding and live MCP BIM authoring.**
+Status: **Folder-output contract, now governed by the post-failure reset
+tracker. This is the handoff contract between source understanding and live MCP
+BIM authoring.**
+
+Reset note: after the failed `target-house-3` Leo benchmark, the controlling
+methodology tracker is
+`spec/reverse-bim-actual-methodology-tracker.md`. This folder-output contract
+remains valid only when its outputs feed the stricter live MCP phase gates,
+Advisor gates, physical-topology gates, and UI/source-overlay evidence gates
+defined there.
 
 ## Purpose
 
@@ -669,65 +677,29 @@ looked plausible.
 
 ## Leo Benchmark Status
 
-Current Leo folder-output state: **`mcp_handoff_ready` for the current
-repaired-area architectural fixture**.
+Current Leo benchmark state: **failed / reset**.
 
-Current Leo model benchmark state: **accepted diagnostic MCP handoff model** at
-`tmp/reverse-bim-testhaus-leo/target-house-3/`.
+The `target-house-3` artifact is not accepted. It is retained only as a
+diagnostic failure case showing that the previous acceptance policy was too
+permissive.
 
-Seed-library inspection bridge: **packaged** at
-`seed-artifacts/target-house-3/` for `make seed name=target-house-3`.
+Observed blockers:
 
-Current run result:
+- `KG` exists as a level/view but is not modeled with source-faithful basement
+  content.
+- Advisor still reports door operation clearance conflicts and a stair/wall
+  clash.
+- Room topology can be satisfied by analytical/separation artifacts while the
+  physical plan remains wrong.
+- Roof/dormer, terrain, parcel placement, and material/schedule semantics are
+  not source-overlay verified.
+- The visual UI state clearly contradicts any claim of "accepted model".
 
-- Source folder: `/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo`.
-- Folder output:
-  `tmp/reverse-bim-testhaus-leo/folder-output-repaired-decisions`.
-- Reader fixture:
-  `tmp/reverse-bim-testhaus-leo/leo-reader-responses.repaired-area.json`.
-- Source package: 16 source documents, 68 rendered pages, 6 accepted reader
-  packages, 0 hard MCP blockers, 0 open conflicts, 0 room-topology blockers,
-  0 coordinate-frame blockers, 0 site-terrain blockers.
-- Package state: `mcp_handoff_ready`.
-- Model output: `tmp/reverse-bim-testhaus-leo/target-house-3/`.
-- Transactional document revision: 5.
-- Modeled elements: 3 levels, 2 floors, 24 walls, 35 room separations,
-  13 rooms, 12 doors, 2 windows, 1 stair, 1 slab opening, 1 railing, 1 roof,
-  1 roof opening, 1 dormer, 1 site, 1 flat context toposolid, 4 property lines.
-- Modeled source fact count: 45.
-- Coverage blockers: 0.
-- Integrity blockers: 0.
-- Room-topology repair worklist: 0 actions after repair transaction.
-- Area reconciliation: 29 rows, all within tolerance, accepted.
-- Advisor/constructability: 18 warnings, 0 errors. All warning rows have
-  explicit reviewed dispositions in
-  `target-house-3/finding-disposition-ledger.json`.
-- Final acceptance:
-  `target-house-3/final-acceptance.json` has 7/7 gates passed and
-  `accepted=true`.
-- Seed artifact: `seed-artifacts/target-house-3/` contains a deterministic
-  119-command `restoreElement` replay bundle for loading the accepted benchmark
-  model through the existing seed-library mechanism. This is a packaging bridge,
-  not the methodology source of truth.
-
-Important caveats:
-
-- This is not hardcoded into product code. Leo-specific source facts and the
-  diagnostic builder live under `tmp/reverse-bim-testhaus-leo/`; generic
-  methodology/tooling lives under `app/bim_ai/` and `spec/`.
-- The accepted run uses a repaired integration fixture, not a fresh live
-  provider response. A future fully automated run still needs the reader
-  provider/subagent loop to produce equivalent facts from a new folder.
-- Door operation-clearance warnings are tolerated because the current Leo
-  extracted facts prove opening locations and widths but not swing handedness or
-  swing arcs. Future readers should extract door swing where visible; otherwise
-  the tolerance remains explicit and source-scoped.
-- The dormer window is modeled through the wall-hosted opening path because the
-  kernel still lacks true dormer-face window authoring. That is a tool-contract
-  gap for future fidelity, not a silent omission.
-- Source overlay comparison is still not implemented, so final acceptance today
-  is based on source fact coverage, model queries, area reconciliation,
-  Advisor/constructability/integrity, topology readback, and dispositions.
+The current controlling plan is
+`spec/reverse-bim-actual-methodology-tracker.md`. This folder-output tracker
+defines the handoff contract, but Leo is not considered successful until a fresh
+run passes the stricter live MCP, Advisor, physical-topology, source-overlay,
+and UI evidence gates.
 
 ## Immediate Implementation Plan
 
@@ -741,15 +713,15 @@ Important caveats:
 | Wave 6 | MCP readiness against full ledger. | No, depends on Waves 3-5 | Full `mcp-readiness.json` separates authorable/resolver/source-repair/metadata facts. | Partial |
 | Wave 7 | Resolver worklist generation. | No, depends on Wave 6 | Every resolver-needed fact has exact resolver input and ambiguity policy. | Partial |
 | Wave 8 | Phase authoring spec generation. | No, depends on Wave 7 | Later agent can execute modeling phases without inspecting the original folder. | Partial |
-| Wave 9 | Leo package acceptance report. | No | Leo package state is either `mcp_handoff_ready` or blocked with exact repair requests. | Done for repaired-area fixture |
-| Wave 10 | Leo modeling benchmark. | No | `target-house-3` is built transactionally, then accepted only after all source/model findings are resolved or explicitly tolerated. | Done for repaired-area fixture |
+| Wave 9 | Leo package acceptance report. | No | Leo package state is either `mcp_handoff_ready` or blocked with exact repair requests. | Partial: previous repaired fixture is invalidated as proof by live inspection. |
+| Wave 10 | Leo modeling benchmark. | No | A fresh model is built transactionally and accepted only after source/model findings are fixed and UI/source-overlay gates pass. | Failed for `target-house-3`; must rerun as a fresh benchmark. |
 
 ## Target-House-3 Remediation Tracker
 
-This section is the detailed work tracker created after the first
-`target-house-3` MCP modeling run. It exists because the run proved that the
-software can author a concrete Leo model transactionally and then converge it
-through query/repair/QA/disposition loops.
+This section is retained as historical failure evidence from the
+`target-house-3` MCP modeling run. It proves that the software can author BIM
+elements transactionally, but it also proves that the previous methodology could
+accept a model that fails live UI and Advisor inspection.
 
 Current benchmark evidence:
 
@@ -790,10 +762,15 @@ Current model feedback:
 - Area reconciliation: 29 rows, all within tolerance.
 - Modeled source facts: 45.
 - Remaining unmodeled/blocking source facts: none.
-- Final acceptance: accepted, with all remaining warnings explicitly reviewed
-  and disposed.
+- Final acceptance: invalidated. Reviewed warning dispositions were too
+  permissive; the live model still has geometry/topology problems and missing
+  UI/source-overlay evidence.
 
 ### Blocking Finding Disposition Plan
+
+Statuses in the following historical table describe which helper tools or
+fixture repairs existed during the failed benchmark. They are **not** acceptance
+statuses for Leo or `target-house-3`.
 
 | ID | Current finding/source blocker | Root cause exposed by Leo | Required folder-output change | Required MCP/modeling change | Done condition | Status |
 | -- | ------------------------------ | ------------------------- | ----------------------------- | ---------------------------- | -------------- | ------ |
@@ -816,6 +793,9 @@ Current model feedback:
 | LEO-FIX-017 | `leo-drainage-conflict-legibility` | Drainage docs are source-limited/legibility-limited and not model-ready. | Drainage facts must be classified as modelable MEP route, metadata, or unreadable repair request. | Add drainage package repair loop and, later, MEP-lite route authoring if source supports it. | Drainage is either modeled, metadata-only, or explicitly unreadable/tolerated. | Not started |
 
 ### Detailed Implementation Waves
+
+Statuses in this historical section must be revalidated against the reset
+methodology before they can be counted toward a fresh Leo acceptance run.
 
 | Wave | Scope | Depends on | Implementation tasks | Required artifacts | Done condition | Status |
 | ---- | ----- | ---------- | -------------------- | ------------------ | -------------- | ------ |
@@ -861,13 +841,13 @@ Current model feedback:
 | Milestone | Goal | Must be true | Status |
 | --------- | ---- | ------------ | ------ |
 | LEO-M1 | Package can be regenerated from source folder and reader responses. | No manual/chat-only facts required; all raw and normalized reader responses are file artifacts. | Partial |
-| LEO-M2 | Folder output reaches `mcp_handoff_ready` for architectural scope. | Conflicts disposed; coordinate frames accepted; all architecture facts ready, resolver-ready, metadata, or tolerated. | Done for current Leo repaired-circulation fixture; resolver-needed facts remain expected modeling work. |
-| LEO-M3 | Shell phase accepted. | Levels, floors, support metadata, exterior/interior walls, roof base geometry pass Advisor/integrity without unexplained errors/warnings. | Done for repaired-area fixture: shell/support/site/toposolid/roof metadata clear integrity and site/roof warnings. |
-| LEO-M4 | Rooms/openings phase accepted. | Room topology, room access, interior doors/openings, area reconciliation, and opening source reconciliation pass. | Done for repaired-area fixture: rooms/openings are modeled, topology repair clears model gaps, area is reconciled, coverage is complete. |
-| LEO-M5 | Stair/vertical circulation phase accepted. | Stair, landing, slab opening, railing, and existing-condition comfort/tolerance are resolved. | Done for repaired-area fixture: stair/slab opening/railing build and existing-condition tolerances are recorded; one stair-wall proxy warning is explicitly disposed. |
+| LEO-M2 | Folder output reaches `mcp_handoff_ready` for architectural scope. | Conflicts disposed; coordinate frames accepted; all architecture facts ready, resolver-ready, metadata, or tolerated. | Partial: previous repaired fixture is useful evidence but not proof for fresh-folder success. |
+| LEO-M3 | Shell phase accepted. | Levels, floors, support metadata, exterior/interior walls, roof base geometry pass Advisor/integrity without unexplained errors/warnings. | Failed in `target-house-3` because level completeness, roof/site fidelity, and UI evidence did not pass. |
+| LEO-M4 | Rooms/openings phase accepted. | Room topology, room access, interior doors/openings, area reconciliation, and opening source reconciliation pass. | Failed in `target-house-3` because physical topology and door clearance were not solved. |
+| LEO-M5 | Stair/vertical circulation phase accepted. | Stair, landing, slab opening, railing, and existing-condition comfort/tolerance are resolved. | Failed in `target-house-3` because a stair-wall clash remains blocking. |
 | LEO-M6 | Roof/dormer phase accepted. | Roof, dormer, dormer window/skylight, overhang semantics, and section/elevation alignment pass. | Not started |
 | LEO-M7 | Site/terrain phase accepted. | Parcel, site element, project/survey/base point, toposolid or no-source terrain tolerance pass. | Partial: folder-output now produces site/terrain decision blockers and repair/tolerance requests; model authoring and final disposition remain pending. |
-| LEO-M8 | Final acceptance. | Source coverage complete; Advisor/constructability/integrity findings have fixed/tolerated dispositions; UI/MCP readback equivalent. | Done for repaired-area fixture: final acceptance passes 7/7 gates. Source overlay/UI parity evidence remains future hardening. |
+| LEO-M8 | Final acceptance. | Source coverage complete; Advisor/constructability/integrity findings are fixed, physical topology is coherent, and UI/MCP/source-overlay readback agree. | Failed for `target-house-3`; future acceptance must block on warnings and UI/source-overlay evidence. |
 
 ### Current Leo Run State (2026-05-20)
 
@@ -880,13 +860,11 @@ Current model feedback:
 | Target-house-3 Advisor/constructability | 18 warnings, 0 errors. Warning groups: door operation clearance (17) and stair-wall clash (1). | All warnings have explicit reviewed dispositions; none remain unresolved. |
 | Target-house-3 area reconciliation | 29 rows; all within tolerance; 0 blocking rows. | The repaired-area source package now proves the area gate can catch and then clear Leo area issues. |
 | Target-house-3 coverage | 45 modeled or reconciled source facts; 0 unmodeled blockers. | Front-door elevation evidence is reconciled to the modeled EG entry door; the DG dormer-window fact is represented by a modeled window pending true dormer-face host tooling. |
-| Target-house-3 final acceptance | 7/7 gates passed; `accepted=true`. | The current repaired-area fixture can be handed to a modeling agent and built through MCP to an accepted diagnostic model. |
+| Target-house-3 final acceptance | Previously reported `accepted=true`, now invalidated by live inspection. | This is the core failure: the final gate was too weak and must be replaced by the reset methodology. |
 
-Important result: the workflow now distinguishes **handoff-ready source
-package** from **accepted BIM model**, and Leo reaches both for the current
-repaired-area fixture. Remaining future work is to make this run fully
-provider-fresh and to add source overlay comparison plus true dormer-face window
-authoring.
+Important result: the workflow must distinguish **handoff-ready source
+package**, **model technically built**, and **model accepted**. Leo reached a
+technically built seed artifact, but it did not reach accepted BIM model state.
 
 ## Final Definition of Done
 

@@ -341,6 +341,41 @@ for _reverse_tool in (
         "cli": "bim-ai reverse-bim phase-packet --phase P1 --advisor advisor.json",
         "notes": "Aggregates per-phase transactions, source facts, QA payloads, and finding dispositions.",
     },
+    {
+        "name": "reverse_bim.level_completeness",
+        "title": "ReverseBimLevelCompletenessInput",
+        "path": "/api/v3/reverse-bim/level-completeness",
+        "cli": "bim-ai reverse-bim level-completeness --facts source-facts.json --model-summary model-summary.json",
+        "notes": "Checks that every source-required storey/level has real physical model content; empty KG-like levels block final acceptance.",
+    },
+    {
+        "name": "reverse_bim.physical_topology",
+        "title": "ReverseBimPhysicalTopologyInput",
+        "path": "/api/v3/reverse-bim/physical-topology",
+        "cli": "bim-ai reverse-bim physical-topology --room-boundary-edges room-boundary-edges.json --advisor advisor.json",
+        "notes": "Checks physical room/opening/stair topology so analytical room graphs cannot substitute for real walls, hosted openings, and collision-free vertical circulation.",
+    },
+    {
+        "name": "reverse_bim.source_overlay_evidence",
+        "title": "ReverseBimSourceOverlayEvidenceInput",
+        "path": "/api/v3/reverse-bim/source-overlay-evidence",
+        "cli": "bim-ai reverse-bim source-overlay-evidence --required-views required-views.json --overlays overlays.json",
+        "notes": "Validates source/model overlay evidence for required floor plans, sections, elevations, and site views before final acceptance.",
+    },
+    {
+        "name": "reverse_bim.ui_evidence",
+        "title": "ReverseBimUiEvidenceInput",
+        "path": "/api/v3/reverse-bim/ui-evidence",
+        "cli": "bim-ai reverse-bim ui-evidence --required-views required-views.json --screenshots screenshots.json",
+        "notes": "Validates human-inspectable live UI screenshot evidence so failures visible in the UI cannot pass JSON-only acceptance.",
+    },
+    {
+        "name": "reverse_bim.final_acceptance",
+        "title": "ReverseBimFinalAcceptanceInput",
+        "path": "/api/v3/reverse-bim/final-acceptance",
+        "cli": "bim-ai reverse-bim final-acceptance --model model.json --advisor advisor.json --overlay source-overlay.json",
+        "notes": "Runs the strict post-target-house-3 final gate: Advisor/constructability warnings block by default, and level completeness, physical topology, source-overlay, and UI evidence reports are required.",
+    },
 ):
     register(
         ToolDescriptor(
@@ -366,6 +401,57 @@ for _reverse_tool in (
             exampleRefs=[f"route:{_reverse_tool['name']}"],
             resourceGroups=["reverse-bim", "existing-building", "source-ingestion", "mcp"],
             uiFeatures=["agent-review", "reverse-bim"],
+        )
+    )
+
+
+for _reverse_qa_tool in (
+    {
+        "name": "qa.level_completeness",
+        "title": "QaLevelCompletenessInput",
+        "path": "/api/v3/qa/level-completeness",
+        "cli": "bim-ai qa level-completeness --facts source-facts.json --model-summary model-summary.json",
+        "notes": "Reverse-BIM QA gate that fails empty source-required levels such as an unmodeled KG.",
+    },
+    {
+        "name": "qa.physical_topology",
+        "title": "QaPhysicalTopologyInput",
+        "path": "/api/v3/qa/physical-topology",
+        "cli": "bim-ai qa physical-topology --room-boundary-edges room-boundary-edges.json --advisor advisor.json",
+        "notes": "Reverse-BIM QA gate for physical room/opening/stair topology; analytical room graphs alone are insufficient.",
+    },
+    {
+        "name": "qa.source_overlay_compare",
+        "title": "QaSourceOverlayCompareInput",
+        "path": "/api/v3/qa/source-overlay-compare",
+        "cli": "bim-ai qa source-overlay-compare --required-views required-views.json --overlays overlays.json",
+        "notes": "Reverse-BIM QA gate for source/model overlay evidence and deviation thresholds.",
+    },
+):
+    register(
+        ToolDescriptor(
+            name=_reverse_qa_tool["name"],
+            category="transform",
+            inputSchema={
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": _reverse_qa_tool["title"],
+                "type": "object",
+                "additionalProperties": True,
+            },
+            outputSchema=_GENERIC_JSON_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Reverse-BIM QA result returned"),
+                "blocked": ExitCode(code=5, meaning="Reverse-BIM QA blockers remain"),
+            },
+            cliExample=_reverse_qa_tool["cli"],
+            restEndpoint=RestEndpoint(method="POST", path=_reverse_qa_tool["path"]),
+            sideEffects="none",
+            agentSafetyNotes=str(_reverse_qa_tool["notes"]),
+            requiredPermissions=["model:read"],
+            schemaRefs=[f"input:{_reverse_qa_tool['title']}", "output:StructuredJsonResult"],
+            exampleRefs=[f"route:{_reverse_qa_tool['name']}"],
+            resourceGroups=["reverse-bim", "existing-building", "qa", "mcp"],
+            uiFeatures=["agent-review", "reverse-bim", "advisor-panel"],
         )
     )
 

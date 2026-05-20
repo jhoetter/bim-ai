@@ -530,7 +530,13 @@ def build_reverse_bim_phase_packet(
         if str(row.get("disposition") or "") in {"blocked", "source_conflict"}
     ]
     advisor_counts = _severity_counts_from_payload(advisor or {})
+    constructability_counts = _severity_counts_from_payload(constructability or {})
     integrity_counts = _severity_counts_from_payload(integrity_preflight or {})
+    blocking_warning_count = (
+        int(advisor_counts.get("warning", 0))
+        + int(constructability_counts.get("warning", 0))
+        + int(integrity_counts.get("warning", 0))
+    )
     payload = {
         "format": "reverseBimPhasePacket_v1",
         "phaseId": phase_id,
@@ -549,7 +555,9 @@ def build_reverse_bim_phase_packet(
             "transactionCount": len(transactions or []),
             "sourceFactCount": len(source_fact_ids or []),
             "advisorSeverityCounts": advisor_counts,
+            "constructabilitySeverityCounts": constructability_counts,
             "integritySeverityCounts": integrity_counts,
+            "blockingWarningCount": blocking_warning_count,
             "openBlockerCount": len(open_blockers),
             "packetErrorCount": sum(1 for row in findings if row.get("severity") == "error"),
         },
@@ -558,7 +566,9 @@ def build_reverse_bim_phase_packet(
         payload["summary"]["openBlockerCount"] == 0
         and payload["summary"]["packetErrorCount"] == 0
         and int(advisor_counts.get("error", 0)) == 0
+        and int(constructability_counts.get("error", 0)) == 0
         and int(integrity_counts.get("error", 0)) == 0
+        and blocking_warning_count == 0
     )
     payload["digestSha256"] = _digest(payload)
     return payload
@@ -753,6 +763,11 @@ def _result(
 
 
 def _severity_counts_from_payload(payload: dict[str, Any]) -> dict[str, int]:
+    data = payload.get("data")
+    if isinstance(data, dict):
+        nested = _severity_counts_from_payload(data)
+        if nested:
+            return nested
     summary = payload.get("summary")
     if isinstance(summary, dict):
         counts = summary.get("severityCounts")

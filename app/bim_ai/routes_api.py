@@ -110,7 +110,14 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
+from bim_ai.final_acceptance import build_final_acceptance_report
 from bim_ai.folder_output import build_reverse_bim_folder_output
+from bim_ai.reverse_bim_acceptance_evidence import (
+    build_level_completeness_report,
+    build_physical_topology_report,
+    build_source_overlay_evidence_report,
+    build_ui_evidence_report,
+)
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -1637,6 +1644,103 @@ async def reverse_bim_phase_packet_route(
         integrity_preflight=body.get("integrityPreflight"),
         evidence_package=body.get("evidencePackage"),
         finding_dispositions=body.get("findingDispositions") or [],
+    )
+
+
+@api_router.post("/v3/reverse-bim/level-completeness")
+async def reverse_bim_level_completeness_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_level_completeness_report(
+        source_facts=body.get("sourceFacts") or body.get("facts"),
+        model_summary=body.get("modelSummary") or body.get("model_summary"),
+        required_levels=body.get("requiredLevels") or body.get("required_levels"),
+        model_level_summaries=body.get("modelLevelSummaries")
+        or body.get("model_level_summaries"),
+        min_physical_elements_per_required_level=int(
+            body.get("minPhysicalElementsPerRequiredLevel")
+            or body.get("min_physical_elements_per_required_level")
+            or 1
+        ),
+    )
+
+
+@api_router.post("/v3/qa/level-completeness")
+async def qa_level_completeness_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return await reverse_bim_level_completeness_route(body)
+
+
+@api_router.post("/v3/reverse-bim/physical-topology")
+async def reverse_bim_physical_topology_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_physical_topology_report(
+        room_boundary_edges=body.get("roomBoundaryEdges") or body.get("room_boundary_edges"),
+        room_access_graph=body.get("roomAccessGraph") or body.get("room_access_graph"),
+        openings=body.get("openings"),
+        stairs=body.get("stairs"),
+        advisor=body.get("advisor"),
+    )
+
+
+@api_router.post("/v3/qa/physical-topology")
+async def qa_physical_topology_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return await reverse_bim_physical_topology_route(body)
+
+
+@api_router.post("/v3/reverse-bim/source-overlay-evidence")
+async def reverse_bim_source_overlay_evidence_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_source_overlay_evidence_report(
+        required_views=body.get("requiredViews") or body.get("required_views"),
+        overlay_results=body.get("overlayResults") or body.get("overlay_results"),
+        default_tolerance_mm=float(body.get("defaultToleranceMm") or 50.0),
+    )
+
+
+@api_router.post("/v3/qa/source-overlay-compare")
+async def qa_source_overlay_compare_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return await reverse_bim_source_overlay_evidence_route(body)
+
+
+@api_router.post("/v3/reverse-bim/ui-evidence")
+async def reverse_bim_ui_evidence_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_ui_evidence_report(
+        required_views=body.get("requiredViews") or body.get("required_views"),
+        screenshots=body.get("screenshots"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/final-acceptance")
+async def reverse_bim_final_acceptance_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_final_acceptance_report(
+        str(body.get("modelId") or body.get("model_id") or "unknown-model"),
+        advisor=body.get("advisor"),
+        constructability=body.get("constructability"),
+        integrity=body.get("integrity") or body.get("integrityPreflight"),
+        area_reconciliation=body.get("areaReconciliation") or body.get("area_reconciliation"),
+        coverage=body.get("coverage") or body.get("sourceCoverage"),
+        finding_disposition=body.get("findingDisposition")
+        or body.get("finding_disposition")
+        or body.get("findingDispositions"),
+        room_access_graph=body.get("roomAccessGraph") or body.get("room_access_graph"),
+        room_boundary_edges=body.get("roomBoundaryEdges") or body.get("room_boundary_edges"),
+        room_topology_repair=body.get("roomTopologyRepair") or body.get("room_topology_repair"),
+        level_completeness=body.get("levelCompleteness") or body.get("level_completeness"),
+        physical_topology=body.get("physicalTopology") or body.get("physical_topology"),
+        source_overlay=body.get("sourceOverlay") or body.get("source_overlay"),
+        ui_evidence=body.get("uiEvidence") or body.get("ui_evidence"),
     )
 
 

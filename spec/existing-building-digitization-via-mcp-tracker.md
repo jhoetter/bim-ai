@@ -2,14 +2,19 @@
 
 Last updated: 2026-05-20
 
-Status: **New MCP-first methodology/spec. Seed artifacts are not the primary
-authoring abstraction.**
+Status: **Superseded by the post-failure reset tracker for acceptance and
+implementation planning. Seed artifacts are not the primary authoring
+abstraction.**
 
-Packaging note: `target-house-3` is also packaged under
-`seed-artifacts/target-house-3/` so the accepted Leo diagnostic model can be
-loaded with the existing `make seed name=target-house-3` inspection path. That
-artifact is a replay/inspection bridge for the benchmark output, not the source
-of truth for the reverse-BIM methodology.
+Reset note: `target-house-3` is **not** accepted as a successful reverse-BIM
+artifact. It is a failure benchmark that exposed missing methodology gates:
+empty source levels, unresolved Advisor warnings, weak physical topology,
+provisional roof/site modeling, and missing UI/source-overlay evidence.
+
+Current controlling tracker:
+`spec/reverse-bim-actual-methodology-tracker.md` captures the actual
+post-failure methodology and implementation plan. Use that tracker for go/no-go
+acceptance and next work items.
 
 Related implementation handoff tracker:
 `spec/reverse-bim-folder-output-methodology-tracker.md` defines the exact
@@ -649,6 +654,9 @@ P2 implementation order:
 | `source.extract_facts` | Partial | Extract semantic building/site facts. |
 | `source.resolve_conflicts` | Not started | Maintain conflict/disposition ledger. |
 | `reverse_bim.source_coverage` | Partial | Track modeled/rejected/deferred source facts. |
+| `qa.level_completeness` | Partial | QA alias for empty/missing source-required levels before final acceptance. |
+| `qa.physical_topology` | Partial | QA alias for physical room/opening/stair topology checks. |
+| `qa.source_overlay_compare` | Partial | QA alias for required source/model overlay evidence rows and deviation thresholds. |
 
 ### `reverse_bim.*`
 
@@ -661,8 +669,12 @@ P2 implementation order:
 | `reverse_bim.mcp_readiness` | Partial | Classify normalized source facts as ready for MCP authoring, resolver-needed, source-refinement-needed, metadata/reference, conflict, or missing-tool. |
 | `reverse_bim.folder_output` | Partial | Build the folder-output handoff package from a source folder plus optional AI-reader responses. |
 | `reverse_bim.phase_packet` | Partial | Aggregate transactions, source facts, QA, views, dispositions. |
+| `reverse_bim.level_completeness` | Partial | Check that every source-required level/storey has real physical modeled content; empty KG-like levels block acceptance. |
+| `reverse_bim.physical_topology` | Partial | Check physical rooms/openings/stairs so analytical room graphs cannot hide bad topology. |
+| `reverse_bim.source_overlay_evidence` | Partial | Enforce required overlay evidence rows and deviation thresholds; actual rendering comparison remains pending. |
+| `reverse_bim.ui_evidence` | Partial | Enforce named UI screenshot evidence before final acceptance; automated capture remains pending. |
 | `reverse_bim.source_model_compare` | Not started | Compare model readback/render evidence to source facts. |
-| `reverse_bim.final_acceptance` | Not started | Enforce acceptance gates and tolerance policy. |
+| `reverse_bim.final_acceptance` | Partial | Enforce strict post-target-house-3 gates and warning policy; seed/export guard and generated evidence capture remain pending. |
 
 ## Exact Current Gap Summary
 
@@ -702,112 +714,32 @@ exists, but it is not yet the complete automated digitization pipeline:
 
 ## Current Testhaus Leo Benchmark Run
 
-Initial source packaging has been run against
-`/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo` with outputs in
-`tmp/reverse-bim-testhaus-leo/`.
+This section has been reset after live inspection of `target-house-3`.
 
-| Artifact | Status | Notes |
-| -------- | ------ | ----- |
-| Folder manifest | Done | 16 PDFs discovered with stable document ids and lightweight metadata. |
-| Document classification | Partial | Filename heuristics found 3 floor plan docs, 1 elevation doc, 2 site plan docs, 2 area calculation docs, drainage/construction/legal docs, and 4 unknown docs. |
-| Full folder preparation run | Done for packaging | `tmp/reverse-bim-testhaus-leo/prepared-from-folder/` was generated from `/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo`: 16 files, 16 documents, 68 rendered PDF pages, 6 work packages, 6 reader requests, initial loop blocked until reader responses are supplied. |
-| PDF rendering | Partial | 9 priority source pages rendered for AI reading: `EG`, `DG`, `Grundrisse, Schnitt`, `Ansichten`, site, drainage, and area documents. |
-| AI-reading packet | Done for packaging | `tmp/reverse-bim-testhaus-leo/source-ai-reading-packet.json` is ready for a multimodal AI/subagent reader. |
-| Deterministic source facts | Partial | Classification and scale candidates exist; they are intentionally insufficient for modeling geometry. |
-| MCP authoring plan from deterministic facts | Blocked as designed | `tmp/reverse-bim-testhaus-leo/authoring-plan.from-deterministic-facts.json` contains no model actions because no AI-read wall/room/opening/site geometry facts exist yet. |
-| MCP authoring plan from demo AI facts | Verified | Demo wall facts route to `author.wall`; demo door facts route to `opening.door_on_wall` and require `resolve.wall_by_line`/`query.nearest_wall` before dry-run. |
-| AI visual trace work order | Partial | `tmp/reverse-bim-testhaus-leo/source-ai-visual-trace-work-order.expanded.json` splits the source set into reusable work packages: current condition, dimensional floorplans, section/roof, area/volume, site/parcel, and drainage/basement. Each package now includes expected fact kinds, required modelable value fields, and an extraction checklist. |
-| AI visual agent requests | Done for packaging | `tmp/reverse-bim-testhaus-leo/source-ai-visual-agent-requests.json` contains six provider-neutral multimodal reader requests with rendered image inputs, prompts, required fact kinds, and output contracts. |
-| AI visual agent loop test | Partial / blocked as designed | `tmp/reverse-bim-testhaus-leo/source-ai-visual-agent-loop.partial.json` ran against partial Leo reader responses. Current-condition facts passed; area/volume needs room facts with boundaries; dimensional floorplans, sections/roof, site/terrain, and drainage are waiting for multimodal reader responses. No BIM authoring is allowed from this partial run. |
-| AI reader normalization | Partial | `tmp/reverse-bim-testhaus-leo/source-ai-visual-reader-responses.normalized.json` normalizes the captured partial reader responses into canonical value objects. This proves the adapter path, but the captured file currently contains only current-condition and area/volume packages. |
-| MCP authoring readiness | Partial / blocked as designed | `tmp/reverse-bim-testhaus-leo/source-ai-visual-mcp-readiness.partial.json` classifies the captured partial facts. Current captured facts are metadata/reference only; no wall/room/opening/stair/roof/site facts are ready for MCP authoring from that partial artifact. |
-| Folder-output fresh run | Partial / blocked as designed | `tmp/reverse-bim-testhaus-leo/folder-output-fresh/` was generated directly from the Leo source folder with no reader responses: 16 source documents, 68 rendered pages, 6 work packages, 35 candidate coordinate frames, package state `source_packaging_ready`. It correctly blocks modeling and instructs dispatch of `ai-reading/ai-visual-agent-requests.json`. |
-| Folder-output partial-response run | Partial / blocked as designed | `tmp/reverse-bim-testhaus-leo/folder-output-partial-responses/` was generated with the captured partial reader responses: package state `source_understanding_blocked`, 8 normalized facts, 1 accepted work package, and explicit missing packages/fact kinds for dimensional floorplans, roof/elevations, site/terrain, area room boundaries, and drainage/basement. |
-| Folder-output repaired-decisions run | Accepted for MCP handoff fixture | `tmp/reverse-bim-testhaus-leo/folder-output-repaired-decisions/` was regenerated from `leo-reader-responses.repaired-area.json`: 16 documents, 68 pages, 6 accepted reader work packages, complete visible room/area rows for the current fixture, 0 hard MCP blockers, 0 open conflicts, 0 room-topology blockers, 0 coordinate-frame blockers, 0 site/terrain blockers, package state `mcp_handoff_ready`. This is still an integration fixture, not a fresh provider result. |
-| Target-house-3 modeling test | Accepted diagnostic MCP model | `tmp/reverse-bim-testhaus-leo/target-house-3/` rebuilds from the folder output transactionally: 3 levels, 24 walls, 2 floors, 35 room separations, 13 rooms, 12 doors, 2 windows, 1 stair, 1 slab opening, 1 railing, 1 roof, 1 roof opening, 1 dormer, 1 site, 1 flat context toposolid, 4 property lines. `final-acceptance.json` passes 7/7 gates with `accepted=true`: coverage complete, area reconciliation clean, room topology complete, integrity clean, and all remaining Advisor/constructability warnings explicitly reviewed/disposed. |
-| AI visual source analysis | Partial | `tmp/reverse-bim-testhaus-leo/leo-ai-visual-source-analysis.md` captures current understanding and blockers; it is not yet sufficient for model authoring. |
-| AI visual completeness gate | Partial | `source.validate_ai_visual_trace_completeness` now blocks vague AI-read facts. Leo currently has high-level understanding, but it intentionally fails authoring readiness until exact wall chains/thicknesses, room loops, openings, stairs, roof, site/terrain, and conflicts are returned as structured facts. |
+`target-house-3` is **not** an accepted reverse-BIM result. It is a failure
+benchmark. The model can be loaded, but it exposed the exact methodology gaps
+that must now be closed: an empty or materially incomplete `KG`, unresolved
+door-clearance warnings, a stair/wall clash, fake or analytical room topology,
+provisional roof/dormer/site geometry, weak material/schedule semantics, and no
+hard UI/source-overlay acceptance gate.
 
-The current Leo result proves the intended gate: the system does not create a
-rough seed from document classifications. It first requires validated AI-read
-source facts, then authors the live BIM through MCP transactions and feedback
-loops. The repaired-area fixture now reaches an accepted diagnostic model, but
-future hardening is still required:
+The controlling tracker for the corrected Leo methodology is now
+`spec/reverse-bim-actual-methodology-tracker.md`.
 
-- replace the fixture with fresh provider/subagent reader responses that produce
-  the same fact quality from the folder alone;
-- add true dormer-face window authoring instead of representing the current
-  dormer-window fact through the wall-hosted opening path;
-- extract door swing/handedness where visible so operation-clearance warnings
-  are resolved geometrically rather than tolerated as source-limited;
-- add source overlay comparison for floor plans, elevations, sections, and site
-  plans;
-- promote the `tmp/reverse-bim-testhaus-leo/build_target_house_3.py`
-  diagnostic harness into a reusable reverse-BIM runner/route.
+The old folder-output and `target-house-3` artifacts remain useful only for
+diagnosis. They must not be used as proof that the methodology works and must
+not be used as source truth for a future fresh house folder.
 
 ## Post-Target-House-3 Detailed Tracker
 
-The detailed remediation tracker is maintained in
-`spec/reverse-bim-folder-output-methodology-tracker.md` under
-`Target-House-3 Remediation Tracker`. That tracker now records the accepted
-Leo repaired-area run and the remaining product-hardening work.
+The detailed remediation plan has moved to
+`spec/reverse-bim-actual-methodology-tracker.md`.
 
-The required work is grouped as follows:
-
-| Track | Primary blocker it resolves | Key new artifacts/tools | Acceptance impact | Status |
-| ----- | --------------------------- | ----------------------- | ----------------- | ------ |
-| Response capture | Consolidated facts are still partly an integration fixture. | `reader-response-index.json`, immutable raw response capture, `readerCommand` dispatch/capture. | Makes the run reproducible from files rather than chat history. | Partial |
-| Coordinate frames | Source geometry is in candidate frames, not accepted transforms. | `coordinate-frame-report.json`, `coordinate-frame-worklist.json`, accepted per-page transforms. | Enables source overlay and precise model/source comparison; generic gate now blocks only fact-referenced geometry frames. | Partial |
-| Conflict disposition | 6 open conflicts/repair blockers block final acceptance after stricter room topology validation. | `conflict-ledger.json`, `conflict-disposition-worklist.json`, tolerance policy decisions. | Prevents ambiguous target-half/year/parcel/roof/drainage facts from silently entering the model. | Partial |
-| Room topology | Room access and room-wall topology must be proven after authoring. | `room-topology.json`, `author.room_separation`, `resolve.room_boundary_edges`, `query.room_access_graph`, `roomTopologyRepairWorklist_v1`. | Source package topology report, stricter reader contract, authoring, deterministic readback, and repair worklist generation exist; target-house-3 now commits topology repairs and ends with 0 repair actions. | Done for repaired-area fixture |
-| Area reconciliation | Modeled room polygons must reconcile to source area formulas. | `qa.area_reconciliation`, `area-reconciliation.json`, source area facts. | Source-vs-model room area report exists; target-house-3 has 29 rows all within tolerance. Formula/sloped-area basis extraction remains future hardening. | Done for repaired-area fixture |
-| Existing stair | Current stair needed raw typed by-sketch bridge and still has integrity blockers. | `author.stair_by_sketch`, `author.stair_by_runs`, `author.stair_existing_condition`, `author.stair_vertical_package`. | Typed stair authoring and source-backed existing-condition tolerance exist; target-house-3 now has zero stair/integrity blockers. | Partial |
-| Floor support | DG slab lacks support metadata. | `resolve.floor_supports`, `author.floor_supports`, support ids/metadata in floor payload. | Resolver and transactional support metadata update exist; target-house-3 clears the DG unsupported-slab integrity blocker. | Partial |
-| Opening reconciliation | DG dormer window and elevation front-door facts must not remain uncovered. | `opening-reconciliation.json`, `resolve.opening_source_match`, `resolve.dormer_opening_host`. | Front-door elevation evidence is reconciled to modeled `op-eg-entry`; DG dormer-window fact is modeled via current wall-hosted path. True dormer-face/window authoring remains a tool-contract gap. | Done for repaired-area fixture / Partial for final fidelity |
-| Roof/dormer precision | Dormer remains partly provisional; roof overhang semantics must be explicit. | `roof-dormer.json`, `resolve.roof_position_from_source_point`, `validate.roof_dormer_source_alignment`, `overhangSemantics`. | Roof overhang semantics now clear Advisor. Roof/dormer exact ridge/eave projection and overlay validation remain. | Partial |
-| Site/toposolid | Site and toposolid relationship warnings must be resolved. | `site-terrain.json`, `site-topology-report.json`, terrain repair/tolerance. | Target-house-3 authors a site element and flat context toposolid from parcel evidence, clearing missing-site/toposolid warnings. Source-backed terrain contours remain future fidelity work. | Done for repaired-area fixture / Partial for terrain fidelity |
-| Source overlay comparison | Current acceptance uses counts/QA, not visual source deviation. | `source.overlay_compare`, screenshots/deviation report. | Required to prove model matches floor plans/sections/elevations. | Not started |
-| Finding dispositions | Errors/warnings must be fixed or explicitly tolerated before acceptance. | `finding-disposition-ledger.json`, `final-acceptance.json`. | Ledger now applies explicit reviewed decisions; target-house-3 has 0 unresolved blocking dispositions and final acceptance passes 7/7 gates. Automated disposition policy and overlay evidence remain. | Done for repaired-area fixture |
-
-Current `target-house-3` state after the repaired-area Leo run:
-
-- Folder output:
-  - `folder-output-repaired-decisions` is `mcp_handoff_ready`.
-  - It has 16 source documents, 68 rendered pages, 6 accepted reader packages,
-    0 hard MCP blockers, 0 room-topology blockers, 0 conflict blockers, 0
-    coordinate-frame blockers, and 0 site-terrain blockers.
-  - The stricter room-topology and source-area gates now block missing
-    circulation refs, missing visible room rows, and inconsistent level totals.
-    Leo was repaired in `leo-reader-responses.repaired-area.json`.
-- Model:
-  - `target-house-3` builds transactionally with 3 levels, 24 walls, 35 room
-    separations, 13 rooms, 12 doors, 2 windows, 1 stair, 1 slab opening, 1
-    railing, 1 roof, 1 roof opening, 1 dormer, 1 site, 1 flat context
-    toposolid, and 4 property lines.
-  - Integrity is clean: 0 findings, 0 blocking findings.
-  - Advisor/constructability have 18 warnings and 0 errors; all remaining
-    warnings are explicitly reviewed/disposed.
-  - Area reconciliation is clean: 29 rows, all within tolerance, 0 blocking rows.
-  - Coverage is complete: 45 modeled or reconciled source facts, 0 blocking
-    source facts.
-  - Final acceptance is true: 7/7 gates pass.
-- Seed inspection bridge:
-  - `seed-artifacts/target-house-3/` packages the accepted diagnostic model for
-    the existing seed-library loader.
-  - `make seed name=target-house-3` loads model
-    `9bb9a145-d9ce-5a2f-a748-bb5be3301b30` with 119 elements.
-  - The packaged bundle uses deterministic `restoreElement` replay from the
-    accepted document state; future reverse-BIM runs must still be driven from
-    folder-output facts through MCP authoring, resolver, QA, and acceptance
-    loops.
-
-Remaining work is product hardening, not current Leo acceptance blocking:
-
-- make the reader loop fresh-provider complete for new folders;
-- add true dormer-face/window authoring;
-- extract and author door operation/swing data where visible;
-- add model/source overlay comparison;
-- turn the Leo diagnostic builder into a reusable runner.
+The key reset is that acceptance is no longer allowed to pass because warnings
+were "reviewed" or because counts look complete. A future Leo benchmark must
+build a new live model from a reproducible source package, stop at every failed
+phase gate, and remain unaccepted until Advisor, constructability, physical
+topology, level completeness, source overlay, and UI evidence gates pass.
 
 ## Reusable Run Pattern For New Source Folders
 

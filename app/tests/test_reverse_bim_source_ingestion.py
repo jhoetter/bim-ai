@@ -151,6 +151,13 @@ def test_source_coverage_and_phase_packet_blockers() -> None:
     assert packet["acceptedForNextPhase"] is False
     assert packet["summary"]["openBlockerCount"] == 1
 
+    warning_packet = build_reverse_bim_phase_packet(
+        phase_id="P7-openings",
+        advisor={"data": {"summary": {"severityCounts": {"error": 0, "warning": 1}}}},
+    )
+    assert warning_packet["acceptedForNextPhase"] is False
+    assert warning_packet["summary"]["blockingWarningCount"] == 1
+
 
 def test_authoring_plan_maps_ai_facts_to_mcp_tools() -> None:
     plan = plan_mcp_authoring_actions(
@@ -1011,6 +1018,14 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.mcp_readiness",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",
+        "reverse_bim.level_completeness",
+        "reverse_bim.physical_topology",
+        "reverse_bim.source_overlay_evidence",
+        "reverse_bim.ui_evidence",
+        "reverse_bim.final_acceptance",
+        "qa.level_completeness",
+        "qa.physical_topology",
+        "qa.source_overlay_compare",
         "resolve.opening_source_match",
         "resolve.dormer_opening_host",
         "resolve.roof_position_from_source_point",
