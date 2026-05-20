@@ -16,7 +16,10 @@ import { describe, expect, it } from 'vitest';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SRC = readFileSync(path.join(__dirname, 'PlanCanvas.tsx'), 'utf8');
+const readSource = (filename: string) => readFileSync(path.join(__dirname, filename), 'utf8');
+const SRC = readSource('PlanCanvas.tsx');
+const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
+const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 
 describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('removes every "stub:" console.warn from PlanCanvas.tsx', () => {
@@ -74,7 +77,7 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   it('wires the Offset modify tool through a selected-wall moveElementsDelta command', () => {
     expect(SRC).toContain("planTool === 'offset'");
     expect(SRC).toContain('wallOffsetMoveCommandFromPoint(');
-    expect(SRC).toContain('data-testid="offset-tool-chip"');
+    expect(TOOL_OVERLAYS_SRC).toContain('testId="offset-tool-chip"');
   });
 
   it('snaps wall authoring points to shared wall connectivity before generic plan snaps', () => {
@@ -129,14 +132,14 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   });
 
   it('renders the active level datum line and elevation badge in plan view', () => {
-    expect(SRC).toContain('data-testid="plan-level-datum-line"');
-    expect(SRC).toContain('data-testid="plan-level-elevation-badge"');
+    expect(READOUTS_SRC).toContain('data-testid="plan-level-datum-line"');
+    expect(READOUTS_SRC).toContain('data-testid="plan-level-elevation-badge"');
   });
 
   it('keeps Rotate on the reference-ray and typed-angle workflow', () => {
     expect(SRC).toMatch(/rotateReferenceRef/);
     expect(SRC).toMatch(/rotateDeltaAngleFromReference/);
     expect(SRC).toMatch(/parseTypedRotateAngle/);
-    expect(SRC).toContain('Click end ray or type angle + Enter');
+    expect(TOOL_OVERLAYS_SRC).toContain('Click end ray or type angle + Enter');
   });
 });

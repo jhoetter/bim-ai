@@ -181,14 +181,10 @@ import {
   type SnapOverrideKeyState,
 } from './interaction/snapOverrideShortcuts';
 import { nearestWallAt } from './selection/nearestWall';
-import {
-  ComponentPlacementPreviewGlyph,
-  guessGridLabel,
-  readPlanToken,
-  type Draft,
-} from './planCanvasHelpers';
+import { guessGridLabel, readPlanToken, type Draft } from './planCanvasHelpers';
 import { PlanCanvasReadouts } from './PlanCanvasReadouts';
 import { PlanCanvasToolOverlays } from './PlanCanvasToolOverlays';
+import { PlanCanvasStatusOverlays } from './PlanCanvasStatusOverlays';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -7335,6 +7331,8 @@ export function PlanCanvas({
         })()
       : null;
   const componentPreviewScreen = hudMm && activeComponentAsset ? worldToScreen(hudMm) : null;
+  const componentPreviewSymbolKind =
+    activeComponentAsset?.planSymbolKind ?? activeComponentAsset?.renderProxyKind;
 
   return (
     <div
@@ -8240,145 +8238,24 @@ export function PlanCanvas({
         planToScreen={worldToScreen}
         onDispatch={onSemanticCommand}
       />
-      {/* B8 — padlock glyphs for pinned elements. */}
-      {(() => {
-        const currentLvl = lvlId;
-        const pinned: Array<{ id: string; xMm: number; yMm: number }> = [];
-        for (const el of Object.values(elementsById)) {
-          if (!el) continue;
-          if (!(el as { pinned?: boolean }).pinned) continue;
-          if (currentLvl && (el as { levelId?: string }).levelId !== currentLvl) continue;
-          const w = el as {
-            start?: { xMm: number; yMm: number };
-            end?: { xMm: number; yMm: number };
-            insertionPoint?: { xMm: number; yMm: number };
-            xMm?: number;
-            yMm?: number;
-          };
-          let xMm: number | undefined;
-          let yMm: number | undefined;
-          if (w.insertionPoint) {
-            xMm = w.insertionPoint.xMm;
-            yMm = w.insertionPoint.yMm;
-          } else if (w.start && w.end) {
-            xMm = (w.start.xMm + w.end.xMm) / 2;
-            yMm = (w.start.yMm + w.end.yMm) / 2;
-          } else if (typeof w.xMm === 'number' && typeof w.yMm === 'number') {
-            xMm = w.xMm;
-            yMm = w.yMm;
-          }
-          if (xMm !== undefined && yMm !== undefined) pinned.push({ id: el.id, xMm, yMm });
-        }
-        if (pinned.length === 0) return null;
-        return (
-          <div
-            aria-hidden="true"
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 18 }}
-            data-testid="pin-glyph-layer"
-          >
-            {pinned.map(({ id, xMm, yMm }) => {
-              const { pxX, pxY } = worldToScreen({ xMm, yMm });
-              return (
-                <span
-                  key={id}
-                  title="Pinned"
-                  style={{
-                    position: 'absolute',
-                    left: pxX + 4,
-                    top: pxY - 16,
-                    fontSize: 10,
-                    lineHeight: 1,
-                    userSelect: 'none',
-                  }}
-                >
-                  📌
-                </span>
-              );
-            })}
-          </div>
-        );
-      })()}
       {/* EDT-05 — snap glyph layer (×, ⊥, dot+dash) above the canvas. */}
       <SnapGlyphLayer
         candidates={snapGlyphState.candidates}
         activeIndex={snapGlyphState.activeIndex}
       />
-      {/* EDT-V3-05 — LOOP cursor chip: shown when loop mode is active and a chained
-          drawing tool (Wall or Beam) is in use. Follows the cursor. */}
-      {loopMode && (planTool === 'wall' || planTool === 'beam') && hudMm
-        ? (() => {
-            const pos = worldToScreen(hudMm);
-            return (
-              <div
-                data-testid="loop-mode-cursor-chip"
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  left: pos.pxX + 14,
-                  top: pos.pxY - 20,
-                  pointerEvents: 'none',
-                  zIndex: 20,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 5px',
-                  height: 18,
-                  borderRadius: 3,
-                  fontSize: 'var(--text-2xs, 10px)',
-                  lineHeight: 'var(--text-2xs-line, 14px)',
-                  background: 'var(--color-surface-2, var(--color-surface-strong))',
-                  border: '1px solid var(--color-accent)',
-                  color: 'var(--color-accent-foreground, var(--color-foreground))',
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontWeight: 600,
-                }}
-              >
-                LOOP
-              </div>
-            );
-          })()
-        : null}
-      {/* WP-NEXT-49: pre-commit boundary validation error banner */}
-      {boundaryValidationError ? (
-        <div
-          data-testid="boundary-validation-error"
-          role="alert"
-          style={{
-            position: 'absolute',
-            bottom: 40,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 30,
-            background: '#ef4444',
-            color: '#fff',
-            borderRadius: 6,
-            padding: '6px 14px',
-            fontSize: 13,
-            fontWeight: 500,
-            pointerEvents: 'auto',
-            cursor: 'pointer',
-            maxWidth: '80%',
-          }}
-          onClick={() => setBoundaryValidationError(null)}
-        >
-          {boundaryValidationError} (click to dismiss)
-        </div>
-      ) : null}
       <div ref={mountRef} className="size-full cursor-crosshair" />
-      {componentPreviewScreen && activeComponentAsset ? (
-        <div
-          data-testid="component-placement-preview-glyph"
-          className="pointer-events-none absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 drop-shadow-sm"
-          style={{
-            left: componentPreviewScreen.pxX,
-            top: componentPreviewScreen.pxY,
-          }}
-        >
-          <ComponentPlacementPreviewGlyph
-            symbolKind={activeComponentAsset.planSymbolKind ?? activeComponentAsset.renderProxyKind}
-          />
-        </div>
-      ) : null}
+      <PlanCanvasStatusOverlays
+        elementsById={elementsById}
+        activeLevelId={lvlId}
+        planTool={planTool}
+        loopMode={loopMode}
+        hudMm={hudMm}
+        worldToScreen={worldToScreen}
+        boundaryValidationError={boundaryValidationError}
+        onDismissBoundaryValidationError={() => setBoundaryValidationError(null)}
+        componentPreviewScreen={componentPreviewScreen}
+        componentPreviewSymbolKind={componentPreviewSymbolKind}
+      />
       {/* SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay. Active when one
           of the *-sketch tools is selected. Commits a Create<Kind> command on
           Finish and otherwise leaves the document untouched. */}

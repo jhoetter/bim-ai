@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                               |
 | ----------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.5k       | High-churn plan interaction monolith.                                 |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 8.3k       | High-churn plan interaction monolith after extracted status overlays. |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                               |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                      |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                             |
@@ -549,6 +549,9 @@ impact of small changes.
   into `plan/PlanCanvasToolOverlays.tsx`.
 - 2026-05-20: the same PlanCanvas overlay extraction brought `PlanCanvas.tsx`
   below the `8,500` local LOC target at `8,468` lines.
+- 2026-05-20: a follow-up PlanCanvas overlay extraction moved status overlays
+  into `plan/PlanCanvasStatusOverlays.tsx`, reducing `PlanCanvas.tsx` to
+  `8,345` local lines while keeping focused plan overlay/readout tests green.
 
 ---
 
@@ -1126,6 +1129,9 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: the next PlanCanvas extraction slice moved canvas readouts into
   `plan/PlanCanvasReadouts.tsx`, keeping persistent overlay UI out of the main
   interaction component.
+- 2026-05-20: the next PlanCanvas extraction slice moved pinned glyphs,
+  loop-mode chip, boundary validation banner, and component placement preview
+  wrapper into `plan/PlanCanvasStatusOverlays.tsx`.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.
