@@ -170,6 +170,7 @@ import { PlanCanvasWallDraftOverlays } from './PlanCanvasWallDraftOverlays';
 import { PlanCanvasContextOverlays } from './PlanCanvasContextOverlays';
 import { PlanCanvasViewControls } from './PlanCanvasViewControls';
 import { PlanCanvasSketchOverlay } from './PlanCanvasSketchOverlay';
+import { usePlanCanvasContextActions } from './usePlanCanvasContextActions';
 import { usePlanCanvasViewState } from './planCanvasViewState';
 import { usePlanCanvasColorSchemeState } from './planCanvasColorSchemeState';
 import { PlanCanvasEmptyStateOverlay } from './PlanCanvasEmptyStateOverlay';
@@ -225,7 +226,6 @@ import {
   type DxfPrimitiveQueryHit,
 } from './dxfUnderlay';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
-import type { WallContextMenuCommand } from '../workspace/viewport/WallContextMenu';
 import { createSimilarPayload } from './createSimilar';
 import { type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { moveDeltaMm } from './moveTool';
@@ -4873,8 +4873,19 @@ export function PlanCanvas({
   ]);
 
   const resetComponentRotation = useCallback(() => setPendingComponentRotationDeg(0), []);
-  const closeUnhideContextMenu = useCallback(() => setUnhideContextMenu(null), []);
-  const closeWallJoinContextMenu = useCallback(() => setWallJoinCtxMenu(null), []);
+  const contextActions = usePlanCanvasContextActions({
+    activateElevationView,
+    camRef,
+    onSemanticCommand,
+    resizeCam,
+    selectEl,
+    setCanvasCtxMenu,
+    setDxfQueryDialog,
+    setElementCtxMenu,
+    setUnhideContextMenu,
+    setWallContextMenu,
+    setWallJoinCtxMenu,
+  });
   usePlanCanvasToolCleanupEffects({
     planTool,
     snapLines,
@@ -4892,9 +4903,9 @@ export function PlanCanvas({
     rootRef,
     componentGhostRef,
     unhideContextMenu,
-    closeUnhideContextMenu,
+    closeUnhideContextMenu: contextActions.closeUnhideContextMenu,
     wallJoinContextMenu: wallJoinCtxMenu,
-    closeWallJoinContextMenu,
+    closeWallJoinContextMenu: contextActions.closeWallJoinContextMenu,
   });
 
   const {
@@ -4914,20 +4925,6 @@ export function PlanCanvas({
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   const plotScaleN = Math.round(halfUi * 2);
-  const handleWallContextMenuCommand = useCallback(
-    (next: WallContextMenuCommand) => {
-      onSemanticCommand(next.cmd);
-      if (next.kind === 'elevation_view') {
-        // Activate the new elevation marker so the user lands on its view.
-        activateElevationView(next.elevationViewId);
-      } else {
-        // Section cuts surface in the project browser; selecting puts focus on
-        // the new element so the user can immediately tweak it.
-        selectEl(next.sectionCutId);
-      }
-    },
-    [activateElevationView, onSemanticCommand, selectEl],
-  );
   const activeComponentAsset = resolveActiveComponentAsset({
     planTool,
     activeComponentAssetId,
@@ -4974,35 +4971,29 @@ export function PlanCanvas({
       />
       <PlanCanvasContextOverlays
         wallContextMenu={wallContextMenu}
-        onWallContextCommand={handleWallContextMenuCommand}
-        onCloseWallContextMenu={() => setWallContextMenu(null)}
+        onWallContextCommand={contextActions.handleWallContextMenuCommand}
+        onCloseWallContextMenu={contextActions.closeWallContextMenu}
         canvasContextMenu={canvasCtxMenu}
-        onCloseCanvasContextMenu={() => setCanvasCtxMenu(null)}
-        onCanvasZoomIn={() => {
-          camRef.current.half = Math.max(HALF_MIN, camRef.current.half * Math.exp(-0.5));
-          resizeCam();
-        }}
-        onCanvasZoomOut={() => {
-          camRef.current.half = Math.min(HALF_MAX, camRef.current.half * Math.exp(0.5));
-          resizeCam();
-        }}
+        onCloseCanvasContextMenu={contextActions.closeCanvasContextMenu}
+        onCanvasZoomIn={contextActions.handleCanvasZoomIn}
+        onCanvasZoomOut={contextActions.handleCanvasZoomOut}
         onCanvasZoomFit={handleFitToView}
         elementContextMenu={elementCtxMenu}
         activeLevelId={displayLevelId ?? ''}
         planTool={planTool ?? ''}
         onSemanticCommand={onSemanticCommand}
-        onCloseElementContextMenu={() => setElementCtxMenu(null)}
+        onCloseElementContextMenu={contextActions.closeElementContextMenu}
         unhideContextMenu={unhideContextMenu}
         activePlanViewId={activePlanViewId}
         onSetCategoryOverride={setCategoryOverride}
-        onCloseUnhideContextMenu={() => setUnhideContextMenu(null)}
+        onCloseUnhideContextMenu={contextActions.closeUnhideContextMenu}
         dxfQueryHover={planTool === 'query' ? dxfQueryHover : null}
         dxfQueryDialog={dxfQueryDialog}
         elementsById={elementsById}
-        onCloseDxfQueryDialog={() => setDxfQueryDialog(null)}
+        onCloseDxfQueryDialog={contextActions.closeDxfQueryDialog}
         onUpdateDxfQueryDialog={setDxfQueryDialog}
         wallJoinContextMenu={wallJoinCtxMenu}
-        onCloseWallJoinContextMenu={() => setWallJoinCtxMenu(null)}
+        onCloseWallJoinContextMenu={contextActions.closeWallJoinContextMenu}
       />
       <PlanCanvasWallDraftOverlays
         hudMm={hudMm ?? null}

@@ -119,6 +119,7 @@ A-territory target:
 | GFR-2026-43 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract sheet, schedule, and section palette actions                | Workspace below `5,150` LOC with focused tests green.       |
 | GFR-2026-44 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract overlay saved-view and work-plane controls                 | Viewport below `5,210` LOC with focused tests green.        |
 | GFR-2026-45 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract viewport command dispatch adapters                         | Viewport below `5,160` LOC with focused tests green.        |
+| GFR-2026-46 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract context-menu command and zoom actions                       | PlanCanvas below `5,200` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -518,4 +519,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   into `packages/web/src/viewport/useViewportCommandHandlers.ts`. Local
   `wc -l` reports `packages/web/src/Viewport.tsx` at `5,150` lines. Focused
   viewport grip/wall-face tests pass (`53 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-46` is Done. The slice moved PlanCanvas context-menu
+  close handlers, canvas context zoom actions, and wall context command
+  dispatch into `packages/web/src/plan/usePlanCanvasContextActions.ts`. Local
+  `wc -l` reports `packages/web/src/plan/PlanCanvas.tsx` at `5,191` lines.
+  Focused PlanCanvas context/tool tests pass (`34 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
