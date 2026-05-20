@@ -138,6 +138,7 @@ A-territory target:
 | GFR-2026-62 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract presentation and presentation-export routes                | Routes API below `3,800` LOC with focused route tests green. |
 | GFR-2026-63 | P1       | Done   | `app/bim_ai/commands.py`                                    | Extract site, output, and MEP command schema families              | Commands module below `3,600` LOC with focused command tests green. |
 | GFR-2026-64 | P1       | Done   | `packages/web/src/workspace/project/ProjectBrowser.tsx`     | Extract family browser and section/context-menu primitives         | Project browser below `3,600` LOC with focused browser tests green. |
+| GFR-2026-65 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract MEP element model family                                  | Elements module below `3,800` LOC with focused MEP/schema tests green. |
 
 ## Progress Log
 
@@ -665,6 +666,13 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   type rows/context menu and shared Project Browser section/context-menu
   primitives into `ProjectBrowserFamiliesGroup.tsx` and
   `ProjectBrowserSections.tsx`. Local `wc -l` reports `ProjectBrowser.tsx` at
-  `3,549` lines and the new modules at `239` and `211` lines. Focused
+  `3,545` lines and the new modules at `239` and `211` lines. Focused
   Project Browser tests pass (`46 passed`), full web typecheck passes, and
   focused ESLint for the touched browser files passes with zero warnings.
+- 2026-05-20: `GFR-2026-65` is Done. The slice moved pipe, duct, cable tray,
+  equipment, fixture, terminal, opening-request, and MEP legend element models
+  into `app/bim_ai/elements_mep.py`, while preserving the legacy
+  `bim_ai.elements` import surface and discriminated union membership. Local
+  `wc -l` reports `app/bim_ai/elements.py` at `3,714` lines and the new MEP
+  module at `280` lines. Python compile, ruff, and focused MEP/schema tests
+  pass (`45 passed`).

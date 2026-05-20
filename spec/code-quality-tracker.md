@@ -178,7 +178,6 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `app/bim_ai/elements.py`                                    | 3,958      | Element model aggregator after extracted primitive geometry, evidence, and shared literal types.   |
 | `packages/web/src/viewport/meshBuilders.ts`                 | 3,950      | Mesh builder collection after prior helper extractions; near-cap growth should trigger another split. |
 | `packages/cli/cli.mjs`                                      | 3,921      | CLI command dispatch after extracted command-family modules and shared helpers.                   |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 3,914      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules. |
@@ -188,10 +187,11 @@ Largest current source files observed:
 | `packages/web/src/Viewport.tsx`                             | 3,802      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                 |
 | `app/bim_ai/routes_api.py`                                  | 3,753      | API route aggregator after extracted query/resolve/QA and presentation routes.                    |
+| `app/bim_ai/elements.py`                                    | 3,714      | Element model aggregator after extracted primitive, MEP, evidence, and shared literal types.      |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
 | `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                             |
-| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,549      | Project browser shell after extracted family rows and section/context-menu primitives.             |
+| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,545      | Project browser shell after extracted family rows and section/context-menu primitives.             |
 | `app/bim_ai/commands.py`                                    | 3,507      | Command schema aggregator after extracted site, output, and MEP command families.                 |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                           |
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
@@ -1383,8 +1383,12 @@ Initial thresholds can be advisory before becoming blocking:
 - 2026-05-20: a Project Browser extraction moved family type rows/context
   menus and shared section/context-menu primitives into
   `ProjectBrowserFamiliesGroup.tsx` and `ProjectBrowserSections.tsx`, reducing
-  `ProjectBrowser.tsx` to `3,549` local lines with focused browser tests,
+  `ProjectBrowser.tsx` to `3,545` local lines with focused browser tests,
   web typecheck, and focused ESLint passing.
+- 2026-05-20: a backend element-model extraction moved MEP route/equipment/
+  fixture/opening/legend element models into `app/bim_ai/elements_mep.py`,
+  reducing `elements.py` to `3,714` local lines with focused MEP/schema tests
+  and ruff passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
