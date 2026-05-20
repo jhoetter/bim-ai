@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from bim_ai.advisor_rule_registry import advisor_rule_catalog_payload
+from bim_ai.api.registry_metadata import KERNEL_COMMANDS_BY_TOOL, RESOURCE_GROUPS_BY_TOOL
 
 
 @dataclass(frozen=True)
@@ -37,147 +38,6 @@ _LEGACY_ENDPOINT_ALIASES: dict[str, RestEndpoint] = {
     "/api/models/{modelId}/bundles": RestEndpoint(
         method="POST", path="/api/models/{model_id}/bundles"
     ),
-}
-
-_KERNEL_COMMANDS_BY_TOOL: dict[str, tuple[str, ...]] = {
-    "apply-bundle": ("*",),
-    "set-tool-pref": ("setToolPref",),
-    "toposolid-create": ("CreateToposolid",),
-    "toposolid-update": ("UpdateToposolid",),
-    "toposolid-delete": ("DeleteToposolid",),
-    "create-graded-region": ("CreateGradedRegion",),
-    "create-toposolid-subdivision": ("create_toposolid_subdivision",),
-    "site.setup-georeference": (
-        "createProjectBasePoint",
-        "createSurveyPoint",
-        "createSunSettings",
-        "upsertSite",
-        "CreateToposolid",
-    ),
-    "site.upsert-site": ("upsertSite",),
-    "site.graded-region-update": ("UpdateGradedRegion",),
-    "site.graded-region-delete": ("DeleteGradedRegion",),
-    "site.property-line-create": ("createPropertyLine",),
-    "site.property-line-update": ("updatePropertyLine",),
-    "site.property-line-delete": ("deletePropertyLine",),
-    "site.project-base-point-create": ("createProjectBasePoint",),
-    "site.project-base-point-move": ("moveProjectBasePoint",),
-    "site.project-base-point-rotate": ("rotateProjectBasePoint",),
-    "site.survey-point-create": ("createSurveyPoint",),
-    "site.survey-point-move": ("moveSurveyPoint",),
-    "site.sun-settings-create": ("createSunSettings",),
-    "site.sun-settings-update": ("updateSunSettings",),
-    "site.toposolid-subdivision-update": ("update_toposolid_subdivision",),
-    "site.toposolid-subdivision-delete": ("delete_toposolid_subdivision",),
-    "site.toposolid-excavation-create": ("CreateToposolidExcavation",),
-    "site.toposolid-excavation-update": ("UpdateToposolidExcavation",),
-    "site.toposolid-excavation-delete": ("DeleteToposolidExcavation",),
-    "set-element-discipline": ("setElementDiscipline",),
-    "set-view-lens": ("setViewLens",),
-    "set-element-construction": ("setElementConstruction",),
-    "create-schedule-view": ("create_schedule_view",),
-    "author.stair_between_levels": ("createStair",),
-    "opening.slab_opening": ("createSlabOpening",),
-    "opening.shaft_opening": ("createSlabOpening",),
-    "author.railing": ("createRailing",),
-    "structure.column": ("createColumn",),
-    "structure.beam": ("createBeam",),
-    "structure.column_update": ("updateColumn",),
-    "structure.constraint": ("createConstraint",),
-    "construction.package": ("createConstructionPackage",),
-    "construction.logistics": ("createConstructionLogistics",),
-    "construction.qa_checklist": ("upsertConstructionQaChecklist",),
-    "mep.pipe_route": ("createPipe",),
-    "mep.duct_route": ("createDuct",),
-    "mep.cable_tray": ("createCableTray",),
-    "mep.equipment": ("createMepEquipment",),
-    "mep.fixture": ("createFixture",),
-    "mep.terminal": ("createMepTerminal",),
-    "mep.opening_request": ("createMepOpeningRequest",),
-    "set-element-prop": ("set_element_prop",),
-    "update-stair-treads": ("update_stair_treads",),
-    "place-kitchen-kit": ("place_kit",),
-    "family.upsert_type": ("upsertFamilyType",),
-    "family.place_instance": ("placeFamilyInstance",),
-    "asset.place": ("PlaceAsset",),
-    "material.upsert_pbr": ("update_material_pbr",),
-    "material.assign": ("set_element_prop",),
-    "material.paint_face": ("set_element_prop",),
-    "decal.create": ("create_decal",),
-    "import-image-underlay": ("import_image_underlay",),
-    "move-image-underlay": ("move_image_underlay",),
-    "scale-image-underlay": ("scale_image_underlay",),
-    "rotate-image-underlay": ("rotate_image_underlay",),
-    "delete-image-underlay": ("delete_image_underlay",),
-    "commit-concept-seed": ("commit_concept_seed",),
-    "create-frame": ("create_frame",),
-    "create-brand-template": ("create_brand_template",),
-    "draw-detail-region": ("create_detail_region",),
-    "update-material-pbr": ("update_material_pbr",),
-}
-
-_RESOURCE_GROUPS_BY_TOOL: dict[str, tuple[str, ...]] = {
-    "api-list-tools": ("api-descriptor",),
-    "api-inspect": ("api-descriptor",),
-    "api-version": ("api-descriptor",),
-    "model-show": ("model", "snapshot"),
-    "collab-ws": ("collaboration",),
-    "fire-safety-lens-review-status": ("lens", "fire-safety"),
-    "cost-quantity-lens-review-status": ("lens", "cost-quantity"),
-    "construction-lens-report": ("lens", "construction"),
-    "presentation-create": ("presentation", "share-link"),
-    "presentation-revoke": ("presentation", "share-link"),
-    "presentation-list": ("presentation", "share-link"),
-    "img-trace": ("image", "sketch"),
-    "import-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
-    "move-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
-    "scale-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
-    "rotate-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
-    "delete-image-underlay": ("image-underlay", "sketch-to-bim", "kernel-command"),
-    "catalog-query": ("asset-catalog",),
-    "family.upsert_type": ("family", "family-type", "kernel-command"),
-    "family.place_instance": ("family", "family-instance", "kernel-command"),
-    "asset.query": ("asset-catalog", "asset-library"),
-    "asset.place": ("asset", "asset-library", "kernel-command"),
-    "material.query": ("material", "material-catalog"),
-    "material.upsert_pbr": ("material", "pbr", "kernel-command"),
-    "material.assign": ("material", "kernel-command"),
-    "material.paint_face": ("material", "paint", "kernel-command"),
-    "decal.create": ("decal", "material", "kernel-command"),
-    "list-concept-seeds": ("concept-seed",),
-    "export-presentation": ("presentation", "export"),
-    "export-branded-pdf": ("presentation", "export"),
-    "export-render-bundle": ("render", "export"),
-    "presentation-documentation-pack": (
-        "presentation",
-        "export",
-        "documentation",
-        "sheet",
-        "schedule",
-        "revision",
-        "render",
-    ),
-    "external-model-call-audit-export": ("audit",),
-    "import-neighborhood": ("site", "context"),
-    "site.setup-georeference": ("site", "context", "kernel-command"),
-    "site.upsert-site": ("site", "context", "kernel-command"),
-    "site.graded-region-update": ("site", "toposolid", "kernel-command"),
-    "site.graded-region-delete": ("site", "toposolid", "kernel-command"),
-    "site.property-line-create": ("site", "property-line", "kernel-command"),
-    "site.property-line-update": ("site", "property-line", "kernel-command"),
-    "site.property-line-delete": ("site", "property-line", "kernel-command"),
-    "site.project-base-point-create": ("site", "georeference", "kernel-command"),
-    "site.project-base-point-move": ("site", "georeference", "kernel-command"),
-    "site.project-base-point-rotate": ("site", "georeference", "kernel-command"),
-    "site.survey-point-create": ("site", "georeference", "kernel-command"),
-    "site.survey-point-move": ("site", "georeference", "kernel-command"),
-    "site.sun-settings-create": ("site", "sun-settings", "kernel-command"),
-    "site.sun-settings-update": ("site", "sun-settings", "kernel-command"),
-    "site.toposolid-subdivision-update": ("site", "toposolid", "kernel-command"),
-    "site.toposolid-subdivision-delete": ("site", "toposolid", "kernel-command"),
-    "site.toposolid-excavation-create": ("site", "toposolid", "kernel-command"),
-    "site.toposolid-excavation-update": ("site", "toposolid", "kernel-command"),
-    "site.toposolid-excavation-delete": ("site", "toposolid", "kernel-command"),
 }
 
 
@@ -269,10 +129,10 @@ class ToolDescriptor:
             )
         if not self.exampleRefs and self.cliExample:
             object.__setattr__(self, "exampleRefs", ["cliExample"])
-        if not self.kernelCommands and self.name in _KERNEL_COMMANDS_BY_TOOL:
-            object.__setattr__(self, "kernelCommands", list(_KERNEL_COMMANDS_BY_TOOL[self.name]))
+        if not self.kernelCommands and self.name in KERNEL_COMMANDS_BY_TOOL:
+            object.__setattr__(self, "kernelCommands", list(KERNEL_COMMANDS_BY_TOOL[self.name]))
         if not self.resourceGroups:
-            groups = _RESOURCE_GROUPS_BY_TOOL.get(self.name)
+            groups = RESOURCE_GROUPS_BY_TOOL.get(self.name)
             if groups is None and self.kernelCommands:
                 groups = ("kernel-command",)
             object.__setattr__(self, "resourceGroups", list(groups or ()))

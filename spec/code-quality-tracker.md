@@ -178,7 +178,7 @@ Largest current source files observed:
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 9.3k       | High-churn plan interaction monolith.      |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.7k       | Shell/workflow orchestration monolith.     |
 | `packages/core/src/index.ts`                                | 5.7k       | Central type and command registry surface. |
-| `app/bim_ai/api/registry.py`                                | 5.9k       | Central API descriptor registry.           |
+| `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.           |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.6k       | Inspector rendering and editing monolith.  |
 | `packages/web/src/Viewport.tsx`                             | 6.1k       | 3D viewport orchestration monolith.        |
 
@@ -208,7 +208,7 @@ Largest current source files observed:
 | CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
 | CQ-2026-05 | P1       | Partial | Core type model hygiene                   | Core facade has site and base building slices with compile-time union fixtures.         |
 | CQ-2026-06 | P1       | Partial | Runtime data coercion boundary            | Site/toposolid coercion is localized with focused tests; remaining domains still inline. |
-| CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
+| CQ-2026-07 | P1       | Partial | Python route and registry maintainability | Registry metadata overlay split; descriptor registry and routes still need domain slices. |
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
 | CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
 | CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
@@ -596,7 +596,7 @@ more defensive `as any` logic.
 ## CQ-2026-07 - Split Backend API Registry and Route Surfaces
 
 Priority: P1
-Status: Open
+Status: Partial
 Owner area: backend API
 
 ### Problem
@@ -626,6 +626,16 @@ for merge conflicts and stale descriptor drift.
 - `app/bim_ai/routes_models.py`
 - `app/bim_ai/routes_catalogs.py`
 - `app/bim_ai/routes_viewsheets.py`
+
+### Completion Evidence
+
+- 2026-05-20: extracted static descriptor overlays for kernel command mappings
+  and resource groups into `app/bim_ai/api/registry_metadata.py`, reducing
+  `app/bim_ai/api/registry.py` from `6,291` to `6,151` lines without changing
+  the public registry entry points.
+- 2026-05-20: focused registry verification passed:
+  `cd app && uv run pytest -q tests/test_api_v3_registry.py --no-cov` and
+  `cd app && uv run ruff check bim_ai/api/registry.py bim_ai/api/registry_metadata.py`.
 
 ---
 
