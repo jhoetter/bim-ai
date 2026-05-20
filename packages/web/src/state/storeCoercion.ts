@@ -6,6 +6,7 @@ import { coerceCoordinationElement } from './coercion/coordinationElements';
 import { coerceLinkElement } from './coercion/linkElements';
 import { coerceProjectReferenceElement } from './coercion/projectReferenceElements';
 import { coerceSiteElement } from './coercion/siteElements';
+import { coerceSpatialElement } from './coercion/spatialElements';
 import {
   coerceLoop as coerceWireLoop,
   coerceXY,
@@ -197,104 +198,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   const buildingElement = coerceBuildingElement(id, name, raw as WireRecord);
   if (buildingElement) return buildingElement;
 
-  if (kind === 'room') {
-    const outline = Array.isArray(raw.outlineMm) ? raw.outlineMm : [];
-    return {
-      kind: 'room',
-      id,
-      name,
-      levelId: String(raw.levelId ?? ''),
-      outlineMm: outline.map((p) => coerceXY((p ?? {}) as Record<string, unknown>)),
-      ...(raw.upperLimitLevelId || raw.upper_limit_level_id
-        ? {
-            upperLimitLevelId: String(raw.upperLimitLevelId ?? raw.upper_limit_level_id),
-          }
-        : {}),
-      volumeCeilingOffsetMm:
-        raw.volumeCeilingOffsetMm !== undefined || raw.volume_ceiling_offset_mm !== undefined
-          ? Number(raw.volumeCeilingOffsetMm ?? raw.volume_ceiling_offset_mm)
-          : undefined,
-      ...(typeof raw.programmeCode === 'string' || typeof raw.programme_code === 'string'
-        ? {
-            programmeCode: String(raw.programmeCode ?? raw.programme_code),
-          }
-        : {}),
-      ...(typeof raw.department === 'string' ? { department: raw.department } : {}),
-      ...(typeof raw.functionLabel === 'string' || typeof raw.function_label === 'string'
-        ? { functionLabel: String(raw.functionLabel ?? raw.function_label) }
-        : {}),
-      ...(typeof raw.finishSet === 'string' || typeof raw.finish_set === 'string'
-        ? { finishSet: String(raw.finishSet ?? raw.finish_set) }
-        : {}),
-      ...(raw.targetAreaM2 !== undefined || raw.target_area_m2 !== undefined
-        ? {
-            targetAreaM2:
-              raw.targetAreaM2 === null || raw.target_area_m2 === null
-                ? null
-                : Number(raw.targetAreaM2 ?? raw.target_area_m2),
-          }
-        : {}),
-      ...(raw.volumeM3 !== undefined || raw.volume_m3 !== undefined
-        ? {
-            volumeM3:
-              raw.volumeM3 === null || raw.volume_m3 === null
-                ? null
-                : Number(raw.volumeM3 ?? raw.volume_m3),
-          }
-        : {}),
-      ...(typeof raw.roomFillOverrideHex === 'string' ||
-      typeof raw.room_fill_override_hex === 'string'
-        ? { roomFillOverrideHex: String(raw.roomFillOverrideHex ?? raw.room_fill_override_hex) }
-        : {}),
-      ...(typeof raw.roomFillPatternOverride === 'string' ||
-      typeof raw.room_fill_pattern_override === 'string'
-        ? {
-            roomFillPatternOverride: String(
-              raw.roomFillPatternOverride ?? raw.room_fill_pattern_override,
-            ) as Extract<Element, { kind: 'room' }>['roomFillPatternOverride'],
-          }
-        : {}),
-      ...(raw.phaseCreated || raw.phase_created
-        ? { phaseCreated: String(raw.phaseCreated ?? raw.phase_created) }
-        : {}),
-      ...(raw.phaseDemolished || raw.phase_demolished
-        ? { phaseDemolished: String(raw.phaseDemolished ?? raw.phase_demolished) }
-        : {}),
-      ...(raw.props && typeof raw.props === 'object' && !Array.isArray(raw.props)
-        ? { props: raw.props as Record<string, unknown> }
-        : {}),
-    };
-  }
-
-  if (kind === 'area') {
-    const ruleRaw = raw.ruleSet ?? raw.rule_set;
-    const ruleSet = ruleRaw === 'gross' || ruleRaw === 'net' ? ruleRaw : ('no_rules' as const);
-    const computedRaw = raw.computedAreaSqMm ?? raw.computed_area_sq_mm;
-    const boundaryRaw = raw.boundaryMm ?? raw.boundary_mm;
-    const computedAreaSqMm =
-      typeof computedRaw === 'number' && Number.isFinite(computedRaw)
-        ? computedRaw
-        : typeof computedRaw === 'string' && computedRaw.trim() !== ''
-          ? Number(computedRaw)
-          : undefined;
-    return {
-      kind: 'area',
-      id,
-      name,
-      levelId: String(raw.levelId ?? raw.level_id ?? ''),
-      boundaryMm: Array.isArray(boundaryRaw)
-        ? boundaryRaw.map((p) => coerceXY((p ?? {}) as Record<string, unknown>))
-        : [],
-      ruleSet,
-      areaScheme: coerceAreaScheme(raw.areaScheme ?? raw.area_scheme),
-      ...(computedAreaSqMm !== undefined && Number.isFinite(computedAreaSqMm)
-        ? { computedAreaSqMm }
-        : {}),
-      ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
-      phaseCreated: (raw.phaseCreated ?? raw.phase_created ?? null) as string | null,
-      phaseDemolished: (raw.phaseDemolished ?? raw.phase_demolished ?? null) as string | null,
-    };
-  }
+  const spatialElement = coerceSpatialElement(id, name, raw as WireRecord);
+  if (spatialElement) return spatialElement;
 
   if (kind === 'viewpoint') {
     const cam = (raw.camera ?? {}) as Record<string, unknown>;
@@ -924,28 +829,6 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...(raw.hostAlongT !== undefined || raw.host_along_t !== undefined
         ? { hostAlongT: Number(raw.hostAlongT ?? raw.host_along_t) }
         : {}),
-    };
-  }
-
-  if (kind === 'room_separation') {
-    return {
-      kind: 'room_separation',
-      id,
-      name,
-      levelId: String(raw.levelId ?? ''),
-      start: coerceXY((raw.start ?? {}) as Record<string, unknown>),
-      end: coerceXY((raw.end ?? {}) as Record<string, unknown>),
-    };
-  }
-
-  if (kind === 'plan_region') {
-    return {
-      kind: 'plan_region',
-      id,
-      name,
-      levelId: String(raw.levelId ?? ''),
-      outlineMm: coerceLoop('outlineMm', 'outline_mm'),
-      cutPlaneOffsetMm: Number(raw.cutPlaneOffsetMm ?? raw.cut_plane_offset_mm ?? -500),
     };
   }
 

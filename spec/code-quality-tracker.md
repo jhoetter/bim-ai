@@ -649,6 +649,9 @@ more defensive `as any` logic.
 - 2026-05-20: extracted base-building wire coercion into
   `packages/web/src/state/coercion/buildingElements.ts` for levels, walls,
   openings, grid lines, and dimensions.
+- 2026-05-20: extracted spatial wire coercion into
+  `packages/web/src/state/coercion/spatialElements.ts` for rooms, areas, room
+  separation lines, and plan regions.
 - 2026-05-20: added focused site coercion coverage in
   `packages/web/src/state/coercion/siteElements.test.ts` for camelCase input,
   snake_case input, invalid numeric defaulting, toposolid height/grid data,
@@ -672,8 +675,11 @@ more defensive `as any` logic.
   `packages/web/src/state/coercion/buildingElements.test.ts` for levels,
   monitor sources, wall curves, opening metadata, grid lines, and dimension
   anchors across snake_case/camelCase payloads.
+- 2026-05-20: added focused spatial coercion coverage in
+  `packages/web/src/state/coercion/spatialElements.test.ts` for rooms, areas,
+  room separation lines, and plan regions across snake_case/camelCase payloads.
 - 2026-05-20: `packages/web/src/state/storeCoercion.ts` reduced from `2,290`
-  to `1,484` lines while keeping `coerceElement` as the stable public entry
+  to `1,367` lines while keeping `coerceElement` as the stable public entry
   point.
 - 2026-05-20: verification passed:
   `pnpm --filter @bim-ai/web exec vitest run src/state/coercion/siteElements.test.ts src/state/store.test.ts`,
