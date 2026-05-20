@@ -232,6 +232,7 @@ import { nextTabSelection } from './tabCycleSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { createPlanCanvasPreviewHelpers } from './planCanvasPreviewHelpers';
 import { createPlanCanvasPickHelpers } from './planCanvasPickHelpers';
+import { handleGripPointerUp } from './planCanvasGripPointerUp';
 import { updatePlanCanvasSnapHover } from './planCanvasSnapHover';
 import {
   updateColumnAtGridsHover,
@@ -1316,33 +1317,20 @@ export function PlanCanvas({
     };
 
     const onUpWindow = (ev: PointerEvent) => {
-      // EDT-01 — release a grip drag: numeric override commits if the
-      // user typed a value, otherwise commit via the live delta.
-      if (gripDragRef.current) {
-        const grip = gripDragRef.current.grip;
-        const numeric = numericInputRef.current?.value;
-        if (numeric != null && numeric !== '') {
-          const parsed = parseDimensionInput(numeric);
-          if (parsed.ok) {
-            void onSemanticCommand(grip.onNumericOverride(parsed.mm));
-          }
-        } else {
-          const rwUp = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-          if (rwUp) {
-            const start = gripDragRef.current.startWorldMm;
-            const delta = { xMm: rwUp.xMm - start.xMm, yMm: rwUp.yMm - start.yMm };
-            // Only commit if the drag actually moved — a click on a
-            // grip without movement should not fire an empty command.
-            if (Math.hypot(delta.xMm, delta.yMm) > 1) {
-              void onSemanticCommand(grip.onCommit(delta));
-            }
-          }
-        }
-        gripDragRef.current = null;
-        setActiveGripId(null);
-        setDraftMutation(null);
-        setNumericInput(null);
-        skipClickRef.current = true;
+      if (
+        handleGripPointerUp({
+          renderer: rnd,
+          camera: camNow,
+          event: ev,
+          gripDragRef,
+          numericInputRef,
+          setActiveGripId,
+          setDraftMutation,
+          setNumericInput,
+          skipClickRef,
+          onSemanticCommand,
+        })
+      ) {
         return;
       }
       dragRef.current.dragging = false;
