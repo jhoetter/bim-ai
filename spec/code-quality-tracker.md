@@ -212,7 +212,7 @@ Largest current source files observed:
 | CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.      |
 | CQ-2026-09 | P2       | Partial | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                      |
 | CQ-2026-10 | P2       | Partial | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                        |
-| CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                  |
+| CQ-2026-11 | P2       | Done    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                  |
 | CQ-2026-12 | P2       | Done    | CI quality budget reporting               | Type/test/coverage/noise budgets are visible in CI artifacts.                             |
 | CQ-2026-13 | P1       | Partial | Enforced maintainability budgets          | File-size, complexity, and ownership budgets prevent new monolith growth.                 |
 | CQ-2026-14 | P1       | Partial | Contract generation and parity            | Element, command, route, CLI, and descriptor contracts are generated or parity-checked.   |
@@ -822,7 +822,7 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
 ## CQ-2026-11 - Separate Browser Rendering Tests from jsdom Tests
 
 Priority: P2
-Status: Open
+Status: Done
 Owner area: frontend tests
 
 ### Problem
@@ -848,6 +848,18 @@ environment than production rendering.
 - `packages/web/src/plan/*PlanThree*.test.ts`
 - `packages/web/e2e/*`
 - shared Vitest setup file
+
+### Progress Notes
+
+- 2026-05-20: `packages/web/src/test/setup.ts` owns the default jsdom canvas
+  mock and now fails targeted `HTMLCanvasElement.prototype.getContext` noise if
+  real canvas APIs leak into the default Vitest run.
+- 2026-05-20: `scripts/check-frontend-test-environments.mjs` enforces the
+  split by scanning source Vitest files for real WebGL renderer construction,
+  pixel readback, and screenshot APIs that belong in Playwright.
+- 2026-05-20: `pnpm test-env:policy` is wired into `pnpm verify:strict`,
+  `make verify`, and the generated code-quality scorecard. Browser rendering
+  evidence remains under `packages/web/e2e`.
 
 ---
 

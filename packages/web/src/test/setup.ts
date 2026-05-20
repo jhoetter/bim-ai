@@ -4,6 +4,7 @@ import '../i18n';
 
 const originalConsoleLog = console.log.bind(console);
 const originalConsoleDebug = console.debug.bind(console);
+const originalConsoleError = console.error.bind(console);
 
 console.log = (...args: unknown[]) => {
   const first = String(args[0] ?? '');
@@ -15,6 +16,16 @@ console.debug = (...args: unknown[]) => {
   const first = String(args[0] ?? '');
   if (first === '[bim] selected element:' || first.startsWith('[bim] selected element:')) return;
   originalConsoleDebug(...args);
+};
+
+console.error = (...args: unknown[]) => {
+  const message = args.map((arg) => String(arg ?? '')).join(' ');
+  if (message.includes('HTMLCanvasElement.prototype.getContext')) {
+    throw new Error(
+      'jsdom canvas getContext noise reached the default Vitest run. Keep real rendering in Playwright or extend src/test/setup.ts with an explicit mock.',
+    );
+  }
+  originalConsoleError(...args);
 };
 
 function jsonResponse(body: unknown): Response {

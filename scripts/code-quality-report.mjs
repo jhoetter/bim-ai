@@ -357,6 +357,7 @@ function packageScripts() {
       lintPy: /^lint-py:/m.test(makefile),
       qualityWaivers: /^quality-waivers:/m.test(makefile),
       securityHygiene: /^security-hygiene:/m.test(makefile),
+      testEnvPolicy: /^test-env-policy:/m.test(makefile),
       testPyFocused: /^test-py-focused:/m.test(makefile),
       testPyRealPath: /^test-py-real-path:/m.test(makefile),
       codeQualityReport: /^code-quality-report:/m.test(makefile),
@@ -401,6 +402,14 @@ function securityGateSummary(scripts) {
   };
 }
 
+function frontendTestEnvironmentSummary(scripts) {
+  return {
+    policyScript: scripts.root['test-env:policy'] ?? null,
+    strictIncludesPolicy: Boolean(scripts.root['verify:strict']?.includes('test-env:policy')),
+    makeTarget: scripts.make.testEnvPolicy,
+  };
+}
+
 function trackerRows() {
   const tracker = readText('spec/code-quality-tracker.md');
   const rowRe =
@@ -428,6 +437,7 @@ function computeGrade({
   typeEscapes,
   scripts,
   securityGates,
+  frontendTestEnvironments,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -456,6 +466,9 @@ function computeGrade({
   }
   if (!hasSecurityHygiene || !securityGates.ciRunsJsAudit || !securityGates.ciRunsPythonAudit) {
     blockersToNextGrade.push('security hygiene and dependency audit gates are not fully wired');
+  }
+  if (!frontendTestEnvironments.policyScript || !frontendTestEnvironments.strictIncludesPolicy) {
+    blockersToNextGrade.push('frontend jsdom/browser test environment policy is not fully wired');
   }
   if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
@@ -526,6 +539,7 @@ function buildReport() {
   const backendCoverage = backendCoverageSummary();
   const frontendGates = frontendGateSummary(scripts);
   const securityGates = securityGateSummary(scripts);
+  const frontendTestEnvironments = frontendTestEnvironmentSummary(scripts);
   const grade = computeGrade({
     tracker,
     waivers,
@@ -535,6 +549,7 @@ function buildReport() {
     typeEscapes,
     scripts,
     securityGates,
+    frontendTestEnvironments,
   });
 
   return {
@@ -565,6 +580,7 @@ function buildReport() {
       },
       make: scripts.make,
       security: securityGates,
+      frontendTestEnvironments,
     },
     maintainability: {
       budgetConfig: {
@@ -668,6 +684,9 @@ function renderMarkdown(report) {
   );
   lines.push(
     `| Python dependency audit | ${report.gates.security.ciRunsPythonAudit ? 'configured' : 'missing'} | pip-audit in CI |`,
+  );
+  lines.push(
+    `| Frontend test environments | ${report.gates.frontendTestEnvironments.policyScript ? 'configured' : 'missing'} | strict: ${report.gates.frontendTestEnvironments.strictIncludesPolicy ? 'yes' : 'no'} |`,
   );
   lines.push('');
   lines.push('## Maintainability Budgets');
