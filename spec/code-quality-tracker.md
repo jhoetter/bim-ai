@@ -181,7 +181,7 @@ Largest current source files observed:
 | `app/bim_ai/api/registry.py`                                | 3,267      | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 4,891      | Inspector rendering and editing monolith after extracted phase/type/wall-part/text/dimension sections. |
 | `packages/web/src/workspace/Workspace.tsx`                  | 4,981      | Shell/workflow orchestration monolith after extracted project/comment/loading/view/palette/composition action modules. |
-| `packages/web/src/Viewport.tsx`                             | 5,101      | 3D viewport orchestration monolith after extracted view-cube, overlay/work-plane, command-handler, and camera-orientation hooks. |
+| `packages/web/src/Viewport.tsx`                             | 3,801      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/core/src/index.ts`                                | 3,386      | Public barrel after extracted resource and late model-contract modules.                           |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 4.7k       | Audit orchestration after extracted config/readiness/reports modules.                             |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,813      | Family editor state shell after extracted workbench and properties panel modules.                  |
@@ -1307,6 +1307,10 @@ Initial thresholds can be advisory before becoming blocking:
   deferred sync, and cleanup handling into `viewport/useViewportCameraOrientation.ts`,
   reducing `Viewport.tsx` to `5,101` local lines with focused viewport
   orientation tests and web typecheck passing.
+- 2026-05-20: a Viewport extraction slice moved post-mount scene
+  synchronization effects into `viewport/useViewportSceneEffects.ts`, reducing
+  `Viewport.tsx` to `3,801` local lines with focused viewport tests and web
+  typecheck passing.
 - 2026-05-20: a core extraction slice moved late model contracts, command
   contracts, presentation/export contracts, and collaboration-adjacent aliases
   into `core/src/modelContracts.ts`, reducing `packages/core/src/index.ts` to

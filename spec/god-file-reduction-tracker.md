@@ -129,6 +129,7 @@ A-territory target:
 | GFR-2026-53 | P0       | Done   | `app/bim_ai/api/registry.py`                                | Extract QA/query/resolve resource descriptors                      | Registry below `4,000` LOC with descriptor import checks green. |
 | GFR-2026-54 | P0       | Done   | `packages/cli/cli.mjs`                                      | Extract CLI command families and shared helpers                    | CLI below `4,000` LOC with focused CLI tests green.         |
 | GFR-2026-55 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract keyboard and auxiliary canvas handlers                     | PlanCanvas below `4,000` LOC with focused tests green.      |
+| GFR-2026-56 | P0       | Done   | `packages/web/src/Viewport.tsx`                             | Extract post-mount scene synchronization effects                   | Viewport below `4,000` LOC with focused tests green.        |
 
 ## Progress Log
 
@@ -594,3 +595,12 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   handler module at `1,662` lines. Focused PlanCanvas padlock/tool/state/
   overlay tests pass (`71 passed`), and `pnpm --filter @bim-ai/web typecheck`
   passes.
+- 2026-05-20: `GFR-2026-56` is Done. The slice moved viewport post-mount scene
+  synchronization effects into
+  `packages/web/src/viewport/useViewportSceneEffects.ts`, covering orbit camera
+  actions, incremental geometry rebuilds, OSM context, render-style updates,
+  section-box visuals, remote outlines, grips, drift badges, group instances,
+  and walk-mode activation. Local `wc -l` reports
+  `packages/web/src/Viewport.tsx` at `3,801` lines and the new hook at `1,666`
+  lines. Focused viewport tests pass (`63 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
