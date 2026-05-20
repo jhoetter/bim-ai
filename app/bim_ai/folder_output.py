@@ -15,6 +15,7 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
+from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     normalize_ai_visual_trace_reader_responses,
@@ -284,6 +285,11 @@ def build_reverse_bim_folder_output(
         text_extractions=text_extractions,
         coordinate_frames=coordinate_frames,
     )
+    evidence_requirements = build_reverse_bim_evidence_requirements(
+        source_page_index=source_page_index,
+        source_facts=facts,
+        phase_authoring_spec=phase_spec,
+    )
     tolerance_policy = _build_tolerance_policy()
 
     artifacts = {
@@ -323,6 +329,7 @@ def build_reverse_bim_folder_output(
         "authoringPlan": out_dir / "mcp-handoff" / "authoring-plan.json",
         "resolverWorklist": out_dir / "mcp-handoff" / "resolver-worklist.json",
         "phaseAuthoringSpec": out_dir / "mcp-handoff" / "phase-authoring-spec.json",
+        "evidenceRequirements": out_dir / "mcp-handoff" / "evidence-requirements.json",
         "tolerancePolicy": out_dir / "mcp-handoff" / "tolerance-policy.json",
         "sourceCompletenessReport": out_dir / "validation" / "source-completeness-report.json",
         "coordinateFrameReport": out_dir / "validation" / "coordinate-frame-report.json",
@@ -378,6 +385,7 @@ def build_reverse_bim_folder_output(
         "authoringPlan": authoring_plan,
         "resolverWorklist": resolver_worklist,
         "phaseAuthoringSpec": phase_spec,
+        "evidenceRequirements": evidence_requirements,
         "tolerancePolicy": tolerance_policy,
         "sourceCompletenessReport": source_completeness,
         "coordinateFrameReport": coordinate_frame_alignment_report,

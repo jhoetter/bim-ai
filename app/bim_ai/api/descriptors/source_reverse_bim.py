@@ -369,6 +369,13 @@ for _reverse_tool in (
         "notes": "Checks that source-bearing reverse-BIM phases have accepted phase packets and prevents skipping earlier blocked phases.",
     },
     {
+        "name": "reverse_bim.evidence_requirements",
+        "title": "ReverseBimEvidenceRequirementsInput",
+        "path": "/api/v3/reverse-bim/evidence-requirements",
+        "cli": "bim-ai reverse-bim evidence-requirements --source-page-index source-page-index.json --phase-spec phase-authoring-spec.json",
+        "notes": "Derives required source overlay views and UI screenshot/checklist views from source pages, facts, and the phase authoring spec.",
+    },
+    {
         "name": "reverse_bim.level_completeness",
         "title": "ReverseBimLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/level-completeness",

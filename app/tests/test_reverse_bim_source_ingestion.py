@@ -797,6 +797,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert package["packageState"] == "source_packaging_ready"
     assert Path(package["artifacts"]["runSummary"]).exists()
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
+    assert Path(package["artifacts"]["evidenceRequirements"]).exists()
     assert Path(package["artifacts"]["packageAcceptanceReport"]).exists()
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0
 
@@ -1094,6 +1095,33 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["format"] == "reverseBimPhaseRunReport_v1"
     assert resp.json()["ok"] is False
 
+    resp = client.post(
+        "/api/v3/reverse-bim/evidence-requirements",
+        json={
+            "sourcePageIndex": {
+                "pages": [
+                    {
+                        "sourcePageId": "src-plan:p1",
+                        "sourceDocumentId": "src-plan",
+                        "page": 1,
+                        "classification": "floor_plan",
+                    }
+                ]
+            },
+            "facts": [
+                {
+                    "factId": "level-eg",
+                    "kind": "level",
+                    "value": {"levelId": "EG", "name": "EG"},
+                }
+            ],
+            "phaseAuthoringSpec": {"phases": []},
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimEvidenceRequirements_v1"
+    assert resp.json()["summary"]["overlayViewCount"] == 1
+
     folder_output_dir = tmp_path / "folder-output-route"
     resp = client.post(
         "/api/v3/reverse-bim/folder-output",
@@ -1130,6 +1158,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",
         "reverse_bim.phase_run",
+        "reverse_bim.evidence_requirements",
         "reverse_bim.level_completeness",
         "reverse_bim.physical_topology",
         "reverse_bim.source_overlay_evidence",

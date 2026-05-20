@@ -515,8 +515,8 @@ Implementation status:
 
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
-| RBM8-001 | Source underlay import | Partial | Source pages can be imported/aligned as visual underlays. |
-| RBM8-002 | Overlay renderer | Not started | Registered source drawing and model geometry produce comparison images. |
+| RBM8-001 | Source underlay import | Partial | Folder output now emits `mcp-handoff/evidence-requirements.json` with required source overlay views derived from source pages; actual underlay import remains pending. |
+| RBM8-002 | Overlay renderer | Partial | `reverse_bim.evidence_requirements` now declares required overlay views and tolerances; actual registered source/model image rendering remains pending. |
 | RBM8-003 | Overlay deviation metrics | Partial | `reverse_bim.source_overlay_evidence` now enforces required overlay result rows and deviation thresholds; actual model/source rendering comparison still pending. |
 | RBM8-004 | UI screenshot gate | Partial | `reverse_bim.ui_evidence` now requires named screenshot evidence and per-view visual checklist evidence before final acceptance; automated capture still pending. |
 | RBM8-005 | Human-visible failure checklist | Partial | UI evidence now checks structured items for placeholder massing, visible Advisor state, topology, hosted openings, empty levels, stairs, roof/dormers, and site placement. |
@@ -657,6 +657,7 @@ Implemented first-pass surfaces:
 - `reverse_bim.source_material_assemblies`
 - `source.reader_consensus`
 - `reverse_bim.phase_run`
+- `reverse_bim.evidence_requirements`
 
 These enforce the new gates with structured reports. The remaining work is
 automatic source/model overlay rendering, screenshot capture, live phase

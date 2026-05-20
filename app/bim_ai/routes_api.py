@@ -126,6 +126,7 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
+from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
@@ -1678,6 +1679,17 @@ async def reverse_bim_phase_run_route(
     return build_reverse_bim_phase_run_report(
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or body,
         phase_packets=body.get("phasePackets") or body.get("packets"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/evidence-requirements")
+async def reverse_bim_evidence_requirements_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_evidence_requirements(
+        source_page_index=body.get("sourcePageIndex") or body.get("source_page_index"),
+        source_facts=body.get("sourceFacts") or body.get("facts") or body.get("extractedFacts"),
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
     )
 
 
