@@ -164,7 +164,6 @@ import {
   type SnapTabCycleState,
 } from './snapTabCycle';
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
-import { dimensionTextOffsetResetCommand } from './grip-providers/dimensionGripProvider';
 import {
   HALF_MAX,
   HALF_MIN,
@@ -206,7 +205,7 @@ import {
 } from './usePlanCanvasRenderPasses';
 import { usePlanCanvasToolActivation } from './usePlanCanvasToolActivation';
 import { usePlanCanvasViewEffects } from './usePlanCanvasViewEffects';
-import { type TempDimTarget } from './tempDimensions';
+import { usePlanCanvasGripHandlers } from './usePlanCanvasGripHandlers';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
 import { HelperDimsLayer } from './HelperDimsLayer';
@@ -5673,63 +5672,20 @@ export function PlanCanvas({
     closeWallJoinContextMenu,
   });
 
-  // EDT-01 — grip pointer-down: capture starting world position so
-  // onMove can compute a stable delta.
-  const handleGripPointerDown = useCallback(
-    (grip: GripDescriptor, ev: { clientX: number; clientY: number }) => {
-      const renderer = rendererRef.current;
-      const cam = cameraRef.current;
-      if (!renderer || !cam) return;
-      const rw = rayToPlanMm(renderer, cam, ev.clientX, ev.clientY);
-      if (!rw) return;
-      gripDragRef.current = {
-        grip,
-        startWorldMm: rw,
-        lastDeltaMm: { xMm: 0, yMm: 0 },
-      };
-      setActiveGripId(grip.id);
-      setDraftMutation(grip.onDrag({ xMm: 0, yMm: 0 }));
-    },
-    [],
-  );
-
-  const handleGripDoubleClick = useCallback(
-    (grip: GripDescriptor) => {
-      const cmd = dimensionTextOffsetResetCommand(grip.id, elementsById);
-      if (!cmd) return;
-      void onSemanticCommand(cmd);
-    },
-    [elementsById, onSemanticCommand],
-  );
-
-  const handleTempDimClick = useCallback(
-    (target: TempDimTarget) => {
-      void onSemanticCommand(target.onClick());
-    },
-    [onSemanticCommand],
-  );
-
-  const handleTempDimLockClick = useCallback(
-    (target: TempDimTarget) => {
-      // EDT-02 — author a `createConstraint` capturing the current
-      // measured distance between the two walls. The engine rejects any
-      // subsequent move that breaks the lock (error severity).
-      const elementsList = Object.values(elementsById);
-      const existing = findLockedConstraintFor(target.aId, target.bId, elementsList);
-      if (existing) return; // already locked — no-op
-      const cid = `cstr-${crypto.randomUUID().slice(0, 10)}`;
-      void onSemanticCommand({
-        type: 'createConstraint',
-        id: cid,
-        rule: 'equal_distance',
-        refsA: [{ elementId: target.aId, anchor: 'center' }],
-        refsB: [{ elementId: target.bId, anchor: 'center' }],
-        lockedValueMm: target.distanceMm,
-        severity: 'error',
-      });
-    },
-    [elementsById, onSemanticCommand],
-  );
+  const {
+    handleGripDoubleClick,
+    handleGripPointerDown,
+    handleTempDimClick,
+    handleTempDimLockClick,
+  } = usePlanCanvasGripHandlers({
+    rendererRef,
+    cameraRef,
+    gripDragRef,
+    setActiveGripId,
+    setDraftMutation,
+    elementsById,
+    onSemanticCommand,
+  });
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   const plotScaleN = Math.round(halfUi * 2);

@@ -98,6 +98,7 @@ A-territory target:
 | GFR-2026-22 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract tool activation/reset effect into hook                     | PlanCanvas below `6,150` LOC with focused tests green.      |
 | GFR-2026-23 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract view rotation, column overlay, and auto-fit effects        | PlanCanvas below `6,110` LOC with focused tests green.      |
 | GFR-2026-24 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer preview and marquee drawing helpers                | PlanCanvas below `6,050` LOC with focused tests green.      |
+| GFR-2026-25 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract grip and temp-dimension callback handlers                  | PlanCanvas below `6,000` LOC with focused tests green.      |
 
 ## Progress Log
 
@@ -366,4 +367,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   event branching in `PlanCanvas.tsx`. Local `wc -l` reports
   `packages/web/src/plan/PlanCanvas.tsx` at `6,019` lines. Focused PlanCanvas
   overlay/tool tests pass (`29 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-20: `GFR-2026-25` is Done. The slice moved grip pointer-down,
+  grip double-click, temp-dimension click, and temp-dimension lock command
+  handlers into `packages/web/src/plan/usePlanCanvasGripHandlers.ts`. Local
+  `wc -l` reports `packages/web/src/plan/PlanCanvas.tsx` at `5,975` lines.
+  Focused grip/temp-dimension/PlanCanvas tests pass (`48 passed`), and
   `pnpm --filter @bim-ai/web typecheck` passes.
