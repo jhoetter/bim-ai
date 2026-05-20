@@ -13,7 +13,8 @@ evidence only.
 
 ## Current Baseline
 
-Sampled with `pnpm js-lint:budget -- --json` on 2026-05-20:
+Initial retirement baseline sampled with `pnpm js-lint:budget -- --json` on
+2026-05-20:
 
 | Metric         | Current budget |
 | -------------- | -------------- |
@@ -34,17 +35,38 @@ Rule budgets:
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 1              |
 
+Latest ratcheted budget after JSL-2026-02:
+
+| Metric         | Current budget |
+| -------------- | -------------- |
+| Errors         | 223            |
+| Warnings       | 30             |
+| Affected files | 58             |
+| Fatal findings | 0              |
+
+Rule budgets:
+
+| Rule                                 | Current budget |
+| ------------------------------------ | -------------- |
+| `@typescript-eslint/no-explicit-any` | 154            |
+| `@typescript-eslint/no-unused-vars`  | 0              |
+| `bim-ai/no-hex-in-chrome`            | 64             |
+| `react-hooks/exhaustive-deps`        | 30             |
+| `fatal`                              | 0              |
+| `@typescript-eslint/ban-ts-comment`  | 4              |
+| `react/no-danger`                    | 1              |
+
 ## Workpackages
 
-| ID          | Status  | Scope                       | Exit signal                                                                                 |
-| ----------- | ------- | --------------------------- | ------------------------------------------------------------------------------------------- |
-| JSL-2026-01 | Done    | Fatal ESLint findings       | `fatal` budget is `0`.                                                                      |
-| JSL-2026-02 | Partial | Mechanical unused variables | `@typescript-eslint/no-unused-vars` budget trends downward without behavior changes.        |
-| JSL-2026-03 | Open    | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget trends downward through token migration.                   |
-| JSL-2026-04 | Open    | Type escapes                | `@typescript-eslint/no-explicit-any` and type-escape budgets trend downward together.       |
-| JSL-2026-05 | Open    | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget trends downward with semantic review.                  |
-| JSL-2026-06 | Open    | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
-| JSL-2026-07 | Open    | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
+| ID          | Status | Scope                       | Exit signal                                                                                 |
+| ----------- | ------ | --------------------------- | ------------------------------------------------------------------------------------------- |
+| JSL-2026-01 | Done   | Fatal ESLint findings       | `fatal` budget is `0`.                                                                      |
+| JSL-2026-02 | Done   | Mechanical unused variables | `@typescript-eslint/no-unused-vars` budget is `0`.                                          |
+| JSL-2026-03 | Open   | Chrome hex literals         | `bim-ai/no-hex-in-chrome` budget trends downward through token migration.                   |
+| JSL-2026-04 | Open   | Type escapes                | `@typescript-eslint/no-explicit-any` and type-escape budgets trend downward together.       |
+| JSL-2026-05 | Open   | Hook dependency warnings    | `react-hooks/exhaustive-deps` budget trends downward with semantic review.                  |
+| JSL-2026-06 | Open   | TS comments and unsafe HTML | `ban-ts-comment`, `react/no-danger`, and related security waivers are removed or isolated.  |
+| JSL-2026-07 | Open   | Full gate retirement        | `pnpm lint` is green, `CQW-2026-001` is removed, and strict verification runs full JS lint. |
 
 ## Execution Rules
 
@@ -76,3 +98,7 @@ Rule budgets:
   plan/workspace orchestration modules. The lint budget moved to `223` errors /
   `80` warnings / `66` files; `@typescript-eslint/no-unused-vars` moved from
   `82` to `50`.
+- 2026-05-20: finished the mechanical unused-variable cleanup across
+  `PlanCanvas`, `Viewport`, inspector/workspace components, IFC export helpers,
+  and focused tests. The lint budget moved to `223` errors / `30` warnings /
+  `58` files; `@typescript-eslint/no-unused-vars` moved from `50` to `0`.

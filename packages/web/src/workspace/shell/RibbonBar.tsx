@@ -1806,7 +1806,7 @@ function buildSheetRibbonTabs(selectedElementKind?: string | null): RibbonTab[] 
   return tabs;
 }
 
-function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+function buildScheduleRibbonTabs(_selectedElementKind?: string | null): RibbonTab[] {
   const tabs: RibbonTab[] = [
     {
       id: 'view',
@@ -2227,10 +2227,6 @@ function ribbonModeIdentity(mode: ToolWorkspaceMode): { label: string; icon: Ico
 
 function tool(id: ToolId, label: string, icon: IconName, testId?: string): RibbonCommand {
   return { type: 'tool', id, label, icon, testId };
-}
-
-function mode(id: WorkspaceMode, label: string, icon: IconName, testId?: string): RibbonCommand {
-  return { type: 'mode', id, label, icon, testId };
 }
 
 function action(id: RibbonActionId, label: string, icon: IconName, testId?: string): RibbonCommand {

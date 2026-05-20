@@ -58,7 +58,6 @@ export function WallInspectorSection(args: any): JSX.Element {
     el,
     t,
     options,
-    elementsById,
     onDisciplineChange,
     onEditType,
     onOpenMaterialBrowser,

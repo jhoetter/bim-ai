@@ -33,21 +33,8 @@ function makeFloor(overrides: Partial<FloorElem> = {}): FloorElem {
   };
 }
 
-function topFaceYValues(mesh: THREE.Mesh): number[] {
-  const pos = mesh.geometry.attributes.position as THREE.BufferAttribute;
-  const th = 0.2; // 200mm / 1000
-  const ys: number[] = [];
-  for (let i = 0; i < pos.count; i++) {
-    // Before slope: top-face vertices sit at y ≈ th; collect all y values
-    // from the buffer to check uniformity or offset.
-    ys.push(pos.getY(i));
-  }
-  return ys;
-}
-
 function topFaceYAt(mesh: THREE.Mesh, worldX: number, worldZ: number): number | null {
   const pos = mesh.geometry.attributes.position as THREE.BufferAttribute;
-  const th = 0.2;
   let found: number | null = null;
   for (let i = 0; i < pos.count; i++) {
     const vx = pos.getX(i);

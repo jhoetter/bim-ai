@@ -4,8 +4,6 @@ import {
   setDoorTagOnPlace,
   windowSillHeightMm,
   setWindowSillHeightMm,
-  windowTagOnPlace,
-  setWindowTagOnPlace,
   gridSpacingMm,
   setGridSpacingMm,
   gridNamePrefix,

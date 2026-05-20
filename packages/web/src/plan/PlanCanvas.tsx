@@ -142,18 +142,12 @@ import {
   type SnapHit,
   type SnapKind,
 } from './snapEngine';
-import { PlanCamera, SnapEngine } from './planCanvasState';
+import { SnapEngine } from './planCanvasState';
 import { SnapGlyphLayer } from './SnapGlyphLayer';
 import { loadSnapSettings, type SnapSettings, type ToggleableSnapKind } from './snapSettings';
 import { bumpSnapTabCycle, initialSnapTabCycle, type SnapTabCycleState } from './snapTabCycle';
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
-import {
-  HALF_MAX,
-  HALF_MIN,
-  SLICE_Y,
-  orthoExtents,
-  rayToPlanMm,
-} from './interaction/planCameraMath';
+import { SLICE_Y, orthoExtents, rayToPlanMm } from './interaction/planCameraMath';
 import {
   resolveSnapOverrideShortcut,
   type SnapOverrideKeyState,
@@ -211,23 +205,16 @@ import {
   resolvePlanGraphicHints,
   resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
-  type PlanSemanticKind,
 } from './planProjection';
 import { type CropBounds, type CropHandleId } from './cropRegionDragHandles';
 import { findAreaPlacementBoundary } from './areaPlacement';
 import {
   dxfViewOverrideKey,
-  isDxfLinkVisibleInView,
-  makeDxfLinkTransform,
-  isDxfLayerHidden,
   queryDxfPrimitiveAtPoint,
-  resolveDxfPrimitiveColor,
-  resolveDxfUnderlayStyle,
   selectDxfUnderlaysForLevel,
   type DxfPrimitiveQueryHit,
 } from './dxfUnderlay';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
-import { createSimilarPayload } from './createSimilar';
 import { type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { moveDeltaMm } from './moveTool';
 import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
@@ -400,8 +387,7 @@ export function PlanCanvas({
   const [arrayPhase, setArrayPhase] = useState<ArrayState['phase']>('idle');
   const placeGroupStateRef = useRef<PlaceGroupState>(initialPlaceGroupState());
   const roofByExtrusionStateRef = useRef<RoofByExtrusionState>(initialRoofByExtrusionState());
-  const [roofByExtrusionPhase, setRoofByExtrusionPhase] =
-    useState<RoofByExtrusionState['phase']>('idle');
+  const [, setRoofByExtrusionPhase] = useState<RoofByExtrusionState['phase']>('idle');
   const revisionCloudStateRef = useRef<RevisionCloudState>(initialRevisionCloudState());
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const splitWallStateRef = useRef<SplitWallState>(initialSplitWallState());
@@ -572,11 +558,6 @@ export function PlanCanvas({
   const [wallDraftNotice, setWallDraftNotice] = useState<string | null>(null);
   const [wallPickLineHint, setWallPickLineHint] = useState<PickedWallLine | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  // D8 - Color fill scheme: user-selected category and color overrides.
-  const [colorFillScheme, setColorFillScheme] = useState<{
-    category: string;
-    colorMap: Record<string, string>;
-  } | null>(null);
   // §13.1.3 — color fill legend panel visibility toggle.
   const [legendVisible, setLegendVisible] = useState(false);
   const [pendingPlanRegion, setPendingPlanRegion] = useState<{
@@ -783,15 +764,16 @@ export function PlanCanvas({
     activeLevelResolvedId,
   });
 
-  const { selectedWall, selectedElement, gripDescriptors, tempDimTargets } =
-    usePlanCanvasSelectionState({ selectedId, elementsById });
+  const { selectedWall, gripDescriptors, tempDimTargets } = usePlanCanvasSelectionState({
+    selectedId,
+    elementsById,
+  });
 
-  const { roomsOnLevel, activePlanViewColorScheme, colorSchemeLegendRows, colorSchemeLegendTitle } =
-    usePlanCanvasColorSchemeState({
-      elementsById,
-      activePlanViewId,
-      levelId: lvlId,
-    });
+  const { colorSchemeLegendRows, colorSchemeLegendTitle } = usePlanCanvasColorSchemeState({
+    elementsById,
+    activePlanViewId,
+    levelId: lvlId,
+  });
 
   usePlanProjectionWireSync({
     modelId,
@@ -992,7 +974,6 @@ export function PlanCanvas({
       activeAreaPlanContext,
       areaSnapPoint,
       commitAreaBoundary,
-      dxfHitAt,
       pickedWallLineAt,
       wallPickToleranceMm,
     } = createPlanCanvasPickHelpers({

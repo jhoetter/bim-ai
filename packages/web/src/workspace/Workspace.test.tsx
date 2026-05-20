@@ -225,8 +225,8 @@ describe('<Workspace /> — smoke', () => {
 
   it('keeps project, mode navigation, and authoring shortcuts out of the workspace header', () => {
     const rendered = renderWithProviders(<Workspace />);
-    const { getByTestId, queryByTestId } = rendered;
-    const header = within(getByTestId('workspace-header'));
+    const { queryByTestId } = rendered;
+    const header = within(rendered.getByTestId('workspace-header'));
 
     expect(queryByTestId('topbar-project-name')).toBeNull();
     expect(queryByTestId('topbar-measure-shortcut')).toBeNull();
@@ -243,11 +243,11 @@ describe('<Workspace /> — smoke', () => {
   it('owns discipline lens in the pane view header while the secondary sidebar is open', () => {
     seedTabs('plan');
     const rendered = renderWithProviders(<Workspace />);
-    const { getByTestId, queryByTestId } = rendered;
-    const primary = within(getByTestId('app-shell-primary-sidebar'));
+    const { queryByTestId } = rendered;
+    const primary = within(rendered.getByTestId('app-shell-primary-sidebar'));
     const viewHeader = within(paneViewHeader(rendered));
     const ribbon = within(paneRibbon(rendered));
-    const statusBar = getByTestId('status-bar');
+    const statusBar = rendered.getByTestId('status-bar');
     const footer = within(statusBar);
 
     expect(primary.queryByTestId('primary-lens-filter')).toBeNull();
@@ -705,13 +705,13 @@ describe('<Workspace /> — smoke', () => {
     });
 
     const rendered = renderWithProviders(<Workspace />);
-    const { getByTestId, queryByTestId } = rendered;
+    const { queryByTestId } = rendered;
 
-    fireEvent.click(getByTestId(`left-rail-row-${viewpoint.id}`));
+    fireEvent.click(rendered.getByTestId(`left-rail-row-${viewpoint.id}`));
 
     expect(queryByTestId('stub-plan-canvas')).toBeNull();
-    expect(getByTestId('stub-viewport')).toBeTruthy();
-    expect(getByTestId('redesign-canvas-root').textContent).toContain('3D · 3D B');
+    expect(rendered.getByTestId('stub-viewport')).toBeTruthy();
+    expect(rendered.getByTestId('redesign-canvas-root').textContent).toContain('3D · 3D B');
     expect(useBimStore.getState().activeViewpointId).toBe(viewpoint.id);
   });
 
@@ -851,7 +851,7 @@ describe('<Workspace /> — smoke', () => {
     seedSplitPaneLayout('plan:pv-a', 'sheet:sheet-b');
 
     const rendered = renderWithProviders(<Workspace />);
-    const { getByTestId, queryByTestId } = rendered;
+    const { queryByTestId } = rendered;
     const rightPane = within(paneSecondary(rendered, 'pane-right'));
     const leftPane = within(paneSecondary(rendered, 'pane-left'));
     const leftViewHeader = within(paneViewHeader(rendered, 'pane-left'));
@@ -1217,7 +1217,7 @@ describe('<Workspace /> — smoke', () => {
 
   it('keeps sheet review controls in the ribbon and out of canvas chrome — UX-CAN-023', () => {
     seedTabs('sheet');
-    const { getByTestId, queryByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
 
     expect(queryByTestId('sheet-review-toolbar')).toBeNull();
 

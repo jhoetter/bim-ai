@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
-import type { CsgRequest, CsgResponse } from './viewport/csgWorker';
+import type { CsgResponse } from './viewport/csgWorker';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -145,7 +145,6 @@ import {
   sectionBoxFaceAxisKey,
   sectionBoxFaceAxisNormal,
   updateSectionBoxHandles,
-  type ViewerEdgeWidth,
   type ViewerGdoRuntimeState,
 } from './viewport/ViewportRuntimeHelpers';
 import {
@@ -242,10 +241,6 @@ type Props = {
   viewOverlayRightInset?: string;
 };
 
-type DoorElem = Extract<Element, { kind: 'door' }>;
-type WindowElem = Extract<Element, { kind: 'window' }>;
-type WallOpeningElem = Extract<Element, { kind: 'wall_opening' }>;
-
 export function Viewport({
   wsConnected,
   onSemanticCommand,
@@ -274,10 +269,7 @@ export function Viewport({
   const osmContextGroupRef = useRef<THREE.Group | null>(null);
   const groupInstanceGroupRef = useRef<THREE.Group | null>(null);
   const osmVisible = useBimStore((s) => s.osmVisible);
-  const setOsmVisible = useBimStore((s) => s.setOsmVisible);
   const osmLayerHidden = useBimStore((s) => s.osmLayerHidden);
-  const toggleOsmLayer = useBimStore((s) => s.toggleOsmLayer);
-  const osmStatus = useBimStore((s) => s.osmStatus);
   const setOsmStatus = useBimStore((s) => s.setOsmStatus);
   const clearWallDraftPreviewGroup = useCallback(() => {
     const group = wallDraftPreviewGroupRef.current;
@@ -534,7 +526,6 @@ export function Viewport({
   const skyBackground = useBimStore((s) => s.skyBackground);
   const skyBackgroundColor = useBimStore((s) => s.skyBackgroundColor);
   const renderQuality = useBimStore((s) => s.renderQuality);
-  const setRenderQuality = useBimStore((s) => s.setRenderQuality);
   const viewerGdoRuntime = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);

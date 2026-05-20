@@ -407,7 +407,7 @@ function ProjectImageAssetSelect({
 function MaterialMetadataPanel({
   material,
   activeTab,
-  mode,
+  mode: _mode,
   elementsById,
   onPatch,
 }: {

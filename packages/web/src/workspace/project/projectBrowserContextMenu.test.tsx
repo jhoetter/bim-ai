@@ -26,18 +26,6 @@ const viewpointEl: Element = {
   mode: 'orbit_3d',
 };
 
-const viewpointEl2: Element = {
-  kind: 'viewpoint',
-  id: 'vp-ctx-02',
-  name: 'Side View',
-  camera: {
-    position: { xMm: 5000, yMm: 0, zMm: 5000 },
-    target: { xMm: 0, yMm: 0, zMm: 0 },
-    up: { xMm: 0, yMm: 1, zMm: 0 },
-  },
-  mode: 'orbit_3d',
-};
-
 function makeProps(elements: Element[] = [viewpointEl]) {
   return {
     elements,
@@ -113,7 +101,7 @@ describe('ProjectBrowser context menu — §1.6.11', () => {
   });
 
   it('context menu closes when clicking away (onClick on container)', () => {
-    const { container, getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...makeProps()} />);
+    const { container, queryByTestId } = render(<ProjectBrowserV3 {...makeProps()} />);
     const btn = getViewButton(container, 'vp-ctx-01');
     fireEvent.contextMenu(btn, { clientX: 50, clientY: 50 });
     expect(queryByTestId('pb-context-menu')).not.toBeNull();

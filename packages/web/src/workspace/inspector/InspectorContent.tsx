@@ -10,10 +10,8 @@ import {
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
 import { roomAreaM2, roomNetAreaM2 } from '../../plan/roomArea';
-import { topLayerIndex } from '../../viewport/hostMaterialLayerTargets';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
-import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 import { FamilyInspectorSection } from './familyInspectorSections';
@@ -22,10 +20,7 @@ import {
   GenericMaterialAssignmentFor,
   MaterialAssignmentRow,
   MaterialSlotsSection,
-  faceMaterialOverrideLabel,
   roofTypeTopMaterialKey,
-  wallTypeExteriorMaterialKey,
-  type MaterialBrowserTargetRequest,
   type OpenMaterialBrowser,
 } from './materialInspectorSections';
 import { ShaftSideWallsButton } from './shaftInspectorSections';
@@ -52,11 +47,9 @@ import {
   PermanentDimensionInspectorSection,
   RadialDimensionInspectorSection,
 } from './dimensionInspectorSections';
-import { FamilyTypeParameterTable, TypeLayerSummary, TypeTextInput } from './typeInspectorSections';
+import { FamilyTypeParameterTable, TypeTextInput } from './typeInspectorSections';
 import { MonitorSourceRows } from './monitorSourceRows';
 import { PhaseSection } from './phaseInspectorSection';
-import { FloorNewTypeRow } from './floorTypeInspectorSections';
-import { WallPartsPanel } from './wallPartsPanel';
 import { FloorInspectorSection, WallInspectorSection } from './wallFloorInspectorSections';
 
 export type { MaterialBrowserTargetRequest } from './materialInspectorSections';

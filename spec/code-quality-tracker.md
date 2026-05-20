@@ -375,6 +375,10 @@ CI chooses one canonical quality gate.
 - 2026-05-20: removed stale destructured orchestration arguments from extracted
   plan/workspace modules; `pnpm js-lint:budget` is now ratcheted to `223`
   errors / `80` warnings / `66` files.
+- 2026-05-20: completed the mechanical unused-variable lint slice across
+  plan, viewport, workspace, inspector, IFC export, and focused test files;
+  `pnpm js-lint:budget` is now ratcheted to `223` errors / `30` warnings /
+  `58` files, with `@typescript-eslint/no-unused-vars` locked at `0`.
 
 ---
 
