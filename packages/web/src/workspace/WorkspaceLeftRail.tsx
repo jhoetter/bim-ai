@@ -298,7 +298,6 @@ export function WorkspaceLeftRail({
       onOpenProjectSettings,
       onOpenSavedView,
       openTabFromElement,
-      selectedId,
       select,
       setActiveViewpointId,
       setOrbitCameraFromViewpointMm,

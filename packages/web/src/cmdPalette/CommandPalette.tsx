@@ -83,7 +83,7 @@ export function CommandPalette({
       map[id] = getRecencyScore(id, paletteRecencyScopeForCommand(id, context), now);
     }
     return map;
-  }, [context, invocations, getRecencyScore]);
+  }, [context, getRecencyScore]);
 
   const results = useMemo(
     () => queryPalette(query, context, recencyMap),

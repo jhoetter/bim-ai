@@ -40,8 +40,8 @@ Latest ratcheted budget after JSL-2026-03:
 | Metric         | Current budget |
 | -------------- | -------------- |
 | Errors         | 4              |
-| Warnings       | 30             |
-| Affected files | 8              |
+| Warnings       | 21             |
+| Affected files | 6              |
 | Fatal findings | 0              |
 
 Rule budgets:
@@ -51,7 +51,7 @@ Rule budgets:
 | `@typescript-eslint/no-explicit-any` | 0              |
 | `@typescript-eslint/no-unused-vars`  | 0              |
 | `bim-ai/no-hex-in-chrome`            | 0              |
-| `react-hooks/exhaustive-deps`        | 30             |
+| `react-hooks/exhaustive-deps`        | 21             |
 | `fatal`                              | 0              |
 | `@typescript-eslint/ban-ts-comment`  | 4              |
 | `react/no-danger`                    | 0              |
@@ -140,3 +140,7 @@ Rule budgets:
   `8` files; `react/no-danger` moved from `1` to `0`. The four remaining
   errors are `@ts-nocheck` headers that currently guard pre-existing type debt
   in large extracted modules.
+- 2026-05-20: removed unnecessary hook dependencies in command palette and
+  workspace left rail, then added stable ref dependencies to small viewport
+  effects. The lint budget moved to `4` errors / `21` warnings / `6` files;
+  `react-hooks/exhaustive-deps` moved from `30` to `21`.

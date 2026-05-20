@@ -190,7 +190,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
   useEffect(() => {
     if (!orbitCameraPoseMm) return;
     orbitRigApiRef.current?.applyViewpointMm(orbitCameraPoseMm);
-  }, [orbitCameraNonce, orbitCameraPoseMm]);
+  }, [orbitCameraNonce, orbitCameraPoseMm, orbitRigApiRef]);
 
   useEffect(() => {
     const cam = orthoMode ? (orthoCameraRef.current ?? cameraRef.current!) : cameraRef.current!;
@@ -1096,7 +1096,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
   useEffect(() => {
     const group = osmContextGroupRef.current;
     if (group) group.visible = osmVisible;
-  }, [osmVisible]);
+  }, [osmContextGroupRef, osmVisible]);
 
   // Sync osmLayerHidden store state → individual sub-group visibility.
   useEffect(() => {
@@ -1106,7 +1106,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       const layer = child.userData.osmLayer as string | undefined;
       if (layer) child.visible = !osmLayerHidden[layer as keyof typeof osmLayerHidden];
     });
-  }, [osmLayerHidden]);
+  }, [osmContextGroupRef, osmLayerHidden]);
 
   // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity) ──
   useEffect(() => {
@@ -1188,14 +1188,14 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       ? THREE.VSMShadowMap
       : THREE.PCFSoftShadowMap;
     renderer.shadowMap.needsUpdate = true;
-  }, [viewerRenderStyle]);
+  }, [isRasterHighFidelityRenderStyle, rendererRef, viewerRenderStyle]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = Math.pow(2, viewerPhotographicExposureEv);
-  }, [viewerPhotographicExposureEv]);
+  }, [rendererRef, viewerPhotographicExposureEv]);
 
   // ── F-113 + §14.4: background colour / sky environment ───────────────────
   useEffect(() => {
@@ -1308,7 +1308,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     ssao.enabled =
       viewerAmbientOcclusionEnabled && !reducedMotion && viewerRenderStyle !== 'hidden-line';
-  }, [viewerAmbientOcclusionEnabled, viewerRenderStyle]);
+  }, [ssaoPassRef, viewerAmbientOcclusionEnabled, viewerRenderStyle]);
 
   useEffect(() => {
     const root = rootGroupRef.current;
@@ -1621,7 +1621,7 @@ export function useViewportSceneEffects(args: Record<string, unknown>): void {
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {
     sectionBoxRef.current?.setActive(sectionBoxActive);
-  }, [sectionBoxActive]);
+  }, [sectionBoxActive, sectionBoxRef]);
 
   // Walk mode activation: seed position from orbit camera, request pointer lock, switch FOV.
   useEffect(() => {

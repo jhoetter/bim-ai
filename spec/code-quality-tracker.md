@@ -408,6 +408,9 @@ js-lint:budget` is now ratcheted to `4` errors / `30` warnings / `8` files,
   with `react/no-danger` locked at `0`. The remaining JS lint errors are the
   four `@ts-nocheck` headers guarding pre-existing type debt in large extracted
   modules.
+- 2026-05-20: trimmed the first hook dependency slice; `pnpm js-lint:budget` is
+  now ratcheted to `4` errors / `21` warnings / `6` files, with
+  `react-hooks/exhaustive-deps` down to `21`.
 
 ---
 
