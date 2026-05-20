@@ -18,6 +18,8 @@ Target modules:
 
 - `plan/planCanvasHelpers.tsx`: token lookup, placement preview glyphs, draft
   shape typing, and small plan formatting helpers.
+- `plan/PlanCanvasToolOverlays.tsx`: transient tool chips, guide SVGs, numeric
+  input, snap override, and scale instruction overlays.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -41,6 +43,7 @@ First landed slices:
 - `plan/marqueeSelectionPreview.ts`
 - `plan/planTextSprites.ts`
 - `plan/PlanCanvasReadouts.tsx`
+- `plan/PlanCanvasToolOverlays.tsx`
 
 ## InspectorContent.tsx
 

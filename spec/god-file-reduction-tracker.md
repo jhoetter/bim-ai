@@ -74,7 +74,7 @@ A-territory target:
 | ID          | Priority | Status | File                                                        | Target slice                                                       | Exit signal                                               |
 | ----------- | -------- | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
 | GFR-2026-01 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.   |
-| GFR-2026-02 | P0       | Open   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
+| GFR-2026-02 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.     |
 | GFR-2026-03 | P1       | Open   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing. |
 | GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.       |
 | GFR-2026-05 | P1       | Open   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.   |
@@ -129,3 +129,10 @@ A-territory target:
   `pnpm --filter @bim-ai/web typecheck` pass. The generated scorecard can be
   rerun after the unrelated parallel deletion of
   `packages/web/src/plan/ImageTraceDropZone.tsx` is resolved.
+- 2026-05-20: `GFR-2026-02` moved to Partial. The first PlanCanvas slice moved
+  transient tool chips, guide SVGs, numeric input, snap override, and scale
+  instruction overlays into `packages/web/src/plan/PlanCanvasToolOverlays.tsx`
+  with focused component coverage in `PlanCanvasToolOverlays.test.tsx`.
+- 2026-05-20: `GFR-2026-02` is Done. Local `wc -l` reports
+  `PlanCanvas.tsx` at `8,468` lines, below the `8,500` target. The focused
+  overlay test and `pnpm --filter @bim-ai/web typecheck` pass.

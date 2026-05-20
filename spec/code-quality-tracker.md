@@ -542,6 +542,10 @@ impact of small changes.
   into `workspace/inspector/viewReferenceInspectorSections.tsx`.
 - 2026-05-20: the `GFR-2026-01` closeout brought `InspectorContent.tsx` below
   the local `6,000` LOC target at `5,996` lines.
+- 2026-05-20: `GFR-2026-02` started by moving PlanCanvas transient tool overlays
+  into `plan/PlanCanvasToolOverlays.tsx`.
+- 2026-05-20: the same PlanCanvas overlay extraction brought `PlanCanvas.tsx`
+  below the `8,500` local LOC target at `8,468` lines.
 
 ---
 
