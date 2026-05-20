@@ -11,7 +11,7 @@ import {
   type WallFaceRadialCommand,
   type WallFaceRadialMenuOpen,
 } from './wallFaceRadialMenu';
-import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
+import { WallContextMenu, type WallContextMenuCommand } from './WallContextMenu';
 
 export type ScreenPoint = { x: number; y: number };
 export type Direct3dAuthoringTool =

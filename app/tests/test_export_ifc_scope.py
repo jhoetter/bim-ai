@@ -3,8 +3,8 @@ from __future__ import annotations
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem
 from bim_ai.export_ifc_scope import (
-    ifc_semantic_mapping_scope_v1,
     ifc_product_is_kernel_slice_supported,
+    ifc_semantic_mapping_scope_v1,
     import_scope_unsupported_ifc_products_v0,
     levels_from_document_sketch,
     storeys_sketch_from_ifc_model,

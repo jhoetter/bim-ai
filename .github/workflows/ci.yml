@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v6.0.2
 
       - uses: pnpm/action-setup@v6.0.6
+        with:
+          version: 9.15.4
 
       - uses: actions/setup-node@v6.4.0
         with:
@@ -75,9 +77,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      # packageManager field in repo root package.json selects the pnpm version (do not duplicate here).
-
       - uses: pnpm/action-setup@v6.0.6
+        with:
+          version: 9.15.4
 
       - uses: actions/setup-node@v6.4.0
         with:

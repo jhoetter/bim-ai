@@ -1,6 +1,6 @@
 import { useCallback, type MutableRefObject } from 'react';
 
-import type { WallContextMenuCommand } from '../workspace/viewport';
+import type { WallContextMenuCommand } from './WallContextMenu';
 import type { WallFaceRadialCommand } from './wallFaceRadialMenu';
 
 type SemanticCommandDispatcher = (cmd: Record<string, unknown>) => void;

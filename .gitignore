@@ -29,6 +29,10 @@ app/data/
 # Generated/local seed artifacts are not committed by default. Promote a seed
 # package deliberately by force-adding a reviewed, portable artifact.
 seed-artifacts/target-house-*/
+!seed-artifacts/target-house-1/
+!seed-artifacts/target-house-1/evidence/
+!seed-artifacts/target-house-1/evidence/phase-p1-p7-all/
+!seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json
 .entire/*
 !.entire/settings.json
 .superset/

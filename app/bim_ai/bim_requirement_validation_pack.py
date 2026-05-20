@@ -675,7 +675,7 @@ def _ids_rows_from_document(doc: Document) -> list[dict[str, Any]]:
         if getattr(elem, "ifc_classification_code", None):
             classifications = [
                 *classifications,
-                {"system": "Uniclass", "value": getattr(elem, "ifc_classification_code")},
+                {"system": "Uniclass", "value": elem.ifc_classification_code},
             ]
         materials = _string_list(
             props.get("materials")
@@ -685,9 +685,7 @@ def _ids_rows_from_document(doc: Document) -> list[dict[str, Any]]:
         )
         properties: dict[str, Any] = dict(props)
         if getattr(elem, "fire_resistance_rating", None):
-            properties.setdefault("Pset_WallCommon", {})["FireRating"] = getattr(
-                elem, "fire_resistance_rating"
-            )
+            properties.setdefault("Pset_WallCommon", {})["FireRating"] = elem.fire_resistance_rating
         part_of = props.get("partOf", [])
         level_id = getattr(elem, "level_id", None)
         if level_id:
