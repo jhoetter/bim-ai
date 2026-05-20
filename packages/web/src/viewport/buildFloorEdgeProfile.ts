@@ -16,7 +16,7 @@ export function buildFloorEdgeProfileMesh(
   thicknessMm: number,
   posY: number,
 ): THREE.Group | null {
-  const profile = (floor as any).edgeProfileMm as Pt2D[] | undefined;
+  const profile = floor.edgeProfileMm;
   if (!profile || profile.length < 2) return null;
 
   const boundary = floor.boundaryMm ?? [];

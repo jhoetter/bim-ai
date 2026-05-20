@@ -658,7 +658,7 @@ export function makeFloorSlabMesh(
   }
 
   // §3.4.2: sub-floor structural pad beneath the slab
-  const subThickMm = (floor as any).subFloorThicknessMm ?? 0;
+  const subThickMm = floor.subFloorThicknessMm ?? 0;
   if (subThickMm > 0) {
     const subTh = subThickMm / 1000;
     const subGeom = new THREE.ExtrudeGeometry(shape, { depth: subTh, bevelEnabled: false });

@@ -1,8 +1,12 @@
 import type { Element } from '@bim-ai/core';
 
+type StairRunElement = Extract<Element, { kind: 'stair_run' }>;
+type StairLandingElement = Extract<Element, { kind: 'stair_landing' }>;
+type StairComponentWithLegacyParent<T> = T & { parentStairId?: string };
+
 export interface StairComponentSummary {
-  runs: Array<Extract<Element, { kind: 'stair_run' }>>;
-  landings: Array<Extract<Element, { kind: 'stair_landing' }>>;
+  runs: StairRunElement[];
+  landings: StairLandingElement[];
 }
 
 /**
@@ -12,21 +16,17 @@ export function getStairComponents(
   stairId: string,
   elementsById: Record<string, Element>,
 ): StairComponentSummary {
-  const runs: Array<Extract<Element, { kind: 'stair_run' }>> = [];
-  const landings: Array<Extract<Element, { kind: 'stair_landing' }>> = [];
+  const runs: StairRunElement[] = [];
+  const landings: StairLandingElement[] = [];
 
   for (const el of Object.values(elementsById)) {
-    if (
-      el.kind === 'stair_run' &&
-      ((el as any).stairId === stairId || (el as any).parentStairId === stairId)
-    ) {
-      runs.push(el as any);
+    if (el.kind === 'stair_run') {
+      const run = el as StairComponentWithLegacyParent<StairRunElement>;
+      if (run.stairId === stairId || run.parentStairId === stairId) runs.push(el);
     }
-    if (
-      el.kind === 'stair_landing' &&
-      ((el as any).stairId === stairId || (el as any).parentStairId === stairId)
-    ) {
-      landings.push(el as any);
+    if (el.kind === 'stair_landing') {
+      const landing = el as StairComponentWithLegacyParent<StairLandingElement>;
+      if (landing.stairId === stairId || landing.parentStairId === stairId) landings.push(el);
     }
   }
 

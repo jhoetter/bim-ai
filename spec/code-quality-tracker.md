@@ -911,6 +911,10 @@ find packages/web/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
   removed the family inspector casts from `InspectorContent.tsx`, reducing the
   top hotspot while preserving the family editor controls behind typed element
   branches.
+- 2026-05-20: replaced broad casts in focused helper/exporter files with
+  discriminated element types or typed legacy intersections. The generated
+  scorecard now reports `21` non-test frontend hotspot files / `137` total
+  matches, down from `29` files / `179` matches.
 - 2026-05-20: this remains Partial until the top hotspot files are reduced with
   type guards, discriminated-union helpers, or core type exports.
 

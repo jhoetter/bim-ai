@@ -1,6 +1,11 @@
 import type { Element } from '@bim-ai/core';
 
 type PointMm = { xMm: number; yMm: number };
+type WallElement = Extract<Element, { kind: 'wall' }>;
+type WallWithLegacyEndpoints = WallElement & {
+  startMm?: PointMm;
+  endMm?: PointMm;
+};
 
 /**
  * Detects the floor boundary by finding wall elements on the active level
@@ -14,7 +19,8 @@ export function detectFloorBoundaryFromWalls(
   activeLevelId: string | null,
 ): PointMm[] | null {
   const walls = Object.values(elementsById).filter(
-    (el) => el?.kind === 'wall' && (activeLevelId == null || (el as any).levelId === activeLevelId),
+    (el): el is WallElement =>
+      el?.kind === 'wall' && (activeLevelId == null || el.levelId === activeLevelId),
   );
 
   if (walls.length === 0) return null;
@@ -22,12 +28,12 @@ export function detectFloorBoundaryFromWalls(
   // Collect all wall endpoints
   const pts: PointMm[] = [];
   for (const wall of walls) {
-    const w = wall as any;
-    if (w.startMm) pts.push(w.startMm);
-    if (w.endMm) pts.push(w.endMm);
+    const legacyWall = wall as WallWithLegacyEndpoints;
+    if (legacyWall.startMm) pts.push(legacyWall.startMm);
+    if (legacyWall.endMm) pts.push(legacyWall.endMm);
     // Also support the start/end shape used by the wall element
-    if (w.start) pts.push(w.start);
-    if (w.end) pts.push(w.end);
+    if (wall.start) pts.push(wall.start);
+    if (wall.end) pts.push(wall.end);
   }
 
   if (pts.length < 3) return null;

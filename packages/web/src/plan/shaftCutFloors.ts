@@ -25,13 +25,12 @@ export function computeShaftCutFloors(
   return Object.values(elementsById)
     .filter((el): el is Extract<Element, { kind: 'floor' }> => {
       if (!el || el.kind !== 'floor') return false;
-      const floor = el as Extract<Element, { kind: 'floor' }>;
-      const floorLevel = levels.find((l) => l.id === (floor as any).levelId);
+      const floorLevel = levels.find((l) => l.id === el.levelId);
       const floorElev = floorLevel?.elevationMm ?? 0;
       // Floor must be within the shaft's vertical extent
       if (floorElev < baseElev || floorElev > topElev) return false;
       // Check if floor boundary overlaps shaft perimeter (simple centroid check)
-      const floorPerim: PointMm[] = (floor as any).boundaryMm ?? [];
+      const floorPerim: PointMm[] = el.boundaryMm ?? [];
       if (floorPerim.length === 0) return false;
       const cx = floorPerim.reduce((s, p) => s + p.xMm, 0) / floorPerim.length;
       const cy = floorPerim.reduce((s, p) => s + p.yMm, 0) / floorPerim.length;

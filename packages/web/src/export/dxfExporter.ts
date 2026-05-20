@@ -1,5 +1,23 @@
 import type { Element } from '@bim-ai/core';
 
+type PointMm = { xMm: number; yMm: number };
+type ProjectSettingsWithDxf = Extract<Element, { kind: 'project_settings' }> & {
+  dxfLayerMapping?: Record<string, string>;
+};
+type ColumnForDxf = Extract<Element, { kind: 'column' }> & {
+  widthMm?: number;
+  depthMm?: number;
+};
+type FloorForDxf = Extract<Element, { kind: 'floor' }> & {
+  perimeterMm?: PointMm[];
+};
+type StairForDxf = Extract<Element, { kind: 'stair' }> & {
+  levelId?: string;
+  startMm?: PointMm;
+  endMm?: PointMm;
+  runWidthMm?: number;
+};
+
 export interface DxfExportOptions {
   levelId?: string;
   units?: 'mm' | 'm';
@@ -218,7 +236,7 @@ export function exportToDxf(
     (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
   );
   const layerMapping: Record<string, string> | undefined =
-    opts?.layerMapping ?? (projectSettings as any)?.dxfLayerMapping;
+    opts?.layerMapping ?? (projectSettings as ProjectSettingsWithDxf | undefined)?.dxfLayerMapping;
 
   const elements = Object.values(elementsById);
   const levels = elements.filter(
@@ -379,11 +397,12 @@ function buildPlanView(
       emit('A-ANNO', dxfText('A-ANNO', x, y, el.fontSizeMm * scale, el.text));
     }
 
-    if (el.kind === 'column' && (el as any).levelId === level.id) {
-      const cx = (el as any).positionMm?.xMm ?? 0;
-      const cy = (el as any).positionMm?.yMm ?? 0;
-      const hw = ((el as any).widthMm ?? 300) / 2;
-      const hd = ((el as any).depthMm ?? 300) / 2;
+    if (el.kind === 'column' && el.levelId === level.id) {
+      const column = el as ColumnForDxf;
+      const cx = column.positionMm.xMm;
+      const cy = column.positionMm.yMm;
+      const hw = (column.widthMm ?? column.bMm ?? 300) / 2;
+      const hd = (column.depthMm ?? column.hMm ?? 300) / 2;
       const pts: [number, number][] = [
         [(cx - hw) * scale, (cy - hd) * scale],
         [(cx + hw) * scale, (cy - hd) * scale],
@@ -394,28 +413,31 @@ function buildPlanView(
       emit(colsLn, dxfPolyline(colsLn, pts, true));
     }
 
-    if (el.kind === 'beam' && (el as any).levelId === level.id) {
-      const sx = (el as any).startMm?.xMm ?? 0;
-      const sy = (el as any).startMm?.yMm ?? 0;
-      const ex = (el as any).endMm?.xMm ?? 0;
-      const ey = (el as any).endMm?.yMm ?? 0;
+    if (el.kind === 'beam' && el.levelId === level.id) {
+      const sx = el.startMm.xMm;
+      const sy = el.startMm.yMm;
+      const ex = el.endMm.xMm;
+      const ey = el.endMm.yMm;
       const beamLn = rln('S-BEAM');
       emit(beamLn, dxfLine(beamLn, sx * scale, sy * scale, ex * scale, ey * scale));
     }
 
-    if (el.kind === 'floor' && (el as any).levelId === level.id) {
-      const pts = ((el as any).perimeterMm ?? (el as any).boundaryMm ?? []).map(
+    if (el.kind === 'floor' && el.levelId === level.id) {
+      const floor = el as FloorForDxf;
+      const pts = (floor.perimeterMm ?? floor.boundaryMm ?? []).map(
         (p: { xMm: number; yMm: number }): [number, number] => [p.xMm * scale, p.yMm * scale],
       );
       if (pts.length >= 3) emit('A-FLOR', dxfPolyline('A-FLOR', pts, true));
     }
 
-    if (el.kind === 'stair' && (el as any).levelId === level.id) {
-      const sx = (el as any).startMm?.xMm ?? 0;
-      const sy = (el as any).startMm?.yMm ?? 0;
-      const ex = (el as any).endMm?.xMm ?? sx + 2000;
-      const ey = (el as any).endMm?.yMm ?? sy;
-      const w = (el as any).runWidthMm ?? (el as any).widthMm ?? 1200;
+    if (el.kind === 'stair') {
+      const stair = el as StairForDxf;
+      if (stair.levelId !== level.id && stair.baseLevelId !== level.id) continue;
+      const sx = stair.startMm?.xMm ?? stair.runStartMm?.xMm ?? 0;
+      const sy = stair.startMm?.yMm ?? stair.runStartMm?.yMm ?? 0;
+      const ex = stair.endMm?.xMm ?? stair.runEndMm?.xMm ?? sx + 2000;
+      const ey = stair.endMm?.yMm ?? stair.runEndMm?.yMm ?? sy;
+      const w = stair.runWidthMm ?? stair.widthMm ?? 1200;
       const dx = ex - sx;
       const dy = ey - sy;
       const len = Math.sqrt(dx * dx + dy * dy) || 1;
