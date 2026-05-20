@@ -40,6 +40,7 @@ First landed slices:
 - `plan/componentGhost.ts`
 - `plan/marqueeSelectionPreview.ts`
 - `plan/planTextSprites.ts`
+- `plan/PlanCanvasReadouts.tsx`
 
 ## InspectorContent.tsx
 
