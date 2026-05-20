@@ -4,6 +4,52 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from bim_ai.commands_mep import (
+    CreateCableTrayCmd,
+    CreateDuctCmd,
+    CreateDuctLegendCmd,
+    CreateFixtureCmd,
+    CreateMepEquipmentCmd,
+    CreateMepOpeningRequestCmd,
+    CreateMepTerminalCmd,
+    CreatePipeCmd,
+    CreatePipeLegendCmd,
+)
+from bim_ai.commands_mep import (
+    MepSystemCmdType as MepSystemCmdType,
+)
+from bim_ai.commands_output import (
+    CreateBrandTemplateCmd,
+    CreateFrameCmd,
+    CreatePresentationCanvasCmd,
+    CreateSavedViewCmd,
+    DeleteBrandTemplateCmd,
+    DeleteFrameCmd,
+    DeleteSavedViewCmd,
+    ReorderFrameCmd,
+    ReorderViewCmd,
+    UpdateBrandTemplateCmd,
+    UpdateFrameCmd,
+    UpdatePresentationCanvasCmd,
+    UpdateSavedViewCmd,
+)
+from bim_ai.commands_site import (
+    CreateGradedRegionCmd,
+    CreateToposolidCmd,
+    CreateToposolidExcavationCmd,
+    CreateToposolidSubdivisionCmd,
+    DeleteGradedRegionCmd,
+    DeleteToposolidCmd,
+    DeleteToposolidExcavationCmd,
+    DeleteToposolidSubdivisionCmd,
+    UpdateGradedRegionCmd,
+    UpdateToposolidCmd,
+    UpdateToposolidExcavationCmd,
+    UpdateToposolidSubdivisionCmd,
+)
+from bim_ai.commands_site import (
+    ToposolidExcavationCutMode as ToposolidExcavationCutMode,
+)
 from bim_ai.elements import (
     BalusterPattern,
     CameraMm,
@@ -2727,171 +2773,6 @@ class UnhideElementInViewCmd(BaseModel):
     element_id: str = Field(alias="elementId")
 
 
-# ---------------------------------------------------------------------------
-# TOP-V3-01 — Toposolid commands
-# ---------------------------------------------------------------------------
-
-
-class CreateToposolidCmd(BaseModel):
-    """TOP-V3-01 — create a terrain solid from a closed boundary and height data."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["CreateToposolid"] = "CreateToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-    name: str | None = None
-    boundary_mm: list[dict] = Field(alias="boundaryMm")
-    height_samples: list[dict] = Field(default_factory=list, alias="heightSamples")
-    heightmap_grid_mm: dict | None = Field(default=None, alias="heightmapGridMm")
-    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
-    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
-    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
-
-
-class UpdateToposolidCmd(BaseModel):
-    """TOP-V3-01 — patch fields on an existing toposolid."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["UpdateToposolid"] = "UpdateToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-    name: str | None = None
-    thickness_mm: float | None = Field(default=None, alias="thicknessMm")
-    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
-    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
-    pinned: bool | None = None
-
-
-class DeleteToposolidCmd(BaseModel):
-    """TOP-V3-01 — delete a toposolid; emits a warning if floors are hosted on it."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["DeleteToposolid"] = "DeleteToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-
-
-# ---------------------------------------------------------------------------
-# TOP-V3-02 — Toposolid subdivision commands
-# ---------------------------------------------------------------------------
-
-
-class CreateToposolidSubdivisionCmd(BaseModel):
-    """TOP-V3-02 — create a surface-finish region on an existing toposolid."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["create_toposolid_subdivision"] = "create_toposolid_subdivision"
-    id: str
-    host_toposolid_id: str = Field(alias="hostToposolidId")
-    boundary_mm: list[dict] = Field(alias="boundaryMm")
-    finish_category: str = Field(alias="finishCategory")
-    material_key: str = Field(alias="materialKey")
-    name: str | None = None
-
-
-class UpdateToposolidSubdivisionCmd(BaseModel):
-    """TOP-V3-02 — patch fields on an existing toposolid subdivision."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["update_toposolid_subdivision"] = "update_toposolid_subdivision"
-    id: str
-    boundary_mm: list[dict] | None = Field(default=None, alias="boundaryMm")
-    finish_category: str | None = Field(default=None, alias="finishCategory")
-    material_key: str | None = Field(default=None, alias="materialKey")
-    name: str | None = None
-
-
-class DeleteToposolidSubdivisionCmd(BaseModel):
-    """TOP-V3-02 — remove a toposolid subdivision from the model."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["delete_toposolid_subdivision"] = "delete_toposolid_subdivision"
-    id: str
-
-
-# ---------------------------------------------------------------------------
-# TOP-V3-04 — Graded region commands
-# ---------------------------------------------------------------------------
-
-
-class CreateGradedRegionCmd(BaseModel):
-    """TOP-V3-04 — create a graded region anchored to a toposolid.
-
-    ``flat`` mode requires ``targetZMm``; ``slope`` mode requires both
-    ``slopeAxisDeg`` and ``slopeDegPercent``.
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["CreateGradedRegion"] = "CreateGradedRegion"
-    id: str | None = None
-    host_toposolid_id: str = Field(alias="hostToposolidId")
-    boundary_mm: list[dict] = Field(alias="boundaryMm")  # [{xMm, yMm}]
-    target_mode: Literal["flat", "slope"] = Field("flat", alias="targetMode")
-    target_z_mm: float | None = Field(None, alias="targetZMm")
-    slope_axis_deg: float | None = Field(None, alias="slopeAxisDeg")
-    slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
-
-
-class UpdateGradedRegionCmd(BaseModel):
-    """TOP-V3-04 — patch fields on an existing graded region."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["UpdateGradedRegion"] = "UpdateGradedRegion"
-    id: str
-    boundary_mm: list[dict] | None = Field(None, alias="boundaryMm")
-    target_mode: Literal["flat", "slope"] | None = Field(None, alias="targetMode")
-    target_z_mm: float | None = Field(None, alias="targetZMm")
-    slope_axis_deg: float | None = Field(None, alias="slopeAxisDeg")
-    slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
-
-
-class DeleteGradedRegionCmd(BaseModel):
-    """TOP-V3-04 — delete a graded region by id."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["DeleteGradedRegion"] = "DeleteGradedRegion"
-    id: str
-
-
-# ---------------------------------------------------------------------------
-# TOP-V3-05 — Toposolid excavation relation commands
-# ---------------------------------------------------------------------------
-
-
-ToposolidExcavationCutMode = Literal["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]
-
-
-class CreateToposolidExcavationCmd(BaseModel):
-    """TOP-V3-05 — declare that a floor/roof/toposolid excavates a host toposolid."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["CreateToposolidExcavation"] = "CreateToposolidExcavation"
-    id: str | None = None
-    host_toposolid_id: str = Field(alias="hostToposolidId")
-    cutter_element_id: str = Field(alias="cutterElementId")
-    cut_mode: ToposolidExcavationCutMode = Field("to_bottom_of_cutter", alias="cutMode")
-    offset_mm: float = Field(0.0, alias="offsetMm")
-    custom_depth_mm: float | None = Field(None, alias="customDepthMm")
-    estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
-
-
-class UpdateToposolidExcavationCmd(BaseModel):
-    """TOP-V3-05 — patch a toposolid excavation relation."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["UpdateToposolidExcavation"] = "UpdateToposolidExcavation"
-    id: str
-    cut_mode: ToposolidExcavationCutMode | None = Field(None, alias="cutMode")
-    offset_mm: float | None = Field(None, alias="offsetMm")
-    custom_depth_mm: float | None = Field(None, alias="customDepthMm")
-    estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
-
-
-class DeleteToposolidExcavationCmd(BaseModel):
-    """TOP-V3-05 — delete a toposolid excavation relation."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["DeleteToposolidExcavation"] = "DeleteToposolidExcavation"
-    id: str
-
-
 # AST-V3-01 — Asset library commands
 # ---------------------------------------------------------------------------
 
@@ -3358,375 +3239,6 @@ class ConsumeConceptSeedCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["consume_concept_seed"] = "consume_concept_seed"
     id: str
-
-
-# ---------------------------------------------------------------------------
-# OUT-V3-02 — Presentation canvas, frames, saved views
-# ---------------------------------------------------------------------------
-
-
-class CreatePresentationCanvasCmd(BaseModel):
-    """OUT-V3-02 — create a named presentation canvas."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["create_presentation_canvas"] = "create_presentation_canvas"
-    id: str
-    name: str
-
-
-class UpdatePresentationCanvasCmd(BaseModel):
-    """OUT-V3-02 — rename a presentation canvas."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["update_presentation_canvas"] = "update_presentation_canvas"
-    id: str
-    name: str | None = None
-
-
-class CreateFrameCmd(BaseModel):
-    """OUT-V3-02 — add a frame (slide crop) on a presentation canvas."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["create_frame"] = "create_frame"
-    id: str
-    presentation_canvas_id: str = Field(alias="presentationCanvasId")
-    view_id: str = Field(alias="viewId")
-    position_mm: dict = Field(alias="positionMm")  # {xMm, yMm}
-    size_mm: dict = Field(alias="sizeMm")  # {widthMm, heightMm}
-    caption: str | None = None
-    brand_template_id: str | None = Field(default=None, alias="brandTemplateId")
-    sort_order: int = Field(0, alias="sortOrder")
-
-
-class UpdateFrameCmd(BaseModel):
-    """OUT-V3-02 — update caption, position, size, or sort order of a frame."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["update_frame"] = "update_frame"
-    id: str
-    caption: str | None = None
-    position_mm: dict | None = Field(default=None, alias="positionMm")
-    size_mm: dict | None = Field(default=None, alias="sizeMm")
-    sort_order: int | None = Field(default=None, alias="sortOrder")
-
-
-class DeleteFrameCmd(BaseModel):
-    """OUT-V3-02 — delete a frame from a canvas."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["delete_frame"] = "delete_frame"
-    id: str
-
-
-class ReorderFrameCmd(BaseModel):
-    """OUT-V3-02 — move a frame to a new sort position; re-normalises all frames on the canvas."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["reorder_frame"] = "reorder_frame"
-    id: str
-    new_sort_order: int = Field(alias="newSortOrder")
-
-
-class CreateSavedViewCmd(BaseModel):
-    """OUT-V3-02 — save a camera + visibility snapshot on a base view."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["create_saved_view"] = "create_saved_view"
-    id: str
-    base_view_id: str = Field(alias="baseViewId")
-    name: str
-    camera_state: dict | None = Field(default=None, alias="cameraState")
-    visibility_overrides: dict | None = Field(default=None, alias="visibilityOverrides")
-    detail_level: str | None = Field(default=None, alias="detailLevel")
-
-
-class UpdateSavedViewCmd(BaseModel):
-    """OUT-V3-02 — patch a saved view's name, camera, visibility or thumbnail."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["update_saved_view"] = "update_saved_view"
-    id: str
-    name: str | None = None
-    camera_state: dict | None = Field(default=None, alias="cameraState")
-    visibility_overrides: dict | None = Field(default=None, alias="visibilityOverrides")
-    detail_level: str | None = Field(default=None, alias="detailLevel")
-    thumbnail_data_uri: str | None = Field(default=None, alias="thumbnailDataUri")
-
-
-class DeleteSavedViewCmd(BaseModel):
-    """OUT-V3-02 — delete a saved view."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["delete_saved_view"] = "delete_saved_view"
-    id: str
-
-
-# ---------------------------------------------------------------------------
-# OUT-V3-03 — BrandTemplate commands
-# ---------------------------------------------------------------------------
-
-
-class CreateBrandTemplateCmd(BaseModel):
-    """OUT-V3-03 — create a brand template for Layer-C CSS overrides."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["create_brand_template"] = "create_brand_template"
-    id: str
-    name: str
-    accent_hex: str = Field(alias="accentHex")
-    accent_foreground_hex: str = Field(alias="accentForegroundHex")
-    typeface: str = "Inter"
-    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
-    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
-
-
-class UpdateBrandTemplateCmd(BaseModel):
-    """OUT-V3-03 — patch fields on an existing brand template."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["update_brand_template"] = "update_brand_template"
-    id: str
-    name: str | None = None
-    accent_hex: str | None = Field(default=None, alias="accentHex")
-    accent_foreground_hex: str | None = Field(default=None, alias="accentForegroundHex")
-    typeface: str | None = None
-    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
-    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
-
-
-class DeleteBrandTemplateCmd(BaseModel):
-    """OUT-V3-03 — delete a brand template."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["delete_brand_template"] = "delete_brand_template"
-    id: str
-
-
-class ReorderViewCmd(BaseModel):
-    """CHR-V3-07 — move a viewpoint or saved_view to a new sort position."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["reorder_view"] = "reorder_view"
-    view_id: str = Field(alias="viewId")
-    new_sort_order: int = Field(alias="newSortOrder")
-
-
-# ---------------------------------------------------------------------------
-# MEP commands — pipe, duct, pipe legend, duct legend (MEP-01..04)
-# ---------------------------------------------------------------------------
-
-
-class CreatePipeCmd(BaseModel):
-    """MEP-01 — create a straight pipe segment."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createPipe"] = "createPipe"
-    id: str | None = None
-    level_id: str = Field(alias="levelId")
-    start_mm: Vec2Mm = Field(alias="startMm")
-    end_mm: Vec2Mm = Field(alias="endMm")
-    elevation_mm: float = Field(default=0.0, alias="elevationMm")
-    diameter_mm: float = Field(default=25.0, alias="diameterMm")
-    system_type: Literal[
-        "hvac_supply",
-        "hvac_return",
-        "heating",
-        "cooling",
-        "domestic_water",
-        "wastewater",
-        "electrical",
-        "data",
-        "domestic_cold_water",
-        "domestic_hot_water",
-        "sanitary",
-        "storm_drainage",
-        "fire_protection",
-        "chilled_water",
-        "condenser_water",
-        "heating_hot_water",
-        "other",
-    ] = Field(default="other", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
-        Field(default="unknown", alias="flowDirection")
-    )
-    insulation: str | None = Field(default=None)
-    service_level: str | None = Field(default=None, alias="serviceLevel")
-    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
-    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-    material_key: str | None = Field(default=None, alias="materialKey")
-    colour: str | None = Field(default=None)
-
-
-class CreateDuctCmd(BaseModel):
-    """MEP-02 — create a straight duct segment."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createDuct"] = "createDuct"
-    id: str | None = None
-    level_id: str = Field(alias="levelId")
-    start_mm: Vec2Mm = Field(alias="startMm")
-    end_mm: Vec2Mm = Field(alias="endMm")
-    elevation_mm: float = Field(default=0.0, alias="elevationMm")
-    width_mm: float = Field(default=300.0, alias="widthMm")
-    height_mm: float = Field(default=200.0, alias="heightMm")
-    shape: Literal["rectangular", "round", "oval"] = Field(default="rectangular")
-    system_type: Literal[
-        "hvac_supply",
-        "hvac_return",
-        "heating",
-        "cooling",
-        "fire_protection",
-        "supply_air",
-        "return_air",
-        "exhaust_air",
-        "outside_air",
-        "other_air",
-        "other",
-    ] = Field(default="other", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
-        Field(default="unknown", alias="flowDirection")
-    )
-    insulation: str | None = Field(default=None)
-    service_level: str | None = Field(default=None, alias="serviceLevel")
-    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
-    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-    colour: str | None = Field(default=None)
-
-
-MepSystemCmdType = Literal[
-    "hvac_supply",
-    "hvac_return",
-    "heating",
-    "cooling",
-    "domestic_water",
-    "wastewater",
-    "electrical",
-    "data",
-    "fire_protection",
-    "other",
-]
-
-
-class CreateCableTrayCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createCableTray"] = "createCableTray"
-    id: str | None = None
-    name: str = "Cable tray"
-    level_id: str = Field(alias="levelId")
-    start_mm: Vec2Mm = Field(alias="startMm")
-    end_mm: Vec2Mm = Field(alias="endMm")
-    elevation_mm: float = Field(default=0.0, alias="elevationMm")
-    width_mm: float = Field(default=200.0, alias="widthMm")
-    height_mm: float = Field(default=60.0, alias="heightMm")
-    system_type: MepSystemCmdType = Field(default="electrical", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    service_level: str | None = Field(default=None, alias="serviceLevel")
-    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
-    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-    colour: str | None = Field(default=None)
-
-
-class CreateMepEquipmentCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createMepEquipment"] = "createMepEquipment"
-    id: str | None = None
-    name: str = "MEP Equipment"
-    level_id: str = Field(alias="levelId")
-    position_mm: Vec2Mm = Field(alias="positionMm")
-    elevation_mm: float = Field(default=0.0, alias="elevationMm")
-    equipment_type: str | None = Field(default=None, alias="equipmentType")
-    family_type_id: str | None = Field(default=None, alias="familyTypeId")
-    system_type: MepSystemCmdType = Field(default="other", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    service_level: str | None = Field(default=None, alias="serviceLevel")
-    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
-    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW")
-
-
-class CreateFixtureCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createFixture"] = "createFixture"
-    id: str | None = None
-    name: str = "Fixture"
-    level_id: str = Field(alias="levelId")
-    position_mm: Vec2Mm = Field(alias="positionMm")
-    room_id: str | None = Field(default=None, alias="roomId")
-    fixture_type: str | None = Field(default=None, alias="fixtureType")
-    system_type: MepSystemCmdType = Field(default="domestic_water", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW")
-
-
-class CreateMepTerminalCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createMepTerminal"] = "createMepTerminal"
-    id: str | None = None
-    name: str = "MEP Terminal"
-    terminal_kind: Literal["diffuser", "terminal", "sprinkler", "device"] = Field(
-        default="terminal", alias="terminalKind"
-    )
-    level_id: str = Field(alias="levelId")
-    position_mm: Vec2Mm = Field(alias="positionMm")
-    room_id: str | None = Field(default=None, alias="roomId")
-    system_type: MepSystemCmdType = Field(default="hvac_supply", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
-        Field(default="supply", alias="flowDirection")
-    )
-    service_level: str | None = Field(default=None, alias="serviceLevel")
-    connectors: list[dict[str, Any]] = Field(default_factory=list)
-
-
-class CreateMepOpeningRequestCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createMepOpeningRequest"] = "createMepOpeningRequest"
-    id: str | None = None
-    name: str = "MEP opening request"
-    host_element_id: str = Field(alias="hostElementId")
-    level_id: str | None = Field(default=None, alias="levelId")
-    requester_element_ids: list[str] = Field(default_factory=list, alias="requesterElementIds")
-    opening_kind: Literal["wall", "slab", "roof", "shaft"] = Field(
-        default="wall", alias="openingKind"
-    )
-    position_mm: Vec2Mm | None = Field(default=None, alias="positionMm")
-    width_mm: float | None = Field(default=None, alias="widthMm")
-    height_mm: float | None = Field(default=None, alias="heightMm")
-    diameter_mm: float | None = Field(default=None, alias="diameterMm")
-    clearance_mm: float = Field(default=50.0, alias="clearanceMm")
-    system_type: MepSystemCmdType = Field(default="other", alias="systemType")
-    system_name: str | None = Field(default=None, alias="systemName")
-
-
-class CreatePipeLegendCmd(BaseModel):
-    """MEP-03 — place a pipe legend in a view."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createPipeLegend"] = "createPipeLegend"
-    id: str | None = None
-    host_view_id: str = Field(alias="hostViewId")
-    position_mm: Vec2Mm = Field(alias="positionMm")
-    entries: list[dict] = Field(default_factory=list)
-    title: str = Field(default="Pipe Legend")
-
-
-class CreateDuctLegendCmd(BaseModel):
-    """MEP-04 — place a duct legend in a view."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["createDuctLegend"] = "createDuctLegend"
-    id: str | None = None
-    host_view_id: str = Field(alias="hostViewId")
-    position_mm: Vec2Mm = Field(alias="positionMm")
-    entries: list[dict] = Field(default_factory=list)
-    title: str = Field(default="Duct Legend")
 
 
 Command = Annotated[

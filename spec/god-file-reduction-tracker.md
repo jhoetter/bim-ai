@@ -136,6 +136,7 @@ A-territory target:
 | GFR-2026-60 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract query, resolve, and QA route cluster                       | Routes API below `4,000` LOC with focused tests green.      |
 | GFR-2026-61 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract primitive geometry and shared literal types                 | Elements module below `4,000` LOC with focused tests green. |
 | GFR-2026-62 | P1       | Done   | `app/bim_ai/routes_api.py`                                  | Extract presentation and presentation-export routes                | Routes API below `3,800` LOC with focused route tests green. |
+| GFR-2026-63 | P1       | Done   | `app/bim_ai/commands.py`                                    | Extract site, output, and MEP command schema families              | Commands module below `3,600` LOC with focused command tests green. |
 
 ## Progress Log
 
@@ -652,3 +653,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   `app/bim_ai/routes_api.py` at `3,753` lines and the new route module at
   `332` lines. Python compile, ruff, and focused permissions/activity route
   tests pass (`28 passed`).
+- 2026-05-20: `GFR-2026-63` is Done. The slice moved site/toposolid,
+  output/presentation, and MEP command schemas into `app/bim_ai/commands_site.py`,
+  `app/bim_ai/commands_output.py`, and `app/bim_ai/commands_mep.py`, while
+  preserving the legacy `bim_ai.commands` import surface. Local `wc -l`
+  reports `app/bim_ai/commands.py` at `3,507` lines and the new modules at
+  `150`, `146`, and `220` lines. Python compile, ruff, and focused site/output/
+  MEP/schema tests pass (`87 passed`).

@@ -178,7 +178,6 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `app/bim_ai/commands.py`                                    | 3,996      | Command execution module, now the largest hand-written file and just below the 4,000 LOC cap.     |
 | `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,980      | Project browser shell near the cap; should be watched for new feature growth.                     |
 | `app/bim_ai/elements.py`                                    | 3,958      | Element model aggregator after extracted primitive geometry, evidence, and shared literal types.   |
 | `packages/web/src/viewport/meshBuilders.ts`                 | 3,950      | Mesh builder collection after prior helper extractions; near-cap growth should trigger another split. |
@@ -193,6 +192,7 @@ Largest current source files observed:
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                    |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                     |
 | `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                             |
+| `app/bim_ai/commands.py`                                    | 3,507      | Command schema aggregator after extracted site, output, and MEP command families.                 |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                           |
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks. |
 | `app/bim_ai/api/registry.py`                                | 3,268      | Central API descriptor registry after extracted descriptor modules.                               |
@@ -1375,6 +1375,11 @@ Initial thresholds can be advisory before becoming blocking:
   websocket fan-out, and presentation-canvas export routes into
   `app/bim_ai/routes_presentation.py`, reducing `routes_api.py` to `3,753`
   local lines with focused Python route tests and ruff passing.
+- 2026-05-20: a backend command-schema extraction moved site/toposolid,
+  output/presentation, and MEP command families into `app/bim_ai/commands_site.py`,
+  `app/bim_ai/commands_output.py`, and `app/bim_ai/commands_mep.py`, reducing
+  `commands.py` to `3,507` local lines with focused command-schema tests and
+  ruff passing.
 - 2026-05-20: a Workspace extraction slice moved composition tab activate,
   create, close, reorder, and rename handlers into
   `workspace/useWorkspaceCompositionActions.ts`, reducing `Workspace.tsx` to
