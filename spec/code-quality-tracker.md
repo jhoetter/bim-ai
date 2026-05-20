@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                           |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 6,597      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 6,448      | High-churn plan interaction monolith after extracted overlay/state/lifecycle/render-pass modules. |
 | `packages/cli/cli.mjs`                                      | 5.6k       | CLI command dispatch after extracted sketch phase workflow module.                                |
 | `app/bim_ai/api/registry.py`                                | 4.7k       | Central API descriptor registry after extracted descriptor modules.                               |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                                         |

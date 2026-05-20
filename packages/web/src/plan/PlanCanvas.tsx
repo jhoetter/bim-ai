@@ -205,7 +205,11 @@ import { usePlanCanvasCameraControls } from './usePlanCanvasCameraControls';
 import { usePlanCanvasSceneLifecycle } from './usePlanCanvasSceneLifecycle';
 import {
   renderAreaPlanOverlays,
+  applyCropRegionVisibility,
+  clearColumnAtGridsOverlay,
   renderDetailComponents,
+  renderColumnAtGridsOverlay,
+  renderCropRegionOverlay,
   renderDraftGrid,
   renderDxfUnderlays,
   renderMaskingRegions,
@@ -1193,122 +1197,20 @@ export function PlanCanvas({
       revealHiddenMode,
     );
 
-    // PLN-02 — render dashed crop frame + 8 drag handles whenever a plan_view
-    // has crop bounds and the frame is visible (cropRegionVisible || cropEnabled).
-    // Removes the previous overlay first so the renderer never accumulates
-    // stale frames during drag.
-    if (cropOverlayRef.current) {
-      grp.remove(cropOverlayRef.current);
-      cropOverlayRef.current.traverse((c) => {
-        if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose();
-      });
-      cropOverlayRef.current = null;
-    }
-    if (activeCropState && (activeCropState.cropRegionVisible || activeCropState.cropEnabled)) {
-      const live = cropDragRef.current?.currentBounds;
-      const minX = (live?.cropMinMm.xMm ?? activeCropState.cropMinMm.xMm) / 1000;
-      const maxX = (live?.cropMaxMm.xMm ?? activeCropState.cropMaxMm.xMm) / 1000;
-      const minY = (live?.cropMinMm.yMm ?? activeCropState.cropMinMm.yMm) / 1000;
-      const maxY = (live?.cropMaxMm.yMm ?? activeCropState.cropMaxMm.yMm) / 1000;
-      const overlay = new THREE.Group();
-      overlay.userData.cropOverlay = true;
-      const frameColor = readPlanToken('--draft-construction-blue', '#fcd34d');
-      const framePts = [
-        new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
-        new THREE.Vector3(maxX, SLICE_Y + 0.005, minY),
-        new THREE.Vector3(maxX, SLICE_Y + 0.005, maxY),
-        new THREE.Vector3(minX, SLICE_Y + 0.005, maxY),
-        new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
-      ];
-      const frameGeom = new THREE.BufferGeometry().setFromPoints(framePts);
-      const frame = new THREE.Line(
-        frameGeom,
-        new THREE.LineDashedMaterial({
-          color: frameColor,
-          dashSize: 0.25,
-          gapSize: 0.12,
-          linewidth: 2,
-        }),
-      );
-      frame.computeLineDistances();
-      frame.userData.cropFrame = true;
-      overlay.add(frame);
-      // 8 handle dots at corners + edge midpoints (cx,cy in metres).
-      const cxM = (minX + maxX) / 2;
-      const cyM = (minY + maxY) / 2;
-      const handleSizeM = Math.max(camRef.current.half * 0.012, 0.06);
-      const handlePositions: Array<{ id: CropHandleId; x: number; y: number }> = [
-        { id: 'corner-nw', x: minX, y: maxY },
-        { id: 'corner-ne', x: maxX, y: maxY },
-        { id: 'corner-sw', x: minX, y: minY },
-        { id: 'corner-se', x: maxX, y: minY },
-        { id: 'edge-n', x: cxM, y: maxY },
-        { id: 'edge-e', x: maxX, y: cyM },
-        { id: 'edge-s', x: cxM, y: minY },
-        { id: 'edge-w', x: minX, y: cyM },
-      ];
-      for (const h of handlePositions) {
-        const handle = new THREE.Mesh(
-          new THREE.PlaneGeometry(handleSizeM, handleSizeM),
-          new THREE.MeshBasicMaterial({ color: frameColor }),
-        );
-        handle.rotation.x = -Math.PI / 2;
-        handle.position.set(h.x, SLICE_Y + 0.006, h.y);
-        handle.userData.cropHandleId = h.id;
-        overlay.add(handle);
-      }
-      grp.add(overlay);
-      cropOverlayRef.current = overlay;
-    }
+    renderCropRegionOverlay(
+      grp,
+      cropOverlayRef,
+      activeCropState,
+      cropDragRef.current?.currentBounds,
+      camRef.current.half,
+    );
 
     // PLN-02 — when cropEnabled, fade meshes whose source element falls
     // entirely outside the crop. We hide rather than remove so the rebuild
     // is incremental; rooms / dimensions are kept visible because they are
     // the most useful context, but per-element visibility uses the
     // pickId→element lookup below.
-    if (activeCropState && activeCropState.cropEnabled) {
-      const inside = (xMm: number, yMm: number) =>
-        pointInsideCrop(activeCropState.cropMinMm, activeCropState.cropMaxMm, xMm, yMm);
-      const elementInsideCrop = (el: Element): boolean => {
-        if (el.kind === 'wall') {
-          return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
-        }
-        if (el.kind === 'door' || el.kind === 'window') {
-          const w = elementsById[el.wallId];
-          if (w && w.kind === 'wall') {
-            const mx = w.start.xMm + (w.end.xMm - w.start.xMm) * el.alongT;
-            const my = w.start.yMm + (w.end.yMm - w.start.yMm) * el.alongT;
-            return inside(mx, my);
-          }
-          return true;
-        }
-        if (el.kind === 'room' || el.kind === 'plan_region') {
-          const o = el.outlineMm ?? [];
-          if (!o.length) return true;
-          let sx = 0,
-            sy = 0;
-          for (const p of o) {
-            sx += p.xMm;
-            sy += p.yMm;
-          }
-          return inside(sx / o.length, sy / o.length);
-        }
-        if (el.kind === 'grid_line') {
-          return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
-        }
-        if (el.kind === 'dimension') {
-          return inside(el.aMm.xMm, el.aMm.yMm) || inside(el.bMm.xMm, el.bMm.yMm);
-        }
-        return true;
-      };
-      grp.traverse((ch) => {
-        const id = (ch.userData as { bimPickId?: string }).bimPickId;
-        if (typeof id !== 'string') return;
-        const target = elementsById[id];
-        if (!target) return;
-        ch.visible = elementInsideCrop(target);
-      });
-    }
+    applyCropRegionVisibility(grp, activeCropState, elementsById);
   }, [
     mergedGraphicHints,
     mergedAnnotationHints,
@@ -1342,70 +1244,19 @@ export function PlanCanvas({
     const grp = rootRef.current;
     if (!grp) return;
 
-    const toRemove: THREE.Object3D[] = [];
-    grp.traverse((ch) => {
-      if ((ch.userData as { columnAtGridsHighlight?: unknown }).columnAtGridsHighlight)
-        toRemove.push(ch);
-    });
-    for (const ch of toRemove) grp.remove(ch);
+    clearColumnAtGridsOverlay(grp);
 
     if (planTool !== 'column-at-grids') return;
 
     const state = columnAtGridsStateRef.current;
     if (state.phase !== 'selecting') return;
 
-    const { selectedGridIds } = state;
-    const highlightGrp = new THREE.Group();
-    highlightGrp.userData.columnAtGridsHighlight = true;
-
-    const hovId = columnAtGridsHoverRef.current;
-    if (hovId && !selectedGridIds.includes(hovId)) {
-      const hel = elementsById[hovId];
-      if (hel?.kind === 'grid_line') {
-        const hpts = [
-          new THREE.Vector3(hel.start.xMm / 1000, SLICE_Y + 0.01, hel.start.yMm / 1000),
-          new THREE.Vector3(hel.end.xMm / 1000, SLICE_Y + 0.01, hel.end.yMm / 1000),
-        ];
-        highlightGrp.add(
-          new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints(hpts),
-            new THREE.LineBasicMaterial({ color: '#88aaff', linewidth: 2 }),
-          ),
-        );
-      }
-    }
-
-    for (const id of selectedGridIds) {
-      const el = elementsById[id];
-      if (el?.kind !== 'grid_line') continue;
-      const pts = [
-        new THREE.Vector3(el.start.xMm / 1000, SLICE_Y + 0.01, el.start.yMm / 1000),
-        new THREE.Vector3(el.end.xMm / 1000, SLICE_Y + 0.01, el.end.yMm / 1000),
-      ];
-      highlightGrp.add(
-        new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(pts),
-          new THREE.LineBasicMaterial({ color: '#0055cc', linewidth: 3 }),
-        ),
-      );
-    }
-
-    if (selectedGridIds.length >= 2) {
-      const selectedGridElems = selectedGridIds
-        .map((id) => elementsById[id])
-        .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
-      const positions = columnPositionsAtGridIntersections(selectedGridElems);
-      for (const pt of positions) {
-        const dotGeo = new THREE.CircleGeometry(0.15, 16);
-        const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: '#0055cc' }));
-        dot.position.set(pt.xMm / 1000, SLICE_Y + 0.011, pt.yMm / 1000);
-        dot.rotation.x = -Math.PI / 2;
-        dot.userData.columnAtGridsPreview = true;
-        highlightGrp.add(dot);
-      }
-    }
-
-    grp.add(highlightGrp);
+    renderColumnAtGridsOverlay(
+      grp,
+      elementsById,
+      state.selectedGridIds,
+      columnAtGridsHoverRef.current,
+    );
   }, [planTool, geomEpoch, elementsById]);
 
   // Auto-fit camera when a level's elements first become available, and on

@@ -89,6 +89,7 @@ A-territory target:
 | GFR-2026-13 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting wall/context HUD and query overlays            | PlanCanvas below `7,500` LOC with plan tests passing.       |
 | GFR-2026-14 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract projection sync, camera, and interaction controller hooks  | PlanCanvas below `7,000` LOC with plan tests passing.       |
 | GFR-2026-15 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting annotation render passes                       | PlanCanvas below `6,600` LOC with plan tests passing.       |
+| GFR-2026-16 | P1       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract crop and column-at-grids render passes                     | PlanCanvas below `6,500` LOC with focused plan tests green. |
 
 ## Progress Log
 
@@ -296,3 +297,9 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   same focused tests without `--no-cov` executed all `116` tests successfully
   but failed the repository-wide coverage threshold, so the no-cov run is the
   slice-level signal.
+- 2026-05-20: `GFR-2026-16` is Done. The slice moved crop-region overlay
+  drawing, crop visibility filtering, and column-at-grids highlight/intersection
+  drawing into `packages/web/src/plan/planCanvasRenderPasses.ts`. Local `wc -l`
+  reports `packages/web/src/plan/PlanCanvas.tsx` at `6,448` lines. Focused
+  crop/column/PlanCanvas tool tests pass (`60 passed`), and
+  `pnpm --filter @bim-ai/web typecheck` passes.

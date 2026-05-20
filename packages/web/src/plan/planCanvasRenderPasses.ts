@@ -22,6 +22,219 @@ import { manualPlacedTagLabel } from './manualTags';
 import { planAnnotationLabelSprite, tagLeaderLineThree } from './planElementMeshBuilders';
 import { createPlanTextSprite } from './planTextSprites';
 import { extractPlanRegionOverlays } from './planProjection';
+import { columnPositionsAtGridIntersections } from './columnAtGrids';
+import { pointInsideCrop, type CropHandleId } from './cropRegionDragHandles';
+
+type CropBoundsMm = {
+  cropMinMm: { xMm: number; yMm: number };
+  cropMaxMm: { xMm: number; yMm: number };
+};
+
+export type PlanCanvasCropRenderState = CropBoundsMm & {
+  cropEnabled: boolean;
+  cropRegionVisible: boolean;
+};
+
+export function renderCropRegionOverlay(
+  grp: THREE.Group,
+  cropOverlayRef: { current: THREE.Group | null },
+  activeCropState: PlanCanvasCropRenderState | null,
+  liveBounds: CropBoundsMm | null | undefined,
+  cameraHalf: number,
+): void {
+  if (cropOverlayRef.current) {
+    grp.remove(cropOverlayRef.current);
+    cropOverlayRef.current.traverse((c) => {
+      if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose();
+    });
+    cropOverlayRef.current = null;
+  }
+
+  if (!activeCropState || (!activeCropState.cropRegionVisible && !activeCropState.cropEnabled)) {
+    return;
+  }
+
+  const minX = (liveBounds?.cropMinMm.xMm ?? activeCropState.cropMinMm.xMm) / 1000;
+  const maxX = (liveBounds?.cropMaxMm.xMm ?? activeCropState.cropMaxMm.xMm) / 1000;
+  const minY = (liveBounds?.cropMinMm.yMm ?? activeCropState.cropMinMm.yMm) / 1000;
+  const maxY = (liveBounds?.cropMaxMm.yMm ?? activeCropState.cropMaxMm.yMm) / 1000;
+  const overlay = new THREE.Group();
+  overlay.userData.cropOverlay = true;
+  const frameColor = readPlanToken('--draft-construction-blue', '#fcd34d');
+  const framePts = [
+    new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
+    new THREE.Vector3(maxX, SLICE_Y + 0.005, minY),
+    new THREE.Vector3(maxX, SLICE_Y + 0.005, maxY),
+    new THREE.Vector3(minX, SLICE_Y + 0.005, maxY),
+    new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
+  ];
+  const frameGeom = new THREE.BufferGeometry().setFromPoints(framePts);
+  const frame = new THREE.Line(
+    frameGeom,
+    new THREE.LineDashedMaterial({
+      color: frameColor,
+      dashSize: 0.25,
+      gapSize: 0.12,
+      linewidth: 2,
+    }),
+  );
+  frame.computeLineDistances();
+  frame.userData.cropFrame = true;
+  overlay.add(frame);
+
+  const cxM = (minX + maxX) / 2;
+  const cyM = (minY + maxY) / 2;
+  const handleSizeM = Math.max(cameraHalf * 0.012, 0.06);
+  const handlePositions: Array<{ id: CropHandleId; x: number; y: number }> = [
+    { id: 'corner-nw', x: minX, y: maxY },
+    { id: 'corner-ne', x: maxX, y: maxY },
+    { id: 'corner-sw', x: minX, y: minY },
+    { id: 'corner-se', x: maxX, y: minY },
+    { id: 'edge-n', x: cxM, y: maxY },
+    { id: 'edge-e', x: maxX, y: cyM },
+    { id: 'edge-s', x: cxM, y: minY },
+    { id: 'edge-w', x: minX, y: cyM },
+  ];
+  for (const h of handlePositions) {
+    const handle = new THREE.Mesh(
+      new THREE.PlaneGeometry(handleSizeM, handleSizeM),
+      new THREE.MeshBasicMaterial({ color: frameColor }),
+    );
+    handle.rotation.x = -Math.PI / 2;
+    handle.position.set(h.x, SLICE_Y + 0.006, h.y);
+    handle.userData.cropHandleId = h.id;
+    overlay.add(handle);
+  }
+  grp.add(overlay);
+  cropOverlayRef.current = overlay;
+}
+
+export function applyCropRegionVisibility(
+  grp: THREE.Group,
+  activeCropState: PlanCanvasCropRenderState | null,
+  elementsById: Record<string, Element>,
+): void {
+  if (!activeCropState?.cropEnabled) return;
+
+  const inside = (xMm: number, yMm: number) =>
+    pointInsideCrop(activeCropState.cropMinMm, activeCropState.cropMaxMm, xMm, yMm);
+  const elementInsideCrop = (el: Element): boolean => {
+    if (el.kind === 'wall') {
+      return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
+    }
+    if (el.kind === 'door' || el.kind === 'window') {
+      const w = elementsById[el.wallId];
+      if (w && w.kind === 'wall') {
+        const mx = w.start.xMm + (w.end.xMm - w.start.xMm) * el.alongT;
+        const my = w.start.yMm + (w.end.yMm - w.start.yMm) * el.alongT;
+        return inside(mx, my);
+      }
+      return true;
+    }
+    if (el.kind === 'room' || el.kind === 'plan_region') {
+      const o = el.outlineMm ?? [];
+      if (!o.length) return true;
+      let sx = 0,
+        sy = 0;
+      for (const p of o) {
+        sx += p.xMm;
+        sy += p.yMm;
+      }
+      return inside(sx / o.length, sy / o.length);
+    }
+    if (el.kind === 'grid_line') {
+      return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
+    }
+    if (el.kind === 'dimension') {
+      return inside(el.aMm.xMm, el.aMm.yMm) || inside(el.bMm.xMm, el.bMm.yMm);
+    }
+    return true;
+  };
+
+  grp.traverse((ch) => {
+    const id = (ch.userData as { bimPickId?: string }).bimPickId;
+    if (typeof id !== 'string') return;
+    const target = elementsById[id];
+    if (!target) return;
+    ch.visible = elementInsideCrop(target);
+  });
+}
+
+export function renderColumnAtGridsOverlay(
+  grp: THREE.Group,
+  elementsById: Record<string, Element>,
+  selectedGridIds: string[],
+  hoverGridId: string | null | undefined,
+): void {
+  const toRemove: THREE.Object3D[] = [];
+  grp.traverse((ch) => {
+    if ((ch.userData as { columnAtGridsHighlight?: unknown }).columnAtGridsHighlight) {
+      toRemove.push(ch);
+    }
+  });
+  for (const ch of toRemove) grp.remove(ch);
+
+  const highlightGrp = new THREE.Group();
+  highlightGrp.userData.columnAtGridsHighlight = true;
+
+  if (hoverGridId && !selectedGridIds.includes(hoverGridId)) {
+    const hel = elementsById[hoverGridId];
+    if (hel?.kind === 'grid_line') {
+      const hpts = [
+        new THREE.Vector3(hel.start.xMm / 1000, SLICE_Y + 0.01, hel.start.yMm / 1000),
+        new THREE.Vector3(hel.end.xMm / 1000, SLICE_Y + 0.01, hel.end.yMm / 1000),
+      ];
+      highlightGrp.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(hpts),
+          new THREE.LineBasicMaterial({ color: '#88aaff', linewidth: 2 }),
+        ),
+      );
+    }
+  }
+
+  for (const id of selectedGridIds) {
+    const el = elementsById[id];
+    if (el?.kind !== 'grid_line') continue;
+    const pts = [
+      new THREE.Vector3(el.start.xMm / 1000, SLICE_Y + 0.01, el.start.yMm / 1000),
+      new THREE.Vector3(el.end.xMm / 1000, SLICE_Y + 0.01, el.end.yMm / 1000),
+    ];
+    highlightGrp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: '#0055cc', linewidth: 3 }),
+      ),
+    );
+  }
+
+  if (selectedGridIds.length >= 2) {
+    const selectedGridElems = selectedGridIds
+      .map((id) => elementsById[id])
+      .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
+    const positions = columnPositionsAtGridIntersections(selectedGridElems);
+    for (const pt of positions) {
+      const dotGeo = new THREE.CircleGeometry(0.15, 16);
+      const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: '#0055cc' }));
+      dot.position.set(pt.xMm / 1000, SLICE_Y + 0.011, pt.yMm / 1000);
+      dot.rotation.x = -Math.PI / 2;
+      dot.userData.columnAtGridsPreview = true;
+      highlightGrp.add(dot);
+    }
+  }
+
+  grp.add(highlightGrp);
+}
+
+export function clearColumnAtGridsOverlay(grp: THREE.Group): void {
+  const toRemove: THREE.Object3D[] = [];
+  grp.traverse((ch) => {
+    if ((ch.userData as { columnAtGridsHighlight?: unknown }).columnAtGridsHighlight) {
+      toRemove.push(ch);
+    }
+  });
+  for (const ch of toRemove) grp.remove(ch);
+}
 
 export function renderNeighborhoodMasses(
   grp: THREE.Group,
