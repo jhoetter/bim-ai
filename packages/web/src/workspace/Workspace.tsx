@@ -14,16 +14,7 @@ import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
-import {
-  applyCommand,
-  ApiHttpError,
-  fetchActivity,
-  fetchComments,
-  postComment,
-  patchCommentResolved,
-  undoModel,
-  redoModel,
-} from '../lib/api';
+import { applyCommand, ApiHttpError, fetchActivity, undoModel, redoModel } from '../lib/api';
 import {
   setActiveComponentAssetId,
   setActiveComponentAssetPreviewEntry,
@@ -145,6 +136,8 @@ import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './h
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
+import { useWorkspaceComments } from './useWorkspaceComments';
+import { useWorkspaceCompositionLoading } from './useWorkspaceCompositionLoading';
 import { useWorkspaceProjectActions } from './useWorkspaceProjectActions';
 import {
   WorkspaceCanvasSlot,
@@ -152,7 +145,7 @@ import {
   WorkspaceHeaderSlot,
 } from './WorkspaceAppShellSlots';
 import { WorkspaceOverlays } from './WorkspaceOverlays';
-import { canonicalPlanToolForMode, mapComments, planToolToToolId } from './workspaceUtils';
+import { canonicalPlanToolForMode, planToolToToolId } from './workspaceUtils';
 import {
   materialEditableTargetLabel,
   materialKeyForInstanceTarget,
@@ -526,8 +519,12 @@ export function Workspace(): JSX.Element {
       readPersistedPaneLayout() ?? createPaneLayout(null),
     ),
   );
-  const [loadingCompositionId, setLoadingCompositionId] = useState<string | null>(null);
-  const loadingCompositionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    loadingCompositionId,
+    finishCompositionLoadingSoon,
+    markCompositionLoading,
+    runAfterLoadingPaint,
+  } = useWorkspaceCompositionLoading();
   const [tabsState, setTabsState] = useState<TabsState>(() => {
     const activeComposition =
       compositionState.compositions.find(
@@ -551,57 +548,6 @@ export function Workspace(): JSX.Element {
   });
   const [panePlanToolsById, setPanePlanToolsById] = useState<Record<string, PlanTool>>({});
   const previousFocusedPaneLeafIdRef = useRef(paneLayout.focusedLeafId);
-  const loadingTransitionSeqRef = useRef(0);
-
-  const finishCompositionLoadingSoon = useCallback((id: string): void => {
-    if (loadingCompositionTimerRef.current) {
-      clearTimeout(loadingCompositionTimerRef.current);
-    }
-    const finish = (): void => {
-      setLoadingCompositionId((current) => (current === id ? null : current));
-      loadingCompositionTimerRef.current = null;
-    };
-    if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
-      finish();
-      return;
-    }
-    loadingCompositionTimerRef.current = setTimeout(finish, 90);
-  }, []);
-
-  const markCompositionLoading = useCallback((id: string): void => {
-    if (loadingCompositionTimerRef.current) {
-      clearTimeout(loadingCompositionTimerRef.current);
-      loadingCompositionTimerRef.current = null;
-    }
-    setLoadingCompositionId(id);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (loadingCompositionTimerRef.current) {
-        clearTimeout(loadingCompositionTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  const runAfterLoadingPaint = useCallback(
-    (action: () => void, loadingId?: string): void => {
-      const seq = loadingTransitionSeqRef.current + 1;
-      loadingTransitionSeqRef.current = seq;
-      const run = (): void => {
-        if (loadingTransitionSeqRef.current !== seq) return;
-        action();
-        if (loadingId) finishCompositionLoadingSoon(loadingId);
-      };
-      if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
-        run();
-        return;
-      }
-      window.setTimeout(run, 32);
-    },
-    [finishCompositionLoadingSoon],
-  );
 
   const setPanePlanTool = useCallback(
     (leafId: string, tool: PlanTool): void => {
@@ -1069,31 +1015,13 @@ export function Workspace(): JSX.Element {
     setTabsState,
   });
 
-  /* ── Comments + presence handlers (T-16) ─────────────────────────── */
-  const handleCommentPost = useCallback(
-    async (body: string): Promise<void> => {
-      if (!modelId) return;
-      await postComment(modelId, {
-        userDisplay: userDisplayName || 'Guest',
-        body,
-        levelId: activeLevelId ?? undefined,
-        elementId: selectedId ?? undefined,
-      });
-      const c = await fetchComments(modelId);
-      setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
-    },
-    [modelId, userDisplayName, activeLevelId, selectedId, setComments],
-  );
-
-  const handleCommentResolve = useCallback(
-    async (commentId: string, resolved: boolean): Promise<void> => {
-      if (!modelId) return;
-      await patchCommentResolved(modelId, commentId, resolved);
-      const c = await fetchComments(modelId);
-      setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
-    },
-    [modelId, setComments],
-  );
+  const { handleCommentPost, handleCommentResolve } = useWorkspaceComments({
+    modelId,
+    userDisplayName,
+    activeLevelId,
+    selectedId,
+    setComments,
+  });
 
   /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
   const onSemanticCommand = useCallback(
