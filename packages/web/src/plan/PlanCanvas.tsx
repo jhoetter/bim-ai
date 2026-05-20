@@ -206,7 +206,7 @@ import {
   type PlanCanvasDraftingPaint,
 } from './usePlanCanvasRenderPasses';
 import { usePlanCanvasToolActivation } from './usePlanCanvasToolActivation';
-import { clearColumnAtGridsOverlay, renderColumnAtGridsOverlay } from './planCanvasRenderPasses';
+import { usePlanCanvasViewEffects } from './usePlanCanvasViewEffects';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -884,15 +884,18 @@ export function PlanCanvas({
     theme,
   });
 
-  // §5.4.2 — apply planViewAngleDeg rotation to the root group when the active
-  // plan view has a stored true-north rotation.
-  useEffect(() => {
-    const grp = rootRef.current;
-    if (!grp) return;
-    const pv = activePlanViewId ? elementsById[activePlanViewId] : undefined;
-    const angleDeg = pv?.kind === 'plan_view' ? (pv.planViewAngleDeg ?? 0) : 0;
-    grp.rotation.y = (angleDeg * Math.PI) / 180;
-  }, [activePlanViewId, elementsById]);
+  usePlanCanvasViewEffects({
+    rootRef,
+    activePlanViewId,
+    activeLevelResolvedId,
+    elementsById,
+    planTool,
+    columnAtGridsStateRef,
+    columnAtGridsHoverRef,
+    geomEpoch,
+    lastAutoFitLevelRef,
+    onFitToView: handleFitToView,
+  });
 
   usePlanCanvasRenderPasses({
     rootRef,
@@ -926,42 +929,6 @@ export function PlanCanvas({
     groupEditModeDefinitionId,
     joinedPairs,
   });
-
-  // Column-at-grids: highlight selected grids + show intersection preview dots
-  useEffect(() => {
-    const grp = rootRef.current;
-    if (!grp) return;
-
-    clearColumnAtGridsOverlay(grp);
-
-    if (planTool !== 'column-at-grids') return;
-
-    const state = columnAtGridsStateRef.current;
-    if (state.phase !== 'selecting') return;
-
-    renderColumnAtGridsOverlay(
-      grp,
-      elementsById,
-      state.selectedGridIds,
-      columnAtGridsHoverRef.current,
-    );
-  }, [planTool, geomEpoch, elementsById]);
-
-  // Auto-fit camera when a level's elements first become available, and on
-  // every level switch — so the model always fills the canvas on open.
-  useEffect(() => {
-    const lvl = activeLevelResolvedId;
-    if (lastAutoFitLevelRef.current === lvl) return;
-    const hasGeo = Object.values(elementsById).some(
-      (el) =>
-        (el.kind === 'wall' || el.kind === 'floor' || el.kind === 'room') &&
-        'levelId' in el &&
-        (el as { levelId?: string }).levelId === lvl,
-    );
-    if (!hasGeo) return;
-    lastAutoFitLevelRef.current = lvl;
-    handleFitToView();
-  }, [activeLevelResolvedId, elementsById, handleFitToView]);
 
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
