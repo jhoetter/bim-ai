@@ -12,6 +12,7 @@ import {
   StairIcon,
   RailingIcon,
   RoomIcon,
+  AreaIcon,
   DimensionIcon,
   SectionIcon,
   TagIcon,
@@ -57,7 +58,15 @@ import {
   WallLayerIcon,
   PhaseIcon,
   TopoIcon,
+  SiteIcon,
+  SiteOriginIcon,
   PropertyLineIcon,
+  ToposolidSubdivisionIcon,
+  TerrainPointIcon,
+  TerrainPadIcon,
+  TerrainSplitIcon,
+  GradedRegionIcon,
+  ProjectBasePointIcon,
   NorthArrowIcon,
   IssueIcon,
   ClashIcon,
@@ -66,8 +75,10 @@ import {
   RFIIcon,
   RevisionCloudIcon,
   TextAnnotationIcon,
+  LeaderTextIcon,
   AngularDimensionIcon,
   RadialDimensionIcon,
+  DiameterDimensionIcon,
   ArcLengthDimensionIcon,
   SpotElevationIcon,
   SpotCoordinateIcon,
@@ -91,13 +102,18 @@ import {
   OnlineIcon,
   ScaleIcon,
   OpeningIcon,
-  AreaLabelIcon,
-  AreaPlanIcon,
   AreaBoundaryIcon,
   ReferencePlaneIcon,
   RoomSeparatorIcon,
+  PlanRegionIcon,
   RampIcon,
   MassIcon,
+  MassBoxIcon,
+  MassExtrusionIcon,
+  MassRevolutionIcon,
+  FamilyBlendIcon,
+  FamilySweepIcon,
+  FamilySweptBlendIcon,
   ModelLineIcon,
   ModelTextIcon,
   WallSweepIcon,
@@ -108,11 +124,34 @@ import {
   LightingFixtureIcon,
   DiffuserIcon,
   HVACZoneIcon,
+  UValueIcon,
+  ThermalBridgeIcon,
+  FireCompartmentIcon,
+  EscapeRouteIcon,
+  FireRatingIcon,
+  TravelDistanceIcon,
+  PenetrationIcon,
+  PenetrationRequestIcon,
   QuantityTakeoffIcon,
   EnergyModelIcon,
+  EPDIcon,
+  CarbonImpactIcon,
+  LCAExportIcon,
+  DIN276Icon,
+  BOQIcon,
+  UnitRateIcon,
+  PackageIcon,
+  LogisticsIcon,
+  ProgressIcon,
+  QAChecklistIcon,
+  SelectionSetIcon,
+  ReviewStatusIcon,
   BraceIcon,
   BeamSystemIcon,
   StructuralConnectionIcon,
+  PrecastColumnIcon,
+  PrecastBeamIcon,
+  PrecastSlabIcon,
   RedoIcon,
   RefreshIcon,
   RotateIcon,
@@ -126,10 +165,15 @@ import {
   ThinLineIcon,
   TrimExtendIcon,
   UndoIcon,
+  AttachIcon,
+  DetachIcon,
   ArrayLinearIcon,
   OffsetIcon,
   UnjoinGeometryIcon,
   PaintMaterialIcon,
+  LineworkIcon,
+  CutGeometryIcon,
+  CreatePartsIcon,
   WalkthroughIcon,
   VisibilityOffIcon,
   VisibilityOnIcon,
@@ -157,53 +201,6 @@ export type BimIconComponent = ComponentType<
     absoluteStrokeWidth?: boolean;
   }
 >;
-
-const AreaIcon = AreaLabelIcon;
-const SiteIcon = TopoIcon;
-const SiteOriginIcon = GridLineIcon;
-const ToposolidSubdivisionIcon = TopoIcon;
-const TerrainPointIcon = TopoIcon;
-const TerrainPadIcon = TopoIcon;
-const TerrainSplitIcon = TopoIcon;
-const GradedRegionIcon = TopoIcon;
-const ProjectBasePointIcon = GridLineIcon;
-const LeaderTextIcon = TextAnnotationIcon;
-const DiameterDimensionIcon = RadialDimensionIcon;
-const PlanRegionIcon = AreaPlanIcon;
-const MassBoxIcon = MassIcon;
-const MassExtrusionIcon = MassIcon;
-const MassRevolutionIcon = MassIcon;
-const FamilyBlendIcon = FamilyIcon;
-const FamilySweepIcon = WallSweepIcon;
-const FamilySweptBlendIcon = WallSweepIcon;
-const UValueIcon = EnergyModelIcon;
-const ThermalBridgeIcon = EnergyModelIcon;
-const FireCompartmentIcon = AlertTriangleIcon;
-const EscapeRouteIcon = AlertTriangleIcon;
-const FireRatingIcon = AlertTriangleIcon;
-const TravelDistanceIcon = DimensionIcon;
-const PenetrationIcon = OpeningIcon;
-const PenetrationRequestIcon = OpeningIcon;
-const EPDIcon = MaterialIcon;
-const CarbonImpactIcon = EnergyModelIcon;
-const LCAExportIcon = EnergyModelIcon;
-const DIN276Icon = QuantityTakeoffIcon;
-const BOQIcon = QuantityTakeoffIcon;
-const UnitRateIcon = QuantityTakeoffIcon;
-const PackageIcon = AssemblyIcon;
-const LogisticsIcon = LinkedModelIcon;
-const ProgressIcon = ClockIcon;
-const QAChecklistIcon = CheckIcon;
-const SelectionSetIcon = GroupIcon;
-const ReviewStatusIcon = IssueIcon;
-const PrecastColumnIcon = ColumnIcon;
-const PrecastBeamIcon = BeamIcon;
-const PrecastSlabIcon = FloorIcon;
-const AttachIcon = LinkIcon;
-const DetachIcon = LinkIcon;
-const LineworkIcon = DetailLineIcon;
-const CutGeometryIcon = SplitIcon;
-const CreatePartsIcon = AssemblyIcon;
 
 /** @deprecated use StairIcon from @bim-ai/icons. Kept for test backwards compat. */
 export { StairIcon as StairsIcon } from '@bim-ai/icons';
