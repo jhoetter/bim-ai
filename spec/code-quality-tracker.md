@@ -1242,6 +1242,9 @@ quality story, not only a future hardening aspiration.
   the actual `Hub` path.
 - 2026-05-20: `make test-py-real-path` provides a reproducible marked backend
   real-path lane without requiring local focused Python runs to start Postgres.
+- 2026-05-20: CI now runs `make test-py-real-path` in the Python job, and the
+  generated code-quality scorecard reports whether the real-app, bundle-route,
+  stale-revision, activity/comment, and websocket checks are present and wired.
   This remains Partial until DB-backed schema/session coverage and frontend
   proxy-to-backend browser coverage are added.
 

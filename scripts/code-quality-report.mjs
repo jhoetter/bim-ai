@@ -438,6 +438,28 @@ function frontendTestEnvironmentSummary(scripts) {
   };
 }
 
+function realPathCoverageSummary(scripts) {
+  const ci = existsSync(join(REPO_ROOT, '.github/workflows/ci.yml'))
+    ? readText('.github/workflows/ci.yml')
+    : '';
+  const testPath = 'app/tests/integration/test_real_path_smoke.py';
+  const testText = existsSync(join(REPO_ROOT, testPath)) ? readText(testPath) : '';
+  return {
+    testPath,
+    testExists: Boolean(testText),
+    makeTarget: scripts.make.testPyRealPath,
+    ciRunsRealPath: ci.includes('test-py-real-path'),
+    importsRealApp: testText.includes('from bim_ai.main import app as real_app'),
+    coversBundleRoute: testText.includes('/commands/bundle'),
+    coversWebsocket: testText.includes('websocket_connect'),
+    coversStaleRevision: testText.includes('stale.status_code == 409'),
+    coversActivityAndComments:
+      testText.includes('/activity') &&
+      testText.includes('/comments') &&
+      testText.includes('comment'),
+  };
+}
+
 function uiQualityBudgetSummary(scripts) {
   const configured = existsSync(join(REPO_ROOT, UI_QUALITY_BUDGETS_PATH));
   const config = configured ? JSON.parse(readText(UI_QUALITY_BUDGETS_PATH)) : null;
@@ -488,6 +510,7 @@ function computeGrade({
   frontendTestEnvironments,
   contractParity,
   uiQualityBudgets,
+  realPathCoverage,
 }) {
   const p0Open = tracker.filter((row) => row.priority === 'P0' && row.status !== 'Done');
   const p1Open = tracker.filter((row) => row.priority === 'P1' && row.status !== 'Done');
@@ -534,6 +557,9 @@ function computeGrade({
     !uiQualityBudgets.ciRunsPolicy
   ) {
     blockersToNextGrade.push('UI quality budgets are not fully wired');
+  }
+  if (!realPathCoverage.makeTarget || !realPathCoverage.ciRunsRealPath) {
+    blockersToNextGrade.push('real-path integration smoke lane is not fully wired');
   }
   if (blockingBudgetsWithoutDisposition.length > 0) {
     score = Math.min(score, 7.0);
@@ -607,6 +633,7 @@ function buildReport() {
   const securityGates = securityGateSummary(scripts);
   const frontendTestEnvironments = frontendTestEnvironmentSummary(scripts);
   const uiQualityBudgets = uiQualityBudgetSummary(scripts);
+  const realPathCoverage = realPathCoverageSummary(scripts);
   const grade = computeGrade({
     tracker,
     waivers,
@@ -619,6 +646,7 @@ function buildReport() {
     frontendTestEnvironments,
     contractParity,
     uiQualityBudgets,
+    realPathCoverage,
   });
 
   return {
@@ -655,6 +683,7 @@ function buildReport() {
       security: securityGates,
       frontendTestEnvironments,
       uiQualityBudgets,
+      realPathCoverage,
     },
     maintainability: {
       budgetConfig: {
@@ -771,6 +800,9 @@ function renderMarkdown(report) {
   );
   lines.push(
     `| UI quality budgets | ${report.gates.uiQualityBudgets.configured ? 'configured' : 'missing'} | strict: ${report.gates.uiQualityBudgets.strictIncludesBudget ? 'yes' : 'no'}, CI: ${report.gates.uiQualityBudgets.ciRunsPolicy ? 'yes' : 'no'} |`,
+  );
+  lines.push(
+    `| Real-path smoke | ${report.gates.realPathCoverage.ciRunsRealPath ? 'configured' : 'missing'} | app: ${report.gates.realPathCoverage.importsRealApp ? 'yes' : 'no'}, websocket: ${report.gates.realPathCoverage.coversWebsocket ? 'yes' : 'no'} |`,
   );
   lines.push('');
   lines.push('## Maintainability Budgets');
