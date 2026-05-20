@@ -32,7 +32,6 @@ import {
   reduceBeamSystem,
   type BeamSystemState,
   cycleWallLocationLine,
-  areaBoundaryRectangleFromDiagonal,
   reduceAreaBoundary,
   initialTextAnnotationState,
   reduceTextAnnotation,
@@ -183,6 +182,7 @@ import {
   handleQueryToolClick,
   handleTagToolClick,
 } from './planCanvasClickHandlers';
+import { handleBoundaryToolClick } from './planCanvasBoundaryClicks';
 import { handleMeasureDraftClick } from './planCanvasMeasureDraftClicks';
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
 import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
@@ -1722,154 +1722,36 @@ export function PlanCanvas({
         });
         return;
       }
-      if (planTool === 'reference-plane') {
-        // KRN-05: two-click reference plane on the active level.
-        const d = draftRef.current;
-        if (!d || d.kind !== 'reference-plane') {
-          draftRef.current = { kind: 'reference-plane', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (!lvlId) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        onSemanticCommand({
-          type: 'createReferencePlane',
+      if (
+        handleBoundaryToolClick({
+          planTool,
+          pointMm: sp,
+          areaClickMm: rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY) ?? sp,
+          shiftKey: ev.shiftKey,
           levelId: lvlId,
-          startMm: { xMm: d.sx, yMm: d.sy },
-          endMm: { xMm: sp.xMm, yMm: sp.yMm },
-        });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'property-line') {
-        // KRN-01: two-click property boundary line.
-        const d = draftRef.current;
-        if (!d || d.kind !== 'property-line') {
-          draftRef.current = { kind: 'property-line', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        onSemanticCommand({
-          type: 'createPropertyLine',
-          startMm: { xMm: d.sx, yMm: d.sy },
-          endMm: { xMm: sp.xMm, yMm: sp.yMm },
-        });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'area') {
-        const ctx = activeAreaPlanContext();
-        if (!ctx) {
-          draftRef.current = undefined;
-          clearPreview();
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const clickMm = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY) ?? sp;
-        const boundary = findAreaPlacementBoundary(elementsById, ctx, clickMm);
-        if (!boundary) {
-          draftRef.current = undefined;
-          clearPreview();
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        selectEl(boundary.existingAreaId);
-        useBimStore.getState().clearSelectedIds();
-        draftRef.current = undefined;
-        clearPreview();
-        bumpGeom((x) => x + 1);
-        return;
-      }
-      if (planTool === 'area-boundary') {
-        // F-095/F-098/KRN-08: area boundaries are authored only in Area Plan
-        // views and inherit that view's Area Scheme. Clicks add arbitrary
-        // polygon vertices; click near the first vertex, Enter, or double-click
-        // closes when at least three vertices exist. Shift-click on the second
-        // point preserves the previous two-click rectangle placement flow.
-        if (!activeAreaPlanContext()) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const areaPt = areaSnapPoint(sp);
-        const d = draftRef.current;
-        if (!d || d.kind !== 'area-boundary') {
-          draftRef.current = { kind: 'area-boundary', verts: [areaPt] };
-          redrawAreaBoundaryPreviewMm([areaPt]);
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (d.verts.length === 1 && ev.shiftKey) {
-          const rectBoundary = areaBoundaryRectangleFromDiagonal(d.verts[0]!, areaPt);
-          if (rectBoundary) {
-            commitAreaBoundary(rectBoundary);
-          } else {
-            draftRef.current = undefined;
-            clearPreview();
-            bumpGeom((x) => x + 1);
-          }
-          return;
-        }
-        const reduced = reduceAreaBoundary(
-          { verticesMm: d.verts },
-          {
-            kind: 'click',
-            pointMm: areaPt,
+          draftRef,
+          hasActiveAreaPlanContext: () => Boolean(activeAreaPlanContext()),
+          areaSnapPoint,
+          findAreaBoundaryForClick: (pointMm) => {
+            const ctx = activeAreaPlanContext();
+            return ctx ? findAreaPlacementBoundary(elementsById, ctx, pointMm) : null;
           },
-        );
-        if (reduced.effect.commitBoundaryMm) {
-          commitAreaBoundary(reduced.effect.commitBoundaryMm);
-          return;
-        }
-        draftRef.current = { kind: 'area-boundary', verts: reduced.state.verticesMm };
-        redrawAreaBoundaryPreviewMm(reduced.state.verticesMm);
-        bumpGeom((x) => x + 1);
+          commitAreaBoundary,
+          redrawAreaBoundaryPreviewMm,
+          setPendingPlanRegion,
+          selectElement: (id) => {
+            selectEl(id);
+            useBimStore.getState().clearSelectedIds();
+          },
+          onSemanticCommand,
+          clearPreview,
+          bumpGeom,
+        })
+      ) {
         return;
       }
       if (planTool === 'masking-region') {
         // KRN-10: Now handled by SketchCanvas overlay. This fallback is no longer needed.
-        return;
-      }
-      if (planTool === 'plan-region') {
-        // KRN-V3-06: two-click rectangular plan-region.
-        const d = draftRef.current;
-        if (!d || d.kind !== 'plan-region') {
-          draftRef.current = { kind: 'plan-region', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (!lvlId) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const x0 = Math.min(d.sx, sp.xMm);
-        const x1 = Math.max(d.sx, sp.xMm);
-        const y0 = Math.min(d.sy, sp.yMm);
-        const y1 = Math.max(d.sy, sp.yMm);
-        setPendingPlanRegion({ x0, x1, y0, y1, lvlId, cutPlaneDraft: '900' });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
         return;
       }
       if (planTool === 'revision-cloud') {
