@@ -74,10 +74,16 @@ Target modules:
   open/close state for project/resource/workflow dialogs.
 - `workspace/controllers/splitPaneController.ts`: split composition
   normalization, pane focus, drop targets, and tab placement.
+- `workspace/compositions.tsx`: persisted composition state, tab instance
+  helpers, lens updates, and the composition tab bar.
 - `workspace/controllers/workspaceHydration.ts`: bootstrap, project switching,
   persisted layout restoration, and store hydration.
 - `workspace/controllers/selectionBridge.ts`: selected element, inspector, and
   pane-browser synchronization.
+
+First landed slice:
+
+- `workspace/compositions.tsx`
 
 ## Viewport.tsx
 

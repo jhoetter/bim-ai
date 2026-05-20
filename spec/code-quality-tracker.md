@@ -475,6 +475,10 @@ impact of small changes.
   branches for family solids, nested components, definitions, parameters,
   constraints, or reference planes; these moved to
   `workspace/inspector/familyInspectorSections.tsx`.
+- 2026-05-20: `Workspace.tsx` no longer owns persisted composition state
+  helpers, tab-instance helpers, lens-update helpers, or the composition tab bar;
+  these moved to `workspace/compositions.tsx`, reducing the workspace file from
+  `6,860` to `6,543` lines.
 - 2026-05-19: focused tests cover the extracted plan camera and nearest-wall
   helpers.
 - 2026-05-20: `PlanCanvas.tsx` no longer owns snap-override keyboard sequence
