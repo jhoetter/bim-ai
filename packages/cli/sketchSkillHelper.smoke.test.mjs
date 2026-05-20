@@ -109,17 +109,46 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
     assert.match(missingCompile.stderr, /does-not-exist\.recipe\.json|ENOENT|no such file/i);
 
     const phaseDir = await fs.mkdtemp(path.join(os.tmpdir(), 'skb-helper-phase-'));
-    await writeJson(path.join(phaseDir, 'evidence-manifest.json'), { ok: true });
+    await writeJson(path.join(phaseDir, 'evidence-manifest.json'), {
+      ok: true,
+      currentHead: {
+        gitHead: doctorPayload.gitHead,
+        modelRevision: 3,
+        advisorRuleDigest: await digestFiles(ADVISOR_RULE_FILES),
+        irSha256: 'smoke-ir-sha',
+        capabilitiesSha256: 'smoke-capabilities-sha',
+      },
+    });
     await writeJson(path.join(phaseDir, 'advisor-warning.json'), { total: 0, violations: [] });
     await writeJson(path.join(phaseDir, 'advisor-info.json'), { total: 1, violations: [] });
     await writeJson(path.join(phaseDir, 'advisor-error.json'), { total: 0, violations: [] });
     await writeJson(path.join(phaseDir, 'constructability-report.json'), { ok: true });
+    await writeJson(path.join(phaseDir, 'integrity-diagnostics.json'), { ok: true });
+    await writeJson(path.join(phaseDir, 'renderer-diagnostics.json'), { ok: true });
+    await writeJson(path.join(phaseDir, 'export-validation.json'), { ok: true });
     await writeJson(path.join(phaseDir, 'visual-evidence-contract.json'), { ok: true });
     await writeJson(path.join(phaseDir, 'finding-dispositions.json'), {
       findings: [
         { source: 'advisor', severity: 'info', code: 'reviewed', disposition: 'reviewed' },
       ],
     });
+    await writeJson(path.join(phaseDir, 'assumption-ledger.json'), {
+      ok: true,
+      summary: {
+        assumptionCount: 1,
+        incompleteAssumptionCount: 0,
+        unresolvedContestableCount: 0,
+      },
+    });
+    await writeJson(path.join(phaseDir, 'source-feature-map.json'), {
+      ok: true,
+      summary: { featureCount: 1, incompleteFeatureCount: 0 },
+    });
+    await writeJson(path.join(phaseDir, 'agent-loop-packet.json'), {
+      ok: true,
+      summary: { blockingFindingCount: 0, untracedFindingCount: 0 },
+    });
+    await writeJson(path.join(phaseDir, 'tolerance-ledger.json'), { ok: true, entries: [] });
     await writeJson(path.join(phaseDir, 'screenshot-manifest.json'), { screenshots: [] });
     await writeJson(path.join(phaseDir, 'semantic-checklist.json'), {
       checks: [{ viewId: 'main', verdict: 'pass' }],
@@ -225,6 +254,8 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
       const bundlePath = path.join(seedDir, 'bundle.json');
       const irPath = path.join(evidenceDir, 'sketch-ir.json');
       const capabilitiesPath = path.join(ROOT, 'spec/sketch-to-bim-capability-matrix.json');
+      const rendererSupportPath = path.join(ROOT, 'spec/generated/renderer-support-matrix.md');
+      const provenanceFiles = ['packages/cli/sketchSkillHelper.smoke.test.mjs'];
       await writeJson(bundlePath, { schemaVersion: 'cmd-v3.0', commands: [] });
       await writeJson(irPath, { schemaVersion: 'sketch-understanding-ir.v0' });
       await writeJson(path.join(currentDir, 'tool-run-summary.json'), {
@@ -237,6 +268,12 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
         capabilitiesSha256: await sha256(capabilitiesPath),
         advisorRuleFiles: ADVISOR_RULE_FILES,
         advisorRuleDigest: await digestFiles(ADVISOR_RULE_FILES),
+        rendererSupportMatrixPath: 'spec/generated/renderer-support-matrix.md',
+        rendererSupportMatrixSha256: await sha256(rendererSupportPath),
+        seedSourceFiles: provenanceFiles,
+        seedSourceDigest: await digestFiles(provenanceFiles),
+        targetSpecFiles: provenanceFiles,
+        targetSpecDigest: await digestFiles(provenanceFiles),
       });
       const fresh = await runHelper(['stale-check', '--seed', seed, '--base-url', base]);
       assert.equal(fresh.code, 0, fresh.stderr);
