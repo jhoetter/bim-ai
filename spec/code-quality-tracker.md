@@ -176,7 +176,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                     |
 | ----------------------------------------------------------- | ---------- | --------------------------------------------------------------------------- |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,499      | High-churn plan interaction monolith after extracted overlay/state modules. |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 7,450      | High-churn plan interaction monolith after extracted overlay/state modules. |
 | `packages/cli/cli.mjs`                                      | 6.7k       | CLI command and evidence orchestration.                                     |
 | `app/bim_ai/api/registry.py`                                | 6.2k       | Central API descriptor registry.                                            |
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 5.7k       | Inspector rendering and editing monolith.                                   |
@@ -567,6 +567,9 @@ impact of small changes.
 - 2026-05-20: the next PlanCanvas extraction moved view controls, sketch wiring,
   view/color/selection state, empty-state UI, and component preview lookup into
   focused modules, reducing `PlanCanvas.tsx` to `7,499` local lines.
+- 2026-05-20: the next PlanCanvas extraction moved server plan-projection wire
+  synchronization into `plan/usePlanProjectionWireSync.ts`, reducing
+  `PlanCanvas.tsx` to `7,450` local lines.
 
 ---
 
@@ -1158,6 +1161,8 @@ Initial thresholds can be advisory before becoming blocking:
   query UI into `plan/PlanCanvasContextOverlays.tsx`.
 - 2026-05-20: a follow-up PlanCanvas slice moved view chrome, sketch wrapper,
   and derived state helpers into focused plan modules.
+- 2026-05-20: a follow-up PlanCanvas slice moved server wire-projection sync
+  into `plan/usePlanProjectionWireSync.ts`.
 - 2026-05-20: an InspectorContent extraction slice moved shared row helpers and
   MEP inspector rows into dedicated modules, keeping the second-largest
   frontend monolith on the same downward trend.

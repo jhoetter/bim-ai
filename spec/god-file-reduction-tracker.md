@@ -72,21 +72,22 @@ A-territory target:
 
 ## Work Packages
 
-| ID          | Priority | Status | File                                                        | Target slice                                                       | Exit signal                                                 |
-| ----------- | -------- | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
-| GFR-2026-01 | P0       | Done   | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.     |
-| GFR-2026-02 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.       |
-| GFR-2026-03 | P1       | Done   | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing.   |
-| GFR-2026-04 | P1       | Open   | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.         |
-| GFR-2026-05 | P1       | Done   | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.     |
-| GFR-2026-06 | P1       | Open   | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
-| GFR-2026-07 | P2       | Done   | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.    |
-| GFR-2026-08 | P2       | Open   | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.       |
-| GFR-2026-09 | P2       | Done   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract self-contained family editor panels                        | Workbench below `4,500` LOC with focused tests passing.     |
-| GFR-2026-10 | P2       | Done   | `packages/web/src/tools/toolGrammar.ts`                     | Extract late-stage reducer groups                                  | Tool grammar below `4,000` LOC with focused tests passing.  |
-| GFR-2026-11 | P2       | Done   | `packages/web/src/viewport/meshBuilders.ts`                 | Extract family/detail mesh helpers                                 | Mesh builders below `4,000` LOC with focused tests passing. |
-| GFR-2026-12 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting presentational overlays and controllers        | PlanCanvas below `8,000` LOC with plan tests passing.       |
-| GFR-2026-13 | P0       | Done   | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting wall/context HUD and query overlays            | PlanCanvas below `7,500` LOC with plan tests passing.       |
+| ID          | Priority | Status  | File                                                        | Target slice                                                       | Exit signal                                                 |
+| ----------- | -------- | ------- | ----------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| GFR-2026-01 | P0       | Done    | `packages/web/src/workspace/inspector/InspectorContent.tsx` | Continue extracting self-contained element-kind inspector sections | Inspector below `6,000` LOC with focused tests passing.     |
+| GFR-2026-02 | P0       | Done    | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract pointer/keyboard or overlay controllers                    | PlanCanvas below `8,500` LOC with plan tests passing.       |
+| GFR-2026-03 | P1       | Done    | `packages/web/src/workspace/Workspace.tsx`                  | Extract dialog/modal and command-routing controllers               | Workspace below `6,000` LOC with workspace tests passing.   |
+| GFR-2026-04 | P1       | Open    | `packages/cli/cli.mjs`                                      | Extract command groups and report writers                          | CLI below `6,000` LOC with CLI smoke/tests passing.         |
+| GFR-2026-05 | P1       | Done    | `packages/web/src/Viewport.tsx`                             | Extract scene lifecycle, HUD, and picking hooks                    | Viewport below `5,500` LOC with viewport tests passing.     |
+| GFR-2026-06 | P1       | Open    | `app/bim_ai/api/registry.py`                                | Split descriptor groups without changing public registry output    | Registry below `5,500` LOC with descriptor tests passing.   |
+| GFR-2026-07 | P2       | Done    | `scripts/audit-ui-mcp-parity.mjs`                           | Extract report formatting and audit collectors                     | Audit script below `5,000` LOC with syntax checks green.    |
+| GFR-2026-08 | P2       | Open    | `packages/core/src/index.ts`                                | Move remaining thematic type clusters behind public re-exports     | Core barrel below `5,000` LOC with typecheck passing.       |
+| GFR-2026-09 | P2       | Done    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | Extract self-contained family editor panels                        | Workbench below `4,500` LOC with focused tests passing.     |
+| GFR-2026-10 | P2       | Done    | `packages/web/src/tools/toolGrammar.ts`                     | Extract late-stage reducer groups                                  | Tool grammar below `4,000` LOC with focused tests passing.  |
+| GFR-2026-11 | P2       | Done    | `packages/web/src/viewport/meshBuilders.ts`                 | Extract family/detail mesh helpers                                 | Mesh builders below `4,000` LOC with focused tests passing. |
+| GFR-2026-12 | P0       | Done    | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting presentational overlays and controllers        | PlanCanvas below `8,000` LOC with plan tests passing.       |
+| GFR-2026-13 | P0       | Done    | `packages/web/src/plan/PlanCanvas.tsx`                      | Continue extracting wall/context HUD and query overlays            | PlanCanvas below `7,500` LOC with plan tests passing.       |
+| GFR-2026-14 | P1       | Partial | `packages/web/src/plan/PlanCanvas.tsx`                      | Extract projection sync, camera, and interaction controller hooks  | PlanCanvas below `7,000` LOC with plan tests passing.       |
 
 ## Progress Log
 
@@ -231,3 +232,8 @@ typecheck` and focused PlanCanvas context/overlay tests pass.
   derivation into focused plan modules. Local `wc -l` reports
   `PlanCanvas.tsx` at `7,499` lines. `pnpm --filter @bim-ai/web typecheck` and
   focused PlanCanvas tests pass.
+- 2026-05-20: `GFR-2026-14` started by moving the server plan-projection wire
+  fetch/reset/readout synchronization effect into
+  `packages/web/src/plan/usePlanProjectionWireSync.ts`. Local `wc -l` now
+  reports `PlanCanvas.tsx` at `7,450` lines. Focused PlanCanvas and wire
+  primitive tests pass; `pnpm --filter @bim-ai/web typecheck` passes.

@@ -199,20 +199,15 @@ import {
   resolveActiveComponentAsset,
 } from './planCanvasComponentPreview';
 import { usePlanCanvasSelectionState } from './planCanvasSelectionState';
+import { usePlanProjectionWireSync } from './usePlanProjectionWireSync';
 import { type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
 import { HelperDimsLayer } from './HelperDimsLayer';
 import {
-  buildPlanProjectionQuery,
   extractPlanAnnotationHints,
-  extractPlanCategoryGraphicHintsV0,
   extractPlanGraphicHints,
-  extractPlanPrimitives,
   extractPlanTagStyleHints,
-  extractRoomColorLegend,
-  extractRoomProgrammeLegendEvidenceV0,
-  fetchPlanProjectionWire,
 } from './planProjectionWire';
 import {
   resolvePlanAnnotationHints,
@@ -825,63 +820,19 @@ export function PlanCanvas({
       levelId: lvlId,
     });
 
-  useEffect(() => {
-    let cancel = false;
-    if (!modelId) {
-      queueMicrotask(() => {
-        if (cancel) return;
-        setPlanProjectionPrimitives(null);
-        setPlanRoomSchemeWireReadout(null);
-        setRoomColorLegend([]);
-        setWireGraphicHints(null);
-        setWireAnnotationHints(null);
-        setWireTagStyleHints(null);
-      });
-      return () => {
-        cancel = true;
-      };
-    }
-    void (async () => {
-      try {
-        const qs = buildPlanProjectionQuery({
-          planViewId: display.planViewElementId,
-          fallbackLevelId: display.planViewElementId ? undefined : lvlId || undefined,
-          globalPresentation: planPresentation,
-        });
-        const payload = await fetchPlanProjectionWire(modelId, qs);
-        if (cancel) return;
-        const legendRows = extractRoomColorLegend(payload);
-        setPlanProjectionPrimitives(extractPlanPrimitives(payload));
-        setPlanRoomSchemeWireReadout({
-          roomColorLegendRows: legendRows,
-          programmeLegendEvidence: extractRoomProgrammeLegendEvidenceV0(payload),
-          planCategoryGraphicHintsV0: extractPlanCategoryGraphicHintsV0(payload),
-        });
-        setRoomColorLegend(legendRows);
-        setWireGraphicHints(extractPlanGraphicHints(payload));
-        setWireAnnotationHints(extractPlanAnnotationHints(payload));
-        setWireTagStyleHints(extractPlanTagStyleHints(payload));
-      } catch {
-        if (!cancel) setPlanProjectionPrimitives(null);
-        if (!cancel) setPlanRoomSchemeWireReadout(null);
-        if (!cancel) setRoomColorLegend([]);
-        if (!cancel) setWireGraphicHints(null);
-        if (!cancel) setWireAnnotationHints(null);
-        if (!cancel) setWireTagStyleHints(null);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [
+  usePlanProjectionWireSync({
     modelId,
     revision,
-    display.planViewElementId,
-    lvlId,
+    planViewId: display.planViewElementId,
+    fallbackLevelId: lvlId,
     planPresentation,
     setPlanProjectionPrimitives,
     setPlanRoomSchemeWireReadout,
-  ]);
+    setRoomColorLegend,
+    setWireGraphicHints,
+    setWireAnnotationHints,
+    setWireTagStyleHints,
+  });
 
   const resizeCam = useCallback(() => {
     const host = mountRef.current;

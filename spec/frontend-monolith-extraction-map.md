@@ -41,6 +41,8 @@ Target modules:
 - `plan/planCanvasComponentPreview.ts`: component asset preview lookup.
 - `plan/planCanvasSelectionState.ts`: selected element, grip, and temporary
   dimension derivation.
+- `plan/usePlanProjectionWireSync.ts`: server plan-projection wire fetch/reset
+  synchronization.
 - `plan/interaction/planCameraMath.ts`: plan slice constants, scale bounds,
   orthographic grid/snap spacing, and pointer ray projection.
 - `plan/selection/nearestWall.ts`: wall hit projection and level-scoped wall
@@ -78,6 +80,7 @@ First landed slices:
 - `plan/planCanvasColorSchemeState.ts`
 - `plan/planCanvasComponentPreview.ts`
 - `plan/planCanvasSelectionState.ts`
+- `plan/usePlanProjectionWireSync.ts`
 
 ## InspectorContent.tsx
 
