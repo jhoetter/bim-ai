@@ -18,6 +18,8 @@ PYTEST_ARGS ?= tests/
 #   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
 WEB_PORT ?= 2000
 API_PORT ?= 8500
+BROWSER_API_PORT ?= $(API_PORT)
+BROWSER_API_WS_BASE ?=
 design ?= default
 SEED_NAME ?= $(name)
 SEED_ROOT ?= $(seed_root)
@@ -32,6 +34,7 @@ help:
 	@echo "bim-ai Makefile"
 	@echo "  install   — pnpm + Python venv"
 	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
+	@echo "              remote tunnel example: make dev BROWSER_API_PORT=28500, then ssh -L 22000:127.0.0.1:2000 -L 28500:127.0.0.1:8500"
 	@echo "  seed      — load seed-artifacts/* or an empty dev model; pass name=<seed-name> to load one"
 	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
@@ -77,10 +80,10 @@ kill-ports:
 	    pids=$$(lsof -ti :$$p 2>/dev/null); \
 	    [ -n "$$pids" ] && kill -9 $$pids 2>/dev/null || true; \
 	  done; \
-	  pkill -9 -f "vite.*$$WS_TAG"     2>/dev/null || true; \
-	  pkill -9 -f "uvicorn.*$$WS_TAG"   2>/dev/null || true; \
-	  pkill -9 -f "concurrently.*$$WS_TAG" 2>/dev/null || true; \
-	  pkill -9 -f "turbo run dev"       2>/dev/null || true; \
+	  pkill -9 -f "[v]ite.*$$WS_TAG"     2>/dev/null || true; \
+	  pkill -9 -f "[u]vicorn.*$$WS_TAG"   2>/dev/null || true; \
+	  pkill -9 -f "[c]oncurrently.*$$WS_TAG" 2>/dev/null || true; \
+	  pkill -9 -f "[t]urbo run dev"       2>/dev/null || true; \
 	  busy=""; \
 	  for p in $$PORTS; do \
 	    lsof -ti :$$p >/dev/null 2>&1 && busy="$$busy $$p"; \
@@ -98,6 +101,7 @@ dev: db-up kill-ports seed
 endif
 	@echo "→ API   http://127.0.0.1:$(API_PORT)/api/health"
 	@echo "→ Web   http://127.0.0.1:$(WEB_PORT)"
+	@echo "→ Browser API/WebSocket port: $(BROWSER_API_PORT)$(if $(BROWSER_API_WS_BASE), ($(BROWSER_API_WS_BASE)),)"
 	$(PNPM) -w exec concurrently -k -n api,web -c blue,magenta \
 	  "$(MAKE) dev-api" \
 	  "$(MAKE) dev-web"
@@ -106,7 +110,7 @@ dev-api:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
 
 dev-web:
-	API_PORT=$(API_PORT) VITE_API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
+	API_PORT=$(API_PORT) VITE_API_PORT=$(BROWSER_API_PORT) VITE_API_WS_BASE="$(BROWSER_API_WS_BASE)" VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
 
 seed:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python scripts/seed.py $(SEED_ARGS)
