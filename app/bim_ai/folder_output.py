@@ -318,6 +318,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTraceWorkOrder": out_dir / "ai-reading" / "ai-visual-trace-work-order.json",
         "aiVisualAgentRequests": out_dir / "ai-reading" / "ai-visual-agent-requests.json",
         "readerPassManifest": out_dir / "ai-reading" / "reader-pass-manifest.json",
+        "readerDispatchGuide": out_dir / "ai-reading" / "reader-dispatch.md",
         "readerResponsesRaw": out_dir / "ai-reading" / "reader-responses.raw.json",
         "readerResponseIndex": out_dir / "ai-reading" / "reader-response-index.json",
         "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
@@ -419,6 +420,10 @@ def build_reverse_bim_folder_output(
         _write_json(artifacts[key], payload)
     artifacts["sourceAnalysis"].write_text(
         _source_analysis_markdown(run_summary, source_completeness, readiness, conflicts),
+        encoding="utf-8",
+    )
+    artifacts["readerDispatchGuide"].write_text(
+        _reader_dispatch_markdown(run_summary, reader_pass_manifest),
         encoding="utf-8",
     )
     artifacts["readme"].write_text(_readme(run_summary, artifacts), encoding="utf-8")
@@ -1757,6 +1762,86 @@ def _source_analysis_markdown(
         for blocker in blockers:
             lines.append(f"- `{blocker.get('workPackageId')}`: {blocker.get('status')}")
     lines.append("")
+    return "\n".join(lines)
+
+
+def _reader_dispatch_markdown(
+    run_summary: dict[str, Any],
+    reader_pass_manifest: dict[str, Any],
+) -> str:
+    summary = reader_pass_manifest.get("summary") or {}
+    policy = reader_pass_manifest.get("readerPassPolicy") or {}
+    assignments = [
+        row
+        for row in reader_pass_manifest.get("assignments") or []
+        if isinstance(row, dict)
+    ]
+    open_assignments = [
+        row for row in assignments if row.get("status") != "response_received"
+    ]
+    lines = [
+        "# Reverse-BIM Reader Dispatch",
+        "",
+        f"Package state: `{run_summary.get('packageState')}`",
+        "",
+        "Do not author BIM from this folder-output until the reader assignments below have source-fact responses.",
+        "",
+        "## Required Files",
+        "",
+        "- Read: `ai-reading/reader-pass-manifest.json`",
+        "- Read: `ai-reading/ai-visual-agent-requests.json`",
+        "- Write responses under the hinted `ai-reading/responses/<reader-pass-id>/...json` paths or provide the same JSON objects to the source agent loop.",
+        "",
+        "## Summary",
+        "",
+        f"- Base request chunks: {summary.get('baseRequestCount', 0)}",
+        f"- Reader assignments: {summary.get('assignmentCount', 0)}",
+        f"- Open assignments: {summary.get('waitingAssignmentCount', 0)}",
+        f"- Critical work packages needing consensus: {summary.get('criticalWorkPackageCount', 0)}",
+        f"- Minimum independent readers for critical facts: {policy.get('minimumIndependentReadersForCriticalFacts', 2)}",
+        "",
+        "## Response Contract",
+        "",
+        "Each response must be JSON with:",
+        "",
+        "- `format: sourceAiVisualTraceReaderResponse_v1`",
+        "- `workPackageId` matching the assignment",
+        "- `requestId` when responding to a chunked assignment",
+        "- `readerPassId` or another independent reader identity",
+        "- `facts[]` only; no BIM commands and no model mutations",
+        "- each fact must include `factId`, `kind`, `value`, `confidence`, and `provenance`",
+        "",
+        "## Open Assignments",
+        "",
+        "| Reader pass | Work package | Request part | Images | Matched roles | Response path hint |",
+        "| --- | --- | --- | ---: | --- | --- |",
+    ]
+    for row in open_assignments:
+        part = f"{row.get('requestPartIndex')}/{row.get('requestPartCount')}"
+        matched = ", ".join(str(value) for value in row.get("matchedClassifications") or []) or "-"
+        lines.append(
+            "| "
+            f"`{row.get('readerPassId')}` | "
+            f"`{row.get('workPackageId')}` | "
+            f"{part} | "
+            f"{row.get('inputImageCount', 0)} | "
+            f"{matched} | "
+            f"`{row.get('responsePathHint')}` |"
+        )
+    if not open_assignments:
+        lines.append("| - | - | - | 0 | - | - |")
+    lines.extend(
+        [
+            "",
+            "## After Reading",
+            "",
+            "1. Collect all reader responses.",
+            "2. Rerun `source.ai_visual_trace_agent_loop` or regenerate the folder-output with the responses.",
+            "3. Resolve `ai-reading/repair-requests.open.json` until all required packages are accepted.",
+            "4. Continue to MCP handoff only after source completeness, reader consensus, and MCP readiness allow it.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

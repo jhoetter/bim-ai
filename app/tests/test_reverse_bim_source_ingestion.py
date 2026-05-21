@@ -1126,6 +1126,10 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert Path(package["artifacts"]["runSummary"]).exists()
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()
+    assert Path(package["artifacts"]["readerPassManifest"]).exists()
+    dispatch_guide = Path(package["artifacts"]["readerDispatchGuide"])
+    assert dispatch_guide.exists()
+    assert "Do not author BIM" in dispatch_guide.read_text(encoding="utf-8")
     assert Path(package["artifacts"]["packageAcceptanceReport"]).exists()
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0
 
