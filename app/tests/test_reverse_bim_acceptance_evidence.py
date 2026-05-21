@@ -10,6 +10,10 @@ from bim_ai.reverse_bim_acceptance_evidence import (
     build_ui_evidence_report,
 )
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.reverse_bim_visual_review import (
+    build_reverse_bim_visual_review_requests,
+    normalize_reverse_bim_visual_review_responses,
+)
 from bim_ai.routes_api import api_router
 
 
@@ -174,6 +178,118 @@ def test_view_capture_plan_creates_ui_and_overlay_work_order() -> None:
     assert plan["captures"][1]["evidenceRowTemplate"]["sourcePageId"] == "eg-p1"
 
 
+def test_visual_review_normalizes_ai_screenshot_responses_into_evidence_rows() -> None:
+    capture_run = {
+        "format": "reverseBimViewCaptureRun_v1",
+        "captures": [
+            {
+                "captureId": "ui:plan-eg",
+                "evidenceKind": "ui",
+                "viewId": "plan-eg",
+                "viewKind": "floor_plan",
+                "status": "captured",
+                "path": "evidence/ui-plan-eg.png",
+                "evidenceRowTemplate": {
+                    "viewId": "plan-eg",
+                    "kind": "floor_plan",
+                    "visualChecklist": {
+                        "required_level_not_empty": False,
+                        "room_labels_match_source": False,
+                    },
+                },
+            },
+            {
+                "captureId": "overlay:eg-p1",
+                "evidenceKind": "overlay",
+                "viewId": "overlay-eg-p1",
+                "viewKind": "floor_plan",
+                "sourcePageId": "eg-p1",
+                "coordinateFrameId": "frame-eg",
+                "status": "captured",
+                "path": "evidence/overlay-eg-p1.png",
+                "evidenceRowTemplate": {
+                    "viewId": "overlay-eg-p1",
+                    "kind": "floor_plan",
+                    "sourcePageId": "eg-p1",
+                    "coordinateFrameId": "frame-eg",
+                    "toleranceMm": 40,
+                },
+            },
+        ],
+    }
+    requests = build_reverse_bim_visual_review_requests(capture_run=capture_run)
+    normalized = normalize_reverse_bim_visual_review_responses(
+        capture_run=capture_run,
+        visual_review_requests=requests,
+        responses=[
+            {
+                "captureId": "ui:plan-eg",
+                "verdict": "passed",
+                "visualChecklist": {
+                    "required_level_not_empty": True,
+                    "room_labels_match_source": True,
+                },
+            },
+            {
+                "captureId": "overlay:eg-p1",
+                "verdict": "passed",
+                "maxDeviationMm": 12,
+            },
+        ],
+    )
+
+    assert requests["ok"] is True
+    assert requests["summary"]["uiRequestCount"] == 1
+    assert requests["summary"]["overlayRequestCount"] == 1
+    assert normalized["ok"] is True
+    assert normalized["uiEvidenceRows"][0]["visualChecklist"] == {
+        "required_level_not_empty": True,
+        "room_labels_match_source": True,
+    }
+    assert normalized["overlayEvidenceRows"][0]["maxDeviationMm"] == 12
+    assert normalized["overlayEvidenceRows"][0]["status"] == "passed"
+
+
+def test_visual_review_blocks_missing_or_failed_ai_responses() -> None:
+    capture_run = {
+        "captures": [
+            {
+                "captureId": "ui:plan-eg",
+                "evidenceKind": "ui",
+                "viewId": "plan-eg",
+                "viewKind": "floor_plan",
+                "status": "captured",
+                "path": "evidence/ui-plan-eg.png",
+                "evidenceRowTemplate": {
+                    "visualChecklist": {"required_level_not_empty": False}
+                },
+            }
+        ]
+    }
+    requests = build_reverse_bim_visual_review_requests(capture_run=capture_run)
+    missing = normalize_reverse_bim_visual_review_responses(
+        capture_run=capture_run,
+        visual_review_requests=requests,
+        responses=[],
+    )
+    failed = normalize_reverse_bim_visual_review_responses(
+        capture_run=capture_run,
+        visual_review_requests=requests,
+        responses=[
+            {
+                "captureId": "ui:plan-eg",
+                "verdict": "failed",
+                "visualChecklist": {"required_level_not_empty": False},
+            }
+        ],
+    )
+
+    assert missing["ok"] is False
+    assert missing["findings"][0]["code"] == "visual_review_response_missing"
+    assert failed["ok"] is False
+    assert failed["uiEvidenceRows"][0]["status"] == "blocked"
+
+
 def test_acceptance_evidence_routes() -> None:
     app = FastAPI()
     app.include_router(api_router)
@@ -215,6 +331,42 @@ def test_acceptance_evidence_routes() -> None:
             "outputDir": "tmp/evidence",
         },
     )
+    visual_requests_resp = client.post(
+        "/api/v3/reverse-bim/visual-review-requests",
+        json={
+            "captureRun": {
+                "captures": [
+                    {
+                        "captureId": "ui:3d",
+                        "evidenceKind": "ui",
+                        "viewId": "ui:3d:overview",
+                        "viewKind": "3d",
+                        "status": "captured",
+                        "path": "tmp/evidence/ui-3d.png",
+                    }
+                ]
+            }
+        },
+    )
+    visual_normalize_resp = client.post(
+        "/api/v3/reverse-bim/visual-review-normalize",
+        json={
+            "captureRun": {
+                "captures": [
+                    {
+                        "captureId": "ui:3d",
+                        "evidenceKind": "ui",
+                        "viewId": "ui:3d:overview",
+                        "viewKind": "3d",
+                        "status": "captured",
+                        "path": "tmp/evidence/ui-3d.png",
+                    }
+                ]
+            },
+            "visualReviewRequests": visual_requests_resp.json(),
+            "responses": [{"captureId": "ui:3d", "verdict": "passed"}],
+        },
+    )
 
     assert alias_resp.status_code == 200
     assert alias_resp.json()["summary"]["accepted"] is True
@@ -222,3 +374,10 @@ def test_acceptance_evidence_routes() -> None:
     assert capture_resp.json()["format"] == "reverseBimViewCapturePlan_v1"
     assert execute_resp.status_code == 200
     assert execute_resp.json()["format"] == "reverseBimViewCaptureExecutionRequest_v1"
+    assert visual_requests_resp.status_code == 200
+    assert visual_requests_resp.json()["format"] == "reverseBimVisualReviewRequests_v1"
+    assert visual_normalize_resp.status_code == 200
+    assert (
+        visual_normalize_resp.json()["format"]
+        == "reverseBimVisualReviewNormalization_v1"
+    )

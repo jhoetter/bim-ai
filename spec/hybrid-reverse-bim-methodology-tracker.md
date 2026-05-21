@@ -242,8 +242,8 @@ Every slice uses the same loop:
 | LOOP-007 | Integrity after every slice. | `qa.integrity_preflight`, domain integrity checks. | Done | Include hosted openings, floors/stairs, room topology, site georeferencing. |
 | LOOP-008 | Area/volume reconciliation. | `qa.area_reconciliation`, schedule tools. | Partial | Add volume reconciliation and source schedule binding per level/half/building. |
 | LOOP-009 | Physical topology gate. | `reverse_bim.physical_topology`, `qa.physical_topology`, room boundary resolvers. | Partial | Expand to require real walls/openings/stairs, not analytical-only room graphs. |
-| LOOP-010 | Source overlay evidence. | `reverse_bim.source_overlay_evidence`, `qa.source_overlay_compare`. | Partial | Build automatic overlay generation from model views and source page transforms. |
-| LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata; `reverse_bim.view_capture_plan` produces deterministic browser/Playwright capture work orders; `reverse_bim.view_capture_execute` runs the plan in Chromium and writes PNGs/manifests. | Partial | Invoke the runner automatically from hybrid runs and feed reviewed checklist rows into UI evidence. |
+| LOOP-010 | Source overlay evidence. | `reverse_bim.source_overlay_evidence`, `qa.source_overlay_compare`, `reverse_bim.view_capture_plan`, `reverse_bim.view_capture_execute`, and `reverse_bim.visual_review_normalize` support overlay screenshot evidence plus AI-returned deviation metrics. | Partial | Build automatic geometric overlay generation from model views and source page transforms. |
+| LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata; `reverse_bim.view_capture_plan` produces deterministic browser/Playwright capture work orders; `reverse_bim.view_capture_execute` runs the plan in Chromium and writes PNGs/manifests; `reverse_bim.visual_review_requests` and `reverse_bim.visual_review_normalize` turn AI visual review into evidence rows. | Partial | Invoke capture/review automatically from hybrid runs. |
 | LOOP-012 | Finding dispositions. | `reverse_bim.phase_packet` with dispositions. | Partial | Enforce source-backed existing-condition policy and block fixable authoring errors. |
 | LOOP-013 | Repair loop. | AI-reader repair requests exist; `reverse_bim.source_spec_revision` maps feedback, `reverse_bim.source_revision_ledger` converts actions into open repair ledger entries, and `reverse_bim.source_revision_ledger_persist` saves resumable ledger/history files. | Partial | Connect persisted repair worklists to automated rerun of impacted slices. |
 | LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks reopened facts; `reverse_bim.source_revision_ledger_persist` records reopened facts; `reverse_bim.handoff_regeneration` produces affected-slice MCP handoff or reader repair work. | Partial | Automatically run focused readers/rerun affected slices. |
@@ -300,9 +300,9 @@ Minimum view set for a house:
 | VIEW-002 | Source-equivalent elevation views. | Cardinal elevation helper exists; elevation view UI exists. | Partial | Add first-class author/query/update elevation view MCP contract if not already stable. |
 | VIEW-003 | Source-equivalent section views. | Section/sheet infrastructure exists. | Partial | Add reverse-BIM section placement from source section marks or inferred review cuts. |
 | VIEW-004 | 3D/cutaway review views. | `save_3d_view`, 3D viewer, clipping controls. | Partial | Add deterministic camera presets for reverse-BIM review and screenshot capture. |
-| VIEW-005 | Live screenshot capture. | Visual evidence scripts exist; validator exists; `reverse_bim.view_capture_plan` defines required browser captures and evidence row templates; `reverse_bim.view_capture_execute` opens each requested view and writes PNGs/manifests. | Partial | Wire capture execution into the hybrid run executor and review loop. |
+| VIEW-005 | Live screenshot capture. | Visual evidence scripts exist; validator exists; `reverse_bim.view_capture_plan` defines required browser captures and evidence row templates; `reverse_bim.view_capture_execute` opens each requested view and writes PNGs/manifests; visual review request/normalization tools convert screenshot review into gate rows. | Partial | Wire capture execution into the hybrid run executor. |
 | VIEW-006 | Overlay source page on model view. | Underlay and overlay evidence validators exist. | Partial | Build generated overlay image and numeric deviation report. |
-| VIEW-007 | Human-visible checklist. | `reverse_bim.ui_evidence` supports checklist validation. | Partial | Add required checklist items per view kind and block on failed visual checks. |
+| VIEW-007 | Human-visible checklist. | `reverse_bim.ui_evidence` supports checklist validation; `reverse_bim.visual_review_requests` packages checklist items for AI review; `reverse_bim.visual_review_normalize` blocks missing/failed responses. | Partial | Invoke the checklist review automatically in hybrid runs. |
 
 ## Advisor And Existing-Condition Policy
 
@@ -473,8 +473,8 @@ The Leo showcase is successful only if:
 | --- | --- | --- | --- |
 | W4-001 | Create source-equivalent plan/elevation/section/site views. | Partial | Views are derived from source-page roles and coordinate frames. |
 | W4-002 | Add official screenshot capture. | Partial | `reverse_bim.view_capture_plan` defines deterministic capture work orders; `reverse_bim.view_capture_execute` / `pnpm --filter @bim-ai/web reverse-bim:capture` executes them in Chromium and writes screenshot manifests. It still needs end-to-end invocation from the hybrid run executor. |
-| W4-003 | Generate overlay comparison payloads. | Partial | Source page and model screenshot are compared with numeric deviation and visual artifact. |
-| W4-004 | Enforce visual checklist. | Partial | Human-visible failures like empty KG or incoherent stairs block acceptance. |
+| W4-003 | Generate overlay comparison payloads. | Partial | AI visual review can return overlay `maxDeviationMm` from captured screenshots; automatic geometric overlay comparison remains open. |
+| W4-004 | Enforce visual checklist. | Partial | Human-visible failures like empty KG or incoherent stairs block acceptance through `reverse_bim.visual_review_normalize` + `reverse_bim.ui_evidence`; automatic invocation from hybrid run remains open. |
 
 ### Wave 5: Leo Fresh Run
 
@@ -504,11 +504,11 @@ Implementation: partial surfaces exist across source packaging, document
 authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification/ledgering/persistence, hybrid slice/run state
 reporting, single-slice live execution, runtime skill guidance, view-capture work
-orders plus a Chromium capture runner, handoff regeneration, and acceptance
-validation.
+orders plus a Chromium capture runner, AI visual review requests/normalization,
+handoff regeneration, and acceptance validation.
 Missing critical glue: UI-assisted coordinate control-point picking, automatic
-overlay measurement, automatic screenshot-runner invocation from hybrid runs,
-automatic handoff reruns, and Leo fresh-run evidence.
+geometric overlay measurement, automatic screenshot/review invocation from
+hybrid runs, automatic handoff reruns, and Leo fresh-run evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

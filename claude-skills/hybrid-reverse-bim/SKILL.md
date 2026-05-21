@@ -188,6 +188,8 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.final_acceptance`
 - `reverse_bim.view_capture_plan`
 - `reverse_bim.view_capture_execute` via `pnpm --filter @bim-ai/web reverse-bim:capture -- --plan <plan.json> --out <evidence-dir> --json`
+- `reverse_bim.visual_review_requests`
+- `reverse_bim.visual_review_normalize`
 
 Use MCP authoring and query/resolve surfaces:
 

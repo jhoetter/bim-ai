@@ -188,6 +188,10 @@ from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
 from bim_ai.reverse_bim_source_revision_persistence import persist_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.reverse_bim_visual_review import (
+    build_reverse_bim_visual_review_requests,
+    normalize_reverse_bim_visual_review_responses,
+)
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_building_scope import build_source_building_scope_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
@@ -2431,6 +2435,30 @@ async def reverse_bim_view_capture_execute_route(
             else "Provide a valid capture plan before running browser evidence."
         ),
     }
+
+
+@api_router.post("/v3/reverse-bim/visual-review-requests")
+async def reverse_bim_visual_review_requests_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_visual_review_requests(
+        capture_run=body.get("captureRun") or body.get("capture_run"),
+        source_context=body.get("sourceContext") or body.get("source_context"),
+        run_id=body.get("runId") or body.get("run_id"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/visual-review-normalize")
+async def reverse_bim_visual_review_normalize_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return normalize_reverse_bim_visual_review_responses(
+        capture_run=body.get("captureRun") or body.get("capture_run"),
+        visual_review_requests=body.get("visualReviewRequests")
+        or body.get("visual_review_requests"),
+        responses=body.get("responses") or body.get("visualReviewResponses"),
+        default_tolerance_mm=float(body.get("defaultToleranceMm") or 50.0),
+    )
 
 
 @api_router.post("/v3/reverse-bim/level-completeness")

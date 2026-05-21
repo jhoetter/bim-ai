@@ -488,6 +488,20 @@ for _reverse_tool in (
         "notes": "Returns the deterministic Chromium runner command for a reverseBimViewCapturePlan_v1. The runner writes PNG screenshots and emits a manifest whose UI checklist and overlay metrics remain pending until AI review/measurement.",
     },
     {
+        "name": "reverse_bim.visual_review_requests",
+        "title": "ReverseBimVisualReviewRequestsInput",
+        "path": "/api/v3/reverse-bim/visual-review-requests",
+        "cli": "bim-ai reverse-bim visual-review-requests --capture-run capture-manifest.json --source-context source-context.json",
+        "notes": "Builds provider-neutral multimodal AI review requests from captured BIM screenshots so plan/3D UI checklist and source overlay metrics are reviewed consistently.",
+    },
+    {
+        "name": "reverse_bim.visual_review_normalize",
+        "title": "ReverseBimVisualReviewNormalizeInput",
+        "path": "/api/v3/reverse-bim/visual-review-normalize",
+        "cli": "bim-ai reverse-bim visual-review-normalize --capture-run capture-manifest.json --requests visual-review-requests.json --responses visual-review-responses.json",
+        "notes": "Normalizes AI visual review responses into uiEvidenceRows and overlayEvidenceRows for the strict reverse-BIM evidence gates.",
+    },
+    {
         "name": "reverse_bim.level_completeness",
         "title": "ReverseBimLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/level-completeness",
