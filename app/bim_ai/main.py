@@ -61,6 +61,15 @@ async def websocket_endpoint(
     websocket: WebSocket,
     model_id: UUID,
     resumeFrom: int | None = Query(default=None),
+    initialSnapshot: bool = Query(default=True),
+    snapshotRevision: int | None = Query(default=None),
 ):
     hub: Hub = websocket.app.state.hub
-    await websocket_loop(websocket, model_id, hub, resume_from=resumeFrom)
+    await websocket_loop(
+        websocket,
+        model_id,
+        hub,
+        resume_from=resumeFrom,
+        send_initial_snapshot=initialSnapshot,
+        snapshot_revision=snapshotRevision,
+    )

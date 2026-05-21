@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveApiWsBase } from './wsUrl';
+import { modelWsUrl, resolveApiWsBase } from './wsUrl';
 
 describe('resolveApiWsBase', () => {
   it('uses the API dev port directly in dev mode', () => {
@@ -32,5 +32,26 @@ describe('resolveApiWsBase', () => {
         apiWsBase: 'ws://api.local.test:9000/',
       }),
     ).toBe('ws://api.local.test:9000');
+  });
+});
+
+describe('modelWsUrl', () => {
+  it('preserves the legacy resumeFrom call shape', () => {
+    const url = new URL(modelWsUrl('model a', 4));
+    expect(url.pathname).toBe('/ws/model%20a');
+    expect(url.searchParams.get('resumeFrom')).toBe('4');
+  });
+
+  it('can skip initial snapshots with a revision guard', () => {
+    const url = new URL(
+      modelWsUrl('model-a', {
+        initialSnapshot: false,
+        snapshotRevision: 12,
+      }),
+    );
+    expect(url.pathname).toBe('/ws/model-a');
+    expect(url.searchParams.get('initialSnapshot')).toBe('false');
+    expect(url.searchParams.get('snapshotRevision')).toBe('12');
+    expect(url.searchParams.has('resumeFrom')).toBe(false);
   });
 });

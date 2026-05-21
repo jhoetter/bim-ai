@@ -9,6 +9,7 @@ Tests:
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
 
@@ -53,6 +54,14 @@ class _DisconnectOnSendWS(_MockWS):
 
     async def receive_json(self) -> dict[str, Any]:
         raise AssertionError("receive_json should not run after bootstrap disconnect")
+
+
+class _ReceiveDisconnectWS(_MockWS):
+    async def accept(self) -> None:
+        pass
+
+    async def receive_json(self) -> dict[str, Any]:
+        raise WebSocketDisconnect(code=1000)
 
 
 class _SessionContext:
@@ -147,6 +156,68 @@ async def test_websocket_loop_unregisters_when_initial_send_disconnects(monkeypa
 
     assert str(model_id) not in hub._rooms
     assert id(ws) not in hub._socket_meta
+
+
+async def test_websocket_loop_skips_duplicate_initial_snapshot_when_revision_matches(
+    monkeypatch: Any,
+) -> None:
+    hub = Hub()
+    model_id = uuid4()
+    ws: Any = _ReceiveDisconnectWS()
+
+    async def fake_load_model_row(session: object, row_model_id: object) -> object:
+        assert row_model_id == model_id
+        return SimpleNamespace(document={"revision": 7, "elements": {}})
+
+    monkeypatch.setattr(routes_api, "SessionMaker", lambda: _SessionContext())
+    monkeypatch.setattr(routes_api, "load_model_row", fake_load_model_row)
+
+    await routes_api.websocket_loop(
+        ws,
+        model_id,
+        hub,
+        send_initial_snapshot=False,
+        snapshot_revision=7,
+    )
+
+    assert ws.sent == [
+        {
+            "type": "replay_done",
+            "modelId": str(model_id),
+            "resumedFrom": None,
+            "snapshotRevision": 7,
+        }
+    ]
+    assert str(model_id) not in hub._rooms
+
+
+async def test_websocket_loop_sends_snapshot_when_client_revision_is_stale(
+    monkeypatch: Any,
+) -> None:
+    hub = Hub()
+    model_id = uuid4()
+    ws: Any = _ReceiveDisconnectWS()
+
+    async def fake_load_model_row(session: object, row_model_id: object) -> object:
+        assert row_model_id == model_id
+        return SimpleNamespace(document={"revision": 8, "elements": {}})
+
+    monkeypatch.setattr(routes_api, "SessionMaker", lambda: _SessionContext())
+    monkeypatch.setattr(routes_api, "load_model_row", fake_load_model_row)
+
+    await routes_api.websocket_loop(
+        ws,
+        model_id,
+        hub,
+        send_initial_snapshot=False,
+        snapshot_revision=7,
+    )
+
+    assert len(ws.sent) == 1
+    assert ws.sent[0]["type"] == "snapshot"
+    assert ws.sent[0]["modelId"] == str(model_id)
+    assert ws.sent[0]["revision"] == 8
+    assert str(model_id) not in hub._rooms
 
 
 async def test_backpressure_disconnect() -> None:

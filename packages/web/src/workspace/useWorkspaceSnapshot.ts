@@ -12,6 +12,7 @@ import {
 import { log } from '../logger';
 import { useBimStore } from '../state/store';
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+import { modelWsUrl } from '../lib/wsUrl';
 import { mapComments } from './workspaceUtils';
 
 const DISABLE_WS =
@@ -146,11 +147,17 @@ export function useWorkspaceSnapshot(): {
   const mountedRef = useRef(true);
 
   const connectWs = useCallback(
-    (mid: string, lastSeq: number | null): WebSocket => {
-      const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const resumeParam = lastSeq !== null ? `?resumeFrom=${lastSeq}` : '';
+    (
+      mid: string,
+      lastSeq: number | null,
+      snapshotRevision: number | null = null,
+    ): WebSocket => {
       const ws = new WebSocket(
-        `${p}://${window.location.host}/ws/${encodeURIComponent(mid)}${resumeParam}`,
+        modelWsUrl(mid, {
+          resumeFrom: lastSeq,
+          initialSnapshot: false,
+          snapshotRevision,
+        }),
       );
 
       ws.onopen = () => {
@@ -177,7 +184,11 @@ export function useWorkspaceSnapshot(): {
         const doReconnect = () => {
           if (!mountedRef.current) return;
           wsRef.current?.close();
-          const nextWs = connectWs(mid, lastSeqRef.current);
+          const nextWs = connectWs(
+            mid,
+            lastSeqRef.current,
+            useBimStore.getState().revision ?? null,
+          );
           wsRef.current = nextWs;
           window.setTimeout(() => {
             if (wsRef.current === nextWs && nextWs.readyState === WebSocket.OPEN) {
@@ -277,7 +288,7 @@ export function useWorkspaceSnapshot(): {
       if (!DISABLE_WS) {
         const lastSeq = readLastSeq(mid);
         lastSeqRef.current = lastSeq;
-        const nextWs = connectWs(mid, lastSeq);
+        const nextWs = connectWs(mid, lastSeq, snap.revision ?? null);
         wsRef.current = nextWs;
         window.setTimeout(() => {
           if (wsRef.current === nextWs && nextWs.readyState === WebSocket.OPEN) {

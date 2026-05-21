@@ -43,8 +43,30 @@ export function apiWsUrl(path: string): string {
   return `${apiWsBase()}${suffix}`;
 }
 
-export function modelWsUrl(modelId: string, resumeFrom?: number | null): string {
-  const resumeParam =
-    resumeFrom !== null && resumeFrom !== undefined ? `?resumeFrom=${resumeFrom}` : '';
-  return apiWsUrl(`/ws/${encodeURIComponent(modelId)}${resumeParam}`);
+export type ModelWsUrlOptions = {
+  resumeFrom?: number | null;
+  initialSnapshot?: boolean;
+  snapshotRevision?: number | null;
+};
+
+export function modelWsUrl(
+  modelId: string,
+  resumeFromOrOptions?: number | null | ModelWsUrlOptions,
+): string {
+  const options =
+    typeof resumeFromOrOptions === 'object' && resumeFromOrOptions !== null
+      ? resumeFromOrOptions
+      : { resumeFrom: resumeFromOrOptions };
+  const params = new URLSearchParams();
+  if (options.resumeFrom !== null && options.resumeFrom !== undefined) {
+    params.set('resumeFrom', String(options.resumeFrom));
+  }
+  if (options.initialSnapshot !== undefined) {
+    params.set('initialSnapshot', options.initialSnapshot ? 'true' : 'false');
+  }
+  if (options.snapshotRevision !== null && options.snapshotRevision !== undefined) {
+    params.set('snapshotRevision', String(options.snapshotRevision));
+  }
+  const query = params.toString();
+  return apiWsUrl(`/ws/${encodeURIComponent(modelId)}${query ? `?${query}` : ''}`);
 }

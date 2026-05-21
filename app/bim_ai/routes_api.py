@@ -3235,6 +3235,8 @@ async def websocket_loop(
     model_id: UUID,
     hub: Hub,
     resume_from: int | None = None,
+    send_initial_snapshot: bool = True,
+    snapshot_revision: int | None = None,
 ) -> None:
 
     sid = str(model_id)
@@ -3254,17 +3256,30 @@ async def websocket_loop(
     try:
         if resume_from is None:
             doc = Document.model_validate(row.document)
-            await websocket.send_json(
-                {
-                    "type": "snapshot",
-                    "modelId": sid,
-                    "revision": doc.revision,
-                    "elements": {
-                        k: el.model_dump(by_alias=True) for k, el in doc.elements.items()
-                    },
-                    "violations": violations_wire(doc.elements),
-                },
+            should_send_snapshot = send_initial_snapshot or (
+                snapshot_revision is not None and snapshot_revision != doc.revision
             )
+            if should_send_snapshot:
+                await websocket.send_json(
+                    {
+                        "type": "snapshot",
+                        "modelId": sid,
+                        "revision": doc.revision,
+                        "elements": {
+                            k: el.model_dump(by_alias=True) for k, el in doc.elements.items()
+                        },
+                        "violations": violations_wire(doc.elements),
+                    },
+                )
+            else:
+                await websocket.send_json(
+                    {
+                        "type": "replay_done",
+                        "modelId": sid,
+                        "resumedFrom": None,
+                        "snapshotRevision": doc.revision,
+                    }
+                )
         else:
             replayed = hub.resume(sid, resume_from)
             if replayed is None:
