@@ -190,16 +190,25 @@ def build_reverse_bim_folder_output(
         run_id=run_id,
     )
 
-    discovered_reader_responses = (
-        None if reader_responses is not None else _load_reader_response_files(out_dir)
+    discovered_reader_response_payload = (
+        _empty_reader_response_file_payload()
+        if reader_responses is not None
+        else _load_reader_response_files(out_dir)
     )
+    discovered_reader_responses = discovered_reader_response_payload.get("responses") or []
+    discovered_reader_response_diagnostics = discovered_reader_response_payload.get("diagnostics") or []
     raw_responses = _reader_response_payload(
         reader_responses if reader_responses is not None else discovered_reader_responses
     )
     raw_response_source = "provided" if reader_responses is not None else "response_files"
-    raw_response_file_count = len(discovered_reader_responses or [])
+    raw_response_file_count = int(discovered_reader_response_payload.get("responseFileCount") or 0)
+    scanned_response_file_count = int(discovered_reader_response_payload.get("scannedResponseFileCount") or 0)
+    raw_response_file_error_count = int(discovered_reader_response_payload.get("responseFileErrorCount") or 0)
     raw_responses["source"] = raw_response_source
     raw_responses["responseFileCount"] = raw_response_file_count
+    raw_responses["scannedResponseFileCount"] = scanned_response_file_count
+    raw_responses["responseFileErrorCount"] = raw_response_file_error_count
+    raw_responses["diagnostics"] = discovered_reader_response_diagnostics
     loop = run_ai_visual_trace_agent_loop(
         work_order=work_order,
         responses=raw_responses.get("responses") or [],
@@ -210,6 +219,9 @@ def build_reverse_bim_folder_output(
     raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
     raw_responses["source"] = raw_response_source
     raw_responses["responseFileCount"] = raw_response_file_count
+    raw_responses["scannedResponseFileCount"] = scanned_response_file_count
+    raw_responses["responseFileErrorCount"] = raw_response_file_error_count
+    raw_responses["diagnostics"] = discovered_reader_response_diagnostics
     reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
         agent_requests=requests,
         work_order=work_order,
@@ -549,24 +561,92 @@ def _reader_response_payload(
     }
 
 
-def _load_reader_response_files(out_dir: Path) -> list[dict[str, Any]]:
+def _empty_reader_response_file_payload() -> dict[str, Any]:
+    return {
+        "responses": [],
+        "diagnostics": [],
+        "responseFileCount": 0,
+        "scannedResponseFileCount": 0,
+        "responseFileErrorCount": 0,
+    }
+
+
+def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
     response_root = out_dir / "ai-reading" / "responses"
     if not response_root.exists():
-        return []
+        return _empty_reader_response_file_payload()
     rows: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    scanned_file_count = 0
+    response_file_count = 0
     for path in sorted(response_root.rglob("*.json")):
+        scanned_file_count += 1
+        path_label = _reader_response_path_label(path=path, output_dir=out_dir)
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except json.JSONDecodeError as exc:
+            diagnostics.append(
+                {
+                    "code": "reader_response_file_invalid_json",
+                    "severity": "error",
+                    "path": path_label,
+                    "message": f"Reader response file is not valid JSON: {exc.msg}.",
+                    "line": exc.lineno,
+                    "column": exc.colno,
+                }
+            )
+            continue
+        except Exception as exc:
+            diagnostics.append(
+                {
+                    "code": "reader_response_file_read_failed",
+                    "severity": "error",
+                    "path": path_label,
+                    "message": f"Reader response file could not be read: {exc}.",
+                }
+            )
             continue
         if isinstance(payload, dict) and isinstance(payload.get("responses"), list):
+            response_file_count += 1
             for row in payload["responses"]:
                 if isinstance(row, dict):
                     rows.append({**row, "responsePath": str(path)})
+                else:
+                    diagnostics.append(
+                        {
+                            "code": "reader_response_file_invalid_response_row",
+                            "severity": "error",
+                            "path": path_label,
+                            "message": "Reader response bundle contains a non-object response row.",
+                        }
+                    )
             continue
         if isinstance(payload, dict):
+            response_file_count += 1
             rows.append({**payload, "responsePath": str(path)})
-    return rows
+            continue
+        diagnostics.append(
+            {
+                "code": "reader_response_file_invalid_container",
+                "severity": "error",
+                "path": path_label,
+                "message": "Reader response file must contain an object or an object with a responses array.",
+            }
+        )
+    return {
+        "responses": rows,
+        "diagnostics": diagnostics,
+        "responseFileCount": response_file_count,
+        "scannedResponseFileCount": scanned_file_count,
+        "responseFileErrorCount": sum(1 for row in diagnostics if row.get("severity") == "error"),
+    }
+
+
+def _reader_response_path_label(*, path: Path, output_dir: Path) -> str:
+    try:
+        return str(path.relative_to(output_dir))
+    except ValueError:
+        return str(path)
 
 
 def _build_reader_assignment_progress(
@@ -1468,6 +1548,18 @@ def _build_package_acceptance_report(
     source_building_scope: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     findings = []
+    response_file_error_count = int(raw_responses.get("responseFileErrorCount") or 0)
+    if response_file_error_count > 0:
+        findings.append(
+            {
+                "code": "folder_output_reader_response_files_invalid",
+                "severity": "error",
+                "message": (
+                    f"{response_file_error_count} AI-reader response file error(s) were found. "
+                    "Fix or remove malformed response files before source-understanding acceptance."
+                ),
+            }
+        )
     if int(raw_responses.get("responseCount") or 0) == 0:
         findings.append(
             {
@@ -1688,6 +1780,8 @@ def _build_package_acceptance_report(
             "sourceMaterialAssemblyBlockerCount": source_material_blocker_count,
             "readerConsensusBlockerCount": reader_consensus_blocker_count,
             "readerResponseCount": raw_responses.get("responseCount", 0),
+            "readerResponseFileCount": raw_responses.get("responseFileCount", 0),
+            "readerResponseFileErrorCount": raw_responses.get("responseFileErrorCount", 0),
         },
         "findings": findings,
     }
@@ -1746,6 +1840,9 @@ def _build_run_summary(
             "noFactReaderAssignmentCount": reader_progress_summary.get("noFactResponseAssignmentCount", 0),
             "readerAssignmentWithFactsCount": reader_progress_summary.get("assignmentWithFactsCount", 0),
             "readerResponseCount": (raw_responses or {}).get("responseCount", 0),
+            "readerResponseFileCount": (raw_responses or {}).get("responseFileCount", 0),
+            "readerResponseFileScannedCount": (raw_responses or {}).get("scannedResponseFileCount", 0),
+            "readerResponseFileErrorCount": (raw_responses or {}).get("responseFileErrorCount", 0),
             "acceptedWorkPackageCount": (loop.get("summary") or {}).get("acceptedPackageCount", 0),
             "normalizedFactCount": (normalized.get("summary") or {}).get("normalizedFactCount", 0),
             "mcpReadyFactCount": (readiness.get("summary") or {}).get("readyForMcpAuthoringCount", 0),

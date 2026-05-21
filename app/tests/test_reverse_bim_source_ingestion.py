@@ -1332,6 +1332,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
         ),
         encoding="utf-8",
     )
+    (response_dir / "bad.json").write_text("{not-json", encoding="utf-8")
     rerun = build_reverse_bim_folder_output(
         root_path=source_dir,
         output_dir=output_dir,
@@ -1342,10 +1343,18 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     raw_responses = json.loads(Path(rerun["artifacts"]["readerResponsesRaw"]).read_text())
     assert raw_responses["source"] == "response_files"
     assert raw_responses["responseFileCount"] == 1
+    assert raw_responses["scannedResponseFileCount"] == 2
+    assert raw_responses["responseFileErrorCount"] == 1
+    assert raw_responses["diagnostics"][0]["code"] == "reader_response_file_invalid_json"
     assert raw_responses["responseCount"] == 1
     progress = json.loads(Path(rerun["artifacts"]["readerAssignmentProgress"]).read_text())
     assert progress["summary"]["noFactResponseAssignmentCount"] == 1
     assert rerun["summary"]["noFactReaderAssignmentCount"] == 1
+    assert rerun["summary"]["readerResponseFileErrorCount"] == 1
+    assert any(
+        row["code"] == "folder_output_reader_response_files_invalid"
+        for row in rerun["acceptance"]["findings"]
+    )
 
 
 def test_reverse_bim_folder_output_rejects_seed_artifact_source_roots(tmp_path: Path) -> None:
