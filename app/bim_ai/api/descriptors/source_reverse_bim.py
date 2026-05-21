@@ -407,6 +407,20 @@ for _reverse_tool in (
         "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, and package acceptance.",
     },
     {
+        "name": "reverse_bim.reader_dispatch_plan",
+        "title": "ReverseBimReaderDispatchPlanInput",
+        "path": "/api/v3/reverse-bim/reader-dispatch-plan",
+        "cli": "bim-ai reverse-bim reader-dispatch-plan --output-dir tmp/reverse-bim/run",
+        "notes": "Builds an assignment-level dispatch plan from a folder-output package so open multimodal reader assignments can be routed without hand-copying prompts.",
+    },
+    {
+        "name": "reverse_bim.reader_dispatch_execute",
+        "title": "ReverseBimReaderDispatchExecuteInput",
+        "path": "/api/v3/reverse-bim/reader-dispatch-execute",
+        "cli": "bim-ai reverse-bim reader-dispatch-execute --output-dir tmp/reverse-bim/run --reader-command ./reader",
+        "notes": "Executes open reader assignments through a configured reader command and writes structured response JSON files under ai-reading/responses for the next folder-output run.",
+    },
+    {
         "name": "reverse_bim.phase_packet",
         "title": "ReverseBimPhasePacketInput",
         "path": "/api/v3/reverse-bim/phase-packet",

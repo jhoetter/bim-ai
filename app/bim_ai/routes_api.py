@@ -185,6 +185,10 @@ from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_
 from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim_reader_dispatch import (
+    build_reverse_bim_reader_dispatch_plan,
+    execute_reverse_bim_reader_dispatch,
+)
 from bim_ai.reverse_bim_source_revision_persistence import persist_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
@@ -1832,6 +1836,40 @@ async def reverse_bim_folder_output_route(
         dpi=int(body.get("dpi") or 200),
         max_pages_per_pdf=body.get("maxPagesPerPdf"),
         reset_output=bool(body.get("resetOutput") or False),
+    )
+
+
+@api_router.post("/v3/reverse-bim/reader-dispatch-plan")
+async def reverse_bim_reader_dispatch_plan_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    output_dir = body.get("outputDir")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    return build_reverse_bim_reader_dispatch_plan(
+        output_dir=str(output_dir),
+        include_completed=bool(body.get("includeCompleted") or False),
+        limit=body.get("limit"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/reader-dispatch-execute")
+async def reverse_bim_reader_dispatch_execute_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    output_dir = body.get("outputDir")
+    reader_command = body.get("readerCommand")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    if not isinstance(reader_command, list) or not reader_command:
+        raise HTTPException(status_code=422, detail="readerCommand must be a non-empty list")
+    return execute_reverse_bim_reader_dispatch(
+        output_dir=str(output_dir),
+        reader_command=[str(item) for item in reader_command],
+        include_completed=bool(body.get("includeCompleted") or False),
+        force=bool(body.get("force") or False),
+        limit=body.get("limit"),
+        timeout_seconds=int(body.get("readerTimeoutSeconds") or 300),
     )
 
 

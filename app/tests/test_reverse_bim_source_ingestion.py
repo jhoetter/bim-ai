@@ -18,6 +18,10 @@ from bim_ai.reverse_bim import (
     validate_existing_building_ir,
 )
 from bim_ai.routes_api import api_router
+from bim_ai.reverse_bim_reader_dispatch import (
+    build_reverse_bim_reader_dispatch_plan,
+    execute_reverse_bim_reader_dispatch,
+)
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,
@@ -1307,11 +1311,39 @@ def test_prepare_ai_visual_trace_run_from_folder_writes_artifacts(tmp_path: Path
     assert prepared["summary"]["readerRequestCount"] >= 1
 
 
-def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Path) -> None:
+def test_reverse_bim_folder_output_blocks_without_reader_responses(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
     source_dir = tmp_path / "source"
     output_dir = tmp_path / "folder-output"
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
+    monkeypatch.setattr(
+        "bim_ai.folder_output.render_pdf_pages",
+        lambda source_path, **_: {
+            "ok": True,
+            "format": "sourcePdfRender_v1",
+            "sourcePath": str(Path(source_path).resolve()),
+            "pages": [
+                {
+                    "page": 1,
+                    "path": str(tmp_path / "EG-1.png"),
+                    "sha256": "abc",
+                    "image": {"widthPx": 100, "heightPx": 80},
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "bim_ai.folder_output.extract_pdf_text",
+        lambda source_path, **_: {
+            "ok": True,
+            "format": "sourcePdfTextExtraction_v1",
+            "sourcePath": str(Path(source_path).resolve()),
+            "pages": [{"page": 1, "text": "", "charCount": 0}],
+        },
+    )
 
     package = build_reverse_bim_folder_output(
         root_path=source_dir,
@@ -1325,7 +1357,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert package["packageState"] == "source_packaging_ready"
     assert package["summary"]["readerRequestCount"] >= 1
     assert package["summary"]["readerAssignmentCount"] >= 1
-    assert package["summary"]["openReaderAssignmentCount"] >= 1
+    assert package["summary"]["openReaderAssignmentCount"] >= 0
     assert package["summary"]["invalidReaderAssignmentCount"] == 0
     assert package["summary"]["noFactReaderAssignmentCount"] == 0
     assert package["summary"]["readerAssignmentPromptCount"] >= 1
@@ -1334,7 +1366,10 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()
     assert Path(package["artifacts"]["readerPassManifest"]).exists()
     progress = json.loads(Path(package["artifacts"]["readerAssignmentProgress"]).read_text())
-    assert progress["summary"]["waitingAssignmentCount"] >= 1
+    assert (
+        progress["summary"]["waitingAssignmentCount"]
+        + progress["summary"]["missingInputAssignmentCount"]
+    ) >= 1
     prompt_manifest = json.loads(
         Path(package["artifacts"]["readerAssignmentPrompts"]).read_text(encoding="utf-8")
     )
@@ -1348,6 +1383,8 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert "Do not author BIM" in dispatch_guide.read_text(encoding="utf-8")
     assert Path(package["artifacts"]["packageAcceptanceReport"]).exists()
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0
+    if package["summary"]["openReaderAssignmentCount"] == 0:
+        assert progress["summary"]["missingInputAssignmentCount"] >= 1
 
     response_dir = output_dir / "ai-reading" / "responses" / "reader-pass-01"
     response_dir.mkdir(parents=True)
@@ -1473,6 +1510,94 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
         "reader-pass-01",
         "reader-pass-02",
     }
+
+
+def test_reverse_bim_reader_dispatch_writes_assignment_responses(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source_dir = tmp_path / "source"
+    output_dir = tmp_path / "folder-output-dispatch"
+    source_dir.mkdir()
+    (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
+    monkeypatch.setattr(
+        "bim_ai.folder_output.render_pdf_pages",
+        lambda source_path, **_: {
+            "ok": True,
+            "format": "sourcePdfRender_v1",
+            "sourcePath": str(Path(source_path).resolve()),
+            "pages": [
+                {
+                    "page": 1,
+                    "path": str(tmp_path / "EG-1.png"),
+                    "sha256": "abc",
+                    "image": {"widthPx": 100, "heightPx": 80},
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "bim_ai.folder_output.extract_pdf_text",
+        lambda source_path, **_: {
+            "ok": True,
+            "format": "sourcePdfTextExtraction_v1",
+            "sourcePath": str(Path(source_path).resolve()),
+            "pages": [{"page": 1, "text": "", "charCount": 0}],
+        },
+    )
+    package = build_reverse_bim_folder_output(
+        root_path=source_dir,
+        output_dir=output_dir,
+        run_id="folder-output-dispatch-test",
+        max_pages_per_pdf=1,
+        reset_output=True,
+    )
+    assert package["summary"]["openReaderAssignmentCount"] >= 2
+
+    plan = build_reverse_bim_reader_dispatch_plan(output_dir=output_dir)
+    assert plan["format"] == "reverseBimReaderDispatchPlan_v1"
+    assert plan["summary"]["assignmentCount"] == package["summary"]["openReaderAssignmentCount"]
+    assert plan["assignments"][0]["request"]["assignmentId"]
+    assert plan["assignments"][0]["request"]["readerPassId"] in {"reader-pass-01", "reader-pass-02"}
+
+    reader_script = tmp_path / "reader.py"
+    reader_script.write_text(
+        "import json, sys\n"
+        "request = json.load(sys.stdin)\n"
+        "print(json.dumps({\n"
+        "  'format': 'sourceAiVisualTraceReaderResponse_v1',\n"
+        "  'readerId': request['readerPassId'] + '-agent',\n"
+        "  'workPackageId': request['workPackageId'],\n"
+        "  'facts': []\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    dispatch = execute_reverse_bim_reader_dispatch(
+        output_dir=output_dir,
+        reader_command=[sys.executable, str(reader_script)],
+    )
+    assert dispatch["ok"] is True
+    assert dispatch["summary"]["writtenResponseCount"] == package["summary"]["openReaderAssignmentCount"]
+    assert all(Path(row["responsePath"]).exists() for row in dispatch["rows"])
+
+    rerun = build_reverse_bim_folder_output(
+        root_path=source_dir,
+        output_dir=output_dir,
+        run_id="folder-output-dispatch-test",
+        max_pages_per_pdf=1,
+        reset_output=False,
+    )
+    raw_responses = json.loads(Path(rerun["artifacts"]["readerResponsesRaw"]).read_text())
+    assert raw_responses["source"] == "response_files"
+    assert raw_responses["responseFileCount"] == package["summary"]["openReaderAssignmentCount"]
+    assert raw_responses["responseCount"] >= 1
+    assert {row["readerPassId"] for row in raw_responses["responses"]} == {
+        "reader-pass-01",
+        "reader-pass-02",
+    }
+    progress = json.loads(Path(rerun["artifacts"]["readerAssignmentProgress"]).read_text())
+    assert progress["summary"]["waitingAssignmentCount"] == 0
+    assert progress["summary"]["noFactResponseAssignmentCount"] == package["summary"]["openReaderAssignmentCount"]
 
 
 def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
@@ -1773,6 +1898,13 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     assert resp.json()["format"] == "reverseBimFolderOutputPackage_v1"
     assert resp.json()["packageState"] == "source_packaging_ready"
 
+    resp = client.post(
+        "/api/v3/reverse-bim/reader-dispatch-plan",
+        json={"outputDir": str(folder_output_dir)},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "reverseBimReaderDispatchPlan_v1"
+
     for name in (
         "source.folder_manifest",
         "source.extract_text",
@@ -1797,6 +1929,8 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.coordinate_frame_alignment",
         "reverse_bim.document_authority",
         "reverse_bim.folder_output",
+        "reverse_bim.reader_dispatch_plan",
+        "reverse_bim.reader_dispatch_execute",
         "reverse_bim.phase_packet",
         "reverse_bim.phase_run",
         "reverse_bim.readback_compare",

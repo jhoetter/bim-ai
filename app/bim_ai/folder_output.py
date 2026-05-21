@@ -695,6 +695,23 @@ def _build_reader_assignment_progress(
     )
     rows = []
     for assignment in assignments:
+        if assignment.get("status") == "missing_inputs":
+            rows.append(
+                {
+                    "assignmentId": assignment.get("assignmentId"),
+                    "readerPassId": assignment.get("readerPassId"),
+                    "workPackageId": assignment.get("workPackageId"),
+                    "requestId": assignment.get("requestId"),
+                    "status": "missing_inputs",
+                    "responsePathHint": assignment.get("responsePathHint"),
+                    "factCount": 0,
+                    "normalizedFactCount": 0,
+                    "normalizationErrorCount": 0,
+                    "normalizationWarningCount": 0,
+                    "normalizationFindings": [],
+                }
+            )
+            continue
         response = _response_for_assignment(
             assignment,
             responses,
@@ -755,6 +772,7 @@ def _build_reader_assignment_progress(
             "invalidResponseAssignmentCount": status_counts.get("response_invalid", 0),
             "noFactResponseAssignmentCount": status_counts.get("response_has_no_facts", 0),
             "assignmentWithFactsCount": status_counts.get("response_has_facts", 0),
+            "missingInputAssignmentCount": status_counts.get("missing_inputs", 0),
             "statusCounts": dict(sorted(status_counts.items())),
         },
         "rows": rows,

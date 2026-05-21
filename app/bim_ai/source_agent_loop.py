@@ -351,17 +351,20 @@ def build_ai_visual_trace_reader_pass_manifest(
             )
         for reader_pass_id in pass_ids:
             request_id = str(request.get("requestId") or "")
-            status = (
-                "response_received"
-                if _assignment_has_response(
-                    response_keys,
-                    request_id,
-                    package_id,
-                    reader_pass_id,
-                    allow_package_fallback=int(request.get("requestPartCount") or 1) <= 1,
+            if request.get("status") != "ready":
+                status = "missing_inputs"
+            else:
+                status = (
+                    "response_received"
+                    if _assignment_has_response(
+                        response_keys,
+                        request_id,
+                        package_id,
+                        reader_pass_id,
+                        allow_package_fallback=int(request.get("requestPartCount") or 1) <= 1,
+                    )
+                    else "waiting_for_reader"
                 )
-                else "waiting_for_reader"
-            )
             assignments.append(
                 {
                     "assignmentId": f"{reader_pass_id}:{request_id}",
@@ -418,6 +421,7 @@ def build_ai_visual_trace_reader_pass_manifest(
             "assignmentCount": len(assignments),
             "waitingAssignmentCount": assignment_counts.get("waiting_for_reader", 0),
             "receivedAssignmentCount": assignment_counts.get("response_received", 0),
+            "missingInputAssignmentCount": assignment_counts.get("missing_inputs", 0),
             "criticalWorkPackageCount": len(critical_package_ids),
             "responseCount": len(response_rows),
         },

@@ -49,6 +49,10 @@ enough to avoid modeling the wrong building.
    assignments automatically; it receives request plus `assignmentId`,
    `readerPassId`, and `responsePathHint` metadata on stdin and must return one
    `sourceAiVisualTraceReaderResponse_v1` JSON object on stdout.
+   Prefer `reverse_bim.reader_dispatch_plan` to inspect dispatchable
+   assignments and `reverse_bim.reader_dispatch_execute` to write response JSON
+   files under `ai-reading/responses/**`. Missing-input assignments are not
+   dispatched; they require source packaging repair.
 7. Collect AI-reader responses as structured source facts.
 8. Normalize and validate facts.
 9. Run reader consensus for critical facts.
