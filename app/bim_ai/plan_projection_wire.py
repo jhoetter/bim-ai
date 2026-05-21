@@ -5,6 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -80,6 +84,10 @@ from bim_ai.wall_opening_cut_fidelity import (
     build_wall_opening_cut_fidelity_row,
     corner_join_rows_for_document,
 )
+
+_PLAN_PROJECTION_WIRE_REQUEST_CACHE: ContextVar[
+    dict[tuple[int, int, str, str, str, str], dict[str, Any]] | None
+] = ContextVar("plan_projection_wire_request_cache", default=None)
 
 
 def _level_elevation_mm(doc: Document, level_id: str) -> float:
@@ -1941,7 +1949,64 @@ def _section_datum_elevation_evidence_v0(
     return out
 
 
+@contextmanager
+def plan_projection_wire_request_cache() -> Iterator[None]:
+    token = _PLAN_PROJECTION_WIRE_REQUEST_CACHE.set({})
+    try:
+        yield
+    finally:
+        _PLAN_PROJECTION_WIRE_REQUEST_CACHE.reset(token)
+
+
+def _plan_projection_cache_arg_key(value: dict[str, Any] | None) -> str:
+    if value is None:
+        return ""
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    except TypeError:
+        return repr(sorted(value.items()))
+
+
 def resolve_plan_projection_wire(
+    doc: Document,
+    *,
+    plan_view_id: str | None,
+    fallback_level_id: str | None,
+    global_plan_presentation: str = "default",
+    sheet_viewport_row_for_crop: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    cache = _PLAN_PROJECTION_WIRE_REQUEST_CACHE.get()
+    if cache is None:
+        return _resolve_plan_projection_wire_uncached(
+            doc,
+            plan_view_id=plan_view_id,
+            fallback_level_id=fallback_level_id,
+            global_plan_presentation=global_plan_presentation,
+            sheet_viewport_row_for_crop=sheet_viewport_row_for_crop,
+        )
+    key = (
+        id(doc),
+        id(doc.elements),
+        plan_view_id or "",
+        fallback_level_id or "",
+        global_plan_presentation,
+        _plan_projection_cache_arg_key(sheet_viewport_row_for_crop),
+    )
+    cached = cache.get(key)
+    if cached is not None:
+        return deepcopy(cached)
+    wire = _resolve_plan_projection_wire_uncached(
+        doc,
+        plan_view_id=plan_view_id,
+        fallback_level_id=fallback_level_id,
+        global_plan_presentation=global_plan_presentation,
+        sheet_viewport_row_for_crop=sheet_viewport_row_for_crop,
+    )
+    cache[key] = deepcopy(wire)
+    return wire
+
+
+def _resolve_plan_projection_wire_uncached(
     doc: Document,
     *,
     plan_view_id: str | None,

@@ -15,8 +15,10 @@ from bim_ai.db import init_db_schema
 from bim_ai.hub import Hub
 from bim_ai.jobs.queue import get_queue
 from bim_ai.jobs.types import Job
+from bim_ai.plan_projection_wire import plan_projection_wire_request_cache
 from bim_ai.room_derivation import room_boundary_derivation_request_cache
 from bim_ai.routes_api import api_router, websocket_loop
+from bim_ai.schedule_derivation import schedule_table_derivation_request_cache
 
 
 @asynccontextmanager
@@ -51,10 +53,14 @@ app.include_router(api_router)
 
 
 @app.middleware("http")
-async def room_boundary_cache_middleware(
+async def derived_payload_cache_middleware(
     request: Request, call_next: RequestResponseEndpoint
 ) -> Response:
-    with room_boundary_derivation_request_cache():
+    with (
+        room_boundary_derivation_request_cache(),
+        schedule_table_derivation_request_cache(),
+        plan_projection_wire_request_cache(),
+    ):
         return await call_next(request)
 
 

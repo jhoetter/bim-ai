@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from copy import deepcopy
 from typing import Any
 
 from bim_ai.construction_lens import construction_progress_rows
@@ -98,6 +102,10 @@ from bim_ai.type_material_registry import (
     material_display_label,
     wall_type_display_label,
 )
+
+_SCHEDULE_TABLE_REQUEST_CACHE: ContextVar[
+    dict[tuple[int, int, str, int], dict[str, Any]] | None
+] = ContextVar("schedule_table_request_cache", default=None)
 
 
 def _material_contract_fields(doc: Document, material_key: str | None) -> dict[str, Any]:
@@ -716,7 +724,42 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
     return None
 
 
+@contextmanager
+def schedule_table_derivation_request_cache() -> Iterator[None]:
+    token = _SCHEDULE_TABLE_REQUEST_CACHE.set({})
+    try:
+        yield
+    finally:
+        _SCHEDULE_TABLE_REQUEST_CACHE.reset(token)
+
+
 def derive_schedule_table(
+    doc: Document,
+    schedule_id: str,
+    *,
+    room_boundary_derivation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    cache = _SCHEDULE_TABLE_REQUEST_CACHE.get()
+    if cache is None:
+        return _derive_schedule_table_uncached(
+            doc,
+            schedule_id,
+            room_boundary_derivation=room_boundary_derivation,
+        )
+    key = (id(doc), id(doc.elements), schedule_id, id(room_boundary_derivation))
+    cached = cache.get(key)
+    if cached is not None:
+        return deepcopy(cached)
+    table = _derive_schedule_table_uncached(
+        doc,
+        schedule_id,
+        room_boundary_derivation=room_boundary_derivation,
+    )
+    cache[key] = deepcopy(table)
+    return table
+
+
+def _derive_schedule_table_uncached(
     doc: Document,
     schedule_id: str,
     *,
