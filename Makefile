@@ -110,7 +110,7 @@ endif
 	  "$(MAKE) dev-web"
 
 dev-forwarded:
-	$(MAKE) dev BROWSER_API_PORT=$(FORWARDED_API_PORT)
+	$(MAKE) dev WEB_PORT=$(FORWARDED_WEB_PORT) API_PORT=$(FORWARDED_API_PORT) BROWSER_API_PORT=$(FORWARDED_API_PORT)
 
 dev-api:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
