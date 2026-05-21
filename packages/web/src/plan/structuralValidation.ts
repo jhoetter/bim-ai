@@ -105,6 +105,18 @@ function hostedWallId(hosted: HostedElementFields): string | undefined {
   return hosted.hostId ?? hosted.wallId ?? hosted.hostWallId;
 }
 
+function wallValidationGroups(walls: WallElem[]): WallElem[][] {
+  const groups = new Map<string, WallElem[]>();
+  for (const wall of walls) {
+    const levelId =
+      typeof wall.levelId === 'string' && wall.levelId ? wall.levelId : '__no_level__';
+    const group = groups.get(levelId) ?? [];
+    group.push(wall);
+    groups.set(levelId, group);
+  }
+  return Array.from(groups.values());
+}
+
 function hostedOffsetAlongWallMm(hosted: HostedElementFields, host: WallElem): number {
   const len = wallLength(host);
   if (typeof hosted.offsetAlongHostMm === 'number') return hosted.offsetAlongHostMm;
@@ -250,8 +262,10 @@ export function runStructuralValidation(elementsById: Record<string, Element>): 
 
   const walls = Object.values(elementsById).filter((e): e is WallElem => e.kind === 'wall');
 
-  issues.push(...findDuplicateWalls(walls));
-  issues.push(...findJoinCleanupFailures(walls));
+  for (const levelWalls of wallValidationGroups(walls)) {
+    issues.push(...findDuplicateWalls(levelWalls));
+    issues.push(...findJoinCleanupFailures(levelWalls));
+  }
   issues.push(...findOrphanedHostedElements(elementsById));
   issues.push(...validateHostedElementSpans(elementsById));
 

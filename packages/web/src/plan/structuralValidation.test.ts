@@ -189,6 +189,16 @@ describe('WP-NEXT-49 structuralValidation', () => {
       });
       expect(issues.some((i) => i.code === 'join_cleanup_failure')).toBe(true);
     });
+
+    it('does not compare join cleanup across different levels', () => {
+      const wall1 = makeWall('w1', 0, 0, 4000, 0);
+      const wall2 = { ...makeWall('w2', 4000, 0, 8000, 0), levelId: 'lvl-2' };
+      const issues = runStructuralValidation({
+        w1: wall1 as unknown as Element,
+        w2: wall2 as unknown as Element,
+      });
+      expect(issues.some((i) => i.code === 'join_cleanup_failure')).toBe(false);
+    });
   });
 
   describe('validateHostedElementSpans', () => {
@@ -285,6 +295,16 @@ describe('WP-NEXT-49 structuralValidation', () => {
       expect(codes).toContain('duplicate_wall');
       expect(codes).toContain('orphaned_host_missing');
       expect(codes).toContain('self_intersecting');
+    });
+
+    it('does not flag identical wall coordinates on different levels as duplicates', () => {
+      const lower = makeWall('w-lower', 0, 0, 4000, 0);
+      const upper = { ...makeWall('w-upper', 0, 0, 4000, 0), levelId: 'lvl-2' };
+      const issues = runStructuralValidation({
+        'w-lower': lower as unknown as Element,
+        'w-upper': upper as unknown as Element,
+      });
+      expect(issues.some((i) => i.code === 'duplicate_wall')).toBe(false);
     });
   });
 });
