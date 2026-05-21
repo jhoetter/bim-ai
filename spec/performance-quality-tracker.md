@@ -571,7 +571,7 @@ Relevant files:
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-C01` | P0 | `Done` | Reduce room rectangle enumeration from all 4-combinations to horizontal-pair x vertical-pair. | `compute_room_boundary_derivation` returns same tested behavior and room derivation is about 190-230 ms on current model. |
 | `PERF-C02` | P0 | `Done` | Share room-boundary derivation between evaluation and schedule parity in one evaluation. | `constraints_evaluation.evaluate` passes the existing room-boundary bundle to schedule parity. |
-| `PERF-C03` | P0 | `Partial` | Identify room derivation as the dominant remaining evaluate cost. | Tracker records measurements; no broader cache/incremental design yet. |
+| `PERF-C03` | P0 | `Done` | Identify room derivation as the dominant remaining evaluate cost. | Tracker records measurements, the backend budget harness covers small and stress fixtures, and HTTP routes now have request-scoped room-derivation caching. |
 | `PERF-C04` | P0 | `Done` | Add request-scoped room-boundary cache. | Any HTTP route computing the room-boundary bundle more than once for the same loaded document reuses it within that request. |
 | `PERF-C05` | P1 | `Not started` | Add document-revision scoped room-boundary cache. | Repeated requests for unchanged model revision reuse safe immutable derivation results. |
 | `PERF-C06` | P1 | `Not started` | Build level-local invalidation for room derivation. | Changes outside a level do not invalidate room derivation for unrelated levels. |
