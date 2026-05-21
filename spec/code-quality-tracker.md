@@ -1810,6 +1810,9 @@ being introduced.
 - 2026-05-20: `spec/security-waivers.json` records expiring, owned security
   exceptions for the three existing SVG `dangerouslySetInnerHTML` rendering
   paths. New unwaived unsafe browser APIs or secret findings fail the gate.
+- 2026-05-21: The three SVG `dangerouslySetInnerHTML` render paths were
+  replaced with structured React SVG nodes, leaving zero active security
+  hygiene waivers.
 - 2026-05-20: `.github/workflows/ci.yml` runs `pnpm audit --audit-level=high`
   and a locked Python `pip-audit` export path in the governance job.
 - 2026-05-20: `spec/security-dependency-policy.md` documents the automated

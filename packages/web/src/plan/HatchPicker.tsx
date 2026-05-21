@@ -7,7 +7,7 @@
 import type { HatchPatternDef } from '@bim-ai/core';
 import type { JSX } from 'react';
 
-import { buildSvgHatchPatternDef, computeHatchScreenRepeat } from './HatchRenderer';
+import { buildSvgHatchPatternElement, computeHatchScreenRepeat } from './HatchRenderer';
 
 const THUMB_SIZE = 32;
 const THUMB_SCALE_DENOM = 50;
@@ -19,16 +19,15 @@ function HatchThumb({ hatch }: { hatch: HatchPatternDef }): JSX.Element {
   // hatches still show at least one line.
   const clampedRepeat = Math.min(screenRepeat, THUMB_SIZE);
   const strokeColour = 'var(--draft-cut)';
-  const patternDef = buildSvgHatchPatternDef(
+  const patternId = `hatch-${hatch.id}-thumb`;
+  const patternDef = buildSvgHatchPatternElement(
     { ...hatch, paperMmRepeat: clampedRepeat },
     clampedRepeat,
     strokeColour,
+    patternId,
   );
 
-  const fillAttr = patternDef ? `url(#hatch-${hatch.id}-thumb)` : strokeColour;
-  const patternWithThumbId = patternDef
-    ? patternDef.replace(`id="hatch-${hatch.id}"`, `id="hatch-${hatch.id}-thumb"`)
-    : null;
+  const fillAttr = patternDef ? `url(#${patternId})` : strokeColour;
 
   return (
     <svg
@@ -36,7 +35,7 @@ function HatchThumb({ hatch }: { hatch: HatchPatternDef }): JSX.Element {
       height={THUMB_SIZE}
       style={{ display: 'block', border: '1px solid var(--draft-grid-major)' }}
     >
-      {patternWithThumbId && <defs dangerouslySetInnerHTML={{ __html: patternWithThumbId }} />}
+      {patternDef ? <defs>{patternDef}</defs> : null}
       <rect width={THUMB_SIZE} height={THUMB_SIZE} fill={fillAttr} />
     </svg>
   );

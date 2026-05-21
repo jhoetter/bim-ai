@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Element, LensMode } from '@bim-ai/core';
 
 import { hatchPatternForMaterial, type HatchPattern } from '../../plan/materialHatchPatterns';
-import { extractLevelData, buildLevelLineSvg } from './sectionLevelLines';
+import { extractLevelData, buildLevelLinePrimitives } from './sectionLevelLines';
 import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
 import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
@@ -1389,19 +1389,41 @@ export function SectionViewportSvg(props: {
             if (sectionEl?.kind !== 'section_cut' || sectionEl.showLevelLines !== true) return null;
             const levelData = extractLevelData(elementsById);
             if (levelData.length === 0) return null;
-            const svgStr = buildLevelLineSvg(
+            const levelLinePrimitives = buildLevelLinePrimitives(
               levelData,
-              props.widthPx,
               layers.z0,
               props.heightPx,
               layers.sy,
             );
             return (
-              <g
-                key="section-level-lines"
-                data-testid="section-level-lines"
-                dangerouslySetInnerHTML={{ __html: svgStr }}
-              />
+              <g key="section-level-lines" data-testid="section-level-lines">
+                {levelLinePrimitives.map((levelLine) => {
+                  const y = levelLine.y.toFixed(1);
+                  return (
+                    <g key={`${levelLine.name}-${levelLine.elevationMm}`}>
+                      <line
+                        x1={0}
+                        y1={y}
+                        x2={props.widthPx}
+                        y2={y}
+                        stroke="#2563eb"
+                        strokeWidth={0.5}
+                        strokeDasharray="8,4"
+                        opacity={0.7}
+                      />
+                      <text
+                        x={4}
+                        y={(levelLine.y - 2).toFixed(1)}
+                        fontSize={9}
+                        fill="#2563eb"
+                        opacity={0.9}
+                      >
+                        {levelLine.label}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
             );
           })()}
         </>

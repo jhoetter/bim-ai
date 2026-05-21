@@ -9,6 +9,8 @@
  * physical brick rhythm.
  */
 
+import { createElement, type ReactElement } from 'react';
+
 import type { HatchPatternDef } from '@bim-ai/core';
 
 /**
@@ -31,6 +33,45 @@ const BUILT_IN_HATCH_DEFS: Record<string, HatchPatternDef> = {
 const SCREEN_DPI = 96;
 const MM_PER_INCH = 25.4;
 const BASE_PIXELS_PER_MM = SCREEN_DPI / MM_PER_INCH;
+const SAFE_SVG_TAGS = new Set([
+  'circle',
+  'ellipse',
+  'g',
+  'line',
+  'path',
+  'polygon',
+  'polyline',
+  'rect',
+]);
+const SAFE_SVG_ATTRS: Record<string, string> = {
+  cx: 'cx',
+  cy: 'cy',
+  d: 'd',
+  fill: 'fill',
+  'fill-opacity': 'fillOpacity',
+  height: 'height',
+  opacity: 'opacity',
+  points: 'points',
+  r: 'r',
+  rx: 'rx',
+  ry: 'ry',
+  stroke: 'stroke',
+  'stroke-dasharray': 'strokeDasharray',
+  'stroke-linecap': 'strokeLinecap',
+  'stroke-linejoin': 'strokeLinejoin',
+  'stroke-miterlimit': 'strokeMiterlimit',
+  'stroke-opacity': 'strokeOpacity',
+  'stroke-width': 'strokeWidth',
+  transform: 'transform',
+  'vector-effect': 'vectorEffect',
+  width: 'width',
+  x: 'x',
+  x1: 'x1',
+  x2: 'x2',
+  y: 'y',
+  y1: 'y1',
+  y2: 'y2',
+};
 
 /**
  * Category-based fallback hatch pattern IDs for elements that have no explicit
@@ -154,6 +195,149 @@ export function buildSvgHatchPatternDef(
         hatch.svgSource +
         `</pattern>`
       );
+
+    default:
+      return null;
+  }
+}
+
+function isUnsafeSvgAttributeValue(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.includes('javascript:') || normalized.includes('<') || normalized.includes('url(')
+  );
+}
+
+function safeSvgAttrProps(el: globalThis.Element): Record<string, string> | null {
+  const props: Record<string, string> = {};
+  for (const attr of Array.from(el.attributes)) {
+    if (attr.name.startsWith('on')) return null;
+    const propName = SAFE_SVG_ATTRS[attr.name];
+    if (!propName || isUnsafeSvgAttributeValue(attr.value)) return null;
+    props[propName] = attr.value;
+  }
+  return props;
+}
+
+function safeSvgElementFromDom(el: globalThis.Element, key: string): ReactElement | null {
+  const tagName = el.tagName.toLowerCase();
+  if (!SAFE_SVG_TAGS.has(tagName)) return null;
+  const props = safeSvgAttrProps(el);
+  if (!props) return null;
+  const children = Array.from(el.children)
+    .map((child, index) => safeSvgElementFromDom(child, `${key}-${index}`))
+    .filter((child): child is ReactElement => child !== null);
+  return createElement(tagName, { ...props, key }, ...children);
+}
+
+function safeSvgSourceElements(svgSource: string): ReactElement[] | null {
+  if (typeof DOMParser === 'undefined') return null;
+  const doc = new DOMParser().parseFromString(`<svg>${svgSource}</svg>`, 'image/svg+xml');
+  if (doc.querySelector('parsererror')) return null;
+  const root = doc.documentElement;
+  const children = Array.from(root.children)
+    .map((child, index) => safeSvgElementFromDom(child, `svg-source-${index}`))
+    .filter((child): child is ReactElement => child !== null);
+  return children.length > 0 ? children : null;
+}
+
+/**
+ * Build an SVG `<pattern>` definition as React nodes for browser render paths.
+ */
+export function buildSvgHatchPatternElement(
+  hatch: HatchPatternDef,
+  screenRepeat: number,
+  strokeColour: string,
+  patternId = `hatch-${hatch.id}`,
+): ReactElement | null {
+  const sw = Math.max(0.3, hatch.strokeWidthMm * BASE_PIXELS_PER_MM);
+  const r = screenRepeat;
+  const rot = hatch.rotationDeg;
+  const patternProps = {
+    id: patternId,
+    patternUnits: 'userSpaceOnUse',
+    width: r,
+    height: r,
+    ...(rot !== 0 ? { patternTransform: `rotate(${rot})` } : {}),
+  };
+
+  switch (hatch.patternKind) {
+    case 'lines':
+      return createElement(
+        'pattern',
+        patternProps,
+        createElement('line', {
+          key: 'line-vertical',
+          x1: 0,
+          y1: 0,
+          x2: 0,
+          y2: r,
+          stroke: strokeColour,
+          strokeWidth: sw,
+        }),
+      );
+
+    case 'crosshatch':
+      return createElement(
+        'pattern',
+        patternProps,
+        createElement('line', {
+          key: 'line-vertical',
+          x1: 0,
+          y1: 0,
+          x2: 0,
+          y2: r,
+          stroke: strokeColour,
+          strokeWidth: sw,
+        }),
+        createElement('line', {
+          key: 'line-horizontal',
+          x1: 0,
+          y1: 0,
+          x2: r,
+          y2: 0,
+          stroke: strokeColour,
+          strokeWidth: sw,
+        }),
+      );
+
+    case 'dots': {
+      const radius = Math.max(0.4, sw / 2);
+      const half = r / 2;
+      return createElement(
+        'pattern',
+        patternProps,
+        createElement('circle', {
+          key: 'dot',
+          cx: half,
+          cy: half,
+          r: radius,
+          fill: strokeColour,
+        }),
+      );
+    }
+
+    case 'curve': {
+      const amp = r * 0.3;
+      const mid = r / 2;
+      return createElement(
+        'pattern',
+        patternProps,
+        createElement('path', {
+          key: 'wave',
+          d: `M0 ${mid} C${r * 0.25} ${mid - amp},${r * 0.75} ${mid + amp},${r} ${mid}`,
+          fill: 'none',
+          stroke: strokeColour,
+          strokeWidth: sw,
+        }),
+      );
+    }
+
+    case 'svg': {
+      if (!hatch.svgSource) return null;
+      const svgChildren = safeSvgSourceElements(hatch.svgSource);
+      return svgChildren ? createElement('pattern', patternProps, ...svgChildren) : null;
+    }
 
     default:
       return null;

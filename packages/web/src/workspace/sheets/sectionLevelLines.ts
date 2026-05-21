@@ -5,6 +5,13 @@ export interface LevelDatum {
   elevationMm: number;
 }
 
+export interface LevelLinePrimitive {
+  name: string;
+  elevationMm: number;
+  y: number;
+  label: string;
+}
+
 /**
  * Extracts level datum lines from the elements collection.
  * Returns all level elements sorted by elevation ascending.
@@ -48,4 +55,25 @@ export function buildLevelLineSvg(
       ].join('');
     })
     .join('\n');
+}
+
+/**
+ * Builds structured level datum primitives for React SVG render paths.
+ */
+export function buildLevelLinePrimitives(
+  levels: LevelDatum[],
+  minElevMm: number,
+  svgHeightPx: number,
+  scale: number,
+): LevelLinePrimitive[] {
+  return levels.map((lev) => {
+    const y = svgHeightPx - (lev.elevationMm - minElevMm) * scale;
+    const label = `${lev.name} ${lev.elevationMm >= 0 ? '+' : ''}${(lev.elevationMm / 1000).toFixed(2)}`;
+    return {
+      name: lev.name,
+      elevationMm: lev.elevationMm,
+      y,
+      label,
+    };
+  });
 }

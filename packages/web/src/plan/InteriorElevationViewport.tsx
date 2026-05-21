@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Element } from '@bim-ai/core';
 
-import { hatchPatternForMaterial, svgHatchDef } from './materialHatchPatterns';
+import { hatchPatternForMaterial, svgHatchPatternElement } from './materialHatchPatterns';
 import { buildInteriorElevationLines } from './interiorElevationProjection';
 
 interface Props {
@@ -148,13 +148,13 @@ export function InteriorElevationViewport({
       }}
     >
       {/* §6.1.5: material hatch pattern defs */}
-      <defs
-        dangerouslySetInnerHTML={{
-          __html: materialKeys
-            .map((mk) => svgHatchDef(hatchPatternForMaterial(mk), `hatch-iel-${mk}`, 1))
-            .join(''),
-        }}
-      />
+      <defs>
+        {materialKeys.map((mk) => (
+          <React.Fragment key={mk}>
+            {svgHatchPatternElement(hatchPatternForMaterial(mk), `hatch-iel-${mk}`, 1)}
+          </React.Fragment>
+        ))}
+      </defs>
 
       {/* Background rect */}
       <rect x={0} y={0} width={widthPx} height={heightPx} fill="white" />
