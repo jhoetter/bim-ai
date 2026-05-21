@@ -937,6 +937,20 @@ async def evidence_package(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
+    return build_evidence_package_payload(
+        model_id=model_id,
+        doc=doc,
+        source_document=row.document,
+    )
+
+
+def build_evidence_package_payload(
+    *,
+    model_id: UUID,
+    doc: Document,
+    source_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    source_document_wire = source_document or doc.model_dump(by_alias=True)
     viols = violations_wire(doc.elements)
     err_ct = sum(1 for x in viols if x.get("severity") == "error")
     block_ct = sum(1 for x in viols if x.get("blocking") is True)
@@ -1027,11 +1041,11 @@ async def evidence_package(
         "info": sum(1 for x in viols if x.get("severity") == "info"),
     }
     payload["rendererDiagnosticPacket_v1"] = latest_renderer_diagnostic_packet_for_evidence(
-        row.document,
+        source_document_wire,
         model_revision=doc.revision,
     )
     payload["rendererDiagnosticPacketEmbedding_v1"] = renderer_diagnostic_packet_embedding(
-        row.document,
+        source_document_wire,
         model_revision=doc.revision,
     )
     payload["semanticDigestSha256"] = evidence_package_semantic_digest_sha256(payload)

@@ -21,6 +21,7 @@
     "maintainability:budgets": "node scripts/check-maintainability-budgets.mjs",
     "js-lint:budget": "node scripts/check-js-lint-budget.mjs",
     "ui:quality-budgets": "node scripts/check-ui-quality-budgets.mjs",
+    "performance:budgets": "cd app && PYTHONPATH=. uv run python scripts/performance_budget.py --fail-on-budget --json",
     "security:hygiene": "node scripts/check-security-hygiene.mjs",
     "test-env:policy": "node scripts/check-frontend-test-environments.mjs",
     "test:e2e:real-backend": "pnpm --filter @bim-ai/web test:e2e:real-backend",

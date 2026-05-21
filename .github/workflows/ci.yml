@@ -202,6 +202,9 @@ jobs:
 
       - run: uv run pytest
 
+      - name: Backend performance budgets
+        run: PYTHONPATH=. uv run python scripts/performance_budget.py --fail-on-budget --json
+
       - name: Real-path smoke lane
         run: cd .. && make test-py-real-path
         env:
