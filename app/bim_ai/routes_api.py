@@ -1756,7 +1756,10 @@ async def reverse_bim_source_building_scope_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
     return build_source_building_scope_report(
-        body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
+        body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or [],
+        scope_decisions=body.get("buildingScopeDecisions")
+        or body.get("scopeDecisions")
+        or body.get("targetScopeDecisions"),
     )
 
 
@@ -1832,6 +1835,9 @@ async def reverse_bim_folder_output_route(
         reader_timeout_seconds=int(body.get("readerTimeoutSeconds") or 300),
         reader_consensus_dispositions=body.get("readerConsensusDispositions")
         or body.get("consensusDispositions"),
+        building_scope_decisions=body.get("buildingScopeDecisions")
+        or body.get("scopeDecisions")
+        or body.get("targetScopeDecisions"),
         conflict_decisions=body.get("conflictDecisions") or body.get("sourceConflictDecisions"),
         coordinate_frame_alignments=body.get("coordinateFrameAlignments")
         or body.get("coordinateFrameDecisions"),

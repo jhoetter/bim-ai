@@ -65,7 +65,11 @@ enough to avoid modeling the wrong building.
 7. Collect AI-reader responses as structured source facts.
 8. Normalize and validate facts.
 9. Run reader consensus for critical facts.
-10. Resolve target building scope and context mask.
+10. Resolve target building scope and context mask. If documents disagree
+    between whole building, Doppelhaus, target half, or unit, record an explicit
+    source-backed `buildingScopeDecisions` / `scopeDecisions` disposition. A
+    target-half/unit decision is not enough by itself; it still needs a
+    source-backed mask, polygon, or boundary reference before authoring.
 11. Resolve levels/storeys, scale, origin, rotation, and coordinate frames.
 12. Build the folder-output/trusted source specification.
 
@@ -98,6 +102,10 @@ Do not infer hidden geometry from prose alone. Prose/Markdown reader notes are
 useful for understanding and repair, but MCP authoring uses the consolidated
 source fact ledger. If a fact is not MCP-ready, run the required resolver,
 request source repair/consolidation, or record a blocked/tolerated disposition.
+Explicit `source_unavailable` facts are allowed only as source-limited
+reference evidence with decision, reason, affected scope, and reviewed source
+evidence. They must not become modeled geometry or hide missing values that are
+required to author walls, rooms, openings, stairs, roofs, terrain, or schedules.
 
 ## Modeling Slices
 
@@ -212,6 +220,7 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.document_authority`
 - `reverse_bim.coordinate_frame_worklist`
 - `reverse_bim.coordinate_frame_alignment`
+- `reverse_bim.source_building_scope`
 - `reverse_bim.mcp_readiness`
 - `reverse_bim.readback_compare`
 - `reverse_bim.source_spec_revision`

@@ -113,6 +113,7 @@ def build_reverse_bim_folder_output(
     reader_command: list[str] | None = None,
     reader_timeout_seconds: int = 300,
     reader_consensus_dispositions: list[dict[str, Any]] | dict[str, Any] | None = None,
+    building_scope_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
     conflict_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
     coordinate_frame_alignments: list[dict[str, Any]] | dict[str, Any] | None = None,
     site_terrain_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
@@ -246,7 +247,10 @@ def build_reverse_bim_folder_output(
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
     facts = _facts_for_handoff(loop=loop, normalized=normalized)
-    source_building_scope = build_source_building_scope_report(facts)
+    source_building_scope = build_source_building_scope_report(
+        facts,
+        scope_decisions=building_scope_decisions,
+    )
     source_level_completeness = build_source_level_completeness_report(facts)
     room_topology = build_source_room_topology_report(facts)
     source_area_consistency = build_source_area_consistency_report(facts)
@@ -397,6 +401,7 @@ def build_reverse_bim_folder_output(
         "readerResponsesNormalized": out_dir / "ai-reading" / "reader-responses.normalized.json",
         "agentLoopAccepted": out_dir / "ai-reading" / "agent-loop.accepted.json",
         "readerConsensusDispositions": out_dir / "ai-reading" / "reader-consensus-dispositions.json",
+        "buildingScopeDecisions": out_dir / "understanding" / "building-scope-decisions.json",
         "repairRequestsOpen": out_dir / "ai-reading" / "repair-requests.open.json",
         "sourceRepairPlan": out_dir / "ai-reading" / "source-repair-plan.json",
         "sourceRepairPlanMarkdown": out_dir / "ai-reading" / "source-repair-plan.md",
@@ -453,6 +458,7 @@ def build_reverse_bim_folder_output(
         "readerConsensusDispositions": _reader_consensus_disposition_payload(
             reader_consensus_dispositions
         ),
+        "buildingScopeDecisions": _building_scope_decision_payload(building_scope_decisions),
         "repairRequestsOpen": repair_requests_open,
         "sourceRepairPlan": source_repair_plan,
         "coordinateFrames": coordinate_frames,
@@ -608,6 +614,28 @@ def _reader_consensus_disposition_payload(
         "format": "reverseBimReaderConsensusDispositions_v1",
         "dispositionCount": len(rows),
         "dispositions": rows,
+    }
+
+
+def _building_scope_decision_payload(
+    decisions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> dict[str, Any]:
+    if decisions is None:
+        rows: list[dict[str, Any]] = []
+    elif isinstance(decisions, dict) and isinstance(decisions.get("decisions"), list):
+        rows = [row for row in decisions["decisions"] if isinstance(row, dict)]
+    elif isinstance(decisions, dict) and isinstance(decisions.get("scopeDecisions"), list):
+        rows = [row for row in decisions["scopeDecisions"] if isinstance(row, dict)]
+    elif isinstance(decisions, dict):
+        rows = [decisions]
+    elif isinstance(decisions, list):
+        rows = [row for row in decisions if isinstance(row, dict)]
+    else:
+        rows = []
+    return {
+        "format": "reverseBimBuildingScopeDecisions_v1",
+        "decisionCount": len(rows),
+        "decisions": rows,
     }
 
 

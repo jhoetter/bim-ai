@@ -19,6 +19,7 @@ UNRESOLVED_SCOPE_TYPES = {"", "ambiguous", "unknown", "unresolved"}
 SCOPE_MASK_TARGET_TYPES = {"target_half", "target_unit", "selected_unit"}
 SCOPE_MASK_KEYS = (
     "scopeMask",
+    "scopeMaskRef",
     "scopePolygon",
     "scopePolygonRef",
     "scopeBoundaryRef",
@@ -28,7 +29,11 @@ SCOPE_MASK_KEYS = (
 )
 
 
-def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str, Any]:
+def build_source_building_scope_report(
+    facts: list[dict[str, Any]],
+    *,
+    scope_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return source-scope blockers before MCP authoring.
 
     Existing-building digitization must know what source pages describe before
@@ -43,16 +48,27 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
             continue
         scopes.append(_scope_row(fact))
 
+    decision_rows = _scope_decision_rows(scope_decisions)
+    accepted_decision = _accepted_scope_decision(decision_rows)
+    decision_source_fact_ids = set(accepted_decision.get("sourceFactIds") or []) if accepted_decision else set()
+    decision_context_fact_ids = set(accepted_decision.get("contextScopeFactIds") or []) if accepted_decision else set()
+    decision_scope_type = str(accepted_decision.get("normalizedTargetScopeType") or "") if accepted_decision else ""
+    decision_mask_ref = _scope_decision_mask_ref(accepted_decision) if accepted_decision else None
+
     blockers: list[dict[str, Any]] = []
     if not scopes:
-        blockers.append(
-            {
-                "code": "building_scope_missing",
-                "severity": "error",
-                "message": "No building_scope source fact was returned for the folder.",
-                "sourceFactIds": [],
-            }
-        )
+        if accepted_decision:
+            if not accepted_decision.get("evidenceSummary"):
+                blockers.append(_decision_blocker("building_scope_decision_evidence_missing", accepted_decision))
+        else:
+            blockers.append(
+                {
+                    "code": "building_scope_missing",
+                    "severity": "error",
+                    "message": "No building_scope source fact was returned for the folder.",
+                    "sourceFactIds": [],
+                }
+            )
 
     for scope in scopes:
         missing = scope.get("missingFields") or []
@@ -66,7 +82,12 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
                     "message": "Building scope fact is missing required source fields.",
                 }
             )
-        if scope.get("scopeRole") == "unresolved":
+        if scope.get("scopeRole") == "unresolved" and not _scope_resolved_by_decision(
+            scope,
+            accepted_decision,
+            decision_source_fact_ids,
+            decision_context_fact_ids,
+        ):
             blockers.append(
                 {
                     "code": "building_scope_unresolved",
@@ -76,7 +97,17 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
                     "message": "Building scope is ambiguous, unknown, or not one of the supported resolved scope types.",
                 }
             )
-        if scope.get("scopeRole") == "target" and scope.get("scopeMaskRequired") and not scope.get("scopeMaskRef"):
+        if (
+            scope.get("scopeRole") == "target"
+            and scope.get("scopeMaskRequired")
+            and not scope.get("scopeMaskRef")
+            and not (
+                accepted_decision
+                and decision_scope_type in SCOPE_MASK_TARGET_TYPES
+                and decision_mask_ref
+                and _scope_referenced_by_decision(scope, decision_source_fact_ids)
+            )
+        ):
             blockers.append(
                 {
                     "code": "building_scope_mask_missing",
@@ -88,7 +119,7 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
             )
 
     target_scopes = [scope for scope in scopes if scope.get("scopeRole") == "target"]
-    if scopes and not target_scopes:
+    if scopes and not target_scopes and not accepted_decision:
         blockers.append(
             {
                 "code": "building_scope_target_missing",
@@ -100,7 +131,7 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
 
     target_type_counts = Counter(str(scope.get("normalizedScopeType") or "") for scope in target_scopes)
     target_types = sorted(scope_type for scope_type in target_type_counts if scope_type)
-    if len(target_types) > 1:
+    if len(target_types) > 1 and not accepted_decision:
         blockers.append(
             {
                 "code": "building_scope_target_type_conflict",
@@ -118,7 +149,12 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
             if scope.get("normalizedScopeType") == "target_half" and scope.get("extentDirection")
         }
     )
-    if len(target_half_directions) > 1:
+    decision_target_half_direction = (
+        str(accepted_decision.get("targetHalfDirection") or "") if accepted_decision else ""
+    )
+    if decision_target_half_direction:
+        target_half_directions = [decision_target_half_direction]
+    if len(target_half_directions) > 1 and not accepted_decision:
         blockers.append(
             {
                 "code": "building_scope_target_half_direction_conflict",
@@ -133,6 +169,29 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
             }
         )
 
+    if accepted_decision:
+        if decision_scope_type not in TARGET_SCOPE_TYPES:
+            blockers.append(_decision_blocker("building_scope_decision_target_type_invalid", accepted_decision))
+        if not accepted_decision.get("evidenceSummary"):
+            blockers.append(_decision_blocker("building_scope_decision_evidence_missing", accepted_decision))
+        if decision_scope_type in SCOPE_MASK_TARGET_TYPES and not decision_mask_ref:
+            blockers.append(
+                {
+                    "code": "building_scope_decision_mask_missing",
+                    "severity": "error",
+                    "sourceFactIds": accepted_decision.get("sourceFactIds") or [],
+                    "scopeType": decision_scope_type,
+                    "message": "A target-half/unit scope decision needs a source-backed scope mask, polygon, or boundary reference.",
+                }
+            )
+
+    resolved_target_scope_type = (
+        decision_scope_type
+        if accepted_decision and decision_scope_type in TARGET_SCOPE_TYPES
+        else target_types[0]
+        if len(target_types) == 1
+        else None
+    )
     actions = [_repair_action(blocker, scopes) for blocker in blockers]
     return {
         "format": "reverseBimSourceBuildingScopeReport_v1",
@@ -142,12 +201,17 @@ def build_source_building_scope_report(facts: list[dict[str, Any]]) -> dict[str,
             "targetScopeFactCount": len(target_scopes),
             "contextScopeFactCount": sum(1 for scope in scopes if scope.get("scopeRole") == "context"),
             "unresolvedScopeFactCount": sum(1 for scope in scopes if scope.get("scopeRole") == "unresolved"),
+            "scopeDecisionCount": len(decision_rows),
+            "acceptedScopeDecisionCount": 1 if accepted_decision else 0,
             "blockingCount": len(blockers),
-            "resolvedTargetScopeType": target_types[0] if len(target_types) == 1 else None,
+            "resolvedTargetScopeType": resolved_target_scope_type,
             "targetHalfDirection": target_half_directions[0] if len(target_half_directions) == 1 else None,
-            "targetScopeTypes": target_types,
+            "targetScopeTypes": [resolved_target_scope_type] if accepted_decision and resolved_target_scope_type else target_types,
+            "decisionResolved": bool(accepted_decision and resolved_target_scope_type),
         },
         "scopes": scopes,
+        "scopeDecisions": decision_rows,
+        "acceptedScopeDecision": accepted_decision,
         "blockers": blockers,
         "actions": actions,
     }
@@ -211,6 +275,101 @@ def _repair_action(blocker: dict[str, Any], scopes: list[dict[str, Any]]) -> dic
         ),
         "existingScopeFacts": scopes,
     }
+
+
+def _scope_decision_rows(
+    scope_decisions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if scope_decisions is None:
+        raw_rows: list[dict[str, Any]] = []
+    elif isinstance(scope_decisions, dict) and isinstance(scope_decisions.get("decisions"), list):
+        raw_rows = [row for row in scope_decisions["decisions"] if isinstance(row, dict)]
+    elif isinstance(scope_decisions, dict) and isinstance(scope_decisions.get("scopeDecisions"), list):
+        raw_rows = [row for row in scope_decisions["scopeDecisions"] if isinstance(row, dict)]
+    elif isinstance(scope_decisions, dict):
+        raw_rows = [scope_decisions]
+    elif isinstance(scope_decisions, list):
+        raw_rows = [row for row in scope_decisions if isinstance(row, dict)]
+    else:
+        raw_rows = []
+
+    rows = []
+    for index, row in enumerate(raw_rows, start=1):
+        target_scope_type = str(row.get("targetScopeType") or row.get("scopeType") or "").strip()
+        modeled_extent = str(row.get("modeledExtent") or row.get("targetExtent") or "").strip()
+        evidence_summary = str(row.get("evidenceSummary") or row.get("reason") or "").strip()
+        normalized_target_scope_type = _normalize_scope_type(target_scope_type, modeled_extent, evidence_summary)
+        target_half_direction = (
+            str(row.get("targetHalfDirection") or row.get("extentDirection") or "").strip()
+            or _extent_direction(" ".join([modeled_extent, evidence_summary]))
+        )
+        rows.append(
+            {
+                "decisionId": row.get("decisionId") or row.get("id") or f"building-scope-decision-{index:03d}",
+                "status": str(row.get("status") or row.get("decisionStatus") or "accepted"),
+                "targetScopeType": target_scope_type,
+                "normalizedTargetScopeType": normalized_target_scope_type,
+                "modeledExtent": modeled_extent,
+                "evidenceSummary": evidence_summary,
+                "sourceFactIds": _string_list(row.get("sourceFactIds") or row.get("appliesToFactIds")),
+                "contextScopeFactIds": _string_list(row.get("contextScopeFactIds") or row.get("contextFactIds")),
+                "targetScopeId": row.get("targetScopeId"),
+                "scopeMaskRef": _scope_decision_mask_ref(row),
+                "targetHalfDirection": target_half_direction,
+                "acceptedBy": row.get("acceptedBy"),
+                "provenance": row.get("provenance") or row.get("sourceEvidence"),
+            }
+        )
+    return rows
+
+
+def _accepted_scope_decision(decision_rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    accepted_statuses = {"accepted", "resolved", "source_backed", "source-backed", "tolerated_existing_condition"}
+    for row in decision_rows:
+        if str(row.get("status") or "").casefold() in accepted_statuses:
+            return row
+    return None
+
+
+def _scope_resolved_by_decision(
+    scope: dict[str, Any],
+    decision: dict[str, Any] | None,
+    decision_source_fact_ids: set[str],
+    decision_context_fact_ids: set[str],
+) -> bool:
+    if not decision:
+        return False
+    fact_id = str(scope.get("factId") or "")
+    return fact_id in decision_source_fact_ids or fact_id in decision_context_fact_ids
+
+
+def _scope_referenced_by_decision(scope: dict[str, Any], decision_source_fact_ids: set[str]) -> bool:
+    fact_id = str(scope.get("factId") or "")
+    return not decision_source_fact_ids or fact_id in decision_source_fact_ids
+
+
+def _decision_blocker(code: str, decision: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "code": code,
+        "severity": "error",
+        "decisionId": decision.get("decisionId"),
+        "sourceFactIds": decision.get("sourceFactIds") or [],
+        "message": "Building-scope decision is incomplete or invalid for source-backed authoring.",
+    }
+
+
+def _scope_decision_mask_ref(value: dict[str, Any] | None) -> Any:
+    if not isinstance(value, dict):
+        return None
+    return _scope_mask_ref(value)
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item or "").strip()]
+    if str(value or "").strip():
+        return [str(value)]
+    return []
 
 
 def _normalize_scope_type(scope_type: str, modeled_extent: str, evidence_summary: str) -> str:

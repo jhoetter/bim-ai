@@ -109,6 +109,75 @@ def test_source_building_scope_blocks_target_type_conflict() -> None:
     assert report["blockers"][0]["code"] == "building_scope_target_type_conflict"
 
 
+def test_source_building_scope_decision_resolves_target_type_conflict() -> None:
+    report = build_source_building_scope_report(
+        [
+            {
+                "factId": "scope-full",
+                "kind": "building_scope",
+                "value": {
+                    "scopeType": "whole_doppelhaus",
+                    "modeledExtent": "whole Doppelhaus with both halves",
+                    "evidenceSummary": "title block describes Doppelwohnhäuser",
+                },
+            },
+            {
+                "factId": "scope-half",
+                "kind": "building_scope",
+                "value": {
+                    "scopeType": "target_half",
+                    "modeledExtent": "right half only",
+                    "evidenceSummary": "parcel/address evidence points to one half",
+                    "scopeBoundaryRef": "right-half perimeter",
+                },
+            },
+        ],
+        scope_decisions=[
+            {
+                "decisionId": "scope-decision-1",
+                "targetScopeType": "whole_doppelhaus",
+                "modeledExtent": "model the complete double-house volume because all plan/elevation views describe both halves",
+                "evidenceSummary": "The source handoff explicitly chooses the whole Doppelhaus over one marketed half for this authoring run.",
+                "sourceFactIds": ["scope-full"],
+                "status": "accepted",
+            }
+        ],
+    )
+
+    assert report["ok"] is True
+    assert report["summary"]["decisionResolved"] is True
+    assert report["summary"]["resolvedTargetScopeType"] == "whole_doppelhaus"
+
+
+def test_source_building_scope_decision_for_target_half_still_requires_mask() -> None:
+    report = build_source_building_scope_report(
+        [
+            {
+                "factId": "scope-half",
+                "kind": "building_scope",
+                "value": {
+                    "scopeType": "target_half",
+                    "modeledExtent": "right half only",
+                    "evidenceSummary": "parcel/address evidence points to one half",
+                },
+            },
+        ],
+        scope_decisions=[
+            {
+                "decisionId": "scope-decision-1",
+                "targetScopeType": "target_half",
+                "modeledExtent": "right half only",
+                "evidenceSummary": "The modeled target is the right half, but no party-wall/perimeter mask has been supplied yet.",
+                "sourceFactIds": ["scope-half"],
+                "status": "accepted",
+            }
+        ],
+    )
+
+    assert report["ok"] is False
+    assert any(blocker["code"] == "building_scope_decision_mask_missing" for blocker in report["blockers"])
+
+
 def test_folder_acceptance_and_repairs_include_building_scope_blockers() -> None:
     scope_report = build_source_building_scope_report([])
     acceptance = _build_package_acceptance_report(

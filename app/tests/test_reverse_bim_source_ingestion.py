@@ -781,6 +781,29 @@ def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinem
     assert source_limited_terrain_readiness["rows"][0]["status"] == "reference_only"
     assert source_limited_terrain_readiness["summary"]["needsSourceRefinementCount"] == 0
 
+    unavailable_source_fact_readiness = build_mcp_authoring_readiness(
+        facts=[
+            {
+                "factId": "material-source-unavailable",
+                "kind": "source_unavailable",
+                "confidence": 1,
+                "status": "accepted",
+                "value": {
+                    "topic": "original wall layer assembly",
+                    "disposition": {
+                        "decision": "source_unavailable",
+                        "reason": "No source document exposes the layer build-up.",
+                        "affectedScope": "wall type material layers",
+                        "sourceEvidenceSummary": "All supplied plan, section, area, and energy documents were reviewed.",
+                    },
+                },
+                "provenance": {"sourceDocumentId": "srcdoc-admin", "page": 1},
+            }
+        ]
+    )
+    assert unavailable_source_fact_readiness["ok"] is True
+    assert unavailable_source_fact_readiness["rows"][0]["status"] == "reference_only"
+
 
 def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
     (tmp_path / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")

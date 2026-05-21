@@ -370,8 +370,8 @@ for _reverse_tool in (
         "name": "reverse_bim.source_building_scope",
         "title": "ReverseBimSourceBuildingScopeInput",
         "path": "/api/v3/reverse-bim/source-building-scope",
-        "cli": "bim-ai reverse-bim source-building-scope --facts ai-source-facts.json",
-        "notes": "Checks whether source facts resolve the authoring target as whole building, Doppelhaus, target half, unit, or context-only geometry before MCP modeling.",
+        "cli": "bim-ai reverse-bim source-building-scope --facts ai-source-facts.json --scope-decisions decisions.json",
+        "notes": "Checks whether source facts resolve the authoring target as whole building, Doppelhaus, target half, unit, or context-only geometry before MCP modeling; optional source-backed scope decisions can resolve document ambiguity while still requiring masks for half/unit targets.",
     },
     {
         "name": "reverse_bim.source_level_completeness",
@@ -406,7 +406,7 @@ for _reverse_tool in (
         "title": "ReverseBimFolderOutputInput",
         "path": "/api/v3/reverse-bim/folder-output",
         "cli": "bim-ai reverse-bim folder-output --root /path/to/source --output-dir tmp/reverse-bim/run",
-        "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses and source-backed consensus dispositions, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, prioritized source repair plan, and package acceptance.",
+        "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses and source-backed consensus/scope dispositions, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, prioritized source repair plan, and package acceptance.",
     },
     {
         "name": "reverse_bim.reader_dispatch_plan",

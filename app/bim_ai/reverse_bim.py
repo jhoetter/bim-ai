@@ -72,6 +72,7 @@ NON_AUTHORING_SOURCE_FACT_KINDS = {
     "building_scope",
     "conflict",
     "site_context",
+    "source_unavailable",
 }
 
 SOURCE_LIMITED_REFERENCE_DECISIONS = {
