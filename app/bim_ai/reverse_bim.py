@@ -74,6 +74,15 @@ NON_AUTHORING_SOURCE_FACT_KINDS = {
     "site_context",
 }
 
+SOURCE_LIMITED_REFERENCE_DECISIONS = {
+    "accept_context_only",
+    "accept_context_only_no_toposolid",
+    "not_in_source",
+    "source_limited",
+    "source_unavailable",
+    "tolerate_unavailable",
+}
+
 
 def validate_existing_building_ir(ir: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
@@ -316,7 +325,7 @@ def plan_mcp_authoring_actions(
         fact_id = str(fact.get("factId") or "")
         kind = str(fact.get("kind") or "")
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-        if _is_metadata_fact(kind, value):
+        if _is_metadata_fact(kind, value) or _is_source_limited_reference_fact(kind, value):
             continue
         tool = _tool_for_fact(kind, value)
         if tool is None:
@@ -741,9 +750,26 @@ def _is_metadata_fact(kind: str, value: dict[str, Any]) -> bool:
     )
 
 
+def _source_limited_decision(value: dict[str, Any] | None) -> str:
+    disposition = value.get("disposition") if isinstance(value, dict) and isinstance(value.get("disposition"), dict) else {}
+    return str(disposition.get("decision") or "")
+
+
+def _is_source_limited_reference_fact(kind: str, value: dict[str, Any] | None) -> bool:
+    decision = _source_limited_decision(value)
+    return decision in SOURCE_LIMITED_REFERENCE_DECISIONS and kind in {
+        "basement",
+        "construction_history",
+        "drainage",
+        "material",
+        "terrain",
+        "volume",
+    }
+
+
 def _tool_for_fact(kind: str, value: dict[str, Any]) -> str | None:
     disposition = value.get("disposition") if isinstance(value.get("disposition"), dict) else {}
-    if kind == "terrain" and disposition.get("decision") == "accept_context_only_no_toposolid":
+    if kind == "terrain" and disposition.get("decision") in SOURCE_LIMITED_REFERENCE_DECISIONS:
         return None
     if kind == "parcel_boundary" and disposition.get("decision") == "accept_context_only":
         return None
@@ -1020,6 +1046,8 @@ def _readback_tolerances(tool: str) -> dict[str, float]:
 def _non_authoring_status(kind: str, value: dict[str, Any] | None = None) -> str:
     if value is not None and _is_metadata_fact(kind, value):
         return "metadata_for_authoring"
+    if _is_source_limited_reference_fact(kind, value):
+        return "reference_only"
     disposition = value.get("disposition") if isinstance(value, dict) and isinstance(value.get("disposition"), dict) else {}
     if kind == "terrain" and disposition.get("decision") == "accept_context_only_no_toposolid":
         return "reference_only"

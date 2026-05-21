@@ -622,6 +622,32 @@ def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinem
     )
     assert context_terrain_readiness["rows"][0]["status"] == "reference_only"
 
+    source_limited_terrain_readiness = build_mcp_authoring_readiness(
+        facts=[
+            {
+                "factId": "terrain-source-limited",
+                "kind": "terrain",
+                "confidence": 0.7,
+                "status": "accepted",
+                "value": {
+                    "siteRef": "parcel",
+                    "method": "source review",
+                    "confidenceNote": "no numeric terrain points in source folder",
+                    "disposition": {
+                        "decision": "source_unavailable",
+                        "reason": "No contour or spot-height source was found.",
+                        "affectedScope": "toposolid elevation model",
+                        "sourceEvidenceSummary": "Reviewed site and legal documents.",
+                    },
+                },
+                "provenance": {"sourceDocumentId": "srcdoc-site", "page": 1},
+            }
+        ]
+    )
+    assert source_limited_terrain_readiness["ok"] is True
+    assert source_limited_terrain_readiness["rows"][0]["status"] == "reference_only"
+    assert source_limited_terrain_readiness["summary"]["needsSourceRefinementCount"] == 0
+
 
 def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
     (tmp_path / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
