@@ -1,6 +1,6 @@
 # BIM AI Performance Quality Tracker
 
-Last updated: 2026-05-19
+Last updated: 2026-05-21
 
 Purpose: track the application-wide performance work needed to make BIM AI feel
 responsive during ordinary authoring, remain predictable on larger projects, and
@@ -39,7 +39,7 @@ throughput, responsiveness, scale, and budget acceptance.
 
 ## Grade Summary
 
-Current grade, based on measurements from model
+Initial grade, based on 2026-05-19 measurements from model
 `6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2`:
 
 | Area | Current state | Grade |
@@ -55,11 +55,36 @@ Current grade, based on measurements from model
 | 2D/3D interaction scale | Good enough at 169 elements; vulnerable to full-model scans and continuous rendering. | `C` |
 | Collaboration/websocket scale | Simple and workable locally; not robust under slow clients or many subscribers. | `C-` |
 
-Overall grade:
+Initial overall grade:
 
 - current small-model interactive experience: `C+`;
 - larger-project readiness: `C-/D+`;
 - reporting/evidence path readiness: `F`;
+- production-load experience: `D+`.
+
+Current recheck grade, based on 2026-05-20/2026-05-21 measurements from current
+seed model `9bb9a145-d9ce-5a2f-a748-bb5be3301b30` (`target-house-3`, revision
+`1`, `120` elements):
+
+| Area | Current state after recheck | Grade |
+| ---- | --------------------------- | ----- |
+| Small-model command/evaluation backend | `evaluate` is about 88-95 ms and a hosted-opening probe reached about 127-151 ms before failing on constraints. | `B` |
+| Snapshot loading | Warm snapshot and expanded snapshot are about 95-122 ms for a 146 KB payload. | `A-/B+` |
+| Plan projection | About 51-84 ms on `plan-eg` / `EG` projection requests. | `B+` |
+| Schedule table derivation | Not re-measured on current seed because it has no schedule elements. | `Unknown` |
+| Validation endpoint | About 137-142 ms. | `B` |
+| Evidence package | About 0.48-0.63 s and observed one room-boundary derivation call. | `B+` |
+| Frontend bundle | Main app chunk regressed slightly to 4.32 MB minified / 1.12 MB gzip. | `D` |
+| Frontend state invalidation | Structural risk remains: broad `elementsById` subscriptions and large components. | `C-/D+` |
+| 2D/3D interaction scale | Still not empirically measured with browser traces or large fixtures. | `C` |
+| Collaboration/websocket scale | No new load test; risk unchanged. | `C-` |
+
+Current overall grade:
+
+- current small-model backend responsiveness: `B`;
+- larger-project readiness: `C-/D+`;
+- reporting/evidence path readiness: `B` for the current seed, pending larger
+  fixtures and CI budgets;
 - production-load experience: `D+`.
 
 ## Measurement Context
@@ -85,6 +110,11 @@ Important caveats:
 - Production build size was measured with `pnpm --filter @bim-ai/web build`.
 
 ## Measured Baselines
+
+The 2026-05-19 baseline below is intentionally preserved because it records the
+original regression class. The 2026-05-20/2026-05-21 recheck shows the current
+backend is materially faster on the current seed, while frontend bundle and
+scale risks remain.
 
 ### Backend HTTP Endpoints
 
@@ -170,6 +200,59 @@ Grade: `D`.
 The app needs code splitting for heavy routes and panels. A 1 MB gzip main
 bundle is expensive for cold loads and makes every dev/preview refresh feel
 heavier.
+
+### Current Recheck: 2026-05-20 / 2026-05-21
+
+Current seed model:
+
+- model id: `9bb9a145-d9ce-5a2f-a748-bb5be3301b30`;
+- slug: `target-house-3`;
+- revision: `1`;
+- element count: `120`;
+- payload size for snapshot: about `146 KB`;
+- schedules: none in this seed, so room schedule timing was not comparable.
+
+Backend HTTP timings:
+
+| Endpoint / path | Recheck result | Prior comparable baseline | Interpretation |
+| --------------- | -------------- | ------------------------- | -------------- |
+| `/api/models/{id}/snapshot` | warm about `95-122 ms`, first cold-ish samples up to about `510 ms` | about `236-269 ms` | Better after warmup; first request can still be noisy. |
+| `/api/models/{id}/snapshot?expandLinks=true` | about `95 ms` warm | about `236-267 ms` | Better. |
+| `/api/models/{id}/projection/plan?...` | about `51-84 ms` | about `198-217 ms` | Much better. |
+| `/api/models/{id}/summary` | about `52-54 ms` | about `206-224 ms` | Much better. |
+| `/api/models/{id}/validate` | about `137-142 ms` | about `399-425 ms` | Much better. |
+| `/api/models/{id}/evidence-package` | about `0.48-0.63 s` | about `7.1-8.0 s` | Critical improvement. |
+
+Backend compute timings:
+
+| Operation | Recheck result | Prior comparable baseline | Interpretation |
+| --------- | -------------- | ------------------------- | -------------- |
+| `load_model_row` | about `26 ms` | about `21-32 ms` | Similar. |
+| `Document.model_validate` | about `0.4 ms` | about `0.5 ms` | Similar. |
+| element `model_dump` for snapshot-like payload | about `0.3-0.4 ms` | about `0.3-0.9 ms` | Similar. |
+| `violations_wire` / `evaluate` | about `88-95 ms` | about `200-240 ms` | Better. |
+| `compute_room_boundary_derivation` | about `45-46 ms` | about `190-230 ms` | Much better on current seed. |
+| `try_commit(insertWindowOnWall)` probe | about `127-151 ms`, but failed with `constraint_error` on current seed | about `208-217 ms` successful on older model | Faster timing, but not a success-path apples-to-apples comparison. |
+| `/evidence-package` room-boundary calls | `1` observed call, about `46 ms` total | about `32` observed calls and about `6.1 s` total | The repeated-derivation failure appears fixed for current seed. |
+
+Production bundle recheck:
+
+| Asset | 2026-05-19 | 2026-05-20/21 | Interpretation |
+| ----- | ---------- | -------------- | -------------- |
+| main app JS minified | `4,186.45 KB` | `4,317.15 KB` | Worse. |
+| main app JS gzip | `1,079.35 KB` | `1,122.95 KB` | Worse. |
+| CSS gzip | `19.12 KB` | `19.14 KB` | Similar. |
+
+Conclusion from recheck:
+
+- The backend performance issue the user felt is materially better.
+- Evidence package no longer shows the 7-8 second repeated room-boundary
+  derivation behavior on the current seed.
+- The tracker remains valid for frontend cold-start, bundle, state invalidation,
+  large-model scale, websocket load, and missing CI benchmark coverage.
+- The current seed is not a full replacement for the original baseline because
+  it has fewer elements and no schedules. Medium/large benchmark fixtures are
+  still required before closing scale items.
 
 ## Architectural Findings
 
@@ -446,7 +529,7 @@ Relevant files:
 | --------- | ------ | ------------- |
 | `PERF-M0` Baseline and tracker | `Done` | This tracker exists with measured baselines, grades, and backlog items. |
 | `PERF-M1` Interactive authoring under 150 ms server p50 | `Partial` | Common commands return in under 150 ms p50 and under 300 ms p95 on standard model fixtures. |
-| `PERF-M2` Evidence package under 1 s small-model p50 | `Not started` | `/evidence-package` stops recomputing derivations and runs under 1 s on the current 169-element model. |
+| `PERF-M2` Evidence package under 1 s small-model p50 | `Partial` | Current seed runs under 1 s and observed one room-boundary derivation call; still needs the original/medium fixtures and CI budget enforcement. |
 | `PERF-M3` Snapshot/bootstrap dedupe | `Not started` | Initial load uses one authoritative bootstrap path and avoids duplicate snapshot/evaluation/hydration. |
 | `PERF-M4` Projection/schedule caching | `Not started` | Plan projection and schedule tables use revision-keyed server/client caches with invalidation. |
 | `PERF-M5` Frontend selector/index hardening | `Not started` | Main panes consume derived selectors/indices rather than scanning `elementsById` directly for common views. |
@@ -499,9 +582,9 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-D01` | P0 | `Not started` | Add request-scoped evidence context/cache object. | Evidence package uses one context that caches room derivation, schedule tables, projection wires, sheet fragments, and validation results. |
-| `PERF-D02` | P0 | `Not started` | Reduce `/evidence-package` to under 1 s on current small model. | Current route is about 7-8 s; target under 1 s p50 and under 1.5 s p95 for this fixture. |
-| `PERF-D03` | P0 | `Not started` | Remove repeated room-boundary derivation from sheet evidence. | Evidence package calls room-boundary derivation no more than once for unchanged doc/revision. |
+| `PERF-D01` | P0 | `Partial` | Add request-scoped evidence context/cache object. | Current seed evidence package observed one room-boundary derivation call, but schedule/projection/sheet fragment caching still needs explicit verification and tests. |
+| `PERF-D02` | P0 | `Partial` | Reduce `/evidence-package` to under 1 s on current small model. | Current seed is about 0.48-0.63 s; still needs original/medium/large fixture coverage and CI budget enforcement. |
+| `PERF-D03` | P0 | `Done` | Remove repeated room-boundary derivation from sheet evidence for current seed. | Current seed evidence package observed one room-boundary derivation call; keep regression coverage before treating this as scale-complete. |
 | `PERF-D04` | P1 | `Not started` | Cache schedule table derivation inside evidence package. | Each schedule id is derived at most once per evidence package request. |
 | `PERF-D05` | P1 | `Not started` | Cache plan projection wire sample inside evidence package. | Each `(planViewId, fallbackLevelId, presentation)` projection is resolved at most once per request. |
 | `PERF-D06` | P1 | `Not started` | Provide evidence-package modes. | Route supports `summary`, `default`, and `full` modes so UI panels do not fetch expensive full evidence unless needed. |
@@ -613,20 +696,21 @@ once medium and large fixtures exist.
 
 | Path / action | Target p50 | Target p95 | Current |
 | ------------- | ---------: | ---------: | ------: |
-| `/snapshot?expandLinks=true` | `<150 ms` | `<300 ms` | `~236-267 ms` |
-| `insertWindowOnWall` commit | `<150 ms` | `<300 ms` | `~208-217 ms` |
-| `/projection/plan` | `<100 ms` | `<250 ms` | `~198-217 ms` |
+| `/snapshot?expandLinks=true` | `<150 ms` | `<300 ms` | `~95 ms` warm on current seed; initial baseline was `~236-267 ms` |
+| `insertWindowOnWall` commit | `<150 ms` | `<300 ms` | `~127-151 ms` failed-constraint probe on current seed; initial success path was `~208-217 ms` |
+| `/projection/plan` | `<100 ms` | `<250 ms` | `~51-84 ms` on current seed; initial baseline was `~198-217 ms` |
 | room schedule table | `<100 ms` | `<250 ms` | `~226-237 ms` |
-| `/validate` | `<200 ms` | `<500 ms` | `~399-425 ms` |
-| `/evidence-package` default | `<1000 ms` | `<1500 ms` | `~7100-8000 ms` |
-| main JS gzip | `<500 KB` | hard fail at `750 KB` | `1079 KB` |
+| `/validate` | `<200 ms` | `<500 ms` | `~137-142 ms` on current seed; initial baseline was `~399-425 ms` |
+| `/evidence-package` default | `<1000 ms` | `<1500 ms` | `~480-630 ms` on current seed; initial baseline was `~7100-8000 ms` |
+| main JS gzip | `<500 KB` | hard fail at `750 KB` | `1123 KB`, regressed from `1079 KB` |
 | 3D idle render loop | `0 continuous frames` | n/a | likely continuous |
 | pointermove handler | `<4 ms` | `<8 ms` | not measured |
 
 ## Recommended Immediate Work Plan
 
-1. `PERF-D01` through `PERF-D05`: add request-scoped memoization for evidence
-   package and repeated derivations.
+1. `PERF-D01` through `PERF-D05`: verify and generalize the evidence-package
+   caching/reuse improvement across schedule-heavy and medium/large fixtures,
+   then lock it with CI budgets.
 2. `PERF-E03`: stop double snapshot bootstrapping.
 3. `PERF-F01` and `PERF-F04`: add revision-keyed server caches for plan
    projection and schedule table derivation.
