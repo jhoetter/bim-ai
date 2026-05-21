@@ -216,6 +216,12 @@ def build_reverse_bim_folder_output(
         reader_command=reader_command,
         reader_timeout_seconds=reader_timeout_seconds,
     )
+    raw_response_source = _raw_reader_response_source(
+        reader_responses_provided=reader_responses is not None,
+        discovered_response_count=len(discovered_reader_responses or []),
+        loop_response_count=len(loop.get("readerResponses") or []),
+        reader_command_used=bool(reader_command),
+    )
     raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
     raw_responses["source"] = raw_response_source
     raw_responses["responseFileCount"] = raw_response_file_count
@@ -569,6 +575,22 @@ def _empty_reader_response_file_payload() -> dict[str, Any]:
         "scannedResponseFileCount": 0,
         "responseFileErrorCount": 0,
     }
+
+
+def _raw_reader_response_source(
+    *,
+    reader_responses_provided: bool,
+    discovered_response_count: int,
+    loop_response_count: int,
+    reader_command_used: bool,
+) -> str:
+    if reader_responses_provided:
+        return "provided"
+    if reader_command_used and loop_response_count:
+        if discovered_response_count:
+            return "response_files+reader_command"
+        return "reader_command"
+    return "response_files"
 
 
 def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:

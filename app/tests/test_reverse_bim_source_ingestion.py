@@ -1463,6 +1463,8 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
     )
 
     assert package["format"] == "reverseBimFolderOutputPackage_v1"
+    raw_responses = json.loads(Path(package["artifacts"]["readerResponsesRaw"]).read_text())
+    assert raw_responses["source"] == "reader_command"
     response_index = json.loads(Path(package["artifacts"]["readerResponseIndex"]).read_text())
     assert response_index["responseCount"] == 2
     assert response_index["rows"][0]["readerId"] == "test-reader"
