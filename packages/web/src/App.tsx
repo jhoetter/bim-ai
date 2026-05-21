@@ -1,18 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes, useParams } from 'react-router';
-import { Workspace } from './workspace/Workspace';
-import { IconGallery } from './design-systems/IconGallery';
-import { FamilyEditorWorkbench } from './familyEditor/FamilyEditorWorkbench';
-import { PresentationViewer } from './viewer/PresentationViewer';
+
+const Workspace = lazy(() => import('./workspace/Workspace').then((m) => ({ default: m.Workspace })));
+const IconGallery = lazy(() =>
+  import('./design-systems/IconGallery').then((m) => ({ default: m.IconGallery })),
+);
+const FamilyEditorWorkbench = lazy(() =>
+  import('./familyEditor/FamilyEditorWorkbench').then((m) => ({
+    default: m.FamilyEditorWorkbench,
+  })),
+);
+const PresentationViewer = lazy(() =>
+  import('./viewer/PresentationViewer').then((m) => ({ default: m.PresentationViewer })),
+);
 
 export function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Workspace />} />
-        <Route path="/p/:token" element={<PublicPresentationRoute />} />
-        <Route path="/icons" element={<IconGallery />} />
-        <Route path="/family-editor" element={<FamilyEditorWorkbench />} />
-      </Routes>
+      <Suspense fallback={<div className="app-route-loading" aria-hidden="true" />}>
+        <Routes>
+          <Route path="/" element={<Workspace />} />
+          <Route path="/p/:token" element={<PublicPresentationRoute />} />
+          <Route path="/icons" element={<IconGallery />} />
+          <Route path="/family-editor" element={<FamilyEditorWorkbench />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

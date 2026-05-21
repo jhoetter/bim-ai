@@ -30,13 +30,13 @@ describe('<App /> routing', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('matches shared presentation links that include a theme hash', () => {
+  it('matches shared presentation links that include a theme hash', async () => {
     const token = 'fan8lkRK5oae3901usDdES4v5NjG0gLDLFM7ynmaJn8';
     window.history.replaceState(null, '', `/p/${token}#theme=light`);
 
-    const { getByTestId } = render(<App />);
+    const { findByTestId } = render(<App />);
 
-    expect(getByTestId('presentation-viewer').dataset.token).toBe(token);
+    expect((await findByTestId('presentation-viewer')).dataset.token).toBe(token);
     expect(presentationViewerSpy).toHaveBeenCalledWith({ token });
   });
 });
