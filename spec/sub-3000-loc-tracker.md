@@ -91,27 +91,27 @@ A-territory bar after the sweep:
 
 | ID            | Priority | Status  | File                                                         | Target slice                                                          | Exit signal                                                |
 | :------------ | :------- | :------ | :----------------------------------------------------------- | :-------------------------------------------------------------------- | :--------------------------------------------------------- |
-| SLC-2026-01   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract reverse-BIM + source + reverse-BIM-QA routes                 | Routes API below 3,500 LOC.                                |
+| SLC-2026-01   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract reverse-BIM + source + reverse-BIM-QA routes                  | Routes API below 3,500 LOC.                                |
 | SLC-2026-02   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract IFC/DXF, sharing, and v3-meta routes                          | Routes API below 3,000 LOC.                                |
-| SLC-2026-03   | P1       | Open   | `packages/web/src/Viewport.tsx`                              | Extract another viewport hook cluster                                 | Viewport below 3,000 LOC.                                  |
-| SLC-2026-04   | P1       | Open   | `packages/web/src/plan/PlanCanvas.tsx`                       | Extract another plan canvas slice                                     | PlanCanvas below 3,000 LOC.                                |
-| SLC-2026-05   | P1       | Open   | `packages/web/src/viewport/meshBuilders.ts`                  | Extract another mesh-builder family                                   | meshBuilders below 3,000 LOC.                              |
-| SLC-2026-06   | P1       | Open   | `packages/cli/cli.mjs`                                       | Extract another CLI command family                                    | cli.mjs below 3,000 LOC.                                   |
-| SLC-2026-07   | P1       | Open   | `app/bim_ai/elements.py`                                     | Extract another element family                                        | elements.py below 3,000 LOC.                               |
-| SLC-2026-08   | P1       | Open   | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract another inspector cluster                                     | InspectorContent below 3,000 LOC.                          |
-| SLC-2026-09   | P2       | Open   | `scripts/audit-ui-mcp-parity.mjs`                            | Extract another audit module                                          | Audit script below 3,000 LOC.                              |
-| SLC-2026-10   | P1       | Open   | `packages/web/src/cmdPalette/defaultCommands.ts`             | Split command catalogue by family                                     | defaultCommands below 3,000 LOC.                           |
-| SLC-2026-11   | P1       | Open   | `packages/web/src/tools/toolGrammar.ts`                      | Extract another reducer cluster                                       | toolGrammar below 3,000 LOC.                               |
-| SLC-2026-12   | P1       | Open   | `packages/web/src/workspace/commandCapabilities.ts`          | Split capability map by family                                        | commandCapabilities below 3,000 LOC.                       |
-| SLC-2026-13   | P1       | Open   | `packages/web/src/workspace/project/ProjectBrowser.tsx`      | Extract another browser group                                         | ProjectBrowser below 3,000 LOC.                            |
-| SLC-2026-14   | P1       | Open   | `app/bim_ai/commands.py`                                     | Extract another command schema family                                 | commands.py below 3,000 LOC.                               |
-| SLC-2026-15   | P2       | Open   | `packages/core/src/index.ts`                                 | Extract another type cluster                                          | core/index below 3,000 LOC.                                |
-| SLC-2026-16   | P1       | Open   | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract another panel cluster                                         | Workbench below 3,000 LOC.                                 |
-| SLC-2026-17   | P1       | Open   | `packages/web/src/workspace/Workspace.tsx`                   | Extract another workspace hook cluster                                | Workspace below 3,000 LOC.                                 |
-| SLC-2026-18   | P1       | Open   | `app/bim_ai/api/registry.py`                                 | Extract another descriptor group                                      | registry.py below 3,000 LOC.                               |
-| SLC-2026-19   | P1       | Open   | `app/bim_ai/model_integrity.py`                              | Extract a validation family                                           | model_integrity below 3,000 LOC.                           |
-| SLC-2026-20   | P2       | Open   | `packages/web/src/workspace/WorkspaceRightRail.tsx`          | Extract another right-rail cluster                                    | WorkspaceRightRail below 3,000 LOC.                        |
-| SLC-2026-21   | P3       | Open   | `spec/code-quality-budgets.json`                             | Tighten `maxLargestSourceLines` to 2950                               | Budget config reflects the new sub-3000 bar.               |
+| SLC-2026-03   | P1       | Open    | `packages/web/src/Viewport.tsx`                              | Extract another viewport hook cluster                                 | Viewport below 3,000 LOC.                                  |
+| SLC-2026-04   | P1       | Open    | `packages/web/src/plan/PlanCanvas.tsx`                       | Extract another plan canvas slice                                     | PlanCanvas below 3,000 LOC.                                |
+| SLC-2026-05   | P1       | Open    | `packages/web/src/viewport/meshBuilders.ts`                  | Extract another mesh-builder family                                   | meshBuilders below 3,000 LOC.                              |
+| SLC-2026-06   | P1       | Done    | `packages/cli/cli.mjs`                                       | Extract agent-api + initiation/export CLI commands                    | cli.mjs below 3,000 LOC.                                   |
+| SLC-2026-07   | P1       | Done    | `app/bim_ai/elements.py`                                     | Extract annotations, constructability, links                          | elements.py below 3,000 LOC.                               |
+| SLC-2026-08   | P1       | Open    | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract another inspector cluster                                     | InspectorContent below 3,000 LOC.                          |
+| SLC-2026-09   | P2       | Open    | `scripts/audit-ui-mcp-parity.mjs`                            | Extract another audit module                                          | Audit script below 3,000 LOC.                              |
+| SLC-2026-10   | P1       | Done    | `packages/web/src/cmdPalette/defaultCommands.ts`             | Split Display/extras palette commands                                 | defaultCommands below 3,000 LOC.                           |
+| SLC-2026-11   | P1       | Done    | `packages/web/src/tools/toolGrammar.ts`                      | Extract annotation reducer cluster                                    | toolGrammar below 3,000 LOC.                               |
+| SLC-2026-12   | P1       | Done    | `packages/web/src/workspace/commandCapabilities.ts`          | Split NAVIGATION + SYSTEM capability arrays                           | commandCapabilities below 3,000 LOC.                       |
+| SLC-2026-13   | P1       | Open    | `packages/web/src/workspace/project/ProjectBrowser.tsx`      | Extract another browser group                                         | ProjectBrowser below 3,000 LOC.                            |
+| SLC-2026-14   | P1       | Done    | `app/bim_ai/commands.py`                                     | Extract annotation + late command schemas                             | commands.py below 3,000 LOC.                               |
+| SLC-2026-15   | P2       | Open    | `packages/core/src/index.ts`                                 | Extract another type cluster                                          | core/index below 3,000 LOC.                                |
+| SLC-2026-16   | P1       | Open    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract another panel cluster                                         | Workbench below 3,000 LOC.                                 |
+| SLC-2026-17   | P1       | Open    | `packages/web/src/workspace/Workspace.tsx`                   | Extract another workspace hook cluster                                | Workspace below 3,000 LOC.                                 |
+| SLC-2026-18   | P1       | Done    | `app/bim_ai/api/registry.py`                                 | Extract OUT-V3-02/03 + EXP-V3-01 descriptor group                     | registry.py below 3,000 LOC.                               |
+| SLC-2026-19   | P1       | Done    | `app/bim_ai/model_integrity.py`                              | Extract v1 contract/evidence emitters                                 | model_integrity below 3,000 LOC.                           |
+| SLC-2026-20   | P2       | Done    | `packages/web/src/workspace/WorkspaceRightRail.tsx`          | Extract wall command helpers                                          | WorkspaceRightRail below 3,000 LOC.                        |
+| SLC-2026-21   | P3       | Open    | `spec/code-quality-budgets.json`                             | Tighten `maxLargestSourceLines` to 2950                               | Budget config reflects the new sub-3000 bar.               |
 
 ## Progress Log
 
@@ -149,3 +149,47 @@ A-territory bar after the sweep:
   pre-existing parallel-agent work — those descriptors were declared without
   matching routes before this slice), `test_command_schemas`, and
   `test_vg_v3_01`.
+- 2026-05-22: ten files now sit below the 3,000 LOC ceiling:
+  - `routes_api.py` (2,909), `api/registry.py` (2,946), `commands.py` (2,989),
+    `elements.py` (2,931), `model_integrity.py` (2,893): backend extractions
+    via new sibling modules (`routes_imports`, `routes_sharing`,
+    `routes_v3_meta`, `routes_reverse_bim`; `commands_annotations`,
+    `commands_late`; `elements_annotations`, `elements_constructability`,
+    `elements_links`; `model_integrity_v1_reports`; descriptors/output_export).
+    All re-exports are kept for legacy callers; focused Python tests pass.
+  - `cli.mjs` (2,833): agent-api + initiation/export extracted to
+    `lib/agent-api-commands.mjs` and `lib/initiation-export-commands.mjs`.
+  - `defaultCommands.ts` (2,079): Display-settings-onwards palette
+    registrations moved to `defaultCommandsDisplayAndExtras.ts`. Helpers
+    `is3dContext`, `hasSelection`, `hasActivePlanView`, etc. now exported
+    from `defaultCommands.ts`.
+  - `toolGrammar.ts` (2,648): annotation/array/scale/roof-by-extrusion/
+    revision-cloud/decal reducers moved to `toolGrammarAnnotation.ts` with
+    a side-effect `export *` re-export.
+  - `commandCapabilities.ts` (2,647): `NAVIGATION_CAPABILITIES` and
+    `SYSTEM_CAPABILITIES` drafts moved to
+    `commandCapabilitiesNavSystem.ts`. The private
+    `CommandCapabilityDraft` type is now exported.
+  - `WorkspaceRightRail.tsx` (2,944): five wall command builders moved to
+    `workspaceRightRailWallCommands.ts`.
+- 2026-05-22: nine files still above 3,000 LOC at session end. They need
+  more careful hook/component extractions and are deferred to a follow-up
+  pass:
+  - `Viewport.tsx` (3,829), `PlanCanvas.tsx` (3,797), `meshBuilders.ts`
+    (3,776), `ProjectBrowser.tsx` (3,769 — grew during this session via
+    parallel agents), `InspectorContent.tsx` (3,678),
+    `audit-ui-mcp-parity.mjs` (3,622), `core/src/index.ts` (3,386),
+    `FamilyEditorWorkbench.tsx` (3,340), `Workspace.tsx` (3,292).
+  - These remaining files mostly have inline closure functions that capture
+    component-local state (Workspace.tsx, FamilyEditorWorkbench.tsx,
+    PlanCanvas.tsx, Viewport.tsx, InspectorContent.tsx,
+    ProjectBrowser.tsx) — extracting them safely requires defining the
+    captured-state surface explicitly, which is a longer task.
+  - `meshBuilders.ts` and `core/src/index.ts` are mostly contiguous type
+    or geometry definitions that need split-by-domain extractions (similar
+    to the elements.py work). `audit-ui-mcp-parity.mjs` has many
+    cross-function helper references.
+- 2026-05-22: scorecard regression cleared. `app/bim_ai/routes_api.py` was
+  the only file flagged in `blockersToNextGrade` (over the 3,950 growth
+  cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
+  reports a growth-cap blocker.
