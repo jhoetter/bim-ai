@@ -464,7 +464,7 @@ for _reverse_tool in (
         "title": "HybridReverseBimRunExecuteInput",
         "path": "/api/v3/models/{model_id}/reverse-bim/hybrid-run-execute",
         "cli": "bim-ai reverse-bim hybrid-run-execute --model-id <id> --slices slices.json",
-        "notes": "Executes ordered live reverse-BIM slices through the single-slice executor and stops on the first unresolved source/readback/QA/visual blocker.",
+        "notes": "Executes ordered live reverse-BIM slices through the single-slice executor, stops on the first unresolved source/readback/QA/visual blocker, and returns handoffRegeneration for the latest source-revision ledger.",
     },
     {
         "name": "reverse_bim.evidence_requirements",

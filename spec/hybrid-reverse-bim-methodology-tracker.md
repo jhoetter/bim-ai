@@ -246,7 +246,7 @@ Every slice uses the same loop:
 | LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata; `reverse_bim.view_capture_plan` produces deterministic browser/Playwright capture work orders; `reverse_bim.view_capture_execute` runs the plan in Chromium and writes PNGs/manifests; `reverse_bim.visual_review_requests` and `reverse_bim.visual_review_normalize` turn AI visual review into evidence rows. | Partial | Invoke capture/review automatically from hybrid runs. |
 | LOOP-012 | Finding dispositions. | `reverse_bim.phase_packet` with dispositions. | Partial | Enforce source-backed existing-condition policy and block fixable authoring errors. |
 | LOOP-013 | Repair loop. | AI-reader repair requests exist; `reverse_bim.source_spec_revision` maps feedback, `reverse_bim.source_revision_ledger` converts actions into open repair ledger entries, and `reverse_bim.source_revision_ledger_persist` saves resumable ledger/history files. | Partial | Connect persisted repair worklists to automated rerun of impacted slices. |
-| LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks reopened facts; `reverse_bim.source_revision_ledger_persist` records reopened facts; `reverse_bim.handoff_regeneration` produces affected-slice MCP handoff or reader repair work. | Partial | Automatically run focused readers/rerun affected slices. |
+| LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks reopened facts; `reverse_bim.source_revision_ledger_persist` records reopened facts; `reverse_bim.handoff_regeneration` produces affected-slice MCP handoff or reader repair work; `reverse_bim.hybrid_run_execute` returns the latest handoff regeneration plan when a run blocks. | Partial | Automatically run focused readers/rerun affected slices. |
 
 ## MCP Authoring Surface Matrix
 
@@ -443,7 +443,7 @@ The Leo showcase is successful only if:
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
 | W1-001 | Adopt this tracker as controlling methodology. | Done by this file. | Other reverse-BIM trackers point here or are clearly subordinate. |
-| W1-002 | Define `hybrid_reverse_bim.run` contract. | Partial | `reverse_bim.hybrid_run` aggregates run evidence; `reverse_bim.hybrid_slice_execute` executes one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices and stops on blockers. Automatic repair/rerun remains. |
+| W1-002 | Define `hybrid_reverse_bim.run` contract. | Partial | `reverse_bim.hybrid_run` aggregates run evidence; `reverse_bim.hybrid_slice_execute` executes one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices, stops on blockers, and returns handoff regeneration for affected repairs. Automatic repair/rerun remains. |
 | W1-003 | Define per-slice state machine. | Done | `reverse_bim.hybrid_slice` reports source-blocked, MCP-ready, source-revision-required, tool-gap-blocked, readback-blocked, QA-blocked, visual-blocked, or accepted. |
 | W1-004 | Define source-backed existing-condition policy in final acceptance. | Done | Policy is encoded in phase and final acceptance gates; warnings require source-backed existing-condition evidence. |
 | W1-005 | Create runtime `SKILL.md`. | Done | `claude-skills/hybrid-reverse-bim/SKILL.md` describes the runtime operating procedure for future agents. |

@@ -2203,6 +2203,18 @@ async def reverse_bim_hybrid_run_execute_route(
         slice_reports=slice_reports,
         package_acceptance=body.get("packageAcceptance") or body.get("folderOutput"),
     )
+    latest_source_revision_ledger = None
+    for row in reversed(results):
+        if isinstance(row.get("sourceRevisionLedger"), dict):
+            latest_source_revision_ledger = row.get("sourceRevisionLedger")
+            break
+    handoff_regeneration = None
+    if latest_source_revision_ledger:
+        handoff_regeneration = build_reverse_bim_handoff_regeneration_plan(
+            facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+            source_revision_ledger=latest_source_revision_ledger,
+            phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+        )
     return {
         "ok": bool(run_report.get("ok")) and not stopped,
         "format": "hybridReverseBimRunExecution_v1",
@@ -2214,11 +2226,13 @@ async def reverse_bim_hybrid_run_execute_route(
             "acceptedSliceCount": sum(1 for row in results if row.get("ok") is True),
         },
         "sliceExecutions": results,
+        "latestSourceRevisionLedger": latest_source_revision_ledger,
+        "handoffRegeneration": handoff_regeneration,
         "runReport": run_report,
         "nextStep": (
             "All requested slices executed and accepted."
             if run_report.get("ok") and not stopped
-            else "Repair the first blocked slice, regenerate handoff if needed, then rerun from that slice."
+            else "Repair the first blocked slice using handoffRegeneration/readerRepairRequests when present, then rerun from that slice."
         ),
     }
 
