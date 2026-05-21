@@ -11,7 +11,7 @@ endif
 PYTHON ?= python3.13
 APP_DIR := app
 PNPM := pnpm
-UV ?= uv
+UV ?= $(if $(wildcard $(HOME)/.local/bin/uv),$(HOME)/.local/bin/uv,uv)
 PYTEST_ARGS ?= tests/
 
 # Local suite port allocation:
@@ -20,12 +20,14 @@ WEB_PORT ?= 2000
 API_PORT ?= 8500
 BROWSER_API_PORT ?= $(API_PORT)
 BROWSER_API_WS_BASE ?=
+FORWARDED_WEB_PORT ?= 22000
+FORWARDED_API_PORT ?= 28500
 design ?= default
 SEED_NAME ?= $(name)
 SEED_ROOT ?= $(seed_root)
 SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
-.PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
+.PHONY: help install dev dev-forwarded dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
 test test-py test-py-full test-py-focused test-py-real-path test-web-real-path test-js format format-check python-format-check lint lint-js lint-py architecture \
 	quality-waivers maintainability-budgets js-lint-budget ui-quality-budgets security-hygiene test-env-policy code-quality-report typecheck verify build clean lockfile-check verify-refinement-reliability
@@ -34,7 +36,8 @@ help:
 	@echo "bim-ai Makefile"
 	@echo "  install   — pnpm + Python venv"
 	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
-	@echo "              remote tunnel example: make dev BROWSER_API_PORT=28500, then ssh -L 22000:127.0.0.1:2000 -L 28500:127.0.0.1:8500"
+	@echo "  dev-forwarded — dev profile for viewing this machine through SSH tunnels (:$(FORWARDED_WEB_PORT) / :$(FORWARDED_API_PORT) on the browser host)"
+	@echo "              tunnel: ssh -L $(FORWARDED_WEB_PORT):127.0.0.1:$(WEB_PORT) -L $(FORWARDED_API_PORT):127.0.0.1:$(API_PORT) <host>"
 	@echo "  seed      — load seed-artifacts/* or an empty dev model; pass name=<seed-name> to load one"
 	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
@@ -53,10 +56,10 @@ help:
 
 install:
 	$(PNPM) install
-	cd $(APP_DIR) && uv venv --clear .venv && uv sync --frozen
+	cd $(APP_DIR) && $(UV) venv --clear .venv && $(UV) sync --frozen
 
 lockfile-check:
-	cd $(APP_DIR) && uv lock --check
+	cd $(APP_DIR) && $(UV) lock --check
 
 db-up:
 	docker compose -f infra/docker-compose.yml up -d
@@ -105,6 +108,9 @@ endif
 	$(PNPM) -w exec concurrently -k -n api,web -c blue,magenta \
 	  "$(MAKE) dev-api" \
 	  "$(MAKE) dev-web"
+
+dev-forwarded:
+	$(MAKE) dev BROWSER_API_PORT=$(FORWARDED_API_PORT)
 
 dev-api:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
