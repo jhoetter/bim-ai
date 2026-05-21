@@ -103,6 +103,7 @@ type WorkspaceSemanticCommandArgs = {
   setCollaborationConflictQueue: (queue: CollaborationConflictQueueV1 | null) => void;
   setPlanTool: (toolId: ToolId) => void;
   setRedoDepth: Dispatch<SetStateAction<number>>;
+  setPendingCommandCount: Dispatch<SetStateAction<number>>;
   setSeedError: (message: string | null) => void;
   setUndoDepth: Dispatch<SetStateAction<number>>;
   shaftBoundaryFromStair: typeof shaftBoundaryFromStairFn;
@@ -135,6 +136,7 @@ export function useWorkspaceSemanticCommand(args: WorkspaceSemanticCommandArgs) 
     rememberLocalClientOp,
     setCollaborationConflictQueue,
     setPlanTool,
+    setPendingCommandCount,
     setRedoDepth,
     setSeedError,
     setUndoDepth,
@@ -1793,6 +1795,7 @@ export function useWorkspaceSemanticCommand(args: WorkspaceSemanticCommandArgs) 
 
       const clientOpId = `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
       rememberLocalClientOp(clientOpId);
+      setPendingCommandCount((count) => count + 1);
       try {
         const r = await applyCommand(mid, effectiveCmd, { userId: uid, clientOpId });
         if (r.revision !== undefined) {
@@ -1862,6 +1865,8 @@ export function useWorkspaceSemanticCommand(args: WorkspaceSemanticCommandArgs) 
           setCollaborationConflictQueue(null);
           setSeedError(err instanceof Error ? err.message : 'Apply failed');
         }
+      } finally {
+        setPendingCommandCount((count) => Math.max(0, count - 1));
       }
     },
     [
@@ -1887,6 +1892,7 @@ export function useWorkspaceSemanticCommand(args: WorkspaceSemanticCommandArgs) 
       materializeOptimisticHostedOpening,
       rememberLocalClientOp,
       setCollaborationConflictQueue,
+      setPendingCommandCount,
       setPlanTool,
       setRedoDepth,
       setSeedError,

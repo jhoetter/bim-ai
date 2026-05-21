@@ -115,6 +115,7 @@ export interface StatusBarProps {
   /** Undo depth; clicking the cluster invokes undo / redo. */
   undoDepth?: number;
   redoDepth?: number;
+  pendingCommandCount?: number;
   onUndo?: () => void;
   onRedo?: () => void;
   wsState?: StatusWsState;
@@ -148,6 +149,7 @@ export interface StatusBarProps {
 export function StatusBar({
   undoDepth,
   redoDepth,
+  pendingCommandCount = 0,
   onUndo,
   onRedo,
   wsState = 'connected',
@@ -210,6 +212,7 @@ export function StatusBar({
           <UndoCluster
             undoDepth={undoDepth ?? 0}
             redoDepth={redoDepth ?? 0}
+            pendingCommandCount={pendingCommandCount}
             onUndo={onUndo}
             onRedo={onRedo}
           />
@@ -710,15 +713,18 @@ function CoordCluster({
 function UndoCluster({
   undoDepth,
   redoDepth,
+  pendingCommandCount,
   onUndo,
   onRedo,
 }: {
   undoDepth: number;
   redoDepth: number;
+  pendingCommandCount: number;
   onUndo?: () => void;
   onRedo?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
+  const pendingLabel = t('statusbar.pendingCommandCount', { count: pendingCommandCount });
   return (
     <div className="flex items-center gap-1">
       <button
@@ -732,6 +738,16 @@ function UndoCluster({
         <Icons.undo size={ICON_SIZE.chrome} aria-hidden="true" />
       </button>
       <span className="text-muted">{undoDepth}</span>
+      {pendingCommandCount > 0 ? (
+        <span
+          data-testid="status-bar-pending-command-count"
+          aria-live="polite"
+          title={pendingLabel}
+          className="rounded-sm bg-surface-strong px-1 font-mono text-[10px] text-muted"
+        >
+          +{pendingCommandCount}
+        </span>
+      ) : null}
       <button
         type="button"
         onClick={onRedo}

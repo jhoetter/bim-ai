@@ -406,6 +406,7 @@ i18n.use(initReactI18next).init({
           undoLabel: 'Undo',
           redoTitle: 'Redo (⇧⌘Z)',
           redoLabel: 'Redo',
+          pendingCommandCount: '{{count}} pending',
           connection: 'Connection: {{label}}',
           wsLabel: 'ws:',
           ws: {
@@ -1308,6 +1309,7 @@ i18n.use(initReactI18next).init({
           undoLabel: 'Rückgängig',
           redoTitle: 'Wiederholen (⇧⌘Z)',
           redoLabel: 'Wiederholen',
+          pendingCommandCount: '{{count}} ausstehend',
           connection: 'Verbindung: {{label}}',
           wsLabel: 'ws:',
           ws: {

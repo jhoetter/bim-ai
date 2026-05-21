@@ -216,6 +216,20 @@ describe('StatusBar — spec §17', () => {
     expect(onRedo).toHaveBeenCalled();
   });
 
+  it('shows pending authoritative commands beside the undo stack', () => {
+    const { getByTestId, getByText } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        undoDepth={2}
+        pendingCommandCount={1}
+        saveState="saving"
+      />,
+    );
+    expect(getByTestId('status-bar-pending-command-count').textContent).toBe('+1');
+    expect(getByTestId('status-bar-pending-command-count').getAttribute('title')).toBe('1 pending');
+    expect(getByText('saving…')).toBeTruthy();
+  });
+
   it('renders a placeholder when cursor is off-canvas', () => {
     const { getByLabelText } = renderWithI18n(
       <ViewContextStatusPanel mode="plan" level={{ id: 'lvl-ground', label: 'Ground' }} />,

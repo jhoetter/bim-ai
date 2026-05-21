@@ -465,6 +465,7 @@ export function Workspace(): JSX.Element {
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
+  const [pendingCommandCount, setPendingCommandCount] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
@@ -899,6 +900,7 @@ export function Workspace(): JSX.Element {
     setActiveLevelId,
     setCollaborationConflictQueue,
     setGroupRegistry,
+    setPendingCommandCount,
     setPlanTool,
     setRedoDepth,
     setSeedError,
@@ -963,6 +965,7 @@ export function Workspace(): JSX.Element {
         positionMm: { xMm: 0, yMm: 0 },
         paramValues,
       };
+      setPendingCommandCount((count) => count + 1);
       try {
         const r = await applyCommand(mid, command, { userId: uid });
         if (r.revision !== undefined) {
@@ -977,6 +980,8 @@ export function Workspace(): JSX.Element {
         }
       } catch {
         // Placement failure is non-blocking — the overlay stays open
+      } finally {
+        setPendingCommandCount((count) => Math.max(0, count - 1));
       }
     },
     [hydrateFromSnapshot],
@@ -988,6 +993,7 @@ export function Workspace(): JSX.Element {
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
       if (!mid) return;
+      setPendingCommandCount((count) => count + 1);
       try {
         const r = isUndo ? await undoModel(mid, uid) : await redoModel(mid, uid);
         if (r.revision !== undefined) {
@@ -1023,6 +1029,8 @@ export function Workspace(): JSX.Element {
         } else {
           setCollaborationConflictQueue(null);
         }
+      } finally {
+        setPendingCommandCount((count) => Math.max(0, count - 1));
       }
     },
     [hydrateFromSnapshot, setActivity],
@@ -3258,10 +3266,11 @@ export function Workspace(): JSX.Element {
             level={activeLevel}
             undoDepth={undoDepth}
             redoDepth={redoDepth}
+            pendingCommandCount={pendingCommandCount}
             onUndo={() => void handleUndoRedo(true)}
             onRedo={() => void handleUndoRedo(false)}
             wsState={wsOn ? 'connected' : 'offline'}
-            saveState="saved"
+            saveState={pendingCommandCount > 0 ? 'saving' : 'saved'}
             advisorCounts={advisorCounts}
             onAdvisorClick={() => setAdvisorOpen(true)}
             jobsCounts={jobsCounts}
