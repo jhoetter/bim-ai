@@ -9,6 +9,7 @@ from bim_ai.hybrid_reverse_bim import (
     build_source_spec_revision_report,
 )
 from bim_ai.reverse_bim_document_authority import build_reverse_bim_document_authority_report
+from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.routes_api import api_router
@@ -172,6 +173,79 @@ def test_source_revision_ledger_reopens_facts_and_names_affected_phase() -> None
     assert ledger["factUpdates"][0]["nextStatus"] == "reopened"
 
 
+def test_handoff_regeneration_blocks_reopened_source_facts() -> None:
+    ledger = {
+        "entries": [
+            {
+                "ledgerEntryId": "rev-1",
+                "classification": "source_fact_misread",
+                "sourceFactIds": ["wall-1"],
+                "affectedPhaseIds": ["S2-EG"],
+                "requiredResolution": "focused_ai_reader_repair_with_provenance",
+                "reason": "Wall thickness did not match readback.",
+            }
+        ]
+    }
+    plan = build_reverse_bim_handoff_regeneration_plan(
+        facts=[
+            {
+                "factId": "wall-1",
+                "kind": "wall_chain",
+                "value": {
+                    "levelId": "EG",
+                    "points": [[0, 0], [5000, 0], [5000, 4000]],
+                    "thicknessMm": 240,
+                    "wallRole": "exterior",
+                },
+                "provenance": {"sourceDocumentId": "doc-eg", "page": 1},
+            }
+        ],
+        source_revision_ledger=ledger,
+        phase_authoring_spec={
+            "phases": [{"phaseId": "S2-EG", "sourceFactIds": ["wall-1"]}]
+        },
+    )
+
+    assert plan["ok"] is False
+    assert plan["phasePlans"][0]["status"] == "source_repair_required"
+    assert plan["readerRepairRequests"][0]["factId"] == "wall-1"
+
+
+def test_handoff_regeneration_rebuilds_ready_handoff_rows_for_payload_repairs() -> None:
+    ledger = {
+        "entries": [
+            {
+                "ledgerEntryId": "rev-1",
+                "classification": "mcp_payload_wrong",
+                "sourceFactIds": ["wall-1"],
+                "affectedPhaseIds": ["S2-EG"],
+            }
+        ]
+    }
+    plan = build_reverse_bim_handoff_regeneration_plan(
+        facts=[
+            {
+                "factId": "wall-1",
+                "kind": "wall_chain",
+                "value": {
+                    "levelId": "EG",
+                    "points": [[0, 0], [5000, 0], [5000, 4000]],
+                    "thicknessMm": 240,
+                    "wallRole": "exterior",
+                },
+            }
+        ],
+        source_revision_ledger=ledger,
+        phase_authoring_spec={
+            "phases": [{"phaseId": "S2-EG", "sourceFactIds": ["wall-1"]}]
+        },
+    )
+
+    assert plan["ok"] is True
+    assert plan["phasePlans"][0]["status"] == "handoff_regeneration_ready"
+    assert plan["phasePlans"][0]["expectedReadback"][0]["sourceFactId"] == "wall-1"
+
+
 def test_hybrid_run_blocks_when_source_package_not_handoff_ready() -> None:
     run = build_hybrid_reverse_bim_run_report(
         phase_authoring_spec={"phases": []},
@@ -304,6 +378,10 @@ def test_hybrid_reverse_bim_routes() -> None:
         "/api/v3/reverse-bim/source-revision-ledger",
         json={"sourceSpecRevision": revision_resp.json(), "facts": []},
     )
+    handoff_resp = client.post(
+        "/api/v3/reverse-bim/handoff-regeneration",
+        json={"sourceRevisionLedger": ledger_resp.json(), "facts": []},
+    )
     slice_resp = client.post(
         "/api/v3/reverse-bim/hybrid-slice",
         json={
@@ -326,6 +404,8 @@ def test_hybrid_reverse_bim_routes() -> None:
     assert revision_resp.json()["format"] == "reverseBimSourceSpecRevisionReport_v1"
     assert ledger_resp.status_code == 200
     assert ledger_resp.json()["format"] == "reverseBimSourceRevisionLedger_v1"
+    assert handoff_resp.status_code == 200
+    assert handoff_resp.json()["format"] == "reverseBimHandoffRegenerationPlan_v1"
     assert slice_resp.status_code == 200
     assert slice_resp.json()["format"] == "hybridReverseBimSliceReport_v1"
     assert run_resp.status_code == 200

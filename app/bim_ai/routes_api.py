@@ -182,6 +182,7 @@ from bim_ai.reverse_bim import (
     validate_existing_building_ir,
 )
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
+from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
@@ -1876,6 +1877,18 @@ async def reverse_bim_source_revision_ledger_route(
         facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
         source_spec_revision=body.get("sourceSpecRevision") or body.get("source_spec_revision"),
         existing_ledger=body.get("existingLedger") or body.get("existing_ledger"),
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/handoff-regeneration")
+async def reverse_bim_handoff_regeneration_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_handoff_regeneration_plan(
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+        source_revision_ledger=body.get("sourceRevisionLedger")
+        or body.get("source_revision_ledger"),
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
     )
 

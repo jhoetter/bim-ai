@@ -182,7 +182,7 @@ Every modelable fact must include:
 | SPEC-006 | Expected readback per action. | `reverse_bim.plan_authoring` emits expected readback; `reverse_bim.readback_compare` compares expected rows with live query/readback evidence. | Done | Keep extending field-level comparisons as new element categories need stricter checks. |
 | SPEC-007 | Source-view requirements. | `reverse_bim.evidence_requirements` | Partial | Include exact plan/elevation/section/site views required for each source page. |
 | SPEC-008 | Tolerance policy. | Folder output tolerance policy; phase packet supports source-backed existing nonconformance. | Partial | Expand policy into blocking categories and existing-condition exception categories. |
-| SPEC-009 | Source-spec revision loop. | `reverse_bim.source_spec_revision` classifies feedback; `reverse_bim.source_revision_ledger` creates repair ledger entries, reopened fact updates, and affected phase ids. | Partial | Persist the ledger per run and regenerate affected MCP handoff rows automatically. |
+| SPEC-009 | Source-spec revision loop. | `reverse_bim.source_spec_revision` classifies feedback; `reverse_bim.source_revision_ledger` creates repair ledger entries; `reverse_bim.handoff_regeneration` regenerates affected MCP handoff rows or reader repair requests. | Partial | Persist the ledger per run and automatically invoke focused source readers/reruns. |
 
 ## Iterative Modeling Slices
 
@@ -246,7 +246,7 @@ Every slice uses the same loop:
 | LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata; `reverse_bim.view_capture_plan` produces deterministic browser/Playwright capture work orders. | Partial | Add the actual Playwright/browser runner that executes capture plans and writes PNGs. |
 | LOOP-012 | Finding dispositions. | `reverse_bim.phase_packet` with dispositions. | Partial | Enforce source-backed existing-condition policy and block fixable authoring errors. |
 | LOOP-013 | Repair loop. | AI-reader repair requests exist; `reverse_bim.source_spec_revision` maps feedback and `reverse_bim.source_revision_ledger` converts actions into open repair ledger entries. | Partial | Persist repair worklists and connect them to automated rerun of impacted slices. |
-| LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks source facts as reopened and names affected slices. | Partial | Persist reopened facts and regenerate affected MCP handoff rows automatically. |
+| LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks reopened facts; `reverse_bim.handoff_regeneration` produces affected-slice MCP handoff or reader repair work. | Partial | Persist reopened facts and automatically run focused readers/rerun affected slices. |
 
 ## MCP Authoring Surface Matrix
 
@@ -465,7 +465,7 @@ The Leo showcase is successful only if:
 | W3-001 | Build runner that executes phase authoring spec transactionally. | Partial | `reverse_bim.hybrid_slice_execute` now handles one slice through dry-run/commit/query/QA/readback; full multi-phase runner and automatic retries remain. |
 | W3-002 | Build readback comparator. | Done | `reverse_bim.readback_compare` checks expected readback rows against explicit readback rows or queried elements. |
 | W3-003 | Attach source fact refs to modeled elements. | Partial | `sourceFactIds` or equivalent survive query, schedule, and evidence export. |
-| W3-004 | Build structured repair worklist from QA/readback findings. | Partial | `reverse_bim.source_spec_revision` classifies actions and `reverse_bim.source_revision_ledger` produces repair entries; persistence and automatic rerun are still needed. |
+| W3-004 | Build structured repair worklist from QA/readback findings. | Partial | `reverse_bim.source_spec_revision` classifies actions, `reverse_bim.source_revision_ledger` produces repair entries, and `reverse_bim.handoff_regeneration` prepares affected MCP reruns/reader repairs; persistence and automatic rerun are still needed. |
 
 ### Wave 4: Visual Evidence And Source Views
 
@@ -504,10 +504,10 @@ Implementation: partial surfaces exist across source packaging, document
 authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification/ledgering, hybrid slice/run state reporting,
 single-slice live execution, runtime skill guidance, view-capture work orders,
-and acceptance validation.
+handoff regeneration, and acceptance validation.
 Missing critical glue: full multi-slice hybrid executor, persisted source-spec
 revision ledger storage, UI-assisted coordinate control-point picking, actual
-browser screenshot execution, automatic overlays, MCP handoff regeneration, and
+browser screenshot execution, automatic overlays, automatic handoff reruns, and
 Leo fresh-run evidence.
 ```
 

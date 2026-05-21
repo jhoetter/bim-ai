@@ -425,6 +425,13 @@ for _reverse_tool in (
         "notes": "Turns source-spec revision actions into a persistent-style repair ledger with reopened fact updates and affected modeling slices.",
     },
     {
+        "name": "reverse_bim.handoff_regeneration",
+        "title": "ReverseBimHandoffRegenerationInput",
+        "path": "/api/v3/reverse-bim/handoff-regeneration",
+        "cli": "bim-ai reverse-bim handoff-regeneration --source-revision-ledger source-revision-ledger.json --facts facts.json --phase-spec phase-authoring-spec.json",
+        "notes": "Builds bounded regenerated MCP handoff rows, expected readback, and reader repair requests for only the slices affected by source/model repair findings.",
+    },
+    {
         "name": "reverse_bim.hybrid_slice",
         "title": "HybridReverseBimSliceInput",
         "path": "/api/v3/reverse-bim/hybrid-slice",
