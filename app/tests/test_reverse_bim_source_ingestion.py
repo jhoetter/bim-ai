@@ -997,13 +997,18 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
     assert dispatched["summary"]["waitingPackageCount"] == 0
     assert dispatched["summary"]["needsRevisionPackageCount"] == 1
     assert dispatched["dispatchDiagnostics"] == []
-    assert len(dispatched["readerResponses"]) == 1
+    assert len(dispatched["readerResponses"]) == 2
     assert dispatched["readerResponses"][0]["format"] == "sourceAiVisualTraceReaderResponse_v1"
     assert dispatched["readerResponses"][0]["workPackageId"] == "wp-dimensional-floorplans"
     assert dispatched["readerResponses"][0]["requestId"] == (
         f"{dispatched['runId']}:wp-dimensional-floorplans"
     )
     assert dispatched["readerResponses"][0]["facts"] == []
+    assert {row["readerPassId"] for row in dispatched["readerResponses"]} == {
+        "reader-pass-01",
+        "reader-pass-02",
+    }
+    assert len(dispatched["mergedReaderResponses"][0]["responseParts"]) == 2
 
     two_pass_blocked = run_ai_visual_trace_agent_loop(
         work_order=work_order,
@@ -1459,9 +1464,13 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
 
     assert package["format"] == "reverseBimFolderOutputPackage_v1"
     response_index = json.loads(Path(package["artifacts"]["readerResponseIndex"]).read_text())
-    assert response_index["responseCount"] == 1
+    assert response_index["responseCount"] == 2
     assert response_index["rows"][0]["readerId"] == "test-reader"
     assert response_index["rows"][0]["model"] == "test-vision"
+    assert {row["readerPassId"] for row in response_index["rows"]} == {
+        "reader-pass-01",
+        "reader-pass-02",
+    }
 
 
 def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:

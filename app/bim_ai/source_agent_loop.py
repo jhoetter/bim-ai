@@ -449,10 +449,25 @@ def run_ai_visual_trace_agent_loop(
         work_order=work_order,
         run_id=resolved_run_id,
     )
-    requests_by_package: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in reader_requests.get("requests", []):
-        if isinstance(row, dict) and row.get("workPackageId"):
-            requests_by_package[str(row.get("workPackageId"))].append(row)
+    request_by_id = {
+        str(row.get("requestId") or ""): row
+        for row in reader_requests.get("requests", [])
+        if isinstance(row, dict) and row.get("requestId")
+    }
+    assignments_by_package: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    if reader_command:
+        dispatch_manifest = build_ai_visual_trace_reader_pass_manifest(
+            agent_requests=reader_requests,
+            work_order=work_order,
+            responses=input_response_rows,
+        )
+        for assignment in dispatch_manifest.get("assignments") or []:
+            if (
+                isinstance(assignment, dict)
+                and assignment.get("status") == "waiting_for_reader"
+                and assignment.get("workPackageId")
+            ):
+                assignments_by_package[str(assignment.get("workPackageId"))].append(assignment)
     package_results: list[dict[str, Any]] = []
     accepted_facts: list[dict[str, Any]] = []
     all_facts: list[dict[str, Any]] = []
@@ -466,6 +481,57 @@ def run_ai_visual_trace_agent_loop(
         required_kinds = _blocking_required_kinds(wp)
         response = responses_by_package.get(package_id)
         response_rows_for_package = response_rows_by_package.get(package_id, [])
+        if reader_command:
+            dispatched_responses = []
+            for assignment in assignments_by_package.get(package_id, []):
+                request = request_by_id.get(str(assignment.get("requestId") or ""))
+                if not request:
+                    dispatch_diagnostics.append(
+                        {
+                            "workPackageId": package_id,
+                            "requestId": assignment.get("requestId"),
+                            "assignmentId": assignment.get("assignmentId"),
+                            "readerPassId": assignment.get("readerPassId"),
+                            "code": "ai_visual_reader_assignment_request_missing",
+                            "severity": "error",
+                            "message": "Reader assignment references a request that was not found.",
+                        }
+                    )
+                    continue
+                dispatch_request = {
+                    **request,
+                    "assignmentId": assignment.get("assignmentId"),
+                    "readerPassId": assignment.get("readerPassId"),
+                    "responsePathHint": assignment.get("responsePathHint"),
+                    "independentReaderRequired": assignment.get("independentReaderRequired"),
+                    "criticalConsensusPackage": assignment.get("criticalConsensusPackage"),
+                }
+                dispatched_response, diagnostic = _call_reader_command(
+                    reader_command,
+                    dispatch_request,
+                    timeout_seconds=reader_timeout_seconds,
+                )
+                if diagnostic:
+                    dispatch_diagnostics.append(
+                        {
+                            "workPackageId": package_id,
+                            "requestId": request.get("requestId"),
+                            "assignmentId": assignment.get("assignmentId"),
+                            "readerPassId": assignment.get("readerPassId"),
+                            **diagnostic,
+                        }
+                    )
+                if isinstance(dispatched_response, dict):
+                    dispatched_responses.append(
+                        _reader_response_with_request_metadata(
+                            dispatched_response,
+                            request,
+                            assignment=assignment,
+                        )
+                    )
+            if dispatched_responses:
+                response_rows_for_package = [*response_rows_for_package, *dispatched_responses]
+                response = _merge_reader_response_rows(response_rows_for_package).get(package_id)
         if wp.get("status") != "ready":
             result = {
                 "workPackageId": package_id,
@@ -485,46 +551,23 @@ def run_ai_visual_trace_agent_loop(
             repair_requests.append(_repair_request(wp, required_kinds, result["findings"]))
             continue
         if response is None:
-            if reader_command:
-                dispatched_responses = []
-                for request in requests_by_package.get(package_id, []):
-                    dispatched_response, diagnostic = _call_reader_command(
-                        reader_command,
-                        request,
-                        timeout_seconds=reader_timeout_seconds,
-                    )
-                    if diagnostic:
-                        dispatch_diagnostics.append(
-                            {
-                                "workPackageId": package_id,
-                                "requestId": request.get("requestId"),
-                                **diagnostic,
-                            }
-                        )
-                    if isinstance(dispatched_response, dict):
-                        dispatched_responses.append(
-                            _reader_response_with_request_metadata(dispatched_response, request)
-                        )
-                response = _merge_reader_response_rows(dispatched_responses).get(package_id)
-                response_rows_for_package = dispatched_responses
-            if response is None:
-                result = {
-                    "workPackageId": package_id,
-                    "status": "waiting_for_ai_reader",
-                    "requiredKinds": required_kinds,
-                    "factCount": 0,
-                    "summary": {"errorCount": 1, "warningCount": 0},
-                    "findings": [
-                        {
-                            "code": "ai_visual_reader_response_missing",
-                            "severity": "error",
-                            "message": "No multimodal reader response was supplied for this work package.",
-                        }
-                    ],
-                }
-                package_results.append(result)
-                repair_requests.append(_repair_request(wp, required_kinds, result["findings"]))
-                continue
+            result = {
+                "workPackageId": package_id,
+                "status": "waiting_for_ai_reader",
+                "requiredKinds": required_kinds,
+                "factCount": 0,
+                "summary": {"errorCount": 1, "warningCount": 0},
+                "findings": [
+                    {
+                        "code": "ai_visual_reader_response_missing",
+                        "severity": "error",
+                        "message": "No multimodal reader response was supplied for this work package.",
+                    }
+                ],
+            }
+            package_results.append(result)
+            repair_requests.append(_repair_request(wp, required_kinds, result["findings"]))
+            continue
 
         if isinstance(response, dict):
             response = {
@@ -1032,11 +1075,20 @@ def _reader_response_with_defaults(row: dict[str, Any], *, package_id: str) -> d
     }
 
 
-def _reader_response_with_request_metadata(row: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
+def _reader_response_with_request_metadata(
+    row: dict[str, Any],
+    request: dict[str, Any],
+    *,
+    assignment: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     out = _reader_response_with_defaults(row, package_id=str(request.get("workPackageId") or ""))
     for key in ("requestId", "requestPartIndex", "requestPartCount"):
         if key not in out or out.get(key) in (None, ""):
             out[key] = request.get(key)
+    assignment = assignment or {}
+    for key in ("assignmentId", "readerPassId", "responsePathHint"):
+        if key not in out or out.get(key) in (None, ""):
+            out[key] = assignment.get(key)
     return out
 
 
