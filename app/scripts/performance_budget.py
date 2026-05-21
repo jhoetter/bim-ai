@@ -39,6 +39,8 @@ BUDGETS_MS: dict[str, float] = {
     "schedule_heavy.door_schedule": 250.0,
     "schedule_heavy.window_schedule": 250.0,
     "schedule_heavy.evidence_package": 6_000.0,
+    "documentation_heavy.plan_projection": 500.0,
+    "documentation_heavy.evidence_package": 8_000.0,
     "room_stress.room_derivation": 1_500.0,
 }
 
@@ -262,6 +264,66 @@ def build_room_stress_fixture() -> Document:
     return Document(revision=1, elements=elements)
 
 
+def build_documentation_heavy_fixture() -> Document:
+    elements: dict[str, Any] = {}
+    for index, level_name in enumerate(["EG", "OG"]):
+        prefix = f"doc-{index}"
+        _add_grid_level(
+            elements,
+            prefix=prefix,
+            level_name=level_name,
+            elevation_mm=index * 3_200,
+            cols=10,
+            rows=8,
+            cell_w_mm=3_800,
+            cell_d_mm=3_000,
+        )
+        _add_schedules_and_sheets(elements, prefix=prefix, plan_id=f"{prefix}-plan")
+
+    # Add a sheet that references both levels so evidence-package assembly covers
+    # cross-level drawing sets rather than only independent single-level sheets.
+    elements["doc-combined-sheet"] = SheetElem(
+        kind="sheet",
+        id="doc-combined-sheet",
+        name="Combined Documentation Sheet",
+        viewportsMm=[
+            {
+                "viewportId": "doc-combined-eg",
+                "viewRef": "plan:doc-0-plan",
+                "xMm": 600,
+                "yMm": 600,
+                "widthMm": 4_800,
+                "heightMm": 3_000,
+            },
+            {
+                "viewportId": "doc-combined-og",
+                "viewRef": "plan:doc-1-plan",
+                "xMm": 5_800,
+                "yMm": 600,
+                "widthMm": 4_800,
+                "heightMm": 3_000,
+            },
+            {
+                "viewportId": "doc-combined-room-schedule",
+                "viewRef": "schedule:doc-0-schedule-rooms",
+                "xMm": 600,
+                "yMm": 4_000,
+                "widthMm": 5_000,
+                "heightMm": 2_200,
+            },
+            {
+                "viewportId": "doc-combined-window-schedule",
+                "viewRef": "schedule:doc-1-schedule-windows",
+                "xMm": 5_900,
+                "yMm": 4_000,
+                "widthMm": 5_000,
+                "heightMm": 2_200,
+            },
+        ],
+    )
+    return Document(revision=1, elements=elements)
+
+
 def _elapsed_ms(func: Callable[[], Any]) -> float:
     start = time.perf_counter()
     func()
@@ -293,6 +355,7 @@ def _measure(
 def run_budgets() -> dict[str, Any]:
     small = build_small_fixture()
     schedule_heavy = build_schedule_heavy_fixture()
+    documentation_heavy = build_documentation_heavy_fixture()
     room_stress = build_room_stress_fixture()
 
     results = [
@@ -330,6 +393,21 @@ def run_budgets() -> dict[str, Any]:
             repeats=3,
         ),
         _measure(
+            "documentation_heavy.plan_projection",
+            lambda: resolve_plan_projection_wire(
+                documentation_heavy,
+                plan_view_id="doc-0-plan",
+                fallback_level_id="doc-0-level",
+                global_plan_presentation="default",
+            ),
+            repeats=3,
+        ),
+        _measure(
+            "documentation_heavy.evidence_package",
+            lambda: build_evidence_package_payload(model_id=MODEL_ID, doc=documentation_heavy),
+            repeats=3,
+        ),
+        _measure(
             "room_stress.room_derivation",
             lambda: compute_room_boundary_derivation(room_stress),
             repeats=3,
@@ -340,6 +418,10 @@ def run_budgets() -> dict[str, Any]:
         "schedule_heavy": {
             "revision": schedule_heavy.revision,
             "elementCount": len(schedule_heavy.elements),
+        },
+        "documentation_heavy": {
+            "revision": documentation_heavy.revision,
+            "elementCount": len(documentation_heavy.elements),
         },
         "room_stress": {
             "revision": room_stress.revision,
