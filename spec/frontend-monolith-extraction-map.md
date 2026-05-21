@@ -1,6 +1,6 @@
 # Frontend Monolith Extraction Map
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 Scope: CQ-2026-04. This map defines the ownership direction for the current
 high-churn frontend files so extraction work can continue in small, testable
@@ -186,6 +186,27 @@ First landed slice:
 - `workspace/compositions.tsx`
 - `workspace/WorkspaceOverlays.tsx`
 - `workspace/WorkspaceAppShellSlots.tsx`
+
+## WorkspaceRightRail.tsx
+
+Current role: selected-element sidebar, secondary view-context sidebar,
+inspector/action handoff, material browser target discovery, and view-specific
+control sections.
+
+Target modules:
+
+- `workspace/WorkspaceRightRailElementInspectors.tsx`: selected element
+  inspectors that are specific to placed assets, family instances, columns,
+  coordinate points, and wall move/join actions, plus material-target helper
+  predicates used by the rail.
+- `workspace/WorkspaceRightRailViewContext.tsx`: plan/3D/section/sheet
+  secondary view-control groups once another cohesive slice is available.
+- `workspace/WorkspaceRightRailActions.ts`: pure selected-element action
+  builders and command payload helpers if the rail callback surface grows again.
+
+First landed slice:
+
+- `workspace/WorkspaceRightRailElementInspectors.tsx`
 
 ## Viewport.tsx
 

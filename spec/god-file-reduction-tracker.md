@@ -1,6 +1,6 @@
 # BIM AI - God File Reduction Tracker
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 Purpose: keep the largest source files shrinking in small, safe slices after the
 main code-quality tracker reached B territory. The goal is not to move lines for
@@ -141,6 +141,7 @@ A-territory target:
 | GFR-2026-65 | P1       | Done   | `app/bim_ai/elements.py`                                    | Extract MEP element model family                                  | Elements module below `3,800` LOC with focused MEP/schema tests green. |
 | GFR-2026-66 | P1       | Done   | `packages/web/src/viewport/meshBuilders.ts`                 | Extract balcony and structural mesh builders                       | Mesh builders below `3,750` LOC with focused viewport tests green. |
 | GFR-2026-67 | P1       | Done   | `packages/cli/cli.mjs`                                      | Extract MEP CLI command family                                    | CLI below `3,750` LOC with CLI parity tests green.          |
+| GFR-2026-68 | P1       | Done   | `packages/web/src/workspace/WorkspaceRightRail.tsx`         | Extract element-specific inspector sections                       | Right rail near `3,000` LOC with focused right-rail tests green. |
 
 ## Progress Log
 
@@ -690,3 +691,11 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   Local `wc -l` reports `packages/cli/cli.mjs` at `3,722` lines and the new
   module at `209` lines. `node --check` passes for both files and the CLI MCP
   parity suite passes (`29 passed`).
+- 2026-05-21: `GFR-2026-68` is Done. The slice moved placed asset, family
+  instance, column, coordinate point, wall move, and wall-join disallow
+  inspector sections plus material-target helpers into
+  `packages/web/src/workspace/WorkspaceRightRailElementInspectors.tsx`.
+  Local `wc -l` reports `WorkspaceRightRail.tsx` at `3,014` lines and the new
+  module at `804` lines. Focused right-rail/inspector tests pass (`100`
+  passed), `pnpm --filter @bim-ai/web typecheck` passes, and
+  `pnpm --filter @bim-ai/web lint` passes.

@@ -3,32 +3,34 @@ import type { Element } from '@bim-ai/core';
 type ElementOfKind<K extends Element['kind']> = Extract<Element, { kind: K }>;
 
 export type ModelIndices = {
-  all: Element[];
-  levels: ElementOfKind<'level'>[];
-  wallsByLevel: Record<string, ElementOfKind<'wall'>[]>;
-  roomsByLevel: Record<string, ElementOfKind<'room'>[]>;
-  openingsByWall: Record<string, Array<ElementOfKind<'door'> | ElementOfKind<'window'>>>;
-  planViews: ElementOfKind<'plan_view'>[];
-  schedules: ElementOfKind<'schedule'>[];
-  sheets: ElementOfKind<'sheet'>[];
+  all: readonly Element[];
+  levels: readonly ElementOfKind<'level'>[];
+  wallsByLevel: Readonly<Record<string, readonly ElementOfKind<'wall'>[]>>;
+  roomsByLevel: Readonly<Record<string, readonly ElementOfKind<'room'>[]>>;
+  openingsByWall: Readonly<
+    Record<string, readonly (ElementOfKind<'door'> | ElementOfKind<'window'>)[]>
+  >;
+  planViews: readonly ElementOfKind<'plan_view'>[];
+  schedules: readonly ElementOfKind<'schedule'>[];
+  sheets: readonly ElementOfKind<'sheet'>[];
   projectSettings: ElementOfKind<'project_settings'> | null;
-  selectableIds: string[];
+  selectableIds: readonly string[];
 };
 
 export const EMPTY_MODEL_INDICES: ModelIndices = Object.freeze({
-  all: Object.freeze([]) as Element[],
-  levels: Object.freeze([]) as ElementOfKind<'level'>[],
+  all: Object.freeze([]) as readonly Element[],
+  levels: Object.freeze([]) as readonly ElementOfKind<'level'>[],
   wallsByLevel: Object.freeze({}) as Record<string, ElementOfKind<'wall'>[]>,
   roomsByLevel: Object.freeze({}) as Record<string, ElementOfKind<'room'>[]>,
   openingsByWall: Object.freeze({}) as Record<
     string,
     Array<ElementOfKind<'door'> | ElementOfKind<'window'>>
   >,
-  planViews: Object.freeze([]) as ElementOfKind<'plan_view'>[],
-  schedules: Object.freeze([]) as ElementOfKind<'schedule'>[],
-  sheets: Object.freeze([]) as ElementOfKind<'sheet'>[],
+  planViews: Object.freeze([]) as readonly ElementOfKind<'plan_view'>[],
+  schedules: Object.freeze([]) as readonly ElementOfKind<'schedule'>[],
+  sheets: Object.freeze([]) as readonly ElementOfKind<'sheet'>[],
   projectSettings: null,
-  selectableIds: Object.freeze([]) as string[],
+  selectableIds: Object.freeze([]) as readonly string[],
 });
 
 function pushByKey<T>(index: Record<string, T[]>, key: string | undefined, item: T): void {
@@ -45,8 +47,7 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
   const levels: ElementOfKind<'level'>[] = [];
   const wallsByLevel: Record<string, ElementOfKind<'wall'>[]> = {};
   const roomsByLevel: Record<string, ElementOfKind<'room'>[]> = {};
-  const openingsByWall: Record<string, Array<ElementOfKind<'door'> | ElementOfKind<'window'>>> =
-    {};
+  const openingsByWall: Record<string, Array<ElementOfKind<'door'> | ElementOfKind<'window'>>> = {};
   const planViews: ElementOfKind<'plan_view'>[] = [];
   const schedules: ElementOfKind<'schedule'>[] = [];
   const sheets: ElementOfKind<'sheet'>[] = [];

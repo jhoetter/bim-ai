@@ -147,11 +147,7 @@ export function useWorkspaceSnapshot(): {
   const mountedRef = useRef(true);
 
   const connectWs = useCallback(
-    (
-      mid: string,
-      lastSeq: number | null,
-      snapshotRevision: number | null = null,
-    ): WebSocket => {
+    (mid: string, lastSeq: number | null, snapshotRevision: number | null = null): WebSocket => {
       const ws = new WebSocket(
         modelWsUrl(mid, {
           resumeFrom: lastSeq,

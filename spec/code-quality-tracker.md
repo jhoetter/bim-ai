@@ -179,8 +179,7 @@ Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                                                                                                              |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `app/bim_ai/routes_api.py`                                  | 3,827      | API route aggregator after extracted query/resolve/QA and presentation routes.                                                       |
-| `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,804      | Workspace side rail remains large but below the current cap.                                                                         |
+| `app/bim_ai/routes_api.py`                                  | 3,915      | API route aggregator after extracted query/resolve/QA and presentation routes.                                                       |
 | `packages/web/src/Viewport.tsx`                             | 3,793      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                                                    |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 3,779      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules.                 |
@@ -195,8 +194,10 @@ Largest current source files observed:
 | `app/bim_ai/commands.py`                                    | 3,509      | Command schema aggregator after extracted site, output, and MEP command families.                                                    |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                                                              |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,341      | Family editor state shell after extracted defaults, workbench, and properties panel modules.                                         |
-| `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks.             |
+| `packages/web/src/workspace/Workspace.tsx`                  | 3,284      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks.             |
 | `app/bim_ai/api/registry.py`                                | 3,268      | Central API descriptor registry after extracted descriptor modules.                                                                  |
+| `app/bim_ai/model_integrity.py`                             | 3,149      | Model integrity validation surface after earlier reliability extraction.                                                             |
+| `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,015      | Workspace side rail after extracting element-specific inspectors and material-target helpers.                                        |
 
 ## Status Model
 
@@ -630,6 +631,14 @@ impact of small changes.
   `spec/god-file-reduction-tracker.md`; the next InspectorContent slice moved
   site terrain rows into `workspace/inspector/siteTerrainInspectorSections.tsx`.
   The inspector file is now about `6,428` scorecard-counted lines.
+- 2026-05-21: the `WorkspaceRightRail` element-inspector slice moved placed
+  asset, family instance, column, coordinate point, wall move, and wall-join
+  disallow editors plus material-target helpers into
+  `workspace/WorkspaceRightRailElementInspectors.tsx`. The committed
+  `WorkspaceRightRail.tsx` scorecard size is now about `3,015` lines; local
+  parallel reverse-BIM route additions may temporarily push dirty-worktree
+  `routes_api.py` reports above the committed budget until those changes are
+  split or finalized.
 - 2026-05-20: the next InspectorContent slice moved placed tag, room tag, and
   material tag rows into `workspace/inspector/annotationTagInspectorSections.tsx`
   with focused material tag coverage, reducing the inspector file to about
@@ -981,6 +990,11 @@ py_compile` passes for the registry and descriptor module, and a focused
   and presentation-canvas export routes into `app/bim_ai/routes_presentation.py`,
   reducing `app/bim_ai/routes_api.py` to `3,753` local lines with Python
   compile, ruff, and focused permissions/activity route tests passing.
+- 2026-05-21: extracted element-specific right-rail editors and material-target
+  detection into `packages/web/src/workspace/WorkspaceRightRailElementInspectors.tsx`,
+  reducing `packages/web/src/workspace/WorkspaceRightRail.tsx` to `3,015`
+  scorecard-counted lines while keeping focused right-rail and inspector tests
+  green.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path

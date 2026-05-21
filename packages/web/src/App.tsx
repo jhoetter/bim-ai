@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes, useParams } from 'react-router';
 
-const Workspace = lazy(() => import('./workspace/Workspace').then((m) => ({ default: m.Workspace })));
+const Workspace = lazy(() =>
+  import('./workspace/Workspace').then((m) => ({ default: m.Workspace })),
+);
 const IconGallery = lazy(() =>
   import('./design-systems/IconGallery').then((m) => ({ default: m.IconGallery })),
 );

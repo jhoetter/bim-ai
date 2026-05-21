@@ -48,6 +48,16 @@ describe('buildModelIndices', () => {
     expect(indices.schedules.map((schedule) => schedule.id)).toEqual(['sch1']);
     expect(indices.sheets.map((sheet) => sheet.id)).toEqual(['sh1']);
     expect(indices.projectSettings?.id).toBe('ps1');
-    expect(indices.selectableIds).toEqual(['d1', 'l1', 'l2', 'ps1', 'pv1', 'r1', 'sch1', 'sh1', 'w1']);
+    expect(indices.selectableIds).toEqual([
+      'd1',
+      'l1',
+      'l2',
+      'ps1',
+      'pv1',
+      'r1',
+      'sch1',
+      'sh1',
+      'w1',
+    ]);
   });
 });
