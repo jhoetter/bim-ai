@@ -757,6 +757,61 @@ def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
         if finding["code"] == "ai_visual_fact_value_schema_invalid"
     } == {"areaM2", "boundaryMm"}
 
+    invalid_systems = validate_ai_visual_trace_completeness(
+        [
+            {
+                "factId": "ai-srcfact-material-invalid",
+                "kind": "material",
+                "value": {
+                    "elementScope": "exterior wall",
+                    "materialName": "Mauerwerk",
+                    "layers": [{"materialName": "Putz", "thicknessMm": 0}],
+                },
+                "confidence": 0.8,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "construction note",
+                },
+            },
+            {
+                "factId": "ai-srcfact-terrain-invalid",
+                "kind": "terrain",
+                "value": {"siteRef": "site", "method": "spot_heights", "points": [{"xMm": 0}]},
+                "confidence": 0.8,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "site plan",
+                },
+            },
+            {
+                "factId": "ai-srcfact-drainage-invalid",
+                "kind": "drainage",
+                "value": {
+                    "systemType": "wastewater",
+                    "elements": [{"type": "pipe", "diameterMm": -100}],
+                },
+                "confidence": 0.8,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "drainage plan",
+                },
+            },
+        ]
+    )
+    invalid_fields = {
+        finding["field"]
+        for finding in invalid_systems["findings"]
+        if finding["code"] == "ai_visual_fact_value_schema_invalid"
+    }
+    assert {
+        "layers[0].thicknessMm",
+        "points",
+        "elements[0].diameterMm",
+    } <= invalid_fields
+
     missing_kind = validate_ai_visual_trace_completeness(
         [
             {

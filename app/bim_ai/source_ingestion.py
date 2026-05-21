@@ -890,6 +890,45 @@ def _validate_ai_visual_fact_value_schema(
     if kind == "volume":
         if "volumeM3" in value and not _positive_number(value.get("volumeM3")):
             error("volumeM3", "Volume fact volumeM3 must be a positive number.")
+    if kind == "material":
+        layers = value.get("layers", value.get("layerStack"))
+        if "layers" in value or "layerStack" in value:
+            if not isinstance(layers, list):
+                error("layers", "Material layer stack must be a list when present.")
+            else:
+                for layer_index, layer in enumerate(layers):
+                    if not isinstance(layer, dict):
+                        error(f"layers[{layer_index}]", "Each material layer must be an object.")
+                        continue
+                    thickness = layer.get("thicknessMm")
+                    if thickness is not None and not _positive_number(thickness):
+                        error(
+                            f"layers[{layer_index}].thicknessMm",
+                            "Material layer thickness must be a positive number in mm.",
+                        )
+    if kind == "terrain":
+        points = value.get("points") or value.get("spotHeights")
+        if "points" in value or "spotHeights" in value:
+            if not _terrain_point_list(points):
+                error("points", "Terrain points/spotHeights must include numeric x/y/z coordinates.")
+        contours = value.get("contours")
+        if contours is not None and not isinstance(contours, list):
+            error("contours", "Terrain contours must be a list when present.")
+    if kind == "drainage":
+        elements = value.get("elements")
+        if "elements" in value and not isinstance(elements, list):
+            error("elements", "Drainage elements must be a list.")
+        elif isinstance(elements, list):
+            for element_index, element in enumerate(elements):
+                if not isinstance(element, dict):
+                    error(f"elements[{element_index}]", "Each drainage element must be an object.")
+                    continue
+                diameter = element.get("diameterMm")
+                if diameter is not None and not _positive_number(diameter):
+                    error(
+                        f"elements[{element_index}].diameterMm",
+                        "Drainage diameterMm must be a positive number when present.",
+                    )
     return findings
 
 
@@ -920,6 +959,19 @@ def _point_list(value: Any, *, min_count: int) -> bool:
         isinstance(value, list)
         and len(value) >= min_count
         and all(_point_like(row) for row in value)
+    )
+
+
+def _terrain_point_list(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and all(
+            isinstance(row, dict)
+            and _number(row.get("xMm", row.get("x")))
+            and _number(row.get("yMm", row.get("y")))
+            and _number(row.get("zMm", row.get("z")))
+            for row in value
+        )
     )
 
 
