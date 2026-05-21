@@ -632,7 +632,7 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-H01` | P0 | `Not started` | Add pointermove budget measurement for PlanCanvas. | Dev benchmark records pointermove handler time for pan, hover, snap, draw wall, place door/window, and tag/dimension interactions. |
+| `PERF-H01` | P0 | `Done` | Add pointermove budget measurement for PlanCanvas. | Dev instrumentation records pointermove handler samples by scenario, and `pnpm performance:plan-pointermove` writes a current summary report from a running app. |
 | `PERF-H02` | P1 | `Not started` | Add spatial index for plan picking and snapping. | Candidate lookup is sublinear for walls/openings/rooms/tags/dimensions on scale fixtures. |
 | `PERF-H03` | P1 | `Not started` | Avoid `Object.values(elementsById)` inside high-frequency handlers. | Pointermove paths use precomputed arrays/indices updated on revision, not per event. |
 | `PERF-H04` | P1 | `Not started` | Coalesce visual hover/snap state updates. | Pointermove UI state is updated at animation-frame cadence and only when semantic hover/snap target changes. |
@@ -711,12 +711,11 @@ once medium and large fixtures exist.
 
 1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
    memoization inside evidence package after the schedule-heavy CI budget.
-2. `PERF-H01`: add browser-side pointermove budget measurement for PlanCanvas.
-3. `PERF-L02`: decide whether pending optimistic hosted openings should reserve
+2. `PERF-L02`: decide whether pending optimistic hosted openings should reserve
    undo-stack entries before authoritative backend acceptance.
-4. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
-5. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
-6. Expand the benchmark fixture set with a larger documentation-heavy model and
+3. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
+4. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
+5. Expand the benchmark fixture set with a larger documentation-heavy model and
    trend artifacts.
 
 ## Commands Used For Initial Measurements
