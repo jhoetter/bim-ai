@@ -362,6 +362,13 @@ for _reverse_tool in (
         "notes": "Checks that every source-required level/storey has physical wall, floor, room, opening, or stair facts before MCP authoring.",
     },
     {
+        "name": "reverse_bim.document_authority",
+        "title": "ReverseBimDocumentAuthorityInput",
+        "path": "/api/v3/reverse-bim/document-authority",
+        "cli": "bim-ai reverse-bim document-authority --manifest manifest.json --classifications classifications.json",
+        "notes": "Ranks and groups source documents by role/scope, marks superseded or duplicate drawings, and blocks critical document groups with unresolved authority before source facts drive MCP authoring.",
+    },
+    {
         "name": "reverse_bim.folder_output",
         "title": "ReverseBimFolderOutputInput",
         "path": "/api/v3/reverse-bim/folder-output",
@@ -381,6 +388,34 @@ for _reverse_tool in (
         "path": "/api/v3/reverse-bim/phase-run",
         "cli": "bim-ai reverse-bim phase-run --phase-spec phase-authoring-spec.json --packets phase-packets.json",
         "notes": "Checks that source-bearing reverse-BIM phases have accepted phase packets and prevents skipping earlier blocked phases.",
+    },
+    {
+        "name": "reverse_bim.readback_compare",
+        "title": "ReverseBimReadbackCompareInput",
+        "path": "/api/v3/reverse-bim/readback-compare",
+        "cli": "bim-ai reverse-bim readback-compare --expected expected-readback.json --elements query-elements.json",
+        "notes": "Compares expected source-derived authoring readback with live model query/readback evidence before a slice can be accepted.",
+    },
+    {
+        "name": "reverse_bim.source_spec_revision",
+        "title": "ReverseBimSourceSpecRevisionInput",
+        "path": "/api/v3/reverse-bim/source-spec-revision",
+        "cli": "bim-ai reverse-bim source-spec-revision --readback readback-comparison.json --overlay source-overlay.json",
+        "notes": "Classifies modeling feedback into source fact repair, coordinate-frame repair, model repair, tool gap, or source-backed existing-condition disposition.",
+    },
+    {
+        "name": "reverse_bim.hybrid_slice",
+        "title": "HybridReverseBimSliceInput",
+        "path": "/api/v3/reverse-bim/hybrid-slice",
+        "cli": "bim-ai reverse-bim hybrid-slice --phase phase.json --readback readback.json --packet phase-packet.json",
+        "notes": "Reports the current state of a hybrid modeling slice: source-blocked, MCP-ready, readback-blocked, source-revision-required, QA-blocked, visual-blocked, or accepted.",
+    },
+    {
+        "name": "reverse_bim.hybrid_run",
+        "title": "HybridReverseBimRunInput",
+        "path": "/api/v3/reverse-bim/hybrid-run",
+        "cli": "bim-ai reverse-bim hybrid-run --phase-spec phase-authoring-spec.json --packets phase-packets.json",
+        "notes": "Aggregates package state, phase packets, and slice states so an agent can continue the hybrid reverse-BIM run without guessing.",
     },
     {
         "name": "reverse_bim.evidence_requirements",

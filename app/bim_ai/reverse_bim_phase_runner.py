@@ -161,6 +161,8 @@ def _packet_readback_rows(packet: dict[str, Any]) -> list[dict[str, Any]]:
         packet.get("readback"),
         packet.get("modelReadback"),
         packet.get("readbackEvidence"),
+        packet.get("readbackComparison"),
+        packet.get("modelReadbackComparison"),
     ]
     evidence = packet.get("evidencePackage") if isinstance(packet.get("evidencePackage"), dict) else {}
     candidates.extend(
@@ -169,6 +171,8 @@ def _packet_readback_rows(packet: dict[str, Any]) -> list[dict[str, Any]]:
             evidence.get("modelReadback"),
             evidence.get("readbackEvidence"),
             evidence.get("readbackExpectations"),
+            evidence.get("readbackComparison"),
+            evidence.get("modelReadbackComparison"),
         ]
     )
     rows: list[dict[str, Any]] = []

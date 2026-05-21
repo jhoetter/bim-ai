@@ -1,6 +1,6 @@
 # Reverse-BIM Actual Methodology Tracker
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 Status: **Reset tracker after target-house-3 failure. This supersedes any claim
 that the current Leo seed proves the reverse-BIM methodology works.**
@@ -126,6 +126,242 @@ source folder
   -> final acceptance
   -> optional export/seed package
 ```
+
+## Conceptual Methodology Map And Leo Position
+
+The input is always the **original source folder**, not a seed and not a prior
+generated BIM output:
+
+```text
+/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo
+```
+
+The full methodology is best understood as four conceptual blocks:
+
+```text
+SOURCE FOLDER
+  -> TRUSTED SOURCE SPECIFICATION
+  -> LIVE MCP-AUTHORED BIM MODEL
+  -> EVIDENCE-BACKED ACCEPTANCE
+```
+
+### Conceptual Blocks
+
+| Block | Core question | What the agent does | Output | Modeling allowed? | Leo now |
+| --- | --- | --- | --- | --- | --- |
+| 1. Source understanding | What exactly do the documents say? | Inventory the folder, render/read pages, use AI visual readers, extract source facts, resolve target/context scope, detect conflicts. | A source specification with facts, provenance, confidence, conflicts, and repair requests. | No. | **Current block. Blocked.** |
+| 2. Modeling handoff | Can these facts be built through MCP without guessing? | Map each accepted fact to MCP tools, resolvers, phase order, and expected readback. | A phase-by-phase authoring plan. | Not yet; this is only the plan. | Not reached. |
+| 3. Live MCP modeling | Build the model in the BIM software. | Dry-run, commit, query, run Advisor/constructability/integrity, and repair after every phase. | A live BIM model plus phase evidence. | Yes, but only for unblocked phases. | Not reached for the valid methodology. |
+| 4. Acceptance | Does the live model match the documents and behave correctly? | Check physical topology, source overlays, UI screenshots, schedules, final Advisor/readback. | Final acceptance report; optional export only after pass. | No new modeling except repairs. | `target-house-3` failed here and is only failure evidence. |
+
+### What "Blocked" Means
+
+Blocked does **not** mean the software cannot model. It means the methodology
+must not ask the software to model yet, because the source specification is not
+complete enough to avoid guessing.
+
+For Leo, the current blocker is in **Block 1: Source understanding**. The latest
+non-destructive package is
+`tmp/reverse-bim-testhaus-leo/folder-output-building-scope-gated/`, and it is
+still `source_understanding_blocked`.
+
+### Leo Current Blockers In Plain Language
+
+| Blocker | Plain meaning | Why it blocks modeling |
+| --- | --- | --- |
+| Target/context scope missing | We have not formally stated whether Leo's BIM target is the full Doppelhaus, one half, one unit, or context-only neighboring geometry. | If this is wrong, the whole model may represent the wrong building. |
+| Scope mask missing | If the target is one half/unit, we need the exact boundary/mask of that target in source coordinates. | Without the mask, the agent can model the wrong half or include context geometry as building geometry. |
+| Coordinate frames unresolved | The plans/elevations/site pages are not all aligned into model coordinates. | Walls, openings, roof, and site placement cannot be checked against source overlays. |
+| Roof/dormer precision unresolved | Roof/dormer geometry is still partly estimated. | A plausible roof is not enough; it must match the elevations/sections. |
+| Site/terrain unresolved | Parcel, building placement, terrain/topology, and context are not modeling-ready. | The house can end up centered on a generic plane instead of correctly placed. |
+| Materials/layers unresolved | Wall/floor/roof construction assemblies are not source-backed or explicitly unavailable. | Existing-building schedules and semantics would be generic. |
+| Reader consensus insufficient | Critical facts need independent agreement or a deterministic cross-check. | One reader pass can be wrong; the workflow needs confidence before authoring. |
+
+### The Start Point
+
+The next valid action is not "create target-house-4." The next valid action is:
+
+```text
+repair Leo source understanding
+```
+
+Concretely, the next AI reader pass must return:
+
+- explicit `building_scope`,
+- target/context decision,
+- source-backed scope mask or boundary reference,
+- plan/section/elevation/site provenance for that decision,
+- repaired roof/dormer facts,
+- repaired coordinate-frame facts,
+- repaired site/terrain facts,
+- material/source-unavailable dispositions,
+- reader consensus or deterministic cross-check evidence.
+
+Only after that can the process move into MCP handoff planning and then live
+modeling.
+
+### Technical Phase Mapping
+
+The implementation below is split into phases so agents can execute and test the
+methodology deterministically. Conceptually:
+
+| Conceptual block | Technical phases below |
+| --- | --- |
+| Source understanding | Phase 0 through Phase 4 |
+| Modeling handoff | Phase 5 |
+| Live MCP modeling | Phase 6 |
+| Acceptance evidence | Phase 7 through Phase 9 |
+| Optional export | Seed/export policy after Phase 9 |
+
+### Waterfall Versus Iterative Execution
+
+The conceptual blocks above can look like a waterfall. They must not be executed
+as a blind one-shot waterfall. The correct reverse-BIM execution model is a
+**hybrid iterative workflow**:
+
+```text
+global source preflight
+  -> choose a modeling slice
+  -> deepen source understanding for that slice
+  -> author that slice through MCP
+  -> query/review/Advisor/overlay
+  -> repair
+  -> continue to next slice
+```
+
+The important distinction:
+
+- **Global source preflight is mandatory** before modeling. It catches building
+  scope, level list, scale, coordinate frames, site context, and document
+  completeness. Without this, the agent can model the wrong house or wrong half.
+- **Detailed modeling can be iterative by slice** after preflight. A slice can
+  be a floor, vertical circulation, roof, site, or material/schedule package.
+
+Recommended slice order for an existing house:
+
+1. Global scope/site/level preflight.
+2. KG/basement source understanding and model.
+3. EG source understanding and model.
+4. DG/upper level source understanding and model.
+5. Cross-level stairs/slab openings/vertical circulation.
+6. Roof/dormers/roof openings.
+7. Site/parcel/terrain placement.
+8. Materials, assemblies, schedules, and final evidence.
+
+#### Option A: Pure Waterfall
+
+```text
+read all sources -> create full spec -> model whole building -> final review
+```
+
+Pros:
+
+- Strong global consistency before any model mutation.
+- Easier to detect source conflicts across documents early.
+- Good for formal handoff when one team reads sources and another models.
+
+Cons:
+
+- Slow to reveal whether MCP authoring tools are sufficient.
+- Large source-specification pass can become abstract and hard to validate.
+- If the source reading is wrong, many downstream facts may need rework.
+- Less like how a careful BIM technician often works in practice.
+
+Leo implication:
+
+- A pure waterfall would require fully resolving all Leo source blockers before
+  drawing anything. This is safe but may delay useful tool feedback.
+
+#### Option B: Pure Floor-By-Floor Iteration
+
+```text
+read KG -> model KG -> review
+read EG -> model EG -> review
+read DG -> model DG -> review
+...
+```
+
+Pros:
+
+- Faster feedback from the live BIM software.
+- Easier to inspect one floor deeply.
+- Failures are localized; an EG wall/door problem does not wait until final
+  acceptance to be discovered.
+- Feels closer to a BIM technician modeling from plans.
+
+Cons:
+
+- Dangerous without global preflight: the agent may choose the wrong target
+  half, wrong scale, wrong coordinate frame, or wrong level datum.
+- Cross-level elements can break: stairs, shafts, chimneys, party walls, roof,
+  and site placement depend on more than one floor.
+- Source conflicts may be discovered late and force remodels.
+- Repeated local decisions may drift from the global source story.
+
+Leo implication:
+
+- Pure floor-by-floor would be risky right now because the target/context scope
+  is unresolved. The agent could model a polished EG that still belongs to the
+  wrong half or wrong extent.
+
+#### Option C: Hybrid Iterative Workflow
+
+```text
+global preflight -> slice source repair -> slice MCP model -> slice review
+                 -> next slice -> cross-slice review -> final acceptance
+```
+
+Pros:
+
+- Keeps the global decisions that must be known upfront: target scope, levels,
+  scale, coordinate frames, site relationship, and document inventory.
+- Allows useful modeling feedback early, one slice at a time.
+- Makes Advisor and overlay feedback part of the build loop instead of a final
+  surprise.
+- Prevents known global blockers from being hidden by a nice-looking local
+  model.
+- Best match for "AI agent behaves like a careful BIM technician."
+
+Cons:
+
+- Requires careful dependency tracking between slices.
+- More phase packets and evidence artifacts are produced.
+- The agent must know when a local issue is actually a global source problem.
+- Needs good checkpointing so a repaired source fact invalidates affected model
+  slices.
+
+Leo implication:
+
+- This is the recommended path. Leo should first repair global source blockers,
+  especially `building_scope` and scope mask. Then it can proceed slice by
+  slice: KG, EG, DG, stairs, roof, site, materials, final evidence.
+
+### Why Each Conceptual Block Fails
+
+The blocks fail for different reasons. Understanding the failure mode matters,
+because the fix is different in each block.
+
+| Block | What failure means | Typical cause | Correct response | Leo example |
+| --- | --- | --- | --- | --- |
+| Source understanding | The agent does not yet know what to build. | Missing facts, unclear target scope, weak provenance, conflicting documents, unread pages, insufficient reader consensus. | Re-read sources, request another AI reader pass, resolve conflicts, record explicit unknowns. | Missing `building_scope` and scope mask; roof/dormer precision unresolved; coordinate frames unresolved. |
+| Modeling handoff | The source facts exist but are not yet safely executable. | Fact lacks host, coordinate frame, resolver output, MCP tool mapping, or phase dependency. | Run resolvers, add tool contract, or mark source/tool blocker. Do not guess payloads. | A window fact may need host wall resolution; a target-half fact needs scope mask before wall authoring. |
+| Live MCP modeling | The plan is executable, but the live model result is wrong or incomplete. | Bad host choice, wrong wall interval, stair clash, missing slab opening, wrong room boundary, incorrect level placement. | Query model, run Advisor/constructability/integrity, repair transactionally before next slice. | `target-house-3` had door clearance warnings and stair-wall clash. |
+| Acceptance evidence | The model may look plausible but is not proven source-faithful. | Missing overlays, missing screenshots, empty levels, generic materials, schedules absent, UI contradicts JSON counts. | Produce overlays/UI evidence and fail acceptance until visible/model/source evidence agrees. | `target-house-3` had no accepted source overlays and failed visual inspection. |
+
+### Recommended Leo Iteration Plan
+
+For Leo, the next run should use this iterative structure:
+
+| Iteration | Scope | Must be understood before modeling | MCP modeling target | Review gate |
+| --- | --- | --- | --- | --- |
+| 0 | Global preflight | Target/context scope, scope mask, levels, document inventory, scale assumptions, site relationship. | None. | Source package no longer blocks on `building_scope`; required pages are routed. |
+| 1 | KG/basement | KG walls/rooms/openings/stairs/drainage or explicit source-limited basement status. | KG levels, slab/floor, walls/rooms/openings. | KG is no longer empty; plan overlay/readback passes. |
+| 2 | EG | EG wall graph, room boundaries, openings, dimensions, areas. | EG shell, partitions, rooms, doors/windows. | Advisor has no door/topology blockers; EG areas reconcile. |
+| 3 | DG | DG wall graph, sloped/upper rooms, openings, areas. | DG shell, partitions, rooms, windows. | DG topology and areas pass; cross-level alignment holds. |
+| 4 | Stairs/vertical circulation | Stair runs, width, riser/tread, landings, slab openings, source nonconformance if any. | Stair, slab opening, railing, related walls/openings. | No stair clash; existing nonconformance is source-backed if tolerated. |
+| 5 | Roof/dormers | Roof footprint, ridge/eave heights, pitch, dormer placement, roof openings. | Roof, dormers, roof windows/openings. | Elevation/section overlay passes; no provisional roof geometry remains. |
+| 6 | Site/topology | Parcel, building placement, terrain/toposolid evidence or source-limited disposition. | Site, property lines, toposolid/context terrain. | House is correctly placed; no generic centered plane acceptance. |
+| 7 | Materials/schedules/evidence | Material/layer source facts or unavailable dispositions; room/opening/material schedules. | Types/materials/schedules/views/sheets. | Final Advisor, constructability, integrity, overlay, UI evidence all pass. |
 
 ## Phase 0: Run Setup
 

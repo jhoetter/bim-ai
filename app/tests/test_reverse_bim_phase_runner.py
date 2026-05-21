@@ -143,3 +143,44 @@ def test_phase_run_requires_expected_readback_evidence() -> None:
     assert missing["phases"][0]["blockers"][0]["code"] == "phase_packet_missing_readback_expectations"
     assert accepted["ok"] is True
     assert accepted["phases"][0]["readbackEvidenceCount"] == 1
+
+
+def test_phase_run_accepts_readback_comparison_report_rows() -> None:
+    spec = {
+        "format": "reverseBimPhaseAuthoringSpec_v1",
+        "phases": [
+            {
+                "phaseId": "S2-EG",
+                "sourceFactIds": ["wall-1"],
+                "authoringActions": [{"factId": "wall-1"}],
+                "expectedReadback": [
+                    {"expectationId": "readback:wall-1", "sourceFactId": "wall-1"}
+                ],
+            }
+        ],
+    }
+
+    report = build_reverse_bim_phase_run_report(
+        phase_authoring_spec=spec,
+        phase_packets=[
+            {
+                "phaseId": "S2-EG",
+                "acceptedForNextPhase": True,
+                "sourceFactIds": ["wall-1"],
+                "evidencePackage": {
+                    "readbackComparison": {
+                        "rows": [
+                            {
+                                "expectationId": "readback:wall-1",
+                                "sourceFactId": "wall-1",
+                                "status": "matched",
+                            }
+                        ]
+                    }
+                },
+            }
+        ],
+    )
+
+    assert report["ok"] is True
+    assert report["phases"][0]["readbackEvidenceCount"] == 1

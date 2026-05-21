@@ -159,12 +159,18 @@ from bim_ai.plan_projection_wire import (
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
 from bim_ai.final_acceptance import build_final_acceptance_report
 from bim_ai.folder_output import build_reverse_bim_folder_output
+from bim_ai.hybrid_reverse_bim import (
+    build_hybrid_reverse_bim_run_report,
+    build_hybrid_reverse_bim_slice_report,
+    build_source_spec_revision_report,
+)
 from bim_ai.reverse_bim_acceptance_evidence import (
     build_level_completeness_report,
     build_physical_topology_report,
     build_source_overlay_evidence_report,
     build_ui_evidence_report,
 )
+from bim_ai.reverse_bim_document_authority import build_reverse_bim_document_authority_report
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -175,6 +181,7 @@ from bim_ai.reverse_bim import (
 )
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
+from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_building_scope import build_source_building_scope_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
@@ -1720,6 +1727,18 @@ async def reverse_bim_source_level_completeness_route(
     )
 
 
+@api_router.post("/v3/reverse-bim/document-authority")
+async def reverse_bim_document_authority_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_document_authority_report(
+        manifest=body.get("manifest") or body.get("sourceManifest") or body.get("files"),
+        classifications=body.get("classifications") or body.get("documents"),
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+        authority_hints=body.get("authorityHints") or body.get("documentAuthorityHints"),
+    )
+
+
 @api_router.post("/v3/reverse-bim/folder-output")
 async def reverse_bim_folder_output_route(
     body: dict[str, Any] = Body(default_factory=dict),
@@ -1772,6 +1791,68 @@ async def reverse_bim_phase_run_route(
     return build_reverse_bim_phase_run_report(
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or body,
         phase_packets=body.get("phasePackets") or body.get("packets"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/readback-compare")
+async def reverse_bim_readback_compare_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_readback_comparison(
+        expected_readback=body.get("expectedReadback")
+        or body.get("expected_readback")
+        or body.get("expectations")
+        or [],
+        model_readback=body.get("modelReadback")
+        or body.get("model_readback")
+        or body.get("readback")
+        or body.get("readbackEvidence"),
+        elements=body.get("elements") or body.get("queryElements") or body.get("query_elements"),
+        tolerance_defaults=body.get("toleranceDefaults") or body.get("tolerance_defaults"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/source-spec-revision")
+async def reverse_bim_source_spec_revision_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_source_spec_revision_report(
+        findings=body.get("findings"),
+        readback_comparison=body.get("readbackComparison") or body.get("readback_comparison"),
+        source_overlay=body.get("sourceOverlay") or body.get("source_overlay"),
+        advisor=body.get("advisor"),
+        constructability=body.get("constructability"),
+        integrity=body.get("integrity") or body.get("integrityPreflight"),
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/hybrid-slice")
+async def reverse_bim_hybrid_slice_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_hybrid_reverse_bim_slice_report(
+        phase=body.get("phase") or body.get("slice") or {},
+        mcp_readiness=body.get("mcpReadiness") or body.get("mcp_readiness"),
+        readback_comparison=body.get("readbackComparison") or body.get("readback_comparison"),
+        phase_packet=body.get("phasePacket") or body.get("phase_packet"),
+        source_spec_revision=body.get("sourceSpecRevision") or body.get("source_spec_revision"),
+        source_overlay=body.get("sourceOverlay") or body.get("source_overlay"),
+        ui_evidence=body.get("uiEvidence") or body.get("ui_evidence"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/hybrid-run")
+async def reverse_bim_hybrid_run_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_hybrid_reverse_bim_run_report(
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or body,
+        phase_packets=body.get("phasePackets") or body.get("packets"),
+        slice_reports=body.get("sliceReports") or body.get("slice_reports"),
+        package_acceptance=body.get("packageAcceptance")
+        or body.get("package_acceptance")
+        or body.get("folderOutput"),
     )
 
 
