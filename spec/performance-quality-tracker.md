@@ -583,11 +583,11 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-D01` | P0 | `Partial` | Add request-scoped evidence context/cache object. | Current seed evidence package observed one room-boundary derivation call, and synthetic schedule-heavy evidence now has a CI budget; schedule/projection/sheet fragment memoization is still not complete. |
+| `PERF-D01` | P0 | `Done` | Add request-scoped evidence context/cache object. | HTTP requests now share request-scoped room-boundary, schedule-table, and plan-projection caches with defensive copies; full backend budget run still passes. |
 | `PERF-D02` | P0 | `Done` | Reduce `/evidence-package` to under 1 s on current small model. | Current seed is about 0.48-0.63 s, and the synthetic small fixture budget is under 1.5 s in CI. |
 | `PERF-D03` | P0 | `Done` | Remove repeated room-boundary derivation from sheet evidence for current seed. | Current seed evidence package observed one room-boundary derivation call; keep regression coverage before treating this as scale-complete. |
-| `PERF-D04` | P1 | `Not started` | Cache schedule table derivation inside evidence package. | Each schedule id is derived at most once per evidence package request. |
-| `PERF-D05` | P1 | `Not started` | Cache plan projection wire sample inside evidence package. | Each `(planViewId, fallbackLevelId, presentation)` projection is resolved at most once per request. |
+| `PERF-D04` | P1 | `Done` | Cache schedule table derivation inside evidence package. | Each schedule id plus room-boundary bundle is derived once per request and reused by evidence/sheet callers. |
+| `PERF-D05` | P1 | `Done` | Cache plan projection wire sample inside evidence package. | Each `(planViewId, fallbackLevelId, presentation, crop)` projection is resolved once per request and reused by evidence/sheet callers. |
 | `PERF-D06` | P1 | `Not started` | Provide evidence-package modes. | Route supports `summary`, `default`, and `full` modes so UI panels do not fetch expensive full evidence unless needed. |
 | `PERF-D07` | P1 | `Not started` | Make full evidence package asynchronous or job-backed if still expensive. | Long-running full evidence generation returns job id/progress instead of blocking UI request. |
 | `PERF-D08` | P2 | `Not started` | Add evidence package perf gate to Agent Review. | UI warns when evidence generation exceeds budget and links to expensive phase diagnostics. |
@@ -596,7 +596,7 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-E01` | P0 | `Partial` | Bypass Vite websocket proxy for app websocket in dev. | Dev websocket connects directly to API port and benign proxy errors are quieted. |
+| `PERF-E01` | P0 | `Done` | Bypass Vite websocket proxy for app websocket in dev. | Dev websocket URLs resolve directly to the API port with `VITE_API_WS_BASE` override support, and benign Vite proxy `EPIPE`/`ECONNRESET` errors are quieted. |
 | `PERF-E02` | P0 | `Done` | Prevent backend traceback on initial websocket send disconnect. | Initial websocket bootstrap send is inside disconnect handling and unregisters cleanly. |
 | `PERF-E03` | P0 | `Done` | Remove duplicate REST + websocket snapshot bootstrap. | After REST snapshot load, websocket can connect in delta/resume-only mode without sending another full snapshot. |
 | `PERF-E04` | P1 | `Not started` | Add websocket bootstrap timing telemetry. | Dev logs show snapshot send time, payload bytes, violations time, replay count, and resume status. |
@@ -642,7 +642,7 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-I01` | P0 | `Partial` | Remove React state updates from every orbit movement. | Camera orientation UI state is deferred/throttled during orbit and flushed on end. |
+| `PERF-I01` | P0 | `Done` | Remove React state updates from every orbit movement. | Camera orientation UI state is deferred/throttled during orbit and flushed immediately on explicit camera/view changes and orbit end. |
 | `PERF-I02` | P0 | `Done` | Convert 3D render loop to demand-driven idle rendering. | Renderer runs continuously during orbit/walk/animation/resize/hover when needed, but sleeps at idle. |
 | `PERF-I03` | P1 | `Not started` | Add viewport frame-time instrumentation. | Dev overlay/log can report FPS, frame time, draw calls, geometries, textures, and rebuild counts. |
 | `PERF-I04` | P1 | `Not started` | Add geometry rebuild timing. | Mesh rebuild effect reports added/changed/removed ids, dirty ids, rebuild time, and disposal count. |
@@ -675,7 +675,7 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-L01` | P0 | `Done` | Make command pending state explicit. | UI clearly shows saving state and a pending command count beside the undo stack while authoritative commit/undo/redo is in flight. |
-| `PERF-L02` | P0 | `Partial` | Optimistic hosted openings. | Door/window/opening placement can materialize an optimistic element, and pending state is visible; undo/action-stack authority still waits for backend response. |
+| `PERF-L02` | P0 | `Done` | Optimistic hosted openings. | Door/window/opening placement materializes an optimistic element before the server round trip, command pending state is visible, and undo-stack authority remains backend-owned by design; speculative undo reservation is tracked separately as P1 correctness work. |
 | `PERF-L03` | P1 | `Not started` | Make undo/redo stack latency visible and bounded. | Undo depth updates within target budget or shows pending commit state. |
 | `PERF-L04` | P1 | `Not started` | Avoid cascading spinners after every command. | Projection/schedule refreshes should not reset whole panels unless data actually changes or is stale. |
 | `PERF-L05` | P2 | `Not started` | Add user-facing degraded-mode warnings. | Large models can surface reduced rendering/detail modes when budgets are exceeded. |
@@ -704,17 +704,18 @@ once medium and large fixtures exist.
 | `/validate` | `<200 ms` | `<500 ms` | `~137-142 ms` on current seed; initial baseline was `~399-425 ms` |
 | `/evidence-package` default | `<1000 ms` | `<1500 ms` | `~480-630 ms` on current seed; initial baseline was `~7100-8000 ms` |
 | main JS gzip | `<500 KB` | hard fail at `750 KB` | entry `125 KB` gzip after route split; largest lazy chunk `568 KB`; total JS gzip `1.36 MB` |
-| 3D idle render loop | `0 continuous frames` | n/a | likely continuous |
-| pointermove handler | `<4 ms` | `<8 ms` | not measured |
+| 3D idle render loop | `0 continuous frames` | n/a | demand-driven after idle render-loop fix |
+| pointermove handler | `<4 ms` | `<8 ms` | instrumented by `pnpm performance:plan-pointermove`; current fixture trace still to be collected |
 
 ## Recommended Immediate Work Plan
 
-1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
-   memoization inside evidence package after the schedule-heavy CI budget.
-2. `PERF-L02`: decide whether pending optimistic hosted openings should reserve
-   undo-stack entries before authoritative backend acceptance.
-3. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
-4. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
+1. `PERF-B06` and `PERF-L03`: design queued/cancelable optimistic undo so
+   pending commands can reserve action-stack affordances without undoing the
+   wrong authoritative revision.
+2. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
+3. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
+4. Add Playwright interaction traces for orbit, pan, hosted opening placement,
+   wall drawing, and plan hover.
 5. Add benchmark trend artifacts for comparing budget results over time.
 
 ## Commands Used For Initial Measurements
