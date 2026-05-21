@@ -726,6 +726,37 @@ def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
     assert incomplete["ok"] is False
     assert incomplete["findings"][0]["code"] == "ai_visual_fact_required_value_missing"
 
+    invalid_geometry = validate_ai_visual_trace_completeness(
+        [
+            {
+                "factId": "ai-srcfact-room-invalid",
+                "kind": "room",
+                "value": {
+                    "levelId": "level-eg",
+                    "name": "Bad",
+                    "areaM2": -1,
+                    "boundaryRef": "room-boundary",
+                    "boundaryMm": [{"xMm": 0, "yMm": 0}, {"xMm": 1000, "yMm": 0}],
+                    "boundaryEdges": [],
+                    "accessRefs": [],
+                    "adjacentRoomRefs": [],
+                },
+                "confidence": 0.9,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "room outline",
+                },
+            }
+        ]
+    )
+    assert invalid_geometry["ok"] is False
+    assert {
+        finding["field"]
+        for finding in invalid_geometry["findings"]
+        if finding["code"] == "ai_visual_fact_value_schema_invalid"
+    } == {"areaM2", "boundaryMm"}
+
     missing_kind = validate_ai_visual_trace_completeness(
         [
             {
@@ -974,11 +1005,16 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
                     {
                         "factId": "ai-srcfact-slab-opening-eg-dg",
                         "kind": "slab_opening",
-                        "value": {
-                            "levelId": "level-dg",
-                            "hostFloorRef": "floor-dg",
-                            "boundary": [{"xMm": 0, "yMm": 0}],
-                        },
+                            "value": {
+                                "levelId": "level-dg",
+                                "hostFloorRef": "floor-dg",
+                                "boundary": [
+                                    {"xMm": 0, "yMm": 0},
+                                    {"xMm": 1000, "yMm": 0},
+                                    {"xMm": 1000, "yMm": 2500},
+                                    {"xMm": 0, "yMm": 2500},
+                                ],
+                            },
                         "confidence": 0.7,
                         "provenance": {
                             "sourceDocumentId": source_document_id,

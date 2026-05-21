@@ -774,6 +774,7 @@ def validate_ai_visual_trace_completeness(
                     "missingValueFields": missing,
                 }
             )
+        findings.extend(_validate_ai_visual_fact_value_schema(kind, value, fact=fact, index=idx))
 
     for required_kind in required_kinds or []:
         if counts.get(str(required_kind), 0) == 0:
@@ -812,6 +813,114 @@ def validate_ai_visual_trace_completeness(
         "findings": findings,
         "facts": normalized,
     }
+
+
+def _validate_ai_visual_fact_value_schema(
+    kind: str,
+    value: dict[str, Any],
+    *,
+    fact: dict[str, Any],
+    index: int,
+) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+
+    def error(field: str, message: str) -> None:
+        findings.append(
+            {
+                "code": "ai_visual_fact_value_schema_invalid",
+                "severity": "error",
+                "factId": fact.get("factId"),
+                "kind": kind,
+                "index": index,
+                "field": field,
+                "message": message,
+            }
+        )
+
+    if kind in {"wall_line", "wall_chain"}:
+        if "thicknessMm" in value and not _positive_number(value.get("thicknessMm")):
+            error("thicknessMm", "Wall thickness must be a positive number in mm.")
+    if kind == "wall_line":
+        for field in ("start", "end"):
+            if field in value and not _point_like(value.get(field)):
+                error(field, "Wall line endpoints must include numeric x/y coordinates.")
+    if kind == "wall_chain":
+        if "points" in value and not _point_list(value.get("points"), min_count=2):
+            error("points", "Wall chains must include at least two numeric points.")
+        if "closed" in value and not isinstance(value.get("closed"), bool):
+            error("closed", "Wall chain closed must be a boolean.")
+    if kind == "room":
+        if "areaM2" in value and not _positive_number(value.get("areaM2")):
+            error("areaM2", "Room area must be a positive number in m2.")
+        if "boundaryMm" in value and not _point_list(value.get("boundaryMm"), min_count=3):
+            error("boundaryMm", "Room boundaryMm must include at least three numeric points.")
+        for field in ("boundaryEdges", "accessRefs", "adjacentRoomRefs"):
+            if field in value and not isinstance(value.get(field), list):
+                error(field, f"Room {field} must be a list.")
+    if kind in {"opening", "door", "window"}:
+        for field in ("widthMm", "heightMm"):
+            if field in value and not _positive_number(value.get(field)):
+                error(field, f"Opening {field} must be a positive number in mm.")
+        if "sillHeightMm" in value and not _number(value.get("sillHeightMm")):
+            error("sillHeightMm", "Window sillHeightMm must be numeric when present.")
+    if kind == "stair":
+        if "stepCount" in value and not _positive_integer(value.get("stepCount")):
+            error("stepCount", "Stair stepCount must be a positive integer.")
+        if "runs" in value and not isinstance(value.get("runs"), list):
+            error("runs", "Stair runs must be a list.")
+    if kind == "slab_opening":
+        if "boundary" in value and not _point_list(value.get("boundary"), min_count=3):
+            error("boundary", "Slab opening boundary must include at least three numeric points.")
+    if kind == "roof":
+        for field in ("pitchDeg", "eaveHeightMm", "ridgeHeightMm"):
+            if field in value and not _number(value.get(field)):
+                error(field, f"Roof {field} must be numeric.")
+    if kind == "dormer":
+        for field in ("widthMm", "heightMm"):
+            if field in value and not _positive_number(value.get(field)):
+                error(field, f"Dormer {field} must be a positive number in mm.")
+    if kind == "parcel_boundary":
+        if "areaM2" in value and not _positive_number(value.get("areaM2")):
+            error("areaM2", "Parcel area must be a positive number in m2.")
+        if "boundary" in value and not _point_list(value.get("boundary"), min_count=3):
+            error("boundary", "Parcel boundary must include at least three numeric points.")
+    if kind == "area":
+        if "areaM2" in value and not _positive_number(value.get("areaM2")):
+            error("areaM2", "Area fact areaM2 must be a positive number.")
+    if kind == "volume":
+        if "volumeM3" in value and not _positive_number(value.get("volumeM3")):
+            error("volumeM3", "Volume fact volumeM3 must be a positive number.")
+    return findings
+
+
+def _number(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int | float)
+
+
+def _positive_number(value: Any) -> bool:
+    return _number(value) and float(value) > 0
+
+
+def _positive_integer(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _point_like(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    x_value = value.get("xMm", value.get("x"))
+    y_value = value.get("yMm", value.get("y"))
+    return _number(x_value) and _number(y_value)
+
+
+def _point_list(value: Any, *, min_count: int) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) >= min_count
+        and all(_point_like(row) for row in value)
+    )
 
 
 def _checklist_for_work_package(work_package_id: str) -> list[str]:
