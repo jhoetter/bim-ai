@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -12,6 +15,9 @@ from bim_ai.reverse_bim_document_authority import build_reverse_bim_document_aut
 from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
+from bim_ai.reverse_bim_source_revision_persistence import (
+    persist_reverse_bim_source_revision_ledger,
+)
 from bim_ai.routes_api import api_router
 
 
@@ -246,6 +252,45 @@ def test_handoff_regeneration_rebuilds_ready_handoff_rows_for_payload_repairs() 
     assert plan["phasePlans"][0]["expectedReadback"][0]["sourceFactId"] == "wall-1"
 
 
+def test_source_revision_ledger_persistence_merges_entries(tmp_path: Path) -> None:
+    first = persist_reverse_bim_source_revision_ledger(
+        output_dir=tmp_path,
+        run_id="run-1",
+        source_revision_ledger={
+            "entries": [
+                {
+                    "ledgerEntryId": "rev-001",
+                    "status": "open",
+                    "blocking": True,
+                    "sourceFactIds": ["wall-1"],
+                }
+            ]
+        },
+    )
+    second = persist_reverse_bim_source_revision_ledger(
+        output_dir=tmp_path,
+        run_id="run-2",
+        source_revision_ledger={
+            "entries": [
+                {
+                    "ledgerEntryId": "rev-002",
+                    "status": "resolved",
+                    "blocking": False,
+                    "sourceFactIds": ["wall-2"],
+                }
+            ]
+        },
+    )
+    ledger_path = tmp_path / "validation" / "source-revision-ledger.json"
+    history_path = tmp_path / "validation" / "source-revision-ledger.history.jsonl"
+    merged = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+    assert first["format"] == "reverseBimSourceRevisionLedgerPersistence_v1"
+    assert second["summary"]["entryCount"] == 2
+    assert [row["ledgerEntryId"] for row in merged["entries"]] == ["rev-001", "rev-002"]
+    assert len(history_path.read_text(encoding="utf-8").splitlines()) == 2
+
+
 def test_hybrid_run_blocks_when_source_package_not_handoff_ready() -> None:
     run = build_hybrid_reverse_bim_run_report(
         phase_authoring_spec={"phases": []},
@@ -335,7 +380,7 @@ def test_document_authority_blocks_critical_ties_without_hints() -> None:
     assert report["findings"][0]["code"] == "document_authority_unresolved"
 
 
-def test_hybrid_reverse_bim_routes() -> None:
+def test_hybrid_reverse_bim_routes(tmp_path: Path) -> None:
     app = FastAPI()
     app.include_router(api_router)
     client = TestClient(app)
@@ -378,6 +423,14 @@ def test_hybrid_reverse_bim_routes() -> None:
         "/api/v3/reverse-bim/source-revision-ledger",
         json={"sourceSpecRevision": revision_resp.json(), "facts": []},
     )
+    ledger_persist_resp = client.post(
+        "/api/v3/reverse-bim/source-revision-ledger-persist",
+        json={
+            "outputDir": str(tmp_path),
+            "sourceRevisionLedger": ledger_resp.json(),
+            "runId": "route-test",
+        },
+    )
     handoff_resp = client.post(
         "/api/v3/reverse-bim/handoff-regeneration",
         json={"sourceRevisionLedger": ledger_resp.json(), "facts": []},
@@ -404,6 +457,11 @@ def test_hybrid_reverse_bim_routes() -> None:
     assert revision_resp.json()["format"] == "reverseBimSourceSpecRevisionReport_v1"
     assert ledger_resp.status_code == 200
     assert ledger_resp.json()["format"] == "reverseBimSourceRevisionLedger_v1"
+    assert ledger_persist_resp.status_code == 200
+    assert (
+        ledger_persist_resp.json()["format"]
+        == "reverseBimSourceRevisionLedgerPersistence_v1"
+    )
     assert handoff_resp.status_code == 200
     assert handoff_resp.json()["format"] == "reverseBimHandoffRegenerationPlan_v1"
     assert slice_resp.status_code == 200

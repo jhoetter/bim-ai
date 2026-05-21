@@ -1270,6 +1270,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.readback_compare",
         "reverse_bim.source_spec_revision",
         "reverse_bim.source_revision_ledger",
+        "reverse_bim.source_revision_ledger_persist",
         "reverse_bim.handoff_regeneration",
         "reverse_bim.hybrid_slice",
         "reverse_bim.hybrid_slice_execute",

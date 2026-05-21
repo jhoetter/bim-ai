@@ -177,6 +177,7 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.readback_compare`
 - `reverse_bim.source_spec_revision`
 - `reverse_bim.source_revision_ledger`
+- `reverse_bim.source_revision_ledger_persist`
 - `reverse_bim.handoff_regeneration`
 - `reverse_bim.hybrid_slice`
 - `reverse_bim.hybrid_slice_execute`

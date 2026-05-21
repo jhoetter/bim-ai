@@ -185,6 +185,7 @@ from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_
 from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim_source_revision_persistence import persist_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.source_level_completeness import build_source_level_completeness_report
@@ -1878,6 +1879,27 @@ async def reverse_bim_source_revision_ledger_route(
         source_spec_revision=body.get("sourceSpecRevision") or body.get("source_spec_revision"),
         existing_ledger=body.get("existingLedger") or body.get("existing_ledger"),
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/source-revision-ledger-persist")
+async def reverse_bim_source_revision_ledger_persist_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    output_dir = body.get("outputDir") or body.get("output_dir")
+    source_revision_ledger = (
+        body.get("sourceRevisionLedger")
+        or body.get("source_revision_ledger")
+        or body.get("ledger")
+    )
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    if not isinstance(source_revision_ledger, dict):
+        raise HTTPException(status_code=422, detail="sourceRevisionLedger is required")
+    return persist_reverse_bim_source_revision_ledger(
+        output_dir=output_dir,
+        source_revision_ledger=source_revision_ledger,
+        run_id=body.get("runId") or body.get("run_id"),
     )
 
 

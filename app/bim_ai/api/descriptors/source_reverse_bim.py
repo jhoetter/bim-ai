@@ -425,6 +425,13 @@ for _reverse_tool in (
         "notes": "Turns source-spec revision actions into a persistent-style repair ledger with reopened fact updates and affected modeling slices.",
     },
     {
+        "name": "reverse_bim.source_revision_ledger_persist",
+        "title": "ReverseBimSourceRevisionLedgerPersistInput",
+        "path": "/api/v3/reverse-bim/source-revision-ledger-persist",
+        "cli": "bim-ai reverse-bim source-revision-ledger-persist --output-dir folder-output --ledger source-revision-ledger.json",
+        "notes": "Persists and merges the source revision ledger under validation/source-revision-ledger.json and appends a resumable history record for future agents.",
+    },
+    {
         "name": "reverse_bim.handoff_regeneration",
         "title": "ReverseBimHandoffRegenerationInput",
         "path": "/api/v3/reverse-bim/handoff-regeneration",
