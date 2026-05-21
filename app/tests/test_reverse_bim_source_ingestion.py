@@ -430,6 +430,50 @@ def test_source_fact_extraction_emits_drawing_candidates_for_secondary_roles(tmp
     assert {"floor_plan", "section"} <= drawing_types
 
 
+def test_work_order_routes_multi_role_documents_by_page_text_when_available(tmp_path: Path) -> None:
+    expose_path = tmp_path / "535_06 KH Expose.pdf"
+    expose_path.write_bytes(b"%PDF-1.4\n% test\n")
+    manifest = build_folder_manifest(tmp_path)
+    text_extractions = [
+        {
+            "sourcePath": str(expose_path.resolve()),
+            "pages": [
+                {"page": 1, "text": "Energieausweis fuer Wohngebaeude"},
+                {"page": 2, "text": "Wohnflaeche 116 m2 Nutzflaeche"},
+                {"page": 3, "text": "Flurstueck Lageplan Grundstueck"},
+            ],
+        }
+    ]
+    classifications = classify_documents(manifest, text_extractions=text_extractions)
+    packet = build_ai_visual_trace_packet(
+        manifest=manifest,
+        classifications=classifications,
+        rendered_pages=[
+            {
+                "sourcePath": str(expose_path.resolve()),
+                "dpi": 160,
+                "pages": [
+                    {"page": 1, "path": "/tmp/expose-1.png"},
+                    {"page": 2, "path": "/tmp/expose-2.png"},
+                    {"page": 3, "path": "/tmp/expose-3.png"},
+                ],
+            }
+        ],
+        text_extractions=text_extractions,
+    )
+    work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=packet)
+    area_wp = next(
+        wp for wp in work_order["workPackages"] if wp["id"] == "wp-area-volume-schedules"
+    )
+    site_wp = next(
+        wp for wp in work_order["workPackages"] if wp["id"] == "wp-site-parcel-terrain"
+    )
+
+    assert [row["page"] for row in area_wp["inputs"]] == [2]
+    assert [row["page"] for row in site_wp["inputs"]] == [3]
+    assert area_wp["inputs"][0]["pageClassificationRoles"]
+
+
 def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinement() -> None:
     readiness = build_mcp_authoring_readiness(
         facts=[

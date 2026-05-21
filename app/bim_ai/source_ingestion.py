@@ -372,10 +372,16 @@ def build_ai_reading_packet(
             continue
         rendered_by_source.setdefault(source, []).extend(render.get("pages") or [])
     text_by_source: dict[str, str] = {}
+    text_by_source_page: dict[tuple[str, int], str] = {}
     for extraction in text_extractions or []:
         source = str(extraction.get("sourcePath") or "")
-        text = "\n".join(str(page.get("text") or "") for page in extraction.get("pages", []))
+        page_rows = extraction.get("pages", [])
+        text = "\n".join(str(page.get("text") or "") for page in page_rows)
         text_by_source[source] = text[:max_text_chars_per_document]
+        for page in page_rows:
+            if not isinstance(page, dict):
+                continue
+            text_by_source_page[(source, int(page.get("page") or 0))] = str(page.get("text") or "")
 
     documents: list[dict[str, Any]] = []
     for file_row in manifest.get("files", []):
@@ -403,6 +409,9 @@ def build_ai_reading_packet(
                         "path": page.get("path"),
                         "sha256": page.get("sha256"),
                         "image": page.get("image"),
+                        "pageClassificationRoles": _classification_roles_from_text(
+                            text_by_source_page.get((source_path, int(page.get("page") or 0)), "")
+                        ),
                     }
                     for page in rendered_pages_for_doc
                 ],
@@ -515,6 +524,22 @@ def build_ai_visual_trace_work_order(
                 roles.add(str(role["classification"]))
         return roles
 
+    def page_roles_for_routing(doc: dict[str, Any], page: dict[str, Any]) -> set[str]:
+        primary = str(doc.get("classification") or "unknown")
+        roles = {primary}
+        page_roles = {
+            str(role["classification"])
+            for role in page.get("pageClassificationRoles") or []
+            if isinstance(role, dict) and role.get("classification")
+        }
+        if page_roles:
+            roles |= page_roles
+        else:
+            roles |= doc_roles(doc)
+        if primary in {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}:
+            roles |= doc_roles(doc) & {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}
+        return roles
+
     def docs_for(*classes: str) -> list[dict[str, Any]]:
         wanted = set(classes)
         return [
@@ -528,9 +553,12 @@ def build_ai_visual_trace_work_order(
         out: list[dict[str, Any]] = []
         wanted = set(wanted_classes)
         for doc in rows:
-            roles = doc_roles(doc)
             for page in doc.get("renderedPages") or []:
                 if not isinstance(page, dict):
+                    continue
+                roles = page_roles_for_routing(doc, page)
+                matched = sorted(roles & wanted)
+                if not matched:
                     continue
                 out.append(
                     {
@@ -538,7 +566,8 @@ def build_ai_visual_trace_work_order(
                         "relativePath": doc.get("relativePath"),
                         "classification": doc.get("classification"),
                         "classificationRoles": doc.get("classificationRoles") or [],
-                        "matchedClassifications": sorted(roles & wanted),
+                        "pageClassificationRoles": page.get("pageClassificationRoles") or [],
+                        "matchedClassifications": matched,
                         "page": page.get("page"),
                         "renderedPagePath": page.get("path"),
                     }
@@ -1126,6 +1155,20 @@ def _classify_file(row: dict[str, Any], *, supplemental_text: str | None = None)
         ],
         "method": "filename_text_heuristic" if supplemental_text else "filename_heuristic",
     }
+
+
+def _classification_roles_from_text(value: str) -> list[dict[str, Any]]:
+    haystack = _normalize_search_text(value[:4000])
+    if not haystack:
+        return []
+    role_scores: dict[str, float] = {}
+    for label, pattern, confidence in CLASSIFICATION_KEYWORDS:
+        if re.search(pattern, haystack, re.IGNORECASE):
+            role_scores[label] = max(role_scores.get(label, 0.0), confidence)
+    return [
+        {"classification": label, "confidence": confidence, "method": "native_page_text_routing_hint"}
+        for label, confidence in sorted(role_scores.items(), key=lambda item: (-item[1], item[0]))
+    ]
 
 
 def _classification_labels(row: dict[str, Any]) -> set[str]:
