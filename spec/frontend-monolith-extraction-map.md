@@ -160,6 +160,26 @@ First landed slice:
 - `workspace/inspector/viewReferenceInspectorSections.tsx`
 - `workspace/inspector/projectSettingsInspectorSection.tsx`
 
+## ToolGrammar.ts
+
+Current role: shared reducer catalogue for plan, documentation, site, roof,
+family, modify, and measurement tool state machines.
+
+Target modules:
+
+- `tools/toolGrammarSiteDetail.ts`: site/detail and late-stage documentation
+  reducers that can stay independently tested behind the public grammar barrel.
+- `tools/toolGrammarFamily.ts`: family blend and family sweep reducers for
+  authored family form tools.
+- `tools/toolGrammarModify.ts`: modify-tool reducers such as split wall,
+  linework, paint, attach, detach, array, scale, and measure once another
+  cohesive slice is available.
+
+First landed slices:
+
+- `tools/toolGrammarSiteDetail.ts`
+- `tools/toolGrammarFamily.ts`
+
 ## Workspace.tsx
 
 Current role: app shell composition, project/resource dialogs, command routing,

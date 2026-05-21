@@ -180,8 +180,7 @@ Largest current source files observed:
 | File                                                        | Approx LOC | Concern                                                                                                                              |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `app/bim_ai/routes_api.py`                                  | 3,915      | API route aggregator after extracted query/resolve/QA and presentation routes.                                                       |
-| `packages/web/src/Viewport.tsx`                             | 3,793      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
-| `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                                                    |
+| `packages/web/src/Viewport.tsx`                             | 3,828      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, scene-effect hooks.     |
 | `packages/web/src/plan/PlanCanvas.tsx`                      | 3,779      | High-churn plan interaction shell after extracted overlay/state/lifecycle/render-pass/click/keyboard/action modules.                 |
 | `packages/web/src/viewport/meshBuilders.ts`                 | 3,725      | Mesh builder collection after extracted family/detail, balcony, and structural builder modules.                                      |
 | `packages/cli/cli.mjs`                                      | 3,723      | CLI command dispatch after extracted command-family modules and shared helpers.                                                      |
@@ -189,9 +188,10 @@ Largest current source files observed:
 | `packages/web/src/workspace/inspector/InspectorContent.tsx` | 3,679      | Inspector switchboard after extracted wall/floor, phase/type/wall-part/text/dimension, and specialist element sections.              |
 | `scripts/audit-ui-mcp-parity.mjs`                           | 3,623      | Audit orchestration after extracted config/readiness/reports/evidence modules.                                                       |
 | `packages/web/src/cmdPalette/defaultCommands.ts`            | 3,621      | Default command catalogue near the watch zone.                                                                                       |
+| `packages/web/src/tools/toolGrammar.ts`                     | 3,603      | Tool grammar reducer module after family and site/detail reducer extraction.                                                         |
 | `packages/web/src/workspace/commandCapabilities.ts`         | 3,560      | Workspace command capability map near the watch zone.                                                                                |
-| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,545      | Project browser shell after extracted family rows and section/context-menu primitives.                                               |
-| `app/bim_ai/commands.py`                                    | 3,509      | Command schema aggregator after extracted site, output, and MEP command families.                                                    |
+| `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,546      | Project browser shell after extracted family rows and section/context-menu primitives.                                               |
+| `app/bim_ai/commands.py`                                    | 3,510      | Command schema aggregator after extracted site, output, and MEP command families.                                                    |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                                                              |
 | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,341      | Family editor state shell after extracted defaults, workbench, and properties panel modules.                                         |
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,284      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks.             |
@@ -995,6 +995,10 @@ py_compile` passes for the registry and descriptor module, and a focused
   reducing `packages/web/src/workspace/WorkspaceRightRail.tsx` to `3,015`
   scorecard-counted lines while keeping focused right-rail and inspector tests
   green.
+- 2026-05-21: extracted family blend and family sweep grammar reducers into
+  `packages/web/src/tools/toolGrammarFamily.ts`, reducing
+  `packages/web/src/tools/toolGrammar.ts` to about `3,603` scorecard-counted
+  lines while preserving the public `toolGrammar.ts` re-export surface.
 - 2026-05-20: CQ-2026-07 is closed: registry core behavior and static metadata
   are split from descriptor declarations, catalog/markup routes are mounted
   through dedicated route modules, and descriptor/route tests cover public path

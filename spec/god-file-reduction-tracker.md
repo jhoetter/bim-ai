@@ -142,6 +142,7 @@ A-territory target:
 | GFR-2026-66 | P1       | Done   | `packages/web/src/viewport/meshBuilders.ts`                 | Extract balcony and structural mesh builders                       | Mesh builders below `3,750` LOC with focused viewport tests green. |
 | GFR-2026-67 | P1       | Done   | `packages/cli/cli.mjs`                                      | Extract MEP CLI command family                                    | CLI below `3,750` LOC with CLI parity tests green.          |
 | GFR-2026-68 | P1       | Done   | `packages/web/src/workspace/WorkspaceRightRail.tsx`         | Extract element-specific inspector sections                       | Right rail near `3,000` LOC with focused right-rail tests green. |
+| GFR-2026-69 | P1       | Done   | `packages/web/src/tools/toolGrammar.ts`                     | Extract family blend/sweep grammar reducers                       | Tool grammar near `3,600` LOC with focused grammar tests green. |
 
 ## Progress Log
 
@@ -699,3 +700,10 @@ typecheck` and `pnpm --filter @bim-ai/web typecheck` pass.
   module at `804` lines. Focused right-rail/inspector tests pass (`100`
   passed), `pnpm --filter @bim-ai/web typecheck` passes, and
   `pnpm --filter @bim-ai/web lint` passes.
+- 2026-05-21: `GFR-2026-69` is Done. The slice moved family blend and family
+  sweep grammar state/effect reducers into
+  `packages/web/src/tools/toolGrammarFamily.ts`, preserving existing imports
+  through `toolGrammar.ts` re-exports. Local `wc -l` reports `toolGrammar.ts`
+  at `3,602` lines and the new module at `172` lines. Focused family/tool
+  grammar tests pass (`76` passed), and `pnpm --filter @bim-ai/web typecheck`
+  passes.
