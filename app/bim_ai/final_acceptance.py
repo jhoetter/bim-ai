@@ -98,21 +98,66 @@ def _is_valid_existing_condition_tolerance(row: Mapping[str, Any]) -> bool:
     disposition = str(row.get("disposition") or "")
     if disposition not in SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS:
         return False
-    decision = row.get("dispositionDecision") if isinstance(row.get("dispositionDecision"), Mapping) else {}
-    source_fact_ids = (
+    return bool(
+        _disposition_source_fact_ids(row)
+        and _disposition_reason(row)
+        and _disposition_accepted_by(row)
+    )
+
+
+def _disposition_decision(row: Mapping[str, Any]) -> Mapping[str, Any]:
+    value = row.get("dispositionDecision")
+    return value if isinstance(value, Mapping) else {}
+
+
+def _disposition_source_fact_ids(row: Mapping[str, Any]) -> list[str]:
+    decision = _disposition_decision(row)
+    raw = (
         row.get("sourceFactIds")
         or decision.get("sourceFactIds")
         or decision.get("sourceFacts")
         or row.get("evidenceFactIds")
     )
-    reason = row.get("reason") or decision.get("reason")
-    accepted_by = (
+    if not isinstance(raw, list):
+        return []
+    return [str(item) for item in raw if item]
+
+
+def _disposition_reason(row: Mapping[str, Any]) -> str:
+    decision = _disposition_decision(row)
+    return str(row.get("reason") or decision.get("reason") or "")
+
+
+def _disposition_accepted_by(row: Mapping[str, Any]) -> str:
+    decision = _disposition_decision(row)
+    return str(
         row.get("acceptedBy")
         or row.get("reviewer")
         or decision.get("acceptedBy")
         or decision.get("reviewer")
+        or ""
     )
-    return bool(source_fact_ids and reason and accepted_by)
+
+
+def _existing_condition_tolerance_rows(finding_disposition: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in _rows(finding_disposition):
+        if not _is_valid_existing_condition_tolerance(row):
+            continue
+        rows.append(
+            {
+                "id": row.get("id") or row.get("findingId"),
+                "source": row.get("source"),
+                "ruleId": row.get("ruleId") or row.get("code"),
+                "severity": row.get("severity"),
+                "disposition": row.get("disposition"),
+                "elementIds": [str(item) for item in row.get("elementIds") or [] if item],
+                "sourceFactIds": _disposition_source_fact_ids(row),
+                "reason": _disposition_reason(row),
+                "acceptedBy": _disposition_accepted_by(row),
+            }
+        )
+    return rows
 
 
 def _blocking_warning_count(
@@ -265,6 +310,10 @@ def build_final_acceptance_report(
     ui_evidence_complete, ui_evidence_summary, ui_evidence_blocking = _accepted_report_summary(
         ui_evidence
     )
+    existing_condition_tolerances = _existing_condition_tolerance_rows(finding_disposition)
+    existing_condition_tolerance_counts = Counter(
+        str(row.get("source") or "unknown") for row in existing_condition_tolerances
+    )
 
     gates = [
         _gate(
@@ -403,6 +452,18 @@ def build_final_acceptance_report(
             "passedGateCount": len(gates) - len(blocking_gates),
             "blockingGateCount": len(blocking_gates),
             "blockingGateIds": [gate["id"] for gate in blocking_gates],
+            "existingConditionToleranceCount": len(existing_condition_tolerances),
+            "existingConditionToleranceCountsBySource": dict(
+                sorted(existing_condition_tolerance_counts.items())
+            ),
+        },
+        "existingConditionTolerances": {
+            "format": "reverseBimExistingConditionToleranceReport_v1",
+            "policy": (
+                "Warnings may be tolerated only when they document a source-backed existing "
+                "condition. Errors and fixable authoring defects remain blocking."
+            ),
+            "rows": existing_condition_tolerances,
         },
         "gates": gates,
     }

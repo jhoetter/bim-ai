@@ -144,6 +144,7 @@ def test_final_acceptance_blocks_reviewed_warning_dispositions() -> None:
 
     assert report["accepted"] is False
     assert "advisor_clean" in report["summary"]["blockingGateIds"]
+    assert report["summary"]["existingConditionToleranceCount"] == 0
 
 
 def test_final_acceptance_allows_source_backed_existing_condition_tolerance() -> None:
@@ -170,6 +171,21 @@ def test_final_acceptance_allows_source_backed_existing_condition_tolerance() ->
     report = build_final_acceptance_report("model-a", **payload)
 
     assert report["accepted"] is True
+    assert report["summary"]["existingConditionToleranceCount"] == 1
+    assert report["summary"]["existingConditionToleranceCountsBySource"] == {"advisor": 1}
+    assert report["existingConditionTolerances"]["rows"] == [
+        {
+            "id": None,
+            "source": "advisor",
+            "ruleId": "stair_riser_tread_comfort_failure",
+            "severity": "warning",
+            "disposition": "existing_nonconforming_tolerated",
+            "elementIds": [],
+            "sourceFactIds": ["stair-source-1"],
+            "reason": "Existing stair dimensions are documented in the source plan.",
+            "acceptedBy": "architect-review",
+        }
+    ]
 
 
 def test_final_acceptance_allows_source_backed_existing_condition_alias() -> None:
@@ -196,6 +212,11 @@ def test_final_acceptance_allows_source_backed_existing_condition_alias() -> Non
     report = build_final_acceptance_report("model-a", **payload)
 
     assert report["accepted"] is True
+    assert report["summary"]["existingConditionToleranceCount"] == 1
+    assert report["existingConditionTolerances"]["rows"][0]["sourceFactIds"] == [
+        "wall-fact-1",
+        "wall-fact-2",
+    ]
 
 
 def test_final_acceptance_rejects_target_house_3_failure_shape() -> None:
