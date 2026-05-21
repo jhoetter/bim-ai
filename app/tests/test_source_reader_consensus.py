@@ -66,3 +66,50 @@ def test_source_reader_consensus_blocks_conflicting_critical_values() -> None:
         and blocker["field"] == "areaM2"
         for blocker in report["blockers"]
     )
+
+
+def test_source_reader_consensus_allows_source_backed_single_reader_disposition() -> None:
+    report = build_source_reader_consensus_report(
+        [_room_response("reader-a", 20.0)],
+        consensus_dispositions=[
+            {
+                "code": "reader_consensus_insufficient_independent_passes",
+                "workPackageId": "wp-dimensional-floorplans",
+                "decision": "accept_deterministic_cross_check",
+                "reason": "The same room area is dimensionally cross-checked against the source plan.",
+                "crossCheckEvidence": {"method": "dimension_sum", "sourceDocumentId": "src-plan"},
+            }
+        ],
+    )
+
+    assert report["ok"] is True
+    assert report["summary"]["blockingCount"] == 0
+    assert report["packages"][0]["status"] == "accepted_by_deterministic_disposition"
+
+
+def test_source_reader_consensus_allows_source_backed_conflict_disposition() -> None:
+    blocked = build_source_reader_consensus_report(
+        [_room_response("reader-a", 20.0), _room_response("reader-b", 22.0)]
+    )
+    conflict = next(row for row in blocked["blockers"] if row["code"] == "reader_consensus_critical_fact_conflict")
+
+    report = build_source_reader_consensus_report(
+        [_room_response("reader-a", 20.0), _room_response("reader-b", 22.0)],
+        consensus_dispositions=[
+            {
+                "code": "reader_consensus_critical_fact_conflict",
+                "matchKey": conflict["matchKey"],
+                "field": "areaM2",
+                "decision": "use_authoritative_document",
+                "reason": "The Wohnflaechenberechnung is the authoritative source for this area.",
+                "sourceEvidence": {"sourceDocumentId": "src-area", "page": 1, "region": "room row"},
+            }
+        ],
+    )
+
+    assert report["ok"] is True
+    assert report["summary"]["blockingCount"] == 0
+    assert any(
+        row["status"] == "resolved_by_deterministic_disposition"
+        for row in report["factGroups"][0]["comparisons"]
+    )

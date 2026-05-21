@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
@@ -111,6 +112,7 @@ def build_reverse_bim_folder_output(
     reader_responses: list[dict[str, Any]] | dict[str, Any] | None = None,
     reader_command: list[str] | None = None,
     reader_timeout_seconds: int = 300,
+    reader_consensus_dispositions: list[dict[str, Any]] | dict[str, Any] | None = None,
     conflict_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
     coordinate_frame_alignments: list[dict[str, Any]] | dict[str, Any] | None = None,
     site_terrain_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
@@ -237,7 +239,10 @@ def build_reverse_bim_folder_output(
         reader_pass_manifest=reader_pass_manifest,
         raw_responses=raw_responses,
     )
-    reader_consensus = build_source_reader_consensus_report(raw_responses)
+    reader_consensus = build_source_reader_consensus_report(
+        raw_responses,
+        consensus_dispositions=reader_consensus_dispositions,
+    )
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
     facts = _facts_for_handoff(loop=loop, normalized=normalized)
@@ -349,6 +354,27 @@ def build_reverse_bim_folder_output(
         reader_pass_manifest=reader_pass_manifest,
     )
     run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get("promptCount", 0)
+    repair_requests_open = {
+        "format": "reverseBimOpenRepairRequests_v1",
+        "requests": _build_open_repair_requests(
+            loop=loop,
+            source_building_scope=source_building_scope,
+            source_level_completeness=source_level_completeness,
+            room_topology=room_topology,
+            source_area_consistency=source_area_consistency,
+            site_terrain=site_terrain,
+            roof_dormer=roof_dormer,
+            source_material_assemblies=source_material_assemblies,
+            reader_consensus=reader_consensus,
+        ),
+    }
+    source_repair_plan = _build_source_repair_plan(
+        run_summary=run_summary,
+        acceptance=acceptance,
+        reader_assignment_progress=reader_assignment_progress,
+        repair_requests_open=repair_requests_open,
+        coordinate_frame_worklist=coordinate_frame_worklist,
+    )
 
     artifacts = {
         "runSummary": out_dir / "run-summary.json",
@@ -370,7 +396,10 @@ def build_reverse_bim_folder_output(
         "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
         "readerResponsesNormalized": out_dir / "ai-reading" / "reader-responses.normalized.json",
         "agentLoopAccepted": out_dir / "ai-reading" / "agent-loop.accepted.json",
+        "readerConsensusDispositions": out_dir / "ai-reading" / "reader-consensus-dispositions.json",
         "repairRequestsOpen": out_dir / "ai-reading" / "repair-requests.open.json",
+        "sourceRepairPlan": out_dir / "ai-reading" / "source-repair-plan.json",
+        "sourceRepairPlanMarkdown": out_dir / "ai-reading" / "source-repair-plan.md",
         "coordinateFrames": out_dir / "understanding" / "coordinate-frames.json",
         "coordinateFrameWorklist": out_dir / "understanding" / "coordinate-frame-worklist.json",
         "sourceFactLedger": out_dir / "understanding" / "source-fact-ledger.json",
@@ -421,20 +450,11 @@ def build_reverse_bim_folder_output(
         "readerConsensus": reader_consensus,
         "readerResponsesNormalized": normalized,
         "agentLoopAccepted": loop,
-        "repairRequestsOpen": {
-            "format": "reverseBimOpenRepairRequests_v1",
-            "requests": _build_open_repair_requests(
-                loop=loop,
-                source_building_scope=source_building_scope,
-                source_level_completeness=source_level_completeness,
-                room_topology=room_topology,
-                source_area_consistency=source_area_consistency,
-                site_terrain=site_terrain,
-                roof_dormer=roof_dormer,
-                source_material_assemblies=source_material_assemblies,
-                reader_consensus=reader_consensus,
-            ),
-        },
+        "readerConsensusDispositions": _reader_consensus_disposition_payload(
+            reader_consensus_dispositions
+        ),
+        "repairRequestsOpen": repair_requests_open,
+        "sourceRepairPlan": source_repair_plan,
         "coordinateFrames": coordinate_frames,
         "coordinateFrameWorklist": coordinate_frame_worklist,
         "sourceFactLedger": fact_ledger,
@@ -466,6 +486,10 @@ def build_reverse_bim_folder_output(
     }
     for key, payload in payloads.items():
         _write_json(artifacts[key], payload)
+    artifacts["sourceRepairPlanMarkdown"].write_text(
+        _source_repair_plan_markdown(source_repair_plan),
+        encoding="utf-8",
+    )
     artifacts["sourceAnalysis"].write_text(
         _source_analysis_markdown(run_summary, source_completeness, readiness, conflicts),
         encoding="utf-8",
@@ -567,6 +591,26 @@ def _reader_response_payload(
     }
 
 
+def _reader_consensus_disposition_payload(
+    dispositions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> dict[str, Any]:
+    if dispositions is None:
+        rows: list[dict[str, Any]] = []
+    elif isinstance(dispositions, dict) and isinstance(dispositions.get("dispositions"), list):
+        rows = [row for row in dispositions["dispositions"] if isinstance(row, dict)]
+    elif isinstance(dispositions, dict):
+        rows = [dispositions]
+    elif isinstance(dispositions, list):
+        rows = [row for row in dispositions if isinstance(row, dict)]
+    else:
+        rows = []
+    return {
+        "format": "reverseBimReaderConsensusDispositions_v1",
+        "dispositionCount": len(rows),
+        "dispositions": rows,
+    }
+
+
 def _empty_reader_response_file_payload() -> dict[str, Any]:
     return {
         "responses": [],
@@ -597,15 +641,25 @@ def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
     response_root = out_dir / "ai-reading" / "responses"
     if not response_root.exists():
         return _empty_reader_response_file_payload()
+    assignments_by_response_path = _reader_assignments_by_response_path(out_dir)
     rows: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
     scanned_file_count = 0
     response_file_count = 0
-    for path in sorted(response_root.rglob("*.json")):
+    response_files = sorted(
+        [
+            path
+            for pattern in ("*.json", "*.md")
+            for path in response_root.rglob(pattern)
+        ]
+    )
+    for path in response_files:
         scanned_file_count += 1
         path_label = _reader_response_path_label(path=path, output_dir=out_dir)
+        assignment = assignments_by_response_path.get(path_label)
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
+            text = path.read_text(encoding="utf-8")
+            payload = _parse_reader_response_file_payload(text, path=path)
         except json.JSONDecodeError as exc:
             diagnostics.append(
                 {
@@ -628,11 +682,39 @@ def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
                 }
             )
             continue
+        if payload is None:
+            response_file_count += 1
+            rows.append(
+                _reader_response_file_defaults(
+                    {
+                        "format": "sourceAiVisualTraceReaderResponse_v1",
+                        "facts": [],
+                        "readerNotes": text,
+                        "responseSource": "markdown_notes_only",
+                    },
+                    assignment=assignment,
+                    path=path,
+                )
+            )
+            diagnostics.append(
+                {
+                    "code": "reader_response_markdown_notes_only",
+                    "severity": "warning",
+                    "path": path_label,
+                    "message": (
+                        "Markdown reader response had no JSON source-fact block. "
+                        "Notes were preserved, but MCP handoff still requires structured facts."
+                    ),
+                }
+            )
+            continue
         if isinstance(payload, dict) and isinstance(payload.get("responses"), list):
             response_file_count += 1
             for row in payload["responses"]:
                 if isinstance(row, dict):
-                    rows.append({**row, "responsePath": str(path)})
+                    rows.append(
+                        _reader_response_file_defaults(row, assignment=assignment, path=path)
+                    )
                 else:
                     diagnostics.append(
                         {
@@ -645,7 +727,7 @@ def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
             continue
         if isinstance(payload, dict):
             response_file_count += 1
-            rows.append({**payload, "responsePath": str(path)})
+            rows.append(_reader_response_file_defaults(payload, assignment=assignment, path=path))
             continue
         diagnostics.append(
             {
@@ -661,6 +743,76 @@ def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
         "responseFileCount": response_file_count,
         "scannedResponseFileCount": scanned_file_count,
         "responseFileErrorCount": sum(1 for row in diagnostics if row.get("severity") == "error"),
+    }
+
+
+def _reader_assignments_by_response_path(out_dir: Path) -> dict[str, dict[str, Any]]:
+    manifest_path = out_dir / "ai-reading" / "reader-pass-manifest.json"
+    if not manifest_path.exists():
+        return {}
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for assignment in manifest.get("assignments") or []:
+        if not isinstance(assignment, dict):
+            continue
+        hint = str(assignment.get("responsePathHint") or "")
+        if hint:
+            out[hint] = assignment
+            if hint.endswith(".json"):
+                out[f"{hint[:-5]}.md"] = assignment
+    return out
+
+
+def _parse_reader_response_file_payload(text: str, *, path: Path) -> Any:
+    if path.suffix.lower() == ".md":
+        return _json_payload_from_markdown(text)
+    return json.loads(text)
+
+
+def _json_payload_from_markdown(text: str) -> Any:
+    fence_pattern = re.compile(r"```(?:json|source-facts|sourcefacts)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
+    for match in fence_pattern.finditer(text):
+        candidate = match.group(1).strip()
+        if not candidate:
+            continue
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    stripped = text.strip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        try:
+            return json.loads(stripped)
+        except json.JSONDecodeError:
+            return None
+    return None
+
+
+def _reader_response_file_defaults(
+    payload: dict[str, Any],
+    *,
+    assignment: dict[str, Any] | None,
+    path: Path,
+) -> dict[str, Any]:
+    assignment = assignment or {}
+    return {
+        **payload,
+        "format": payload.get("format") or "sourceAiVisualTraceReaderResponse_v1",
+        "assignmentId": payload.get("assignmentId") or assignment.get("assignmentId"),
+        "readerPassId": payload.get("readerPassId") or assignment.get("readerPassId"),
+        "requestId": payload.get("requestId") or assignment.get("requestId"),
+        "requestPartIndex": payload.get("requestPartIndex") or assignment.get("requestPartIndex"),
+        "requestPartCount": payload.get("requestPartCount") or assignment.get("requestPartCount"),
+        "workPackageId": (
+            payload.get("workPackageId")
+            or payload.get("workPackage")
+            or assignment.get("workPackageId")
+        ),
+        "responsePathHint": payload.get("responsePathHint") or assignment.get("responsePathHint"),
+        "responsePath": str(path),
     }
 
 
@@ -1575,6 +1727,263 @@ def _build_open_repair_requests(
     return requests
 
 
+def _build_source_repair_plan(
+    *,
+    run_summary: dict[str, Any],
+    acceptance: dict[str, Any],
+    reader_assignment_progress: dict[str, Any],
+    repair_requests_open: dict[str, Any],
+    coordinate_frame_worklist: dict[str, Any],
+) -> dict[str, Any]:
+    """Prioritize source-understanding repair before MCP authoring.
+
+    The raw repair request list can be intentionally granular. This plan is the
+    compact handoff a future agent should follow before trying to model.
+    """
+
+    acceptance_summary = (
+        acceptance.get("summary") if isinstance(acceptance.get("summary"), dict) else {}
+    )
+    progress_rows = [
+        row
+        for row in reader_assignment_progress.get("rows") or []
+        if isinstance(row, dict)
+    ]
+    repair_requests = [
+        row
+        for row in repair_requests_open.get("requests") or []
+        if isinstance(row, dict)
+    ]
+    request_counts_by_kind = Counter(
+        str(row.get("kind") or row.get("workPackageId") or "source_package_repair")
+        for row in repair_requests
+    )
+    waiting_assignments = [
+        row
+        for row in progress_rows
+        if row.get("status") in {"waiting_for_reader", "response_invalid", "response_has_no_facts"}
+    ]
+    steps: list[dict[str, Any]] = []
+
+    def add_step(
+        step_id: str,
+        *,
+        title: str,
+        blocker_count: int,
+        work_package_ids: list[str] | None = None,
+        artifacts: list[str] | None = None,
+        instructions: list[str] | None = None,
+        done_criteria: list[str] | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        steps.append(
+            {
+                "stepId": step_id,
+                "title": title,
+                "status": "blocked" if blocker_count else "not_needed",
+                "blockerCount": blocker_count,
+                "workPackageIds": sorted(set(work_package_ids or [])),
+                "artifacts": artifacts or [],
+                "instructions": instructions or [],
+                "doneCriteria": done_criteria or [],
+                "details": details or {},
+            }
+        )
+
+    add_step(
+        "SRP-001-reader-assignment-coverage",
+        title="Finish or repair reader assignments before modeling",
+        blocker_count=len(waiting_assignments),
+        work_package_ids=[
+            str(row.get("workPackageId") or "")
+            for row in waiting_assignments
+            if row.get("workPackageId")
+        ],
+        artifacts=[
+            "ai-reading/reader-assignment-progress.json",
+            "ai-reading/reader-dispatch.md",
+            "ai-reading/assignments/**",
+            "ai-reading/responses/**",
+        ],
+        instructions=[
+            "Dispatch each waiting assignment to a multimodal subagent or optional command adapter.",
+            "Markdown responses are acceptable only when they include a fenced JSON source-fact block.",
+            "Rerun folder-output with reset_output=false after responses are written.",
+        ],
+        done_criteria=[
+            "readerAssignmentProgress.summary.waitingAssignmentCount == 0",
+            "invalidResponseAssignmentCount == 0",
+            "noFactResponseAssignmentCount == 0 for required packages",
+        ],
+        details={"assignments": waiting_assignments},
+    )
+    add_step(
+        "SRP-002-reader-consensus",
+        title="Resolve critical reader consensus conflicts",
+        blocker_count=int(acceptance_summary.get("readerConsensusBlockerCount") or 0),
+        work_package_ids=["wp-dimensional-floorplans", "wp-sections-elevations-roof", "wp-site-parcel-terrain", "wp-area-volume-schedules"],
+        artifacts=["ai-reading/reader-consensus.json", "ai-reading/repair-requests.open.json"],
+        instructions=[
+            "Compare conflicting critical fact groups across independent reader passes.",
+            "Either add a focused independent reader response or record a deterministic source-backed disposition.",
+        ],
+        done_criteria=["readerConsensus.summary.blockingCount == 0"],
+    )
+    add_step(
+        "SRP-003-coordinate-frames",
+        title="Align source pages into model coordinates",
+        blocker_count=int(acceptance_summary.get("coordinateFrameAlignmentBlockerCount") or 0),
+        artifacts=["understanding/coordinate-frame-worklist.json", "understanding/coordinate-frames.json"],
+        instructions=[
+            "For each plan/section/elevation/site frame, identify source control points and model coordinates.",
+            "Do not author wall or site geometry from a page until its frame is aligned or explicitly source-limited.",
+        ],
+        done_criteria=["validation/coordinate-frame-report.json has no blocking alignments"],
+        details={"classificationCounts": (coordinate_frame_worklist.get("summary") or {}).get("classificationCounts")},
+    )
+    add_step(
+        "SRP-004-level-and-floorplan-physics",
+        title="Repair physical level, wall, room, and access facts",
+        blocker_count=(
+            int(acceptance_summary.get("emptySourceLevelCount") or 0)
+            + int(acceptance_summary.get("missingSourceLevelFacts") or 0)
+            + int(acceptance_summary.get("missingRoomAccessRefCount") or 0)
+            + int(acceptance_summary.get("missingAdjacentRoomRefCount") or 0)
+        ),
+        work_package_ids=["wp-dimensional-floorplans"],
+        artifacts=[
+            "understanding/source-level-completeness.json",
+            "understanding/room-topology.json",
+            "ai-reading/repair-requests.open.json",
+        ],
+        instructions=[
+            "Re-read floor plans for real walls, partitions, room boundaries, openings, stairs, and access/adjacency.",
+            "Do not let analytical room labels substitute for physical topology.",
+        ],
+        done_criteria=[
+            "source-level-completeness.summary.blockingCount == 0",
+            "room-topology has no missing access or adjacency refs",
+        ],
+    )
+    add_step(
+        "SRP-005-area-schedule-reconciliation",
+        title="Reconcile room/area schedule facts with plan topology",
+        blocker_count=int(acceptance_summary.get("sourceAreaConsistencyBlockerCount") or 0),
+        work_package_ids=["wp-area-volume-schedules", "wp-dimensional-floorplans"],
+        artifacts=["understanding/source-area-consistency.json", "ai-reading/repair-requests.open.json"],
+        instructions=[
+            "Bind each area schedule row to a room/source boundary or mark it context/reference-only.",
+            "Record area basis and source-limited dispositions; do not invent missing room geometry.",
+        ],
+        done_criteria=["source-area-consistency.summary.blockingCount == 0"],
+    )
+    add_step(
+        "SRP-006-roof-site-materials",
+        title="Repair roof, site/terrain, and material assembly readiness",
+        blocker_count=(
+            int(acceptance_summary.get("roofDormerBlockerCount") or 0)
+            + int(acceptance_summary.get("siteTerrainBlockerCount") or 0)
+            + int(acceptance_summary.get("sourceMaterialAssemblyBlockerCount") or 0)
+        ),
+        work_package_ids=[
+            "wp-sections-elevations-roof",
+            "wp-site-parcel-terrain",
+            "wp-current-condition",
+        ],
+        artifacts=[
+            "understanding/roof-dormer.json",
+            "understanding/site-terrain.json",
+            "understanding/material-assemblies.json",
+        ],
+        instructions=[
+            "Use elevations/sections for roof and dormer geometry.",
+            "Use site/parcel pages for property and placement; source-limit terrain only when numeric evidence is unavailable.",
+            "Use construction/energy/current-condition documents for material layers or explicit unavailable-source dispositions.",
+        ],
+        done_criteria=[
+            "roof-dormer.summary.blockedActionCount == 0",
+            "site-terrain.summary.blockedActionCount == 0",
+            "material-assemblies.summary.blockedAssemblyCount == 0",
+        ],
+    )
+    add_step(
+        "SRP-007-mcp-handoff-readiness",
+        title="Regenerate MCP handoff only after source blockers clear",
+        blocker_count=int(acceptance_summary.get("hardMcpReadinessBlockerCount") or 0),
+        artifacts=["mcp-handoff/mcp-readiness.json", "mcp-handoff/phase-authoring-spec.json"],
+        instructions=[
+            "Rerun folder-output after source repairs.",
+            "Proceed to MCP dry-run/commit only for facts marked ready or resolver-ready.",
+        ],
+        done_criteria=[
+            "validation/package-acceptance-report.json has no source-understanding errors",
+            "mcp-handoff/phase-authoring-spec.json contains ready slices",
+        ],
+    )
+
+    blocked_steps = [step for step in steps if step["status"] == "blocked"]
+    return {
+        "ok": not blocked_steps,
+        "format": "reverseBimSourceRepairPlan_v1",
+        "packageState": run_summary.get("packageState"),
+        "summary": {
+            "stepCount": len(steps),
+            "blockedStepCount": len(blocked_steps),
+            "openRepairRequestCount": len(repair_requests),
+            "repairRequestCountsByKind": dict(sorted(request_counts_by_kind.items())),
+        },
+        "steps": steps,
+        "nextStep": (
+            "Resolve blocked source-repair steps in order, then rerun folder-output with reset_output=false."
+            if blocked_steps
+            else "Source repair plan is clear; proceed to MCP handoff readiness."
+        ),
+    }
+
+
+def _source_repair_plan_markdown(plan: dict[str, Any]) -> str:
+    summary = plan.get("summary") if isinstance(plan.get("summary"), dict) else {}
+    lines = [
+        "# Reverse-BIM Source Repair Plan",
+        "",
+        f"Package state: `{plan.get('packageState')}`",
+        "",
+        f"- Blocked steps: {summary.get('blockedStepCount', 0)}",
+        f"- Open repair requests: {summary.get('openRepairRequestCount', 0)}",
+        "",
+        "Work these steps in order. Do not start MCP modeling while any blocked source-repair step remains.",
+        "",
+    ]
+    for step in plan.get("steps") or []:
+        if not isinstance(step, dict):
+            continue
+        lines.extend(
+            [
+                f"## {step.get('stepId')} {step.get('title')}",
+                "",
+                f"Status: `{step.get('status')}`",
+                f"Blockers: {step.get('blockerCount', 0)}",
+                "",
+            ]
+        )
+        artifacts = step.get("artifacts") if isinstance(step.get("artifacts"), list) else []
+        if artifacts:
+            lines.append("Artifacts:")
+            lines.extend(f"- `{artifact}`" for artifact in artifacts)
+            lines.append("")
+        instructions = step.get("instructions") if isinstance(step.get("instructions"), list) else []
+        if instructions:
+            lines.append("Instructions:")
+            lines.extend(f"- {item}" for item in instructions)
+            lines.append("")
+        done = step.get("doneCriteria") if isinstance(step.get("doneCriteria"), list) else []
+        if done:
+            lines.append("Done criteria:")
+            lines.extend(f"- {item}" for item in done)
+            lines.append("")
+    return "\n".join(lines)
+
+
 def _build_package_acceptance_report(
     *,
     raw_responses: dict[str, Any],
@@ -2172,7 +2581,13 @@ def _reader_assignment_prompt_markdown(
         f"Request part: {assignment.get('requestPartIndex')}/{assignment.get('requestPartCount')}",
         f"Status: `{assignment.get('status')}`",
         "",
-        "Do not author BIM and do not emit model commands. Return source facts only.",
+        "Do not author BIM and do not emit model commands.",
+        "",
+        (
+            "Preferred mode is multimodal AI/subagent reading: inspect the rendered page images visually, "
+            "write down what the documents actually say, then include one structured source-fact JSON block. "
+            "A vendor API command is optional and is not the methodology."
+        ),
         "",
         "## Write Response To",
         "",
@@ -2220,6 +2635,8 @@ def _reader_assignment_prompt_markdown(
             "",
             "## Response Skeleton",
             "",
+            "You may write a Markdown response for a subagent handoff. If you do, include this JSON object in one fenced `json` block. The folder-output loader also accepts a plain `.json` response file.",
+            "",
             "```json",
             json.dumps(
                 {
@@ -2249,7 +2666,7 @@ def _reader_assignment_prompt_markdown(
             ),
             "```",
             "",
-            "If a required fact is not visible in these pages, return a `conflict` or source-unavailable disposition with provenance instead of guessing.",
+            "If a required fact is not visible in these pages, write the observation in notes and return a `conflict` or source-unavailable disposition with provenance instead of guessing.",
             "",
         ]
     )
@@ -2288,13 +2705,14 @@ def _reader_dispatch_markdown(
         f"Package state: `{run_summary.get('packageState')}`",
         "",
         "Do not author BIM from this folder-output until the reader assignments below have source-fact responses.",
+        "Use multimodal AI/subagent reading as the default. API reader commands are optional adapters for automation, not the core reverse-BIM methodology.",
         "",
         "## Required Files",
         "",
         "- Read: `ai-reading/reader-pass-manifest.json`",
         "- Read: `ai-reading/ai-visual-agent-requests.json`",
         "- Prefer the self-contained prompts under `ai-reading/assignments/**`.",
-        "- Write responses under the hinted `ai-reading/responses/<reader-pass-id>/...json` paths or provide the same JSON objects to the source agent loop.",
+        "- Write responses under the hinted `ai-reading/responses/<reader-pass-id>/...json` paths, or use `.md` with a fenced JSON source-fact block, or provide the same objects to the source agent loop.",
         "",
         "## Summary",
         "",
@@ -2308,7 +2726,7 @@ def _reader_dispatch_markdown(
         "",
         "## Response Contract",
         "",
-        "Each response must be JSON with:",
+        "Each reader must produce real source understanding plus a structured source-fact block. A response may be a JSON file or Markdown containing one fenced JSON object with:",
         "",
         "- `format: sourceAiVisualTraceReaderResponse_v1`",
         "- `workPackageId` matching the assignment",
@@ -2316,6 +2734,8 @@ def _reader_dispatch_markdown(
         "- `readerPassId` or another independent reader identity",
         "- `facts[]` only; no BIM commands and no model mutations",
         "- each fact must include `factId`, `kind`, `value`, `confidence`, and `provenance`",
+        "",
+        "Markdown without a JSON source-fact block is preserved as reader notes, but it cannot advance MCP handoff until a consolidator turns it into structured facts.",
         "",
         "## Open Assignments",
         "",
@@ -2362,6 +2782,7 @@ def _readme(run_summary: dict[str, Any], artifacts: dict[str, Path]) -> str:
             "",
             "- `run-summary.json`",
             "- `validation/package-acceptance-report.json`",
+            "- `ai-reading/source-repair-plan.md`",
             "- `mcp-handoff/phase-authoring-spec.json`",
             "- `mcp-handoff/mcp-readiness.json`",
             "",

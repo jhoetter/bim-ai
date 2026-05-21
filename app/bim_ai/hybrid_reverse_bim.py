@@ -110,6 +110,8 @@ def build_hybrid_reverse_bim_slice_report(
     source_spec_revision: dict[str, Any] | None = None,
     source_overlay: dict[str, Any] | None = None,
     ui_evidence: dict[str, Any] | None = None,
+    evidence_requirements: dict[str, Any] | None = None,
+    view_capture_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return the current hybrid state for one modeling slice."""
 
@@ -187,6 +189,40 @@ def build_hybrid_reverse_bim_slice_report(
                 }
             )
 
+    required_overlay_count = len((evidence_requirements or {}).get("requiredOverlayViews") or [])
+    required_ui_count = len((evidence_requirements or {}).get("requiredUiViews") or [])
+    if required_overlay_count and not isinstance(source_overlay, dict):
+        if state in {"mcp_ready", "accepted"}:
+            state = "visual_blocked"
+        blockers.append(
+            {
+                "code": "slice_source_overlay_evidence_missing",
+                "message": "Source-equivalent overlay evidence is required before accepting this slice.",
+                "summary": {"requiredOverlayViewCount": required_overlay_count},
+            }
+        )
+    if required_ui_count and not isinstance(ui_evidence, dict):
+        if state in {"mcp_ready", "accepted"}:
+            state = "visual_blocked"
+        blockers.append(
+            {
+                "code": "slice_ui_evidence_missing",
+                "message": "Live UI screenshot evidence is required before accepting this slice.",
+                "summary": {"requiredUiViewCount": required_ui_count},
+            }
+        )
+    view_capture_summary = _summary(view_capture_plan)
+    if view_capture_plan and view_capture_plan.get("ok") is not True:
+        if state in {"mcp_ready", "accepted"}:
+            state = "visual_blocked"
+        blockers.append(
+            {
+                "code": "slice_view_capture_plan_blocked",
+                "message": "View capture plan has blockers, so required visual evidence cannot be collected.",
+                "summary": view_capture_summary,
+            }
+        )
+
     payload = {
         "ok": state == "accepted",
         "format": "hybridReverseBimSliceReport_v1",
@@ -199,6 +235,9 @@ def build_hybrid_reverse_bim_slice_report(
             "mcpReadinessBlockerCount": int(readiness_summary.get("blockerCount") or 0),
             "sourceRevisionActionCount": int(revision_summary.get("sourceRevisionActionCount") or 0),
             "readbackBlockedCount": int(readback_summary.get("blockedCount") or 0),
+            "requiredOverlayViewCount": required_overlay_count,
+            "requiredUiViewCount": required_ui_count,
+            "viewCapturePlanBlockerCount": int(view_capture_summary.get("blockerCount") or 0),
         },
         "blockers": blockers,
         "nextStep": _slice_next_step(state),

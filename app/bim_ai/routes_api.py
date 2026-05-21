@@ -1661,6 +1661,8 @@ async def source_reader_consensus_route(
         min_independent_readers=int(body.get("minIndependentReaders") or 2)
         if isinstance(body, dict)
         else 2,
+        consensus_dispositions=body.get("readerConsensusDispositions")
+        or body.get("consensusDispositions"),
     )
 
 
@@ -1828,6 +1830,8 @@ async def reverse_bim_folder_output_route(
         reader_responses=body.get("readerResponses") or body.get("responses"),
         reader_command=body.get("readerCommand"),
         reader_timeout_seconds=int(body.get("readerTimeoutSeconds") or 300),
+        reader_consensus_dispositions=body.get("readerConsensusDispositions")
+        or body.get("consensusDispositions"),
         conflict_decisions=body.get("conflictDecisions") or body.get("sourceConflictDecisions"),
         coordinate_frame_alignments=body.get("coordinateFrameAlignments")
         or body.get("coordinateFrameDecisions"),
@@ -2153,6 +2157,44 @@ async def reverse_bim_hybrid_slice_execute_route(
         evidence_package=evidence_package,
         finding_dispositions=body.get("findingDispositions") or [],
     )
+    evidence_requirements = body.get("evidenceRequirements") or body.get("evidence_requirements")
+    if not isinstance(evidence_requirements, dict) and (
+        body.get("sourcePageIndex")
+        or body.get("source_page_index")
+        or body.get("requireVisualEvidence")
+        or body.get("require_visual_evidence")
+    ):
+        evidence_requirements = build_reverse_bim_evidence_requirements(
+            source_page_index=body.get("sourcePageIndex") or body.get("source_page_index"),
+            source_facts=source_facts if isinstance(source_facts, list) else [],
+            phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+        )
+    view_capture_plan = body.get("viewCapturePlan") or body.get("view_capture_plan")
+    if not isinstance(view_capture_plan, dict) and isinstance(evidence_requirements, dict):
+        required_evidence_count = int(
+            (evidence_requirements.get("summary") or {}).get("requiredEvidenceCount") or 0
+        )
+        capture_output_dir = (
+            body.get("viewCaptureOutputDir")
+            or body.get("view_capture_output_dir")
+            or body.get("outputDir")
+            or body.get("output_dir")
+        )
+        if required_evidence_count and capture_output_dir:
+            view_capture_plan = build_reverse_bim_view_capture_plan(
+                model_id=str(model_id),
+                required_ui_views=evidence_requirements.get("requiredUiViews")
+                or evidence_requirements.get("required_ui_views"),
+                required_overlay_views=evidence_requirements.get("requiredOverlayViews")
+                or evidence_requirements.get("required_overlay_views"),
+                output_dir=str(capture_output_dir),
+                base_url=body.get("viewCaptureBaseUrl")
+                or body.get("view_capture_base_url")
+                or body.get("baseUrl")
+                or body.get("base_url"),
+                run_id=body.get("runId") or body.get("run_id") or phase_id,
+                viewport=body.get("captureViewport") or body.get("viewport"),
+            )
     source_overlay = body.get("sourceOverlay") or body.get("source_overlay")
     ui_evidence = body.get("uiEvidence") or body.get("ui_evidence")
     slice_report = build_hybrid_reverse_bim_slice_report(
@@ -2163,6 +2205,8 @@ async def reverse_bim_hybrid_slice_execute_route(
         source_spec_revision=source_spec_revision,
         source_overlay=source_overlay,
         ui_evidence=ui_evidence,
+        evidence_requirements=evidence_requirements if isinstance(evidence_requirements, dict) else None,
+        view_capture_plan=view_capture_plan if isinstance(view_capture_plan, dict) else None,
     )
     execution_state = (
         "accepted"
@@ -2192,6 +2236,8 @@ async def reverse_bim_hybrid_slice_execute_route(
         "sourceSpecRevision": source_spec_revision,
         "sourceRevisionLedger": source_revision_ledger,
         "sourceRevisionLedgerPersistence": source_revision_ledger_persistence,
+        "evidenceRequirements": evidence_requirements,
+        "viewCapturePlan": view_capture_plan,
         "phasePacket": phase_packet,
         "sliceReport": slice_report,
         "nextStep": slice_report.get("nextStep"),
@@ -2225,6 +2271,19 @@ async def reverse_bim_hybrid_run_execute_route(
         "source_overlay",
         "uiEvidence",
         "ui_evidence",
+        "evidenceRequirements",
+        "evidence_requirements",
+        "sourcePageIndex",
+        "source_page_index",
+        "viewCapturePlan",
+        "view_capture_plan",
+        "viewCaptureOutputDir",
+        "view_capture_output_dir",
+        "viewCaptureBaseUrl",
+        "view_capture_base_url",
+        "captureViewport",
+        "requireVisualEvidence",
+        "require_visual_evidence",
         "outputDir",
         "output_dir",
         "runId",
@@ -2394,6 +2453,8 @@ async def reverse_bim_hybrid_slice_route(
         source_spec_revision=body.get("sourceSpecRevision") or body.get("source_spec_revision"),
         source_overlay=body.get("sourceOverlay") or body.get("source_overlay"),
         ui_evidence=body.get("uiEvidence") or body.get("ui_evidence"),
+        evidence_requirements=body.get("evidenceRequirements") or body.get("evidence_requirements"),
+        view_capture_plan=body.get("viewCapturePlan") or body.get("view_capture_plan"),
     )
 
 

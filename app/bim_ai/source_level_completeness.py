@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from typing import Any
+import re
+import unicodedata
 
 PHYSICAL_LEVEL_FACT_KINDS = {
     "wall_line",
@@ -27,7 +29,8 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
     rows = []
     for level in level_rows:
         level_id = str(level.get("levelId") or level.get("name") or "")
-        physical = physical_by_level.get(level_id, [])
+        level_key = str(level.get("levelKey") or _canonical_level_key(level_id) or level_id)
+        physical = physical_by_level.get(level_key, [])
         blockers = []
         if not physical:
             blockers.append("source-required level has no physical wall/room/floor/opening/stair facts")
@@ -35,6 +38,8 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
             {
                 "levelId": level_id,
                 "name": level.get("name"),
+                "canonicalLevelKey": level_key,
+                "aliases": level.get("aliases") or [],
                 "sourceFactId": level.get("sourceFactId"),
                 "status": "complete" if not blockers else "blocked_no_physical_source_content",
                 "physicalFactCount": len(physical),
@@ -71,24 +76,33 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
 
 def _level_rows(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
-    seen = set()
+    by_key: dict[str, dict[str, Any]] = {}
     for fact in facts:
         if not isinstance(fact, dict) or str(fact.get("kind") or "") not in {"level", "storey"}:
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-        level_id = str(value.get("levelId") or value.get("name") or fact.get("factId") or "").strip()
-        if not level_id or level_id in seen or value.get("required") is False:
+        raw_level_id = str(value.get("levelId") or value.get("name") or fact.get("factId") or "").strip()
+        level_key = _canonical_level_key(raw_level_id)
+        if not level_key and _is_generic_level_fact(raw_level_id):
             continue
-        seen.add(level_id)
-        rows.append(
-            {
-                "levelId": level_id,
-                "name": value.get("name") or level_id,
-                "sourceFactId": fact.get("factId"),
-                "provenance": fact.get("provenance"),
-            }
-        )
-    return rows
+        level_id = level_key or raw_level_id
+        if not level_id or value.get("required") is False:
+            continue
+        if level_id in by_key:
+            aliases = by_key[level_id].setdefault("aliases", [])
+            name = str(value.get("name") or raw_level_id)
+            if name and name not in aliases:
+                aliases.append(name)
+            continue
+        by_key[level_id] = {
+            "levelId": level_id,
+            "levelKey": level_id,
+            "name": _level_display_name(level_id, value.get("name") or raw_level_id),
+            "aliases": [str(value.get("name") or raw_level_id)],
+            "sourceFactId": fact.get("factId"),
+            "provenance": fact.get("provenance"),
+        }
+    return list(by_key.values())
 
 
 def _physical_facts_by_level(facts: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
@@ -98,7 +112,7 @@ def _physical_facts_by_level(facts: list[dict[str, Any]]) -> dict[str, list[dict
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
         for level_id in _fact_level_ids(value):
-            rows[level_id].append(fact)
+            rows[_canonical_level_key(level_id) or level_id].append(fact)
     return rows
 
 
@@ -117,3 +131,48 @@ def _fact_level_ids(value: dict[str, Any]) -> list[str]:
         elif str(candidate or "").strip():
             out.append(str(candidate))
     return sorted(set(out))
+
+
+def _canonical_level_key(value: Any) -> str | None:
+    text = _normalize_level_text(str(value or ""))
+    if not text:
+        return None
+    matches: list[str] = []
+    if re.search(r"\bkg\b|\bkellergeschoss\b|\buntergeschoss\b|\bbasement\b|level-kg", text):
+        matches.append("KG")
+    if re.search(r"\beg\b|\berdgeschoss\b|\bground\s*floor\b|level-eg", text):
+        matches.append("EG")
+    if re.search(r"\bdg\b|\bdachgeschoss\b|\battic\b|level-dg", text):
+        matches.append("DG")
+    unique = []
+    for match in matches:
+        if match not in unique:
+            unique.append(match)
+    if len(unique) == 1:
+        return unique[0]
+    if len(unique) > 1:
+        return None
+    return text.upper() if len(text) <= 24 else None
+
+
+def _is_generic_level_fact(value: str) -> bool:
+    text = _normalize_level_text(value)
+    return not text or bool(
+        re.search(r"\ball\s+levels\b|\bebenen\b|\blevels\b|\belevations?\s+unavailable\b", text)
+    )
+
+
+def _level_display_name(level_key: str, fallback: Any) -> str:
+    return {"KG": "KG", "EG": "EG", "DG": "DG"}.get(level_key, str(fallback or level_key))
+
+
+def _normalize_level_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    asciiish = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    return (
+        asciiish.replace("ß", "ss")
+        .replace("ä", "ae")
+        .replace("ö", "oe")
+        .replace("ü", "ue")
+        .lower()
+    )

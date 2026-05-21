@@ -47,6 +47,42 @@ def test_source_level_completeness_accepts_physical_source_content_per_level() -
     assert report["summary"]["blockingCount"] == 0
 
 
+def test_source_level_completeness_matches_common_german_level_aliases() -> None:
+    report = build_source_level_completeness_report(
+        [
+            {
+                "factId": "level-eg",
+                "kind": "level",
+                "value": {"levelId": "Erdgeschoss", "name": "Erdgeschoss"},
+            },
+            {
+                "factId": "level-eg-duplicate",
+                "kind": "level",
+                "value": {"levelId": "level-eg-floorplan", "name": "EG / Erdgeschoss"},
+            },
+            {
+                "factId": "level-generic",
+                "kind": "level",
+                "value": {"levelId": "all levels in area/volume sheets", "name": "all levels"},
+            },
+            {
+                "factId": "room-eg",
+                "kind": "room",
+                "value": {
+                    "levelId": "EG",
+                    "name": "Wohnzimmer",
+                    "boundaryMm": [{"xMm": 0, "yMm": 0}],
+                },
+            },
+        ]
+    )
+
+    assert report["ok"] is True
+    assert report["summary"]["requiredLevelCount"] == 1
+    assert report["levels"][0]["canonicalLevelKey"] == "EG"
+    assert report["levels"][0]["physicalFactIds"] == ["room-eg"]
+
+
 def test_folder_acceptance_and_repairs_include_source_level_blockers() -> None:
     level_report = build_source_level_completeness_report(
         [{"factId": "level-kg", "kind": "level", "value": {"levelId": "KG", "name": "KG"}}]

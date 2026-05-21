@@ -94,3 +94,24 @@ def test_openai_reader_normalizes_json_output(tmp_path: Path) -> None:
     assert response["provider"] == "openai"
     assert response["model"] == "vision-model"
     assert response["responseId"] == "resp-123"
+
+
+def test_openai_reader_extracts_json_object_from_wrapped_text(tmp_path: Path) -> None:
+    image = tmp_path / "page.png"
+    image.write_bytes(PNG_1X1)
+    assignment = _assignment_request(image)
+    api_payload = {
+        "id": "resp-456",
+        "model": "vision-model",
+        "output_text": (
+            "Notes before JSON.\n"
+            "{\"format\":\"sourceAiVisualTraceReaderResponse_v1\","
+            "\"readerId\":\"reader-b\",\"facts\":[]}\n"
+            "Trailing note."
+        ),
+    }
+
+    response = normalize_openai_reader_response(api_payload, assignment)
+
+    assert response["readerId"] == "reader-b"
+    assert response["assignmentId"] == "reader-pass-01:run:wp"

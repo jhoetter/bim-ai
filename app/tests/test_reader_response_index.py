@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from bim_ai.folder_output import _build_reader_response_index, _reader_response_payload
+from pathlib import Path
+
+from bim_ai.folder_output import (
+    _build_reader_response_index,
+    _load_reader_response_files,
+    _reader_response_payload,
+)
 
 
 def test_reader_response_payload_adds_stable_digest() -> None:
@@ -57,3 +63,77 @@ def test_reader_response_index_records_digest_status_and_fact_counts() -> None:
     assert row["factCountsByKind"] == {"room": 1, "wall_chain": 1}
     assert row["normalizationWarningCount"] == 1
     assert row["findingCount"] == 1
+
+
+def test_reader_response_loader_accepts_markdown_with_fenced_json(tmp_path: Path) -> None:
+    out_dir = tmp_path / "folder-output"
+    manifest_path = out_dir / "ai-reading" / "reader-pass-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    response_hint = "ai-reading/responses/reader-pass-01/run-wp-dimensional-floorplans.md"
+    manifest_path.write_text(
+        """{
+  "assignments": [
+    {
+      "assignmentId": "reader-pass-01:run:wp-dimensional-floorplans",
+      "readerPassId": "reader-pass-01",
+      "requestId": "run:wp-dimensional-floorplans",
+      "workPackageId": "wp-dimensional-floorplans",
+      "requestPartIndex": 1,
+      "requestPartCount": 1,
+      "responsePathHint": "ai-reading/responses/reader-pass-01/run-wp-dimensional-floorplans.json"
+    }
+  ]
+}
+""",
+        encoding="utf-8",
+    )
+    response_path = out_dir / response_hint
+    response_path.parent.mkdir(parents=True)
+    response_path.write_text(
+        """
+# Reader notes
+
+The ground-floor plan shows one room label.
+
+```json
+{
+  "format": "sourceAiVisualTraceReaderResponse_v1",
+  "readerId": "subagent-a",
+  "facts": [
+    {
+      "factId": "fact-room-1",
+      "kind": "room",
+      "value": {"levelId": "EG", "name": "Wohnen", "areaM2": 18.5},
+      "confidence": 0.8,
+      "provenance": {"sourceDocumentId": "src-eg", "page": 1, "region": "room label"}
+    }
+  ]
+}
+```
+""",
+        encoding="utf-8",
+    )
+
+    loaded = _load_reader_response_files(out_dir)
+
+    assert loaded["responseFileCount"] == 1
+    assert loaded["responseFileErrorCount"] == 0
+    assert loaded["responses"][0]["readerPassId"] == "reader-pass-01"
+    assert loaded["responses"][0]["requestId"] == "run:wp-dimensional-floorplans"
+    assert loaded["responses"][0]["workPackageId"] == "wp-dimensional-floorplans"
+    assert loaded["responses"][0]["facts"][0]["factId"] == "fact-room-1"
+
+
+def test_reader_response_loader_preserves_markdown_notes_without_facts(tmp_path: Path) -> None:
+    out_dir = tmp_path / "folder-output"
+    response_path = out_dir / "ai-reading" / "responses" / "reader-pass-01" / "notes.md"
+    response_path.parent.mkdir(parents=True)
+    response_path.write_text("Observed: the source is too blurry to read dimensions.", encoding="utf-8")
+
+    loaded = _load_reader_response_files(out_dir)
+
+    assert loaded["responseFileCount"] == 1
+    assert loaded["responseFileErrorCount"] == 0
+    assert loaded["diagnostics"][0]["code"] == "reader_response_markdown_notes_only"
+    assert loaded["responses"][0]["facts"] == []
+    assert "too blurry" in loaded["responses"][0]["readerNotes"]

@@ -42,19 +42,26 @@ enough to avoid modeling the wrong building.
 5. Package source pages for multimodal AI/subagent reading.
 6. Use `ai-reading/reader-dispatch.md` and `ai-reading/reader-pass-manifest.json`
    to dispatch reader assignments. Prefer the self-contained prompts under
-   `ai-reading/assignments/**`. Reader responses may be supplied directly or
-   written as JSON under `ai-reading/responses/**` for the next folder-output
-   run to reload.
-   If a `reader_command` is available, it may be used to dispatch open
-   assignments automatically; it receives request plus `assignmentId`,
-   `readerPassId`, and `responsePathHint` metadata on stdin and must return one
+   `ai-reading/assignments/**`.
+   The default reader is a multimodal AI/subagent or human reviewer that reads
+   the rendered page images visually. The reader may write concise Markdown
+   notes, but the response must include a structured source-fact block before it
+   can feed MCP modeling.
+   Reader responses may be supplied directly, written as JSON under
+   `ai-reading/responses/**`, or written as Markdown under the same response
+   path with a fenced `json` source-fact object. Markdown without structured
+   facts is preserved as reader notes but still requires a consolidation pass.
+   If a `reader_command` is available, it may be used as an optional automation
+   adapter; it receives request plus `assignmentId`, `readerPassId`, and
+   `responsePathHint` metadata on stdin and returns one
    `sourceAiVisualTraceReaderResponse_v1` JSON object on stdout.
    Prefer `reverse_bim.reader_dispatch_plan` to inspect dispatchable
    assignments and `reverse_bim.reader_dispatch_execute` to write response JSON
    files under `ai-reading/responses/**`. Missing-input assignments are not
    dispatched; they require source packaging repair.
    The optional command `app/scripts/reverse_bim_openai_reader.py` can be used
-   as a reader command when `OPENAI_API_KEY` and `OPENAI_READER_MODEL` are set.
+   when `OPENAI_API_KEY` and `OPENAI_READER_MODEL` are set, but it is not the
+   methodology and should not replace subagent reasoning when that is available.
 7. Collect AI-reader responses as structured source facts.
 8. Normalize and validate facts.
 9. Run reader consensus for critical facts.
@@ -83,10 +90,14 @@ Every reader response should include `workPackageId`, `requestId`,
 `readerPassId`, and independent reader identity metadata such as `readerId`,
 `agentId`, `provider`, `model`, or `responseId`. Critical packages must have
 independent agreement or an explicit deterministic disposition before modeling.
+Reader consensus dispositions are allowed only when they include a decision,
+reason, and source/cross-check evidence; they must not hide unresolved source
+uncertainty.
 
-Do not infer hidden geometry from prose. If a fact is not MCP-ready, run the
-required resolver, request source repair, or record a blocked/tolerated
-disposition.
+Do not infer hidden geometry from prose alone. Prose/Markdown reader notes are
+useful for understanding and repair, but MCP authoring uses the consolidated
+source fact ledger. If a fact is not MCP-ready, run the required resolver,
+request source repair/consolidation, or record a blocked/tolerated disposition.
 
 ## Modeling Slices
 
@@ -121,7 +132,10 @@ For every slice:
 
 When using `reverse_bim.hybrid_slice_execute` or `reverse_bim.hybrid_run_execute`,
 pass the folder-output `outputDir` so source-revision ledgers are persisted under
-`validation/` and future agents can resume repair work.
+`validation/` and future agents can resume repair work. Also pass
+`sourcePageIndex` or `evidenceRequirements` whenever available; the executor
+will emit the required `viewCapturePlan` and keep the slice blocked until the
+matching UI screenshots and source overlays are supplied.
 
 ## Source-Spec Feedback Loop
 

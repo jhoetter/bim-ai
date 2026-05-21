@@ -23,11 +23,26 @@ SOURCE_UNAVAILABLE_DECISIONS = {
 }
 SOURCE_UNAVAILABLE_FACT_KINDS = {
     "basement",
+    "building_scope",
     "construction_history",
+    "door",
     "drainage",
+    "dormer",
+    "level",
     "material",
+    "opening",
+    "parcel_boundary",
+    "roof",
+    "room",
+    "slab_opening",
+    "stair",
+    "storey",
     "terrain",
     "volume",
+    "wall_chain",
+    "wall_line",
+    "window",
+    "area",
 }
 
 AI_VISUAL_FACT_VALUE_REQUIREMENTS: dict[str, list[str]] = {
@@ -87,6 +102,23 @@ CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
     ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b|\bexpose\b", 0.9),
     ("legal_admin", r"\bbaulast\b|\baltlast", 0.9),
     ("legal_admin", r"\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b", 0.78),
+    ("construction_description", r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b", 0.78),
+)
+
+PAGE_CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
+    (
+        "floor_plan",
+        r"\bgrundriss\b|\bgrundrisse\b|\bfloor\s*plan\b|\berdgeschoss\b|\bdachgeschoss\b|\bkellergeschoss\b|\buntergeschoss\b|\bobergeschoss\b|\bkg\s*[-\u2013]?\s*plan\b|\beg\s*[-\u2013]?\s*plan\b|\bdg\s*[-\u2013]?\s*plan\b",
+        0.86,
+    ),
+    ("section", r"\bschnitt\b|\bsection\b|\blaengsschnitt\b|\blangsschnitt\b|\bquerschnitt\b", 0.84),
+    ("elevation", r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b", 0.84),
+    ("site_plan", r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b", 0.86),
+    ("area_calculation", r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b", 0.82),
+    ("energy_doc", r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b", 0.92),
+    ("drainage_doc", r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b", 0.82),
+    ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b|\bexpose\b", 0.9),
+    ("legal_admin", r"\bbaulast\b|\baltlast|\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b", 0.78),
     ("construction_description", r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b", 0.78),
 )
 
@@ -559,7 +591,14 @@ def build_ai_visual_trace_work_order(
         return [
             doc
             for doc in documents
-            if doc_roles(doc) & wanted
+            if (
+                doc_roles(doc) & wanted
+                or any(
+                    page_roles_for_routing(doc, page) & wanted
+                    for page in doc.get("renderedPages") or []
+                    if isinstance(page, dict)
+                )
+            )
             and doc.get("renderedPages")
         ]
 
@@ -777,8 +816,8 @@ def validate_ai_visual_trace_completeness(
             else AI_VISUAL_FACT_VALUE_REQUIREMENTS.get(kind, [])
         )
         missing = [field for field in required if not _value_path_present(value, field)]
+        source_unavailable = _source_unavailable_disposition_status(kind, fact, value)
         if missing:
-            source_unavailable = _source_unavailable_disposition_status(kind, fact, value)
             if source_unavailable["present"] and not source_unavailable["ok"]:
                 findings.append(
                     {
@@ -809,6 +848,8 @@ def validate_ai_visual_trace_completeness(
                     "missingValueFields": missing,
                 }
             )
+        if source_unavailable["ok"] and missing:
+            continue
         findings.extend(_validate_ai_visual_fact_value_schema(kind, value, fact=fact, index=idx))
 
     for required_kind in required_kinds or []:
@@ -976,6 +1017,8 @@ def _source_unavailable_disposition_status(
     if not isinstance(raw, dict):
         raw = value.get("disposition")
     if not isinstance(raw, dict):
+        raw = _source_unavailable_status_disposition(kind, fact, value)
+    if not isinstance(raw, dict):
         return {"present": False, "ok": False, "missingFields": []}
     decision = str(raw.get("decision") or "")
     if decision not in SOURCE_UNAVAILABLE_DECISIONS:
@@ -987,6 +1030,44 @@ def _source_unavailable_disposition_status(
         if not str(raw.get(field) or "").strip():
             missing.append(field)
     return {"present": True, "ok": not missing, "missingFields": missing}
+
+
+def _source_unavailable_status_disposition(
+    kind: str,
+    fact: dict[str, Any],
+    value: dict[str, Any],
+) -> dict[str, Any] | None:
+    status = _source_unavailable_decision_from_text(fact.get("status")) or _source_unavailable_decision_from_text(
+        value.get("status")
+    )
+    if not status:
+        return None
+    reason = (
+        value.get("reason")
+        or value.get("elevationSource")
+        or value.get("evidenceSummary")
+        or value.get("confidenceNote")
+        or value.get("sourceEvidenceSummary")
+        or fact.get("notes")
+        or fact.get("note")
+    )
+    return {
+        "decision": status,
+        "reason": reason,
+        "affectedScope": value.get("affectedScope") or value.get("scope") or fact.get("factId") or kind,
+        "sourceEvidenceSummary": value.get("sourceEvidenceSummary") or reason,
+    }
+
+
+def _source_unavailable_decision_from_text(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    if not text:
+        return None
+    if "source_limited" in text or "source-limited" in text:
+        return "source_limited"
+    if "unavailable" in text or "not_in_source" in text or "not-in-source" in text:
+        return "source_unavailable"
+    return None
 
 
 def _number(value: Any) -> bool:
@@ -1214,8 +1295,12 @@ def _file_manifest_row(root: Path, path: Path) -> dict[str, Any]:
     stat = path.stat()
     suffix = path.suffix.lower()
     mime, _encoding = mimetypes.guess_type(str(path))
+    sha256 = _sha256_file(path)
     row: dict[str, Any] = {
         "sourceDocumentId": _source_document_id(root, path),
+        "sourceDocumentPathId": _source_document_id(root, path),
+        "sourceDocumentStableId": _source_document_stable_id(sha256),
+        "sourceContentId": _source_content_id(sha256),
         "relativePath": str(path.relative_to(root)),
         "absolutePath": str(path),
         "name": path.name,
@@ -1224,7 +1309,7 @@ def _file_manifest_row(root: Path, path: Path) -> dict[str, Any]:
         "kind": _file_kind(suffix, mime),
         "sizeBytes": stat.st_size,
         "mtimeMs": int(stat.st_mtime * 1000),
-        "sha256": _sha256_file(path),
+        "sha256": sha256,
     }
     if row["kind"] == "image":
         row["image"] = _image_metadata(path)
@@ -1236,6 +1321,14 @@ def _file_manifest_row(root: Path, path: Path) -> dict[str, Any]:
 def _source_document_id(root: Path, path: Path) -> str:
     rel = str(path.relative_to(root)).replace("\\", "/")
     return "srcdoc-" + hashlib.sha1(rel.encode()).hexdigest()[:12]
+
+
+def _source_document_stable_id(sha256: str) -> str:
+    return "srcdoc-stable-" + sha256[:16]
+
+
+def _source_content_id(sha256: str) -> str:
+    return "srccontent-" + sha256[:16]
 
 
 def _file_kind(suffix: str, mime: str | None) -> str:
@@ -1380,13 +1473,36 @@ def _classification_roles_from_text(value: str) -> list[dict[str, Any]]:
     if not haystack:
         return []
     role_scores: dict[str, float] = {}
-    for label, pattern, confidence in CLASSIFICATION_KEYWORDS:
+    for label, pattern, confidence in PAGE_CLASSIFICATION_KEYWORDS:
         if re.search(pattern, haystack, re.IGNORECASE):
+            if label == "floor_plan" and not _is_floor_plan_page_hint(haystack):
+                continue
             role_scores[label] = max(role_scores.get(label, 0.0), confidence)
     return [
         {"classification": label, "confidence": confidence, "method": "native_page_text_routing_hint"}
         for label, confidence in sorted(role_scores.items(), key=lambda item: (-item[1], item[0]))
     ]
+
+
+def _is_floor_plan_page_hint(haystack: str) -> bool:
+    if re.search(
+        r"\bgrundriss\b|\bgrundrisse\b|\bfloor\s*plan\b|\bkg\s*[-\u2013]?\s*plan\b|\beg\s*[-\u2013]?\s*plan\b|\bdg\s*[-\u2013]?\s*plan\b",
+        haystack,
+    ):
+        return True
+    if len(haystack) > 500:
+        return False
+    if re.search(
+        r"\bbeschreibung\b|\bausstattung\b|\bobjektart\b|\bwohnflaeche\b|\bwohnflache\b|\bmieteinnahmen\b|\bmodernisierung",
+        haystack,
+    ):
+        return False
+    return bool(
+        re.search(
+            r"\berdgeschoss\b|\bdachgeschoss\b|\bkellergeschoss\b|\buntergeschoss\b|\bobergeschoss\b",
+            haystack,
+        )
+    )
 
 
 def _classification_labels(row: dict[str, Any]) -> set[str]:

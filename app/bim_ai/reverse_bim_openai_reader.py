@@ -198,4 +198,37 @@ def _parse_json_text(text: str) -> Any:
     fence = re.match(r"^```(?:json)?\s*(.*?)\s*```$", stripped, re.DOTALL)
     if fence:
         stripped = fence.group(1).strip()
-    return json.loads(stripped)
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        candidate = _first_json_object_text(stripped)
+        if candidate:
+            return json.loads(candidate)
+        raise
+
+
+def _first_json_object_text(text: str) -> str | None:
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_string = False
+    escaped = False
+    for idx, ch in enumerate(text[start:], start=start):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : idx + 1]
+    return None

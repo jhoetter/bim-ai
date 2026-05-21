@@ -1259,7 +1259,12 @@ def _call_reader_command(
 def _reader_prompt(work_package: dict[str, Any], required_kinds: list[str]) -> str:
     lines = [
         "You are reading existing-building source documents as a careful BIM technician.",
-        "Return JSON only. Do not emit BIM commands. Do not mutate the model.",
+        "Do not emit BIM commands and do not mutate the model.",
+        (
+            "Return source understanding with a structured source-fact object. "
+            "If your environment is a subagent or human-readable note flow, write concise notes first, "
+            "but include one fenced JSON object that follows the response shape below."
+        ),
         f"Work package: {work_package.get('title') or work_package.get('id')}",
         f"Task: {work_package.get('readerTask') or ''}",
         "Use rendered page images as the primary evidence. Native text is supplemental only.",
@@ -1310,13 +1315,23 @@ def _repair_request(
     *,
     previous_response: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    package_id = str(work_package.get("id") or "unknown-work-package")
+    finding_codes = [
+        str(row.get("code") or "finding")
+        for row in findings
+        if isinstance(row, dict)
+    ]
+    primary_code = finding_codes[0] if finding_codes else "source_reader_repair"
     return {
-        "workPackageId": work_package.get("id"),
+        "repairRequestId": f"reader-package-{package_id}-{_safe_response_file_stem(primary_code)}",
+        "kind": "reader_package_repair",
+        "workPackageId": package_id,
         "title": work_package.get("title"),
         "status": "repair_required",
         "inputImages": work_package.get("inputs") or [],
         "requiredKinds": required_kinds,
         "findingsToFix": findings,
+        "findingCodes": finding_codes,
         "readerPrompt": _reader_prompt(work_package, required_kinds),
         "previousFactCount": len(previous_response.get("facts") or []) if previous_response else 0,
         "instructions": [

@@ -62,6 +62,7 @@ def build_source_reader_consensus_report(
     responses: list[dict[str, Any]] | dict[str, Any] | None,
     *,
     min_independent_readers: int = 2,
+    consensus_dispositions: list[dict[str, Any]] | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compare critical facts across independent AI-reader passes.
 
@@ -71,6 +72,7 @@ def build_source_reader_consensus_report(
     """
 
     rows = _response_rows(responses)
+    dispositions = _disposition_rows(consensus_dispositions)
     response_summaries = []
     facts_by_match_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
     reader_keys_by_package: dict[str, set[str]] = defaultdict(set)
@@ -113,25 +115,35 @@ def build_source_reader_consensus_report(
         reader_count = len(reader_keys_by_package[package_id])
         critical_kinds = sorted(critical_kinds_by_package.get(package_id, set()))
         status = "accepted"
+        disposition = None
         if critical_kinds and reader_count < min_independent_readers:
-            status = "blocked_insufficient_independent_readers"
-            blockers.append(
-                {
-                    "code": "reader_consensus_insufficient_independent_passes",
-                    "severity": "error",
-                    "workPackageId": package_id,
-                    "independentReaderCount": reader_count,
-                    "requiredIndependentReaderCount": min_independent_readers,
-                    "criticalFactKinds": critical_kinds,
-                    "message": "Critical source facts require independent reader agreement or deterministic cross-check evidence.",
-                }
+            disposition = _matching_disposition(
+                dispositions,
+                code="reader_consensus_insufficient_independent_passes",
+                work_package_id=package_id,
             )
+            if disposition:
+                status = "accepted_by_deterministic_disposition"
+            else:
+                status = "blocked_insufficient_independent_readers"
+                blockers.append(
+                    {
+                        "code": "reader_consensus_insufficient_independent_passes",
+                        "severity": "error",
+                        "workPackageId": package_id,
+                        "independentReaderCount": reader_count,
+                        "requiredIndependentReaderCount": min_independent_readers,
+                        "criticalFactKinds": critical_kinds,
+                        "message": "Critical source facts require independent reader agreement or deterministic cross-check evidence.",
+                    }
+                )
         package_rows.append(
             {
                 "workPackageId": package_id,
                 "independentReaderCount": reader_count,
                 "criticalFactKinds": critical_kinds,
                 "status": status,
+                "dispositionId": disposition.get("dispositionId") if disposition else None,
             }
         )
 
@@ -140,7 +152,30 @@ def build_source_reader_consensus_report(
         reader_keys = sorted({str(row.get("readerKey")) for row in group})
         kind = str((group[0].get("fact") or {}).get("kind") or "unknown") if group else "unknown"
         comparisons = _compare_group(kind, group)
-        conflicts = [row for row in comparisons if row.get("status") == "conflict"]
+        resolved_comparisons = []
+        for comparison in comparisons:
+            if comparison.get("status") != "conflict":
+                resolved_comparisons.append(comparison)
+                continue
+            disposition = _matching_disposition(
+                dispositions,
+                code="reader_consensus_critical_fact_conflict",
+                match_key=match_key,
+                kind=kind,
+                field=str(comparison.get("field") or ""),
+            )
+            if disposition:
+                resolved_comparisons.append(
+                    {
+                        **comparison,
+                        "status": "resolved_by_deterministic_disposition",
+                        "dispositionId": disposition.get("dispositionId"),
+                        "decision": disposition.get("decision"),
+                    }
+                )
+            else:
+                resolved_comparisons.append(comparison)
+        conflicts = [row for row in resolved_comparisons if row.get("status") == "conflict"]
         status = "blocked_conflict" if conflicts else "accepted"
         if conflicts:
             blockers.extend(
@@ -166,7 +201,7 @@ def build_source_reader_consensus_report(
                     if (row.get("fact") or {}).get("factId")
                 ),
                 "status": status,
-                "comparisons": comparisons,
+                "comparisons": resolved_comparisons,
             }
         )
 
@@ -191,6 +226,7 @@ def build_source_reader_consensus_report(
         "responses": response_summaries,
         "packages": package_rows,
         "factGroups": fact_group_rows,
+        "dispositions": dispositions,
         "blockers": blockers,
     }
 
@@ -209,6 +245,71 @@ def _response_rows(responses: list[dict[str, Any]] | dict[str, Any] | None) -> l
     if isinstance(responses, list):
         return [row for row in responses if isinstance(row, dict)]
     return []
+
+
+def _disposition_rows(dispositions: list[dict[str, Any]] | dict[str, Any] | None) -> list[dict[str, Any]]:
+    if dispositions is None:
+        return []
+    if isinstance(dispositions, dict) and isinstance(dispositions.get("dispositions"), list):
+        rows = [row for row in dispositions["dispositions"] if isinstance(row, dict)]
+    elif isinstance(dispositions, dict):
+        rows = [dispositions]
+    elif isinstance(dispositions, list):
+        rows = [row for row in dispositions if isinstance(row, dict)]
+    else:
+        rows = []
+    out = []
+    for index, row in enumerate(rows):
+        if not _valid_deterministic_disposition(row):
+            continue
+        out.append(
+            {
+                **row,
+                "dispositionId": row.get("dispositionId") or f"reader-consensus-disposition-{index + 1:03d}",
+                "status": "accepted_for_consensus_resolution",
+            }
+        )
+    return out
+
+
+def _valid_deterministic_disposition(row: dict[str, Any]) -> bool:
+    decision = str(row.get("decision") or "")
+    if decision not in {
+        "accept_deterministic_cross_check",
+        "use_source_backed_value",
+        "defer_source_limited",
+        "use_authoritative_document",
+    }:
+        return False
+    if not str(row.get("reason") or "").strip():
+        return False
+    if row.get("provenance") or row.get("sourceEvidence") or row.get("crossCheckEvidence"):
+        return True
+    return False
+
+
+def _matching_disposition(
+    dispositions: list[dict[str, Any]],
+    *,
+    code: str,
+    work_package_id: str | None = None,
+    match_key: str | None = None,
+    kind: str | None = None,
+    field: str | None = None,
+) -> dict[str, Any] | None:
+    for row in dispositions:
+        if row.get("code") and str(row.get("code")) != code:
+            continue
+        if work_package_id and row.get("workPackageId") and str(row.get("workPackageId")) != work_package_id:
+            continue
+        if match_key and row.get("matchKey") and str(row.get("matchKey")) != match_key:
+            continue
+        if kind and row.get("kind") and str(row.get("kind")) != kind:
+            continue
+        if field and row.get("field") and str(row.get("field")) != field:
+            continue
+        return row
+    return None
 
 
 def _reader_key(response: dict[str, Any], index: int) -> str:

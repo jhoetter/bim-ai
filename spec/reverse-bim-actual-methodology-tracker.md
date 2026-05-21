@@ -441,11 +441,15 @@ Implementation status:
 
 ## Phase 2: AI Source Reading
 
-Goal: have AI/subagents visually read documents into strict source facts.
+Goal: have AI/subagents visually read documents into source understanding that
+can be consolidated into strict source facts.
 
 This is AI-based, not legacy image-trace/CV-based. The software prepares
-context; the AI reader interprets documents visually and returns structured
-facts with provenance.
+context; the AI reader interprets documents visually. The preferred runtime
+reader is a multimodal subagent/human-style reviewer. Vendor LLM commands are
+optional adapters. Reader notes may be Markdown, but MCP modeling starts only
+after the understanding has been consolidated into structured facts with
+provenance.
 
 Required outputs:
 
@@ -480,7 +484,9 @@ Hard gates:
   - one reader pass plus deterministic cross-check from dimensions/areas.
 - Reader output must include source page ids, crop/region refs, confidence, and
   explicit unknowns.
-- Reader cannot return only prose. It must return model-feedable facts.
+- Reader can include prose notes, but prose alone is not model-feedable. The
+  package preserves notes-only responses as repair/consolidation evidence and
+  blocks MCP handoff until structured facts exist.
 - Missing required facts create repair requests, not assumptions.
 
 Implementation status:
@@ -488,7 +494,7 @@ Implementation status:
 | ID | Work item | Status | Done condition |
 | --- | --- | --- | --- |
 | RBM2-001 | AI work-package schema | Partial | Work packages require source pages, expected facts, coordinate needs, and unknown policy. |
-| RBM2-002 | Reader response normalization | Partial | Flexible AI output normalizes into typed source facts. |
+| RBM2-002 | Reader response normalization | Partial | Flexible AI output normalizes into typed source facts; Markdown response files with fenced JSON source-fact blocks are accepted, and notes-only Markdown is retained for consolidation while still blocking MCP handoff. |
 | RBM2-003 | Reader consensus | Partial | `source.reader_consensus` and folder output now compare critical facts across independent reader passes and block insufficient/conflicting source readings. Deterministic cross-check disposition support is still pending. |
 | RBM2-004 | Repair loop | Partial | Missing/conflicting facts produce actionable reader repair requests. |
 | RBM2-005 | Fixture-free Leo rerun | Not started | Leo source understanding can be regenerated from folder without manually repaired JSON fixtures. |

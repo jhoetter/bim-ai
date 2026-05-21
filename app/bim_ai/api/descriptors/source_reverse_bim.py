@@ -250,9 +250,11 @@ for _source_tool in (
             "responses": {"type": "array", "items": {"type": "object"}},
             "readerResponses": {"type": "array", "items": {"type": "object"}},
             "minIndependentReaders": {"type": "integer", "default": 2},
+            "readerConsensusDispositions": {"type": "array", "items": {"type": "object"}},
+            "consensusDispositions": {"type": "array", "items": {"type": "object"}},
         },
         "cli": "bim-ai source reader-consensus --responses responses.json --output json",
-        "notes": "Compares critical source facts across independent AI-reader passes and blocks source handoff on insufficient passes or conflicting values.",
+        "notes": "Compares critical source facts across independent AI-reader passes and blocks source handoff on insufficient passes or conflicting values unless an explicit deterministic, source-backed consensus disposition is supplied.",
     },
     {
         "name": "source.validate_ai_facts",
@@ -404,7 +406,7 @@ for _reverse_tool in (
         "title": "ReverseBimFolderOutputInput",
         "path": "/api/v3/reverse-bim/folder-output",
         "cli": "bim-ai reverse-bim folder-output --root /path/to/source --output-dir tmp/reverse-bim/run",
-        "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, and package acceptance.",
+        "notes": "Builds the folder-output handoff package from a source folder plus optional AI-reader responses and source-backed consensus dispositions, including source registry, normalized facts, completeness, MCP readiness, resolver worklist, phase authoring spec, prioritized source repair plan, and package acceptance.",
     },
     {
         "name": "reverse_bim.reader_dispatch_plan",
@@ -481,7 +483,7 @@ for _reverse_tool in (
         "title": "HybridReverseBimSliceExecuteInput",
         "path": "/api/v3/models/{model_id}/reverse-bim/hybrid-slice-execute",
         "cli": "bim-ai reverse-bim hybrid-slice-execute --model-id <id> --bundle bundle.json --phase phase.json",
-        "notes": "Executes one live reverse-BIM slice through model.dry_run/model.commit_bundle, then queries readback, Advisor, constructability, integrity, source-spec revision, phase/slice gates, and persists the source-revision ledger when outputDir is supplied.",
+        "notes": "Executes one live reverse-BIM slice through model.dry_run/model.commit_bundle, then queries readback, Advisor, constructability, integrity, source-spec revision, phase/slice gates, and persists the source-revision ledger when outputDir is supplied. When evidenceRequirements/sourcePageIndex plus outputDir are provided, it also emits a deterministic viewCapturePlan and blocks acceptance until required UI/overlay evidence is supplied.",
     },
     {
         "name": "reverse_bim.hybrid_run",

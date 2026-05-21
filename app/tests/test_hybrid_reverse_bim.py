@@ -152,6 +152,32 @@ def test_hybrid_slice_requires_source_revision_before_acceptance() -> None:
     assert report["blockers"][0]["code"] == "slice_source_spec_revision_required"
 
 
+def test_hybrid_slice_blocks_missing_required_visual_evidence() -> None:
+    report = build_hybrid_reverse_bim_slice_report(
+        phase={"phaseId": "S2-EG"},
+        mcp_readiness={"summary": {"blockerCount": 0}},
+        readback_comparison={"ok": True, "summary": {"blockedCount": 0}},
+        source_spec_revision={
+            "summary": {
+                "sourceRevisionActionCount": 0,
+                "toolGapActionCount": 0,
+            }
+        },
+        phase_packet={"acceptedForNextPhase": True, "summary": {}},
+        evidence_requirements={
+            "summary": {"requiredEvidenceCount": 2},
+            "requiredOverlayViews": [{"viewId": "overlay:eg-plan", "kind": "floor_plan"}],
+            "requiredUiViews": [{"viewId": "ui:plan:EG", "kind": "floor_plan"}],
+        },
+        view_capture_plan={"ok": True, "summary": {"blockerCount": 0}},
+    )
+
+    assert report["ok"] is False
+    assert report["state"] == "visual_blocked"
+    codes = {row["code"] for row in report["blockers"]}
+    assert {"slice_source_overlay_evidence_missing", "slice_ui_evidence_missing"} <= codes
+
+
 def test_source_revision_ledger_reopens_facts_and_names_affected_phase() -> None:
     ledger = build_reverse_bim_source_revision_ledger(
         facts=[{"factId": "wall-1", "status": "accepted"}],

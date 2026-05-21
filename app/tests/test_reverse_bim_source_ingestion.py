@@ -30,6 +30,7 @@ from bim_ai.source_agent_loop import (
     run_ai_visual_trace_agent_loop,
 )
 from bim_ai.source_ingestion import (
+    _classification_roles_from_text,
     build_ai_reading_packet,
     build_ai_visual_trace_packet,
     build_ai_visual_trace_work_order,
@@ -63,6 +64,10 @@ def test_folder_manifest_is_stable_and_classifies_sources(tmp_path: Path) -> Non
     assert manifest_a["manifestDigestSha256"] == manifest_b["manifestDigestSha256"]
     assert manifest_a["kindCounts"]["pdf"] == 1
     assert manifest_a["kindCounts"]["image"] == 1
+    by_name = {row["name"]: row for row in manifest_a["files"]}
+    assert by_name["EG Grundriss.pdf"]["sourceDocumentPathId"].startswith("srcdoc-")
+    assert by_name["EG Grundriss.pdf"]["sourceDocumentStableId"].startswith("srcdoc-stable-")
+    assert by_name["EG Grundriss.pdf"]["sourceContentId"].startswith("srccontent-")
 
     classifications = classify_documents(manifest_a)
     labels = {row["relativePath"]: row["classification"] for row in classifications["documents"]}
@@ -335,6 +340,130 @@ def test_document_classification_uses_native_text_when_filename_is_opaque(tmp_pa
     assert filename_only["documents"][0]["classification"] == "unknown"
     assert with_text["documents"][0]["classification"] == "energy_doc"
     assert with_text["documents"][0]["method"] == "filename_text_heuristic"
+
+
+def test_ai_visual_work_order_routes_visual_page_roles_even_when_document_primary_differs() -> None:
+    packet = {
+        "format": "sourceAiVisualTracePacket_v1",
+        "sourceManifestDigestSha256": "digest",
+        "documents": [
+            {
+                "sourceDocumentId": "src-expose",
+                "relativePath": "Expose.pdf",
+                "classification": "energy_doc",
+                "classificationRoles": [{"classification": "energy_doc", "confidence": 0.9}],
+                "renderedPages": [
+                    {
+                        "page": 15,
+                        "path": "/tmp/expose-15.png",
+                        "pageClassificationRoles": [
+                            {
+                                "classification": "floor_plan",
+                                "confidence": 0.86,
+                                "method": "native_page_text_routing_hint",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=packet)
+
+    floorplans = next(
+        row for row in work_order["workPackages"] if row["id"] == "wp-dimensional-floorplans"
+    )
+    assert floorplans["status"] == "ready"
+    assert floorplans["inputs"][0]["sourceDocumentId"] == "src-expose"
+    assert floorplans["inputs"][0]["matchedClassifications"] == ["floor_plan"]
+
+
+def test_page_text_routing_does_not_treat_room_photo_captions_as_floorplans() -> None:
+    photo_roles = {
+        role["classification"]
+        for role in _classification_roles_from_text("EG Wohnzimmer\nEG Kueche\nDG Wohnzimmer")
+    }
+    assert "floor_plan" not in photo_roles
+
+    eg_plan_roles = {
+        role["classification"]
+        for role in _classification_roles_from_text("Grundriss Erdgeschoss")
+    }
+    assert "floor_plan" in eg_plan_roles
+
+    dg_plan_roles = {
+        role["classification"]
+        for role in _classification_roles_from_text("Dachgeschoss")
+    }
+    assert "floor_plan" in dg_plan_roles
+
+    narrative_roles = {
+        role["classification"]
+        for role in _classification_roles_from_text(
+            "Beschreibung Erdgeschoss rd. 62 m2, Dachgeschoss ca. 54 m2, "
+            "Kellergeschoss diverse Kellerräume. " * 10
+        )
+    }
+    assert "floor_plan" not in narrative_roles
+
+    packet = {
+        "format": "sourceAiVisualTracePacket_v1",
+        "sourceManifestDigestSha256": "digest",
+        "documents": [
+            {
+                "sourceDocumentId": "src-expose",
+                "relativePath": "Expose.pdf",
+                "classification": "photo",
+                "classificationRoles": [{"classification": "photo", "confidence": 0.9}],
+                "renderedPages": [
+                    {
+                        "page": 11,
+                        "path": "/tmp/expose-11.png",
+                        "pageClassificationRoles": [
+                            {
+                                "classification": "photo",
+                                "confidence": 0.9,
+                                "method": "native_page_text_routing_hint",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=packet)
+
+    floorplans = next(
+        row for row in work_order["workPackages"] if row["id"] == "wp-dimensional-floorplans"
+    )
+    assert floorplans["status"] == "missing_inputs"
+
+
+def test_source_unavailable_status_keeps_reader_package_valid_with_warning() -> None:
+    report = validate_ai_visual_trace_completeness(
+        [
+            {
+                "factId": "level-eg",
+                "kind": "level",
+                "value": {
+                    "name": "Erdgeschoss",
+                    "elevationMm": None,
+                    "elevationSource": "Source plan names the level but gives no elevation datum.",
+                },
+                "status": "source_unavailable_for_elevation",
+                "confidence": 0.8,
+                "provenance": {"sourceDocumentId": "src-eg", "page": 1},
+            }
+        ],
+        required_kinds=["level"],
+        required_value_fields_by_kind={"level": ["name", "elevationMm"]},
+    )
+
+    assert report["ok"] is True
+    assert report["summary"]["warningCount"] == 1
+    assert report["findings"][0]["code"] == "ai_visual_fact_source_unavailable_disposition"
 
 
 def test_document_classification_prefers_specific_type_over_generic_area_or_site_text(tmp_path: Path) -> None:
@@ -1364,6 +1493,8 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(
     assert Path(package["artifacts"]["runSummary"]).exists()
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()
+    assert Path(package["artifacts"]["sourceRepairPlan"]).exists()
+    assert Path(package["artifacts"]["sourceRepairPlanMarkdown"]).exists()
     assert Path(package["artifacts"]["readerPassManifest"]).exists()
     progress = json.loads(Path(package["artifacts"]["readerAssignmentProgress"]).read_text())
     assert (
