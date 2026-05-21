@@ -132,11 +132,17 @@ def classify_documents(
         for row in files
     ]
     counts = Counter(str(row["classification"]) for row in rows)
+    role_counts: Counter[str] = Counter()
+    for row in rows:
+        for role in row.get("classificationRoles") or []:
+            if isinstance(role, dict) and role.get("classification"):
+                role_counts[str(role["classification"])] += 1
     return {
         "ok": True,
         "format": "sourceDocumentClassification_v1",
         "documentCount": len(rows),
         "classificationCounts": dict(sorted(counts.items())),
+        "classificationRoleCounts": dict(sorted(role_counts.items())),
         "documents": rows,
     }
 
@@ -387,6 +393,8 @@ def build_ai_reading_packet(
                 "kind": file_row.get("kind"),
                 "classification": classification.get("classification", "unknown"),
                 "classificationConfidence": classification.get("confidence", 0.0),
+                "classificationRoles": classification.get("classificationRoles") or [],
+                "secondaryClassifications": classification.get("secondaryClassifications") or [],
                 "pdf": file_row.get("pdf"),
                 "image": file_row.get("image"),
                 "renderedPages": [
@@ -500,18 +508,27 @@ def build_ai_visual_trace_work_order(
         if isinstance(doc, dict)
     ]
 
+    def doc_roles(doc: dict[str, Any]) -> set[str]:
+        roles = {str(doc.get("classification") or "unknown")}
+        for role in doc.get("classificationRoles") or []:
+            if isinstance(role, dict) and role.get("classification"):
+                roles.add(str(role["classification"]))
+        return roles
+
     def docs_for(*classes: str) -> list[dict[str, Any]]:
         wanted = set(classes)
         return [
             doc
             for doc in documents
-            if str(doc.get("classification") or "unknown") in wanted
+            if doc_roles(doc) & wanted
             and doc.get("renderedPages")
         ]
 
-    def inputs_for(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def inputs_for(rows: list[dict[str, Any]], *, wanted_classes: tuple[str, ...]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
+        wanted = set(wanted_classes)
         for doc in rows:
+            roles = doc_roles(doc)
             for page in doc.get("renderedPages") or []:
                 if not isinstance(page, dict):
                     continue
@@ -520,6 +537,8 @@ def build_ai_visual_trace_work_order(
                         "sourceDocumentId": doc.get("sourceDocumentId"),
                         "relativePath": doc.get("relativePath"),
                         "classification": doc.get("classification"),
+                        "classificationRoles": doc.get("classificationRoles") or [],
+                        "matchedClassifications": sorted(roles & wanted),
                         "page": page.get("page"),
                         "renderedPagePath": page.get("path"),
                     }
@@ -606,7 +625,7 @@ def build_ai_visual_trace_work_order(
     work_packages: list[dict[str, Any]] = []
     for spec in package_specs:
         rows = docs_for(*spec["classes"])
-        package_inputs = inputs_for(rows)
+        package_inputs = inputs_for(rows, wanted_classes=spec["classes"])
         work_packages.append(
             {
                 "id": spec["id"],
@@ -876,13 +895,24 @@ def extract_source_facts(
     for doc in classifications.get("documents", []):
         doc_id = str(doc["sourceDocumentId"])
         classification = str(doc.get("classification") or "unknown")
+        classification_labels = _classification_labels(doc)
+        drawing_classifications = {"floor_plan", "section", "elevation", "site_plan"}
+        drawing_types = (
+            classification_labels & drawing_classifications
+            if classification in drawing_classifications
+            else set()
+        )
         source_path = str(doc.get("sourcePath") or "")
         text = text_by_path.get(source_path, "")
         facts.append(
             {
                 "factId": f"srcfact-{len(facts) + 1:04d}",
                 "kind": "source_document_classification",
-                "value": {"classification": classification},
+                "value": {
+                    "classification": classification,
+                    "classificationRoles": sorted(classification_labels),
+                    "secondaryClassifications": doc.get("secondaryClassifications") or [],
+                },
                 "confidence": float(doc.get("confidence", 0.0)),
                 "status": "accepted" if classification != "unknown" else "candidate",
                 "provenance": {
@@ -892,12 +922,12 @@ def extract_source_facts(
                 },
             }
         )
-        if classification in {"floor_plan", "section", "elevation", "site_plan"}:
+        for drawing_type in sorted(drawing_types):
             facts.append(
                 {
                     "factId": f"srcfact-{len(facts) + 1:04d}",
                     "kind": "drawing_candidate",
-                    "value": {"drawingType": classification, "requiresCoordinateFrame": True},
+                    "value": {"drawingType": drawing_type, "requiresCoordinateFrame": True},
                     "confidence": float(doc.get("confidence", 0.0)),
                     "status": "candidate",
                     "provenance": {
@@ -1062,15 +1092,25 @@ def _classify_file(row: dict[str, Any], *, supplemental_text: str | None = None)
             (supplemental_text or "")[:4000],
         ]
     ))
+    role_scores: dict[str, float] = {}
     if row.get("kind") == "image":
+        role_scores["photo"] = 0.45
         default = ("photo", 0.45)
     else:
         default = ("unknown", 0.0)
-    best_label, best_confidence = default
     for label, pattern, confidence in CLASSIFICATION_KEYWORDS:
         if re.search(pattern, haystack, re.IGNORECASE):
-            if confidence > best_confidence:
-                best_label, best_confidence = label, confidence
+            role_scores[label] = max(role_scores.get(label, 0.0), confidence)
+    if not role_scores:
+        role_scores[default[0]] = default[1]
+
+    sorted_roles = sorted(role_scores.items(), key=lambda item: (-item[1], item[0]))
+    best_label, best_confidence = sorted_roles[0]
+    classification_roles = [
+        {"classification": label, "confidence": confidence}
+        for label, confidence in sorted_roles
+        if label != "unknown" or len(sorted_roles) == 1
+    ]
     return {
         "sourceDocumentId": row["sourceDocumentId"],
         "sourcePath": row.get("absolutePath"),
@@ -1078,8 +1118,25 @@ def _classify_file(row: dict[str, Any], *, supplemental_text: str | None = None)
         "kind": row.get("kind"),
         "classification": best_label,
         "confidence": best_confidence,
+        "classificationRoles": classification_roles,
+        "secondaryClassifications": [
+            role["classification"]
+            for role in classification_roles
+            if role["classification"] != best_label
+        ],
         "method": "filename_text_heuristic" if supplemental_text else "filename_heuristic",
     }
+
+
+def _classification_labels(row: dict[str, Any]) -> set[str]:
+    labels = {str(row.get("classification") or "unknown")}
+    for role in row.get("classificationRoles") or []:
+        if isinstance(role, dict) and role.get("classification"):
+            labels.add(str(role["classification"]))
+    for label in row.get("secondaryClassifications") or []:
+        if label:
+            labels.add(str(label))
+    return labels
 
 
 def _text_extraction_index(text_extractions: list[dict[str, Any]] | None) -> dict[str, str]:

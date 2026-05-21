@@ -363,6 +363,72 @@ def test_document_classification_prefers_specific_type_over_generic_area_or_site
     assert by_name["Auskunft Baulast.pdf"] == "legal_admin"
 
 
+def test_document_classification_keeps_secondary_roles_for_work_package_routing(tmp_path: Path) -> None:
+    expose_path = tmp_path / "535_06 KH Expose.pdf"
+    expose_path.write_bytes(b"%PDF-1.4\n% test\n")
+    manifest = build_folder_manifest(tmp_path)
+    classifications = classify_documents(
+        manifest,
+        text_extractions=[
+            {
+                "sourcePath": str(expose_path.resolve()),
+                "pages": [
+                    {
+                        "page": 1,
+                        "text": "Expose Energieausweis Wohnflaeche 116 m2 Grundstuecksgroesse 520 m2",
+                    }
+                ],
+            }
+        ],
+    )
+
+    doc = classifications["documents"][0]
+    roles = {row["classification"] for row in doc["classificationRoles"]}
+    assert doc["classification"] == "energy_doc"
+    assert {"energy_doc", "photo", "area_calculation", "site_plan"} <= roles
+    assert classifications["classificationRoleCounts"]["photo"] == 1
+
+    packet = build_ai_visual_trace_packet(
+        manifest=manifest,
+        classifications=classifications,
+        rendered_pages=[
+            {
+                "sourcePath": str(expose_path.resolve()),
+                "dpi": 160,
+                "pages": [{"page": 1, "path": "/tmp/expose-1.png"}],
+            }
+        ],
+    )
+    work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=packet)
+    area_wp = next(
+        wp for wp in work_order["workPackages"] if wp["id"] == "wp-area-volume-schedules"
+    )
+    current_wp = next(
+        wp for wp in work_order["workPackages"] if wp["id"] == "wp-current-condition"
+    )
+
+    assert area_wp["status"] == "ready"
+    assert area_wp["inputs"][0]["classification"] == "energy_doc"
+    assert "area_calculation" in area_wp["inputs"][0]["matchedClassifications"]
+    assert current_wp["status"] == "ready"
+
+
+def test_source_fact_extraction_emits_drawing_candidates_for_secondary_roles(tmp_path: Path) -> None:
+    drawing_path = tmp_path / "Grundrisse Schnitt.pdf"
+    drawing_path.write_bytes(b"%PDF-1.4\n% test\n")
+    manifest = build_folder_manifest(tmp_path)
+    classifications = classify_documents(manifest)
+
+    facts = extract_source_facts(classifications)
+    drawing_types = {
+        fact["value"]["drawingType"]
+        for fact in facts["facts"]
+        if fact["kind"] == "drawing_candidate"
+    }
+
+    assert {"floor_plan", "section"} <= drawing_types
+
+
 def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinement() -> None:
     readiness = build_mcp_authoring_readiness(
         facts=[

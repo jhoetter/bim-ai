@@ -123,7 +123,7 @@ This is the non-negotiable front gate. It is not full modeling. It answers:
 | GPF-001 | Create immutable folder manifest with file hashes and metadata. | `source.folder_manifest` | Partial | Persist source registry per run/project; include stable document ids independent of local paths. |
 | GPF-002 | Render PDFs/images into AI-readable page images. | `source.render_pdf_pages`, `source.prepare_ai_visual_trace_run` | Partial | Persist page index with DPI, page size, crop, rotation, and source-page ids. |
 | GPF-003 | Extract native text only as supplemental evidence, not OCR primary. | `source.extract_text` | Partial | Keep text supplemental; add page-coordinate text boxes later when available. |
-| GPF-004 | Classify documents/pages by role: floor plan, section, elevation, site, calculation, photo, legal, energy, drainage. | `source.classify_documents` uses filename plus native PDF text when available; `reverse_bim.document_authority` exists. Leo now routes energy certificates, Baulast/Altlast, Exposé/current-condition, floor plans, elevations, site/parcel, area, and drainage docs without `unknown` classifications. | Partial | Page-level AI classification and multi-role document support are still needed; document-level authority/supersession is deterministic. |
+| GPF-004 | Classify documents/pages by role: floor plan, section, elevation, site, calculation, photo, legal, energy, drainage. | `source.classify_documents` uses filename plus native PDF text when available and now preserves document-level primary plus secondary roles. Work-package routing uses all roles, while coordinate-frame candidates remain limited to primary drawing documents to avoid turning Exposé/legal text pages into false model frames. `reverse_bim.document_authority` exists. Leo now routes energy certificates, Baulast/Altlast, Exposé/current-condition, floor plans, elevations/section, site/parcel, area, and drainage docs without `unknown` classifications. | Partial | Page-level AI classification is still needed so a multi-role document contributes only the relevant pages to each reader package; document-level authority/supersession is deterministic. |
 | GPF-005 | Package source pages for multimodal AI/subagent reading. | `source.ai_reading_packet`, `source.ai_visual_trace_packet`, `source.ai_visual_trace_work_order`, `source.ai_visual_trace_agent_requests`; large work packages are split into chunked reader requests and merged by work package before validation. | Partial | Keep provider-neutral; add first-class "reader pass" orchestration for multiple independent readers. |
 | GPF-006 | Normalize AI-reader responses into strict source facts. | `source.normalize_ai_visual_trace_reader_responses`, `source.validate_ai_facts` | Partial | Enforce fact schemas by phase and reject prose-only source understanding. |
 | GPF-007 | Require reader consensus for critical facts. | `source.reader_consensus` | Partial | Define critical fact classes and minimum reader count by phase. |
@@ -480,7 +480,7 @@ The Leo showcase is successful only if:
 
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
-| W5-001 | Run fresh Leo source preflight from folder. | Partial | Fresh package at `tmp/reverse-bim/leo-hybrid-fresh` was generated from `/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo`: 16 source documents, 68 rendered pages, 6 work packages, 10 chunked AI-reader requests, no target-house-3 dependency. It correctly blocks before modeling until reader responses are supplied. |
+| W5-001 | Run fresh Leo source preflight from folder. | Partial | Fresh package at `tmp/reverse-bim/leo-hybrid-fresh` was generated from `/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo`: 16 source documents, 68 rendered pages, 6 work packages, 14 chunked AI-reader requests after multi-role routing, 36 coordinate-frame candidates, no target-house-3 dependency. It correctly blocks before modeling until reader responses are supplied. |
 | W5-002 | Repair Leo source understanding until handoff-ready or explicitly blocked. | Not started for new hybrid method. | Building scope, levels, frames, roof/dormer, site, and materials have dispositions. |
 | W5-003 | Model Leo slices through MCP. | Not started for new hybrid method. | Each slice has phase packet, screenshots, overlays, and accepted QA. |
 | W5-004 | Final Leo acceptance. | Not started for new hybrid method. | UI/MCP evidence proves source-faithful model; optional seed/export created only after pass. |
@@ -505,10 +505,11 @@ authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification/ledgering/persistence, hybrid slice/run state
 reporting, single-slice live execution, runtime skill guidance, view-capture work
 orders plus a Chromium capture runner, AI visual review requests/normalization,
-handoff regeneration, and acceptance validation.
+handoff regeneration, multi-role document routing, and acceptance validation.
 Missing critical glue: UI-assisted coordinate control-point picking, automatic
 geometric overlay measurement, automatic screenshot/review invocation from
-hybrid runs, automatic handoff reruns, and Leo fresh-run evidence.
+hybrid runs, automatic handoff reruns, page-level source classification, and Leo
+reader-response evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

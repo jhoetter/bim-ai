@@ -596,6 +596,8 @@ def _build_document_registry(
                 "pageCount": ((row.get("pdf") or {}).get("pageCount") if isinstance(row.get("pdf"), dict) else None),
                 "classification": classification,
                 "classificationConfidence": cls.get("confidence", 0),
+                "classificationRoles": cls.get("classificationRoles") or [],
+                "secondaryClassifications": cls.get("secondaryClassifications") or [],
                 "roleInModeling": _role_for_classification(classification),
                 "status": "unknown_needs_review" if classification == "unknown" else "accepted_for_modeling",
                 "method": cls.get("method"),
@@ -651,6 +653,12 @@ def _build_source_page_index(
                     "sourceDocumentId": cls.get("sourceDocumentId"),
                     "page": page_num,
                     "classification": cls.get("classification") or "unknown",
+                    "classificationRoles": cls.get("classificationRoles") or [],
+                    "matchedClassifications": [
+                        role.get("classification")
+                        for role in cls.get("classificationRoles") or []
+                        if isinstance(role, dict) and role.get("classification")
+                    ],
                     "renderedPagePath": page.get("path"),
                     "widthPx": image.get("widthPx"),
                     "heightPx": image.get("heightPx"),
@@ -659,6 +667,13 @@ def _build_source_page_index(
                     "nativeTextAvailable": bool(str(text_page.get("text") or "").strip()),
                     "coordinateFrameId": frame_by_page.get(source_page_id),
                     "modelingUse": _modeling_use_for_classification(str(cls.get("classification") or "unknown")),
+                    "modelingUses": sorted(
+                        {
+                            _modeling_use_for_classification(label)
+                            for label in _classification_labels(cls)
+                            if _modeling_use_for_classification(label) != "ignored_with_reason"
+                        }
+                    ),
                 }
             )
     return {
@@ -684,8 +699,14 @@ def _build_coordinate_frames(
     for render in rendered_pages:
         source_path = str(render.get("sourcePath") or "")
         cls = class_by_path.get(source_path, {})
-        classification = str(cls.get("classification") or "unknown")
-        if classification not in {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}:
+        primary_classification = str(cls.get("classification") or "unknown")
+        frame_classification_set = {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}
+        frame_classifications = (
+            sorted(_classification_labels(cls) & frame_classification_set)
+            if primary_classification in frame_classification_set
+            else []
+        )
+        if not frame_classifications:
             continue
         for page in render.get("pages") or []:
             if not isinstance(page, dict):
@@ -693,26 +714,29 @@ def _build_coordinate_frames(
             page_num = int(page.get("page") or 0)
             source_page_id = f"{cls.get('sourceDocumentId') or source_path}:p{page_num}"
             scale = scale_by_path.get((source_path, page_num)) or {}
-            frames.append(
-                {
-                    "coordinateFrameId": f"frame-{cls.get('sourceDocumentId')}-p{page_num}",
-                    "sourcePageId": source_page_id,
-                    "sourceDocumentId": cls.get("sourceDocumentId"),
-                    "page": page_num,
-                    "classification": classification,
-                    "status": "candidate_needs_alignment",
-                    "scale": scale.get("scale") or ("1:100" if classification in {"floor_plan", "section", "elevation", "drainage_doc"} else None),
-                    "mmPerPaperUnit": scale.get("mmPerPaperUnit"),
-                    "originPx": None,
-                    "rotationDeg": 0,
-                    "modelOriginMm": None,
-                    "levelOrSiteAssociation": _level_or_site_association(classification, source_path),
-                    "confidence": 0.5 if scale else 0.35,
-                    "notes": [
-                        "Generated as a candidate frame. A modeling-ready run must align origin/rotation and confirm scale before geometry authoring."
-                    ],
-                }
-            )
+            for classification in frame_classifications:
+                suffix = "" if len(frame_classifications) == 1 else f"-{classification}"
+                frames.append(
+                    {
+                        "coordinateFrameId": f"frame-{cls.get('sourceDocumentId')}-p{page_num}{suffix}",
+                        "sourcePageId": source_page_id,
+                        "sourceDocumentId": cls.get("sourceDocumentId"),
+                        "page": page_num,
+                        "classification": classification,
+                        "classificationRoles": cls.get("classificationRoles") or [],
+                        "status": "candidate_needs_alignment",
+                        "scale": scale.get("scale") or ("1:100" if classification in {"floor_plan", "section", "elevation", "drainage_doc"} else None),
+                        "mmPerPaperUnit": scale.get("mmPerPaperUnit"),
+                        "originPx": None,
+                        "rotationDeg": 0,
+                        "modelOriginMm": None,
+                        "levelOrSiteAssociation": _level_or_site_association(classification, source_path),
+                        "confidence": 0.5 if scale else 0.35,
+                        "notes": [
+                            "Generated as a candidate frame. A modeling-ready run must align origin/rotation and confirm scale before geometry authoring."
+                        ],
+                    }
+                )
     return {
         "format": "reverseBimCoordinateFrames_v1",
         "coordinateFrameCount": len(frames),
@@ -1582,6 +1606,17 @@ def _modeling_use_for_classification(classification: str) -> str:
         "legal_admin": "legal_context",
         "construction_description": "materials_history",
     }.get(classification, "ignored_with_reason")
+
+
+def _classification_labels(row: dict[str, Any]) -> set[str]:
+    labels = {str(row.get("classification") or "unknown")}
+    for role in row.get("classificationRoles") or []:
+        if isinstance(role, dict) and role.get("classification"):
+            labels.add(str(role["classification"]))
+    for label in row.get("secondaryClassifications") or []:
+        if label:
+            labels.add(str(label))
+    return labels
 
 
 def _level_or_site_association(classification: str, source_path: str) -> str:

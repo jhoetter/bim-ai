@@ -222,6 +222,8 @@ def build_ai_visual_trace_agent_requests(
                 "sourceDocumentId": row.get("sourceDocumentId"),
                 "relativePath": row.get("relativePath"),
                 "classification": row.get("classification"),
+                "classificationRoles": row.get("classificationRoles") or [],
+                "matchedClassifications": row.get("matchedClassifications") or [],
                 "page": row.get("page"),
                 "renderedPagePath": row.get("renderedPagePath"),
             }
