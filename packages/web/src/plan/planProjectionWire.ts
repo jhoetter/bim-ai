@@ -351,9 +351,10 @@ export function buildPlanProjectionQuery(params: {
 export async function fetchPlanProjectionWire(
   modelId: string,
   qs: URLSearchParams,
+  init?: Pick<RequestInit, 'signal'>,
 ): Promise<PlanProjectionWirePayload> {
   const url = `/api/models/${encodeURIComponent(modelId)}/projection/plan?${qs.toString()}`;
-  const res = await fetch(url);
+  const res = await fetch(url, init);
   const txt = await res.text();
   if (!res.ok) throw new Error(`${res.status}: ${txt}`);
   return JSON.parse(txt) as PlanProjectionWirePayload;

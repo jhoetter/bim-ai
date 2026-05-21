@@ -3,11 +3,58 @@ from __future__ import annotations
 import logging
 import secrets
 import time
+from collections import OrderedDict
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
+
+_PLAN_PROJECTION_CACHE_MAX = 128
+_PLAN_PROJECTION_CACHE: OrderedDict[tuple[str, int, str, str, str], dict[str, Any]] = OrderedDict()
+
+
+def _row_revision(row: Any) -> int:
+    raw = getattr(row, "revision", None)
+    if raw is None and isinstance(getattr(row, "document", None), dict):
+        raw = row.document.get("revision")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _projection_cache_key(
+    *,
+    model_id: UUID,
+    revision: int,
+    plan_view_id: str | None,
+    fallback_level_id: str | None,
+    global_plan_presentation: str,
+) -> tuple[str, int, str, str, str]:
+    return (
+        str(model_id),
+        revision,
+        plan_view_id or "",
+        fallback_level_id or "",
+        global_plan_presentation,
+    )
+
+
+def _get_plan_projection_cache(key: tuple[str, int, str, str, str]) -> dict[str, Any] | None:
+    cached = _PLAN_PROJECTION_CACHE.get(key)
+    if cached is None:
+        return None
+    _PLAN_PROJECTION_CACHE.move_to_end(key)
+    return deepcopy(cached)
+
+
+def _set_plan_projection_cache(key: tuple[str, int, str, str, str], payload: dict[str, Any]) -> None:
+    _PLAN_PROJECTION_CACHE[key] = deepcopy(payload)
+    _PLAN_PROJECTION_CACHE.move_to_end(key)
+    while len(_PLAN_PROJECTION_CACHE) > _PLAN_PROJECTION_CACHE_MAX:
+        _PLAN_PROJECTION_CACHE.popitem(last=False)
 
 from fastapi import (
     APIRouter,
@@ -1283,13 +1330,25 @@ async def projection_plan_wire_route(
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
+    cache_key = _projection_cache_key(
+        model_id=model_id,
+        revision=_row_revision(row),
+        plan_view_id=plan_view_id,
+        fallback_level_id=fallback_level_id,
+        global_plan_presentation=global_plan_presentation,
+    )
+    cached = _get_plan_projection_cache(cache_key)
+    if cached is not None:
+        return cached
     doc = Document.model_validate(row.document)
-    return plan_projection_wire_from_request(
+    payload = plan_projection_wire_from_request(
         doc,
         plan_view_id=plan_view_id,
         fallback_level_id=fallback_level_id,
         global_plan_presentation=global_plan_presentation,
     )
+    _set_plan_projection_cache(cache_key, payload)
+    return deepcopy(payload)
 
 
 @api_router.get("/models/{model_id}/projection/section/{section_cut_id}")
