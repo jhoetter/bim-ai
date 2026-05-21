@@ -24,3 +24,22 @@ describe('WP-NEXT-42 Viewport wall authoring source guards', () => {
     expect(SRC).toMatch(/const\s+actualEnd\s*=\s*end/);
   });
 });
+
+describe('PERF-I02 Viewport render loop guards', () => {
+  it('uses demand-driven RAF scheduling instead of unconditional continuous rendering', () => {
+    expect(SRC).toContain('requestViewportRenderRef');
+    expect(SRC).toContain('function scheduleViewportRender(): void');
+    expect(SRC).toContain('function shouldAnimateViewport(): boolean');
+    expect(SRC).toContain('if (shouldAnimateViewport()) scheduleViewportRender();');
+    expect(SRC).not.toMatch(
+      /composer\.render\(\);\s*rafRef\.current = requestAnimationFrame\(tick\);/,
+    );
+  });
+
+  it('requests a frame after scene effects and asynchronous mesh updates', () => {
+    expect(SRC).toMatch(
+      /useEffect\(\(\) => \{\s*requestViewportRenderRef\.current\?\.\(\);\s*\}\);/,
+    );
+    expect(SRC).toMatch(/rootNow\.add\(mesh\);\s*scheduleViewportRender\(\);/);
+  });
+});

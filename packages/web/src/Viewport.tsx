@@ -262,6 +262,7 @@ export function Viewport({
   const rootGroupRef = useRef<THREE.Group | null>(null);
   const planOverlayGroupRef = useRef<THREE.Group | null>(null);
   const rafRef = useRef<number | null>(null);
+  const requestViewportRenderRef = useRef<(() => void) | null>(null);
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
@@ -745,6 +746,7 @@ export function Viewport({
             }
           });
           cacheNow.delete(data.jobId);
+          scheduleViewportRender();
         }
         return;
       }
@@ -800,6 +802,7 @@ export function Viewport({
       }
       cacheNow.set(data.jobId, mesh);
       rootNow.add(mesh);
+      scheduleViewportRender();
 
       // Keep outline pass in sync if this wall is the current selection.
       const op = outlinePassRef.current;
@@ -846,6 +849,25 @@ export function Viewport({
       lastDeltaMm: number;
     } | null = null;
     let sectionBoxDrag: { face: string; dragPlane: THREE.Plane } | null = null;
+    let viewportRenderFrameQueued = false;
+    let viewportRenderDisposed = false;
+    let lastFrameMs = performance.now();
+
+    function shouldAnimateViewport(): boolean {
+      return (
+        walkController.snapshot().active ||
+        dragging !== null ||
+        Math.hypot(inertiaVx, inertiaVy) > 0.06
+      );
+    }
+
+    function scheduleViewportRender(): void {
+      if (viewportRenderDisposed || viewportRenderFrameQueued) return;
+      viewportRenderFrameQueued = true;
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    requestViewportRenderRef.current = scheduleViewportRender;
     type WallDraftScreenBasis = {
       mode: 'elevation-axis';
       originScreen: ScreenPoint;
@@ -984,6 +1006,7 @@ export function Viewport({
       if (oc) {
         mirrorSceneCameraPose(camera, oc, snap.target);
       }
+      scheduleViewportRender();
     }
 
     placeCamera('immediate');
@@ -2423,6 +2446,7 @@ export function Viewport({
         oc.far = f.far;
         oc.updateProjectionMatrix();
       }
+      scheduleViewportRender();
     }
 
     const ro = new ResizeObserver(onResize);
@@ -2558,6 +2582,7 @@ export function Viewport({
       const startedLineOnDown = toolDraftStartedLineOnDown;
       const consumedOnDown = toolDraftConsumedOnDown;
       dragging = null;
+      scheduleViewportRender();
       toolDraftTool = null;
       toolDraftStartedLineOnDown = false;
       toolDraftConsumedOnDown = false;
@@ -2649,10 +2674,12 @@ export function Viewport({
       dragMoved = false;
       cumulativeDragPx = 0;
       clearWallDraftPreviewGroup();
+      scheduleViewportRender();
     }
 
     function onMove(ev: PointerEvent): void {
       const directTool = activeDirect3dTool();
+      if (dragging || directTool) scheduleViewportRender();
       if (
         directTool &&
         (LINE_3D_AUTHORING_TOOLS.has(directTool) ||
@@ -3462,8 +3489,9 @@ export function Viewport({
     }
     document.addEventListener('pointerlockchange', onPointerLockChange);
 
-    let lastFrameMs = performance.now();
     function tick() {
+      viewportRenderFrameQueued = false;
+      rafRef.current = null;
       const now = performance.now();
       const dt = Math.min(0.05, (now - lastFrameMs) / 1000);
       lastFrameMs = now;
@@ -3488,10 +3516,10 @@ export function Viewport({
       }
 
       composer.render();
-      rafRef.current = requestAnimationFrame(tick);
+      if (shouldAnimateViewport()) scheduleViewportRender();
     }
 
-    tick();
+    scheduleViewportRender();
 
     const pendingCsg = pendingCsgRef.current;
     const pendingCsgMeta = pendingCsgMetaRef.current;
@@ -3500,8 +3528,11 @@ export function Viewport({
       orbitRigApiRef.current = null;
       cameraRigRef.current = null;
       paintBundleRef.current = null;
+      viewportRenderDisposed = true;
+      requestViewportRenderRef.current = null;
 
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
       ro.disconnect();
       clearWallDraftPreviewGroup();
 
@@ -3719,6 +3750,10 @@ export function Viewport({
     wallVerticalSpanM,
     wallWith3dJoinDisallowGaps,
     yawForPlanSegment,
+  });
+
+  useEffect(() => {
+    requestViewportRenderRef.current?.();
   });
 
   const { handleViewCubePick, handleViewCubeDrag, handleOrientSaved } = useViewportViewCubeHandlers(
