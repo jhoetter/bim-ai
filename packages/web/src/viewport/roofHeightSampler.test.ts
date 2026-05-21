@@ -60,6 +60,15 @@ describe('roofHeightAtPoint — gable ridgeAlongX', () => {
     // |1.5 - 3| = 1.5, halfSpan - 1.5 = 1.5 → height = 3 + 1.5 = 4.5
     expect(roofHeightAtPoint(gableRoof, elementsById, 4000, 1500)).toBeCloseTo(4.5, 6);
   });
+
+  it('samples the visible overhang-expanded roof surface for attached wall tops', () => {
+    const roofWithOverhang: RoofElem = { ...gableRoof, overhangMm: 500 };
+
+    // The rendered roof mesh expands the eave line by the overhang.  A wall at
+    // the raw footprint edge therefore intersects the visible sloped roof
+    // surface above the outer eave height.
+    expect(roofHeightAtPoint(roofWithOverhang, elementsById, 4000, 0)).toBeCloseTo(3.5, 6);
+  });
 });
 
 describe('roofHeightAtPoint — mass_box', () => {

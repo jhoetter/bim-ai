@@ -3385,6 +3385,40 @@ function toposolidHeightMmAtPoint(
   return topo.baseElevationMm ?? 0;
 }
 
+function boundaryForToposolidExcavation(
+  excav: Extract<Element, { kind: 'toposolid_excavation' }>,
+  elementsById?: Record<string, Element>,
+): Array<{ xMm: number; yMm: number }> {
+  if (excav.boundaryMm && excav.boundaryMm.length >= 3) return excav.boundaryMm;
+  const cutter = elementsById?.[excav.cutterElementId];
+  if (!cutter) return [];
+  if (
+    (cutter.kind === 'floor' ||
+      cutter.kind === 'roof' ||
+      cutter.kind === 'site' ||
+      cutter.kind === 'toposolid') &&
+    Array.isArray((cutter as { boundaryMm?: unknown }).boundaryMm)
+  ) {
+    return (cutter as { boundaryMm: Array<{ xMm: number; yMm: number }> }).boundaryMm;
+  }
+  if (cutter.kind === 'roof' && Array.isArray(cutter.footprintMm)) return cutter.footprintMm;
+  return [];
+}
+
+function excavationBoundariesForToposolid(
+  topo: Extract<Element, { kind: 'toposolid' }>,
+  elementsById?: Record<string, Element>,
+): Array<Array<{ xMm: number; yMm: number }>> {
+  if (!elementsById) return [];
+  return Object.values(elementsById)
+    .filter(
+      (el): el is Extract<Element, { kind: 'toposolid_excavation' }> =>
+        el.kind === 'toposolid_excavation' && el.hostToposolidId === topo.id,
+    )
+    .map((excav) => boundaryForToposolidExcavation(excav, elementsById))
+    .filter((boundary) => boundary.length >= 3);
+}
+
 export function makeToposolidMesh(
   topo: Extract<Element, { kind: 'toposolid' }>,
   paint: ViewportPaintBundle | null,
@@ -3400,30 +3434,48 @@ export function makeToposolidMesh(
           { xMm: 20000, yMm: 20000 },
           { xMm: -20000, yMm: 20000 },
         ];
-  const topHeights = points.map((point) => toposolidHeightMmAtPoint(topo, point));
+  const excavationBoundaries = excavationBoundariesForToposolid(topo, elementsById);
+  const contours = [points, ...excavationBoundaries];
+  const flatPoints = contours.flat();
+  const topHeights = flatPoints.map((point) => toposolidHeightMmAtPoint(topo, point));
   const topMax = Math.max(...topHeights, topo.baseElevationMm ?? 0);
   const undersideMm =
     topo.baseElevationMm != null
       ? topo.baseElevationMm - (topo.thicknessMm ?? 1500)
       : Math.min(...topHeights) - (topo.thicknessMm ?? 1500);
   const vertices: number[] = [];
-  for (let i = 0; i < points.length; i++) {
-    const point = points[i]!;
-    vertices.push(point.xMm / 1000, topHeights[i]! / 1000, -point.yMm / 1000);
+  for (let i = 0; i < flatPoints.length; i++) {
+    const point = flatPoints[i]!;
+    vertices.push(point.xMm / 1000, topHeights[i]! / 1000, point.yMm / 1000);
   }
-  for (const point of points) {
-    vertices.push(point.xMm / 1000, undersideMm / 1000, -point.yMm / 1000);
+  for (const point of flatPoints) {
+    vertices.push(point.xMm / 1000, undersideMm / 1000, point.yMm / 1000);
   }
 
   const indices: number[] = [];
-  for (let i = 1; i < points.length - 1; i++) indices.push(0, i, i + 1);
-  const bottomOffset = points.length;
-  for (let i = 1; i < points.length - 1; i++)
-    indices.push(bottomOffset, bottomOffset + i + 1, bottomOffset + i);
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    indices.push(i, j, bottomOffset + j);
-    indices.push(i, bottomOffset + j, bottomOffset + i);
+  const contourVectors = points.map(
+    (point) => new THREE.Vector2(point.xMm / 1000, point.yMm / 1000),
+  );
+  const holeVectors = excavationBoundaries.map((boundary) =>
+    boundary.map((point) => new THREE.Vector2(point.xMm / 1000, point.yMm / 1000)),
+  );
+  const topTriangles = THREE.ShapeUtils.triangulateShape(contourVectors, holeVectors);
+  for (const tri of topTriangles) indices.push(tri[0]!, tri[1]!, tri[2]!);
+  const bottomOffset = flatPoints.length;
+  for (const tri of topTriangles) {
+    indices.push(bottomOffset + tri[2]!, bottomOffset + tri[1]!, bottomOffset + tri[0]!);
+  }
+
+  let contourStart = 0;
+  for (const contour of contours) {
+    for (let i = 0; i < contour.length; i++) {
+      const j = (i + 1) % contour.length;
+      const a = contourStart + i;
+      const b = contourStart + j;
+      indices.push(a, b, bottomOffset + b);
+      indices.push(a, bottomOffset + b, bottomOffset + a);
+    }
+    contourStart += contour.length;
   }
 
   const geom = new THREE.BufferGeometry();
