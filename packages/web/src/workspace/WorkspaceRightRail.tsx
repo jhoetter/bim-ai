@@ -43,7 +43,13 @@ import {
   VIEWER_CATEGORY_KEYS,
   type ViewerCatKey,
 } from '../viewport/sceneUtils';
-import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import {
+  createElevationFromWallCommand,
+  createSectionFromWallCommand,
+  createWallOpeningCenterCommand,
+  insertDoorOnWallCenterCommand,
+  insertWindowOnWallCenterCommand,
+} from './workspaceRightRailWallCommands';
 import { buildBoundaryWallPlan, type BoundaryWallPlan } from '../geometry/boundaryWallGeneration';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
@@ -2626,82 +2632,6 @@ function ActionButton({
       {label}
     </button>
   );
-}
-
-function insertDoorOnWallCenterCommand(
-  wall: Extract<Element, { kind: 'wall' }>,
-): Record<string, unknown> {
-  return {
-    type: 'insertDoorOnWall',
-    wallId: wall.id,
-    alongT: 0.5,
-    widthMm: 900,
-  };
-}
-
-function insertWindowOnWallCenterCommand(
-  wall: Extract<Element, { kind: 'wall' }>,
-): Record<string, unknown> {
-  return {
-    type: 'insertWindowOnWall',
-    wallId: wall.id,
-    alongT: 0.5,
-    widthMm: 1200,
-    sillHeightMm: 900,
-    heightMm: 1500,
-  };
-}
-
-function createWallOpeningCenterCommand(
-  wall: Extract<Element, { kind: 'wall' }>,
-): Record<string, unknown> {
-  return {
-    type: 'createWallOpening',
-    hostWallId: wall.id,
-    alongTStart: 0.45,
-    alongTEnd: 0.55,
-    sillHeightMm: 200,
-    headHeightMm: 2400,
-  };
-}
-
-function createSectionFromWallCommand(wall: Extract<Element, { kind: 'wall' }>): {
-  id: string;
-  cmd: Record<string, unknown>;
-} {
-  const params = sectionCutFromWall(wall);
-  const id = `sc-${crypto.randomUUID().slice(0, 10)}`;
-  return {
-    id,
-    cmd: {
-      type: 'createSectionCut',
-      id,
-      name: params.name,
-      lineStartMm: params.lineStartMm,
-      lineEndMm: params.lineEndMm,
-      cropDepthMm: params.cropDepthMm,
-    },
-  };
-}
-
-function createElevationFromWallCommand(wall: Extract<Element, { kind: 'wall' }>): {
-  id: string;
-  cmd: Record<string, unknown>;
-} {
-  const params = elevationFromWall(wall);
-  const id = `ev-${crypto.randomUUID().slice(0, 10)}`;
-  const cmd: Record<string, unknown> = {
-    type: 'createElevationView',
-    id,
-    name: params.name,
-    direction: params.direction,
-    cropMinMm: params.cropMinMm,
-    cropMaxMm: params.cropMaxMm,
-  };
-  if (params.direction === 'custom' && params.customAngleDeg !== null) {
-    cmd.customAngleDeg = params.customAngleDeg;
-  }
-  return { id, cmd };
 }
 
 function InspectorContextActions({
