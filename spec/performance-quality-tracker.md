@@ -572,7 +572,7 @@ Relevant files:
 | `PERF-C01` | P0 | `Done` | Reduce room rectangle enumeration from all 4-combinations to horizontal-pair x vertical-pair. | `compute_room_boundary_derivation` returns same tested behavior and room derivation is about 190-230 ms on current model. |
 | `PERF-C02` | P0 | `Done` | Share room-boundary derivation between evaluation and schedule parity in one evaluation. | `constraints_evaluation.evaluate` passes the existing room-boundary bundle to schedule parity. |
 | `PERF-C03` | P0 | `Partial` | Identify room derivation as the dominant remaining evaluate cost. | Tracker records measurements; no broader cache/incremental design yet. |
-| `PERF-C04` | P0 | `Not started` | Add request-scoped room-boundary cache. | Any route computing the room-boundary bundle more than once per document revision reuses it. |
+| `PERF-C04` | P0 | `Done` | Add request-scoped room-boundary cache. | Any HTTP route computing the room-boundary bundle more than once for the same loaded document reuses it within that request. |
 | `PERF-C05` | P1 | `Not started` | Add document-revision scoped room-boundary cache. | Repeated requests for unchanged model revision reuse safe immutable derivation results. |
 | `PERF-C06` | P1 | `Not started` | Build level-local invalidation for room derivation. | Changes outside a level do not invalidate room derivation for unrelated levels. |
 | `PERF-C07` | P1 | `Not started` | Pre-index axis segments by coordinate and extent. | Rectangle detection avoids repeated snapping and repeated full candidate checks. |
@@ -711,14 +711,12 @@ once medium and large fixtures exist.
 
 1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
    memoization inside evidence package after the schedule-heavy CI budget.
-2. `PERF-C04`: add a request-scoped room-boundary cache for routes that still
-   compose multiple derivation consumers.
-3. `PERF-H01`: add browser-side pointermove budget measurement for PlanCanvas.
-4. `PERF-L01` and `PERF-L02`: make command pending/optimistic state explicit so
+2. `PERF-H01`: add browser-side pointermove budget measurement for PlanCanvas.
+3. `PERF-L01` and `PERF-L02`: make command pending/optimistic state explicit so
    undo/redo latency is visible instead of feeling like the UI missed the action.
-5. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
-6. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
-7. Expand the benchmark fixture set with a larger documentation-heavy model and
+4. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
+5. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
+6. Expand the benchmark fixture set with a larger documentation-heavy model and
    trend artifacts.
 
 ## Commands Used For Initial Measurements
