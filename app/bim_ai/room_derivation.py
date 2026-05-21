@@ -7,6 +7,10 @@ import itertools
 import json
 import math
 from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from copy import deepcopy
 from typing import Any, Literal
 
 from bim_ai.document import Document
@@ -14,6 +18,9 @@ from bim_ai.elements import LevelElem, ProjectSettingsElem, RoomElem, RoomSepara
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 BOUNDARY_SEGMENT_VERSION_V1 = "boundary_segment_v1"
+_ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[dict[tuple[int, int], dict[str, Any]] | None] = (
+    ContextVar("room_boundary_request_cache", default=None)
+)
 
 # Shared with preview (orthogonal snap / closure tests)
 _SNAP_MM = 50.0
@@ -499,7 +506,29 @@ def _bbox_area_m2_with_inset(bbox: dict[str, Any], inset_mm: float) -> float:
     return max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
 
 
+@contextmanager
+def room_boundary_derivation_request_cache() -> Iterator[None]:
+    token = _ROOM_BOUNDARY_REQUEST_CACHE.set({})
+    try:
+        yield
+    finally:
+        _ROOM_BOUNDARY_REQUEST_CACHE.reset(token)
+
+
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
+    cache = _ROOM_BOUNDARY_REQUEST_CACHE.get()
+    if cache is None:
+        return _compute_room_boundary_derivation_uncached(doc)
+    key = (id(doc), id(doc.elements))
+    cached = cache.get(key)
+    if cached is not None:
+        return deepcopy(cached)
+    bundle = _compute_room_boundary_derivation_uncached(doc)
+    cache[key] = deepcopy(bundle)
+    return bundle
+
+
+def _compute_room_boundary_derivation_uncached(doc: Document) -> dict[str, Any]:
     """Single deterministic bundle: candidates, classification, diagnostics, preview warnings."""
     lvl_names = {e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)}
     segments_by_level = collect_axis_aligned_boundary_segments(doc)
