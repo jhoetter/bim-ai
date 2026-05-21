@@ -189,7 +189,16 @@ def build_reverse_bim_folder_output(
         run_id=run_id,
     )
 
-    raw_responses = _reader_response_payload(reader_responses)
+    discovered_reader_responses = (
+        None if reader_responses is not None else _load_reader_response_files(out_dir)
+    )
+    raw_responses = _reader_response_payload(
+        reader_responses if reader_responses is not None else discovered_reader_responses
+    )
+    raw_response_source = "provided" if reader_responses is not None else "response_files"
+    raw_response_file_count = len(discovered_reader_responses or [])
+    raw_responses["source"] = raw_response_source
+    raw_responses["responseFileCount"] = raw_response_file_count
     loop = run_ai_visual_trace_agent_loop(
         work_order=work_order,
         responses=raw_responses.get("responses") or [],
@@ -198,6 +207,8 @@ def build_reverse_bim_folder_output(
         reader_timeout_seconds=reader_timeout_seconds,
     )
     raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
+    raw_responses["source"] = raw_response_source
+    raw_responses["responseFileCount"] = raw_response_file_count
     reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
         agent_requests=requests,
         work_order=work_order,
@@ -517,6 +528,26 @@ def _reader_response_payload(
         "responsesDigestSha256": _sha256_json(rows),
         "responses": rows,
     }
+
+
+def _load_reader_response_files(out_dir: Path) -> list[dict[str, Any]]:
+    response_root = out_dir / "ai-reading" / "responses"
+    if not response_root.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for path in sorted(response_root.rglob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if isinstance(payload, dict) and isinstance(payload.get("responses"), list):
+            for row in payload["responses"]:
+                if isinstance(row, dict):
+                    rows.append({**row, "responsePath": str(path)})
+            continue
+        if isinstance(payload, dict):
+            rows.append({**payload, "responsePath": str(path)})
+    return rows
 
 
 def _build_reader_response_index(

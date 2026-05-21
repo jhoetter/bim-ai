@@ -1133,6 +1133,31 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert Path(package["artifacts"]["packageAcceptanceReport"]).exists()
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0
 
+    response_dir = output_dir / "ai-reading" / "responses" / "reader-pass-01"
+    response_dir.mkdir(parents=True)
+    (response_dir / "floorplans.json").write_text(
+        json.dumps(
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "readerPassId": "reader-pass-01",
+                "workPackageId": "wp-dimensional-floorplans",
+                "facts": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    rerun = build_reverse_bim_folder_output(
+        root_path=source_dir,
+        output_dir=output_dir,
+        run_id="folder-output-test",
+        max_pages_per_pdf=1,
+        reset_output=False,
+    )
+    raw_responses = json.loads(Path(rerun["artifacts"]["readerResponsesRaw"]).read_text())
+    assert raw_responses["source"] == "response_files"
+    assert raw_responses["responseFileCount"] == 1
+    assert raw_responses["responseCount"] == 1
+
 
 def test_reverse_bim_folder_output_rejects_seed_artifact_source_roots(tmp_path: Path) -> None:
     source_dir = tmp_path / "seed-artifacts" / "target-house-3"

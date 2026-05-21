@@ -40,12 +40,16 @@ enough to avoid modeling the wrong building.
 3. Extract native PDF text only as supplemental evidence.
 4. Classify documents/pages by role.
 5. Package source pages for multimodal AI/subagent reading.
-6. Collect AI-reader responses as structured source facts.
-7. Normalize and validate facts.
-8. Run reader consensus for critical facts.
-9. Resolve target building scope and context mask.
-10. Resolve levels/storeys, scale, origin, rotation, and coordinate frames.
-11. Build the folder-output/trusted source specification.
+6. Use `ai-reading/reader-dispatch.md` and `ai-reading/reader-pass-manifest.json`
+   to dispatch reader assignments. Reader responses may be supplied directly or
+   written as JSON under `ai-reading/responses/**` for the next folder-output
+   run to reload.
+7. Collect AI-reader responses as structured source facts.
+8. Normalize and validate facts.
+9. Run reader consensus for critical facts.
+10. Resolve target building scope and context mask.
+11. Resolve levels/storeys, scale, origin, rotation, and coordinate frames.
+12. Build the folder-output/trusted source specification.
 
 If the source package is `source_packaging_ready` or
 `source_understanding_blocked`, stop modeling and repair source understanding.
