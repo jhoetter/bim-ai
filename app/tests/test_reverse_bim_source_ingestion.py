@@ -1293,6 +1293,10 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
 
     assert package["format"] == "reverseBimFolderOutputPackage_v1"
     assert package["packageState"] == "source_packaging_ready"
+    assert package["summary"]["readerRequestCount"] >= 1
+    assert package["summary"]["readerAssignmentCount"] >= 1
+    assert package["summary"]["openReaderAssignmentCount"] >= 1
+    assert package["summary"]["readerAssignmentPromptCount"] >= 1
     assert Path(package["artifacts"]["runSummary"]).exists()
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()

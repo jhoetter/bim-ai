@@ -302,6 +302,9 @@ def build_reverse_bim_folder_output(
         readiness=readiness,
         conflicts=conflicts,
         acceptance=acceptance,
+        raw_responses=raw_responses,
+        agent_requests=requests,
+        reader_pass_manifest=reader_pass_manifest,
     )
     document_registry = _build_document_registry(manifest, classifications)
     source_page_index = _build_source_page_index(
@@ -321,6 +324,7 @@ def build_reverse_bim_folder_output(
         agent_requests=requests,
         reader_pass_manifest=reader_pass_manifest,
     )
+    run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get("promptCount", 0)
 
     artifacts = {
         "runSummary": out_dir / "run-summary.json",
@@ -1570,8 +1574,16 @@ def _build_run_summary(
     readiness: dict[str, Any],
     conflicts: dict[str, Any],
     acceptance: dict[str, Any],
+    raw_responses: dict[str, Any] | None = None,
+    agent_requests: dict[str, Any] | None = None,
+    reader_pass_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     package_state = str(acceptance.get("packageState") or "source_understanding_blocked")
+    reader_assignment_summary = (
+        reader_pass_manifest.get("summary")
+        if isinstance(reader_pass_manifest, dict) and isinstance(reader_pass_manifest.get("summary"), dict)
+        else {}
+    )
     return {
         "format": "reverseBimFolderOutputRunSummary_v1",
         "sourceFolder": str(source_folder),
@@ -1583,6 +1595,13 @@ def _build_run_summary(
             "sourceDocumentCount": manifest.get("fileCount", 0),
             "renderedPageCount": sum(len(row.get("pages") or []) for row in rendered_pages if isinstance(row, dict)),
             "workPackageCount": len(work_order.get("workPackages") or []),
+            "readerRequestCount": (
+                (agent_requests or {}).get("readerRequestCount")
+                or len((agent_requests or {}).get("requests") or [])
+            ),
+            "readerAssignmentCount": reader_assignment_summary.get("assignmentCount", 0),
+            "openReaderAssignmentCount": reader_assignment_summary.get("waitingAssignmentCount", 0),
+            "readerResponseCount": (raw_responses or {}).get("responseCount", 0),
             "acceptedWorkPackageCount": (loop.get("summary") or {}).get("acceptedPackageCount", 0),
             "normalizedFactCount": (normalized.get("summary") or {}).get("normalizedFactCount", 0),
             "mcpReadyFactCount": (readiness.get("summary") or {}).get("readyForMcpAuthoringCount", 0),
