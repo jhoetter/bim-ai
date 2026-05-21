@@ -179,6 +179,7 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.phase_packet`
 - `reverse_bim.phase_run`
 - `reverse_bim.final_acceptance`
+- `reverse_bim.view_capture_plan`
 
 Use MCP authoring and query/resolve surfaces:
 

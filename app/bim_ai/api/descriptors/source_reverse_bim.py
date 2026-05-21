@@ -425,6 +425,13 @@ for _reverse_tool in (
         "notes": "Derives required source overlay views and UI screenshot/checklist views from source pages, facts, and the phase authoring spec.",
     },
     {
+        "name": "reverse_bim.view_capture_plan",
+        "title": "ReverseBimViewCapturePlanInput",
+        "path": "/api/v3/reverse-bim/view-capture-plan",
+        "cli": "bim-ai reverse-bim view-capture-plan --evidence-requirements evidence-requirements.json --model-id <id>",
+        "notes": "Creates a deterministic browser/Playwright screenshot work order for source-equivalent plan/elevation/section/site/3D views before UI and overlay evidence gates run.",
+    },
+    {
         "name": "reverse_bim.level_completeness",
         "title": "ReverseBimLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/level-completeness",

@@ -9,6 +9,7 @@ from bim_ai.reverse_bim_acceptance_evidence import (
     build_source_overlay_evidence_report,
     build_ui_evidence_report,
 )
+from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.routes_api import api_router
 
 
@@ -143,6 +144,36 @@ def test_ui_evidence_requires_visual_checklist_for_human_visible_failures() -> N
     assert failed["summary"]["failedVisualChecklistItemCount"] == 1
 
 
+def test_view_capture_plan_creates_ui_and_overlay_work_order() -> None:
+    plan = build_reverse_bim_view_capture_plan(
+        model_id="model-1",
+        output_dir="tmp/reverse-bim/evidence",
+        run_id="leo-run",
+        required_ui_views=[
+            {
+                "viewId": "ui:plan:EG",
+                "kind": "floor_plan",
+                "visualChecklistItems": ["required_level_not_empty"],
+            }
+        ],
+        required_overlay_views=[
+            {
+                "viewId": "overlay:eg-p1",
+                "kind": "floor_plan",
+                "sourcePageId": "eg-p1",
+                "coordinateFrameId": "frame-eg",
+            }
+        ],
+    )
+
+    assert plan["ok"] is True
+    assert plan["summary"]["captureCount"] == 2
+    assert plan["captures"][0]["evidenceRowTemplate"]["visualChecklist"] == {
+        "required_level_not_empty": False
+    }
+    assert plan["captures"][1]["evidenceRowTemplate"]["sourcePageId"] == "eg-p1"
+
+
 def test_acceptance_evidence_routes() -> None:
     app = FastAPI()
     app.include_router(api_router)
@@ -167,6 +198,18 @@ def test_acceptance_evidence_routes() -> None:
         "/api/v3/qa/physical-topology",
         json={"roomBoundaryEdges": {"data": {"boundaryEdges": {"summary": {}}}}},
     )
+    capture_resp = client.post(
+        "/api/v3/reverse-bim/view-capture-plan",
+        json={
+            "modelId": "model-1",
+            "outputDir": "tmp/evidence",
+            "evidenceRequirements": {
+                "requiredUiViews": [{"viewId": "ui:3d:overview", "kind": "3d"}]
+            },
+        },
+    )
 
     assert alias_resp.status_code == 200
     assert alias_resp.json()["summary"]["accepted"] is True
+    assert capture_resp.status_code == 200
+    assert capture_resp.json()["format"] == "reverseBimViewCapturePlan_v1"

@@ -243,7 +243,7 @@ Every slice uses the same loop:
 | LOOP-008 | Area/volume reconciliation. | `qa.area_reconciliation`, schedule tools. | Partial | Add volume reconciliation and source schedule binding per level/half/building. |
 | LOOP-009 | Physical topology gate. | `reverse_bim.physical_topology`, `qa.physical_topology`, room boundary resolvers. | Partial | Expand to require real walls/openings/stairs, not analytical-only room graphs. |
 | LOOP-010 | Source overlay evidence. | `reverse_bim.source_overlay_evidence`, `qa.source_overlay_compare`. | Partial | Build automatic overlay generation from model views and source page transforms. |
-| LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata. Visual evidence test scripts exist. | Partial | Add stable MCP/API/browser capture command for plan/elevation/section/3D screenshots. |
+| LOOP-011 | UI screenshot evidence. | `reverse_bim.ui_evidence` validates screenshot metadata; `reverse_bim.view_capture_plan` produces deterministic browser/Playwright capture work orders. | Partial | Add the actual Playwright/browser runner that executes capture plans and writes PNGs. |
 | LOOP-012 | Finding dispositions. | `reverse_bim.phase_packet` with dispositions. | Partial | Enforce source-backed existing-condition policy and block fixable authoring errors. |
 | LOOP-013 | Repair loop. | AI-reader repair requests exist; `reverse_bim.source_spec_revision` maps modeling feedback to source repair, resolver/payload repair, model repair, tool gap, or existing-condition candidate. | Partial | Persist repair worklists and connect them to automated rerun of impacted slices. |
 | LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions as `source_fact_misread`, `source_fact_underconstrained`, `coordinate_frame_wrong`, `mcp_payload_wrong`, `tool_gap`, `model_authoring_error`, `missing_evidence`, or `existing_condition`. | Partial | Persist reopened facts and regenerate affected MCP handoff rows automatically. |
@@ -271,7 +271,7 @@ exist. Raw bundles are fallback only and must be recorded as a gap.
 | Materials/assemblies | `reverse_bim.source_material_assemblies`, type/material query tools | Partial | Need typed layer-stack authoring and source-unavailable dispositions. |
 | Schedules | schedule derivation/query/export surfaces | Partial | Need reverse-BIM schedule reconciliation against source calculations. |
 | Views | `author.plan_view`, `save_3d_view`, view/query/sheet tools | Partial | Need exact source-equivalent elevation/section/cutaway view setup. |
-| Screenshots | UI/Playwright evidence scripts, `reverse_bim.ui_evidence` validator | Partial | Need first-class capture surface, not ad hoc screenshots. |
+| Screenshots | UI/Playwright evidence scripts, `reverse_bim.ui_evidence` validator, `reverse_bim.view_capture_plan` | Partial | Capture work order is first-class; actual runner still needs implementation/wiring. |
 
 ## Required Review Views
 
@@ -300,7 +300,7 @@ Minimum view set for a house:
 | VIEW-002 | Source-equivalent elevation views. | Cardinal elevation helper exists; elevation view UI exists. | Partial | Add first-class author/query/update elevation view MCP contract if not already stable. |
 | VIEW-003 | Source-equivalent section views. | Section/sheet infrastructure exists. | Partial | Add reverse-BIM section placement from source section marks or inferred review cuts. |
 | VIEW-004 | 3D/cutaway review views. | `save_3d_view`, 3D viewer, clipping controls. | Partial | Add deterministic camera presets for reverse-BIM review and screenshot capture. |
-| VIEW-005 | Live screenshot capture. | Visual evidence scripts exist; validator exists. | Partial | Build official `capture.view_screenshot` MCP/API/CLI surface or documented Playwright runner. |
+| VIEW-005 | Live screenshot capture. | Visual evidence scripts exist; validator exists; `reverse_bim.view_capture_plan` defines required browser captures and evidence row templates. | Partial | Build the actual Playwright/browser runner that opens each requested view and writes PNGs. |
 | VIEW-006 | Overlay source page on model view. | Underlay and overlay evidence validators exist. | Partial | Build generated overlay image and numeric deviation report. |
 | VIEW-007 | Human-visible checklist. | `reverse_bim.ui_evidence` supports checklist validation. | Partial | Add required checklist items per view kind and block on failed visual checks. |
 
@@ -393,7 +393,7 @@ The final model is accepted only when all of these are true:
 | ACC-001 | Level completeness gate. | `reverse_bim.level_completeness` | Partial | Tie directly to source-required levels and live model summary. |
 | ACC-002 | Physical topology gate. | `reverse_bim.physical_topology` | Partial | Expand coverage for stairs, openings, room boundaries, and assets. |
 | ACC-003 | Source overlay evidence gate. | `reverse_bim.source_overlay_evidence`, `qa.source_overlay_compare` | Partial | Build automatic generation of overlay inputs from captured views. |
-| ACC-004 | UI screenshot evidence gate. | `reverse_bim.ui_evidence` | Partial | Add official screenshot capture and required visual checklist per view. |
+| ACC-004 | UI screenshot evidence gate. | `reverse_bim.ui_evidence`, `reverse_bim.view_capture_plan` | Partial | Execute capture plans automatically and feed captured rows into UI evidence. |
 | ACC-005 | Source coverage gate. | `reverse_bim.source_coverage`; hybrid readback/source revision reports preserve `sourceFactIds` in evidence. | Partial | Populate fact-to-element refs during live authoring. |
 | ACC-006 | Advisor final gate. | `qa.advisor`, `reverse_bim.final_acceptance`; source-backed warning policy is enforced in phase/final gates. | Done | Keep expanding non-tolerable authoring categories as Advisor grows. |
 | ACC-007 | Constructability/integrity final gate. | `qa.constructability`, `qa.integrity_preflight` | Partial | Enforce non-tolerable authoring error categories. |
@@ -472,7 +472,7 @@ The Leo showcase is successful only if:
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
 | W4-001 | Create source-equivalent plan/elevation/section/site views. | Partial | Views are derived from source-page roles and coordinate frames. |
-| W4-002 | Add official screenshot capture. | Partial | Agent can capture required live views without manual UI screenshots. |
+| W4-002 | Add official screenshot capture. | Partial | `reverse_bim.view_capture_plan` defines deterministic capture work orders; actual browser execution still needs wiring. |
 | W4-003 | Generate overlay comparison payloads. | Partial | Source page and model screenshot are compared with numeric deviation and visual artifact. |
 | W4-004 | Enforce visual checklist. | Partial | Human-visible failures like empty KG or incoherent stairs block acceptance. |
 
@@ -503,10 +503,10 @@ Tracker: active BUILDING backlog.
 Implementation: partial surfaces exist across source packaging, document
 authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification, hybrid slice/run state reporting, runtime
-skill guidance, and acceptance validation.
+skill guidance, view-capture work orders, and acceptance validation.
 Missing critical glue: live hybrid executor, persisted source-spec revision
-ledger, source-coordinate alignment resource, official screenshot capture,
-automatic overlays, and Leo fresh-run evidence.
+ledger, source-coordinate alignment resource, actual browser screenshot
+execution, automatic overlays, and Leo fresh-run evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

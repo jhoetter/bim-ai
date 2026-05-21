@@ -182,6 +182,7 @@ from bim_ai.reverse_bim import (
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_building_scope import build_source_building_scope_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
@@ -1864,6 +1865,32 @@ async def reverse_bim_evidence_requirements_route(
         source_page_index=body.get("sourcePageIndex") or body.get("source_page_index"),
         source_facts=body.get("sourceFacts") or body.get("facts") or body.get("extractedFacts"),
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/view-capture-plan")
+async def reverse_bim_view_capture_plan_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    evidence_requirements = (
+        body.get("evidenceRequirements")
+        or body.get("evidence_requirements")
+        or {}
+    )
+    return build_reverse_bim_view_capture_plan(
+        model_id=body.get("modelId") or body.get("model_id"),
+        required_ui_views=body.get("requiredUiViews")
+        or body.get("required_ui_views")
+        or evidence_requirements.get("requiredUiViews")
+        or evidence_requirements.get("required_ui_views"),
+        required_overlay_views=body.get("requiredOverlayViews")
+        or body.get("required_overlay_views")
+        or evidence_requirements.get("requiredOverlayViews")
+        or evidence_requirements.get("required_overlay_views"),
+        output_dir=body.get("outputDir") or body.get("output_dir"),
+        base_url=body.get("baseUrl") or body.get("base_url"),
+        run_id=body.get("runId") or body.get("run_id"),
+        viewport=body.get("viewport"),
     )
 
 
