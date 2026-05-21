@@ -1296,11 +1296,15 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert package["summary"]["readerRequestCount"] >= 1
     assert package["summary"]["readerAssignmentCount"] >= 1
     assert package["summary"]["openReaderAssignmentCount"] >= 1
+    assert package["summary"]["invalidReaderAssignmentCount"] == 0
+    assert package["summary"]["noFactReaderAssignmentCount"] == 0
     assert package["summary"]["readerAssignmentPromptCount"] >= 1
     assert Path(package["artifacts"]["runSummary"]).exists()
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()
     assert Path(package["artifacts"]["readerPassManifest"]).exists()
+    progress = json.loads(Path(package["artifacts"]["readerAssignmentProgress"]).read_text())
+    assert progress["summary"]["waitingAssignmentCount"] >= 1
     prompt_manifest = json.loads(
         Path(package["artifacts"]["readerAssignmentPrompts"]).read_text(encoding="utf-8")
     )
@@ -1339,6 +1343,9 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert raw_responses["source"] == "response_files"
     assert raw_responses["responseFileCount"] == 1
     assert raw_responses["responseCount"] == 1
+    progress = json.loads(Path(rerun["artifacts"]["readerAssignmentProgress"]).read_text())
+    assert progress["summary"]["noFactResponseAssignmentCount"] == 1
+    assert rerun["summary"]["noFactReaderAssignmentCount"] == 1
 
 
 def test_reverse_bim_folder_output_rejects_seed_artifact_source_roots(tmp_path: Path) -> None:

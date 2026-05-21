@@ -353,7 +353,13 @@ def build_ai_visual_trace_reader_pass_manifest(
             request_id = str(request.get("requestId") or "")
             status = (
                 "response_received"
-                if _assignment_has_response(response_keys, request_id, package_id, reader_pass_id)
+                if _assignment_has_response(
+                    response_keys,
+                    request_id,
+                    package_id,
+                    reader_pass_id,
+                    allow_package_fallback=int(request.get("requestPartCount") or 1) <= 1,
+                )
                 else "waiting_for_reader"
             )
             assignments.append(
@@ -1037,11 +1043,19 @@ def _assignment_has_response(
     request_id: str,
     package_id: str,
     reader_pass_id: str,
+    *,
+    allow_package_fallback: bool = True,
 ) -> bool:
-    if (request_id, package_id, reader_pass_id) in keys or ("", package_id, reader_pass_id) in keys:
+    if (request_id, package_id, reader_pass_id) in keys:
         return True
-    if reader_pass_id == "reader-pass-01":
-        return (request_id, package_id, "") in keys or ("", package_id, "") in keys
+    if reader_pass_id == "reader-pass-01" and (request_id, package_id, "") in keys:
+        return True
+    if not allow_package_fallback:
+        return False
+    if ("", package_id, reader_pass_id) in keys:
+        return True
+    if reader_pass_id == "reader-pass-01" and ("", package_id, "") in keys:
+        return True
     return False
 
 

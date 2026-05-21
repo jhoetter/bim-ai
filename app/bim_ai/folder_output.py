@@ -19,6 +19,7 @@ from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,
+    normalize_ai_visual_trace_reader_response,
     normalize_ai_visual_trace_reader_responses,
     run_ai_visual_trace_agent_loop,
 )
@@ -214,6 +215,10 @@ def build_reverse_bim_folder_output(
         work_order=work_order,
         responses=raw_responses.get("responses") or [],
     )
+    reader_assignment_progress = _build_reader_assignment_progress(
+        reader_pass_manifest=reader_pass_manifest,
+        raw_responses=raw_responses,
+    )
     reader_consensus = build_source_reader_consensus_report(raw_responses)
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
@@ -305,6 +310,7 @@ def build_reverse_bim_folder_output(
         raw_responses=raw_responses,
         agent_requests=requests,
         reader_pass_manifest=reader_pass_manifest,
+        reader_assignment_progress=reader_assignment_progress,
     )
     document_registry = _build_document_registry(manifest, classifications)
     source_page_index = _build_source_page_index(
@@ -338,6 +344,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTraceWorkOrder": out_dir / "ai-reading" / "ai-visual-trace-work-order.json",
         "aiVisualAgentRequests": out_dir / "ai-reading" / "ai-visual-agent-requests.json",
         "readerPassManifest": out_dir / "ai-reading" / "reader-pass-manifest.json",
+        "readerAssignmentProgress": out_dir / "ai-reading" / "reader-assignment-progress.json",
         "readerDispatchGuide": out_dir / "ai-reading" / "reader-dispatch.md",
         "readerAssignmentPrompts": out_dir / "ai-reading" / "reader-assignment-prompts.json",
         "readerResponsesRaw": out_dir / "ai-reading" / "reader-responses.raw.json",
@@ -389,6 +396,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTraceWorkOrder": work_order,
         "aiVisualAgentRequests": requests,
         "readerPassManifest": reader_pass_manifest,
+        "readerAssignmentProgress": reader_assignment_progress,
         "readerAssignmentPrompts": reader_assignment_prompts,
         "readerResponsesRaw": raw_responses,
         "readerResponseIndex": reader_response_index,
@@ -445,7 +453,7 @@ def build_reverse_bim_folder_output(
         encoding="utf-8",
     )
     artifacts["readerDispatchGuide"].write_text(
-        _reader_dispatch_markdown(run_summary, reader_pass_manifest),
+        _reader_dispatch_markdown(run_summary, reader_pass_manifest, reader_assignment_progress),
         encoding="utf-8",
     )
     artifacts["readme"].write_text(_readme(run_summary, artifacts), encoding="utf-8")
@@ -559,6 +567,129 @@ def _load_reader_response_files(out_dir: Path) -> list[dict[str, Any]]:
         if isinstance(payload, dict):
             rows.append({**payload, "responsePath": str(path)})
     return rows
+
+
+def _build_reader_assignment_progress(
+    *,
+    reader_pass_manifest: dict[str, Any],
+    raw_responses: dict[str, Any],
+) -> dict[str, Any]:
+    assignments = [
+        row
+        for row in reader_pass_manifest.get("assignments") or []
+        if isinstance(row, dict)
+    ]
+    responses = [
+        row
+        for row in raw_responses.get("responses") or []
+        if isinstance(row, dict)
+    ]
+    assignment_group_counts = Counter(
+        (
+            str(row.get("workPackageId") or ""),
+            str(row.get("readerPassId") or "reader-pass-01"),
+        )
+        for row in assignments
+    )
+    rows = []
+    for assignment in assignments:
+        response = _response_for_assignment(
+            assignment,
+            responses,
+            assignment_group_counts=assignment_group_counts,
+        )
+        if response is None:
+            rows.append(
+                {
+                    "assignmentId": assignment.get("assignmentId"),
+                    "readerPassId": assignment.get("readerPassId"),
+                    "workPackageId": assignment.get("workPackageId"),
+                    "requestId": assignment.get("requestId"),
+                    "status": "waiting_for_reader",
+                    "responsePathHint": assignment.get("responsePathHint"),
+                    "finding": {
+                        "code": "reader_assignment_response_missing",
+                        "severity": "error",
+                        "message": "No response matched this reader assignment.",
+                    },
+                }
+            )
+            continue
+        normalization = normalize_ai_visual_trace_reader_response(response)
+        norm_summary = normalization.get("summary") if isinstance(normalization.get("summary"), dict) else {}
+        normalized_count = int(norm_summary.get("normalizedFactCount") or 0)
+        error_count = int(norm_summary.get("errorCount") or 0)
+        if error_count:
+            status = "response_invalid"
+        elif normalized_count == 0:
+            status = "response_has_no_facts"
+        else:
+            status = "response_has_facts"
+        rows.append(
+            {
+                "assignmentId": assignment.get("assignmentId"),
+                "readerPassId": assignment.get("readerPassId"),
+                "workPackageId": assignment.get("workPackageId"),
+                "requestId": assignment.get("requestId"),
+                "status": status,
+                "responsePathHint": assignment.get("responsePathHint"),
+                "responsePath": response.get("responsePath"),
+                "factCount": int(norm_summary.get("factCount") or 0),
+                "normalizedFactCount": normalized_count,
+                "normalizationErrorCount": error_count,
+                "normalizationWarningCount": int(norm_summary.get("warningCount") or 0),
+                "normalizationFindings": normalization.get("findings") or [],
+            }
+        )
+    status_counts = Counter(str(row.get("status") or "unknown") for row in rows)
+    return {
+        "format": "sourceAiVisualTraceReaderAssignmentProgress_v1",
+        "ok": status_counts.get("waiting_for_reader", 0) == 0
+        and status_counts.get("response_invalid", 0) == 0,
+        "source": raw_responses.get("source"),
+        "summary": {
+            "assignmentCount": len(rows),
+            "waitingAssignmentCount": status_counts.get("waiting_for_reader", 0),
+            "invalidResponseAssignmentCount": status_counts.get("response_invalid", 0),
+            "noFactResponseAssignmentCount": status_counts.get("response_has_no_facts", 0),
+            "assignmentWithFactsCount": status_counts.get("response_has_facts", 0),
+            "statusCounts": dict(sorted(status_counts.items())),
+        },
+        "rows": rows,
+    }
+
+
+def _response_for_assignment(
+    assignment: dict[str, Any],
+    responses: list[dict[str, Any]],
+    *,
+    assignment_group_counts: Counter[tuple[str, str]],
+) -> dict[str, Any] | None:
+    request_id = str(assignment.get("requestId") or "")
+    package_id = str(assignment.get("workPackageId") or "")
+    reader_pass_id = str(assignment.get("readerPassId") or "reader-pass-01")
+    for response in responses:
+        if (
+            str(response.get("requestId") or "") == request_id
+            and str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "") == package_id
+            and str(response.get("readerPassId") or reader_pass_id) == reader_pass_id
+        ):
+            return response
+    for response in responses:
+        if (
+            str(response.get("requestId") or "") == request_id
+            and str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "") == package_id
+            and not response.get("readerPassId")
+            and reader_pass_id == "reader-pass-01"
+        ):
+            return response
+    if assignment_group_counts[(package_id, reader_pass_id)] == 1:
+        for response in responses:
+            response_package = str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "")
+            response_pass = str(response.get("readerPassId") or reader_pass_id)
+            if response_package == package_id and response_pass == reader_pass_id:
+                return response
+    return None
 
 
 def _build_reader_response_index(
@@ -1577,11 +1708,18 @@ def _build_run_summary(
     raw_responses: dict[str, Any] | None = None,
     agent_requests: dict[str, Any] | None = None,
     reader_pass_manifest: dict[str, Any] | None = None,
+    reader_assignment_progress: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     package_state = str(acceptance.get("packageState") or "source_understanding_blocked")
     reader_assignment_summary = (
         reader_pass_manifest.get("summary")
         if isinstance(reader_pass_manifest, dict) and isinstance(reader_pass_manifest.get("summary"), dict)
+        else {}
+    )
+    reader_progress_summary = (
+        reader_assignment_progress.get("summary")
+        if isinstance(reader_assignment_progress, dict)
+        and isinstance(reader_assignment_progress.get("summary"), dict)
         else {}
     )
     return {
@@ -1600,7 +1738,13 @@ def _build_run_summary(
                 or len((agent_requests or {}).get("requests") or [])
             ),
             "readerAssignmentCount": reader_assignment_summary.get("assignmentCount", 0),
-            "openReaderAssignmentCount": reader_assignment_summary.get("waitingAssignmentCount", 0),
+            "openReaderAssignmentCount": reader_progress_summary.get(
+                "waitingAssignmentCount",
+                reader_assignment_summary.get("waitingAssignmentCount", 0),
+            ),
+            "invalidReaderAssignmentCount": reader_progress_summary.get("invalidResponseAssignmentCount", 0),
+            "noFactReaderAssignmentCount": reader_progress_summary.get("noFactResponseAssignmentCount", 0),
+            "readerAssignmentWithFactsCount": reader_progress_summary.get("assignmentWithFactsCount", 0),
             "readerResponseCount": (raw_responses or {}).get("responseCount", 0),
             "acceptedWorkPackageCount": (loop.get("summary") or {}).get("acceptedPackageCount", 0),
             "normalizedFactCount": (normalized.get("summary") or {}).get("normalizedFactCount", 0),
@@ -1978,8 +2122,15 @@ def _safe_prompt_stem(value: str) -> str:
 def _reader_dispatch_markdown(
     run_summary: dict[str, Any],
     reader_pass_manifest: dict[str, Any],
+    reader_assignment_progress: dict[str, Any] | None = None,
 ) -> str:
     summary = reader_pass_manifest.get("summary") or {}
+    progress_summary = (
+        reader_assignment_progress.get("summary")
+        if isinstance(reader_assignment_progress, dict)
+        and isinstance(reader_assignment_progress.get("summary"), dict)
+        else {}
+    )
     policy = reader_pass_manifest.get("readerPassPolicy") or {}
     assignments = [
         row
@@ -2007,7 +2158,9 @@ def _reader_dispatch_markdown(
         "",
         f"- Base request chunks: {summary.get('baseRequestCount', 0)}",
         f"- Reader assignments: {summary.get('assignmentCount', 0)}",
-        f"- Open assignments: {summary.get('waitingAssignmentCount', 0)}",
+        f"- Open assignments: {progress_summary.get('waitingAssignmentCount', summary.get('waitingAssignmentCount', 0))}",
+        f"- Invalid responses: {progress_summary.get('invalidResponseAssignmentCount', 0)}",
+        f"- Responses with no facts: {progress_summary.get('noFactResponseAssignmentCount', 0)}",
         f"- Critical work packages needing consensus: {summary.get('criticalWorkPackageCount', 0)}",
         f"- Minimum independent readers for critical facts: {policy.get('minimumIndependentReadersForCriticalFacts', 2)}",
         "",
