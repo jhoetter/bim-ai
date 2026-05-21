@@ -154,13 +154,32 @@ def _candidate_elements(
         if expected_element_id and str(element.get("id") or "") == expected_element_id:
             candidates.append(element)
             continue
-        source_ids = element.get("sourceFactIds") or element.get("sourceFacts") or []
+        source_ids = _element_source_fact_ids(element)
         if source_fact_id and isinstance(source_ids, list) and source_fact_id in {str(item) for item in source_ids}:
             candidates.append(element)
+            continue
+        if source_fact_id:
             continue
         if expected_kind and str(element.get("kind") or element.get("category") or "") == expected_kind:
             candidates.append(element)
     return candidates
+
+
+def _element_source_fact_ids(element: dict[str, Any]) -> list[str]:
+    explicit = element.get("sourceFactIds") or element.get("sourceFacts") or []
+    out = [str(item) for item in explicit if item] if isinstance(explicit, list) else []
+    raw = element.get("raw") if isinstance(element.get("raw"), dict) else {}
+    agent_trace = (
+        element.get("agentTrace")
+        if isinstance(element.get("agentTrace"), dict)
+        else raw.get("agentTrace") if isinstance(raw.get("agentTrace"), dict) else {}
+    )
+    for key in agent_trace.get("assumptionKeys") or []:
+        text = str(key)
+        for prefix in ("sourceFact:", "sourceFactId:", "fact:", "factId:"):
+            if text.startswith(prefix):
+                out.append(text.removeprefix(prefix))
+    return sorted(set(out))
 
 
 def _element_count_status(expected: dict[str, Any], actual_count: int) -> tuple[str, list[str]]:

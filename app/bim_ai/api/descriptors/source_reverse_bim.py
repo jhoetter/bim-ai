@@ -418,6 +418,13 @@ for _reverse_tool in (
         "notes": "Reports the current state of a hybrid modeling slice: source-blocked, MCP-ready, readback-blocked, source-revision-required, QA-blocked, visual-blocked, or accepted.",
     },
     {
+        "name": "reverse_bim.hybrid_slice_execute",
+        "title": "HybridReverseBimSliceExecuteInput",
+        "path": "/api/v3/models/{model_id}/reverse-bim/hybrid-slice-execute",
+        "cli": "bim-ai reverse-bim hybrid-slice-execute --model-id <id> --bundle bundle.json --phase phase.json",
+        "notes": "Executes one live reverse-BIM slice through model.dry_run/model.commit_bundle, then queries readback, Advisor, constructability, integrity, source-spec revision, and phase/slice gates.",
+    },
+    {
         "name": "reverse_bim.hybrid_run",
         "title": "HybridReverseBimRunInput",
         "path": "/api/v3/reverse-bim/hybrid-run",

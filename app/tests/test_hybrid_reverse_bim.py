@@ -65,6 +65,36 @@ def test_readback_comparison_blocks_missing_or_mismatched_elements() -> None:
     assert report["rows"][0]["status"] in {"missing", "mismatched"}
 
 
+def test_readback_comparison_requires_source_fact_reference_for_source_expectation() -> None:
+    report = build_reverse_bim_readback_comparison(
+        expected_readback=[_expectation()],
+        elements=[
+            {
+                "id": "generic-wall",
+                "kind": "wall",
+                "levelId": "EG",
+                "thicknessMm": 240,
+            }
+        ],
+    )
+    traced_report = build_reverse_bim_readback_comparison(
+        expected_readback=[_expectation()],
+        elements=[
+            {
+                "id": "traced-wall",
+                "kind": "wall",
+                "levelId": "EG",
+                "thicknessMm": 240,
+                "raw": {"agentTrace": {"assumptionKeys": ["sourceFact:wall-1"]}},
+            }
+        ],
+    )
+
+    assert report["ok"] is False
+    assert report["rows"][0]["status"] == "missing"
+    assert traced_report["ok"] is True
+
+
 def test_source_spec_revision_reopens_facts_when_model_disproves_source_spec() -> None:
     readback = build_reverse_bim_readback_comparison(
         expected_readback=[_expectation()],
