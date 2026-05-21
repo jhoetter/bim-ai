@@ -1,5 +1,11 @@
 # bim-ai — Claude Code instructions
 
+## CI-parity checks
+
+Before pushing, follow the relevant checklist in `AGENTS.md`. It records the
+exact CI commands and pinned tool versions, including Node 20 + `pnpm@9.15.4`
+for JavaScript/governance and Python 3.12 + `uv` for backend checks.
+
 ## Formatting
 
 Prettier runs automatically after every Edit/Write via the Claude Code PostToolUse hook — no manual `pnpm format` needed.
