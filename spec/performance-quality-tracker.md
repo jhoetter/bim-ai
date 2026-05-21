@@ -674,8 +674,8 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-L01` | P0 | `Not started` | Make command pending state explicit. | UI clearly shows when a command is pending authoritative commit without blocking visual feedback. |
-| `PERF-L02` | P0 | `Partial` | Optimistic hosted openings. | Door/window/opening placement can materialize an optimistic element, but undo/action-stack state still waits for backend response. |
+| `PERF-L01` | P0 | `Done` | Make command pending state explicit. | UI clearly shows saving state and a pending command count beside the undo stack while authoritative commit/undo/redo is in flight. |
+| `PERF-L02` | P0 | `Partial` | Optimistic hosted openings. | Door/window/opening placement can materialize an optimistic element, and pending state is visible; undo/action-stack authority still waits for backend response. |
 | `PERF-L03` | P1 | `Not started` | Make undo/redo stack latency visible and bounded. | Undo depth updates within target budget or shows pending commit state. |
 | `PERF-L04` | P1 | `Not started` | Avoid cascading spinners after every command. | Projection/schedule refreshes should not reset whole panels unless data actually changes or is stale. |
 | `PERF-L05` | P2 | `Not started` | Add user-facing degraded-mode warnings. | Large models can surface reduced rendering/detail modes when budgets are exceeded. |
@@ -712,8 +712,8 @@ once medium and large fixtures exist.
 1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
    memoization inside evidence package after the schedule-heavy CI budget.
 2. `PERF-H01`: add browser-side pointermove budget measurement for PlanCanvas.
-3. `PERF-L01` and `PERF-L02`: make command pending/optimistic state explicit so
-   undo/redo latency is visible instead of feeling like the UI missed the action.
+3. `PERF-L02`: decide whether pending optimistic hosted openings should reserve
+   undo-stack entries before authoritative backend acceptance.
 4. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
 5. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
 6. Expand the benchmark fixture set with a larger documentation-heavy model and
