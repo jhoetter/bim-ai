@@ -208,8 +208,17 @@ def test_acceptance_evidence_routes() -> None:
             },
         },
     )
+    execute_resp = client.post(
+        "/api/v3/reverse-bim/view-capture-execute",
+        json={
+            "planPath": "tmp/evidence/view-capture-plan.json",
+            "outputDir": "tmp/evidence",
+        },
+    )
 
     assert alias_resp.status_code == 200
     assert alias_resp.json()["summary"]["accepted"] is True
     assert capture_resp.status_code == 200
     assert capture_resp.json()["format"] == "reverseBimViewCapturePlan_v1"
+    assert execute_resp.status_code == 200
+    assert execute_resp.json()["format"] == "reverseBimViewCaptureExecutionRequest_v1"

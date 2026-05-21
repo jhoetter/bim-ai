@@ -2356,6 +2356,83 @@ async def reverse_bim_view_capture_plan_route(
     )
 
 
+@api_router.post("/v3/reverse-bim/view-capture-execute")
+async def reverse_bim_view_capture_execute_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    plan = body.get("viewCapturePlan") or body.get("view_capture_plan") or body.get("plan")
+    plan_path = body.get("planPath") or body.get("plan_path")
+    output_dir = body.get("outputDir") or body.get("output_dir")
+    timeout_ms = int(body.get("timeoutMs") or body.get("timeout_ms") or 30000)
+    blockers = []
+    if not plan_path and not isinstance(plan, dict):
+        blockers.append(
+            {
+                "code": "capture_plan_missing",
+                "message": "Provide planPath or an inline reverseBimViewCapturePlan_v1.",
+            }
+        )
+    if isinstance(plan, dict) and plan.get("format") != "reverseBimViewCapturePlan_v1":
+        blockers.append(
+            {
+                "code": "capture_plan_format_invalid",
+                "message": "Expected reverseBimViewCapturePlan_v1.",
+            }
+        )
+    captures = plan.get("captures") if isinstance(plan, dict) else []
+    capture_count = len(captures) if isinstance(captures, list) else 0
+    plan_arg = str(plan_path or "{write-inline-plan-to-json-first}")
+    command = [
+        "pnpm",
+        "--filter",
+        "@bim-ai/web",
+        "reverse-bim:capture",
+        "--",
+        "--plan",
+        plan_arg,
+        "--timeout-ms",
+        str(timeout_ms),
+    ]
+    if output_dir:
+        command.extend(["--out", str(output_dir)])
+    command.append("--json")
+    return {
+        "ok": not blockers,
+        "format": "reverseBimViewCaptureExecutionRequest_v1",
+        "summary": {
+            "captureCount": capture_count,
+            "blockerCount": len(blockers),
+            "requiresBrowser": True,
+            "mutatesModel": False,
+        },
+        "blockers": blockers,
+        "command": command,
+        "scriptPath": "packages/web/scripts/reverse-bim-view-capture-runner.mjs",
+        "expectedManifest": (
+            f"{str(output_dir).rstrip('/')}/reverse-bim-view-capture-manifest.json"
+            if output_dir
+            else "{runner-output-dir}/reverse-bim-view-capture-manifest.json"
+        ),
+        "runnerContract": {
+            "inputFormat": "reverseBimViewCapturePlan_v1",
+            "outputFormat": "reverseBimViewCaptureRun_v1",
+            "feeds": {
+                "uiEvidenceRows": "reverse_bim.ui_evidence.screenshots",
+                "overlayEvidenceRows": "reverse_bim.source_overlay_evidence.overlayResults",
+            },
+            "reviewRequiredBeforeAcceptance": [
+                "UI visual checklist rows must be reviewed from screenshots.",
+                "Overlay rows need numeric source/model deviation metrics before pass.",
+            ],
+        },
+        "nextStep": (
+            "Run the command, then feed the generated manifest rows into UI/source-overlay evidence after review."
+            if not blockers
+            else "Provide a valid capture plan before running browser evidence."
+        ),
+    }
+
+
 @api_router.post("/v3/reverse-bim/level-completeness")
 async def reverse_bim_level_completeness_route(
     body: dict[str, Any] = Body(default_factory=dict),

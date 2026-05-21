@@ -481,6 +481,13 @@ for _reverse_tool in (
         "notes": "Creates a deterministic browser/Playwright screenshot work order for source-equivalent plan/elevation/section/site/3D views before UI and overlay evidence gates run.",
     },
     {
+        "name": "reverse_bim.view_capture_execute",
+        "title": "ReverseBimViewCaptureExecuteInput",
+        "path": "/api/v3/reverse-bim/view-capture-execute",
+        "cli": "pnpm --filter @bim-ai/web reverse-bim:capture -- --plan view-capture-plan.json --out folder-output/evidence/reverse-bim --json",
+        "notes": "Returns the deterministic Chromium runner command for a reverseBimViewCapturePlan_v1. The runner writes PNG screenshots and emits a manifest whose UI checklist and overlay metrics remain pending until AI review/measurement.",
+    },
+    {
         "name": "reverse_bim.level_completeness",
         "title": "ReverseBimLevelCompletenessInput",
         "path": "/api/v3/reverse-bim/level-completeness",
