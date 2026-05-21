@@ -22,6 +22,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.engine import try_commit
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.routes_api import build_evidence_package_payload
@@ -34,6 +35,7 @@ BUDGETS_MS: dict[str, float] = {
     "small.evaluate": 500.0,
     "small.room_derivation": 250.0,
     "small.plan_projection": 250.0,
+    "small.insert_window_commit": 150.0,
     "small.evidence_package": 1_500.0,
     "schedule_heavy.room_schedule": 500.0,
     "schedule_heavy.door_schedule": 250.0,
@@ -368,6 +370,21 @@ def run_budgets() -> dict[str, Any]:
                 plan_view_id="small-plan",
                 fallback_level_id="small-level",
                 global_plan_presentation="default",
+            ),
+        ),
+        _measure(
+            "small.insert_window_commit",
+            lambda: try_commit(
+                small,
+                {
+                    "type": "insertWindowOnWall",
+                    "id": "perf-window-east",
+                    "wallId": "small-wall-east",
+                    "alongT": 0.5,
+                    "widthMm": 1_200,
+                    "sillHeightMm": 900,
+                    "heightMm": 1_300,
+                },
             ),
         ),
         _measure(
