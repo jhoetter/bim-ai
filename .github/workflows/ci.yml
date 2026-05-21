@@ -90,6 +90,9 @@ jobs:
 
       - run: pnpm verify:strict
 
+      - name: Web bundle budgets
+        run: pnpm --silent bundle:budgets
+
       - run: cd packages/web && pnpm exec playwright install chromium --with-deps
 
       - run: cd packages/web && pnpm run test:e2e:ci

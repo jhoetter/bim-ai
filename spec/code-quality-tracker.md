@@ -180,7 +180,6 @@ Largest current source files observed:
 | File                                                        | Approx LOC | Concern                                                                                                                              |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `app/bim_ai/routes_api.py`                                  | 3,827      | API route aggregator after extracted query/resolve/QA and presentation routes.                                                       |
-| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,819      | Family editor state shell after extracted workbench and properties panel modules.                                                    |
 | `packages/web/src/workspace/WorkspaceRightRail.tsx`         | 3,804      | Workspace side rail remains large but below the current cap.                                                                         |
 | `packages/web/src/Viewport.tsx`                             | 3,793      | 3D viewport orchestrator after extracted view-cube, overlay/work-plane, command-handler, camera-orientation, and scene-effect hooks. |
 | `packages/web/src/tools/toolGrammar.ts`                     | 3,786      | Tool grammar reducer module after prior reducer-group extraction.                                                                    |
@@ -195,6 +194,7 @@ Largest current source files observed:
 | `packages/web/src/workspace/project/ProjectBrowser.tsx`     | 3,545      | Project browser shell after extracted family rows and section/context-menu primitives.                                               |
 | `app/bim_ai/commands.py`                                    | 3,509      | Command schema aggregator after extracted site, output, and MEP command families.                                                    |
 | `packages/core/src/index.ts`                                | 3,387      | Public barrel after extracted resource and late model-contract modules.                                                              |
+| `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`   | 3,341      | Family editor state shell after extracted defaults, workbench, and properties panel modules.                                         |
 | `packages/web/src/workspace/Workspace.tsx`                  | 3,327      | Shell/workflow orchestrator after extracted project/comment/loading/view/palette/composition and semantic-command hooks.             |
 | `app/bim_ai/api/registry.py`                                | 3,268      | Central API descriptor registry after extracted descriptor modules.                                                                  |
 
@@ -692,6 +692,10 @@ impact of small changes.
 - 2026-05-21: the next InspectorContent extraction moved the view-template
   property editor into `workspace/inspector/viewTemplateInspectorEditor.tsx`.
   `InspectorContent.tsx` is now `3,679` scorecard-counted lines.
+- 2026-05-21: the next FamilyEditorWorkbench extraction moved default family
+  fixtures, draft defaults, and pure family editor helpers into
+  `familyEditor/familyEditorWorkbenchDefaults.ts`. `FamilyEditorWorkbench.tsx`
+  is now `3,341` scorecard-counted lines.
 - 2026-05-20: the CLI extraction moved sketch phase apply/run, evidence
   collection, initiation-run packaging, bundle application, and JSON artifact
   helpers into `packages/cli/lib/sketch-phase-workflows.mjs`, bringing
