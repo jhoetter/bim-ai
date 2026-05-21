@@ -531,10 +531,10 @@ Relevant files:
 | `PERF-M0` Baseline and tracker | `Done` | This tracker exists with measured baselines, grades, and backlog items. |
 | `PERF-M1` Interactive authoring under 150 ms server p50 | `Partial` | Common commands return in under 150 ms p50 and under 300 ms p95 on standard model fixtures. |
 | `PERF-M2` Evidence package under 1 s small-model p50 | `Done` | Current seed and the synthetic small fixture run under the budget; schedule-heavy evidence is covered by the backend budget harness. |
-| `PERF-M3` Snapshot/bootstrap dedupe | `Not started` | Initial load uses one authoritative bootstrap path and avoids duplicate snapshot/evaluation/hydration. |
-| `PERF-M4` Projection/schedule caching | `Not started` | Plan projection and schedule tables use revision-keyed server/client caches with invalidation. |
-| `PERF-M5` Frontend selector/index hardening | `Not started` | Main panes consume derived selectors/indices rather than scanning `elementsById` directly for common views. |
-| `PERF-M6` 3D/2D interaction budgets | `Not started` | Orbit, hover, pan, snap, and placement remain smooth on scale fixtures; render loop is demand-driven when idle. |
+| `PERF-M3` Snapshot/bootstrap dedupe | `Done` | Initial load uses one authoritative bootstrap path and avoids duplicate snapshot/evaluation/hydration. |
+| `PERF-M4` Projection/schedule caching | `Partial` | Plan projection and schedule tables use revision-keyed server/client caches with invalidation. |
+| `PERF-M5` Frontend selector/index hardening | `Partial` | Main panes consume derived selectors/indices rather than scanning `elementsById` directly for common views. |
+| `PERF-M6` 3D/2D interaction budgets | `Partial` | Orbit, hover, pan, snap, and placement remain smooth on scale fixtures; render loop is demand-driven when idle. |
 | `PERF-M7` Bundle budget | `Partial` | Entry chunk is below budget and non-default routes are split; the workspace route still needs deeper heavy-panel splitting. |
 | `PERF-M8` CI performance gates | `Partial` | Backend compute/evidence budgets and web bundle budgets run in CI; browser interaction budgets are still missing. |
 
@@ -598,7 +598,7 @@ Relevant files:
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-E01` | P0 | `Partial` | Bypass Vite websocket proxy for app websocket in dev. | Dev websocket connects directly to API port and benign proxy errors are quieted. |
 | `PERF-E02` | P0 | `Done` | Prevent backend traceback on initial websocket send disconnect. | Initial websocket bootstrap send is inside disconnect handling and unregisters cleanly. |
-| `PERF-E03` | P0 | `Not started` | Remove duplicate REST + websocket snapshot bootstrap. | After REST snapshot load, websocket can connect in delta/resume-only mode without sending another full snapshot. |
+| `PERF-E03` | P0 | `Done` | Remove duplicate REST + websocket snapshot bootstrap. | After REST snapshot load, websocket can connect in delta/resume-only mode without sending another full snapshot. |
 | `PERF-E04` | P1 | `Not started` | Add websocket bootstrap timing telemetry. | Dev logs show snapshot send time, payload bytes, violations time, replay count, and resume status. |
 | `PERF-E05` | P1 | `Not started` | Implement per-socket send tasks/queues. | One slow websocket cannot block broadcast to other clients. |
 | `PERF-E06` | P1 | `Not started` | Add large-delta/presence backpressure policy. | Slow clients receive RESYNC or disconnect based on queue size and age, not just synchronous send failure. |
@@ -608,8 +608,8 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-F01` | P0 | `Not started` | Add server-side plan projection cache by revision and params. | Repeated projection requests for the same revision/plan/presentation return from cache. |
-| `PERF-F02` | P0 | `Not started` | Add client-side projection request dedupe and `AbortController`. | Rapid revision/view changes cancel stale fetches and avoid setting stale projection state. |
+| `PERF-F01` | P0 | `Done` | Add server-side plan projection cache by revision and params. | Repeated projection requests for the same revision/plan/presentation return from cache. |
+| `PERF-F02` | P0 | `Done` | Add client-side projection request dedupe and `AbortController`. | Rapid revision/view changes cancel stale fetches and avoid setting stale projection state. |
 | `PERF-F03` | P1 | `Not started` | Add projection timing metadata in debug mode. | Plan projection response can include optional phase timings and primitive counts. |
 | `PERF-F04` | P1 | `Not started` | Add server-side schedule table cache by revision and schedule id. | Repeated `/schedules/{id}/table` requests for unchanged revision reuse cached derivation. |
 | `PERF-F05` | P1 | `Not started` | Add client schedule table cache. | SchedulePanel and ModeShells share a cache instead of independently refetching the same table. |
@@ -620,8 +620,8 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-G01` | P0 | `Not started` | Inventory direct `elementsById` subscriptions. | Generated report lists components subscribing to full model state and their derived scans. |
-| `PERF-G02` | P0 | `Not started` | Add derived model indices to store/selectors. | Store exposes levels, walls by level, openings by wall, schedules, sheets, project settings, rooms by level, and selectable ids. |
+| `PERF-G01` | P0 | `Done` | Inventory direct `elementsById` subscriptions. | Generated report lists components subscribing to full model state and their derived scans. |
+| `PERF-G02` | P0 | `Done` | Add derived model indices to store/selectors. | Store exposes levels, walls by level, openings by wall, schedules, sheets, project settings, rooms by level, and selectable ids. |
 | `PERF-G03` | P1 | `Not started` | Migrate `Workspace` off broad full-model scans for common derived values. | Workspace uses narrow selectors for levels, sheets, schedules, project settings, saved views, and counts. |
 | `PERF-G04` | P1 | `Not started` | Migrate `PlanCanvas` interaction paths to indices. | Snapping, picking, hover, tags, dimensions, walls, and floors use precomputed indices where possible. |
 | `PERF-G05` | P1 | `Not started` | Migrate `Viewport` placement/conflict paths to indices. | Hosted opening conflict and level/project-settings lookups avoid repeated full scans. |
@@ -643,7 +643,7 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-I01` | P0 | `Partial` | Remove React state updates from every orbit movement. | Camera orientation UI state is deferred/throttled during orbit and flushed on end. |
-| `PERF-I02` | P0 | `Not started` | Convert 3D render loop to demand-driven idle rendering. | Renderer runs continuously during orbit/walk/animation/resize/hover when needed, but sleeps at idle. |
+| `PERF-I02` | P0 | `Done` | Convert 3D render loop to demand-driven idle rendering. | Renderer runs continuously during orbit/walk/animation/resize/hover when needed, but sleeps at idle. |
 | `PERF-I03` | P1 | `Not started` | Add viewport frame-time instrumentation. | Dev overlay/log can report FPS, frame time, draw calls, geometries, textures, and rebuild counts. |
 | `PERF-I04` | P1 | `Not started` | Add geometry rebuild timing. | Mesh rebuild effect reports added/changed/removed ids, dirty ids, rebuild time, and disposal count. |
 | `PERF-I05` | P1 | `Not started` | Add spatial/raycast acceleration for picking if needed. | Raycast cost remains bounded on medium/large fixtures. |
@@ -711,13 +711,13 @@ once medium and large fixtures exist.
 
 1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
    memoization inside evidence package after the schedule-heavy CI budget.
-2. `PERF-E03`: stop double snapshot bootstrapping.
-3. `PERF-F01` and `PERF-F04`: add revision-keyed server caches for plan
-   projection and schedule table derivation.
-4. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
-5. `PERF-G01` and `PERF-G02`: generate an `elementsById` subscription/scan
-   report and introduce derived indices.
-6. `PERF-I02`: make 3D rendering demand-driven when idle.
+2. `PERF-C04`: add a request-scoped room-boundary cache for routes that still
+   compose multiple derivation consumers.
+3. `PERF-H01`: add browser-side pointermove budget measurement for PlanCanvas.
+4. `PERF-L01` and `PERF-L02`: make command pending/optimistic state explicit so
+   undo/redo latency is visible instead of feeling like the UI missed the action.
+5. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
+6. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
 7. Expand the benchmark fixture set with a larger documentation-heavy model and
    trend artifacts.
 
