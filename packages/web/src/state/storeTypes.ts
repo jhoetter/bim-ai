@@ -14,6 +14,7 @@ import type { FamilyDefinition } from '../families/types';
 import type { WallLocationLine } from '../tools/toolGrammar';
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type { GroupRegistry } from '../groups/groupTypes';
+import type { ModelIndices } from './modelIndices';
 import type {
   PlanProjectionPrimitivesV1Wire,
   PlanCategoryGraphicHintsV0Wire,
@@ -245,6 +246,7 @@ export type StoreState = {
   modelId?: string;
   revision: number;
   elementsById: Record<string, Element>;
+  modelIndices: ModelIndices;
   violations: Violation[];
   selectedId?: string;
   /** F-100: additional IDs in the multi-select set (Ctrl+Click). Does not replace `selectedId`. */

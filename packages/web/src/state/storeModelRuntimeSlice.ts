@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 
 import type { Element, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
 
+import { buildModelIndices, EMPTY_MODEL_INDICES } from './modelIndices';
 import type { StoreState } from './storeTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
@@ -17,6 +18,7 @@ export type ModelRuntimeSlice = Pick<
   StoreState,
   | 'revision'
   | 'elementsById'
+  | 'modelIndices'
   | 'violations'
   | 'selectedIds'
   | 'planProjectionPrimitives'
@@ -43,6 +45,7 @@ export function createModelRuntimeSlice(
   return {
     revision: 0,
     elementsById: {},
+    modelIndices: EMPTY_MODEL_INDICES,
     violations: [],
     selectedIds: [],
     planProjectionPrimitives: null,
@@ -67,6 +70,7 @@ export function createModelRuntimeSlice(
         modelId: snap.modelId,
         revision: snap.revision,
         elementsById: elements,
+        modelIndices: buildModelIndices(elements),
         violations: (snap.violations ?? []).map(coerceViolation),
         activeLevelId:
           curLevel && elements[curLevel]?.kind === 'level' ? curLevel : defaultLevelId(elements),
@@ -108,6 +112,7 @@ export function createModelRuntimeSlice(
       set({
         revision: d.revision,
         elementsById: merged,
+        modelIndices: buildModelIndices(merged),
         violations: (d.violations ?? []).map(coerceViolation),
         planProjectionPrimitives: null,
         planRoomSchemeWireReadout: null,
@@ -160,7 +165,7 @@ export function createModelRuntimeSlice(
             next[(el as { id: string }).id] = el as Element;
           }
         }
-        return { elementsById: next };
+        return { elementsById: next, modelIndices: buildModelIndices(next) };
       }),
 
     importFamilyDefinitions: (defs) =>

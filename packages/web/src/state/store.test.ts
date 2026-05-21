@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useBimStore } from './store';
+import { EMPTY_MODEL_INDICES } from './modelIndices';
 
 // Reset store to initial revision=0 / empty before each test
 beforeEach(() => {
   useBimStore.setState({
     revision: 0,
     elementsById: {},
+    modelIndices: EMPTY_MODEL_INDICES,
     violations: [],
     activeLevelId: undefined,
     activePlanViewId: undefined,
@@ -24,6 +26,33 @@ describe('hydrateFromSnapshot', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({ modelId: 'm1', revision: 42, elements: {}, violations: [] });
     expect(useBimStore.getState().revision).toBe(42);
+  });
+
+  it('builds derived model indices', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      violations: [],
+      elements: {
+        lvl: { kind: 'level', id: 'lvl', name: 'L1', elevationMm: 0 },
+        wall: {
+          kind: 'wall',
+          id: 'wall',
+          name: 'Wall',
+          levelId: 'lvl',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      },
+    });
+
+    expect(useBimStore.getState().modelIndices.levels.map((level) => level.id)).toEqual(['lvl']);
+    expect(useBimStore.getState().modelIndices.wallsByLevel.lvl?.map((wall) => wall.id)).toEqual([
+      'wall',
+    ]);
   });
 
   it('sets modelId from snapshot', () => {
