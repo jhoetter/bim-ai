@@ -208,6 +208,10 @@ from bim_ai.semantic_authoring import (
     UnsupportedSemanticOperationError,
     build_semantic_authoring_bundle,
 )
+from bim_ai.source_coordinate_frames import (
+    apply_coordinate_frame_alignments,
+    build_coordinate_frame_alignment_worklist,
+)
 from bim_ai.routes_activity import activity_router
 from bim_ai.routes_catalogs import catalogs_router
 from bim_ai.routes_commands import commands_router
@@ -1728,6 +1732,39 @@ async def reverse_bim_source_level_completeness_route(
 ) -> dict[str, Any]:
     return build_source_level_completeness_report(
         body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
+    )
+
+
+@api_router.post("/v3/reverse-bim/coordinate-frame-worklist")
+async def reverse_bim_coordinate_frame_worklist_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    coordinate_frames = (
+        body.get("coordinateFrames")
+        or body.get("coordinate_frames")
+        or body.get("frames")
+        or {}
+    )
+    return build_coordinate_frame_alignment_worklist(
+        coordinate_frames,
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/coordinate-frame-alignment")
+async def reverse_bim_coordinate_frame_alignment_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    coordinate_frames = (
+        body.get("coordinateFrames")
+        or body.get("coordinate_frames")
+        or body.get("frames")
+        or {}
+    )
+    return apply_coordinate_frame_alignments(
+        coordinate_frames,
+        body.get("alignments") or body.get("coordinateFrameAlignments"),
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
     )
 
 

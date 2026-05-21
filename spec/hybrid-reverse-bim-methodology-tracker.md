@@ -128,7 +128,7 @@ This is the non-negotiable front gate. It is not full modeling. It answers:
 | GPF-006 | Normalize AI-reader responses into strict source facts. | `source.normalize_ai_visual_trace_reader_responses`, `source.validate_ai_facts` | Partial | Enforce fact schemas by phase and reject prose-only source understanding. |
 | GPF-007 | Require reader consensus for critical facts. | `source.reader_consensus` | Partial | Define critical fact classes and minimum reader count by phase. |
 | GPF-008 | Resolve target building scope and target/context mask. | `reverse_bim.source_building_scope` | Partial | Add stronger mask geometry contract and UI/source overlay evidence for target scope. |
-| GPF-009 | Establish page-to-model coordinate frames. | Underlay transforms exist; `coordinate-frame-worklist` exists in folder output. | Partial | Implement first-class source coordinate frame resource and alignment validation. |
+| GPF-009 | Establish page-to-model coordinate frames. | `reverse_bim.coordinate_frame_worklist`, `reverse_bim.coordinate_frame_alignment`, and folder-output coordinate-frame artifacts. | Partial | Add UI/source overlay assistance for selecting control points and residual-error visualization. |
 | GPF-010 | Establish levels/storeys before modeling. | `author.level`, `query.levels`, `reverse_bim.source_level_completeness` | Partial | Add global level consensus from plans, sections, elevations, and schedules. |
 | GPF-011 | Produce a trusted source specification. | `reverse_bim.folder_output`, ExistingBuildingIR seed/validate | Partial | Expand IR schema for all modelable object types and conflict decisions. |
 | GPF-012 | Block modeling if required source facts are incomplete. | `source.validate_ai_visual_trace_completeness`, `reverse_bim.mcp_readiness` | Partial | Make the hybrid runner enforce this before any live authoring. |
@@ -454,7 +454,7 @@ The Leo showcase is successful only if:
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
 | W2-001 | Strengthen source fact schemas by object type. | Partial | Invalid/missing wall, opening, stair, roof, terrain, parcel facts fail before modeling. |
-| W2-002 | Add coordinate-frame resource and alignment report. | Partial | Every source page used for geometry has scale, origin, rotation, and level/site binding. |
+| W2-002 | Add coordinate-frame resource and alignment report. | Partial | First-class API surfaces exist; still need UI-assisted control-point picking and overlay residual visualization. |
 | W2-003 | Add critical reader consensus policy. | Partial | Critical facts require independent agreement or explicit conflict disposition. |
 | W2-004 | Add document authority/supersession report. | Done | `reverse_bim.document_authority` ranks document groups, marks superseded/duplicate documents, and blocks unresolved critical authority ties. |
 
@@ -506,9 +506,9 @@ source-spec revision classification/ledgering, hybrid slice/run state reporting,
 single-slice live execution, runtime skill guidance, view-capture work orders,
 and acceptance validation.
 Missing critical glue: full multi-slice hybrid executor, persisted source-spec
-revision ledger storage, source-coordinate alignment resource, actual browser
-screenshot execution, automatic overlays, MCP handoff regeneration, and Leo
-fresh-run evidence.
+revision ledger storage, UI-assisted coordinate control-point picking, actual
+browser screenshot execution, automatic overlays, MCP handoff regeneration, and
+Leo fresh-run evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

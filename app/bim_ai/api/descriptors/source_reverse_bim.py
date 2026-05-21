@@ -362,6 +362,20 @@ for _reverse_tool in (
         "notes": "Checks that every source-required level/storey has physical wall, floor, room, opening, or stair facts before MCP authoring.",
     },
     {
+        "name": "reverse_bim.coordinate_frame_worklist",
+        "title": "ReverseBimCoordinateFrameWorklistInput",
+        "path": "/api/v3/reverse-bim/coordinate-frame-worklist",
+        "cli": "bim-ai reverse-bim coordinate-frame-worklist --coordinate-frames coordinate-frames.json --facts facts.json",
+        "notes": "Lists page-to-model coordinate frames that must be aligned before geometry facts from plans, sections, elevations, or site documents can drive authoring.",
+    },
+    {
+        "name": "reverse_bim.coordinate_frame_alignment",
+        "title": "ReverseBimCoordinateFrameAlignmentInput",
+        "path": "/api/v3/reverse-bim/coordinate-frame-alignment",
+        "cli": "bim-ai reverse-bim coordinate-frame-alignment --coordinate-frames coordinate-frames.json --alignments alignments.json",
+        "notes": "Applies accepted source-page coordinate-frame alignments and reports remaining blocking missing/invalid frame alignments.",
+    },
+    {
         "name": "reverse_bim.document_authority",
         "title": "ReverseBimDocumentAuthorityInput",
         "path": "/api/v3/reverse-bim/document-authority",

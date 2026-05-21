@@ -1261,6 +1261,8 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.source_material_assemblies",
         "reverse_bim.source_building_scope",
         "reverse_bim.source_level_completeness",
+        "reverse_bim.coordinate_frame_worklist",
+        "reverse_bim.coordinate_frame_alignment",
         "reverse_bim.document_authority",
         "reverse_bim.folder_output",
         "reverse_bim.phase_packet",

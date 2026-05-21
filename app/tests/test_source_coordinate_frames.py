@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from bim_ai.routes_api import api_router
 from bim_ai.source_coordinate_frames import (
     apply_coordinate_frame_alignments,
     build_coordinate_frame_alignment_worklist,
@@ -128,3 +132,52 @@ def test_coordinate_frame_alignment_blocks_only_referenced_geometry_pages() -> N
         {"coordinateFrameId": "frame-site-1", "status": "missing_alignment"},
         {"coordinateFrameId": "frame-site-2", "status": "not_required"},
     ]
+
+
+def test_coordinate_frame_routes() -> None:
+    app = FastAPI()
+    app.include_router(api_router)
+    client = TestClient(app)
+    frames = {
+        "coordinateFrames": [
+            {
+                "coordinateFrameId": "frame-eg",
+                "classification": "floor_plan",
+                "status": "candidate_needs_alignment",
+            }
+        ]
+    }
+
+    worklist = client.post(
+        "/api/v3/reverse-bim/coordinate-frame-worklist",
+        json={"coordinateFrames": frames},
+    )
+    alignment = client.post(
+        "/api/v3/reverse-bim/coordinate-frame-alignment",
+        json={
+            "coordinateFrames": frames,
+            "alignments": [
+                {
+                    "coordinateFrameId": "frame-eg",
+                    "scale": "1:100",
+                    "originPx": {"xPx": 0, "yPx": 0},
+                    "rotationDeg": 0,
+                    "modelOriginMm": {"xMm": 0, "yMm": 0},
+                    "controlPoints": [
+                        {"sourcePx": {"xPx": 0, "yPx": 0}, "modelMm": {"xMm": 0, "yMm": 0}},
+                        {
+                            "sourcePx": {"xPx": 100, "yPx": 0},
+                            "modelMm": {"xMm": 10000, "yMm": 0},
+                        },
+                    ],
+                    "residualErrorMm": 0,
+                    "acceptedBy": "test",
+                }
+            ],
+        },
+    )
+
+    assert worklist.status_code == 200
+    assert worklist.json()["summary"]["blockedAlignmentCount"] == 1
+    assert alignment.status_code == 200
+    assert alignment.json()["accepted"] is True

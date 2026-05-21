@@ -171,6 +171,8 @@ Use reverse-BIM handoff/gates:
 
 - `reverse_bim.folder_output`
 - `reverse_bim.document_authority`
+- `reverse_bim.coordinate_frame_worklist`
+- `reverse_bim.coordinate_frame_alignment`
 - `reverse_bim.mcp_readiness`
 - `reverse_bim.readback_compare`
 - `reverse_bim.source_spec_revision`
