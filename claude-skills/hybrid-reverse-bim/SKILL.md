@@ -53,6 +53,8 @@ enough to avoid modeling the wrong building.
    assignments and `reverse_bim.reader_dispatch_execute` to write response JSON
    files under `ai-reading/responses/**`. Missing-input assignments are not
    dispatched; they require source packaging repair.
+   The optional command `app/scripts/reverse_bim_openai_reader.py` can be used
+   as a reader command when `OPENAI_API_KEY` and `OPENAI_READER_MODEL` are set.
 7. Collect AI-reader responses as structured source facts.
 8. Normalize and validate facts.
 9. Run reader consensus for critical facts.
