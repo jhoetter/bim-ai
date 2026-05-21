@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from collections import Counter
+from collections.abc import Mapping
 from typing import Any
 
 SOURCE_BACKED_EXISTING_NONCONFORMANCE_DISPOSITIONS = {
