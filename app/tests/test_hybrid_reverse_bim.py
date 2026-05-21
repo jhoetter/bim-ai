@@ -10,6 +10,7 @@ from bim_ai.hybrid_reverse_bim import (
 )
 from bim_ai.reverse_bim_document_authority import build_reverse_bim_document_authority_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.routes_api import api_router
 
 
@@ -112,6 +113,33 @@ def test_hybrid_slice_requires_source_revision_before_acceptance() -> None:
     assert report["ok"] is False
     assert report["state"] == "source_revision_required"
     assert report["blockers"][0]["code"] == "slice_source_spec_revision_required"
+
+
+def test_source_revision_ledger_reopens_facts_and_names_affected_phase() -> None:
+    ledger = build_reverse_bim_source_revision_ledger(
+        facts=[{"factId": "wall-1", "status": "accepted"}],
+        source_spec_revision={
+            "actions": [
+                {
+                    "findingId": "readback:wall-1",
+                    "classification": "source_fact_misread",
+                    "sourceFactIds": ["wall-1"],
+                    "affectedElementIds": ["model-wall-1"],
+                }
+            ]
+        },
+        phase_authoring_spec={
+            "phases": [
+                {"phaseId": "S2-EG", "sourceFactIds": ["wall-1"]},
+                {"phaseId": "S3-DG", "sourceFactIds": ["wall-2"]},
+            ]
+        },
+    )
+
+    assert ledger["ok"] is False
+    assert ledger["summary"]["reopenedFactCount"] == 1
+    assert ledger["summary"]["affectedPhaseIds"] == ["S2-EG"]
+    assert ledger["factUpdates"][0]["nextStatus"] == "reopened"
 
 
 def test_hybrid_run_blocks_when_source_package_not_handoff_ready() -> None:
@@ -242,6 +270,10 @@ def test_hybrid_reverse_bim_routes() -> None:
         "/api/v3/reverse-bim/source-spec-revision",
         json={"readbackComparison": readback_resp.json(), "facts": []},
     )
+    ledger_resp = client.post(
+        "/api/v3/reverse-bim/source-revision-ledger",
+        json={"sourceSpecRevision": revision_resp.json(), "facts": []},
+    )
     slice_resp = client.post(
         "/api/v3/reverse-bim/hybrid-slice",
         json={
@@ -262,6 +294,8 @@ def test_hybrid_reverse_bim_routes() -> None:
     assert readback_resp.json()["format"] == "reverseBimReadbackComparison_v1"
     assert revision_resp.status_code == 200
     assert revision_resp.json()["format"] == "reverseBimSourceSpecRevisionReport_v1"
+    assert ledger_resp.status_code == 200
+    assert ledger_resp.json()["format"] == "reverseBimSourceRevisionLedger_v1"
     assert slice_resp.status_code == 200
     assert slice_resp.json()["format"] == "hybridReverseBimSliceReport_v1"
     assert run_resp.status_code == 200

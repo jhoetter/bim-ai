@@ -174,6 +174,7 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.mcp_readiness`
 - `reverse_bim.readback_compare`
 - `reverse_bim.source_spec_revision`
+- `reverse_bim.source_revision_ledger`
 - `reverse_bim.hybrid_slice`
 - `reverse_bim.hybrid_run`
 - `reverse_bim.phase_packet`

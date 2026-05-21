@@ -404,6 +404,13 @@ for _reverse_tool in (
         "notes": "Classifies modeling feedback into source fact repair, coordinate-frame repair, model repair, tool gap, or source-backed existing-condition disposition.",
     },
     {
+        "name": "reverse_bim.source_revision_ledger",
+        "title": "ReverseBimSourceRevisionLedgerInput",
+        "path": "/api/v3/reverse-bim/source-revision-ledger",
+        "cli": "bim-ai reverse-bim source-revision-ledger --source-spec-revision source-spec-revision.json --facts facts.json",
+        "notes": "Turns source-spec revision actions into a persistent-style repair ledger with reopened fact updates and affected modeling slices.",
+    },
+    {
         "name": "reverse_bim.hybrid_slice",
         "title": "HybridReverseBimSliceInput",
         "path": "/api/v3/reverse-bim/hybrid-slice",

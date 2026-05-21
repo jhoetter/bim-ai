@@ -182,6 +182,7 @@ from bim_ai.reverse_bim import (
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_building_scope import build_source_building_scope_report
@@ -1825,6 +1826,18 @@ async def reverse_bim_source_spec_revision_route(
         constructability=body.get("constructability"),
         integrity=body.get("integrity") or body.get("integrityPreflight"),
         facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+    )
+
+
+@api_router.post("/v3/reverse-bim/source-revision-ledger")
+async def reverse_bim_source_revision_ledger_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return build_reverse_bim_source_revision_ledger(
+        facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+        source_spec_revision=body.get("sourceSpecRevision") or body.get("source_spec_revision"),
+        existing_ledger=body.get("existingLedger") or body.get("existing_ledger"),
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
     )
 
 
