@@ -15,6 +15,20 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp"}
 PDF_EXTENSIONS = {".pdf"}
 CAD_EXTENSIONS = {".dxf", ".dwg", ".ifc"}
 TEXT_EXTENSIONS = {".txt", ".md", ".csv", ".json", ".xml"}
+SOURCE_UNAVAILABLE_DECISIONS = {
+    "not_in_source",
+    "source_limited",
+    "source_unavailable",
+    "tolerate_unavailable",
+}
+SOURCE_UNAVAILABLE_FACT_KINDS = {
+    "basement",
+    "construction_history",
+    "drainage",
+    "material",
+    "terrain",
+    "volume",
+}
 
 AI_VISUAL_FACT_VALUE_REQUIREMENTS: dict[str, list[str]] = {
     "level": ["name", "elevationMm"],
@@ -764,10 +778,31 @@ def validate_ai_visual_trace_completeness(
         )
         missing = [field for field in required if not _value_path_present(value, field)]
         if missing:
+            source_unavailable = _source_unavailable_disposition_status(kind, fact, value)
+            if source_unavailable["present"] and not source_unavailable["ok"]:
+                findings.append(
+                    {
+                        "code": "ai_visual_fact_source_unavailable_disposition_invalid",
+                        "severity": "error",
+                        "factId": fact.get("factId"),
+                        "kind": kind,
+                        "index": idx,
+                        "missingDispositionFields": source_unavailable["missingFields"],
+                    }
+                )
+            severity = (
+                "warning"
+                if source_unavailable["ok"] and kind in SOURCE_UNAVAILABLE_FACT_KINDS
+                else "error"
+            )
             findings.append(
                 {
-                    "code": "ai_visual_fact_required_value_missing",
-                    "severity": "error",
+                    "code": (
+                        "ai_visual_fact_source_unavailable_disposition"
+                        if severity == "warning"
+                        else "ai_visual_fact_required_value_missing"
+                    ),
+                    "severity": severity,
                     "factId": fact.get("factId"),
                     "kind": kind,
                     "index": idx,
@@ -930,6 +965,28 @@ def _validate_ai_visual_fact_value_schema(
                         "Drainage diameterMm must be a positive number when present.",
                     )
     return findings
+
+
+def _source_unavailable_disposition_status(
+    kind: str,
+    fact: dict[str, Any],
+    value: dict[str, Any],
+) -> dict[str, Any]:
+    raw = fact.get("disposition")
+    if not isinstance(raw, dict):
+        raw = value.get("disposition")
+    if not isinstance(raw, dict):
+        return {"present": False, "ok": False, "missingFields": []}
+    decision = str(raw.get("decision") or "")
+    if decision not in SOURCE_UNAVAILABLE_DECISIONS:
+        return {"present": False, "ok": False, "missingFields": []}
+    missing = []
+    if kind not in SOURCE_UNAVAILABLE_FACT_KINDS:
+        missing.append("kind_allows_source_unavailable")
+    for field in ("reason", "affectedScope", "sourceEvidenceSummary"):
+        if not str(raw.get(field) or "").strip():
+            missing.append(field)
+    return {"present": True, "ok": not missing, "missingFields": missing}
 
 
 def _number(value: Any) -> bool:

@@ -812,6 +812,59 @@ def test_ai_reading_packet_and_ai_fact_validation(tmp_path: Path) -> None:
         "elements[0].diameterMm",
     } <= invalid_fields
 
+    source_unavailable = validate_ai_visual_trace_completeness(
+        [
+            {
+                "factId": "ai-srcfact-material-unavailable",
+                "kind": "material",
+                "value": {
+                    "elementScope": "exterior wall",
+                    "disposition": {
+                        "decision": "source_unavailable",
+                        "reason": "The source folder contains drawings but no wall layer schedule.",
+                        "affectedScope": "exterior wall layer stack",
+                        "sourceEvidenceSummary": "Reviewed construction and energy pages; no layer stack visible.",
+                    },
+                },
+                "confidence": 0.8,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "drawing notes",
+                },
+            }
+        ],
+        required_kinds=["material"],
+    )
+    assert source_unavailable["ok"] is True
+    assert source_unavailable["findings"][0]["code"] == "ai_visual_fact_source_unavailable_disposition"
+    assert source_unavailable["findings"][0]["severity"] == "warning"
+
+    invalid_source_unavailable = validate_ai_visual_trace_completeness(
+        [
+            {
+                "factId": "ai-srcfact-material-unavailable-invalid",
+                "kind": "material",
+                "value": {
+                    "elementScope": "exterior wall",
+                    "disposition": {"decision": "source_unavailable"},
+                },
+                "confidence": 0.8,
+                "provenance": {
+                    "sourceDocumentId": manifest["files"][0]["sourceDocumentId"],
+                    "page": 1,
+                    "region": "drawing notes",
+                },
+            }
+        ],
+        required_kinds=["material"],
+    )
+    assert invalid_source_unavailable["ok"] is False
+    assert any(
+        finding["code"] == "ai_visual_fact_source_unavailable_disposition_invalid"
+        for finding in invalid_source_unavailable["findings"]
+    )
+
     missing_kind = validate_ai_visual_trace_completeness(
         [
             {

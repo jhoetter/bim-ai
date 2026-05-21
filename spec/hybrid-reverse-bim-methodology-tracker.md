@@ -178,7 +178,7 @@ Every modelable fact must include:
 
 | ID | Requirement | Existing repo support | Status | Required build or decision |
 | --- | --- | --- | --- | --- |
-| SPEC-001 | Canonical source fact ledger. | Folder output writes source fact ledger; AI visual completeness now validates object-level value shapes for walls, room boundaries, openings, stairs/slab openings, roofs/dormers, parcel boundaries, areas, volumes, material layer stacks, terrain point sets, and drainage elements. | Partial | Extend strict schemas to full material assembly semantics, terrain contour topology, drainage graph connectivity, and source-unavailable dispositions. |
+| SPEC-001 | Canonical source fact ledger. | Folder output writes source fact ledger; AI visual completeness now validates object-level value shapes for walls, room boundaries, openings, stairs/slab openings, roofs/dormers, parcel boundaries, areas, volumes, material layer stacks, terrain point sets, and drainage elements. Source-limited/unavailable facts are accepted only as warnings when they include decision, reason, affected scope, and source evidence summary. | Partial | Extend strict schemas to full material assembly semantics, terrain contour topology, drainage graph connectivity, and final-report rendering of source-limited dispositions. |
 | SPEC-002 | Existing-building IR separate from seed DSL. | `reverse_bim.ir_seed`, `reverse_bim.ir_validate` | Partial | Expand IR to include wall graphs, host references, source-view requirements, and unresolved decisions. |
 | SPEC-003 | Conflict ledger with explicit dispositions. | Folder output conflict reports/worklist. | Partial | Make unresolved conflict dispositions block slice authoring automatically. |
 | SPEC-004 | MCP-readiness mapping. | `reverse_bim.mcp_readiness`, `reverse_bim.plan_authoring` | Partial | Add per-slice readiness and stricter "no hidden inference" enforcement. |
@@ -457,7 +457,7 @@ The Leo showcase is successful only if:
 
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
-| W2-001 | Strengthen source fact schemas by object type. | Partial | Invalid/missing wall, room, opening, stair/slab-opening, roof/dormer, parcel, area, volume, material layer, terrain point, and drainage element facts fail before modeling; full connectivity/topology semantics and source-unavailable dispositions still need the same strictness. |
+| W2-001 | Strengthen source fact schemas by object type. | Partial | Invalid/missing wall, room, opening, stair/slab-opening, roof/dormer, parcel, area, volume, material layer, terrain point, and drainage element facts fail before modeling; source-limited/unavailable facts require structured disposition evidence. Full connectivity/topology semantics still need the same strictness. |
 | W2-002 | Add coordinate-frame resource and alignment report. | Partial | First-class API surfaces exist; still need UI-assisted control-point picking and overlay residual visualization. |
 | W2-003 | Add critical reader consensus policy. | Partial | Critical facts require independent agreement or explicit conflict disposition. |
 | W2-004 | Add document authority/supersession report. | Done | `reverse_bim.document_authority` ranks document groups, marks superseded/duplicate documents, and blocks unresolved critical authority ties. |
