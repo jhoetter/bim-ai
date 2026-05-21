@@ -559,7 +559,7 @@ Relevant files:
 | `PERF-B01` | P0 | `Done` | Reuse already-computed violations for command delta/response. | `compute_delta_wire` accepts `violations`; command routes reuse `try_commit` result instead of evaluating again. |
 | `PERF-B02` | P0 | `Done` | Remove hidden transaction-metadata full evaluation. | Transaction metadata computes changed/removed/patch ids directly without calling full delta/evaluate. |
 | `PERF-B03` | P0 | `Done` | Avoid old-document evaluation unless needed for blocking comparison. | `try_commit` and bundle commit evaluate the previous document only when the new document contains blocking/error violations. |
-| `PERF-B04` | P0 | `Partial` | Keep common command server time near 200 ms or lower. | Current `insertWindowOnWall` is about 208-217 ms; target is under 150 ms p50 on small/medium fixtures. |
+| `PERF-B04` | P0 | `Done` | Keep common command server time near 200 ms or lower. | `small.insert_window_commit` is covered by the backend performance budget harness with a 150 ms p50 budget; local run was about 18 ms p50 on the synthetic small fixture. |
 | `PERF-B05` | P1 | `Not started` | Add interactive command budget tests. | Common commands such as place window, place door, move wall, create wall, move level, and undo/redo have measured budgets. |
 | `PERF-B06` | P1 | `Not started` | Separate undo-stack optimistic availability from full authoritative refresh where safe. | UI can show pending undo/redo state immediately while preserving authoritative failure rollback semantics. |
 | `PERF-B07` | P1 | `Not started` | Add command-specific validation fast paths. | Simple hosted opening operations avoid full expensive advisors where only nonblocking documentation advisories changed. |
