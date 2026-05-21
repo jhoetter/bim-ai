@@ -169,13 +169,13 @@ def build_reverse_bim_folder_output(
         _write_json(out_dir / "run-summary.json", manifest)
         return manifest
 
-    classifications = classify_documents(manifest)
     rendered_pages, text_extractions = _render_and_extract(
         manifest=manifest,
         output_dir=out_dir / "source" / "rendered-pages",
         dpi=dpi,
         max_pages_per_pdf=max_pages_per_pdf,
     )
+    classifications = classify_documents(manifest, text_extractions=text_extractions)
     visual_packet = build_ai_visual_trace_packet(
         manifest=manifest,
         classifications=classifications,

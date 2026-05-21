@@ -509,8 +509,6 @@ def prepare_ai_visual_trace_run_from_folder(
     manifest = build_folder_manifest(root_path)
     if manifest.get("ok") is False:
         return manifest
-    classifications = classify_documents(manifest)
-
     rendered_pages: list[dict[str, Any]] = []
     text_extractions: list[dict[str, Any]] = []
     for file_row in manifest.get("files", []):
@@ -528,6 +526,7 @@ def prepare_ai_visual_trace_run_from_folder(
         )
         rendered_pages.append(render)
         text_extractions.append(extract_pdf_text(source_path, max_pages=max_pages_per_pdf))
+    classifications = classify_documents(manifest, text_extractions=text_extractions)
 
     packet = build_ai_visual_trace_packet(
         manifest=manifest,

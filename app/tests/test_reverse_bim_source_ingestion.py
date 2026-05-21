@@ -311,6 +311,58 @@ def test_ai_visual_reader_normalization_builds_mcp_feedable_facts() -> None:
     assert room["value"]["boundaryRef"] == "ai-srcfact-room-wohnen:boundary"
 
 
+def test_document_classification_uses_native_text_when_filename_is_opaque(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "NW-2025-opaque.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n% test\n")
+    manifest = build_folder_manifest(tmp_path)
+
+    filename_only = classify_documents(manifest)
+    with_text = classify_documents(
+        manifest,
+        text_extractions=[
+            {
+                "sourcePath": str(pdf_path.resolve()),
+                "pages": [{"page": 1, "text": "Energieausweis fuer Wohngebaeude"}],
+            }
+        ],
+    )
+
+    assert filename_only["documents"][0]["classification"] == "unknown"
+    assert with_text["documents"][0]["classification"] == "energy_doc"
+    assert with_text["documents"][0]["method"] == "filename_text_heuristic"
+
+
+def test_document_classification_prefers_specific_type_over_generic_area_or_site_text(tmp_path: Path) -> None:
+    expose_path = tmp_path / "535_06 KH Expose.pdf"
+    energy_path = tmp_path / "NW-2025-opaque.pdf"
+    baulast_path = tmp_path / "Auskunft Baulast.pdf"
+    for path in (expose_path, energy_path, baulast_path):
+        path.write_bytes(b"%PDF-1.4\n% test\n")
+    manifest = build_folder_manifest(tmp_path)
+    classified = classify_documents(
+        manifest,
+        text_extractions=[
+            {
+                "sourcePath": str(expose_path.resolve()),
+                "pages": [{"page": 1, "text": "Wohnflaeche 116 m2 Grundstuecksgroesse 520 m2"}],
+            },
+            {
+                "sourcePath": str(energy_path.resolve()),
+                "pages": [{"page": 1, "text": "Energieausweis Wohnflaeche 161 m2"}],
+            },
+            {
+                "sourcePath": str(baulast_path.resolve()),
+                "pages": [{"page": 1, "text": "Flurstueck Grundstueck Lageplan"}],
+            },
+        ],
+    )
+    by_name = {Path(row["relativePath"]).name: row["classification"] for row in classified["documents"]}
+
+    assert by_name["535_06 KH Expose.pdf"] == "photo"
+    assert by_name["NW-2025-opaque.pdf"] == "energy_doc"
+    assert by_name["Auskunft Baulast.pdf"] == "legal_admin"
+
+
 def test_mcp_authoring_readiness_separates_resolvers_metadata_and_source_refinement() -> None:
     readiness = build_mcp_authoring_readiness(
         facts=[

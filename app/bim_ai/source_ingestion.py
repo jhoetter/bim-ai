@@ -68,10 +68,11 @@ CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
     ("elevation", r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b", 0.84),
     ("site_plan", r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b", 0.86),
     ("area_calculation", r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b", 0.82),
-    ("energy_doc", r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b", 0.82),
+    ("energy_doc", r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b", 0.92),
     ("drainage_doc", r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b", 0.82),
-    ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b", 0.78),
-    ("legal_admin", r"\bbaugenehmigung\b|\bbaulast\b|\bgrundbuch\b|\baltlast|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b", 0.78),
+    ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b|\bexpose\b", 0.9),
+    ("legal_admin", r"\bbaulast\b|\baltlast", 0.9),
+    ("legal_admin", r"\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b", 0.78),
     ("construction_description", r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b", 0.78),
 )
 
@@ -120,9 +121,16 @@ def build_folder_manifest(root_path: str | Path) -> dict[str, Any]:
     }
 
 
-def classify_documents(manifest_or_files: dict[str, Any] | list[dict[str, Any]]) -> dict[str, Any]:
+def classify_documents(
+    manifest_or_files: dict[str, Any] | list[dict[str, Any]],
+    text_extractions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     files = _files_from_manifest(manifest_or_files)
-    rows = [_classify_file(row) for row in files]
+    text_by_source = _text_extraction_index(text_extractions)
+    rows = [
+        _classify_file(row, supplemental_text=text_by_source.get(str(row.get("absolutePath") or "")))
+        for row in files
+    ]
     counts = Counter(str(row["classification"]) for row in rows)
     return {
         "ok": True,
@@ -1045,12 +1053,13 @@ def _pdf_metadata(path: Path) -> dict[str, Any]:
     return {"pageCount": None, "diagnostics": [{"code": "pdf_metadata_unavailable"}]}
 
 
-def _classify_file(row: dict[str, Any]) -> dict[str, Any]:
+def _classify_file(row: dict[str, Any], *, supplemental_text: str | None = None) -> dict[str, Any]:
     haystack = _normalize_search_text(" ".join(
         [
             str(row.get("relativePath") or ""),
             str(row.get("name") or ""),
             str(row.get("mimeType") or ""),
+            (supplemental_text or "")[:4000],
         ]
     ))
     if row.get("kind") == "image":
@@ -1069,8 +1078,27 @@ def _classify_file(row: dict[str, Any]) -> dict[str, Any]:
         "kind": row.get("kind"),
         "classification": best_label,
         "confidence": best_confidence,
-        "method": "filename_heuristic",
+        "method": "filename_text_heuristic" if supplemental_text else "filename_heuristic",
     }
+
+
+def _text_extraction_index(text_extractions: list[dict[str, Any]] | None) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for extraction in text_extractions or []:
+        if not isinstance(extraction, dict):
+            continue
+        source_path = str(extraction.get("sourcePath") or "")
+        if not source_path:
+            continue
+        pages = extraction.get("pages") if isinstance(extraction.get("pages"), list) else []
+        text = "\n".join(
+            str(page.get("text") or "")
+            for page in pages
+            if isinstance(page, dict) and page.get("text")
+        )
+        if text.strip():
+            out[source_path] = text
+    return out
 
 
 def _normalize_search_text(value: str) -> str:
