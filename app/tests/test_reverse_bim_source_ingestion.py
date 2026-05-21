@@ -1218,8 +1218,16 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(tmp_path: Pat
     assert Path(package["artifacts"]["phaseAuthoringSpec"]).exists()
     assert Path(package["artifacts"]["evidenceRequirements"]).exists()
     assert Path(package["artifacts"]["readerPassManifest"]).exists()
+    prompt_manifest = json.loads(
+        Path(package["artifacts"]["readerAssignmentPrompts"]).read_text(encoding="utf-8")
+    )
+    assert prompt_manifest["promptCount"] >= 1
+    prompt_text = Path(prompt_manifest["prompts"][0]["promptPath"]).read_text(encoding="utf-8")
+    assert "Do not author BIM" in prompt_text
+    assert "sourceAiVisualTraceReaderResponse_v1" in prompt_text
     dispatch_guide = Path(package["artifacts"]["readerDispatchGuide"])
     assert dispatch_guide.exists()
+    assert "ai-reading/assignments" in dispatch_guide.read_text(encoding="utf-8")
     assert "Do not author BIM" in dispatch_guide.read_text(encoding="utf-8")
     assert Path(package["artifacts"]["packageAcceptanceReport"]).exists()
     assert package["acceptance"]["summary"]["readerResponseCount"] == 0

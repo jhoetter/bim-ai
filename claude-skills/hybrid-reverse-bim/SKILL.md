@@ -41,7 +41,8 @@ enough to avoid modeling the wrong building.
 4. Classify documents/pages by role.
 5. Package source pages for multimodal AI/subagent reading.
 6. Use `ai-reading/reader-dispatch.md` and `ai-reading/reader-pass-manifest.json`
-   to dispatch reader assignments. Reader responses may be supplied directly or
+   to dispatch reader assignments. Prefer the self-contained prompts under
+   `ai-reading/assignments/**`. Reader responses may be supplied directly or
    written as JSON under `ai-reading/responses/**` for the next folder-output
    run to reload.
 7. Collect AI-reader responses as structured source facts.

@@ -316,6 +316,11 @@ def build_reverse_bim_folder_output(
         phase_authoring_spec=phase_spec,
     )
     tolerance_policy = _build_tolerance_policy()
+    reader_assignment_prompts = _write_reader_assignment_prompts(
+        output_dir=out_dir / "ai-reading" / "assignments",
+        agent_requests=requests,
+        reader_pass_manifest=reader_pass_manifest,
+    )
 
     artifacts = {
         "runSummary": out_dir / "run-summary.json",
@@ -330,6 +335,7 @@ def build_reverse_bim_folder_output(
         "aiVisualAgentRequests": out_dir / "ai-reading" / "ai-visual-agent-requests.json",
         "readerPassManifest": out_dir / "ai-reading" / "reader-pass-manifest.json",
         "readerDispatchGuide": out_dir / "ai-reading" / "reader-dispatch.md",
+        "readerAssignmentPrompts": out_dir / "ai-reading" / "reader-assignment-prompts.json",
         "readerResponsesRaw": out_dir / "ai-reading" / "reader-responses.raw.json",
         "readerResponseIndex": out_dir / "ai-reading" / "reader-response-index.json",
         "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
@@ -379,6 +385,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTraceWorkOrder": work_order,
         "aiVisualAgentRequests": requests,
         "readerPassManifest": reader_pass_manifest,
+        "readerAssignmentPrompts": reader_assignment_prompts,
         "readerResponsesRaw": raw_responses,
         "readerResponseIndex": reader_response_index,
         "readerConsensus": reader_consensus,
@@ -1796,6 +1803,159 @@ def _source_analysis_markdown(
     return "\n".join(lines)
 
 
+def _write_reader_assignment_prompts(
+    *,
+    output_dir: Path,
+    agent_requests: dict[str, Any],
+    reader_pass_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    requests_by_id = {
+        str(row.get("requestId") or ""): row
+        for row in agent_requests.get("requests") or []
+        if isinstance(row, dict) and row.get("requestId")
+    }
+    prompts = []
+    for assignment in reader_pass_manifest.get("assignments") or []:
+        if not isinstance(assignment, dict):
+            continue
+        request_id = str(assignment.get("requestId") or "")
+        request = requests_by_id.get(request_id, {})
+        reader_pass_id = str(assignment.get("readerPassId") or "reader-pass-01")
+        prompt_path = output_dir / reader_pass_id / f"{_safe_prompt_stem(request_id)}.md"
+        prompt_path.parent.mkdir(parents=True, exist_ok=True)
+        prompt_path.write_text(
+            _reader_assignment_prompt_markdown(assignment, request),
+            encoding="utf-8",
+        )
+        prompts.append(
+            {
+                "assignmentId": assignment.get("assignmentId"),
+                "readerPassId": reader_pass_id,
+                "workPackageId": assignment.get("workPackageId"),
+                "requestId": request_id,
+                "status": assignment.get("status"),
+                "promptPath": str(prompt_path),
+                "responsePathHint": assignment.get("responsePathHint"),
+                "inputImageCount": assignment.get("inputImageCount", 0),
+            }
+        )
+    return {
+        "format": "sourceAiVisualTraceReaderAssignmentPrompts_v1",
+        "runId": agent_requests.get("runId"),
+        "promptCount": len(prompts),
+        "prompts": prompts,
+    }
+
+
+def _reader_assignment_prompt_markdown(
+    assignment: dict[str, Any],
+    request: dict[str, Any],
+) -> str:
+    output_contract = request.get("outputContract") if isinstance(request.get("outputContract"), dict) else {}
+    required_fields = output_contract.get("requiredValueFieldsByKind") or {}
+    blocking_kinds = output_contract.get("blockingRequiredFactKinds") or []
+    lines = [
+        "# Reverse-BIM Reader Assignment",
+        "",
+        f"Assignment: `{assignment.get('assignmentId')}`",
+        f"Reader pass: `{assignment.get('readerPassId')}`",
+        f"Work package: `{assignment.get('workPackageId')}`",
+        f"Request: `{assignment.get('requestId')}`",
+        f"Request part: {assignment.get('requestPartIndex')}/{assignment.get('requestPartCount')}",
+        f"Status: `{assignment.get('status')}`",
+        "",
+        "Do not author BIM and do not emit model commands. Return source facts only.",
+        "",
+        "## Write Response To",
+        "",
+        f"`{assignment.get('responsePathHint')}`",
+        "",
+        "## Reader Task",
+        "",
+        str(request.get("readerPrompt") or "Read the source pages and return structured source facts."),
+        "",
+        "## Required Fact Kinds",
+        "",
+    ]
+    if blocking_kinds:
+        lines.extend(f"- `{kind}`" for kind in blocking_kinds)
+    else:
+        lines.append("- None")
+    lines.extend(
+        [
+            "",
+            "## Required Value Fields",
+            "",
+            "```json",
+            json.dumps(required_fields, indent=2, ensure_ascii=False),
+            "```",
+            "",
+            "## Source Images",
+            "",
+            "| Source document | Page | Matched roles | Rendered page path |",
+            "| --- | ---: | --- | --- |",
+        ]
+    )
+    for image in request.get("inputImages") or []:
+        if not isinstance(image, dict):
+            continue
+        matched = ", ".join(str(value) for value in image.get("matchedClassifications") or []) or "-"
+        lines.append(
+            "| "
+            f"`{image.get('relativePath')}` | "
+            f"{image.get('page')} | "
+            f"{matched} | "
+            f"`{image.get('renderedPagePath')}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Response Skeleton",
+            "",
+            "```json",
+            json.dumps(
+                {
+                    "format": "sourceAiVisualTraceReaderResponse_v1",
+                    "readerPassId": assignment.get("readerPassId"),
+                    "requestId": assignment.get("requestId"),
+                    "workPackageId": assignment.get("workPackageId"),
+                    "facts": [
+                        {
+                            "factId": "stable-id",
+                            "kind": "room",
+                            "value": {},
+                            "confidence": 0.0,
+                            "status": "candidate",
+                            "provenance": {
+                                "sourceDocumentId": "from source image row",
+                                "page": 1,
+                                "region": "visible source region",
+                                "method": "ai_document_read",
+                                "renderedPagePath": "from source image row",
+                            },
+                        }
+                    ],
+                },
+                indent=2,
+                ensure_ascii=False,
+            ),
+            "```",
+            "",
+            "If a required fact is not visible in these pages, return a `conflict` or source-unavailable disposition with provenance instead of guessing.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _safe_prompt_stem(value: str) -> str:
+    stem = "".join(char if char.isalnum() or char in "._-" else "-" for char in value).strip("-")
+    return stem[:120] or "reader-assignment"
+
+
 def _reader_dispatch_markdown(
     run_summary: dict[str, Any],
     reader_pass_manifest: dict[str, Any],
@@ -1821,6 +1981,7 @@ def _reader_dispatch_markdown(
         "",
         "- Read: `ai-reading/reader-pass-manifest.json`",
         "- Read: `ai-reading/ai-visual-agent-requests.json`",
+        "- Prefer the self-contained prompts under `ai-reading/assignments/**`.",
         "- Write responses under the hinted `ai-reading/responses/<reader-pass-id>/...json` paths or provide the same JSON objects to the source agent loop.",
         "",
         "## Summary",
