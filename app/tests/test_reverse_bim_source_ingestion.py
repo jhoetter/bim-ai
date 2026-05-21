@@ -997,12 +997,35 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
     assert dispatched["summary"]["waitingPackageCount"] == 0
     assert dispatched["summary"]["needsRevisionPackageCount"] == 1
     assert dispatched["dispatchDiagnostics"] == []
-    assert dispatched["readerResponses"] == [
-        {
-            "format": "sourceAiVisualTraceReaderResponse_v1",
-            "workPackageId": "wp-dimensional-floorplans",
-            "facts": [],
-        }
+    assert len(dispatched["readerResponses"]) == 1
+    assert dispatched["readerResponses"][0]["format"] == "sourceAiVisualTraceReaderResponse_v1"
+    assert dispatched["readerResponses"][0]["workPackageId"] == "wp-dimensional-floorplans"
+    assert dispatched["readerResponses"][0]["requestId"] == (
+        f"{dispatched['runId']}:wp-dimensional-floorplans"
+    )
+    assert dispatched["readerResponses"][0]["facts"] == []
+
+    two_pass_blocked = run_ai_visual_trace_agent_loop(
+        work_order=work_order,
+        responses=[
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "workPackageId": "wp-dimensional-floorplans",
+                "readerId": "reader-a",
+                "facts": [],
+            },
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "workPackageId": "wp-dimensional-floorplans",
+                "readerId": "reader-b",
+                "facts": [],
+            },
+        ],
+    )
+    assert two_pass_blocked["summary"]["needsRevisionPackageCount"] == 1
+    assert [row["readerId"] for row in two_pass_blocked["readerResponses"]] == [
+        "reader-a",
+        "reader-b",
     ]
 
     source_document_id = manifest["files"][0]["sourceDocumentId"]
@@ -1252,7 +1275,9 @@ def test_ai_visual_reader_requests_split_large_packages_and_merge_responses() ->
     assert [len(row["inputImages"]) for row in requests["requests"]] == [10, 10, 5]
     assert accepted["ok"] is True
     assert accepted["summary"]["acceptedPackageCount"] == 1
-    assert accepted["readerResponses"][0]["responseParts"][1]["requestPartIndex"] == 2
+    assert len(accepted["readerResponses"]) == 2
+    assert accepted["readerResponses"][1]["requestPartIndex"] == 2
+    assert accepted["mergedReaderResponses"][0]["responseParts"][1]["requestPartIndex"] == 2
     assert accepted["acceptedFacts"][0]["factId"] == "fact-level-eg"
 
 

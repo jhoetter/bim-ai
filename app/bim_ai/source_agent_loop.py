@@ -442,7 +442,9 @@ def run_ai_visual_trace_agent_loop(
     """Validate multimodal AI-reader responses and create repair work."""
 
     resolved_run_id = run_id or _stable_run_id(work_order, responses or {})
-    responses_by_package = _responses_by_package(responses)
+    input_response_rows = _reader_response_rows(responses)
+    responses_by_package = _merge_reader_response_rows(input_response_rows)
+    response_rows_by_package = _response_rows_by_package(input_response_rows)
     reader_requests = build_ai_visual_trace_agent_requests(
         work_order=work_order,
         run_id=resolved_run_id,
@@ -457,11 +459,13 @@ def run_ai_visual_trace_agent_loop(
     repair_requests: list[dict[str, Any]] = []
     dispatch_diagnostics: list[dict[str, Any]] = []
     reader_responses_used: list[dict[str, Any]] = []
+    merged_reader_responses_used: list[dict[str, Any]] = []
 
     for wp in _work_packages(work_order):
         package_id = str(wp.get("id") or "")
         required_kinds = _blocking_required_kinds(wp)
         response = responses_by_package.get(package_id)
+        response_rows_for_package = response_rows_by_package.get(package_id, [])
         if wp.get("status") != "ready":
             result = {
                 "workPackageId": package_id,
@@ -498,8 +502,11 @@ def run_ai_visual_trace_agent_loop(
                             }
                         )
                     if isinstance(dispatched_response, dict):
-                        dispatched_responses.append(dispatched_response)
+                        dispatched_responses.append(
+                            _reader_response_with_request_metadata(dispatched_response, request)
+                        )
                 response = _merge_reader_response_rows(dispatched_responses).get(package_id)
+                response_rows_for_package = dispatched_responses
             if response is None:
                 result = {
                     "workPackageId": package_id,
@@ -525,7 +532,15 @@ def run_ai_visual_trace_agent_loop(
                 "format": response.get("format") or "sourceAiVisualTraceReaderResponse_v1",
                 "workPackageId": response.get("workPackageId") or package_id,
             }
-            reader_responses_used.append(response)
+            merged_reader_responses_used.append(response)
+            if response_rows_for_package:
+                reader_responses_used.extend(
+                    _reader_response_with_defaults(row, package_id=package_id)
+                    for row in response_rows_for_package
+                    if isinstance(row, dict)
+                )
+            else:
+                reader_responses_used.append(response)
 
         normalization = normalize_ai_visual_trace_reader_response(response)
         normalized_response = normalization.get("response") if isinstance(normalization.get("response"), dict) else response
@@ -620,6 +635,7 @@ def run_ai_visual_trace_agent_loop(
         },
         "packageResults": package_results,
         "readerResponses": reader_responses_used,
+        "mergedReaderResponses": merged_reader_responses_used,
         "acceptedFacts": accepted_facts,
         "allReturnedFacts": all_facts,
         "repairRequests": repair_requests,
@@ -997,6 +1013,31 @@ def _responses_by_package(
     responses: list[dict[str, Any]] | dict[str, Any] | None,
 ) -> dict[str, dict[str, Any]]:
     return _merge_reader_response_rows(_reader_response_rows(responses))
+
+
+def _response_rows_by_package(rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        package_id = str(row.get("workPackageId") or row.get("workPackage") or row.get("id") or "")
+        if package_id:
+            out[package_id].append(row)
+    return out
+
+
+def _reader_response_with_defaults(row: dict[str, Any], *, package_id: str) -> dict[str, Any]:
+    return {
+        **row,
+        "format": row.get("format") or "sourceAiVisualTraceReaderResponse_v1",
+        "workPackageId": row.get("workPackageId") or row.get("workPackage") or row.get("id") or package_id,
+    }
+
+
+def _reader_response_with_request_metadata(row: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
+    out = _reader_response_with_defaults(row, package_id=str(request.get("workPackageId") or ""))
+    for key in ("requestId", "requestPartIndex", "requestPartCount"):
+        if key not in out or out.get(key) in (None, ""):
+            out[key] = request.get(key)
+    return out
 
 
 def _reader_response_rows(
