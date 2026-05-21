@@ -1,5 +1,5 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import {
   initialAlignState,
   initialSplitState,
@@ -133,17 +133,8 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
-import {
-  collectCenterAnchors,
-  collectSnapLines,
-  collectWallAnchors,
-  snapPlanPoint,
-  type SegmentLine,
-  type SnapHit,
-  type SnapKind,
-} from './snapEngine';
+import { snapPlanPoint, type SegmentLine, type SnapHit, type SnapKind } from './snapEngine';
 import { SnapEngine } from './planCanvasState';
-import { SnapGlyphLayer } from './SnapGlyphLayer';
 import { loadSnapSettings, type SnapSettings, type ToggleableSnapKind } from './snapSettings';
 import { bumpSnapTabCycle, initialSnapTabCycle, type SnapTabCycleState } from './snapTabCycle';
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
@@ -169,10 +160,6 @@ import { usePlanCanvasViewState } from './planCanvasViewState';
 import { usePlanCanvasColorSchemeState } from './planCanvasColorSchemeState';
 import { PlanCanvasEmptyStateOverlay } from './PlanCanvasEmptyStateOverlay';
 import {
-  componentPreviewSymbolKind,
-  resolveActiveComponentAsset,
-} from './planCanvasComponentPreview';
-import {
   handleDoorWindowToolClick,
   handleQueryToolClick,
   handleTagToolClick,
@@ -188,24 +175,17 @@ import {
   usePlanCanvasRenderPasses,
   type PlanCanvasDraftingPaint,
 } from './usePlanCanvasRenderPasses';
+import { usePlanCanvasDerivedViewData } from './usePlanCanvasDerivedViewData';
 import { usePlanCanvasToolActivation } from './usePlanCanvasToolActivation';
 import { usePlanCanvasViewEffects } from './usePlanCanvasViewEffects';
 import { usePlanCanvasGripHandlers } from './usePlanCanvasGripHandlers';
 import { createPlanCanvasKeyboardAuxHandlers } from './planCanvasKeyboardAuxHandlers';
-import { findLockedConstraintFor } from './tempDimensionLockState';
-import { GripLayer, TempDimLayer } from './GripLayer';
-import { HelperDimsLayer } from './HelperDimsLayer';
+import { PlanCanvasEditLayers } from './PlanCanvasEditLayers';
 import {
   extractPlanAnnotationHints,
   extractPlanGraphicHints,
   extractPlanTagStyleHints,
 } from './planProjectionWire';
-import {
-  resolvePlanAnnotationHints,
-  resolvePlanGraphicHints,
-  resolvePlanTagStyleLane,
-  resolvePlanViewDisplay,
-} from './planProjection';
 import { type CropBounds, type CropHandleId } from './cropRegionDragHandles';
 import { findAreaPlacementBoundary } from './areaPlacement';
 import {
@@ -287,6 +267,7 @@ import {
   getLineworkLineDash,
 } from '../workspace/authoring';
 import { ColorSchemeLegend } from './ColorSchemeLegend';
+import { resolvePlanCanvasHudState } from './planCanvasHudState';
 
 /** Imperative handle so the tab host can snapshot / restore the 2D camera
  * without continuous callbacks. Fill via cameraHandleRef prop. */
@@ -589,35 +570,6 @@ export function PlanCanvas({
 
   const elementsByIdRaw = useBimStore((s) => s.elementsById);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
-  // VIE-04: drop elements that the active temporary-visibility override hides
-  // before any downstream projection or hit-test sees them. View definitions
-  // (plan_view, view_template, viewpoint, …) are never gated.
-  const elementsById = useMemo(() => {
-    if (temporaryVisibility === null) return elementsByIdRaw;
-    const VIEW_DEF_KINDS = new Set<string>([
-      'plan_view',
-      'view_template',
-      'viewpoint',
-      'sheet',
-      'schedule',
-      'level',
-      'project_settings',
-      'callout',
-    ]);
-    const next: Record<string, Element> = {};
-    for (const [id, el] of Object.entries(elementsByIdRaw)) {
-      if (VIEW_DEF_KINDS.has(el.kind)) {
-        next[id] = el;
-        continue;
-      }
-      const inSet =
-        temporaryVisibility.categories.includes(el.kind) ||
-        (temporaryVisibility.elementIds ?? []).includes(id);
-      const visible = temporaryVisibility.mode === 'isolate' ? inSet : !inSet;
-      if (visible) next[id] = el;
-    }
-    return next;
-  }, [elementsByIdRaw, temporaryVisibility]);
   const selectedId = useBimStore((s) => s.selectedId);
   const selectedIds = useBimStore((s) => s.selectedIds);
   const modelId = useBimStore((s) => s.modelId);
@@ -665,88 +617,29 @@ export function PlanCanvas({
   const setSubdivisionDraft = useToolPrefs((s) => s.setSubdivisionDraft);
   const clearSubdivisionDraft = useToolPrefs((s) => s.clearSubdivisionDraft);
 
-  const display = useMemo(
-    () =>
-      resolvePlanViewDisplay(
-        elementsById,
-        activePlanViewId,
-        activeLevelResolvedId || undefined,
-        planPresentation,
-      ),
-    [elementsById, activePlanViewId, activeLevelResolvedId, planPresentation],
-  );
-
-  // PLN-02 — resolve the active plan view's crop state. The frame is drawn
-  // when bounds exist AND either cropEnabled or cropRegionVisible is true.
-  // When cropEnabled is on, plan rendering also clips elements outside the
-  // bounds (handled in the geometry rebuild effect below).
-  const activeCropState = useMemo((): {
-    planViewId: string;
-    cropMinMm: { xMm: number; yMm: number };
-    cropMaxMm: { xMm: number; yMm: number };
-    cropEnabled: boolean;
-    cropRegionVisible: boolean;
-  } | null => {
-    if (!activePlanViewId) return null;
-    const el = elementsById[activePlanViewId];
-    if (!el || el.kind !== 'plan_view') return null;
-    if (!el.cropMinMm || !el.cropMaxMm) return null;
-    const cropEnabled = !!el.cropEnabled;
-    const cropRegionVisible = el.cropRegionVisible !== false; // default visible when bounds exist
-    return {
-      planViewId: el.id,
-      cropMinMm: el.cropMinMm,
-      cropMaxMm: el.cropMaxMm,
-      cropEnabled,
-      cropRegionVisible,
-    };
-  }, [activePlanViewId, elementsById]);
-
-  const mergedGraphicHints = useMemo(() => {
-    if (wireGraphicHints) return wireGraphicHints;
-    return resolvePlanGraphicHints(elementsById, activePlanViewId);
-  }, [wireGraphicHints, elementsById, activePlanViewId]);
-
-  const mergedAnnotationHints = useMemo(() => {
-    if (wireAnnotationHints !== null) return wireAnnotationHints;
-    return resolvePlanAnnotationHints(elementsById, activePlanViewId);
-  }, [wireAnnotationHints, elementsById, activePlanViewId]);
-
-  const planTagFontScales = useMemo(() => {
-    const pvId = display.planViewElementId;
-    const ro = resolvePlanTagStyleLane(elementsById, pvId, 'opening');
-    const rr = resolvePlanTagStyleLane(elementsById, pvId, 'room');
-    const bo = wireTagStyleHints?.opening?.textSizePt;
-    const br = wireTagStyleHints?.room?.textSizePt;
-    const openingPt = typeof bo === 'number' && Number.isFinite(bo) ? bo : ro.textSizePt;
-    const roomPt = typeof br === 'number' && Number.isFinite(br) ? br : rr.textSizePt;
-    return { opening: openingPt / 10, room: roomPt / 10 };
-  }, [wireTagStyleHints, elementsById, display.planViewElementId]);
-
-  const hiddenKey = useMemo(
-    () => [...display.hiddenSemanticKinds].sort().join('|'),
-    [display.hiddenSemanticKinds],
-  );
-
-  // F-102: stable key for per-element hiddenElementIds Set (used in useEffect deps).
-  const hiddenElementIdsKey = useMemo(
-    () => [...display.hiddenElementIds].sort().join('|'),
-    [display.hiddenElementIds],
-  );
-
-  const displayLevelId = display.activeLevelId;
-  const anchors = useMemo(
-    () => collectWallAnchors(elementsById, displayLevelId || undefined),
-    [elementsById, displayLevelId],
-  );
-  const centerAnchors = useMemo(
-    () => collectCenterAnchors(elementsById, displayLevelId || undefined),
-    [elementsById, displayLevelId],
-  );
-  const snapLines = useMemo(
-    () => collectSnapLines(elementsById, displayLevelId || undefined),
-    [elementsById, displayLevelId],
-  );
+  const {
+    elementsById,
+    display,
+    activeCropState,
+    mergedGraphicHints,
+    mergedAnnotationHints,
+    planTagFontScales,
+    hiddenKey,
+    hiddenElementIdsKey,
+    displayLevelId,
+    anchors,
+    centerAnchors,
+    snapLines,
+  } = usePlanCanvasDerivedViewData({
+    elementsByIdRaw,
+    temporaryVisibility,
+    activePlanViewId,
+    activeLevelResolvedId,
+    planPresentation,
+    wireGraphicHints,
+    wireAnnotationHints,
+    wireTagStyleHints,
+  });
   const lvlId = displayLevelId || activeLevelResolvedId;
   const {
     showConstraints,
@@ -3636,16 +3529,16 @@ export function PlanCanvas({
     onSemanticCommand,
   });
 
-  const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
-  const plotScaleN = Math.round(halfUi * 2);
-  const activeComponentAsset = resolveActiveComponentAsset({
-    planTool,
-    activeComponentAssetId,
-    elementsById: elementsByIdRaw,
-    previewEntry: activeComponentAssetPreviewEntry,
-  });
-  const componentPreviewScreen = hudMm && activeComponentAsset ? worldToScreen(hudMm) : null;
-  const componentPreviewSymbol = componentPreviewSymbolKind(activeComponentAsset);
+  const { scaleBarMeters, plotScaleN, componentPreviewScreen, componentPreviewSymbol } =
+    resolvePlanCanvasHudState({
+      halfUi,
+      planTool,
+      activeComponentAssetId,
+      elementsById: elementsByIdRaw,
+      previewEntry: activeComponentAssetPreviewEntry,
+      hudMm,
+      worldToScreen,
+    });
 
   return (
     <div
@@ -3826,47 +3719,28 @@ export function PlanCanvas({
       />
       <PlanCanvasReadouts
         activeLevel={activeLevelElem}
-        scaleBarMeters={sb}
+        scaleBarMeters={scaleBarMeters}
         plotScaleN={plotScaleN}
       />
-      {/* EDT-01 — temp-dimension layer: shown when exactly one wall is selected. */}
-      {selectedWall && tempDimTargets.length > 0 && (
-        <TempDimLayer
-          targets={tempDimTargets}
-          worldToScreen={worldToScreen}
-          onTargetClick={handleTempDimClick}
-          onLockClick={handleTempDimLockClick}
-          isLocked={(t) => !!findLockedConstraintFor(t.aId, t.bId, Object.values(elementsById))}
-        />
-      )}
-      {/* EDT-01 — grip layer (raycast above element pick so grips win
-          on hover). Renders the live draft preview during drag.
-          F-088: also shown for selected dimensions (text + offset grips). */}
-      {gripDescriptors.length > 0 && (
-        <GripLayer
-          grips={gripDescriptors}
-          worldToScreen={worldToScreen}
-          onGripPointerDown={handleGripPointerDown}
-          onGripDoubleClick={handleGripDoubleClick}
-          activeGripId={activeGripId}
-          draftWall={
-            draftMutation && draftMutation.kind === 'wall'
-              ? { start: draftMutation.start, end: draftMutation.end }
-              : null
-          }
-        />
-      )}
-      {/* EDT-V3-06 — helper dimension chips on single-element selection. */}
-      <HelperDimsLayer
-        selectedElemId={selectedId ?? null}
+      <PlanCanvasEditLayers
+        showTempDimensions={!!selectedWall}
+        tempDimTargets={tempDimTargets}
+        worldToScreen={worldToScreen}
+        onTempDimClick={handleTempDimClick}
+        onTempDimLockClick={handleTempDimLockClick}
+        gripDescriptors={gripDescriptors}
+        onGripPointerDown={handleGripPointerDown}
+        onGripDoubleClick={handleGripDoubleClick}
+        activeGripId={activeGripId}
+        draftWall={
+          draftMutation && draftMutation.kind === 'wall'
+            ? { start: draftMutation.start, end: draftMutation.end }
+            : null
+        }
+        selectedId={selectedId ?? null}
         elementsById={elementsById}
-        planToScreen={worldToScreen}
         onDispatch={onSemanticCommand}
-      />
-      {/* EDT-05 — snap glyph layer (×, ⊥, dot+dash) above the canvas. */}
-      <SnapGlyphLayer
-        candidates={snapGlyphState.candidates}
-        activeIndex={snapGlyphState.activeIndex}
+        snapGlyphState={snapGlyphState}
       />
       <div ref={mountRef} className="size-full cursor-crosshair" />
       <PlanCanvasStatusOverlays

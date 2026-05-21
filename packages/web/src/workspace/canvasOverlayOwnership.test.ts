@@ -11,6 +11,10 @@ const planCanvasAuthoringOverlaysSource = readFileSync(
   resolve(process.cwd(), 'src/plan/PlanCanvasAuthoringOverlays.tsx'),
   'utf8',
 );
+const planCanvasEditLayersSource = readFileSync(
+  resolve(process.cwd(), 'src/plan/PlanCanvasEditLayers.tsx'),
+  'utf8',
+);
 const viewportSource = readFileSync(resolve(process.cwd(), 'src/Viewport.tsx'), 'utf8');
 const viewportOverlaysSource = readFileSync(
   resolve(process.cwd(), 'src/viewport/ViewportOverlays.tsx'),
@@ -32,8 +36,9 @@ describe('canvas overlay ownership — UX-WP-07', () => {
   });
 
   it('keeps spatial/transient plan overlays available on the canvas', () => {
-    expect(planCanvasSource).toContain('<SnapGlyphLayer');
-    expect(planCanvasSource).toContain('<TempDimLayer');
+    expect(planCanvasSource).toContain('<PlanCanvasEditLayers');
+    expect(planCanvasEditLayersSource).toContain('<SnapGlyphLayer');
+    expect(planCanvasEditLayersSource).toContain('<TempDimLayer');
     expect(planCanvasSource).toContain('<PlanCanvasAuthoringOverlays');
     expect(planCanvasAuthoringOverlaysSource).toContain('data-testid="reveal-hidden-chip"');
     expect(planCanvasToolOverlaysSource).toContain('data-testid="snap-override-chip"');
