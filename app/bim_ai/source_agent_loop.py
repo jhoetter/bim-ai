@@ -22,6 +22,25 @@ from bim_ai.source_ingestion import (
 )
 
 BASE_FACT_KEYS = {"factId", "kind", "value", "confidence", "status", "provenance"}
+AI_VISUAL_CRITICAL_CONSENSUS_FACT_KINDS = {
+    "building_scope",
+    "level",
+    "storey",
+    "wall_line",
+    "wall_chain",
+    "wall_thickness",
+    "room",
+    "area",
+    "opening",
+    "door",
+    "window",
+    "stair",
+    "slab_opening",
+    "roof",
+    "dormer",
+    "terrain",
+    "parcel_boundary",
+}
 TOP_LEVEL_VALUE_KEYS = {
     field
     for fields in AI_VISUAL_FACT_VALUE_REQUIREMENTS.values()
@@ -291,6 +310,119 @@ def build_ai_visual_trace_agent_requests(
     }
 
 
+def build_ai_visual_trace_reader_pass_manifest(
+    *,
+    agent_requests: dict[str, Any],
+    work_order: dict[str, Any],
+    responses: list[dict[str, Any]] | dict[str, Any] | None = None,
+    min_independent_readers_for_critical_facts: int = 2,
+) -> dict[str, Any]:
+    """Build the dispatch/checklist manifest for multimodal source readers.
+
+    The manifest is intentionally provider-neutral. It describes which request
+    chunks must be answered by a first reader pass, which chunks need another
+    independent pass for consensus, and what response metadata must come back
+    before reverse-BIM modeling may start.
+    """
+
+    request_rows = [
+        row
+        for row in agent_requests.get("requests") or []
+        if isinstance(row, dict)
+    ]
+    work_packages = {str(row.get("id") or ""): row for row in _work_packages(work_order)}
+    response_rows = _reader_response_rows(responses)
+    response_keys = _response_keys(response_rows)
+    critical_package_ids = {
+        package_id
+        for package_id, work_package in work_packages.items()
+        if set(_blocking_required_kinds(work_package)) & AI_VISUAL_CRITICAL_CONSENSUS_FACT_KINDS
+    }
+
+    assignments: list[dict[str, Any]] = []
+    for request in request_rows:
+        package_id = str(request.get("workPackageId") or "")
+        pass_ids = ["reader-pass-01"]
+        if package_id in critical_package_ids and min_independent_readers_for_critical_facts > 1:
+            pass_ids.extend(
+                f"reader-pass-{index:02d}"
+                for index in range(2, min_independent_readers_for_critical_facts + 1)
+            )
+        for reader_pass_id in pass_ids:
+            request_id = str(request.get("requestId") or "")
+            status = (
+                "response_received"
+                if _assignment_has_response(response_keys, request_id, package_id, reader_pass_id)
+                else "waiting_for_reader"
+            )
+            assignments.append(
+                {
+                    "assignmentId": f"{reader_pass_id}:{request_id}",
+                    "readerPassId": reader_pass_id,
+                    "requestId": request_id,
+                    "workPackageId": package_id,
+                    "requestPartIndex": request.get("requestPartIndex"),
+                    "requestPartCount": request.get("requestPartCount"),
+                    "status": status,
+                    "independentReaderRequired": reader_pass_id != "reader-pass-01",
+                    "criticalConsensusPackage": package_id in critical_package_ids,
+                    "inputImageCount": len(request.get("inputImages") or []),
+                    "matchedClassifications": sorted(
+                        {
+                            label
+                            for image in request.get("inputImages") or []
+                            if isinstance(image, dict)
+                            for label in image.get("matchedClassifications") or []
+                        }
+                    ),
+                    "responsePathHint": (
+                        f"ai-reading/responses/{reader_pass_id}/"
+                        f"{_safe_response_file_stem(request_id)}.json"
+                    ),
+                    "requiredResponseFields": [
+                        "format",
+                        "workPackageId",
+                        "facts",
+                        "readerId or agentId or readerPassId/provider/model/responseId",
+                    ],
+                }
+            )
+
+    assignment_counts = Counter(str(row.get("status") or "unknown") for row in assignments)
+    return {
+        "ok": assignment_counts.get("waiting_for_reader", 0) == 0,
+        "format": "sourceAiVisualTraceReaderPassManifest_v1",
+        "runId": agent_requests.get("runId"),
+        "createdAt": datetime.now(UTC).isoformat(),
+        "sourceWorkOrderDigestSha256": agent_requests.get("sourceWorkOrderDigestSha256"),
+        "readerPassPolicy": {
+            "firstPass": "Every ready request chunk must be read visually and returned as source facts.",
+            "criticalFactConsensus": (
+                "Work packages with critical geometry/site facts require independent reader responses "
+                "or an explicit deterministic cross-check disposition before MCP authoring."
+            ),
+            "minimumIndependentReadersForCriticalFacts": min_independent_readers_for_critical_facts,
+            "criticalFactKinds": sorted(AI_VISUAL_CRITICAL_CONSENSUS_FACT_KINDS),
+            "criticalWorkPackageIds": sorted(critical_package_ids),
+            "responseMergePolicy": "Chunk responses with the same workPackageId are merged before validation; reader identity is still required for consensus.",
+        },
+        "summary": {
+            "baseRequestCount": len(request_rows),
+            "assignmentCount": len(assignments),
+            "waitingAssignmentCount": assignment_counts.get("waiting_for_reader", 0),
+            "receivedAssignmentCount": assignment_counts.get("response_received", 0),
+            "criticalWorkPackageCount": len(critical_package_ids),
+            "responseCount": len(response_rows),
+        },
+        "assignments": assignments,
+        "nextStep": (
+            "All reader assignments have responses; normalize, validate, and run reader consensus."
+            if assignment_counts.get("waiting_for_reader", 0) == 0
+            else "Dispatch open assignments to multimodal readers; do not author BIM yet."
+        ),
+    }
+
+
 def run_ai_visual_trace_agent_loop(
     *,
     work_order: dict[str, Any],
@@ -538,6 +670,11 @@ def prepare_ai_visual_trace_run_from_folder(
     )
     work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=packet)
     requests = build_ai_visual_trace_agent_requests(work_order=work_order, run_id=run_id)
+    reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
+        agent_requests=requests,
+        work_order=work_order,
+        responses=[],
+    )
     initial_loop = run_ai_visual_trace_agent_loop(
         work_order=work_order,
         responses=[],
@@ -552,6 +689,7 @@ def prepare_ai_visual_trace_run_from_folder(
         "aiVisualTracePacket": out_dir / "source-ai-visual-trace-packet.json",
         "aiVisualTraceWorkOrder": out_dir / "source-ai-visual-trace-work-order.json",
         "aiVisualTraceAgentRequests": out_dir / "source-ai-visual-agent-requests.json",
+        "readerPassManifest": out_dir / "source-reader-pass-manifest.json",
         "initialAgentLoop": out_dir / "source-ai-visual-agent-loop.initial.json",
     }
     payloads = {
@@ -562,6 +700,7 @@ def prepare_ai_visual_trace_run_from_folder(
         "aiVisualTracePacket": packet,
         "aiVisualTraceWorkOrder": work_order,
         "aiVisualTraceAgentRequests": requests,
+        "readerPassManifest": reader_pass_manifest,
         "initialAgentLoop": initial_loop,
     }
     for key, path in artifacts.items():
@@ -850,23 +989,64 @@ def _blocking_required_kinds(work_package: dict[str, Any]) -> list[str]:
 def _responses_by_package(
     responses: list[dict[str, Any]] | dict[str, Any] | None,
 ) -> dict[str, dict[str, Any]]:
+    return _merge_reader_response_rows(_reader_response_rows(responses))
+
+
+def _reader_response_rows(
+    responses: list[dict[str, Any]] | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     if responses is None:
-        return {}
-    rows: list[dict[str, Any]]
+        return []
     if isinstance(responses, dict):
         if isinstance(responses.get("responses"), list):
-            rows = [row for row in responses["responses"] if isinstance(row, dict)]
-        else:
-            rows = [
-                {**value, "workPackageId": key}
-                for key, value in responses.items()
-                if isinstance(value, dict)
-            ]
-    elif isinstance(responses, list):
-        rows = [row for row in responses if isinstance(row, dict)]
-    else:
-        rows = []
-    return _merge_reader_response_rows(rows)
+            return [row for row in responses["responses"] if isinstance(row, dict)]
+        return [
+            {**value, "workPackageId": key}
+            for key, value in responses.items()
+            if isinstance(value, dict)
+        ]
+    if isinstance(responses, list):
+        return [row for row in responses if isinstance(row, dict)]
+    return []
+
+
+def _response_keys(rows: list[dict[str, Any]]) -> set[tuple[str, str, str]]:
+    keys: set[tuple[str, str, str]] = set()
+    for row in rows:
+        package_id = str(row.get("workPackageId") or row.get("workPackage") or row.get("id") or "")
+        request_id = str(row.get("requestId") or "")
+        reader_pass_id = str(row.get("readerPassId") or "")
+        if package_id or request_id:
+            keys.add((request_id, package_id, reader_pass_id))
+        for part in row.get("responseParts") or []:
+            if not isinstance(part, dict):
+                continue
+            keys.add(
+                (
+                    str(part.get("requestId") or request_id),
+                    package_id,
+                    reader_pass_id,
+                )
+            )
+    return keys
+
+
+def _assignment_has_response(
+    keys: set[tuple[str, str, str]],
+    request_id: str,
+    package_id: str,
+    reader_pass_id: str,
+) -> bool:
+    if (request_id, package_id, reader_pass_id) in keys or ("", package_id, reader_pass_id) in keys:
+        return True
+    if reader_pass_id == "reader-pass-01":
+        return (request_id, package_id, "") in keys or ("", package_id, "") in keys
+    return False
+
+
+def _safe_response_file_stem(value: str) -> str:
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-")
+    return stem[:120] or "reader-response"
 
 
 def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:

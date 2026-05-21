@@ -167,6 +167,7 @@ Use source tools for preflight:
 - `source.ai_visual_trace_packet`
 - `source.ai_visual_trace_work_order`
 - `source.ai_visual_trace_agent_requests`
+- `source.ai_visual_trace_reader_pass_manifest`
 - `source.normalize_ai_visual_trace_reader_responses`
 - `source.reader_consensus`
 - `source.validate_ai_visual_trace_completeness`

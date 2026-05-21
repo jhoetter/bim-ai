@@ -180,6 +180,23 @@ for _source_tool in (
         "notes": "Creates multimodal AI-reader request packets from a visual trace work order; does not call a model or mutate BIM.",
     },
     {
+        "name": "source.ai_visual_trace_reader_pass_manifest",
+        "title": "SourceAiVisualTraceReaderPassManifestInput",
+        "path": "/api/v3/source/ai-visual-trace-reader-pass-manifest",
+        "required": ["agentRequests", "workOrder"],
+        "properties": {
+            "agentRequests": {"type": "object"},
+            "aiVisualTraceAgentRequests": {"type": "object"},
+            "workOrder": {"type": "object"},
+            "aiVisualTraceWorkOrder": {"type": "object"},
+            "responses": {"type": "array", "items": {"type": "object"}},
+            "readerResponses": {"type": "array", "items": {"type": "object"}},
+            "minIndependentReadersForCriticalFacts": {"type": "integer"},
+        },
+        "cli": "bim-ai source ai-visual-trace-reader-pass-manifest --requests requests.json --work-order work-order.json --output json",
+        "notes": "Creates the multimodal-reader dispatch checklist, including first-pass source reading assignments and second independent passes for critical geometry/site facts.",
+    },
+    {
         "name": "source.prepare_ai_visual_trace_run",
         "title": "SourcePrepareAiVisualTraceRunInput",
         "path": "/api/v3/source/prepare-ai-visual-trace-run",

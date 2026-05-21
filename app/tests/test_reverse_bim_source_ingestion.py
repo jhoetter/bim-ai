@@ -20,6 +20,7 @@ from bim_ai.reverse_bim import (
 from bim_ai.routes_api import api_router
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
+    build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_responses,
     prepare_ai_visual_trace_run_from_folder,
     run_ai_visual_trace_agent_loop,
@@ -739,6 +740,30 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
     assert requests["format"] == "sourceAiVisualTraceAgentRequests_v1"
     assert requests["requests"][0]["outputContract"]["blockingRequiredFactKinds"]
 
+    reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
+        agent_requests=requests,
+        work_order=work_order,
+        responses=[
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "readerPassId": "reader-pass-01",
+                "requestId": requests["requests"][0]["requestId"],
+                "workPackageId": "wp-dimensional-floorplans",
+                "facts": [],
+            }
+        ],
+    )
+    assert reader_pass_manifest["format"] == "sourceAiVisualTraceReaderPassManifest_v1"
+    assert reader_pass_manifest["summary"]["assignmentCount"] == 2
+    assert reader_pass_manifest["summary"]["receivedAssignmentCount"] == 1
+    assert reader_pass_manifest["summary"]["waitingAssignmentCount"] == 1
+    assert reader_pass_manifest["readerPassPolicy"]["criticalWorkPackageIds"] == [
+        "wp-dimensional-floorplans"
+    ]
+    assert {
+        row["readerPassId"] for row in reader_pass_manifest["assignments"]
+    } == {"reader-pass-01", "reader-pass-02"}
+
     blocked = run_ai_visual_trace_agent_loop(work_order=work_order, responses=[])
     assert blocked["ok"] is False
     assert blocked["summary"]["waitingPackageCount"] == 1
@@ -1174,6 +1199,14 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
     )
     assert resp.status_code == 200, resp.text
     assert resp.json()["format"] == "sourceAiVisualTraceAgentRequests_v1"
+    agent_requests = resp.json()
+
+    resp = client.post(
+        "/api/v3/source/ai-visual-trace-reader-pass-manifest",
+        json={"agentRequests": agent_requests, "workOrder": work_order},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["format"] == "sourceAiVisualTraceReaderPassManifest_v1"
 
     resp = client.post(
         "/api/v3/source/ai-visual-trace-agent-loop",

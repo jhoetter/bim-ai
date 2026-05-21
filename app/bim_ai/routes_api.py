@@ -255,6 +255,7 @@ from bim_ai.source_ingestion import (
 )
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
+    build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_responses,
     prepare_ai_visual_trace_run_from_folder,
     run_ai_visual_trace_agent_loop,
@@ -1579,6 +1580,27 @@ async def source_ai_visual_trace_agent_requests_route(
         work_order=work_order,
         run_id=body.get("runId"),
         max_native_text_chars=int(body.get("maxNativeTextChars") or 0),
+    )
+
+
+@api_router.post("/v3/source/ai-visual-trace-reader-pass-manifest")
+async def source_ai_visual_trace_reader_pass_manifest_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    agent_requests = (
+        body.get("agentRequests")
+        or body.get("aiVisualTraceAgentRequests")
+        or body.get("requests")
+        or {}
+    )
+    work_order = body.get("workOrder") or body.get("aiVisualTraceWorkOrder") or {}
+    return build_ai_visual_trace_reader_pass_manifest(
+        agent_requests=agent_requests,
+        work_order=work_order,
+        responses=body.get("responses") or body.get("readerResponses"),
+        min_independent_readers_for_critical_facts=int(
+            body.get("minIndependentReadersForCriticalFacts") or 2
+        ),
     )
 
 

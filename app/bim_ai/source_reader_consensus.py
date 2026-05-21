@@ -212,7 +212,7 @@ def _response_rows(responses: list[dict[str, Any]] | dict[str, Any] | None) -> l
 
 
 def _reader_key(response: dict[str, Any], index: int) -> str:
-    explicit = response.get("readerId") or response.get("agentId")
+    explicit = response.get("readerId") or response.get("agentId") or response.get("readerPassId")
     if explicit:
         return str(explicit)
     provider = response.get("provider")

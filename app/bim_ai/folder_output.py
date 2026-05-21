@@ -18,6 +18,7 @@ from bim_ai.reverse_bim import (
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
+    build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_responses,
     run_ai_visual_trace_agent_loop,
 )
@@ -197,6 +198,11 @@ def build_reverse_bim_folder_output(
         reader_timeout_seconds=reader_timeout_seconds,
     )
     raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
+    reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
+        agent_requests=requests,
+        work_order=work_order,
+        responses=raw_responses.get("responses") or [],
+    )
     reader_consensus = build_source_reader_consensus_report(raw_responses)
     normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
     reader_response_index = _build_reader_response_index(raw_responses, loop)
@@ -311,6 +317,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTracePacket": out_dir / "ai-reading" / "ai-visual-trace-packet.json",
         "aiVisualTraceWorkOrder": out_dir / "ai-reading" / "ai-visual-trace-work-order.json",
         "aiVisualAgentRequests": out_dir / "ai-reading" / "ai-visual-agent-requests.json",
+        "readerPassManifest": out_dir / "ai-reading" / "reader-pass-manifest.json",
         "readerResponsesRaw": out_dir / "ai-reading" / "reader-responses.raw.json",
         "readerResponseIndex": out_dir / "ai-reading" / "reader-response-index.json",
         "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
@@ -359,6 +366,7 @@ def build_reverse_bim_folder_output(
         "aiVisualTracePacket": visual_packet,
         "aiVisualTraceWorkOrder": work_order,
         "aiVisualAgentRequests": requests,
+        "readerPassManifest": reader_pass_manifest,
         "readerResponsesRaw": raw_responses,
         "readerResponseIndex": reader_response_index,
         "readerConsensus": reader_consensus,
