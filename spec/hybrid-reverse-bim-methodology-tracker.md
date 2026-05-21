@@ -451,7 +451,7 @@ The Leo showcase is successful only if:
 | W1-002 | Define `hybrid_reverse_bim.run` contract. | Partial | `reverse_bim.hybrid_run` aggregates run evidence; `reverse_bim.hybrid_slice_execute` executes one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices, stops on blockers, and returns handoff regeneration for affected repairs. Automatic repair/rerun remains. |
 | W1-003 | Define per-slice state machine. | Done | `reverse_bim.hybrid_slice` reports source-blocked, MCP-ready, source-revision-required, tool-gap-blocked, readback-blocked, QA-blocked, visual-blocked, or accepted. |
 | W1-004 | Define source-backed existing-condition policy in final acceptance. | Done | Policy is encoded in phase and final acceptance gates; warnings require source-backed existing-condition evidence. |
-| W1-005 | Create runtime `SKILL.md`. | Done | `claude-skills/hybrid-reverse-bim/SKILL.md` describes the runtime operating procedure for future agents. |
+| W1-005 | Create runtime `SKILL.md`. | Done | `claude-skills/hybrid-reverse-bim/SKILL.md` describes the runtime operating procedure for future agents, including assignment-based reader dispatch/response metadata expectations. |
 | W1-006 | Test runtime skill against Leo end-to-end. | Not started | Requires the live runner, screenshot/overlay capture, and fresh Leo source package. |
 
 ### Wave 2: Source Specification Hardening

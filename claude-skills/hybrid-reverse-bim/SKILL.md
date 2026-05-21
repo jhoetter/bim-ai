@@ -45,6 +45,10 @@ enough to avoid modeling the wrong building.
    `ai-reading/assignments/**`. Reader responses may be supplied directly or
    written as JSON under `ai-reading/responses/**` for the next folder-output
    run to reload.
+   If a `reader_command` is available, it may be used to dispatch open
+   assignments automatically; it receives request plus `assignmentId`,
+   `readerPassId`, and `responsePathHint` metadata on stdin and must return one
+   `sourceAiVisualTraceReaderResponse_v1` JSON object on stdout.
 7. Collect AI-reader responses as structured source facts.
 8. Normalize and validate facts.
 9. Run reader consensus for critical facts.
@@ -68,6 +72,11 @@ Every modelable fact must have:
 - status;
 - intended MCP tool or resolver;
 - expected readback.
+
+Every reader response should include `workPackageId`, `requestId`,
+`readerPassId`, and independent reader identity metadata such as `readerId`,
+`agentId`, `provider`, `model`, or `responseId`. Critical packages must have
+independent agreement or an explicit deterministic disposition before modeling.
 
 Do not infer hidden geometry from prose. If a fact is not MCP-ready, run the
 required resolver, request source repair, or record a blocked/tolerated
