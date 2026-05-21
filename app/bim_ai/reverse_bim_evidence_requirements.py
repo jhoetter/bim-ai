@@ -39,27 +39,51 @@ def _overlay_views(source_page_index: dict[str, Any]) -> list[dict[str, Any]]:
     for page in source_page_index.get("pages") or []:
         if not isinstance(page, dict):
             continue
-        classification = str(page.get("classification") or "")
-        if classification not in OVERLAY_CLASSIFICATIONS:
-            continue
         source_page_id = str(page.get("sourcePageId") or "")
         if not source_page_id:
             continue
-        rows.append(
-            {
-                "viewId": f"overlay:{source_page_id}",
-                "kind": classification,
-                "sourcePageId": source_page_id,
-                "sourceDocumentId": page.get("sourceDocumentId"),
-                "page": page.get("page"),
-                "coordinateFrameId": page.get("coordinateFrameId"),
-                "renderedPagePath": page.get("renderedPagePath"),
-                "toleranceMm": _overlay_tolerance(classification),
-                "requiredBeforeFinalAcceptance": True,
-                "reason": _overlay_reason(classification),
-            }
-        )
+        classifications = _page_overlay_classifications(page)
+        for classification in classifications:
+            rows.append(
+                {
+                    "viewId": (
+                        f"overlay:{source_page_id}"
+                        if len(classifications) == 1
+                        else f"overlay:{source_page_id}:{classification}"
+                    ),
+                    "kind": classification,
+                    "sourcePageId": source_page_id,
+                    "sourceDocumentId": page.get("sourceDocumentId"),
+                    "page": page.get("page"),
+                    "coordinateFrameId": page.get("coordinateFrameId"),
+                    "renderedPagePath": page.get("renderedPagePath"),
+                    "toleranceMm": _overlay_tolerance(classification),
+                    "requiredBeforeFinalAcceptance": True,
+                    "reason": _overlay_reason(classification),
+                    "sourceRoles": classifications,
+                    "primarySourceRole": classifications[0],
+                }
+            )
     return rows
+
+
+def _page_overlay_classifications(page: dict[str, Any]) -> list[str]:
+    labels: list[str] = []
+
+    def add(label: Any) -> None:
+        value = str(label or "").strip()
+        if value in OVERLAY_CLASSIFICATIONS and value not in labels:
+            labels.append(value)
+
+    add(page.get("classification"))
+    for label in page.get("matchedClassifications") or []:
+        add(label)
+    for role in page.get("classificationRoles") or []:
+        if isinstance(role, dict):
+            add(role.get("classification"))
+        else:
+            add(role)
+    return labels
 
 
 def _ui_views(source_facts: list[dict[str, Any]], phase_authoring_spec: dict[str, Any]) -> list[dict[str, Any]]:

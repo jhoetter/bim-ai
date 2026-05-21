@@ -21,6 +21,15 @@ def test_evidence_requirements_derives_overlay_and_ui_views() -> None:
                     "page": 1,
                     "classification": "photo",
                 },
+                {
+                    "sourcePageId": "src-admin:p2",
+                    "sourceDocumentId": "src-admin",
+                    "page": 2,
+                    "classification": "legal_admin",
+                    "matchedClassifications": ["site_plan", "elevation"],
+                    "classificationRoles": [{"classification": "calculation"}],
+                    "renderedPagePath": "rendered/admin-p2.png",
+                },
             ]
         },
         source_facts=[
@@ -44,8 +53,15 @@ def test_evidence_requirements_derives_overlay_and_ui_views() -> None:
     )
 
     assert report["format"] == "reverseBimEvidenceRequirements_v1"
-    assert report["summary"]["overlayViewCount"] == 1
+    assert report["summary"]["overlayViewCount"] == 3
     assert report["requiredOverlayViews"][0]["viewId"] == "overlay:src-plan:p1"
+    multi_role_view_ids = {row["viewId"] for row in report["requiredOverlayViews"]}
+    assert "overlay:src-admin:p2:site_plan" in multi_role_view_ids
+    assert "overlay:src-admin:p2:elevation" in multi_role_view_ids
+    site_overlay = next(
+        row for row in report["requiredOverlayViews"] if row["viewId"] == "overlay:src-admin:p2:site_plan"
+    )
+    assert site_overlay["sourceRoles"] == ["site_plan", "elevation"]
     ui_view_ids = {row["viewId"] for row in report["requiredUiViews"]}
     assert {"ui:plan:KG", "ui:plan:EG", "ui:3d:overview", "ui:elevation:roof-dormers", "ui:site:placement"} <= ui_view_ids
     plan_kg = next(row for row in report["requiredUiViews"] if row["viewId"] == "ui:plan:KG")

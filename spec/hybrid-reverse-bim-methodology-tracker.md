@@ -185,7 +185,7 @@ Every modelable fact must include:
 | SPEC-004 | MCP-readiness mapping. | `reverse_bim.mcp_readiness`, `reverse_bim.plan_authoring`; source-limited terrain/material/history/drainage/volume facts are classified as reference-only or metadata instead of becoming fake authoring rows. | Partial | Add per-slice readiness and stricter "no hidden inference" enforcement for remaining topology/host cases. |
 | SPEC-005 | Source coverage matrix. | `reverse_bim.source_coverage` | Partial | Connect coverage to live element metadata after commits. |
 | SPEC-006 | Expected readback per action. | `reverse_bim.plan_authoring` emits expected readback; `reverse_bim.readback_compare` compares expected rows with live query/readback evidence. | Done | Keep extending field-level comparisons as new element categories need stricter checks. |
-| SPEC-007 | Source-view requirements. | `reverse_bim.evidence_requirements` | Partial | Include exact plan/elevation/section/site views required for each source page. |
+| SPEC-007 | Source-view requirements. | `reverse_bim.evidence_requirements` now derives required overlay views from primary and secondary page roles, so mixed-role source pages can demand site/elevation/plan overlays even when the document primary role differs. | Partial | Include exact crop/orientation/camera/view setup required for each source page. |
 | SPEC-008 | Tolerance policy. | Folder output tolerance policy; phase packet supports source-backed existing nonconformance. | Partial | Expand policy into blocking categories and existing-condition exception categories. |
 | SPEC-009 | Source-spec revision loop. | `reverse_bim.source_spec_revision` classifies feedback; `reverse_bim.source_revision_ledger` creates repair ledger entries; `reverse_bim.source_revision_ledger_persist` stores/merges the ledger under folder-output validation, and `reverse_bim.handoff_regeneration` regenerates affected MCP handoff rows or reader repair requests. | Partial | Automatically invoke focused source readers/reruns from persisted ledger entries. |
 
@@ -301,7 +301,7 @@ Minimum view set for a house:
 
 | ID | Requirement | Existing repo support | Status | Required build or decision |
 | --- | --- | --- | --- | --- |
-| VIEW-001 | Source-equivalent plan views for each level. | Plan view authoring/query exists. | Partial | Add source-page binding, crop, scale, and screenshot requirement per level. |
+| VIEW-001 | Source-equivalent plan views for each level. | Plan view authoring/query exists; evidence requirements bind required overlays to primary and secondary source-page roles. | Partial | Add crop, scale, and screenshot requirement per level. |
 | VIEW-002 | Source-equivalent elevation views. | Cardinal elevation helper exists; elevation view UI exists. | Partial | Add first-class author/query/update elevation view MCP contract if not already stable. |
 | VIEW-003 | Source-equivalent section views. | Section/sheet infrastructure exists. | Partial | Add reverse-BIM section placement from source section marks or inferred review cuts. |
 | VIEW-004 | 3D/cutaway review views. | `save_3d_view`, 3D viewer, clipping controls. | Partial | Add deterministic camera presets for reverse-BIM review and screenshot capture. |
