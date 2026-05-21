@@ -74,7 +74,7 @@ seed model `9bb9a145-d9ce-5a2f-a748-bb5be3301b30` (`target-house-3`, revision
 | Schedule table derivation | Not re-measured on current seed because it has no schedule elements. | `Unknown` |
 | Validation endpoint | About 137-142 ms. | `B` |
 | Evidence package | About 0.48-0.63 s and observed one room-boundary derivation call. | `B+` |
-| Frontend bundle | Main app chunk regressed slightly to 4.32 MB minified / 1.12 MB gzip. | `D` |
+| Frontend bundle | Entry chunk is now about 408 KB minified / 125 KB gzip after route splitting; largest lazy chunk is still the workspace at about 2.15 MB minified / 568 KB gzip. | `C+` |
 | Frontend state invalidation | Structural risk remains: broad `elementsById` subscriptions and large components. | `C-/D+` |
 | 2D/3D interaction scale | Still not empirically measured with browser traces or large fixtures. | `C` |
 | Collaboration/websocket scale | No new load test; risk unchanged. | `C-` |
@@ -85,7 +85,8 @@ Current overall grade:
 - larger-project readiness: `C-/D+`;
 - reporting/evidence path readiness: `B` for the current seed, pending larger
   fixtures and CI budgets;
-- production-load experience: `D+`.
+- production-load experience: `C`, with the workspace route still needing deeper
+  panel-level splitting.
 
 ## Measurement Context
 
@@ -529,13 +530,13 @@ Relevant files:
 | --------- | ------ | ------------- |
 | `PERF-M0` Baseline and tracker | `Done` | This tracker exists with measured baselines, grades, and backlog items. |
 | `PERF-M1` Interactive authoring under 150 ms server p50 | `Partial` | Common commands return in under 150 ms p50 and under 300 ms p95 on standard model fixtures. |
-| `PERF-M2` Evidence package under 1 s small-model p50 | `Partial` | Current seed runs under 1 s and observed one room-boundary derivation call; still needs the original/medium fixtures and CI budget enforcement. |
+| `PERF-M2` Evidence package under 1 s small-model p50 | `Done` | Current seed and the synthetic small fixture run under the budget; schedule-heavy evidence is covered by the backend budget harness. |
 | `PERF-M3` Snapshot/bootstrap dedupe | `Not started` | Initial load uses one authoritative bootstrap path and avoids duplicate snapshot/evaluation/hydration. |
 | `PERF-M4` Projection/schedule caching | `Not started` | Plan projection and schedule tables use revision-keyed server/client caches with invalidation. |
 | `PERF-M5` Frontend selector/index hardening | `Not started` | Main panes consume derived selectors/indices rather than scanning `elementsById` directly for common views. |
 | `PERF-M6` 3D/2D interaction budgets | `Not started` | Orbit, hover, pan, snap, and placement remain smooth on scale fixtures; render loop is demand-driven when idle. |
-| `PERF-M7` Bundle budget | `Not started` | Main gzip chunk is below agreed budget and heavy routes/panels are code-split. |
-| `PERF-M8` CI performance gates | `Not started` | Backend endpoint, command, projection, evidence, and bundle budgets run in CI with stable fixtures. |
+| `PERF-M7` Bundle budget | `Partial` | Entry chunk is below budget and non-default routes are split; the workspace route still needs deeper heavy-panel splitting. |
+| `PERF-M8` CI performance gates | `Partial` | Backend compute/evidence budgets and web bundle budgets run in CI; browser interaction budgets are still missing. |
 
 ## Tracker Items
 
@@ -544,11 +545,11 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-A01` | P0 | `Done` | Record current measured baselines. | This tracker includes endpoint timings, compute timings, bundle size, and grades from the 2026-05-19 investigation. |
-| `PERF-A02` | P0 | `Not started` | Add repeatable backend benchmark script. | A script can run snapshot, validate, command dry-run, command commit simulation, projection, schedule, and evidence-package against a fixture and emit JSON timings. |
-| `PERF-A03` | P0 | `Not started` | Add standard performance fixtures. | Fixtures include small current model, medium BIM model, large documentation model, and room-separation stress model. |
+| `PERF-A02` | P0 | `Done` | Add repeatable backend benchmark script. | `app/scripts/performance_budget.py` emits JSON timings and enforces budgets for evaluate, projection, schedules, evidence package, and room derivation. |
+| `PERF-A03` | P0 | `Partial` | Add standard performance fixtures. | Synthetic small, schedule-heavy, and room-separation stress fixtures exist; a larger documentation-heavy fixture is still missing. |
 | `PERF-A04` | P1 | `Not started` | Add route timing middleware in dev/test. | Slow backend routes log route, model id, revision, elapsed time, and top-level compute phase labels. |
 | `PERF-A05` | P1 | `Not started` | Add compute-phase timers for expensive derivations. | Room derivation, schedule derivation, plan projection, sheet evidence, validation, and evidence package expose phase timings in debug logs or optional response metadata. |
-| `PERF-A06` | P1 | `Not started` | Add CI backend budgets. | CI fails when stable fixtures exceed budget thresholds with reasonable tolerances. |
+| `PERF-A06` | P1 | `Done` | Add CI backend budgets. | CI runs the backend performance budget harness with stable synthetic fixtures and failure thresholds. |
 | `PERF-A07` | P2 | `Not started` | Store historical benchmark output. | Benchmark JSON is written to `spec/generated` or artifacts so regressions can be compared over time. |
 
 ### B. Command Commit And Undo/Redo Responsiveness
@@ -582,8 +583,8 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-D01` | P0 | `Partial` | Add request-scoped evidence context/cache object. | Current seed evidence package observed one room-boundary derivation call, but schedule/projection/sheet fragment caching still needs explicit verification and tests. |
-| `PERF-D02` | P0 | `Partial` | Reduce `/evidence-package` to under 1 s on current small model. | Current seed is about 0.48-0.63 s; still needs original/medium/large fixture coverage and CI budget enforcement. |
+| `PERF-D01` | P0 | `Partial` | Add request-scoped evidence context/cache object. | Current seed evidence package observed one room-boundary derivation call, and synthetic schedule-heavy evidence now has a CI budget; schedule/projection/sheet fragment memoization is still not complete. |
+| `PERF-D02` | P0 | `Done` | Reduce `/evidence-package` to under 1 s on current small model. | Current seed is about 0.48-0.63 s, and the synthetic small fixture budget is under 1.5 s in CI. |
 | `PERF-D03` | P0 | `Done` | Remove repeated room-boundary derivation from sheet evidence for current seed. | Current seed evidence package observed one room-boundary derivation call; keep regression coverage before treating this as scale-complete. |
 | `PERF-D04` | P1 | `Not started` | Cache schedule table derivation inside evidence package. | Each schedule id is derived at most once per evidence package request. |
 | `PERF-D05` | P1 | `Not started` | Cache plan projection wire sample inside evidence package. | Each `(planViewId, fallbackLevelId, presentation)` projection is resolved at most once per request. |
@@ -654,8 +655,8 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-J01` | P0 | `Done` | Record current production bundle baseline. | Main app chunk is recorded as 4.19 MB minified / 1.08 MB gzip. |
-| `PERF-J02` | P0 | `Not started` | Add bundle size budget. | CI fails or warns when main gzip exceeds agreed threshold. |
-| `PERF-J03` | P0 | `Not started` | Code split non-default routes. | Family editor, presentation viewer, icon gallery, and other non-root routes load through `React.lazy`. |
+| `PERF-J02` | P0 | `Done` | Add bundle size budget. | `scripts/check-bundle-budgets.mjs` fails CI when entry, largest JS chunk, or total JS gzip budgets regress. |
+| `PERF-J03` | P0 | `Done` | Code split non-default routes. | Workspace, family editor, presentation viewer, and icon gallery routes load through `React.lazy`. |
 | `PERF-J04` | P1 | `Not started` | Code split heavy panels. | Evidence/Agent Review, Sheet Documentation, Schedule focus, Family Library, PDF/export, map/Leaflet surfaces load on demand. |
 | `PERF-J05` | P1 | `Not started` | Add manual chunks for stable heavy dependencies. | Three.js, Leaflet, html2canvas/jsPDF, command registry, and large feature modules are split where appropriate. |
 | `PERF-J06` | P2 | `Not started` | Add bundle analyzer report. | A generated report identifies top modules in the main chunk. |
@@ -683,8 +684,8 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-M01` | P0 | `Not started` | Add backend perf smoke test for current small fixture. | Snapshot, validate, projection, schedule, evidence, and common command paths are measured. |
-| `PERF-M02` | P0 | `Not started` | Add bundle size check. | Main gzip and total dist size are checked in CI. |
+| `PERF-M01` | P0 | `Done` | Add backend perf smoke test for current small fixture. | Synthetic small, schedule-heavy, and room-stress fixtures measure evaluate, projection, schedules, evidence, and room derivation in CI. |
+| `PERF-M02` | P0 | `Done` | Add bundle size check. | Entry gzip, largest JS chunk gzip, and total JS gzip are checked in CI. |
 | `PERF-M03` | P1 | `Not started` | Add Playwright interaction perf traces. | Orbit, pan, place window, place door, draw wall, and plan hover collect browser timing traces. |
 | `PERF-M04` | P1 | `Not started` | Add render-count regression test harness. | Development/test mode can assert major panes do not render unexpectedly on simple deltas. |
 | `PERF-M05` | P2 | `Not started` | Add benchmark trend artifacts. | CI uploads benchmark JSON/HTML summaries for comparison across commits. |
@@ -702,25 +703,23 @@ once medium and large fixtures exist.
 | room schedule table | `<100 ms` | `<250 ms` | `~226-237 ms` |
 | `/validate` | `<200 ms` | `<500 ms` | `~137-142 ms` on current seed; initial baseline was `~399-425 ms` |
 | `/evidence-package` default | `<1000 ms` | `<1500 ms` | `~480-630 ms` on current seed; initial baseline was `~7100-8000 ms` |
-| main JS gzip | `<500 KB` | hard fail at `750 KB` | `1123 KB`, regressed from `1079 KB` |
+| main JS gzip | `<500 KB` | hard fail at `750 KB` | entry `125 KB` gzip after route split; largest lazy chunk `568 KB`; total JS gzip `1.36 MB` |
 | 3D idle render loop | `0 continuous frames` | n/a | likely continuous |
 | pointermove handler | `<4 ms` | `<8 ms` | not measured |
 
 ## Recommended Immediate Work Plan
 
-1. `PERF-D01` through `PERF-D05`: verify and generalize the evidence-package
-   caching/reuse improvement across schedule-heavy and medium/large fixtures,
-   then lock it with CI budgets.
+1. `PERF-D01`, `PERF-D04`, and `PERF-D05`: finish schedule/projection/sheet
+   memoization inside evidence package after the schedule-heavy CI budget.
 2. `PERF-E03`: stop double snapshot bootstrapping.
 3. `PERF-F01` and `PERF-F04`: add revision-keyed server caches for plan
    projection and schedule table derivation.
-4. `PERF-J03` and `PERF-J04`: split non-default routes and heavy panels from
-   the main bundle.
+4. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
 5. `PERF-G01` and `PERF-G02`: generate an `elementsById` subscription/scan
    report and introduce derived indices.
 6. `PERF-I02`: make 3D rendering demand-driven when idle.
-7. `PERF-A02` and `PERF-M01`: turn the current ad hoc measurements into a
-   repeatable benchmark.
+7. Expand the benchmark fixture set with a larger documentation-heavy model and
+   trend artifacts.
 
 ## Commands Used For Initial Measurements
 
