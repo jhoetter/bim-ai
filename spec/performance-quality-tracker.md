@@ -546,7 +546,7 @@ Relevant files:
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-A01` | P0 | `Done` | Record current measured baselines. | This tracker includes endpoint timings, compute timings, bundle size, and grades from the 2026-05-19 investigation. |
 | `PERF-A02` | P0 | `Done` | Add repeatable backend benchmark script. | `app/scripts/performance_budget.py` emits JSON timings and enforces budgets for evaluate, projection, schedules, evidence package, and room derivation. |
-| `PERF-A03` | P0 | `Partial` | Add standard performance fixtures. | Synthetic small, schedule-heavy, and room-separation stress fixtures exist; a larger documentation-heavy fixture is still missing. |
+| `PERF-A03` | P0 | `Done` | Add standard performance fixtures. | Synthetic small, schedule-heavy, room-separation stress, and documentation-heavy fixtures exist in the backend performance budget harness. |
 | `PERF-A04` | P1 | `Not started` | Add route timing middleware in dev/test. | Slow backend routes log route, model id, revision, elapsed time, and top-level compute phase labels. |
 | `PERF-A05` | P1 | `Not started` | Add compute-phase timers for expensive derivations. | Room derivation, schedule derivation, plan projection, sheet evidence, validation, and evidence package expose phase timings in debug logs or optional response metadata. |
 | `PERF-A06` | P1 | `Done` | Add CI backend budgets. | CI runs the backend performance budget harness with stable synthetic fixtures and failure thresholds. |
@@ -715,8 +715,7 @@ once medium and large fixtures exist.
    undo-stack entries before authoritative backend acceptance.
 3. `PERF-F04`: add revision-keyed server caching for schedule table derivation.
 4. `PERF-J04`: split heavy workspace panels from the workspace lazy chunk.
-5. Expand the benchmark fixture set with a larger documentation-heavy model and
-   trend artifacts.
+5. Add benchmark trend artifacts for comparing budget results over time.
 
 ## Commands Used For Initial Measurements
 
