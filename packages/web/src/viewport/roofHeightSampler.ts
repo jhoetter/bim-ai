@@ -23,6 +23,18 @@ function xzBoundsMm(poly: Array<{ xMm: number; yMm: number }>) {
   return { minX, maxX, minZ, maxZ, spanX: maxX - minX, spanZ: maxZ - minZ };
 }
 
+function boundsWithOverhangMm(bounds: ReturnType<typeof xzBoundsMm>, roof: RoofElem) {
+  const overhangMm = Math.max(0, Number(roof.overhangMm ?? 0));
+  return {
+    minX: bounds.minX - overhangMm,
+    maxX: bounds.maxX + overhangMm,
+    minZ: bounds.minZ - overhangMm,
+    maxZ: bounds.maxZ + overhangMm,
+    spanX: bounds.spanX + overhangMm * 2,
+    spanZ: bounds.spanZ + overhangMm * 2,
+  };
+}
+
 export function roofHeightAtPoint(
   roof: RoofElem,
   elementsById: Record<string, Element>,
@@ -49,7 +61,7 @@ export function roofHeightAtPoint(
   const clampedDeg = Math.min(70, Math.max(5, Number(rawSlopeDeg)));
   const slopeRad = (clampedDeg * Math.PI) / 180;
 
-  const b = xzBoundsMm(roof.footprintMm ?? []);
+  const b = boundsWithOverhangMm(xzBoundsMm(roof.footprintMm ?? []), roof);
   const ox0 = b.minX / 1000;
   const ox1 = b.maxX / 1000;
   const oz0 = b.minZ / 1000;

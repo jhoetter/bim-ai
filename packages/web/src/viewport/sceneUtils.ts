@@ -68,6 +68,7 @@ export function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'floor';
     case 'site':
     case 'toposolid':
+    case 'toposolid_excavation':
       return 'site';
     case 'internal_origin':
     case 'project_base_point':

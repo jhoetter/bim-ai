@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ToposolidExcavationElem } from '@bim-ai/core';
+import type { Element, ToposolidExcavationElem } from '@bim-ai/core';
 
 import { buildWindowFrameMesh, buildGlazingMesh } from './meshBuilders.windowFrame';
 
@@ -13,9 +13,62 @@ import { buildWindowFrameMesh, buildGlazingMesh } from './meshBuilders.windowFra
  *  0 — walls (ExtrudeGeometry along the boundary, extruded downward)
  *  1 — floor (ShapeGeometry at Y = −depthMm/1000)
  */
-export function buildExcavationMesh(excav: ToposolidExcavationElem): THREE.Group {
+function cutterBoundaryMm(
+  excav: ToposolidExcavationElem,
+  elementsById?: Record<string, Element>,
+): { xMm: number; yMm: number }[] {
+  if (excav.boundaryMm && excav.boundaryMm.length >= 3) return excav.boundaryMm;
+  const cutter = elementsById?.[excav.cutterElementId];
+  if (!cutter) return [];
+  if (
+    (cutter.kind === 'floor' ||
+      cutter.kind === 'roof' ||
+      cutter.kind === 'site' ||
+      cutter.kind === 'toposolid') &&
+    Array.isArray((cutter as { boundaryMm?: unknown }).boundaryMm)
+  ) {
+    return (cutter as { boundaryMm: { xMm: number; yMm: number }[] }).boundaryMm;
+  }
+  if (cutter.kind === 'roof' && Array.isArray(cutter.footprintMm)) return cutter.footprintMm;
+  return [];
+}
+
+function centroidMm(boundary: { xMm: number; yMm: number }[]): { xMm: number; yMm: number } {
+  const sum = boundary.reduce(
+    (acc, point) => ({ xMm: acc.xMm + point.xMm, yMm: acc.yMm + point.yMm }),
+    { xMm: 0, yMm: 0 },
+  );
+  return { xMm: sum.xMm / boundary.length, yMm: sum.yMm / boundary.length };
+}
+
+function toposolidHeightAtPointMm(
+  topo: Extract<Element, { kind: 'toposolid' }>,
+  point: { xMm: number; yMm: number },
+): number {
+  const samples = topo.heightSamples ?? [];
+  if (samples.length > 0) {
+    let best = samples[0]!;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const sample of samples) {
+      const dx = sample.xMm - point.xMm;
+      const dy = sample.yMm - point.yMm;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        best = sample;
+        bestDist = dist;
+      }
+    }
+    return best.zMm;
+  }
+  return topo.baseElevationMm ?? 0;
+}
+
+export function buildExcavationMesh(
+  excav: ToposolidExcavationElem,
+  elementsById?: Record<string, Element>,
+): THREE.Group {
   const group = new THREE.Group();
-  const boundary = excav.boundaryMm ?? [];
+  const boundary = cutterBoundaryMm(excav, elementsById);
   if (boundary.length < 3) return group;
 
   const depthMm = excav.depthMm ?? (excav.customDepthMm != null ? excav.customDepthMm : 1500);
@@ -58,6 +111,10 @@ export function buildExcavationMesh(excav: ToposolidExcavationElem): THREE.Group
   group.add(floorMesh);
 
   group.userData.bimPickId = excav.id;
+  const host = elementsById?.[excav.hostToposolidId];
+  if (host?.kind === 'toposolid') {
+    group.position.y = toposolidHeightAtPointMm(host, centroidMm(boundary)) / 1000;
+  }
   return group;
 }
 

@@ -74,7 +74,7 @@ SOURCE FOLDER
        -> MCP commit
        -> model readback
        -> Advisor / constructability / integrity
-       -> source-view screenshots and overlays
+       -> source-view screenshots, overlays, and visual geometry parity
        -> disposition / repair
            -> if source facts are disproved, return to source specification
   -> FINAL ACCEPTANCE
@@ -226,13 +226,16 @@ Every slice uses the same loop:
 9. Run Advisor, constructability, integrity, area/source checks.
 10. Create source-equivalent views.
 11. Capture screenshots and source overlays.
-12. Disposition every finding.
-13. If the finding is a model-authoring error, repair the model.
-14. If the finding disproves or weakens a source fact, reopen the source
+12. Run visual geometry parity checks for roof/wall joins, dormers, openings,
+    stairs, rooms, and terrain/site placement.
+13. Disposition every finding.
+14. If the finding is a model-authoring or renderer/tool-contract error, repair
+    the model or tool and rerun the slice.
+15. If the finding disproves or weakens a source fact, reopen the source
     specification, repair the fact, regenerate the affected handoff rows, and
     rerun the slice.
-15. Accept the slice only after source facts, model readback, QA, and visual
-    evidence agree.
+16. Accept the slice only after source facts, model readback, QA, and visual
+    geometry evidence agree.
 ```
 
 ### Per-Slice Tracker
@@ -253,6 +256,7 @@ Every slice uses the same loop:
 | LOOP-012 | Finding dispositions. | `reverse_bim.phase_packet` with dispositions. | Partial | Enforce source-backed existing-condition policy and block fixable authoring errors. |
 | LOOP-013 | Repair loop. | AI-reader repair requests exist; `reverse_bim.source_spec_revision` maps feedback, `reverse_bim.source_revision_ledger` converts actions into open repair ledger entries, and `reverse_bim.source_revision_ledger_persist` saves resumable ledger/history files. | Partial | Connect persisted repair worklists to automated rerun of impacted slices. |
 | LOOP-014 | Modeling-to-source feedback loop. | `reverse_bim.source_spec_revision` classifies contradictions; `reverse_bim.source_revision_ledger` marks reopened facts; `reverse_bim.source_revision_ledger_persist` records reopened facts; `reverse_bim.handoff_regeneration` produces affected-slice MCP handoff or reader repair work; `reverse_bim.hybrid_run_execute` returns the latest handoff regeneration plan when a run blocks. | Partial | Automatically run focused readers/rerun affected slices. |
+| LOOP-015 | Visual geometry parity gate. | Roof height sampling now uses the same overhang-expanded roof footprint as the rendered roof, and toposolid rendering uses the building coordinate convention with excavation holes derived from cutter elements. These fixes make roof/wall joins and terrain/building cuts inspectable instead of hidden renderer mismatches. | Partial | Add first-class gate rows from source-equivalent screenshots that explicitly fail visible roof-wall penetrations/gaps, wrong dormer/window height, terrain offset/mirroring, missing excavations, and building-pad/site misalignment. |
 
 ## MCP Authoring Surface Matrix
 
@@ -269,15 +273,15 @@ exist. Raw bundles are fallback only and must be recorded as a gap.
 | Stairs | `author.stair_between_levels`, `author.stair_by_runs`, `author.stair_by_sketch` | Partial | Existing-house stairs often need by-sketch source facts, slab openings, headroom checks. |
 | Stair/slab openings | `opening.slab_opening`, `opening.shaft_opening` | Partial | Need automatic stair-to-opening consistency gate. |
 | Railings | `author.railing` | Done | Need source/condition metadata for existing railings if visible. |
-| Roofs | `author.roof_from_boundary` | Partial | Roof geometry currently may be simplified; source elevations/sections must validate. |
-| Dormers | `author.dormer_on_roof`, `resolve.roof_position_from_source_point`, `resolve.dormer_opening_host` | Partial | Need stronger dormer face/window host model and elevation overlay. |
+| Roofs | `author.roof_from_boundary` | Partial | Roof geometry may still be simplified, but roof/wall attachment must use the rendered roof surface including overhang/eave behavior. Source elevations/sections and 3D cutaways must fail visible wall-through-roof or floating-roof defects. |
+| Dormers | `author.dormer_on_roof`, `resolve.roof_position_from_source_point`, `resolve.dormer_opening_host` | Partial | Need stronger dormer face/window host model and elevation overlay; dormer windows must be checked in source-equivalent elevation and roof-slope views. |
 | Roof openings | `opening.roof_opening` | Partial | Need source-backed structural/curb review or accepted existing-condition note. |
-| Terrain/toposolid | `toposolid-create`, site tools | Partial | Need source coordinate frame and source-limited terrain policy. |
+| Terrain/toposolid | `toposolid-create`, site tools | Partial | Renderer now supports the building Y/Z convention and toposolid excavation holes, but method still requires source coordinate frame, building-pad/excavation evidence, and source-limited terrain policy. |
 | Parcel/property lines | `site.property-line-create` | Partial | Need legal/site document extraction and georeferencing. |
 | Materials/assemblies | `reverse_bim.source_material_assemblies`, type/material query tools | Partial | Need typed layer-stack authoring and source-unavailable dispositions. |
 | Schedules | schedule derivation/query/export surfaces | Partial | Need reverse-BIM schedule reconciliation against source calculations. |
-| Views | `author.plan_view`, `save_3d_view`, view/query/sheet tools | Partial | Need exact source-equivalent elevation/section/cutaway view setup. |
-| Screenshots | UI/Playwright evidence scripts, `reverse_bim.ui_evidence` validator, `reverse_bim.view_capture_plan` | Partial | Capture work order is first-class; actual runner still needs implementation/wiring. |
+| Views | `author.plan_view`, `save_3d_view`, view/query/sheet tools | Partial | Need exact source-equivalent elevation/section/cutaway view setup, including roof-wall and terrain/building interface review views. |
+| Screenshots | UI/Playwright evidence scripts, `reverse_bim.ui_evidence` validator, `reverse_bim.view_capture_plan` | Partial | Capture work order is first-class; actual runner still needs implementation/wiring and visual-geometry failure extraction. |
 
 ## Required Review Views
 
@@ -295,6 +299,9 @@ Minimum view set for a house:
 - at least one transverse section through roof/dormer;
 - 3D overview;
 - 3D cutaway showing stairs/floors/openings;
+- 3D/section views focused on roof-wall junctions, dormers, eaves, and ridge;
+- 3D/site cutaway showing terrain/toposolid, building pad, excavations, and
+  property/site placement;
 - site/parcel/topology plan;
 - schedule views for rooms, openings, areas, volumes, and materials.
 
@@ -309,6 +316,7 @@ Minimum view set for a house:
 | VIEW-005 | Live screenshot capture. | Visual evidence scripts exist; validator exists; `reverse_bim.view_capture_plan` defines required browser captures and evidence row templates; `reverse_bim.view_capture_execute` opens each requested view and writes PNGs/manifests; visual review request/normalization tools convert screenshot review into gate rows. Hybrid slice execution now emits capture plans from evidence requirements and blocks missing evidence. | Partial | Wire actual browser capture execution and review responses into the hybrid run executor. |
 | VIEW-006 | Overlay source page on model view. | Underlay and overlay evidence validators exist. | Partial | Build generated overlay image and numeric deviation report. |
 | VIEW-007 | Human-visible checklist. | `reverse_bim.ui_evidence` supports checklist validation; `reverse_bim.visual_review_requests` packages checklist items for AI review; `reverse_bim.visual_review_normalize` blocks missing/failed responses. | Partial | Invoke the checklist review automatically in hybrid runs. |
+| VIEW-008 | Source-view visual geometry defect gate. | Runtime screenshots can expose defects that Advisor does not classify, and renderer fixes now make roof-wall and terrain cut conditions visible. | Partial | Add mandatory checklist/result rows for roof/wall penetrations or gaps, dormer/opening height, terrain/toposolid coordinate placement, excavation/building-pad alignment, and source-view facade/roof/site parity. |
 
 ## Advisor And Existing-Condition Policy
 
@@ -352,6 +360,10 @@ Examples that may not be tolerated:
 
 - floating/unhosted doors or windows;
 - doors/windows outside walls;
+- visible roof/wall penetration or gap caused by wrong attachment, clipping,
+  roof surface sampling, or roof authoring;
+- visible terrain/toposolid offset, mirroring, wrong start edge, or missing
+  building excavation/pad when the source/model should define it;
 - stair hard clash caused by wrong modeling;
 - missing KG/basement when source has KG;
 - room placeholders not bounded by physical topology;
@@ -379,8 +391,14 @@ The final model is accepted only when all of these are true:
 - Volumes reconcile with source volume calculations where available.
 - Sections and elevations align to source evidence.
 - Roof/dormers/openings match source views or are explicitly source-limited.
+- Roof surfaces visually meet supporting walls/eaves/ridge conditions without
+  wall-through-roof penetrations or floating gaps, unless a source-backed
+  existing condition is explicitly modeled as such.
 - Terrain/site/parcel placement is source-backed or source-limited with a
   visible disposition.
+- Terrain/toposolid, excavations, building pad, and parcel/site placement share
+  the same accepted coordinate frame as the building and match source-view
+  screenshots.
 - No floating or unhosted elements exist.
 - No doors/windows are outside walls.
 - No assets/furniture/openings occupy stairs.
@@ -405,6 +423,7 @@ The final model is accepted only when all of these are true:
 | ACC-007 | Constructability/integrity final gate. | `qa.constructability`, `qa.integrity_preflight` | Partial | Enforce non-tolerable authoring error categories. |
 | ACC-008 | Schedule reconciliation gate. | Area reconciliation exists; schedule derivation exists. | Partial | Add final room/area/volume/material schedule comparison package. |
 | ACC-009 | Final acceptance package. | `reverse_bim.final_acceptance`, evidence package surfaces. | Partial | Produce one operator-readable and machine-readable package. |
+| ACC-010 | Visual geometry parity final gate. | Roof-wall sampling and toposolid/excavation rendering now expose the critical Leo-style failures in the UI; screenshot evidence and visual review rows exist. | Partial | Final acceptance must fail if source-equivalent views show roof-wall penetrations/gaps, wrong dormer/window height, terrain offset/mirroring, missing excavation/pad relation, or facade/site mismatch even when Advisor is clean. |
 
 ## Leo End-To-End Validation Plan
 
@@ -437,7 +456,12 @@ The Leo showcase is successful only if:
 - rooms and room areas reconcile with the source area calculation;
 - stair geometry, slab openings, and headroom are physically coherent;
 - roof pitch, eaves, dormers, and facade openings align to the outside views;
+- DG/gable/exterior walls terminate cleanly at the roof surface and do not pass
+  visually through the roof;
+- roof windows and dormer windows sit at source-backed heights and hosts;
 - site/parcel/topology are modeled or explicitly source-limited;
+- terrain/toposolid is not mirrored or offset from the building; the slope,
+  building pad, and excavation relationship match Leo source evidence;
 - final Advisor errors are zero;
 - remaining warnings, if any, are source-backed existing conditions;
 - the model can be inspected through both UI screenshots and MCP query output.
@@ -482,6 +506,7 @@ The Leo showcase is successful only if:
 | W4-002 | Add official screenshot capture. | Partial | `reverse_bim.view_capture_plan` defines deterministic capture work orders; `reverse_bim.view_capture_execute` / `pnpm --filter @bim-ai/web reverse-bim:capture` executes them in Chromium and writes screenshot manifests. Hybrid slice execution now emits capture plans and blocks missing evidence; actual browser execution/review still needs automatic invocation. |
 | W4-003 | Generate overlay comparison payloads. | Partial | AI visual review can return overlay `maxDeviationMm` from captured screenshots; automatic geometric overlay comparison remains open. |
 | W4-004 | Enforce visual checklist. | Partial | Human-visible failures like empty KG or incoherent stairs block acceptance through `reverse_bim.visual_review_normalize` + `reverse_bim.ui_evidence`; hybrid slice acceptance now also blocks when required checklist/screenshot evidence is absent. Automatic capture/review invocation from hybrid run remains open. |
+| W4-005 | Enforce roof-wall and terrain/source-view geometry gates. | Partial | Renderer/tool fixes now expose overhang-aware roof-wall joins and toposolid excavation cuts; accepted slices still need automatic screenshot review rows that fail visible roof penetrations, roof gaps, wrong dormer/window placement, terrain offset/mirroring, and pad/excavation mismatch. |
 
 ### Wave 5: Leo Fresh Run
 
@@ -512,12 +537,15 @@ authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification/ledgering/persistence, hybrid slice/run state
 reporting, single-slice live execution, runtime skill guidance, view-capture work
 orders plus a Chromium capture runner, AI visual review requests/normalization,
-handoff regeneration, multi-role document routing, and acceptance validation.
+handoff regeneration, multi-role document routing, acceptance validation,
+overhang-aware roof-wall height sampling, and visible toposolid excavation
+rendering in the building coordinate frame.
 Missing critical glue: UI-assisted coordinate control-point and target-scope
 mask picking, applying accepted target/context masks to authoring filters,
 automatic geometric overlay measurement, automatic screenshot/review invocation
-from hybrid runs, automatic handoff reruns, page-level source classification,
-and Leo reader-response consolidation/repair evidence.
+from hybrid runs, automatic visual-geometry defect extraction, automatic handoff
+reruns, page-level source classification, and Leo reader-response
+consolidation/repair evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

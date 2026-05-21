@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildExcavationMesh } from './meshBuilders';
-import type { ToposolidExcavationElem } from '@bim-ai/core';
+import type { Element, ToposolidExcavationElem } from '@bim-ai/core';
 
 const makeExcav = (
   boundaryMm: { xMm: number; yMm: number }[],
@@ -45,5 +45,31 @@ describe('buildExcavationMesh', () => {
       ]),
     );
     expect(grp.children).toHaveLength(0);
+  });
+
+  it('derives its boundary from the cutter floor when boundaryMm is not explicit', () => {
+    const elementsById: Record<string, Element> = {
+      'floor-1': {
+        kind: 'floor',
+        id: 'floor-1',
+        levelId: 'lvl-1',
+        boundaryMm: SQUARE,
+        thicknessMm: 200,
+      } as Extract<Element, { kind: 'floor' }>,
+    };
+    const grp = buildExcavationMesh(
+      {
+        kind: 'toposolid_excavation',
+        id: 'test-excav-cutter',
+        hostToposolidId: '',
+        cutterElementId: 'floor-1',
+        cutMode: 'to_bottom_of_cutter',
+        offsetMm: 0,
+        customDepthMm: 2500,
+      },
+      elementsById,
+    );
+
+    expect(grp.children).toHaveLength(2);
   });
 });

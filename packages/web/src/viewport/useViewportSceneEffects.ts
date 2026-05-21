@@ -59,6 +59,7 @@ type ViewportSceneEffectsArgs = {
   buildConicalRoofMesh: typeof import('./meshBuilders.coneRoof').buildConicalRoofMesh;
   buildDomeRoofMesh: typeof import('./meshBuilders.coneRoof').buildDomeRoofMesh;
   buildDriftBadgeCanvas: typeof import('../plan/monitorDriftBadge').buildDriftBadgeCanvas;
+  buildExcavationMesh: typeof import('./meshBuilders').buildExcavationMesh;
   buildFamilyBlendMesh: typeof import('./meshBuilders.familyBlend').buildFamilyBlendMesh;
   buildFamilySweepMesh: typeof import('./meshBuilders.familySweep').buildFamilySweepMesh;
   buildGradedRegionMesh: typeof import('./meshBuilders.gradedRegion').buildGradedRegionMesh;
@@ -233,6 +234,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     buildConicalRoofMesh,
     buildDomeRoofMesh,
     buildDriftBadgeCanvas,
+    buildExcavationMesh,
     buildFamilyBlendMesh,
     buildFamilySweepMesh,
     buildGradedRegionMesh,
@@ -941,6 +943,9 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
           break;
         case 'toposolid':
           obj = makeToposolidMesh(e, paint, curr);
+          break;
+        case 'toposolid_excavation':
+          obj = buildExcavationMesh(e, curr);
           break;
         case 'graded_region':
           obj = buildGradedRegionMesh(e);
