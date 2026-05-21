@@ -450,7 +450,7 @@ for _reverse_tool in (
         "title": "HybridReverseBimSliceExecuteInput",
         "path": "/api/v3/models/{model_id}/reverse-bim/hybrid-slice-execute",
         "cli": "bim-ai reverse-bim hybrid-slice-execute --model-id <id> --bundle bundle.json --phase phase.json",
-        "notes": "Executes one live reverse-BIM slice through model.dry_run/model.commit_bundle, then queries readback, Advisor, constructability, integrity, source-spec revision, and phase/slice gates.",
+        "notes": "Executes one live reverse-BIM slice through model.dry_run/model.commit_bundle, then queries readback, Advisor, constructability, integrity, source-spec revision, phase/slice gates, and persists the source-revision ledger when outputDir is supplied.",
     },
     {
         "name": "reverse_bim.hybrid_run",

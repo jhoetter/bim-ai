@@ -2062,12 +2062,21 @@ async def reverse_bim_hybrid_slice_execute_route(
         existing_ledger=body.get("sourceRevisionLedger") or body.get("source_revision_ledger"),
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
     )
+    source_revision_ledger_persistence = None
+    output_dir = body.get("outputDir") or body.get("output_dir")
+    if output_dir:
+        source_revision_ledger_persistence = persist_reverse_bim_source_revision_ledger(
+            output_dir=output_dir,
+            source_revision_ledger=source_revision_ledger,
+            run_id=body.get("runId") or body.get("run_id") or phase_id,
+        )
     evidence_package = {
         "modelSummary": compute_model_summary(doc),
         "queryElements": query_result,
         "readbackComparison": readback_comparison,
         "sourceSpecRevision": source_spec_revision,
         "sourceRevisionLedger": source_revision_ledger,
+        "sourceRevisionLedgerPersistence": source_revision_ledger_persistence,
     }
     phase_packet = build_reverse_bim_phase_packet(
         phase_id=phase_id,
@@ -2122,6 +2131,7 @@ async def reverse_bim_hybrid_slice_execute_route(
         "integrityPreflight": integrity,
         "sourceSpecRevision": source_spec_revision,
         "sourceRevisionLedger": source_revision_ledger,
+        "sourceRevisionLedgerPersistence": source_revision_ledger_persistence,
         "phasePacket": phase_packet,
         "sliceReport": slice_report,
         "nextStep": slice_report.get("nextStep"),
@@ -2155,6 +2165,10 @@ async def reverse_bim_hybrid_run_execute_route(
         "source_overlay",
         "uiEvidence",
         "ui_evidence",
+        "outputDir",
+        "output_dir",
+        "runId",
+        "run_id",
     }
     common = {key: body[key] for key in common_keys if key in body}
     results = []

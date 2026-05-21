@@ -99,6 +99,10 @@ For every slice:
 13. Accept the slice only when source facts, model readback, QA, and visual
     evidence agree.
 
+When using `reverse_bim.hybrid_slice_execute` or `reverse_bim.hybrid_run_execute`,
+pass the folder-output `outputDir` so source-revision ledgers are persisted under
+`validation/` and future agents can resume repair work.
+
 ## Source-Spec Feedback Loop
 
 The source specification is a controlled baseline, not immutable truth.

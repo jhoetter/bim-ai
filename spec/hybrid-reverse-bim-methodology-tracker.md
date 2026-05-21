@@ -233,7 +233,7 @@ Every slice uses the same loop:
 
 | ID | Requirement | Existing repo support | Status | Required build or decision |
 | --- | --- | --- | --- | --- |
-| LOOP-001 | Slice runner that accepts phase authoring spec and executes only unblocked facts. | `reverse_bim.hybrid_slice_execute` performs one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices and stops on the first unresolved blocker. | Partial | Add automatic screenshot/overlay execution and automatic repair/rerun loops. |
+| LOOP-001 | Slice runner that accepts phase authoring spec and executes only unblocked facts. | `reverse_bim.hybrid_slice_execute` performs one live slice, persists source-revision ledger/history when `outputDir` is supplied, and `reverse_bim.hybrid_run_execute` executes ordered slices and stops on the first unresolved blocker. | Partial | Add automatic screenshot/overlay execution and automatic repair/rerun loops. |
 | LOOP-002 | Dry-run before commit for every mutation. | `model.dry_run`, command bundle dry-run path. | Done | Make this mandatory in runner. |
 | LOOP-003 | Commit through transactional MCP/API only. | `model.commit_bundle`, `/api/models/{model_id}/bundles`. | Done | Prohibit seed/raw direct writes except recorded fallback. |
 | LOOP-004 | Query after commit. | `model.summary`, `query.elements`, `query.levels`, `query.views`, `query.hosts`, `query.enclosed_loops`, plus `reverse_bim.readback_compare`. | Done | Runtime runner must call query surfaces and feed results into the comparator after every commit. |
@@ -462,7 +462,7 @@ The Leo showcase is successful only if:
 
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
-| W3-001 | Build runner that executes phase authoring spec transactionally. | Partial | `reverse_bim.hybrid_slice_execute` handles one slice; `reverse_bim.hybrid_run_execute` runs ordered slices. Automatic retries and evidence capture execution remain. |
+| W3-001 | Build runner that executes phase authoring spec transactionally. | Partial | `reverse_bim.hybrid_slice_execute` handles one slice and stores ledger history when `outputDir` is supplied; `reverse_bim.hybrid_run_execute` runs ordered slices. Automatic retries and evidence capture execution remain. |
 | W3-002 | Build readback comparator. | Done | `reverse_bim.readback_compare` checks expected readback rows against explicit readback rows or queried elements. |
 | W3-003 | Attach source fact refs to modeled elements. | Partial | `sourceFactIds` or equivalent survive query, schedule, and evidence export. |
 | W3-004 | Build structured repair worklist from QA/readback findings. | Partial | `reverse_bim.source_spec_revision` classifies actions, `reverse_bim.source_revision_ledger` produces repair entries, `reverse_bim.source_revision_ledger_persist` stores resumable ledger/history files, and `reverse_bim.handoff_regeneration` prepares affected MCP reruns/reader repairs; automatic rerun is still needed. |
