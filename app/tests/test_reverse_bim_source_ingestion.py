@@ -825,6 +825,80 @@ def test_ai_visual_trace_agent_loop_accepts_or_repairs_packages(tmp_path: Path) 
     assert accepted["readerResponses"][0]["workPackageId"] == "wp-dimensional-floorplans"
 
 
+def test_ai_visual_reader_requests_split_large_packages_and_merge_responses() -> None:
+    inputs = [
+        {
+            "sourceDocumentId": "doc-large",
+            "relativePath": "large.pdf",
+            "classification": "floor_plan",
+            "page": index + 1,
+            "renderedPagePath": f"/tmp/large-{index + 1}.png",
+        }
+        for index in range(25)
+    ]
+    work_order = {
+        "workPackages": [
+            {
+                "id": "wp-large",
+                "title": "Large package",
+                "status": "ready",
+                "inputs": inputs,
+                "readerTask": "Read all pages.",
+                "blockingRequiredFactKinds": ["level"],
+                "requiredValueFieldsByKind": {},
+            }
+        ]
+    }
+
+    requests = build_ai_visual_trace_agent_requests(
+        work_order=work_order,
+        run_id="run-large",
+        max_images_per_request=10,
+    )
+    accepted = run_ai_visual_trace_agent_loop(
+        work_order=work_order,
+        responses=[
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "requestId": "run-large:wp-large:part-01",
+                "workPackageId": "wp-large",
+                "requestPartIndex": 1,
+                "requestPartCount": 3,
+                "facts": [],
+            },
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "requestId": "run-large:wp-large:part-02",
+                "workPackageId": "wp-large",
+                "requestPartIndex": 2,
+                "requestPartCount": 3,
+                "facts": [
+                    {
+                        "factId": "fact-level-eg",
+                        "kind": "level",
+                        "value": {"levelId": "EG", "name": "EG", "elevationMm": 0},
+                        "confidence": 0.9,
+                        "provenance": {
+                            "sourceDocumentId": "doc-large",
+                            "page": 11,
+                            "region": "title block",
+                            "method": "ai_document_read",
+                        },
+                    }
+                ],
+            },
+        ],
+    )
+
+    assert requests["workPackageCount"] == 1
+    assert requests["readerRequestCount"] == 3
+    assert [len(row["inputImages"]) for row in requests["requests"]] == [10, 10, 5]
+    assert accepted["ok"] is True
+    assert accepted["summary"]["acceptedPackageCount"] == 1
+    assert accepted["readerResponses"][0]["responseParts"][1]["requestPartIndex"] == 2
+    assert accepted["acceptedFacts"][0]["factId"] == "fact-level-eg"
+
+
 def test_prepare_ai_visual_trace_run_from_folder_writes_artifacts(tmp_path: Path) -> None:
     source_dir = tmp_path / "source"
     output_dir = tmp_path / "out"

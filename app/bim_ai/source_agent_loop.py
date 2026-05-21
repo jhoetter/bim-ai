@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 import subprocess
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -203,6 +203,7 @@ def build_ai_visual_trace_agent_requests(
     work_order: dict[str, Any],
     run_id: str | None = None,
     max_native_text_chars: int = 0,
+    max_images_per_request: int | None = 12,
 ) -> dict[str, Any]:
     """Build deterministic requests for multimodal AI/source-reader workers.
 
@@ -216,44 +217,58 @@ def build_ai_visual_trace_agent_requests(
     for wp in _work_packages(work_order):
         package_id = str(wp.get("id") or "")
         required_kinds = _blocking_required_kinds(wp)
-        requests.append(
+        input_images = [
             {
-                "requestId": f"{resolved_run_id}:{package_id}",
-                "workPackageId": package_id,
-                "title": wp.get("title"),
-                "status": "ready" if wp.get("status") == "ready" else "missing_inputs",
-                "inputImages": [
-                    {
-                        "sourceDocumentId": row.get("sourceDocumentId"),
-                        "relativePath": row.get("relativePath"),
-                        "classification": row.get("classification"),
-                        "page": row.get("page"),
-                        "renderedPagePath": row.get("renderedPagePath"),
-                    }
-                    for row in wp.get("inputs") or []
-                    if isinstance(row, dict)
-                ],
-                "readerPrompt": _reader_prompt(wp, required_kinds),
-                "outputContract": {
-                    "format": "sourceAiVisualTraceReaderResponse_v1",
-                    "workPackageId": package_id,
-                    "factsOnly": True,
-                    "modelMutationsAllowed": False,
-                    "requiredFactFields": [
-                        "factId",
-                        "kind",
-                        "value",
-                        "confidence",
-                        "provenance",
-                    ],
-                    "requiredProvenanceFields": ["sourceDocumentId", "page", "region"],
-                    "method": "ai_document_read",
-                    "blockingRequiredFactKinds": required_kinds,
-                    "requiredValueFieldsByKind": wp.get("requiredValueFieldsByKind") or {},
-                },
-                "nativeTextBudgetChars": max_native_text_chars,
+                "sourceDocumentId": row.get("sourceDocumentId"),
+                "relativePath": row.get("relativePath"),
+                "classification": row.get("classification"),
+                "page": row.get("page"),
+                "renderedPagePath": row.get("renderedPagePath"),
             }
-        )
+            for row in wp.get("inputs") or []
+            if isinstance(row, dict)
+        ]
+        chunks = _chunk_rows(input_images, max_images_per_request)
+        for part_index, image_chunk in enumerate(chunks, start=1):
+            part_count = len(chunks)
+            request_id = f"{resolved_run_id}:{package_id}"
+            if part_count > 1:
+                request_id = f"{request_id}:part-{part_index:02d}"
+            requests.append(
+                {
+                    "requestId": request_id,
+                    "workPackageId": package_id,
+                    "requestPartIndex": part_index,
+                    "requestPartCount": part_count,
+                    "title": wp.get("title"),
+                    "status": "ready" if wp.get("status") == "ready" else "missing_inputs",
+                    "inputImages": image_chunk,
+                    "readerPrompt": _reader_prompt(wp, required_kinds),
+                    "outputContract": {
+                        "format": "sourceAiVisualTraceReaderResponse_v1",
+                        "workPackageId": package_id,
+                        "factsOnly": True,
+                        "modelMutationsAllowed": False,
+                        "requiredFactFields": [
+                            "factId",
+                            "kind",
+                            "value",
+                            "confidence",
+                            "provenance",
+                        ],
+                        "requiredProvenanceFields": ["sourceDocumentId", "page", "region"],
+                        "method": "ai_document_read",
+                        "blockingRequiredFactKinds": required_kinds,
+                        "requiredValueFieldsByKind": wp.get("requiredValueFieldsByKind") or {},
+                    },
+                    "nativeTextBudgetChars": max_native_text_chars,
+                    "responseMergePolicy": (
+                        "Multiple responses with the same workPackageId are merged by concatenating facts before package validation."
+                        if part_count > 1
+                        else "Single response validates this work package."
+                    ),
+                }
+            )
 
     return {
         "ok": True,
@@ -261,7 +276,8 @@ def build_ai_visual_trace_agent_requests(
         "runId": resolved_run_id,
         "createdAt": datetime.now(UTC).isoformat(),
         "sourceWorkOrderDigestSha256": work_order.get("digestSha256"),
-        "workPackageCount": len(requests),
+        "workPackageCount": len(_work_packages(work_order)),
+        "readerRequestCount": len(requests),
         "requests": requests,
         "acceptance": [
             "Each reader response must be JSON with format=sourceAiVisualTraceReaderResponse_v1.",
@@ -290,11 +306,10 @@ def run_ai_visual_trace_agent_loop(
         work_order=work_order,
         run_id=resolved_run_id,
     )
-    requests_by_package = {
-        str(row.get("workPackageId")): row
-        for row in reader_requests.get("requests", [])
-        if isinstance(row, dict)
-    }
+    requests_by_package: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in reader_requests.get("requests", []):
+        if isinstance(row, dict) and row.get("workPackageId"):
+            requests_by_package[str(row.get("workPackageId"))].append(row)
     package_results: list[dict[str, Any]] = []
     accepted_facts: list[dict[str, Any]] = []
     all_facts: list[dict[str, Any]] = []
@@ -326,13 +341,24 @@ def run_ai_visual_trace_agent_loop(
             continue
         if response is None:
             if reader_command:
-                response, diagnostic = _call_reader_command(
-                    reader_command,
-                    requests_by_package.get(package_id, {}),
-                    timeout_seconds=reader_timeout_seconds,
-                )
-                if diagnostic:
-                    dispatch_diagnostics.append({"workPackageId": package_id, **diagnostic})
+                dispatched_responses = []
+                for request in requests_by_package.get(package_id, []):
+                    dispatched_response, diagnostic = _call_reader_command(
+                        reader_command,
+                        request,
+                        timeout_seconds=reader_timeout_seconds,
+                    )
+                    if diagnostic:
+                        dispatch_diagnostics.append(
+                            {
+                                "workPackageId": package_id,
+                                "requestId": request.get("requestId"),
+                                **diagnostic,
+                            }
+                        )
+                    if isinstance(dispatched_response, dict):
+                        dispatched_responses.append(dispatched_response)
+                response = _merge_reader_response_rows(dispatched_responses).get(package_id)
             if response is None:
                 result = {
                     "workPackageId": package_id,
@@ -839,12 +865,49 @@ def _responses_by_package(
         rows = [row for row in responses if isinstance(row, dict)]
     else:
         rows = []
+    return _merge_reader_response_rows(rows)
+
+
+def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for row in rows:
         package_id = str(row.get("workPackageId") or row.get("workPackage") or row.get("id") or "")
-        if package_id:
-            out[package_id] = row
+        if not package_id:
+            continue
+        existing = out.get(package_id)
+        facts = [fact for fact in row.get("facts") or [] if isinstance(fact, dict)]
+        part = {
+            "requestId": row.get("requestId"),
+            "requestPartIndex": row.get("requestPartIndex"),
+            "requestPartCount": row.get("requestPartCount"),
+            "factCount": len(facts),
+        }
+        part_has_metadata = any(
+            part.get(key) is not None for key in ("requestId", "requestPartIndex", "requestPartCount")
+        )
+        if existing is None:
+            merged = {
+                **row,
+                "format": row.get("format") or "sourceAiVisualTraceReaderResponse_v1",
+                "workPackageId": package_id,
+                "facts": facts,
+            }
+            if part_has_metadata:
+                merged["responseParts"] = [part]
+            out[package_id] = merged
+            continue
+        existing["facts"] = [*(existing.get("facts") or []), *facts]
+        if part_has_metadata:
+            existing["responseParts"] = [*(existing.get("responseParts") or []), part]
     return out
+
+
+def _chunk_rows(rows: list[dict[str, Any]], max_rows: int | None) -> list[list[dict[str, Any]]]:
+    if not rows:
+        return [[]]
+    if max_rows is None or max_rows <= 0 or len(rows) <= max_rows:
+        return [rows]
+    return [rows[index : index + max_rows] for index in range(0, len(rows), max_rows)]
 
 
 def _call_reader_command(

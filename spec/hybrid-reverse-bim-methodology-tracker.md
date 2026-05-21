@@ -124,7 +124,7 @@ This is the non-negotiable front gate. It is not full modeling. It answers:
 | GPF-002 | Render PDFs/images into AI-readable page images. | `source.render_pdf_pages`, `source.prepare_ai_visual_trace_run` | Partial | Persist page index with DPI, page size, crop, rotation, and source-page ids. |
 | GPF-003 | Extract native text only as supplemental evidence, not OCR primary. | `source.extract_text` | Partial | Keep text supplemental; add page-coordinate text boxes later when available. |
 | GPF-004 | Classify documents/pages by role: floor plan, section, elevation, site, calculation, photo, legal, energy, drainage. | `source.classify_documents`, `reverse_bim.document_authority` | Partial | Page-level AI classification is still needed; document-level authority/supersession is now deterministic. |
-| GPF-005 | Package source pages for multimodal AI/subagent reading. | `source.ai_reading_packet`, `source.ai_visual_trace_packet`, `source.ai_visual_trace_work_order`, `source.ai_visual_trace_agent_requests` | Partial | Keep provider-neutral; add first-class "reader pass" orchestration for multiple independent readers. |
+| GPF-005 | Package source pages for multimodal AI/subagent reading. | `source.ai_reading_packet`, `source.ai_visual_trace_packet`, `source.ai_visual_trace_work_order`, `source.ai_visual_trace_agent_requests`; large work packages are split into chunked reader requests and merged by work package before validation. | Partial | Keep provider-neutral; add first-class "reader pass" orchestration for multiple independent readers. |
 | GPF-006 | Normalize AI-reader responses into strict source facts. | `source.normalize_ai_visual_trace_reader_responses`, `source.validate_ai_facts` | Partial | Enforce fact schemas by phase and reject prose-only source understanding. |
 | GPF-007 | Require reader consensus for critical facts. | `source.reader_consensus` | Partial | Define critical fact classes and minimum reader count by phase. |
 | GPF-008 | Resolve target building scope and target/context mask. | `reverse_bim.source_building_scope` | Partial | Add stronger mask geometry contract and UI/source overlay evidence for target scope. |
@@ -480,7 +480,7 @@ The Leo showcase is successful only if:
 
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
-| W5-001 | Run fresh Leo source preflight from folder. | Not started for new hybrid method. | Fresh output package exists and does not rely on target-house-3. |
+| W5-001 | Run fresh Leo source preflight from folder. | Partial | Fresh package at `tmp/reverse-bim/leo-hybrid-fresh` was generated from `/Users/jhoetter/Desktop/Testhäuser/Testhaus Leo`: 16 source documents, 68 rendered pages, 6 work packages, 10 chunked AI-reader requests, no target-house-3 dependency. It correctly blocks before modeling until reader responses are supplied. |
 | W5-002 | Repair Leo source understanding until handoff-ready or explicitly blocked. | Not started for new hybrid method. | Building scope, levels, frames, roof/dormer, site, and materials have dispositions. |
 | W5-003 | Model Leo slices through MCP. | Not started for new hybrid method. | Each slice has phase packet, screenshots, overlays, and accepted QA. |
 | W5-004 | Final Leo acceptance. | Not started for new hybrid method. | UI/MCP evidence proves source-faithful model; optional seed/export created only after pass. |
