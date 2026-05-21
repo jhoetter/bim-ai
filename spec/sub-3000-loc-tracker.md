@@ -91,8 +91,8 @@ A-territory bar after the sweep:
 
 | ID            | Priority | Status  | File                                                         | Target slice                                                          | Exit signal                                                |
 | :------------ | :------- | :------ | :----------------------------------------------------------- | :-------------------------------------------------------------------- | :--------------------------------------------------------- |
-| SLC-2026-01   | P0       | Partial | `app/bim_ai/routes_api.py`                                   | Extract reverse-BIM + source + reverse-BIM-QA routes                 | Routes API below 3,500 LOC.                                |
-| SLC-2026-02   | P0       | Open    | `app/bim_ai/routes_api.py`                                   | Extract IFC/DXF import + upload routes                                | Routes API below 3,000 LOC.                                |
+| SLC-2026-01   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract reverse-BIM + source + reverse-BIM-QA routes                 | Routes API below 3,500 LOC.                                |
+| SLC-2026-02   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract IFC/DXF, sharing, and v3-meta routes                          | Routes API below 3,000 LOC.                                |
 | SLC-2026-03   | P1       | Open   | `packages/web/src/Viewport.tsx`                              | Extract another viewport hook cluster                                 | Viewport below 3,000 LOC.                                  |
 | SLC-2026-04   | P1       | Open   | `packages/web/src/plan/PlanCanvas.tsx`                       | Extract another plan canvas slice                                     | PlanCanvas below 3,000 LOC.                                |
 | SLC-2026-05   | P1       | Open   | `packages/web/src/viewport/meshBuilders.ts`                  | Extract another mesh-builder family                                   | meshBuilders below 3,000 LOC.                              |
@@ -131,3 +131,21 @@ A-territory bar after the sweep:
   hybrid-run-execute routes remain in `routes_api.py` because they call into
   the bundle apply path defined later in the same file; they will move when
   the bundle apply path is itself extracted.
+- 2026-05-22: `SLC-2026-01` and `SLC-2026-02` are Done. Three more route
+  modules were extracted from `routes_api.py`:
+  - `routes_imports.py` owns IFC/DXF/DWG import + upload + material-asset
+    validation (~496 lines moved).
+  - `routes_sharing.py` owns role management, public-link, and shared-token
+    routes (~352 lines moved); the cross-module helpers `resolve_caller_role`
+    and `resolve_token_role` migrated to `routes_deps.py`.
+  - `routes_v3_meta.py` owns v3 visual compare, SKB checkpoint, tool registry,
+    advisor rules, command schema, and version routes (~120 lines moved).
+  Local `wc -l` reports `routes_api.py` at `2,909` lines, below the 3,000
+  ceiling. Python compile and ruff are clean across all touched modules.
+  Focused tests pass for `test_ifc_shadow_import`,
+  `test_material_image_assets`, `test_permissions`, `test_out_v3_01`,
+  `test_public_links_route`, `test_api_v3_registry` (the descriptor parity
+  failure for `reverse_bim.exterior_view_create` and three siblings is
+  pre-existing parallel-agent work — those descriptors were declared without
+  matching routes before this slice), `test_command_schemas`, and
+  `test_vg_v3_01`.

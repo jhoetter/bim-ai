@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 from uuid import UUID
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +14,7 @@ from bim_ai.document import Document
 from bim_ai.hub import Hub
 from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
 from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
-from bim_ai.tables import ModelRecord, RedoStackRecord
+from bim_ai.tables import ModelRecord, RedoStackRecord, RoleAssignmentRecord
 
 
 def get_hub(request: Request) -> Hub:
@@ -74,6 +75,37 @@ async def delete_redos(session: AsyncSession, model_id: UUID, user_id: str) -> N
             RedoStackRecord.user_id == user_id,
         ),
     )
+
+
+async def resolve_caller_role(session: AsyncSession, model_id: str | UUID, user_id: str) -> str:
+    """Return the caller's role for model_id. Defaults to 'admin' when no record exists."""
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.model_id == str(model_id),
+            RoleAssignmentRecord.subject_kind == "user",
+            RoleAssignmentRecord.subject_id == user_id,
+        )
+    )
+    record = res.scalars().first()
+    return record.role if record is not None else "admin"
+
+
+async def resolve_token_role(session: AsyncSession, model_id_str: str, token: str) -> str:
+    """Resolve a public-link token to a role; raises 403 if invalid or expired."""
+    now_ms = int(time.time() * 1000)
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.model_id == model_id_str,
+            RoleAssignmentRecord.subject_kind == "public-link",
+            RoleAssignmentRecord.subject_id == token,
+        )
+    )
+    record = res.scalars().first()
+    if record is None:
+        raise HTTPException(status_code=403, detail="Invalid public-link token")
+    if record.expires_at is not None and record.expires_at < now_ms:
+        raise HTTPException(status_code=403, detail="Public-link token has expired")
+    return record.role
 
 
 PERSPECTIVE_IDS = sorted(

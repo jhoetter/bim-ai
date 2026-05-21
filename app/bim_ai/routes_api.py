@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import secrets
 import time
 from collections import OrderedDict
 from copy import deepcopy
@@ -60,10 +59,8 @@ from fastapi import (
     APIRouter,
     Body,
     Depends,
-    Form,
     HTTPException,
     Query,
-    UploadFile,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -79,14 +76,12 @@ from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topic
 from bim_ai.agent_generated_bundle_qa_checklist import (
     agent_generated_bundle_qa_checklist_v1,
 )
-from bim_ai.advisor_rule_registry import advisor_rule_catalog_payload
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
 from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
-from bim_ai.command_schemas import export_command_schemas, get_command_schema
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
 from bim_ai.constructability_report import (
@@ -102,7 +97,6 @@ from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.assets import search_assets
-from bim_ai.material_image_assets import ImageAssetUpload, build_image_asset_from_upload
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
 from bim_ai.engine import (
@@ -199,16 +193,21 @@ from bim_ai.routes_deps import (
     document_to_wire,
     get_hub,
     load_model_row,
+    resolve_caller_role,
+    resolve_token_role,
     violations_wire,
 )
 from bim_ai.routes_exports import exports_router
 from bim_ai.routes_integrity import integrity_router
 from bim_ai.routes_markups import markups_router
+from bim_ai.routes_imports import imports_router
 from bim_ai.routes_query_resolve import query_resolve_router
 from bim_ai.routes_presentation import presentation_router
 from bim_ai.routes_reverse_bim import reverse_bim_router
+from bim_ai.routes_sharing import sharing_router
 from bim_ai.routes_sketch import sketch_router
 from bim_ai.routes_sketch_product import sketch_product_router
+from bim_ai.routes_v3_meta import v3_meta_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.seed_library import is_seed_library_project_id
@@ -221,8 +220,6 @@ from bim_ai.tables import (
     MilestoneRecord,
     ModelRecord,
     ProjectRecord,
-    PublicLinkRecord,
-    RoleAssignmentRecord,
     UndoStackRecord,
 )
 from bim_ai.template_loader import (
@@ -239,7 +236,6 @@ from bim_ai.transaction_safety import (
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
-from bim_ai.api.registry import get_catalog, get_descriptor
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
@@ -248,11 +244,14 @@ api_router.include_router(activity_router)
 api_router.include_router(catalogs_router)
 api_router.include_router(integrity_router)
 api_router.include_router(markups_router)
+api_router.include_router(imports_router)
 api_router.include_router(query_resolve_router)
 api_router.include_router(presentation_router)
 api_router.include_router(reverse_bim_router)
+api_router.include_router(sharing_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
+api_router.include_router(v3_meta_router)
 
 
 def _get_job_queue() -> JobQueue:
@@ -264,42 +263,6 @@ class RendererDiagnosticPacketPersistBody(BaseModel):
 
     packet: dict[str, Any]
     user_id: str | None = Field(default="local-dev", alias="userId")
-
-
-# ---------------------------------------------------------------------------
-# COL-V3-02 — permission helpers
-# ---------------------------------------------------------------------------
-
-
-async def resolve_caller_role(session: AsyncSession, model_id: str | UUID, user_id: str) -> str:
-    """Return the caller's role for model_id. Defaults to 'admin' when no record exists."""
-    res = await session.execute(
-        select(RoleAssignmentRecord).where(
-            RoleAssignmentRecord.model_id == str(model_id),
-            RoleAssignmentRecord.subject_kind == "user",
-            RoleAssignmentRecord.subject_id == user_id,
-        )
-    )
-    record = res.scalars().first()
-    return record.role if record is not None else "admin"
-
-
-async def _resolve_token_role(session: AsyncSession, model_id_str: str, token: str) -> str:
-    """Resolve a public-link token to a role; raises 403 if invalid or expired."""
-    now_ms = int(time.time() * 1000)
-    res = await session.execute(
-        select(RoleAssignmentRecord).where(
-            RoleAssignmentRecord.model_id == model_id_str,
-            RoleAssignmentRecord.subject_kind == "public-link",
-            RoleAssignmentRecord.subject_id == token,
-        )
-    )
-    record = res.scalars().first()
-    if record is None:
-        raise HTTPException(status_code=403, detail="Invalid public-link token")
-    if record.expires_at is not None and record.expires_at < now_ms:
-        raise HTTPException(status_code=403, detail="Public-link token has expired")
-    return record.role
 
 
 # ---------------------------------------------------------------------------
@@ -2059,503 +2022,6 @@ async def schedule_view_rows(
     return rows
 
 
-# ---------------------------------------------------------------------------
-# FED-04 — IFC → shadow-model link import
-# ---------------------------------------------------------------------------
-
-
-class ImportIfcBody(BaseModel):
-    """FED-04: payload for ``POST /api/models/{host_id}/import-ifc``.
-
-    Either ``file_text`` (inline IFC STEP) or ``file_path`` (server-side path
-    readable by the FastAPI process) must be supplied. ``slug`` names the new
-    shadow-model row; ``link_name`` is the host-side display name for the
-    auto-created ``link_model`` element. Both have sensible defaults so a
-    minimal request just sends the IFC bytes.
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    file_text: str | None = Field(default=None, alias="fileText")
-    file_path: str | None = Field(default=None, alias="filePath")
-    slug: str = Field(default="ifc-import", min_length=1, max_length=128)
-    link_name: str = Field(default="Linked IFC", alias="linkName")
-
-
-@api_router.post("/models/{host_id}/import-ifc")
-async def import_ifc_to_shadow_link(
-    host_id: UUID,
-    body: ImportIfcBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-) -> dict[str, Any]:
-    """FED-04: import an IFC file as a brand-new shadow bim-ai model + auto-
-    create a ``link_model`` row in the host pointing at it.
-
-    Round-trip: parse IFC → ``authoritativeReplay_v0`` command bundle →
-    apply to a fresh ``ModelRecord`` in the same project → run
-    ``createLinkModel`` against the host. The shadow model is independent
-    from then on (host edits never reach back into it; the host treats its
-    elements as read-only renderable context per FED-01).
-    """
-
-    from bim_ai.export_ifc import build_kernel_ifc_authoritative_replay_sketch_v0
-    from bim_ai.engine import (
-        try_apply_kernel_ifc_authoritative_replay_v0,
-        try_commit,
-    )
-
-    # Resolve host first so we can mirror its project_id onto the shadow.
-    host_row = await load_model_row(session, host_id)
-    if host_row is None:
-        raise HTTPException(status_code=404, detail="Host model not found")
-
-    # Read the IFC text. The endpoint accepts either inline text or a path.
-    if body.file_text is not None:
-        step_text = body.file_text
-    elif body.file_path is not None:
-        try:
-            with open(body.file_path, encoding="utf-8") as fh:
-                step_text = fh.read()
-        except OSError as exc:
-            raise HTTPException(status_code=400, detail=f"Cannot read IFC file: {exc}") from exc
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="import-ifc requires either fileText or filePath in the request body",
-        )
-
-    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step_text)
-    if sketch.get("available") is not True:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "reason": "ifc_replay_unavailable",
-                "ifcReason": sketch.get("reason"),
-            },
-        )
-
-    # 1. Create the shadow model row in the host's project.
-    shadow_id = uuid4()
-    shadow_doc: Document = Document(revision=1, elements={})  # type: ignore[arg-type]
-    ensure_internal_origin(shadow_doc)
-    ensure_sun_settings(shadow_doc)
-    ensure_seed_hatches(shadow_doc)
-
-    # 2. Apply the replay bundle in-memory.
-    ok, replayed_doc, applied_cmds, _viols, code = try_apply_kernel_ifc_authoritative_replay_v0(
-        shadow_doc, sketch
-    )
-    if not ok or replayed_doc is None:
-        raise HTTPException(
-            status_code=400,
-            detail={"reason": "ifc_replay_failed", "code": code},
-        )
-
-    # 3. Persist the shadow model.
-    shadow_row = ModelRecord(
-        id=shadow_id,
-        project_id=host_row.project_id,
-        slug=body.slug,
-        revision=replayed_doc.revision,
-        document=document_to_wire(replayed_doc),
-    )
-    session.add(shadow_row)
-    try:
-        await session.flush()
-    except IntegrityError:
-        await session.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="Shadow model slug already exists for this project — pass a unique 'slug'",
-        ) from None
-
-    # 4. Build a createLinkModel command and apply it to the host.
-    suggested_position = {"xMm": 0.0, "yMm": 0.0, "zMm": 0.0}
-    host_doc = Document.model_validate(host_row.document)
-    create_link = {
-        "type": "createLinkModel",
-        "name": body.link_name,
-        "sourceModelId": str(shadow_id),
-        "positionMm": suggested_position,
-        "rotationDeg": 0.0,
-        "originAlignmentMode": "origin_to_origin",
-    }
-    try:
-        host_ok, new_host_doc, _cmd, host_viols, host_code = try_commit(host_doc, create_link)
-    except Exception as exc:
-        await session.rollback()
-        raise HTTPException(status_code=400, detail=f"createLinkModel failed: {exc}") from exc
-    if not host_ok or new_host_doc is None:
-        await session.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "reason": host_code,
-                "violations": [v.model_dump(by_alias=True) for v in host_viols],
-            },
-        )
-
-    # The new link_model element id is the only one missing from doc_before.
-    new_link_ids = set(new_host_doc.elements.keys()) - set(host_doc.elements.keys())
-    if len(new_link_ids) != 1:
-        await session.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Internal: createLinkModel did not produce exactly one new element",
-        )
-    link_element_id = next(iter(new_link_ids))
-
-    # Persist the host. Keep the undo-stack record so the import is undoable.
-    host_row.document = document_to_wire(new_host_doc)  # type: ignore[assignment]
-    host_row.revision = new_host_doc.revision
-    await session.commit()
-
-    # Broadcast the host's delta so connected clients pick up the link.
-    try:
-        await hub.publish(
-            host_id,
-            {
-                "type": "delta",
-                "modelId": str(host_id),
-                "revision": new_host_doc.revision,
-            },
-        )
-    except Exception:
-        # Hub failures must not roll back the import.
-        pass
-
-    return {
-        "linkedModelId": str(shadow_id),
-        "linkElementId": link_element_id,
-        "suggestedLinkPosition": suggested_position,
-        "appliedReplayCommandCount": len(applied_cmds),
-        "shadowModelSlug": body.slug,
-    }
-
-
-# ---------------------------------------------------------------------------
-# FED-04 — DXF underlay import
-# ---------------------------------------------------------------------------
-
-
-class ImportDxfBody(BaseModel):
-    """FED-04: payload for ``POST /api/models/{host_id}/import-dxf``.
-
-    Either ``file_path`` (server-side path readable by the FastAPI process)
-    must be supplied. ``level_id`` names the host level the underlay is
-    attached to. ``origin_mm`` / ``rotation_deg`` / ``scale_factor`` let the
-    caller place the linework; defaults centre on the project origin with
-    no rotation.
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    file_path: str = Field(alias="filePath")
-    level_id: str = Field(alias="levelId")
-    name: str = Field(default="DXF Underlay")
-    origin_mm: dict[str, float] | None = Field(default=None, alias="originMm")
-    origin_alignment_mode: str = Field(default="origin_to_origin", alias="originAlignmentMode")
-    unit_override: str | int | None = Field(default=None, alias="unitOverride")
-    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
-    color_mode: str = Field(default="black_white", alias="colorMode")
-    custom_color: str | None = Field(default=None, alias="customColor")
-    overlay_opacity: float = Field(default=0.5, alias="overlayOpacity", ge=0.0, le=1.0)
-    hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
-
-
-@api_router.post("/models/{host_id}/import-dxf")
-async def import_dxf(
-    host_id: UUID,
-    body: ImportDxfBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-) -> dict[str, Any]:
-    """FED-04: parse a DXF file and materialise a ``link_dxf`` element.
-
-    The route reads the file at ``body.file_path``, runs the ``ezdxf``
-    parser, then dispatches a single ``createLinkDxf`` engine command on
-    the host. Returns the new ``link_dxf`` element id so the frontend can
-    open ManageLinksDialog with the new entry highlighted.
-    """
-
-    from pathlib import Path as _Path
-
-    from bim_ai.dxf_import import (
-        collect_dxf_layers,
-        dxf_source_metadata,
-        parse_dxf_to_linework_with_diagnostics,
-    )
-
-    host_row = await load_model_row(session, host_id)
-    if host_row is None:
-        raise HTTPException(status_code=404, detail="Host model not found")
-
-    dxf_path = _Path(body.file_path)
-    if not dxf_path.is_file():
-        raise HTTPException(
-            status_code=400, detail=f"DXF file not found at filePath: {body.file_path}"
-        )
-
-    try:
-        linework, unit_scale_to_mm, dxf_import_readback = parse_dxf_to_linework_with_diagnostics(
-            dxf_path,
-            unit_override=body.unit_override,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
-
-    host_doc = Document.model_validate(host_row.document)
-    if body.level_id not in host_doc.elements or not isinstance(
-        host_doc.elements[body.level_id], LevelElem
-    ):
-        raise HTTPException(
-            status_code=400, detail="levelId must reference an existing Level on the host model"
-        )
-
-    create_cmd = {
-        "type": "createLinkDxf",
-        "name": body.name,
-        "levelId": body.level_id,
-        "originMm": body.origin_mm or {"xMm": 0.0, "yMm": 0.0},
-        "originAlignmentMode": body.origin_alignment_mode,
-        "unitOverride": body.unit_override,
-        "unitScaleToMm": unit_scale_to_mm,
-        "rotationDeg": float(body.rotation_deg),
-        "scaleFactor": float(body.scale_factor),
-        "linework": linework,
-        "dxfLayers": collect_dxf_layers(linework),
-        "hiddenLayerNames": body.hidden_layer_names,
-        "sourcePath": str(dxf_path),
-        "cadReferenceType": "linked",
-        "sourceMetadata": {
-            **dxf_source_metadata(dxf_path),
-            "unitOverride": body.unit_override,
-            "unitScaleToMm": unit_scale_to_mm,
-            "dxfImportReadbackContract_v1": dxf_import_readback,
-        },
-        "reloadStatus": "ok",
-        "lastReloadMessage": f"Loaded from {dxf_path}",
-        "loaded": True,
-        "colorMode": body.color_mode,
-        "customColor": body.custom_color,
-        "overlayOpacity": body.overlay_opacity,
-    }
-    try:
-        ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"createLinkDxf failed: {exc}") from exc
-    if not ok or new_doc is None:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "reason": code,
-                "violations": [v.model_dump(by_alias=True) for v in viols],
-            },
-        )
-
-    new_link_dxf_ids = [
-        eid
-        for eid in set(new_doc.elements.keys()) - set(host_doc.elements.keys())
-        if getattr(new_doc.elements[eid], "kind", None) == "link_dxf"
-    ]
-    if len(new_link_dxf_ids) != 1:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal: createLinkDxf did not produce exactly one new link_dxf element",
-        )
-    link_element_id = new_link_dxf_ids[0]
-
-    host_row.document = document_to_wire(new_doc)  # type: ignore[assignment]
-    host_row.revision = new_doc.revision
-    await session.commit()
-
-    try:
-        await hub.publish(
-            host_id,
-            {
-                "type": "delta",
-                "modelId": str(host_id),
-                "revision": new_doc.revision,
-            },
-        )
-    except Exception:
-        pass
-
-    return {
-        "linkedElementId": link_element_id,
-        "lineworkCount": len(linework),
-        "dxfImportReadbackContract_v1": dxf_import_readback,
-    }
-
-
-@api_router.post("/models/{host_id}/upload-dxf-file")
-async def upload_dxf_file(
-    host_id: UUID,
-    file: UploadFile,
-    levelId: str = Form(...),
-    name: str = Form(default=""),
-    originAlignmentMode: str = Form(default="origin_to_origin"),
-    unitOverride: str | None = Form(default=None),
-    colorMode: str = Form(default="black_white"),
-    customColor: str | None = Form(default=None),
-    overlayOpacity: float = Form(default=0.5),
-    hiddenLayerNames: str = Form(default=""),
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-) -> dict[str, Any]:
-    """FED-04b: upload a DXF file directly from the browser and materialise it as link_dxf.
-
-    Accepts multipart/form-data with:
-      - file: binary DXF file
-      - levelId: ID of the host level
-      - name: optional display name (defaults to filename without extension)
-    """
-    import os
-    import tempfile
-    from pathlib import Path as _Path
-
-    from bim_ai.dxf_import import collect_dxf_layers, parse_dxf_to_linework_with_diagnostics
-
-    host_row = await load_model_row(session, host_id)
-    if host_row is None:
-        raise HTTPException(status_code=404, detail="Host model not found")
-
-    # Validate level exists
-    host_doc = Document.model_validate(host_row.document)
-    if levelId not in host_doc.elements or not isinstance(host_doc.elements[levelId], LevelElem):
-        raise HTTPException(status_code=400, detail="levelId must reference an existing Level")
-
-    # Use filename without extension as name if not provided
-    display_name = name.strip() or _Path(file.filename or "DXF Underlay").stem
-
-    # Save to temp file, parse, clean up
-    content = await file.read()
-    with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as tmp:
-        tmp.write(content)
-        tmp_path = tmp.name
-
-    try:
-        linework, unit_scale_to_mm, dxf_import_readback = parse_dxf_to_linework_with_diagnostics(
-            _Path(tmp_path),
-            unit_override=unitOverride,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-
-    hidden_layer_names = [name.strip() for name in hiddenLayerNames.split(",") if name.strip()]
-
-    create_cmd = {
-        "type": "createLinkDxf",
-        "name": display_name,
-        "levelId": levelId,
-        "originMm": {"xMm": 0.0, "yMm": 0.0},
-        "originAlignmentMode": originAlignmentMode,
-        "unitOverride": unitOverride,
-        "unitScaleToMm": unit_scale_to_mm,
-        "rotationDeg": 0.0,
-        "scaleFactor": 1.0,
-        "linework": linework,
-        "dxfLayers": collect_dxf_layers(linework),
-        "hiddenLayerNames": hidden_layer_names,
-        "sourcePath": file.filename or display_name,
-        "cadReferenceType": "embedded",
-        "sourceMetadata": {
-            "fileName": file.filename or display_name,
-            "sizeBytes": len(content),
-            "unitOverride": unitOverride,
-            "unitScaleToMm": unit_scale_to_mm,
-            "dxfImportReadbackContract_v1": dxf_import_readback,
-        },
-        "reloadStatus": "embedded",
-        "lastReloadMessage": "Embedded CAD import has no reloadable source path",
-        "loaded": True,
-        "colorMode": colorMode,
-        "customColor": customColor,
-        "overlayOpacity": overlayOpacity,
-    }
-    try:
-        ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    if not ok or new_doc is None:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "reason": code,
-                "violations": [v.model_dump(by_alias=True) for v in viols],
-            },
-        )
-
-    new_link_dxf_ids = [
-        eid
-        for eid in set(new_doc.elements.keys()) - set(host_doc.elements.keys())
-        if getattr(new_doc.elements[eid], "kind", None) == "link_dxf"
-    ]
-    if len(new_link_dxf_ids) != 1:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal: createLinkDxf did not produce exactly one new link_dxf element",
-        )
-    link_element_id = new_link_dxf_ids[0]
-
-    host_row.document = document_to_wire(new_doc)  # type: ignore[assignment]
-    host_row.revision = new_doc.revision
-    await session.commit()
-
-    try:
-        await hub.publish(
-            host_id,
-            {
-                "type": "delta",
-                "modelId": str(host_id),
-                "revision": new_doc.revision,
-            },
-        )
-    except Exception:
-        pass
-
-    return {
-        "linkDxfId": link_element_id,
-        "name": display_name,
-        "dxfImportReadbackContract_v1": dxf_import_readback,
-    }
-
-
-@api_router.post("/material-assets/validate-upload")
-async def validate_material_asset_upload(
-    file: UploadFile,
-    mapUsageHint: str = Form(default="albedo"),
-    source: str | None = Form(default=None),
-    license: str | None = Form(default=None),
-    provenance: str | None = Form(default=None),
-) -> dict[str, Any]:
-    """MAT-11: validate an uploaded texture map and return image_asset metadata."""
-
-    if mapUsageHint not in {"albedo", "normal", "roughness", "metalness", "height", "opacity"}:
-        raise HTTPException(status_code=400, detail="mapUsageHint is not supported")
-    content = await file.read()
-    try:
-        asset = build_image_asset_from_upload(
-            ImageAssetUpload(
-                filename=file.filename or "texture",
-                mime_type=file.content_type or "",
-                data=content,
-                map_usage_hint=mapUsageHint,  # type: ignore[arg-type]
-                source=source,
-                license=license,
-                provenance=provenance,
-            )
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return asset.model_dump(by_alias=True)
-
 
 # ---------------------------------------------------------------------------
 # AGT-01 — Agent iterate endpoint
@@ -2626,7 +2092,7 @@ async def apply_bundle_route(
 
     # COL-V3-02: resolve caller role and gate commands.
     if token:
-        caller_role = await _resolve_token_role(session, str(model_id), token)
+        caller_role = await resolve_token_role(session, str(model_id), token)
     else:
         caller_role = await resolve_caller_role(session, model_id, body.user_id or "local-dev")
     for cmd in body.bundle.commands:
@@ -2823,358 +2289,6 @@ async def apply_bundle_route(
     )
     return result_wire
 
-
-# ---------------------------------------------------------------------------
-# COL-V3-02 — role management + public-link share routes
-# ---------------------------------------------------------------------------
-
-
-class GrantRoleBody(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    subject_kind: str = Field(alias="subjectKind")
-    subject_id: str = Field(alias="subjectId")
-    role: str
-    expires_at: int | None = Field(default=None, alias="expiresAt")
-
-
-class CreatePublicLinkBody(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    expires_at: int | None = Field(default=None, alias="expiresAt")
-
-
-@api_router.get("/models/{model_id}/roles")
-async def list_roles(
-    model_id: UUID,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """COL-V3-02: list all role assignments for a model."""
-    res = await session.execute(
-        select(RoleAssignmentRecord).where(RoleAssignmentRecord.model_id == str(model_id))
-    )
-    rows = res.scalars().all()
-    return {
-        "roles": [
-            {
-                "id": r.id,
-                "modelId": r.model_id,
-                "subjectKind": r.subject_kind,
-                "subjectId": r.subject_id,
-                "role": r.role,
-                "grantedBy": r.granted_by,
-                "grantedAt": r.granted_at,
-                "expiresAt": r.expires_at,
-            }
-            for r in rows
-        ]
-    }
-
-
-@api_router.post("/models/{model_id}/roles")
-async def grant_role(
-    model_id: UUID,
-    body: GrantRoleBody,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """COL-V3-02: grant a role to a subject. Admin only."""
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can grant roles")
-    now_ms = int(time.time() * 1000)
-    assignment_id = secrets.token_urlsafe(16)
-    record = RoleAssignmentRecord(
-        id=assignment_id,
-        model_id=str(model_id),
-        subject_kind=body.subject_kind,
-        subject_id=body.subject_id,
-        role=body.role,
-        granted_by=user_id,
-        granted_at=now_ms,
-        expires_at=body.expires_at,
-    )
-    session.add(record)
-    await session.commit()
-    return {
-        "id": assignment_id,
-        "modelId": str(model_id),
-        "subjectKind": body.subject_kind,
-        "subjectId": body.subject_id,
-        "role": body.role,
-        "grantedBy": user_id,
-        "grantedAt": now_ms,
-        "expiresAt": body.expires_at,
-    }
-
-
-@api_router.delete("/models/{model_id}/roles/{assignment_id}")
-async def revoke_role(
-    model_id: UUID,
-    assignment_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """COL-V3-02: revoke a role assignment. Admin only."""
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can revoke roles")
-    res = await session.execute(
-        select(RoleAssignmentRecord).where(
-            RoleAssignmentRecord.id == assignment_id,
-            RoleAssignmentRecord.model_id == str(model_id),
-        )
-    )
-    record = res.scalars().first()
-    if record is None:
-        raise HTTPException(status_code=404, detail="Role assignment not found")
-    await session.delete(record)
-    await session.commit()
-    return {"deleted": assignment_id}
-
-
-@api_router.post("/models/{model_id}/public-link")
-async def create_public_link(
-    model_id: UUID,
-    body: CreatePublicLinkBody,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """COL-V3-02: create a public-link token for viewer access. Admin only."""
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can create public links")
-    token = secrets.token_urlsafe(32)
-    now_ms = int(time.time() * 1000)
-    assignment_id = secrets.token_urlsafe(16)
-    record = RoleAssignmentRecord(
-        id=assignment_id,
-        model_id=str(model_id),
-        subject_kind="public-link",
-        subject_id=token,
-        role="public-link-viewer",
-        granted_by=user_id,
-        granted_at=now_ms,
-        expires_at=body.expires_at,
-    )
-    session.add(record)
-    await session.commit()
-    url = f"/api/models/{model_id}/snapshot?token={token}"
-    return {"token": token, "url": url, "assignmentId": assignment_id}
-
-
-# ---------------------------------------------------------------------------
-# COL-V3-03 — Shareable public link
-# ---------------------------------------------------------------------------
-
-
-class CreatePublicLinkBodyV3(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    display_name: str | None = Field(default=None, alias="displayName")
-    expires_at: int | None = Field(default=None, alias="expiresAt")
-    password: str | None = Field(default=None)
-
-
-class VerifyPasswordBody(BaseModel):
-    password: str
-
-
-@api_router.post("/models/{model_id}/public-links")
-async def create_public_link_v3(
-    model_id: UUID,
-    body: CreatePublicLinkBodyV3,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """COL-V3-03: create a public link with optional expiry and password. Admin only."""
-    from bim_ai.public_links import generate_link_token, hash_link_password
-
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can create public links")
-
-    now_ms = int(time.time() * 1000)
-    link_id = secrets.token_urlsafe(16)
-    token = generate_link_token()
-    password_hash = hash_link_password(body.password) if body.password else None
-
-    link_record = PublicLinkRecord(
-        id=link_id,
-        model_id=str(model_id),
-        token=token,
-        created_by=user_id,
-        created_at=now_ms,
-        expires_at=body.expires_at,
-        password_hash=password_hash,
-        is_revoked=False,
-        display_name=body.display_name,
-        open_count=0,
-    )
-    session.add(link_record)
-
-    assignment_id = secrets.token_urlsafe(16)
-    role_record = RoleAssignmentRecord(
-        id=assignment_id,
-        model_id=str(model_id),
-        subject_kind="public-link",
-        subject_id=token,
-        role="public-link-viewer",
-        granted_by=user_id,
-        granted_at=now_ms,
-        expires_at=body.expires_at,
-    )
-    session.add(role_record)
-    await session.commit()
-
-    return {
-        "id": link_id,
-        "modelId": str(model_id),
-        "token": token,
-        "createdBy": user_id,
-        "createdAt": now_ms,
-        "expiresAt": body.expires_at,
-        "isRevoked": False,
-        "displayName": body.display_name,
-        "openCount": 0,
-    }
-
-
-@api_router.get("/models/{model_id}/public-links")
-async def list_public_links(
-    model_id: UUID,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """COL-V3-03: list non-revoked public links for a model."""
-    res = await session.execute(
-        select(PublicLinkRecord).where(
-            PublicLinkRecord.model_id == str(model_id),
-            PublicLinkRecord.is_revoked.is_(False),
-        )
-    )
-    records = res.scalars().all()
-    return {
-        "links": [
-            {
-                "id": r.id,
-                "modelId": r.model_id,
-                "token": r.token,
-                "createdBy": r.created_by,
-                "createdAt": r.created_at,
-                "expiresAt": r.expires_at,
-                "isRevoked": r.is_revoked,
-                "displayName": r.display_name,
-                "openCount": r.open_count,
-            }
-            for r in records
-        ]
-    }
-
-
-@api_router.post("/models/{model_id}/public-links/{link_id}/revoke")
-async def revoke_public_link(
-    model_id: UUID,
-    link_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """COL-V3-03: revoke a public link and delete its RoleAssignment. Admin only."""
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can revoke public links")
-
-    res = await session.execute(
-        select(PublicLinkRecord).where(
-            PublicLinkRecord.id == link_id,
-            PublicLinkRecord.model_id == str(model_id),
-        )
-    )
-    link_record = res.scalars().first()
-    if link_record is None:
-        raise HTTPException(status_code=404, detail="Public link not found")
-
-    link_record.is_revoked = True
-
-    role_res = await session.execute(
-        select(RoleAssignmentRecord).where(
-            RoleAssignmentRecord.model_id == str(model_id),
-            RoleAssignmentRecord.subject_kind == "public-link",
-            RoleAssignmentRecord.subject_id == link_record.token,
-        )
-    )
-    role_record = role_res.scalars().first()
-    if role_record is not None:
-        await session.delete(role_record)
-
-    await session.commit()
-    return {"revoked": link_id}
-
-
-@api_router.get("/shared/{token}")
-async def resolve_shared_token(
-    token: str,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """COL-V3-03: resolve a public link token and return the model document."""
-    now_ms = int(time.time() * 1000)
-    res = await session.execute(select(PublicLinkRecord).where(PublicLinkRecord.token == token))
-    link_record = res.scalars().first()
-    if link_record is None or link_record.is_revoked:
-        raise HTTPException(status_code=410, detail="Link not found or revoked")
-    if link_record.expires_at is not None and link_record.expires_at < now_ms:
-        raise HTTPException(status_code=410, detail="Link has expired")
-
-    try:
-        from sqlalchemy import update as sa_update
-
-        await session.execute(
-            sa_update(PublicLinkRecord)
-            .where(PublicLinkRecord.id == link_record.id)
-            .values(open_count=PublicLinkRecord.open_count + 1)
-        )
-        await session.commit()
-    except Exception:
-        pass
-
-    try:
-        model_uuid = UUID(link_record.model_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Model not found") from None
-
-    row = await load_model_row(session, model_uuid)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    doc = Document.model_validate(row.document)
-    elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
-    return {
-        "modelId": str(row.id),
-        "revision": doc.revision,
-        "elements": elements_wire,
-        "violations": violations_wire(doc.elements),
-        "publicLink": {
-            "id": link_record.id,
-            "displayName": link_record.display_name,
-            "openCount": link_record.open_count,
-        },
-    }
-
-
-@api_router.post("/shared/{token}/verify-password")
-async def verify_public_link_password(
-    token: str,
-    body: VerifyPasswordBody,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """COL-V3-03: verify the password for a public link."""
-    res = await session.execute(select(PublicLinkRecord).where(PublicLinkRecord.token == token))
-    link_record = res.scalars().first()
-    if link_record is None:
-        raise HTTPException(status_code=404, detail="Public link not found")
-
-    if link_record.password_hash is None:
-        return {"ok": True}
-
-    from bim_ai.public_links import verify_link_password
-
-    return {"ok": verify_link_password(body.password, link_record.password_hash)}
 
 
 # ---------------------------------------------------------------------------
@@ -3418,7 +2532,7 @@ async def collab_ws(
     async with SessionMaker() as session:
         if token:
             try:
-                caller_role = await _resolve_token_role(session, str(model_id), token)
+                caller_role = await resolve_token_role(session, str(model_id), token)
             except HTTPException:
                 await websocket.close(code=4403)
                 return
@@ -3438,126 +2552,6 @@ async def collab_ws(
         orchestrator.remove_empty_rooms()
         logger.info("collab ws disconnect model=%s", model_id)
 
-
-# ---------------------------------------------------------------------------
-# API-V3-01 — Tool registry REST surface
-# ---------------------------------------------------------------------------
-
-
-def _descriptor_to_dict(d: Any) -> dict[str, Any]:
-    from dataclasses import asdict
-
-    return asdict(d)
-
-
-# ---------------------------------------------------------------------------
-# VG-V3-01 — Render-and-compare
-# ---------------------------------------------------------------------------
-
-
-@api_router.post("/v3/compare")
-async def compare_snapshots_endpoint(body: dict) -> dict:
-    """VG-V3-01 — Deterministic visual diff between two model snapshots.
-
-    Accepts JSON body with snapshotA, snapshotB, and optional metric / threshold / region.
-    Returns a CompareResult. Same inputs → byte-identical output.
-    """
-    snap_a = body.get("snapshotA")
-    snap_b = body.get("snapshotB")
-    if snap_a is None or snap_b is None:
-        raise HTTPException(status_code=422, detail="snapshotA and snapshotB are required")
-    metric = body.get("metric", "ssim")
-    if metric not in ("ssim", "mse", "pixel-diff"):
-        raise HTTPException(
-            status_code=422,
-            detail="metric must be one of: ssim, mse, pixel-diff",
-        )
-    threshold = body.get("threshold")
-    region = body.get("region")
-    from bim_ai.vg.compare import compare_snapshots
-
-    return compare_snapshots(
-        snap_a,
-        snap_b,
-        metric=metric,
-        threshold=float(threshold) if threshold is not None else None,
-        region=region,
-    )
-
-
-# ---------------------------------------------------------------------------
-# SKB-03 — Visual Checkpoint
-# ---------------------------------------------------------------------------
-
-
-@api_router.post("/v3/skb/checkpoint")
-async def skb_visual_checkpoint(body: dict) -> dict:
-    """SKB-03 — visual checkpoint tool (image-to-image comparison).
-
-    Accepts body with actualPng, targetPng, and optional threshold.
-    Returns a CheckpointReport.
-    """
-    actual_png = body.get("actualPng")
-    target_png = body.get("targetPng")
-    threshold = body.get("threshold", 0.05)
-    if not actual_png or not target_png:
-        raise HTTPException(status_code=422, detail="actualPng and targetPng are required")
-
-    from bim_ai.skb.visual_checkpoint import compare_pngs
-
-    report = compare_pngs(actual_png, target_png, threshold=float(threshold))
-    return report.to_dict()
-
-
-@api_router.get("/v3/tools")
-async def v3_list_tools() -> dict[str, Any]:
-    catalog = get_catalog()
-    return {
-        "schemaVersion": catalog.schemaVersion,
-        "tools": [_descriptor_to_dict(t) for t in catalog.tools],
-    }
-
-
-@api_router.get("/v3/tools/{name}")
-async def v3_inspect_tool(name: str) -> dict[str, Any]:
-    descriptor = get_descriptor(name)
-    if descriptor is None:
-        raise HTTPException(status_code=404, detail=f"Tool '{name}' not found in registry.")
-    return _descriptor_to_dict(descriptor)
-
-
-@api_router.get("/v3/advisor-rules")
-async def v3_advisor_rules(
-    profile: str | None = Query(default=None),
-    surface: str | None = Query(default=None),
-) -> dict[str, object]:
-    return advisor_rule_catalog_payload(profile=profile, surface=surface)
-
-
-@api_router.get("/v3/commands")
-async def v3_list_command_schemas() -> dict[str, Any]:
-    return export_command_schemas()
-
-
-@api_router.get("/v3/commands/{name}")
-async def v3_inspect_command_schema(name: str) -> dict[str, Any]:
-    command_schema = get_command_schema(name)
-    if command_schema is None:
-        raise HTTPException(status_code=404, detail=f"Command '{name}' not found.")
-    return command_schema
-
-
-@api_router.get("/v3/version")
-async def v3_api_version() -> dict[str, str]:
-    import subprocess
-
-    try:
-        build_ref = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL, text=True
-        ).strip()
-    except Exception:
-        build_ref = "unknown"
-    return {"schemaVersion": "api-v3.0", "buildRef": build_ref}
 
 
 # ---------------------------------------------------------------------------
