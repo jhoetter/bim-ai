@@ -233,7 +233,7 @@ Every slice uses the same loop:
 
 | ID | Requirement | Existing repo support | Status | Required build or decision |
 | --- | --- | --- | --- | --- |
-| LOOP-001 | Slice runner that accepts phase authoring spec and executes only unblocked facts. | `reverse_bim.hybrid_slice_execute` performs live dry-run/optional commit, query/readback, Advisor, constructability, integrity, source-spec revision, source revision ledger, phase packet, and slice report for one slice. | Partial | Add multi-slice orchestration and automatic screenshot/overlay execution. |
+| LOOP-001 | Slice runner that accepts phase authoring spec and executes only unblocked facts. | `reverse_bim.hybrid_slice_execute` performs one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices and stops on the first unresolved blocker. | Partial | Add automatic screenshot/overlay execution and automatic repair/rerun loops. |
 | LOOP-002 | Dry-run before commit for every mutation. | `model.dry_run`, command bundle dry-run path. | Done | Make this mandatory in runner. |
 | LOOP-003 | Commit through transactional MCP/API only. | `model.commit_bundle`, `/api/models/{model_id}/bundles`. | Done | Prohibit seed/raw direct writes except recorded fallback. |
 | LOOP-004 | Query after commit. | `model.summary`, `query.elements`, `query.levels`, `query.views`, `query.hosts`, `query.enclosed_loops`, plus `reverse_bim.readback_compare`. | Done | Runtime runner must call query surfaces and feed results into the comparator after every commit. |
@@ -443,7 +443,7 @@ The Leo showcase is successful only if:
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
 | W1-001 | Adopt this tracker as controlling methodology. | Done by this file. | Other reverse-BIM trackers point here or are clearly subordinate. |
-| W1-002 | Define `hybrid_reverse_bim.run` contract. | Partial | `reverse_bim.hybrid_run` aggregates source package, phase-run, and slice reports; `reverse_bim.hybrid_slice_execute` executes one live slice. Full run orchestration still needed. |
+| W1-002 | Define `hybrid_reverse_bim.run` contract. | Partial | `reverse_bim.hybrid_run` aggregates run evidence; `reverse_bim.hybrid_slice_execute` executes one live slice; `reverse_bim.hybrid_run_execute` executes ordered slices and stops on blockers. Automatic repair/rerun remains. |
 | W1-003 | Define per-slice state machine. | Done | `reverse_bim.hybrid_slice` reports source-blocked, MCP-ready, source-revision-required, tool-gap-blocked, readback-blocked, QA-blocked, visual-blocked, or accepted. |
 | W1-004 | Define source-backed existing-condition policy in final acceptance. | Done | Policy is encoded in phase and final acceptance gates; warnings require source-backed existing-condition evidence. |
 | W1-005 | Create runtime `SKILL.md`. | Done | `claude-skills/hybrid-reverse-bim/SKILL.md` describes the runtime operating procedure for future agents. |
@@ -462,7 +462,7 @@ The Leo showcase is successful only if:
 
 | ID | Work item | Current status | Done criteria |
 | --- | --- | --- | --- |
-| W3-001 | Build runner that executes phase authoring spec transactionally. | Partial | `reverse_bim.hybrid_slice_execute` now handles one slice through dry-run/commit/query/QA/readback; full multi-phase runner and automatic retries remain. |
+| W3-001 | Build runner that executes phase authoring spec transactionally. | Partial | `reverse_bim.hybrid_slice_execute` handles one slice; `reverse_bim.hybrid_run_execute` runs ordered slices. Automatic retries and evidence capture execution remain. |
 | W3-002 | Build readback comparator. | Done | `reverse_bim.readback_compare` checks expected readback rows against explicit readback rows or queried elements. |
 | W3-003 | Attach source fact refs to modeled elements. | Partial | `sourceFactIds` or equivalent survive query, schedule, and evidence export. |
 | W3-004 | Build structured repair worklist from QA/readback findings. | Partial | `reverse_bim.source_spec_revision` classifies actions, `reverse_bim.source_revision_ledger` produces repair entries, and `reverse_bim.handoff_regeneration` prepares affected MCP reruns/reader repairs; persistence and automatic rerun are still needed. |
@@ -505,10 +505,10 @@ authority, MCP authoring, query/resolve, QA, phase packets, readback comparison,
 source-spec revision classification/ledgering, hybrid slice/run state reporting,
 single-slice live execution, runtime skill guidance, view-capture work orders,
 handoff regeneration, and acceptance validation.
-Missing critical glue: full multi-slice hybrid executor, persisted source-spec
-revision ledger storage, UI-assisted coordinate control-point picking, actual
-browser screenshot execution, automatic overlays, automatic handoff reruns, and
-Leo fresh-run evidence.
+Missing critical glue: persisted source-spec revision ledger storage,
+UI-assisted coordinate control-point picking, actual browser screenshot
+execution, automatic overlays, automatic handoff reruns, and Leo fresh-run
+evidence.
 ```
 
 The next correct action is not to seed another model. It is to implement the

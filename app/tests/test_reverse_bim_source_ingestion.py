@@ -1274,6 +1274,7 @@ def test_api_routes_and_descriptors_are_registered(tmp_path: Path) -> None:
         "reverse_bim.hybrid_slice",
         "reverse_bim.hybrid_slice_execute",
         "reverse_bim.hybrid_run",
+        "reverse_bim.hybrid_run_execute",
         "reverse_bim.evidence_requirements",
         "reverse_bim.view_capture_plan",
         "reverse_bim.level_completeness",

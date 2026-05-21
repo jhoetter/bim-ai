@@ -181,6 +181,7 @@ Use reverse-BIM handoff/gates:
 - `reverse_bim.hybrid_slice`
 - `reverse_bim.hybrid_slice_execute`
 - `reverse_bim.hybrid_run`
+- `reverse_bim.hybrid_run_execute`
 - `reverse_bim.phase_packet`
 - `reverse_bim.phase_run`
 - `reverse_bim.final_acceptance`

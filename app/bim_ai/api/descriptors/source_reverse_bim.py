@@ -453,6 +453,13 @@ for _reverse_tool in (
         "notes": "Aggregates package state, phase packets, and slice states so an agent can continue the hybrid reverse-BIM run without guessing.",
     },
     {
+        "name": "reverse_bim.hybrid_run_execute",
+        "title": "HybridReverseBimRunExecuteInput",
+        "path": "/api/v3/models/{model_id}/reverse-bim/hybrid-run-execute",
+        "cli": "bim-ai reverse-bim hybrid-run-execute --model-id <id> --slices slices.json",
+        "notes": "Executes ordered live reverse-BIM slices through the single-slice executor and stops on the first unresolved source/readback/QA/visual blocker.",
+    },
+    {
         "name": "reverse_bim.evidence_requirements",
         "title": "ReverseBimEvidenceRequirementsInput",
         "path": "/api/v3/reverse-bim/evidence-requirements",

@@ -2102,6 +2102,87 @@ async def reverse_bim_hybrid_slice_execute_route(
     }
 
 
+@api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-run-execute")
+async def reverse_bim_hybrid_run_execute_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+    token: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """Execute an ordered list of reverse-BIM slices and stop on blockers."""
+
+    slices = [row for row in body.get("slices") or [] if isinstance(row, dict)]
+    if not slices:
+        raise HTTPException(status_code=422, detail="slices must contain at least one slice body")
+    continue_on_blockers = bool(body.get("continueOnBlockers") or body.get("continue_on_blockers"))
+    common_keys = {
+        "facts",
+        "sourceFacts",
+        "extractedFacts",
+        "phaseAuthoringSpec",
+        "phaseSpec",
+        "sourceRevisionLedger",
+        "source_revision_ledger",
+        "findingDispositions",
+        "sourceOverlay",
+        "source_overlay",
+        "uiEvidence",
+        "ui_evidence",
+    }
+    common = {key: body[key] for key in common_keys if key in body}
+    results = []
+    stopped = False
+    for slice_body in slices:
+        merged_body = {**common, **slice_body}
+        result = await reverse_bim_hybrid_slice_execute_route(
+            model_id,
+            merged_body,
+            session=session,
+            hub=hub,
+            token=token,
+        )
+        results.append(result)
+        if result.get("ok") is not True and not continue_on_blockers:
+            stopped = True
+            break
+
+    phase_packets = [
+        row.get("phasePacket")
+        for row in results
+        if isinstance(row.get("phasePacket"), dict)
+    ]
+    slice_reports = [
+        row.get("sliceReport")
+        for row in results
+        if isinstance(row.get("sliceReport"), dict)
+    ]
+    run_report = build_hybrid_reverse_bim_run_report(
+        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or {},
+        phase_packets=phase_packets,
+        slice_reports=slice_reports,
+        package_acceptance=body.get("packageAcceptance") or body.get("folderOutput"),
+    )
+    return {
+        "ok": bool(run_report.get("ok")) and not stopped,
+        "format": "hybridReverseBimRunExecution_v1",
+        "modelId": str(model_id),
+        "summary": {
+            "requestedSliceCount": len(slices),
+            "executedSliceCount": len(results),
+            "stoppedOnBlocker": stopped,
+            "acceptedSliceCount": sum(1 for row in results if row.get("ok") is True),
+        },
+        "sliceExecutions": results,
+        "runReport": run_report,
+        "nextStep": (
+            "All requested slices executed and accepted."
+            if run_report.get("ok") and not stopped
+            else "Repair the first blocked slice, regenerate handoff if needed, then rerun from that slice."
+        ),
+    }
+
+
 def _hybrid_bundle_request(
     *,
     bundle_payload: dict[str, Any],
