@@ -1017,8 +1017,11 @@ function normalizeMarkerList(value: unknown): string[] {
 function knownRoofGeometryMode(mode: string): boolean {
   return [
     'flat',
+    'mass_box',
     'shed',
     'gable',
+    'gable_pitched_rectangle',
+    'gable_pitched_l_shape',
     'asymmetric_gable',
     'hip',
     'hip_like',

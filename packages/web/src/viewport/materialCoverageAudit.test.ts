@@ -129,6 +129,29 @@ describe('material coverage audit — RMP-01', () => {
     expect(entries.r1?.shadowedMaterialKey).toBe('white_render');
   });
 
+  it('treats source-backed unspecified roof tiles as a resolved render material', () => {
+    const roof: Extract<Element, { kind: 'roof' }> = {
+      kind: 'roof',
+      id: 'roof-source-backed',
+      name: 'Source-backed gable roof',
+      referenceLevelId: 'l2',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 5000, yMm: 0 },
+        { xMm: 5000, yMm: 3000 },
+      ],
+      materialKey: 'roof_tiles_unknown',
+    };
+
+    const audit = auditElementMaterialCoverage({ [roof.id]: roof });
+    const entry = byId(audit.entries)[roof.id];
+
+    expect(entry?.source).toBe('instance');
+    expect(entry?.materialKey).toBe('roof_tiles_unknown');
+    expect(entry?.resolved).toBe(true);
+    expect(entry?.flags).not.toContain('unresolved-material-key');
+  });
+
   it('reports window frame and glass as separate material facts', () => {
     const win: Extract<Element, { kind: 'window' }> = {
       kind: 'window',

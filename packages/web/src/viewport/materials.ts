@@ -708,6 +708,15 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     hatchPattern: 'tile',
     displayName: 'Terracotta clay roof tile',
   },
+  roof_tiles_unknown: {
+    key: 'roof_tiles_unknown',
+    baseColor: '#6f625b',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'tile',
+    displayName: 'Source-backed roof tiles - unspecified finish',
+  },
 
   // ── MAT-01 aluminium variants ────────────────────────────────────────
   aluminium_dark_grey: {
@@ -1286,5 +1295,9 @@ export function resolveWallSurfaceMaterial(
 /** True when a roof material key should receive generated roof striping. */
 export function isStandingSeamMetalKey(materialKey: string | null | undefined): boolean {
   if (!materialKey) return false;
-  return materialKey.startsWith('metal_standing_seam_') || materialKey.startsWith('roof_tile_');
+  return (
+    materialKey.startsWith('metal_standing_seam_') ||
+    materialKey.startsWith('roof_tile_') ||
+    materialKey.startsWith('roof_tiles_')
+  );
 }

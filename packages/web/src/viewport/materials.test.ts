@@ -206,6 +206,8 @@ describe('MAT-01 — material registry', () => {
     'metal_standing_seam_dark_grey',
     'metal_standing_seam_zinc',
     'metal_standing_seam_copper',
+    // Source-backed roof material placeholders
+    'roof_tiles_unknown',
   ];
 
   it.each(REQUIRED_KEYS)('resolves %s to a PBR spec', (key) => {
@@ -270,6 +272,8 @@ describe('MAT-01 — material registry', () => {
     expect(isStandingSeamMetalKey('metal_standing_seam_dark_grey')).toBe(true);
     expect(isStandingSeamMetalKey('metal_standing_seam_zinc')).toBe(true);
     expect(isStandingSeamMetalKey('metal_standing_seam_copper')).toBe(true);
+    expect(isStandingSeamMetalKey('roof_tile_terracotta')).toBe(true);
+    expect(isStandingSeamMetalKey('roof_tiles_unknown')).toBe(true);
     expect(isStandingSeamMetalKey('aluminium_natural')).toBe(false);
     expect(isStandingSeamMetalKey('cladding_warm_wood')).toBe(false);
     expect(isStandingSeamMetalKey(null)).toBe(false);

@@ -500,6 +500,37 @@ describe('element render feature status', () => {
         blocking: true,
       },
     });
+    const supportedRoofStatuses = byId(
+      collectElementRenderFeatureStatuses({
+        elements: [
+          {
+            kind: 'roof',
+            id: 'roof-gable-rectangle',
+            name: 'Supported gable roof',
+            referenceLevelId: 'level-1',
+            roofGeometryMode: 'gable_pitched_rectangle',
+            footprintMm: [
+              { xMm: 0, yMm: 0 },
+              { xMm: 5000, yMm: 0 },
+              { xMm: 5000, yMm: 3000 },
+              { xMm: 0, yMm: 3000 },
+            ],
+            materialKey: 'roof_tiles_unknown',
+          } as Extract<Element, { kind: 'roof' }>,
+        ],
+      }),
+    );
+    expect(supportedRoofStatuses['roof-gable-rectangle']).toMatchObject({
+      geometry: {
+        state: 'partial',
+        diagnosticCodes: [],
+        blocking: false,
+      },
+      material: {
+        state: 'resolved',
+        materialKey: 'roof_tiles_unknown',
+      },
+    });
     expect(statuses['stair-unsupported-shape']).toMatchObject({
       geometry: {
         state: 'unsupported',

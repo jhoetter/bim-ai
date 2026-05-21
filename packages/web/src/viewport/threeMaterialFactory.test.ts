@@ -91,6 +91,17 @@ describe('three material factory', () => {
     expect(material.color.getHexString()).toBe('ffffff');
   });
 
+  it('resolves source-backed unspecified roof tiles to procedural realistic maps', () => {
+    const material = makeThreeMaterialForKey('roof_tiles_unknown', {
+      usage: 'roofTop',
+    }) as THREE.MeshStandardMaterial;
+
+    expect(material.userData.materialResolved).toBe(true);
+    expect(material.userData.materialKey).toBe('roof_tiles_unknown');
+    expect(material.map?.name).toBe('roof_tiles_unknown:procedural:albedo');
+    expect(material.bumpMap?.name).toBe('roof_tiles_unknown:procedural:bump');
+  });
+
   it('prefers normal maps over bump maps for project material elements', () => {
     const loads: string[] = [];
     const textureManager = stubTextureManager(loads);
