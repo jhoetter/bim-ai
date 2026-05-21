@@ -24,6 +24,7 @@
     "bundle:budgets": "node scripts/check-bundle-budgets.mjs",
     "performance:budgets": "cd app && PYTHONPATH=. uv run python scripts/performance_budget.py --fail-on-budget --json",
     "performance:elements-inventory": "node scripts/inventory-elementsById-consumers.mjs --out-json spec/generated/elementsById-inventory.json --out-md spec/generated/elementsById-inventory.md",
+    "performance:plan-pointermove": "node scripts/measure-plan-pointermove.mjs",
     "security:hygiene": "node scripts/check-security-hygiene.mjs",
     "test-env:policy": "node scripts/check-frontend-test-environments.mjs",
     "test:e2e:real-backend": "pnpm --filter @bim-ai/web test:e2e:real-backend",

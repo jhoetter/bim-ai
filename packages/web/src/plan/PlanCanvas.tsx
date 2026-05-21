@@ -268,6 +268,10 @@ import {
 } from '../workspace/authoring';
 import { ColorSchemeLegend } from './ColorSchemeLegend';
 import { resolvePlanCanvasHudState } from './planCanvasHudState';
+import {
+  beginPlanPointerMoveSample,
+  classifyPlanPointerMoveScenario,
+} from './planPointerMovePerformance';
 
 /** Imperative handle so the tab host can snapshot / restore the 2D camera
  * without continuous callbacks. Fill via cameraHandleRef prop. */
@@ -884,177 +888,231 @@ export function PlanCanvas({
     });
 
     const onMove = (ev: PointerEvent) => {
-      // EDT-01 — grip drag takes priority over every other interaction.
-      if (gripDragRef.current) {
-        const rwGrip = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-        if (rwGrip) {
-          const startMm = gripDragRef.current.startWorldMm;
-          const delta = {
-            xMm: rwGrip.xMm - startMm.xMm,
-            yMm: rwGrip.yMm - startMm.yMm,
-          };
-          gripDragRef.current.lastDeltaMm = delta;
-          setDraftMutation(gripDragRef.current.grip.onDrag(delta));
-          if (numericInputRef.current) {
-            setNumericInput((prev) =>
-              prev ? { ...prev, pxX: ev.clientX, pxY: ev.clientY } : prev,
-            );
-          }
-        }
-        return;
-      }
-      const xy = snapped(ev.clientX, ev.clientY);
-      setHudMm(xy);
-      useBimStore.getState().setPlanHud(xy);
-      if (
-        handleCropPointerMove({
-          renderer: rnd,
-          camera: camNow,
-          event: ev,
-          cropDragRef,
-          cropGripDragRef,
-          skipClickRef,
-          onSemanticCommand,
-          bumpGeom,
-        })
-      ) {
-        return;
-      }
-      if (
-        handlePanMarqueePointerMove({
-          renderer: rnd,
-          camera: camNow,
-          event: ev,
-          dragRef,
-          camRef,
-          marqueeRef,
-          redrawMarqueeRect,
-          resizeCam,
-          skipClickRef,
-        })
-      ) {
-        return;
-      }
-      const v = snapped(ev.clientX, ev.clientY);
-      if (!v) return;
-
-      if (useBimStore.getState().planTool === 'wall' && !draftRef.current) {
-        setWallPickLineHint(pickedWallLineAt(v, wallPickToleranceMm()));
-      } else {
-        setWallPickLineHint((prev) => (prev ? null : prev));
-      }
-
-      if (planTool === 'query') {
-        const dxfLevelId = displayLevelId || activeLevelResolvedId;
-        const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
-        const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
-        const viewOverrides =
-          activePlanView?.kind === 'plan_view'
-            ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
-            : {};
-        const rect = rnd.domElement.getBoundingClientRect();
-        const toleranceMm = (12 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000;
-        setDxfQueryHover(
-          queryDxfPrimitiveAtPoint(dxfUnderlays, v, {
-            toleranceMm,
-            elementsById,
-            viewOverridesByLinkId: Object.fromEntries(
-              dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
-            ),
-          }),
-        );
-      } else {
-        setDxfQueryHover((prev) => (prev ? null : prev));
-      }
-
-      updatePlanCanvasSnapHover({
-        planTool,
-        cursorMm: v,
-        renderer: rnd,
-        group: grp,
-        cameraHalf: camRef.current.half,
-        elementsById,
-        displayLevelId,
-        snapEngineRef,
-        snapIndicatorRef,
-        setSnapLabel,
-        lastSnapLinesRef,
-        anchors,
-        centerAnchors,
-        draftRef,
-        orthoSnapHold,
-        snapOverrideRef,
-        snapSettings,
-        snapTabCycleRef,
-        lastSnapHitsRef,
-        setSnapGlyphState,
-        worldToScreen,
+      const endPointerMoveSample = beginPlanPointerMoveSample({
+        scenario: classifyPlanPointerMoveScenario({
+          tool: planTool,
+          isPanning: dragRef.current.dragging,
+          isMarquee: marqueeRef.current.active,
+          isGripDragging: Boolean(gripDragRef.current),
+          isCropDragging: Boolean(cropDragRef.current || cropGripDragRef.current),
+        }),
+        tool: planTool,
+        pointerType: ev.pointerType,
       });
+      try {
+        // EDT-01 — grip drag takes priority over every other interaction.
+        if (gripDragRef.current) {
+          const rwGrip = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+          if (rwGrip) {
+            const startMm = gripDragRef.current.startWorldMm;
+            const delta = {
+              xMm: rwGrip.xMm - startMm.xMm,
+              yMm: rwGrip.yMm - startMm.yMm,
+            };
+            gripDragRef.current.lastDeltaMm = delta;
+            setDraftMutation(gripDragRef.current.grip.onDrag(delta));
+            if (numericInputRef.current) {
+              setNumericInput((prev) =>
+                prev ? { ...prev, pxX: ev.clientX, pxY: ev.clientY } : prev,
+              );
+            }
+          }
+          return;
+        }
+        const xy = snapped(ev.clientX, ev.clientY);
+        setHudMm(xy);
+        useBimStore.getState().setPlanHud(xy);
+        if (
+          handleCropPointerMove({
+            renderer: rnd,
+            camera: camNow,
+            event: ev,
+            cropDragRef,
+            cropGripDragRef,
+            skipClickRef,
+            onSemanticCommand,
+            bumpGeom,
+          })
+        ) {
+          return;
+        }
+        if (
+          handlePanMarqueePointerMove({
+            renderer: rnd,
+            camera: camNow,
+            event: ev,
+            dragRef,
+            camRef,
+            marqueeRef,
+            redrawMarqueeRect,
+            resizeCam,
+            skipClickRef,
+          })
+        ) {
+          return;
+        }
+        const v = snapped(ev.clientX, ev.clientY);
+        if (!v) return;
 
-      const p = new THREE.Vector3(v.xMm / 1000, SLICE_Y, v.yMm / 1000);
-      const d = draftRef.current;
-      if (planTool === 'area-boundary' && d?.kind === 'area-boundary') {
-        redrawAreaBoundaryPreviewMm(d.verts, areaSnapPoint(v));
-        return;
-      }
-      if (planTool === 'room_rectangle' && d?.kind === 'room_rect') {
-        redrawPreviewRectMm(d.sx, d.sy, v.xMm, v.yMm);
-        return;
-      }
-      if (planTool === 'model-line' && d?.kind === 'model-line' && d.points.length >= 1) {
-        const all = [...d.points, { xMm: v.xMm, yMm: v.yMm }];
-        const pts = all.map((pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000));
-        if (previewRef.current) {
-          grp.remove(previewRef.current);
-          previewRef.current.geometry.dispose();
+        if (useBimStore.getState().planTool === 'wall' && !draftRef.current) {
+          setWallPickLineHint(pickedWallLineAt(v, wallPickToleranceMm()));
+        } else {
+          setWallPickLineHint((prev) => (prev ? null : prev));
         }
-        previewRef.current = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(pts),
-          new THREE.LineBasicMaterial({
-            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
-          }),
-        );
-        grp.add(previewRef.current);
-        return;
-      }
-      if (
-        (planTool === 'wall' && d?.kind === 'wall') ||
-        (planTool === 'grid' && d?.kind === 'grid') ||
-        (planTool === 'measure' && d?.kind === 'measure')
-      ) {
-        const pv =
-          planTool === 'wall' && d?.kind === 'wall'
-            ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
-            : planTool === 'grid' && d?.kind === 'grid'
-              ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
-              : planTool === 'measure' && d?.kind === 'measure'
-                ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                : p;
-        redrawSeg(pv, p);
-      }
-      if (planTool === 'dimension') {
-        const { state } = reducePermanentDim(permanentDimStateRef.current, {
-          kind: 'moveMouse',
-          xMm: v.xMm,
-          yMm: v.yMm,
-        });
-        permanentDimStateRef.current = state;
-        // Clean up existing snap circles
-        for (const c of dimSnapCirclesRef.current) {
-          grp.remove(c);
-          c.geometry.dispose();
-        }
-        dimSnapCirclesRef.current = [];
-        if (state.phase === 'picking' && state.points.length >= 1) {
-          const allPts = [...state.points, { xMm: v.xMm, yMm: v.yMm }];
-          const threePts = allPts.map(
-            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
+
+        if (planTool === 'query') {
+          const dxfLevelId = displayLevelId || activeLevelResolvedId;
+          const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
+          const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+          const viewOverrides =
+            activePlanView?.kind === 'plan_view'
+              ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
+              : {};
+          const rect = rnd.domElement.getBoundingClientRect();
+          const toleranceMm = (12 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000;
+          setDxfQueryHover(
+            queryDxfPrimitiveAtPoint(dxfUnderlays, v, {
+              toleranceMm,
+              elementsById,
+              viewOverridesByLinkId: Object.fromEntries(
+                dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
+              ),
+            }),
           );
+        } else {
+          setDxfQueryHover((prev) => (prev ? null : prev));
+        }
+
+        updatePlanCanvasSnapHover({
+          planTool,
+          cursorMm: v,
+          renderer: rnd,
+          group: grp,
+          cameraHalf: camRef.current.half,
+          elementsById,
+          displayLevelId,
+          snapEngineRef,
+          snapIndicatorRef,
+          setSnapLabel,
+          lastSnapLinesRef,
+          anchors,
+          centerAnchors,
+          draftRef,
+          orthoSnapHold,
+          snapOverrideRef,
+          snapSettings,
+          snapTabCycleRef,
+          lastSnapHitsRef,
+          setSnapGlyphState,
+          worldToScreen,
+        });
+
+        const p = new THREE.Vector3(v.xMm / 1000, SLICE_Y, v.yMm / 1000);
+        const d = draftRef.current;
+        if (planTool === 'area-boundary' && d?.kind === 'area-boundary') {
+          redrawAreaBoundaryPreviewMm(d.verts, areaSnapPoint(v));
+          return;
+        }
+        if (planTool === 'room_rectangle' && d?.kind === 'room_rect') {
+          redrawPreviewRectMm(d.sx, d.sy, v.xMm, v.yMm);
+          return;
+        }
+        if (planTool === 'model-line' && d?.kind === 'model-line' && d.points.length >= 1) {
+          const all = [...d.points, { xMm: v.xMm, yMm: v.yMm }];
+          const pts = all.map((pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000));
           if (previewRef.current) {
             grp.remove(previewRef.current);
             previewRef.current.geometry.dispose();
           }
-          const geo = new THREE.BufferGeometry().setFromPoints(threePts);
+          previewRef.current = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(pts),
+            new THREE.LineBasicMaterial({
+              color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+            }),
+          );
+          grp.add(previewRef.current);
+          return;
+        }
+        if (
+          (planTool === 'wall' && d?.kind === 'wall') ||
+          (planTool === 'grid' && d?.kind === 'grid') ||
+          (planTool === 'measure' && d?.kind === 'measure')
+        ) {
+          const pv =
+            planTool === 'wall' && d?.kind === 'wall'
+              ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
+              : planTool === 'grid' && d?.kind === 'grid'
+                ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
+                : planTool === 'measure' && d?.kind === 'measure'
+                  ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
+                  : p;
+          redrawSeg(pv, p);
+        }
+        if (planTool === 'dimension') {
+          const { state } = reducePermanentDim(permanentDimStateRef.current, {
+            kind: 'moveMouse',
+            xMm: v.xMm,
+            yMm: v.yMm,
+          });
+          permanentDimStateRef.current = state;
+          // Clean up existing snap circles
+          for (const c of dimSnapCirclesRef.current) {
+            grp.remove(c);
+            c.geometry.dispose();
+          }
+          dimSnapCirclesRef.current = [];
+          if (state.phase === 'picking' && state.points.length >= 1) {
+            const allPts = [...state.points, { xMm: v.xMm, yMm: v.yMm }];
+            const threePts = allPts.map(
+              (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
+            );
+            if (previewRef.current) {
+              grp.remove(previewRef.current);
+              previewRef.current.geometry.dispose();
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(threePts);
+            const mat = new THREE.LineDashedMaterial({
+              color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+              dashSize: 0.25,
+              gapSize: 0.12,
+            });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            line.userData.preview = 'dim-chain';
+            previewRef.current = line;
+            grp.add(previewRef.current);
+            // Snap circles at each already-picked point
+            const snapMat = new THREE.MeshBasicMaterial({
+              color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+              side: THREE.DoubleSide,
+            });
+            for (const pt of state.points) {
+              const circleGeo = new THREE.CircleGeometry(0.1, 16);
+              const circle = new THREE.Mesh(circleGeo, snapMat);
+              circle.position.set(pt.xMm / 1000, SLICE_Y + 0.003, pt.yMm / 1000);
+              circle.rotation.x = -Math.PI / 2;
+              circle.userData.preview = 'dim-chain';
+              grp.add(circle);
+              dimSnapCirclesRef.current.push(circle);
+            }
+            bumpGeom((x) => x + 1);
+          }
+        }
+        // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
+        if (
+          planTool === 'toposolid_subdivision' &&
+          d?.kind === 'toposolid-subdivision' &&
+          d.verts.length >= 1
+        ) {
+          const pts = [
+            ...d.verts.map((v2) => new THREE.Vector3(v2.xMm / 1000, SLICE_Y, v2.yMm / 1000)),
+            p,
+          ];
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+          }
+          const geo = new THREE.BufferGeometry().setFromPoints(pts);
           const mat = new THREE.LineDashedMaterial({
             color: readPlanToken('--draft-construction-blue', '#fcd34d'),
             dashSize: 0.25,
@@ -1062,106 +1120,67 @@ export function PlanCanvas({
           });
           const line = new THREE.Line(geo, mat);
           line.computeLineDistances();
-          line.userData.preview = 'dim-chain';
           previewRef.current = line;
           grp.add(previewRef.current);
-          // Snap circles at each already-picked point
-          const snapMat = new THREE.MeshBasicMaterial({
-            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
-            side: THREE.DoubleSide,
-          });
-          for (const pt of state.points) {
-            const circleGeo = new THREE.CircleGeometry(0.1, 16);
-            const circle = new THREE.Mesh(circleGeo, snapMat);
-            circle.position.set(pt.xMm / 1000, SLICE_Y + 0.003, pt.yMm / 1000);
-            circle.rotation.x = -Math.PI / 2;
-            circle.userData.preview = 'dim-chain';
-            grp.add(circle);
-            dimSnapCirclesRef.current.push(circle);
+        }
+        // §5.1.4 — terrain-pad polygon preview while sketching
+        if (planTool === 'terrain-pad' && terrainPadStateRef.current.phase === 'sketching') {
+          const pts = [
+            ...terrainPadStateRef.current.points.map(
+              (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
+            ),
+            p,
+          ];
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
           }
-          bumpGeom((x) => x + 1);
+          const geo = new THREE.BufferGeometry().setFromPoints(pts);
+          const mat = new THREE.LineDashedMaterial({
+            color: '#c8a882',
+            dashSize: 0.25,
+            gapSize: 0.12,
+          });
+          const line = new THREE.Line(geo, mat);
+          line.computeLineDistances();
+          previewRef.current = line;
+          grp.add(previewRef.current);
         }
-      }
-      // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
-      if (
-        planTool === 'toposolid_subdivision' &&
-        d?.kind === 'toposolid-subdivision' &&
-        d.verts.length >= 1
-      ) {
-        const pts = [
-          ...d.verts.map((v2) => new THREE.Vector3(v2.xMm / 1000, SLICE_Y, v2.yMm / 1000)),
-          p,
-        ];
-        if (previewRef.current) {
-          grp.remove(previewRef.current);
-          previewRef.current.geometry.dispose();
-        }
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        const mat = new THREE.LineDashedMaterial({
-          color: readPlanToken('--draft-construction-blue', '#fcd34d'),
-          dashSize: 0.25,
-          gapSize: 0.12,
+        updateSplitWallHover({
+          planTool,
+          elementsById,
+          displayLevelId,
+          cursorMm: v,
+          splitWallStateRef,
+          bumpGeom,
         });
-        const line = new THREE.Line(geo, mat);
-        line.computeLineDistances();
-        previewRef.current = line;
-        grp.add(previewRef.current);
-      }
-      // §5.1.4 — terrain-pad polygon preview while sketching
-      if (planTool === 'terrain-pad' && terrainPadStateRef.current.phase === 'sketching') {
-        const pts = [
-          ...terrainPadStateRef.current.points.map(
-            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
-          ),
-          p,
-        ];
-        if (previewRef.current) {
-          grp.remove(previewRef.current);
-          previewRef.current.geometry.dispose();
-        }
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        const mat = new THREE.LineDashedMaterial({
-          color: '#c8a882',
-          dashSize: 0.25,
-          gapSize: 0.12,
+        updateComponentGhostHover({
+          planTool,
+          renderer: rnd,
+          camera: camNow,
+          group: grp,
+          event: ev,
+          componentGhostRef,
+          elementsById,
+          activeLevelResolvedId,
+          activeComponentAssetId,
+          activeComponentFamilyTypeId,
+          activeComponentAssetPreviewEntry,
+          pendingComponentRotationDeg,
         });
-        const line = new THREE.Line(geo, mat);
-        line.computeLineDistances();
-        previewRef.current = line;
-        grp.add(previewRef.current);
+        updateColumnAtGridsHover({
+          planTool,
+          renderer: rnd,
+          camera: camNow,
+          group: grp,
+          event: ev,
+          elementsById,
+          columnAtGridsHoverRef,
+          bumpGeom,
+        });
+      } finally {
+        endPointerMoveSample();
       }
-      updateSplitWallHover({
-        planTool,
-        elementsById,
-        displayLevelId,
-        cursorMm: v,
-        splitWallStateRef,
-        bumpGeom,
-      });
-      updateComponentGhostHover({
-        planTool,
-        renderer: rnd,
-        camera: camNow,
-        group: grp,
-        event: ev,
-        componentGhostRef,
-        elementsById,
-        activeLevelResolvedId,
-        activeComponentAssetId,
-        activeComponentFamilyTypeId,
-        activeComponentAssetPreviewEntry,
-        pendingComponentRotationDeg,
-      });
-      updateColumnAtGridsHover({
-        planTool,
-        renderer: rnd,
-        camera: camNow,
-        group: grp,
-        event: ev,
-        elementsById,
-        columnAtGridsHoverRef,
-        bumpGeom,
-      });
     };
 
     const onDown = (ev: PointerEvent) => {
