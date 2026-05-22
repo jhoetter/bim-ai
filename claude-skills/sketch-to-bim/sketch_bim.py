@@ -24,8 +24,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
-DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
-DEFAULT_ARCHETYPES = "spec/sketch-to-bim-archetypes.json"
+DEFAULT_CAPABILITIES = "spec/data/sketch-to-bim-capability-matrix.json"
+DEFAULT_ARCHETYPES = "spec/data/sketch-to-bim-archetypes.json"
 DEFAULT_RENDERER_SUPPORT_MATRIX = "spec/generated/renderer-support-matrix.md"
 TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}

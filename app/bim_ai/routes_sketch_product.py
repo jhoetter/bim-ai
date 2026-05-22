@@ -144,7 +144,7 @@ async def sketch_ir_validate(body: SketchIrValidateRequest) -> dict[str, Any]:
             "warningCount": sum(1 for issue in issues if issue["severity"] == "warning"),
         },
         "issues": issues,
-        "cliEquivalent": "bim-ai sketch ir validate --ir sketch-ir.json --capabilities spec/sketch-to-bim-capability-matrix.json --out packet",
+        "cliEquivalent": "bim-ai sketch ir validate --ir sketch-ir.json --capabilities spec/data/sketch-to-bim-capability-matrix.json --out packet",
     }
 
 
@@ -256,5 +256,5 @@ async def sketch_phase_accept(body: SketchPhaseAcceptRequest) -> dict[str, Any]:
         "ok": not blockers,
         "summary": {"blockerCount": len(blockers)},
         "blockers": blockers,
-        "cliEquivalent": "bim-ai sketch phase accept --ir sketch-ir.json --capabilities spec/sketch-to-bim-capability-matrix.json --out packet --fail-on-acceptance",
+        "cliEquivalent": "bim-ai sketch phase accept --ir sketch-ir.json --capabilities spec/data/sketch-to-bim-capability-matrix.json --out packet --fail-on-acceptance",
     }

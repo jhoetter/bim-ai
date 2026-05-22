@@ -48,7 +48,7 @@ Use this before generation, with output outside seed artifacts until approval:
 ```bash
 node packages/cli/cli.mjs sketch ir validate \
   --ir spec/target-house/target-house-1-sketch-ir.draft.json \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/data/sketch-to-bim-capability-matrix.json \
   --out tmp/target-house-1-readiness-ir
 ```
 

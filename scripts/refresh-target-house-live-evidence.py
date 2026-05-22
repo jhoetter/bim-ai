@@ -32,7 +32,7 @@ from bim_ai.routes_deps import violations_wire
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
+DEFAULT_CAPABILITIES = "spec/data/sketch-to-bim-capability-matrix.json"
 ADVISOR_RULE_FILES = [
     "app/bim_ai/constructability_advisories.py",
     "app/bim_ai/constructability_report.py",

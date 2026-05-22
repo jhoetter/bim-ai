@@ -275,7 +275,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-check \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/data/sketch-to-bim-capability-matrix.json \
      --out nightshift/<run>/initiation-check \
      --mode project_initiation_bim \
      --fail-on-acceptance
@@ -288,7 +288,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-run \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/data/sketch-to-bim-capability-matrix.json \
      --model "$BIM_AI_MODEL_ID" \
      --out nightshift/<run>/initiation-run \
      --target-image nightshift/<run>/target-reference.png \
@@ -319,7 +319,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 
    ```bash
    node packages/cli/cli.mjs initiation-golden \
-     --manifest spec/sketch-to-bim-golden-seeds.json \
+     --manifest spec/data/sketch-to-bim-golden-seeds.json \
      --out nightshift/<run>/golden
    ```
 
@@ -368,7 +368,7 @@ Final seed packaging must use a fresh current-HEAD live run, normally:
 ```bash
 BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs initiation-run \
   --ir seed-artifacts/<seed-name>/evidence/sketch-ir.json \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/data/sketch-to-bim-capability-matrix.json \
   --model <id> \
   --mode project_initiation_bim \
   --fail-on-warning \
@@ -626,7 +626,7 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 **Initiation evidence runner:** `node packages/cli/cli.mjs initiation-run ...` captures live snapshot, validate, evidence package, Advisor warning/info, screenshots, sketch acceptance visual scoring, brief acceptance gates, and status. Use `--target-image` or `--target-map` for automated render/reference comparison, and `--fail-on-warning --fail-on-visual --fail-on-acceptance` for final acceptance.
 
-**Golden suite:** `node packages/cli/cli.mjs initiation-golden --manifest spec/sketch-to-bim-golden-seeds.json --out <dir>` runs preflight packets for multiple sketch-to-BIM cases. Use this before changing methodology or capability-matrix behavior.
+**Golden suite:** `node packages/cli/cli.mjs initiation-golden --manifest spec/data/sketch-to-bim-golden-seeds.json --out <dir>` runs preflight packets for multiple sketch-to-BIM cases. Use this before changing methodology or capability-matrix behavior.
 
 **Seed artifact packer:** `node scripts/create-seed-artifact.mjs --name <seed-name> --source <input-folder> --bundle <bundle.json>` creates the loadable artifact folder. Run it only after the bundle and evidence folder are coherent.
 

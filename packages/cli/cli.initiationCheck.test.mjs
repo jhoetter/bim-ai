@@ -1582,7 +1582,7 @@ test('seed-dsl compile rejects invalid site grading definitions', async () => {
 
 test('initiation-golden runs the preflight golden suite', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-golden-'));
-  const manifestPath = path.resolve(__dirname, '../../spec/sketch-to-bim-golden-seeds.json');
+  const manifestPath = path.resolve(__dirname, '../../spec/data/sketch-to-bim-golden-seeds.json');
 
   const res = await runCli(['initiation-golden', '--manifest', manifestPath, '--out', dir]);
 

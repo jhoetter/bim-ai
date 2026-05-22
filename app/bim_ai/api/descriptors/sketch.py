@@ -55,7 +55,7 @@ register(
         },
         cliExample=(
             "bim-ai sketch ir validate --ir sketch-ir.json "
-            "--capabilities spec/sketch-to-bim-capability-matrix.json --out packet"
+            "--capabilities spec/data/sketch-to-bim-capability-matrix.json --out packet"
         ),
         restEndpoint=RestEndpoint(method="POST", path="/api/v3/sketch/ir/validate"),
         sideEffects="none",
@@ -216,7 +216,7 @@ register(
         },
         cliExample=(
             "bim-ai sketch phase accept --ir sketch-ir.json "
-            "--capabilities spec/sketch-to-bim-capability-matrix.json --out packet "
+            "--capabilities spec/data/sketch-to-bim-capability-matrix.json --out packet "
             "--fail-on-acceptance"
         ),
         restEndpoint=RestEndpoint(method="POST", path="/api/v3/sketch/phase/accept"),

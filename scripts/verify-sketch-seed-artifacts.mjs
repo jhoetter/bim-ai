@@ -16,9 +16,9 @@ import { pathToFileURL } from 'node:url';
 
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_ROOT = path.join(REPO_ROOT, 'seed-artifacts');
-const DEFAULT_CAPABILITIES = 'spec/sketch-to-bim-capability-matrix.json';
+const DEFAULT_CAPABILITIES = 'spec/data/sketch-to-bim-capability-matrix.json';
 const DEFAULT_RENDERER_SUPPORT_MATRIX = 'spec/generated/renderer-support-matrix.md';
-const DEFAULT_GOLDEN_MANIFEST = 'spec/sketch-to-bim-golden-seeds.json';
+const DEFAULT_GOLDEN_MANIFEST = 'spec/data/sketch-to-bim-golden-seeds.json';
 const ADVISOR_RULE_FILES = [
   'app/bim_ai/constructability_advisories.py',
   'app/bim_ai/constructability_report.py',
@@ -36,7 +36,7 @@ function usage() {
     [--require-phase-packets] [--require-material-check]
     [--require-methodology-gates]
     [--require-tolerance-ledger] [--require-exchange-validation]
-    [--golden-manifest spec/sketch-to-bim-golden-seeds.json]
+    [--golden-manifest spec/data/sketch-to-bim-golden-seeds.json]
     [--no-golden-requirements]
 
 Checks manifest/bundle consistency for seed artifacts. With

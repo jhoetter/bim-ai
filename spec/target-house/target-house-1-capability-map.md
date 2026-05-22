@@ -1,7 +1,7 @@
 # Target-House-1 Capability Map
 
 Status: no-seed planning draft. Based on
-`spec/sketch-to-bim-capability-matrix.json` and the draft IR at
+`spec/data/sketch-to-bim-capability-matrix.json` and the draft IR at
 `spec/target-house/target-house-1-sketch-ir.draft.json`.
 
 ## Coverage Summary

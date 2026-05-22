@@ -16,7 +16,7 @@ For current work, use these sources together:
   surface inventory.
 - `spec/methodology/sketch-to-bim-failure-taxonomy.md` for blocker/tolerance categories,
   owner layers, examples, and expected evidence.
-- `spec/sketch-to-bim-capability-matrix.json` for feature-to-capability
+- `spec/data/sketch-to-bim-capability-matrix.json` for feature-to-capability
   readiness.
 - `spec/trackers/ui-mcp-parity-tracker.md` for the broader UI/Cmd+K/CLI/MCP parity
   design.

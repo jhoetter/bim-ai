@@ -129,7 +129,7 @@ function runVerifier(root, seed) {
 const summary = {
   bundlePath: 'seed-artifacts/target-house-1/bundle.json',
   irPath: 'seed-artifacts/target-house-1/evidence/sketch-ir.json',
-  capabilitiesPath: 'spec/sketch-to-bim-capability-matrix.json',
+  capabilitiesPath: 'spec/data/sketch-to-bim-capability-matrix.json',
   rendererSupportMatrixPath: 'spec/generated/renderer-support-matrix.md',
   seedSourceFiles: [
     'seed-artifacts/target-house-1/manifest.json',

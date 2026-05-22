@@ -13,7 +13,7 @@ import {
   resolveSemanticVisualChecklistRequirement,
 } from './sketch-semantic-visual-gate.mjs';
 
-export const DEFAULT_CAPABILITY_MATRIX_PATH = 'spec/sketch-to-bim-capability-matrix.json';
+export const DEFAULT_CAPABILITY_MATRIX_PATH = 'spec/data/sketch-to-bim-capability-matrix.json';
 export const INITIATION_MODES = {
   massing_only: {
     label: 'Massing only',

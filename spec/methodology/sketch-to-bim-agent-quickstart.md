@@ -23,7 +23,7 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py doctor
 python3 claude-skills/sketch-to-bim/sketch_bim.py tools
 node packages/cli/cli.mjs sketch ir validate \
   --ir spec/target-house/target-house-1-sketch-ir.draft.json \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/data/sketch-to-bim-capability-matrix.json \
   --out tmp/sketch-ir-validation
 ```
 
@@ -40,7 +40,7 @@ The Sketch Understanding IR must name:
 - dimensions, assumptions, and feature ids;
 - rooms/spaces, required views, and BIM information requirements.
 
-Validate it against `spec/sketch-to-bim-capability-matrix.json`. A critical
+Validate it against `spec/data/sketch-to-bim-capability-matrix.json`. A critical
 missing capability blocks authoring. A partial capability is allowed only with a
 planned evidence gate and later screenshot/Advisor proof.
 
@@ -111,7 +111,7 @@ node packages/cli/cli.mjs initiation-run \
   --ir <ir.json> \
   --out <evidence-dir> \
   --model "$BIM_AI_MODEL_ID" \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/data/sketch-to-bim-capability-matrix.json \
   --fail-on-warning \
   --fail-on-acceptance
 ```
@@ -124,7 +124,7 @@ tolerance. Nonblank screenshots alone do not prove visual fidelity.
 ```bash
 node packages/cli/cli.mjs sketch phase accept \
   --ir <ir.json> \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/data/sketch-to-bim-capability-matrix.json \
   --out <phase-acceptance-dir> \
   --fail-on-acceptance
 ```

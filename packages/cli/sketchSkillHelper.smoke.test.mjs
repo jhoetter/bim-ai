@@ -253,7 +253,7 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
     try {
       const bundlePath = path.join(seedDir, 'bundle.json');
       const irPath = path.join(evidenceDir, 'sketch-ir.json');
-      const capabilitiesPath = path.join(ROOT, 'spec/sketch-to-bim-capability-matrix.json');
+      const capabilitiesPath = path.join(ROOT, 'spec/data/sketch-to-bim-capability-matrix.json');
       const rendererSupportPath = path.join(ROOT, 'spec/generated/renderer-support-matrix.md');
       const provenanceFiles = ['packages/cli/sketchSkillHelper.smoke.test.mjs'];
       await writeJson(bundlePath, { schemaVersion: 'cmd-v3.0', commands: [] });
@@ -264,7 +264,7 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
         gitHead: doctorPayload.gitHead,
         bundleSha256: await sha256(bundlePath),
         irSha256: await sha256(irPath),
-        capabilitiesPath: 'spec/sketch-to-bim-capability-matrix.json',
+        capabilitiesPath: 'spec/data/sketch-to-bim-capability-matrix.json',
         capabilitiesSha256: await sha256(capabilitiesPath),
         advisorRuleFiles: ADVISOR_RULE_FILES,
         advisorRuleDigest: await digestFiles(ADVISOR_RULE_FILES),
