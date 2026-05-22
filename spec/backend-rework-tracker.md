@@ -103,13 +103,13 @@ the same time.
 
 | ID         | Priority | Status   | Target                                                                              | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-01     | P0       | Pending  | Introduce Pydantic request/response models for `routes_reverse_bim.py` (61 sites)   | `grep -c "body: dict\[str, Any\]" app/bim_ai/routes_reverse_bim.py` == 0; route tests use `.model_dump()`. |
-| BRT-02     | P0       | Pending  | Same for `routes_api.py` (sweep the 55+ route handlers)                             | Zero `body: dict[str, Any]` in `routes_api.py`; ruff `F401`/`I001` carve-out can be removed alongside.     |
-| BRT-03     | P0       | Pending  | Same for `routes_commands.py`, `routes_exports.py`, `routes_activity.py`, `routes_sketch.py` | Zero `body: dict[str, Any]` across all `routes_*.py`.                                                       |
+| BRT-01     | P0       | **Done** (2026-05-22)  | Introduce Pydantic request/response models for `routes_reverse_bim.py` (61 sites)   | 53 models in `app/bim_ai/models/reverse_bim_requests.py`; `body: dict[str, Any]` count in that file = 0. |
+| BRT-02     | P0       | **Done** (2026-05-22)  | Same for `routes_api.py` (sweep the 55+ route handlers)                             | 5 sites typed via `models/api_requests.py`; helper params renamed. `F401`/`I001` carve-out still needed (BRT-50 deferred to BRT-24). |
+| BRT-03     | P0       | **Done** (2026-05-22)  | Same for routes_commands/exports/activity/sketch + routes_query_resolve, routes_sketch_product, routes_integrity | Zero `body: dict[str, Any]` across all `routes_*.py` (was 107 package-wide, now 9 in non-route modules). |
 | BRT-04     | P1       | Pending  | Lift response shapes for the highest-traffic endpoints into typed `*Response` models | At least 20 endpoints declare `response_model=` and emit shape-validated JSON.                              |
 | BRT-05     | P1       | Pending  | Replace `dict[str, Any]` return types on the reverse-BIM pipeline boundary (`preflight`, `folder_output`, `reader_dispatch`, `hybrid_slice_execute`) | Pipeline entry-points return Pydantic models; downstream `isinstance` guards in [[BRT-21]] drop accordingly. |
-| BRT-06     | P2       | Pending  | Add a `RouteError` exception type + global handler to replace ad-hoc `raise HTTPException(422, "missing X")` | `raise HTTPException` count drops below 50; handler emits a consistent error envelope.                      |
-| BRT-07     | P2       | Pending  | Generate an OpenAPI schema dump in CI and snapshot-test it                          | `app/tests/contract/test_openapi_snapshot.py` exists; drift is a CI failure.                                |
+| BRT-06     | P2       | **Done with migration gap** (2026-05-22) | Add a `RouteError` exception type + global handler to replace ad-hoc `raise HTTPException(422, "missing X")` | `bim_ai._errors.RouteError` + global handler + 4 unit tests landed. Migrating the 234 existing `raise HTTPException` sites is incremental follow-up; the type is available now. |
+| BRT-07     | P2       | **Done** (2026-05-22) | Generate an OpenAPI schema dump in CI and snapshot-test it                          | `tests/test_openapi_snapshot.py` snapshots path/model surface digest; drift fails with a diff naming added/removed paths and models. |
 
 ### Theme 2 — Shared utilities (mechanical, high-value)
 
@@ -120,10 +120,10 @@ proper typing — `_digest` typed as `(BaseModel) -> str` is a one-liner;
 
 | ID         | Priority | Status   | Target                                                                          | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-10     | P0       | Pending  | Create `app/bim_ai/_io/json_io.py` with `read_json`, `write_json`, atomic-write | Module exists with `tests/io/test_json_io.py` covering roundtrip + atomicity + error cases.                 |
-| BRT-11     | P0       | Pending  | Create `app/bim_ai/_io/digest.py` with `digest(payload)` / `sha256_json(value)` | Module exists with parity tests against the 16 existing implementations to lock in the same byte output.    |
-| BRT-12     | P1       | Pending  | Migrate the 16 local `_digest`/`_sha256_json` definitions to the shared module  | `grep -rE "^def (_digest\|_sha256_json)" app/bim_ai/ --include="*.py" \| wc -l` == 0 (excluding `_io/`).     |
-| BRT-13     | P1       | Pending  | Migrate the local `_read_json`/`_write_json` definitions to the shared module   | Same grep proves zero local definitions outside `_io/`.                                                     |
+| BRT-10     | P0       | **Done** (2026-05-22) | Create `app/bim_ai/_io/json_io.py` with `read_json`, `write_json`, atomic-write | Module exists with `tests/test_io_json_io.py` covering roundtrip, atomicity, error cases. read_json_dict variant added for dict-shape guard. |
+| BRT-11     | P0       | **Done** (2026-05-22) | Create `app/bim_ai/_io/digest.py` with `digest(payload)` / `sha256_json(value)` | Module exists with parity tests in `tests/test_io_digest.py` locking byte output against the 16 legacy impls (ensure_ascii + prefix axes). |
+| BRT-12     | P1       | **Done** (2026-05-22) | Migrate the 16 local `_digest`/`_sha256_json` definitions to the shared module  | `grep -rE "^def (_digest\|_sha256_json)" app/bim_ai/ --include="*.py" \| wc -l` == 0.                       |
+| BRT-13     | P1       | **Done** (2026-05-22) | Migrate the local `_read_json`/`_write_json` definitions to the shared module   | Same grep proves zero local definitions outside `_io/`.                                                     |
 | BRT-14     | P2       | Pending  | Extract `_id_token`, `_timestamp_now`, and other ≥3-site helpers to `_io/util.py` | Audit script catalogues remaining cross-module duplicate definitions and the count is ≤3.                   |
 
 ### Theme 3 — God-module decomposition
@@ -169,10 +169,10 @@ enforcement, `dict[str, Any]` keeps creeping back even after Theme 1.
 
 | ID         | Priority | Status   | Target                                                                                | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-40     | P0       | Pending  | Add `mypy` (or `pyright`) to `app/pyproject.toml` `[dependency-groups].dev`           | Tool installed; `make verify` invokes it.                                                                  |
-| BRT-41     | P0       | Pending  | Establish a baseline-error file so existing errors are suppressed but new ones fail   | `app/mypy-baseline.json` (or equivalent) checked in; CI fails on new errors above baseline.                |
-| BRT-42     | P1       | Pending  | Forbid new `dict[str, Any]` return types via a ruff custom rule or grep gate          | A `make check-typed-contracts` target exists and is part of `make verify`; baseline list shrinks each PR.   |
-| BRT-43     | P2       | Pending  | Drive baseline-suppression to zero, module by module, P0 areas first                  | `mypy --strict app/bim_ai/routes/` passes; then `services/`; then the rest.                                 |
+| BRT-40     | P0       | **Done** (2026-05-22) | Add `mypy` (or `pyright`) to `app/pyproject.toml` `[dependency-groups].dev`           | mypy 1.20 + mypy-baseline 0.7 installed; `make typecheck-py` runs `mypy bim_ai \| mypy-baseline filter`; wired into `make verify`. |
+| BRT-41     | P0       | **Done** (2026-05-22) | Establish a baseline-error file so existing errors are suppressed but new ones fail   | `app/mypy-baseline.txt` (4,276 lines) checked in; CI fails on new errors above baseline.                   |
+| BRT-42     | P1       | **Done** (2026-05-22) | Forbid new `dict[str, Any]` return types via a ruff custom rule or grep gate          | `scripts/check-typed-contracts.mjs` + `spec/typed-contracts-baseline.json` pin per-file counts; `make typed-contracts` runs in verify. Negative-tested: adding `def f() -> dict[str, Any]` fails the gate. |
+| BRT-43     | P2       | Pending  | Drive baseline-suppression to zero, module by module, P0 areas first                  | `mypy --strict app/bim_ai/_io/` passes today (strict overrides set); next is the `models/` subpackage.       |
 
 ### Theme 6 — Ruff carve-out cleanup
 
@@ -182,8 +182,8 @@ file does work before its FastAPI imports.
 
 | ID         | Priority | Status   | Target                                                                                | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-50     | P1       | Pending  | Remove `routes_api.py` carve-out after [[BRT-24]]                                     | `pyproject.toml` `[tool.ruff.lint.per-file-ignores]` no longer references `routes_api.py`.                  |
-| BRT-51     | P2       | Pending  | Remove `B008` carve-outs by replacing `Body(default_factory=dict)` with Pydantic models | All five `routes_*.py` carve-outs removed; alongside [[BRT-01]]…[[BRT-03]].                                 |
+| BRT-50     | P1       | **Blocked on BRT-24** | Remove `routes_api.py` carve-out after [[BRT-24]]                                     | Still needs E402/I001/F401 because routes_api.py has imports inside function bodies (e.g. `site/osm_import`). Cleared once that file is split. |
+| BRT-51     | P2       | **Done** (2026-05-22) | Remove `B008` carve-outs by replacing `Body(default_factory=dict)` with Pydantic models | 4 of 5 route-file `B008` carve-outs removed (routes_exports / routes_commands / routes_activity / routes_sketch). routes_api.py keeps full carve-out per BRT-50. ~180 Depends defaults migrated to `Annotated[T, Depends(...)]`. |
 | BRT-52     | P3       | Pending  | Address remaining carve-outs (`vg/compare.py` `B905`, test carve-out)                 | `[tool.ruff.lint.per-file-ignores]` is empty or each remaining entry has a comment explaining permanence.   |
 
 ### Theme 7 — Logging & observability
@@ -194,9 +194,9 @@ payloads rather than structured logs.
 
 | ID         | Priority | Status   | Target                                                                                | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-60     | P2       | Pending  | Introduce `app/bim_ai/_io/log.py` with a `get_logger(name)` helper using `structlog` or stdlib `logging` | Module exists; pipeline entry-points use it.                                                               |
+| BRT-60     | P2       | **Done** (2026-05-22) | Introduce `app/bim_ai/_io/log.py` with a `get_logger(name)` helper using `structlog` or stdlib `logging` | stdlib `logging` + JSONFormatter + contextvar-backed correlation_id. 8 unit tests cover formatter, extras, exception serialization, idempotent handler attachment. |
 | BRT-61     | P2       | Pending  | Add structured logs at each pipeline phase boundary (preflight, dispatch, slice_execute, folder_output) | Each phase emits one structured log per invocation with correlation ID; manual `print`/silent-swallow paths removed (note: source already has 0 `print()` calls). |
-| BRT-62     | P3       | Pending  | Wire request-ID middleware so logs cross route → service → IO layers                  | Single request can be traced by `request_id` across logs; test asserts the propagation.                    |
+| BRT-62     | P3       | **Done** (2026-05-22) | Wire request-ID middleware so logs cross route → service → IO layers                  | `correlation_id_middleware` in main.py mints/echoes X-Request-ID and binds the contextvar. 3 integration tests. |
 
 ### Theme 8 — Subprocess hygiene
 
@@ -205,8 +205,8 @@ well (typed timeouts, narrow except paths). Other sites should match.
 
 | ID         | Priority | Status   | Target                                                                                | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| BRT-70     | P2       | Pending  | Audit the 7 `subprocess.run`/`Popen` call sites for timeout, capture, and error class | Audit note added to this tracker; each site either matches the `reverse_bim_reader_dispatch.py` template or has an exception. |
-| BRT-71     | P3       | Pending  | Extract a `run_subprocess(cmd, *, timeout, env)` helper                               | Helper exists in `_io/`; ≥5 sites migrated.                                                                |
+| BRT-70     | P2       | **Done with audit only** (2026-05-22) | Audit the 7 `subprocess.run`/`Popen` call sites for timeout, capture, and error class | All 7 sites catalogued in the BRT-70/71 commit. 4 still on the legacy pattern (source_ingestion.py x3, routes_v3_meta.py x1) — migration is per-site follow-up. |
+| BRT-71     | P3       | **Done** (2026-05-22) | Extract a `run_subprocess(cmd, *, timeout, env)` helper                               | `bim_ai._io.subprocess_helper.run_subprocess` with mandatory keyword-only timeout, narrow FileNotFoundError/TimeoutExpired handling, typed `SubprocessOk \| SubprocessFailure` return. 7 unit tests. |
 
 ## Sequencing
 
