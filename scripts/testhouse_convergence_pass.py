@@ -1318,17 +1318,20 @@ def _apply_iter3_facts_to_live_model(
                 "POST",
                 f"/api/models/{model_id}/query/nearest-wall",
                 {
-                    "point": {"xMm": float(position["xMm"]), "yMm": float(position["yMm"])},
+                    "nearPointMm": [
+                        float(position["xMm"]),
+                        float(position["yMm"]),
+                    ],
                     "levelId": canonical_level,
                 },
             )
-            wall_id = (nearest.get("data") or {}).get("wallId") or nearest.get("wallId")
+            wall_block = (nearest.get("data") or {}).get("wall") or {}
+            placement = (nearest.get("data") or {}).get("placement") or {}
+            wall_id = wall_block.get("elementId") or wall_block.get("wallId")
             if not wall_id:
                 skipped.append(f"no_host_wall:{fact.get('factId')}")
                 continue
-            # Compute along_t from the printed position. nearest-wall response
-            # often includes an `alongT` already; fall back to 0.5 (mid-wall).
-            along_t = (nearest.get("data") or {}).get("alongT")
+            along_t = placement.get("t")
             if not isinstance(along_t, int | float):
                 along_t = 0.5
             along_t = max(0.0, min(1.0, float(along_t)))
