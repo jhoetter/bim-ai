@@ -2,13 +2,23 @@
 
 Last updated: 2026-05-22
 
-Status: **Iteration-1 blocker closeout.** Run 1 completed the full source
-preflight and an initial multimodal-reader pass against each of `house-alpha`,
-`house-beta`, and `house-gamma`, lifted alpha + beta to
-`source_understanding_blocked`, and landed the TH-UI-001..005 sidebar /
-MCP-descriptor additions. The houses did not reach accepted-model status — the
-tracker now reflects the truth, including which methodology and software gaps
-must close before iteration 2.
+Status: **Iteration-2 infrastructure complete; modeling blocked on numeric
+coordinate facts.** Run 1 closed all three houses at
+`source_understanding_blocked`. Run 2 (2026-05-22) shipped all four
+iteration-2 unblocker findings end-to-end (TH-X-F006 source_view_evidence
+schema, TH-X-F008 page classifier, TH-X-F009 response normalizer fan-out,
+TH-X-F010 DPI raised to 240 + rerender_for_legibility), refreshed the
+preflight at 240 DPI for all three houses, ran the new page classifier
+against the three critical compound PDFs (beta 6 pages, gamma 10 pages,
+alpha Exposé 18 pages), and supplied scope decisions for all three houses
+— closing the building-scope blockers for alpha and beta and resolving
+gamma's target-scope type to `target_half`. The houses remain at
+`source_understanding_blocked` because the iter-1 reader passes returned
+*descriptive* facts (`"~9.5 m x 8.0 m"`) not *numeric* coordinate facts,
+and the hybrid-reverse-bim skill explicitly forbids inferring hidden
+geometry from prose. Iteration 3 must re-dispatch the reader campaigns
+against the now-higher-DPI renders with prompts that extract numeric
+coordinates, then drive MCP authoring per slice.
 
 This tracker turns the `testhouses/` folders into a sequential learning
 benchmark for `claude-skills/hybrid-reverse-bim`.
@@ -410,3 +420,125 @@ Ordered by leverage:
 
 Total tracker findings recorded in iteration 1: 6 (alpha) + 5 (beta) + 7
 (gamma) + 12 cross-house = **30 findings**, all with a named follow-up.
+
+## Iteration 2 Summary (2026-05-22)
+
+### What iteration 2 actually delivered
+
+- **Infrastructure shipped 4/4:** TH-X-F006 (source_view_evidence schema
+  end-to-end), TH-X-F008 (source.classify_pages dispatch + normalize),
+  TH-X-F009 (reader-response normalizer fan-out via
+  `additionalWorkPackageIds`), TH-X-F010 (preflight DPI raised from 200 to
+  240, `source.rerender_for_legibility` helper). All four findings have
+  Iteration-2 landed status above.
+- **Preflight refreshed for all three houses at 240 DPI** via
+  `scripts/testhouse_iter2_finalize.py`. Artifacts re-emitted under
+  `tmp/reverse-bim/house-{alpha,beta,gamma}/`. Iter-2 status snapshots
+  persisted at `tmp/reverse-bim/house-<name>/iter-2-status.json`.
+- **Page classification reads landed for the three compound PDFs that
+  blocked iter-1 routing:**
+  - Beta `Grundrisse, Ansichten, Schnitt (1).pdf` (6 pages → 3 floor plans
+    + 1 section + 2 elevations).
+  - Gamma `Kannenofen.pdf` (10 pages → 5 floor plans + 3 elevations + 1
+    section + 1 legal_admin).
+  - Alpha `535_06 KH Exposé.pdf` (18 pages → 8 photos + 3 floor plans + 5
+    legal_admin + 2 construction_description).
+  Responses live under
+  `ai-reading/page-classifications/responses/*.json` and are merged into
+  `aiVisualTracePacket.documents[].renderedPages[].pageClassificationRoles`
+  on the next folder-output run.
+- **Scope decisions accepted for all three houses** (see
+  `scripts/testhouse_iter2_finalize.py`):
+  - Alpha: `target_half` (present east half of the 1956 Reinecke
+    Doppelhaus, party-wall axis as `scopeBoundaryRef`). Closes the
+    `buildingScopeBlockerCount`.
+  - Beta: `selected_building` (single detached house at Emattweg). Closes
+    the scope blocker.
+  - Gamma: `target_half` (Doppelhaushaelfte + Praxis at Kannenofen 45).
+    Closes scope-decision binding; 4 stale unresolved scope facts remain
+    in the noise (from the rescue file's non-standard value shape).
+- **Gamma rescue file fanout proven:** after applying TH-X-F009 normalizer
+  + supplemental building_scope fact (with the standard
+  `scopeType/modeledExtent/evidenceSummary` value shape), gamma's
+  normalized fact count rose to 1,470 spread across all six work
+  packages.
+- **TH-UI-004 evidence pill backed by real `source_view_evidence`
+  elements.** `scripts/testhouse_iter2_smoke_author.py` proves the
+  schema round-trips through `apply_inplace`: 3 levels + 2 sections + 4
+  elevations + 6 paired `source_view_evidence` records (`source_linked`)
+  serialize cleanly to `tmp/reverse-bim/house-beta/iter-2-smoke-model.json`.
+
+### What iteration 2 did **not** deliver (and why)
+
+- **No house reached accepted-model status.** All three remain at
+  `packageState: source_understanding_blocked`. The fundamental blocker
+  is that the iter-1 reader passes returned **descriptive prose**, not
+  **numeric coordinate facts** — wall_chain `points: "~9.5 m x 8.0 m"`,
+  level `elevationSource: "inferred_from_section_overlay_page4"`, etc.
+  The hybrid-reverse-bim skill explicitly forbids inferring hidden
+  geometry from prose. Authoring with synthetic coordinates would
+  violate the methodology.
+- **Coordinate-frame alignment payloads not produced.** Each alignment
+  needs measured page-pixel control points → metric anchor pairs (alpha
+  4, beta 6). That is measurement work against the now-240-DPI source
+  PNGs, not pure code work.
+- **Material-assembly, area-consistency, roof/dormer, and
+  site/terrain readers not re-dispatched.** Combined ~50 blockers across
+  the three houses are gated on these reader passes.
+- **Visual-geometry gate not run.** Requires the live BIM web app + an
+  authored model + view-capture screenshots + source-overlay PNGs. This
+  is the methodology's hard gate; it cannot be satisfied from a Python
+  script alone.
+
+### Per-house status snapshot (post iter-2)
+
+| House | Package state | Normalized facts | MCP-ready | Open blockers | Scope blockers | Resolved scope | Iteration-2 outcome |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Alpha | `source_understanding_blocked` | 174 | 45 | 10 | 0 | `target_half` (east) | Scope resolved; 4 coordinate frames, 11 roof/dormer, 18 material assemblies, 9 area consistency, 1 site/terrain still open. 14 reader assignments still waiting. |
+| Beta | `source_understanding_blocked` | 113 | 53 | 10 | 0 | `selected_building` | Scope resolved; 6 coordinate frames, 8 roof/dormer, 18 material assemblies, 1 site/terrain, 1 reader consensus still open. Sections pass-02 still waiting. |
+| Gamma | `source_understanding_blocked` | 1,470 | 20 | 8 | 8 (residual) | `target_half` (left) | Scope decision binds; rescue file fans across 5 work packages via TH-X-F009. 12 roof/dormer, 4 site/terrain, 4 reader consensus blockers. 3 main reader assignments still open. |
+
+### Iteration-3 work items (next session)
+
+Ordered by what unblocks the most blockers per unit of work:
+
+1. **Re-dispatch dimensional reader passes against 240-DPI renders with
+   numeric-coordinate prompts.** The single biggest blocker. Each
+   reader must return `wall_chain.points` as actual `[{xMm, yMm}, ...]`
+   coordinates, `level.elevationMm` as a measured number, and
+   `opening.position` as an `{xMm, yMm}` pair. Use the existing
+   reader-dispatch infrastructure under `ai-reading/assignments/**` but
+   with a tightened prompt focused on numbers, not labels.
+2. **Produce coordinate-frame alignment payloads** for alpha (4) and
+   beta (6). Each needs ≥3 source-page → metric control point pairs.
+   This is measurement against the 240-DPI PNGs.
+3. **Dispatch the outstanding reader assignments**:
+   - Alpha: 14 outstanding (current_condition × 2, site/parcel × 8,
+     area/volume × 4, drainage × 1, sections pass-02 × 1).
+   - Beta: 3 outstanding (sections pass-02, area pass-02, current_condition pass-02).
+   - Gamma: 3 outstanding normal-mode passes for the per-page routed
+     pages (now that the page classifier has supplied roles).
+4. **Run `reverse_bim.material_assembly_repair`** with the
+   construction-description reads to close the 18-per-house material
+   assembly blockers.
+5. **Stand up a per-house MCP authoring slice** using the numeric facts:
+   `author.level` → `author.wall_chain` → `opening.door_on_wall` /
+   `opening.window_on_wall` → `author.roof_from_boundary` →
+   `author.dormer_on_roof` → `author.stair_between_levels` →
+   `author.floor_from_boundary`. Slice acceptance requires `qa.advisor`
+   + `qa.constructability` + `qa.integrity_preflight` + Document
+   readback comparison.
+6. **Capture source-equivalent views** via
+   `reverse_bim.view_capture_plan` + `view_capture_execute` (requires
+   the live web app). For every plan / elevation / section / detail in
+   the source folder there must be a recreated model view + a
+   source-overlay PNG.
+7. **Run `reverse_bim.visual_review_requests` +
+   `reverse_bim.visual_review_normalize`** to gate visual geometry:
+   walls vs roof joins, dormer placements, opening heights, terrain /
+   building pad coherence.
+8. **Run `reverse_bim.final_acceptance`** per house once Advisor +
+   constructability + integrity + visual review are green.
+
+Iteration 3's critical-path dependency is reader work, not code work.
+The infrastructure is ready; the houses now need real measurements.
