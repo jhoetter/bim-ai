@@ -36,6 +36,25 @@ async def init_db_schema() -> None:
         await conn.execute(
             text("ALTER TABLE bim_redo_stack ADD COLUMN IF NOT EXISTS transaction_metadata JSONB")
         )
+        # Time-travel: ensure the commit_id column exists on bim_undo_stack
+        # even if a deployment was running before the column was added to
+        # the ORM definition. Idempotent.
+        await conn.execute(
+            text(
+                "ALTER TABLE bim_undo_stack "
+                "ADD COLUMN IF NOT EXISTS commit_id VARCHAR(26) "
+                "REFERENCES bim_model_commits(commit_id)"
+            )
+        )
+        # Time-travel: at most one open commit per model. Partial unique
+        # index — postgres-specific but required for the v1 single-writer
+        # invariant.
+        await conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS bim_model_commits_one_open_per_model "
+                "ON bim_model_commits (model_id) WHERE state = 'open'"
+            )
+        )
 
 
 def _metadata_idempotency(metadata: dict[str, Any] | None) -> dict[str, Any]:

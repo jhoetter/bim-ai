@@ -61,6 +61,15 @@ class UndoStackRecord(Base):
 
     transaction_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Time-travel: groups consecutive transactions into a named commit with
+    # agent context. Nullable so existing rows do not need backfill.
+    commit_id: Mapped[str | None] = mapped_column(
+        String(26),
+        ForeignKey("bim_model_commits.commit_id"),
+        nullable=True,
+        index=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -150,6 +159,82 @@ class RoleAssignmentRecord(Base):
     granted_by: Mapped[str] = mapped_column(String, nullable=False)
     granted_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     expires_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class ModelCommitRecord(Base):
+    """Git-like commit grouping a contiguous range of bim_undo_stack rows.
+
+    See spec/model-time-travel-tracker.md for the methodology and lifecycle.
+    """
+
+    __tablename__ = "bim_model_commits"
+
+    # ULID, 26-char Crockford base32. Monotonic, human-copyable, sortable.
+    commit_id: Mapped[str] = mapped_column(String(26), primary_key=True)
+
+    model_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("bim_models.id"), index=True, nullable=False
+    )
+
+    # NULL for the very first commit on a model; otherwise points at the
+    # immediately preceding closed commit. Not uniquely-indexed: the schema
+    # permits forks even though the v1 API forbids creating them.
+    parent_commit_id: Mapped[str | None] = mapped_column(
+        ForeignKey("bim_model_commits.commit_id"), nullable=True, index=True
+    )
+
+    # Inclusive bounds resolved from bim_undo_stack.revision_after.
+    first_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # 'open' | 'closed' | 'aborted'.
+    state: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+
+    summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    # Free-form agent context. Conventional fields documented in the tracker:
+    # sessionId, agentId, methodologyVersion, commandSchemaVersion,
+    # iterationLabel, phaseId, sliceId, runId, source, toolCallIds, factIds,
+    # outputDir, houseName, userId.
+    context: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Set on close (skipped for aborted commits per resolved decision #6).
+    snapshot_id: Mapped[int | None] = mapped_column(
+        ForeignKey("bim_model_snapshots.id"), nullable=True
+    )
+
+
+class ModelSnapshotRecord(Base):
+    """Full bim_models.document JSONB captured at a commit boundary."""
+
+    __tablename__ = "bim_model_snapshots"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+
+    model_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("bim_models.id"), index=True, nullable=False
+    )
+    commit_id: Mapped[str] = mapped_column(
+        ForeignKey("bim_model_commits.commit_id"), nullable=False, unique=True
+    )
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    document: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    # SHA-256 over canonical_transaction_digest()-style serialization
+    # (json.dumps(..., sort_keys=True, separators=(",", ":"))). Enables
+    # content-addressed dedup for no-op or near-identical commits.
+    document_sha256: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    document_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    # Lightweight index of doc contents: { element_kind: count }. Lets the
+    # log/dashboard show element counts without parsing the full JSONB.
+    element_counts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class PublicLinkRecord(Base):
