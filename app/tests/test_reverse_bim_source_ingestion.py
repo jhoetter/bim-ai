@@ -321,6 +321,76 @@ def test_ai_visual_reader_normalization_builds_mcp_feedable_facts() -> None:
     assert room["value"]["boundaryRef"] == "ai-srcfact-room-wohnen:boundary"
 
 
+def test_additional_work_package_ids_fan_out_a_single_rescue_response() -> None:
+    """TH-X-F009 — a "rescue" reader response that spans multiple work
+    packages can declare `additionalWorkPackageIds` and have its facts
+    distributed across every named package, not just the primary one."""
+
+    normalized = normalize_ai_visual_trace_reader_responses(
+        [
+            {
+                "format": "sourceAiVisualTraceReaderResponse_v1",
+                "workPackageId": "wp-dimensional-floorplans",
+                "additionalWorkPackageIds": [
+                    "wp-sections-elevations-roof",
+                    "wp-site-parcel-terrain",
+                ],
+                "requestId": "rescue-001",
+                "facts": [
+                    {
+                        "factId": "ai-srcfact-level-eg",
+                        "kind": "level",
+                        "value": {"name": "EG", "elevationMm": 0},
+                        "confidence": 0.9,
+                        "provenance": {
+                            "sourceDocumentId": "srcdoc-kannenofen",
+                            "page": 2,
+                            "region": "title block",
+                        },
+                    },
+                    {
+                        "factId": "ai-srcfact-roof",
+                        "kind": "roof",
+                        "value": {
+                            "roofType": "gable",
+                            "boundaryRef": "polygon",
+                            "pitchDeg": 45,
+                            "eaveHeightMm": 6000,
+                            "ridgeHeightMm": 11390,
+                        },
+                        "confidence": 0.85,
+                        "provenance": {
+                            "sourceDocumentId": "srcdoc-kannenofen",
+                            "page": 9,
+                            "region": "Schnitt A-A",
+                        },
+                    },
+                ],
+            }
+        ]
+    )
+
+    responses_by_pkg = {row["workPackageId"]: row for row in normalized["responses"]}
+    # All three named work packages receive the response.
+    assert {
+        "wp-dimensional-floorplans",
+        "wp-sections-elevations-roof",
+        "wp-site-parcel-terrain",
+    } <= set(responses_by_pkg.keys())
+    # Primary package keeps no fanout marker; secondaries carry it.
+    primary = responses_by_pkg["wp-dimensional-floorplans"]
+    assert "fanoutFromWorkPackageId" not in primary
+    secondary = responses_by_pkg["wp-sections-elevations-roof"]
+    assert secondary["fanoutFromWorkPackageId"] == "wp-dimensional-floorplans"
+    # Each receiving package sees the same fact set.
+    primary_fact_ids = {f["factId"] for f in primary["facts"]}
+    assert primary_fact_ids == {"ai-srcfact-level-eg", "ai-srcfact-roof"}
+    for pkg_id in ("wp-sections-elevations-roof", "wp-site-parcel-terrain"):
+        assert {
+            f["factId"] for f in responses_by_pkg[pkg_id]["facts"]
+        } == primary_fact_ids
+
+
 def test_document_classification_uses_native_text_when_filename_is_opaque(tmp_path: Path) -> None:
     pdf_path = tmp_path / "NW-2025-opaque.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n% test\n")

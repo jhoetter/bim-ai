@@ -1162,12 +1162,28 @@ def _safe_response_file_stem(value: str) -> str:
 
 
 def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Merge reader response rows into one envelope per work-package id.
+
+    TH-X-F009 — a single "global" or "rescue" reader can satisfy multiple work
+    packages by declaring ``additionalWorkPackageIds: [str]`` on its response
+    envelope. The row is then merged into every listed package id in addition
+    to its primary ``workPackageId``. The fan-out copies the same fact list
+    into each receiving package; package validation downstream selects only
+    facts whose ``kind`` matches that package's blocking required kinds, so
+    cross-pollution is not a concern.
+    """
+
     out: dict[str, dict[str, Any]] = {}
     for row in rows:
-        package_id = str(row.get("workPackageId") or row.get("workPackage") or row.get("id") or "")
-        if not package_id:
+        primary_id = str(row.get("workPackageId") or row.get("workPackage") or row.get("id") or "")
+        additional_ids = [
+            str(pid)
+            for pid in row.get("additionalWorkPackageIds") or []
+            if isinstance(pid, str) and pid and pid != primary_id
+        ]
+        if not primary_id and not additional_ids:
             continue
-        existing = out.get(package_id)
+        targets = ([primary_id] if primary_id else []) + additional_ids
         facts = [fact for fact in row.get("facts") or [] if isinstance(fact, dict)]
         part = {
             "requestId": row.get("requestId"),
@@ -1178,20 +1194,40 @@ def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[st
         part_has_metadata = any(
             part.get(key) is not None for key in ("requestId", "requestPartIndex", "requestPartCount")
         )
-        if existing is None:
-            merged = {
-                **row,
-                "format": row.get("format") or "sourceAiVisualTraceReaderResponse_v1",
-                "workPackageId": package_id,
-                "facts": facts,
-            }
+        for index, target_id in enumerate(targets):
+            existing = out.get(target_id)
+            target_part = (
+                part
+                if index == 0
+                else {**part, "fanoutFromWorkPackageId": primary_id}
+            )
+            if existing is None:
+                merged = {
+                    **row,
+                    "format": row.get("format") or "sourceAiVisualTraceReaderResponse_v1",
+                    "workPackageId": target_id,
+                    "facts": list(facts),
+                }
+                if target_id != primary_id and primary_id:
+                    merged["fanoutFromWorkPackageId"] = primary_id
+                if part_has_metadata:
+                    merged["responseParts"] = [target_part]
+                out[target_id] = merged
+                continue
+            existing["facts"] = [*(existing.get("facts") or []), *facts]
             if part_has_metadata:
-                merged["responseParts"] = [part]
-            out[package_id] = merged
-            continue
-        existing["facts"] = [*(existing.get("facts") or []), *facts]
-        if part_has_metadata:
-            existing["responseParts"] = [*(existing.get("responseParts") or []), part]
+                existing["responseParts"] = [
+                    *(existing.get("responseParts") or []),
+                    target_part,
+                ]
+            if target_id != primary_id and primary_id:
+                fanouts = set(existing.get("fanoutFromWorkPackageIds") or [])
+                if existing.get("fanoutFromWorkPackageId") and existing.get(
+                    "fanoutFromWorkPackageId"
+                ) != primary_id:
+                    fanouts.add(str(existing["fanoutFromWorkPackageId"]))
+                fanouts.add(primary_id)
+                existing["fanoutFromWorkPackageIds"] = sorted(fanouts)
     return out
 
 
