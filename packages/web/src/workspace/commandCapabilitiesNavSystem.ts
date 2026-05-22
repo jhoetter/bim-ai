@@ -1,7 +1,5 @@
-import {
-  CAPABILITY_VIEW_MODES,
-  type CommandCapabilityDraft,
-} from './commandCapabilities';
+import { CAPABILITY_VIEW_MODES } from './capabilityViewModes';
+import type { CommandCapabilityDraft } from './commandCapabilities';
 
 export const NAVIGATION_CAPABILITIES: CommandCapabilityDraft[] = [
   {
@@ -916,4 +914,3 @@ export const SYSTEM_CAPABILITIES: CommandCapabilityDraft[] = [
     usabilityScore: 8,
   },
 ];
-

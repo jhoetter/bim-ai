@@ -6,7 +6,6 @@ import {
   getToolRegistry,
   type ToolDefinition,
   type ToolId,
-  type WorkspaceMode,
 } from '../tools/toolRegistry';
 import {
   getAuthoringCommandContract,
@@ -14,18 +13,11 @@ import {
   type AuthoringCompletionBehavior,
 } from '../tools/authoringCommandContract';
 
+import { CAPABILITY_VIEW_MODES, type CapabilityViewMode } from './capabilityViewModes';
 import { NAVIGATION_CAPABILITIES, SYSTEM_CAPABILITIES } from './commandCapabilitiesNavSystem';
 
-export const CAPABILITY_VIEW_MODES = [
-  'plan',
-  '3d',
-  'elevation',
-  'section',
-  'sheet',
-  'schedule',
-] as const satisfies readonly WorkspaceMode[];
-
-export type CapabilityViewMode = (typeof CAPABILITY_VIEW_MODES)[number];
+export { CAPABILITY_VIEW_MODES };
+export type { CapabilityViewMode };
 export type CapabilityLensMode = LensMode;
 
 export type CommandSurface =
