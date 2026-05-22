@@ -754,3 +754,133 @@ for _semantic_arch_tool in (
             uiFeatures=["cmd-k:agent-equivalent", "reverse-bim"],
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# TH-UI-005 — Reverse-BIM source-derived view authoring surfaces
+#
+# These descriptors give agents and humans a single, source-aware way to author
+# the source-derived views the testhouse hybrid reverse-BIM tracker requires
+# (exterior elevations, architectural details, and source-equivalent section
+# cuts), each carrying source-document / page / region provenance and an
+# intended comparison type so the per-row evidence badge in the project browser
+# can show acceptance progress.
+#
+# The view-creation tools wrap the existing kernel commands
+# (`createElevationView`, `upsertPlanView` with `planViewSubtype='callout'`,
+# `createSectionCut`). The companion `reverse_bim.source_view_evidence_upsert`
+# tool documents the evidence-record surface; the persistent backing element
+# kind (`source_view_evidence`) is tracked as follow-up in
+# `spec/testhouse-hybrid-reverse-bim-tracker.md` finding `TH-X-F006`.
+# ---------------------------------------------------------------------------
+
+
+for _th_ui_view_tool in (
+    {
+        "name": "reverse_bim.exterior_view_create",
+        "title": "ReverseBimExteriorViewCreateInput",
+        "path": "/api/v3/reverse-bim/exterior-view-create",
+        "kernel": ["createElevationView"],
+        "cli": (
+            "bim-ai reverse-bim exterior-view-create --name 'Berg-Ansicht' "
+            "--direction north --source-document srcdoc-... --source-page 1 --comparison overlay"
+        ),
+        "notes": (
+            "TH-UI-001/005 — generate a typed createElevationView bundle for a source-"
+            "derived exterior view. The view sits in the Exterior Views sidebar group "
+            "(distinct from sections) and accepts optional source provenance "
+            "(sourceDocumentId, page, region, comparisonType) that the evidence pill "
+            "renders in the project browser."
+        ),
+    },
+    {
+        "name": "reverse_bim.detail_view_create",
+        "title": "ReverseBimDetailViewCreateInput",
+        "path": "/api/v3/reverse-bim/detail-view-create",
+        "kernel": ["upsertPlanView"],
+        "cli": (
+            "bim-ai reverse-bim detail-view-create --name 'Eave detail south' "
+            "--parent-view-id pv-... --scale 20 --source-document srcdoc-... --source-page 9"
+        ),
+        "notes": (
+            "TH-UI-002/005 — generate a typed upsertPlanView bundle with "
+            "planViewSubtype='callout' for an architectural detail/callout view (eave, "
+            "ridge, dormer, balcony/guard, stair, wall/floor/roof assembly, foundation, "
+            "drainage interface, facade opening). Detail views sit in the dedicated "
+            "Detail Views sidebar group."
+        ),
+    },
+    {
+        "name": "reverse_bim.section_view_create",
+        "title": "ReverseBimSectionViewCreateInput",
+        "path": "/api/v3/reverse-bim/section-view-create",
+        "kernel": ["createSectionCut"],
+        "cli": (
+            "bim-ai reverse-bim section-view-create --name 'Querschnitt A-A' "
+            "--start 0,0 --end 0,10000 --source-document srcdoc-... --source-page 1"
+        ),
+        "notes": (
+            "TH-UI-003/005 — generate a typed createSectionCut bundle. Section cuts are "
+            "explicitly distinct from exterior views; opening one creates a cut plane. "
+            "Optional source provenance feeds the section evidence pill."
+        ),
+    },
+    {
+        "name": "reverse_bim.source_view_evidence_upsert",
+        "title": "ReverseBimSourceViewEvidenceUpsertInput",
+        "path": "/api/v3/reverse-bim/source-view-evidence-upsert",
+        "kernel": ["upsertSourceViewEvidence"],
+        "cli": (
+            "bim-ai reverse-bim source-view-evidence-upsert --view-id ev-... "
+            "--category exterior --source-document srcdoc-... --source-page 1 "
+            "--status overlay_compared --screenshot path.png --overlay overlay.png"
+        ),
+        "notes": (
+            "TH-UI-004/005 — upsert the source-view-evidence record attached to a "
+            "section_cut / elevation_view / detail (callout plan_view). Status values: "
+            "missing_source_link, source_linked, screenshot_captured, overlay_compared, "
+            "findings_open, accepted. Schema/kernel backing is tracked as follow-up; "
+            "until then the project-browser pill derives state from view name hints."
+        ),
+    },
+):
+    register(
+        ToolDescriptor(
+            name=_th_ui_view_tool["name"],
+            category="mutation",
+            inputSchema={
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": _th_ui_view_tool["title"],
+                "type": "object",
+                "additionalProperties": True,
+            },
+            outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Typed source-derived view bundle generated"),
+                "invalid": ExitCode(
+                    code=422, meaning="Invalid source-derived view authoring payload"
+                ),
+            },
+            cliExample=str(_th_ui_view_tool["cli"]),
+            restEndpoint=RestEndpoint(method="POST", path=str(_th_ui_view_tool["path"])),
+            sideEffects="mutates-kernel",
+            agentSafetyNotes=str(_th_ui_view_tool["notes"]),
+            schemaRefs=[
+                f"input:{_th_ui_view_tool['title']}",
+                "output:SemanticAuthoringBundle",
+            ],
+            exampleRefs=[f"route:{_th_ui_view_tool['name']}"],
+            kernelCommands=list(_th_ui_view_tool["kernel"]),
+            resourceGroups=[
+                "semantic-authoring",
+                "reverse-bim",
+                "source-derived-views",
+                "kernel-command",
+            ],
+            uiFeatures=[
+                "cmd-k:agent-equivalent",
+                "reverse-bim",
+                "project-browser:source-derived-views",
+            ],
+        )
+    )

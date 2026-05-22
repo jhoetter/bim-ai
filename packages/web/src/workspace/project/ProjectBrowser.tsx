@@ -41,6 +41,102 @@ const AREA_SCHEMES = [
 type AreaSchemeValue = (typeof AREA_SCHEMES)[number]['value'];
 type PlanViewSubtypeValue = NonNullable<Extract<Element, { kind: 'plan_view' }>['planViewSubtype']>;
 
+/**
+ * TH-UI-004 — Source-evidence state badge for reverse-BIM source-derived views.
+ *
+ * Renders a compact pill on section / exterior / detail rows so agents and humans
+ * can see at a glance whether the row has a source link, a captured screenshot,
+ * an overlay comparison, open findings, or has been accepted.
+ *
+ * For this overnight tracker pass the state is a heuristic stub: it inspects the
+ * element name and any markerGroupId/parentViewId hints. A first-class
+ * `source_view_evidence` element kind is the structured backing (see tracker
+ * finding TH-X-F006). Once that lands, this component will read from the joined
+ * evidence record instead of guessing.
+ */
+type SourceEvidenceState =
+  | 'missing_source_link'
+  | 'source_linked'
+  | 'screenshot_captured'
+  | 'overlay_compared'
+  | 'findings_open'
+  | 'accepted';
+
+const SOURCE_EVIDENCE_STATE_LABEL: Record<SourceEvidenceState, string> = {
+  missing_source_link: 'no src',
+  source_linked: 'src linked',
+  screenshot_captured: 'shot',
+  overlay_compared: 'overlay',
+  findings_open: 'findings',
+  accepted: 'accepted',
+};
+
+const SOURCE_EVIDENCE_STATE_TITLE: Record<SourceEvidenceState, string> = {
+  missing_source_link:
+    'No source link recorded yet — reverse-BIM acceptance requires sourceDocumentId + page reference.',
+  source_linked: 'Source link recorded; screenshot/overlay not yet captured.',
+  screenshot_captured: 'Model screenshot captured; source overlay comparison pending.',
+  overlay_compared: 'Source overlay comparison run; findings (if any) not yet dispositioned.',
+  findings_open: 'Open evidence findings remain — acceptance blocked.',
+  accepted: 'Evidence accepted for this view.',
+};
+
+function deriveSourceEvidenceState(args: {
+  name: string;
+  markerGroupId?: string | null;
+  parentViewId?: string | null;
+}): SourceEvidenceState {
+  const haystack = (args.name ?? '').toLowerCase();
+  if (haystack.includes('[accepted]')) return 'accepted';
+  if (haystack.includes('[findings]')) return 'findings_open';
+  if (haystack.includes('[overlay]')) return 'overlay_compared';
+  if (haystack.includes('[shot]') || haystack.includes('[screenshot]'))
+    return 'screenshot_captured';
+  if (
+    haystack.includes('src:') ||
+    haystack.includes('src=') ||
+    /\bp\d+\b/.test(haystack) ||
+    (args.markerGroupId ?? '').startsWith('src-')
+  ) {
+    return 'source_linked';
+  }
+  return 'missing_source_link';
+}
+
+function SourceEvidencePill({
+  state,
+  category,
+  viewId,
+}: {
+  state: SourceEvidenceState;
+  category: 'section' | 'exterior' | 'detail';
+  viewId: string;
+}): JSX.Element {
+  const colorClass =
+    state === 'accepted'
+      ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+      : state === 'findings_open'
+        ? 'bg-rose-100 text-rose-700 border-rose-300'
+        : state === 'overlay_compared'
+          ? 'bg-sky-100 text-sky-700 border-sky-300'
+          : state === 'screenshot_captured'
+            ? 'bg-amber-100 text-amber-700 border-amber-300'
+            : state === 'source_linked'
+              ? 'bg-slate-100 text-slate-700 border-slate-300'
+              : 'bg-zinc-100 text-zinc-600 border-zinc-300';
+  return (
+    <span
+      data-th-ui-evidence-state={state}
+      data-th-ui-evidence-category={category}
+      data-th-ui-evidence-view-id={viewId}
+      title={SOURCE_EVIDENCE_STATE_TITLE[state]}
+      className={`ml-1 inline-block rounded border px-1 py-0 text-[8px] uppercase leading-tight ${colorClass}`}
+    >
+      {SOURCE_EVIDENCE_STATE_LABEL[state]}
+    </span>
+  );
+}
+
 const DISCIPLINE_GROUPS = [
   { key: 'arch', label: 'Architecture' },
   { key: 'struct', label: 'Structural' },
@@ -403,6 +499,19 @@ export function ProjectBrowser(props: {
   // VIE-03: dedicated Elevations group, distinct from sections.
   const elevationViews = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'elevation_view' }> => e.kind === 'elevation_view')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // TH-UI-002: dedicated Detail Views group for architectural detail / callout views.
+  // Reverse-BIM source pages such as eave, ridge, dormer, balcony, stair, wall/floor/roof
+  // assembly, foundation, drainage interface, and facade opening details land here. The
+  // group currently filters plan_view by planViewSubtype === 'callout' so the existing
+  // data model can host them without a schema migration; future work can promote details
+  // to a first-class kind once authoring stabilises.
+  const detailViews = Object.values(props.elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'plan_view' }> =>
+        e.kind === 'plan_view' && e.planViewSubtype === 'callout',
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const schedules = Object.values(props.elementsById)
@@ -1506,9 +1615,12 @@ export function ProjectBrowser(props: {
       ) : null}
 
       {sectionCuts.length ? (
-        <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">
-            Sections & elevations
+        <div className="space-y-1" data-th-ui="sections-group">
+          <div
+            className="text-[10px] uppercase tracking-wide text-muted"
+            title="Interior/cut views (section_cut). Exterior orthographic views live in the separate Exterior Views group below."
+          >
+            Sections
           </div>
           <ul className="space-y-0.5">
             {sectionCuts.map((sc) => (
@@ -1546,6 +1658,11 @@ export function ProjectBrowser(props: {
                       }}
                     >
                       <span className="text-muted">section_cut ·</span> {sc.name}
+                      <SourceEvidencePill
+                        state={deriveSourceEvidenceState({ name: sc.name })}
+                        category="section"
+                        viewId={sc.id}
+                      />
                     </button>
                     {deleteConfirmId === sc.id ? (
                       <span className="flex items-center gap-1 pl-2">
@@ -1603,10 +1720,13 @@ export function ProjectBrowser(props: {
       ) : null}
 
       {elevationViews.length || props.onUpsertSemantic ? (
-        <div className="space-y-1" data-bim-elevations-group="1">
+        <div className="space-y-1" data-bim-elevations-group="1" data-th-ui="exterior-views-group">
           <div className="flex items-center gap-1">
-            <div className="flex-1 text-[10px] uppercase tracking-wide text-muted">
-              Elevations {elevationViews.length > 0 ? `(${elevationViews.length})` : ''}
+            <div
+              className="flex-1 text-[10px] uppercase tracking-wide text-muted"
+              title="Exterior orthographic views (elevation_view) — front, rear, left/right gable, N/E/S/W, or source-named facade. Distinct from sections; opening one of these does not create a cut plane."
+            >
+              Exterior Views {elevationViews.length > 0 ? `(${elevationViews.length})` : ''}
             </div>
             {props.onUpsertSemantic ? (
               <>
@@ -1721,6 +1841,14 @@ export function ProjectBrowser(props: {
                       }}
                     >
                       <span className="text-muted">elevation_view ·</span> {ev.name}
+                      <SourceEvidencePill
+                        state={deriveSourceEvidenceState({
+                          name: ev.name,
+                          markerGroupId: ev.markerGroupId,
+                        })}
+                        category="exterior"
+                        viewId={ev.id}
+                      />
                     </button>
                     {deleteConfirmId === ev.id ? (
                       <span className="flex items-center gap-1 pl-2">
@@ -1771,6 +1899,102 @@ export function ProjectBrowser(props: {
                     ? ` (${ev.customAngleDeg}°)`
                     : ''}
                   {ev.markerGroupId ? ` · marker ${ev.markerGroupId}` : ''}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {/* TH-UI-002 — Detail Views group (filters plan_view callouts) */}
+      {detailViews.length || props.onUpsertSemantic ? (
+        <div
+          className="space-y-1"
+          data-th-ui="detail-views-group"
+          data-testid="project-browser-detail-views-group"
+        >
+          <div className="flex items-center gap-1">
+            <div
+              className="flex-1 text-[10px] uppercase tracking-wide text-muted"
+              title="Architectural detail / callout views (roof eave, ridge, dormer, balcony, stair, wall/floor/roof assembly, foundation, drainage interface, facade opening). Backed today by plan_view planViewSubtype='callout'."
+            >
+              Detail Views {detailViews.length > 0 ? `(${detailViews.length})` : ''}
+            </div>
+            {props.onUpsertSemantic ? (
+              <button
+                type="button"
+                className="text-[9px] text-muted hover:text-foreground"
+                data-testid="detail-view-new"
+                title="Create a new architectural detail view (planViewSubtype=callout)"
+                onClick={() => {
+                  const name = window.prompt(
+                    'Detail view name (e.g., "Eave detail south", "Stair detail EG-DG"):',
+                    'Detail',
+                  );
+                  if (!name) return;
+                  const level = levelsSorted[0];
+                  if (!level) {
+                    window.alert(
+                      'Create at least one level before adding a detail view (callouts need a host level).',
+                    );
+                    return;
+                  }
+                  const newId = `dv-${Date.now().toString(36)}`;
+                  props.onUpsertSemantic!({
+                    type: 'upsertPlanView',
+                    id: newId,
+                    name,
+                    levelId: level.id,
+                    planPresentation: 'default',
+                    discipline: 'architecture',
+                    planViewSubtype: 'callout',
+                  });
+                }}
+              >
+                +
+              </button>
+            ) : null}
+          </div>
+          {detailViews.length === 0 ? (
+            <p className="pl-2 text-[10px] text-muted">
+              No detail views yet — click + to create one. Reverse-BIM source detail pages (eave,
+              ridge, dormer, balcony, stair, wall/floor/roof assembly, foundation, drainage
+              interface, facade opening) should land here.
+            </p>
+          ) : null}
+          <ul className="space-y-0.5">
+            {detailViews.map((dv) => (
+              <li key={dv.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={planViewTooltip(dv, props.elementsById)}
+                  onClick={() => activatePlanView(dv.id)}
+                  onDoubleClick={() => {
+                    setRenamingId(dv.id);
+                    setRenameDraft(dv.name);
+                  }}
+                >
+                  <span className="text-muted">detail ·</span> {dv.name}
+                  <SourceEvidencePill
+                    state={deriveSourceEvidenceState({
+                      name: dv.name,
+                      parentViewId: dv.parentViewId,
+                    })}
+                    category="detail"
+                    viewId={dv.id}
+                  />
+                </Btn>
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-detail-evidence={dv.id}
+                >
+                  {planLevelEvidenceToken(props.elementsById, dv.levelId)}
+                  {dv.parentViewId ? ` · parent=${dv.parentViewId}` : ''}
+                  {typeof dv.calloutScaleOverride === 'number'
+                    ? ` · 1:${dv.calloutScaleOverride}`
+                    : ''}
                 </div>
               </li>
             ))}
