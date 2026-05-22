@@ -1277,7 +1277,15 @@ async def projection_plan_wire_route(
     plan_view_id: Annotated[str | None, Query(alias="planViewId")] = None,
     fallback_level_id: Annotated[str | None, Query(alias="fallbackLevelId")] = None,
     global_plan_presentation: Annotated[str, Query(alias="globalPresentation")] = "default",
+    debug: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
+    """PERF-F03: when `debug=true`, the response includes a `_perfDebug`
+    block (totalMs, cacheHit, docValidateMs, projectionMs, primitiveCount).
+    Debug requests bypass the cross-request cache so the timings reflect
+    actual recomputation cost; default requests are unchanged.
+    """
+    import time as _time
+
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -1288,17 +1296,36 @@ async def projection_plan_wire_route(
         fallback_level_id=fallback_level_id,
         global_plan_presentation=global_plan_presentation,
     )
-    cached = _get_plan_projection_cache(cache_key)
-    if cached is not None:
-        return cached
+    if not debug:
+        cached = _get_plan_projection_cache(cache_key)
+        if cached is not None:
+            return cached
+    total_start = _time.perf_counter()
+    validate_start = _time.perf_counter()
     doc = Document.model_validate(row.document)
+    validate_ms = (_time.perf_counter() - validate_start) * 1000.0
+    proj_start = _time.perf_counter()
     payload = plan_projection_wire_from_request(
         doc,
         plan_view_id=plan_view_id,
         fallback_level_id=fallback_level_id,
         global_plan_presentation=global_plan_presentation,
     )
+    proj_ms = (_time.perf_counter() - proj_start) * 1000.0
     _set_plan_projection_cache(cache_key, payload)
+    if debug:
+        total_ms = (_time.perf_counter() - total_start) * 1000.0
+        prims = payload.get("primitives")
+        primitive_count = len(prims) if isinstance(prims, list) else None
+        out = deepcopy(payload)
+        out["_perfDebug"] = {
+            "totalMs": round(total_ms, 3),
+            "cacheHit": False,
+            "docValidateMs": round(validate_ms, 3),
+            "projectionMs": round(proj_ms, 3),
+            "primitiveCount": primitive_count,
+        }
+        return out
     return deepcopy(payload)
 
 
