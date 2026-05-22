@@ -119,16 +119,7 @@ import { registerDormerCutFn } from './viewport/meshBuilders';
 import {
   activeComponentAssetId,
   activeComponentFamilyTypeId,
-  pendingComponentRotationDeg,
 } from './workspace/authoring/OptionsBar';
-import {
-  familyTypePlacesAsDetailComponent,
-  familyTypeRequiresWallHost,
-} from './families/familyPlacementRuntime';
-import {
-  resolveHostedFamilyPlacement,
-  type HostedFamilyTool,
-} from './families/hostedFamilySelection';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import { useSunStore } from './sunStore';
@@ -166,15 +157,12 @@ import {
 } from './viewport/renderStyles';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
-import { projectAlongT, type WallFaceRadialMenuOpen } from './viewport/wallFaceRadialMenu';
+import type { WallFaceRadialMenuOpen } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
 import { wallWith3dJoinDisallowGaps } from './viewport/wallJoinDisplay';
 import {
   buildLinePreviewPayload,
-  buildPolygonPreviewPayload,
-  linePreviewToSemanticCommand,
-  polygonPreviewToSemanticCommand,
   resizeLinePreviewToLength,
   classifyWallDraftProjection,
   isDraftPlaneHitOccluded,
@@ -188,17 +176,9 @@ import {
   type WallDraftProjectionMode,
 } from './viewport/authoring3d';
 import {
-  findHostedOpeningConflict,
-  isBackfacingWallHit,
-  isDuplicateHostedPlacement,
   isLinkedElementId,
-  isPhysicalHostedOpeningWall,
-  isWallOnActiveAuthoringLevel,
   shouldBypassLevelDatumPickForDirectAuthoring,
   shouldCommitHostedPlacementOnPointerUp,
-  shouldReuseHostedPreviewCommit,
-  type HostedOpeningLike,
-  type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
@@ -221,6 +201,12 @@ import {
   type Direct3dAuthoringTool,
   type ScreenPoint,
 } from './viewport/ViewportOverlays';
+import {
+  createDirect3dToolDraftState,
+  createDirect3dToolHelpers,
+  type DraftPlaneProjection,
+  type WallDraftScreenBasis,
+} from './viewport/direct3dToolHelpers';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -869,44 +855,9 @@ export function Viewport({
     }
 
     requestViewportRenderRef.current = scheduleViewportRender;
-    type WallDraftScreenBasis = {
-      mode: 'elevation-axis';
-      originScreen: ScreenPoint;
-      originPointMm: { xMm: number; yMm: number };
-      xPerPx: { xMm: number; yMm: number };
-      yPerPx: { xMm: number; yMm: number };
-      scaleMmPerPx: number;
-      projection: WallDraftProjectionClassification;
-    };
-    type DraftPlaneProjection = {
-      point: { xMm: number; yMm: number };
-      screen: ScreenPoint;
-      distanceM: number;
-      snapKind?: Authoring3dSnapKind;
-      snapScreen?: ScreenPoint;
-      blocker?: {
-        elementId?: string;
-        kind?: Element['kind'];
-        distanceM: number;
-      };
-    };
-    let lineDraftStart: {
-      tool: 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane';
-      levelId: string;
-      point: { xMm: number; yMm: number };
-      screen?: ScreenPoint;
-      wallBasis?: WallDraftScreenBasis;
-      wallProjection?: WallDraftProjectionClassification;
-    } | null = null;
-    let polygonDraft: {
-      tool: 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area';
-      levelId: string;
-      points: Array<{ xMm: number; yMm: number }>;
-    } | null = null;
-    let lastHostedPlacementScreen: HostedPlacementDedupeState | null = null;
-    let lastHostedPlacementHost: HostedPlacementDedupeState | null = null;
-    let wallFlipNextSegment = false;
-    let hostPreviewLock = false;
+    // Mutable draft state shared between the in-place pointer handlers and the
+    // 3D-authoring-tool click dispatcher (extracted to direct3dToolHelpers.ts).
+    const draftState = createDirect3dToolDraftState();
 
     function measureDraftPlaneProjectionMmPerPx(
       cx: number,
@@ -1084,30 +1035,6 @@ export function Viewport({
       return DIRECT_3D_AUTHORING_TOOLS.has(tool) ? tool : null;
     }
 
-    function resolveDraftLevelInfo(): {
-      id: string;
-      elevationMm: number;
-      name: string;
-    } | null {
-      const levels = Object.values(elementsByIdRef.current).filter(
-        (el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level',
-      );
-      const draftLevel = resolve3dDraftLevel(levels, activeLevelIdRef.current);
-      if (!draftLevel) return null;
-      const levelName =
-        levels.find((level) => level.id === draftLevel.id)?.name ??
-        authoringOverlayRef.current?.levelName ??
-        'Active level';
-      return { id: draftLevel.id, elevationMm: draftLevel.elevationMm, name: levelName };
-    }
-
-    function resolveDraftLevels(): Array<{ id: string; elevationMm: number; name: string }> {
-      return Object.values(elementsByIdRef.current)
-        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-        .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }))
-        .sort((a, b) => a.elevationMm - b.elevationMm);
-    }
-
     function projectPointerToDraftPlane(
       cx: number,
       cy: number,
@@ -1257,87 +1184,6 @@ export function Viewport({
         },
         screen,
         distanceM: 0,
-      };
-    }
-
-    function pickWallAtPointer(
-      cx: number,
-      cy: number,
-      options?: {
-        tool?: 'door' | 'window' | 'wall-opening';
-        preferWallId?: string;
-        lockToPreferred?: boolean;
-      },
-    ): {
-      wall: Extract<Element, { kind: 'wall' }>;
-      hitPointMm: { xMm: number; yMm: number; zMm: number };
-      alongT: number;
-    } | null {
-      const rect = renderer.domElement.getBoundingClientRect();
-      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
-      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
-      camera.updateMatrixWorld(true);
-      raycaster.setFromCamera(ndc, camera);
-      const hits = raycaster.intersectObjects(root.children, true);
-      const draftLevelInfo = resolveDraftLevelInfo();
-      const candidates = new Map<
-        string,
-        {
-          wall: Extract<Element, { kind: 'wall' }>;
-          hitPointMm: { xMm: number; yMm: number; zMm: number };
-          alongT: number;
-          score: number;
-        }
-      >();
-      for (const h of hits) {
-        const id = h.object.userData.bimPickId as string | undefined;
-        if (!id) continue;
-        if (isLinkedElementId(id)) continue;
-        const el = elementsByIdRef.current[id];
-        if (el?.kind !== 'wall') continue;
-        if (!isPhysicalHostedOpeningWall(el)) continue;
-        if (isBackfacingWallHit(h.face?.normal, h.object.matrixWorld, raycaster.ray.direction))
-          continue;
-        const wall = el;
-        if (!isWallOnActiveAuthoringLevel(wall, draftLevelInfo?.id)) continue;
-        const hitPointMm = {
-          xMm: h.point.x * 1000,
-          yMm: h.point.z * 1000,
-          zMm: h.point.y * 1000,
-        };
-        const alongT = projectAlongT(hitPointMm, wall.start, wall.end);
-        const edgeProximity = Math.min(alongT, 1 - alongT);
-        const edgePenalty =
-          options?.tool && edgeProximity < 0.04 ? (0.04 - Math.max(0, edgeProximity)) * 12 : 0;
-        const frontness = Math.max(
-          0,
-          -(h.face?.normal?.clone() ?? new THREE.Vector3(0, 0, 1))
-            .transformDirection(h.object.matrixWorld)
-            .dot(raycaster.ray.direction),
-        );
-        const grazingPenalty = (1 - Math.min(1, frontness)) * 0.25;
-        const score = h.distance + edgePenalty + grazingPenalty;
-        const prior = candidates.get(id);
-        if (!prior || score < prior.score) {
-          candidates.set(id, { wall, hitPointMm, alongT, score });
-        }
-      }
-      if (candidates.size === 0) return null;
-      const sorted = [...candidates.values()].sort((a, b) => a.score - b.score);
-      let picked = sorted[0]!;
-      if (options?.preferWallId) {
-        const preferred = candidates.get(options.preferWallId);
-        if (options.lockToPreferred) {
-          if (!preferred) return null;
-          picked = preferred;
-        } else if (preferred && preferred.score <= picked.score + 0.08) {
-          picked = preferred;
-        }
-      }
-      return {
-        wall: picked.wall,
-        hitPointMm: picked.hitPointMm,
-        alongT: Math.max(0, Math.min(1, picked.alongT)),
       };
     }
 
@@ -1516,840 +1362,45 @@ export function Viewport({
       return preview;
     }
 
-    function dispatchLinePreviewPayload(payload: Authoring3dLinePreviewPayload): void {
-      if (payload.tool === 'stair') {
-        const levels = resolveDraftLevels();
-        const baseIndex = levels.findIndex((level) => level.id === payload.levelId);
-        const topLevel = baseIndex >= 0 ? levels[baseIndex + 1] : undefined;
-        onSemanticCommandRef.current?.({
-          ...linePreviewToSemanticCommand(payload),
-          topLevelId: topLevel?.id ?? payload.levelId,
-          widthMm: 1100,
-          riserMm: 175,
-          treadMm: 275,
-        });
-        return;
-      }
-      onSemanticCommandRef.current?.(linePreviewToSemanticCommand(payload));
-    }
-
-    function hostedToolSpec(tool: HostedFamilyTool) {
-      return resolveHostedFamilyPlacement({
-        tool,
-        familyTypeId: activeComponentFamilyTypeId,
-        elementsById: elementsByIdRef.current,
-      });
-    }
-
-    function hostedPreviewSegment(
-      tool: HostedFamilyTool,
-      hit: {
-        wall: Extract<Element, { kind: 'wall' }>;
-        hitPointMm: { xMm: number; yMm: number; zMm: number };
-        alongT: number;
+    // 3D direct-authoring tool helpers — the giant tool-click dispatcher, the
+    // hosted-opening preview math, the wall picker, and the draft-level
+    // resolvers live in `viewport/direct3dToolHelpers.ts`. We bind them once
+    // here with closures over the THREE refs and the kept inline helpers, so
+    // the in-place pointer handlers can call them by name below.
+    const {
+      resolveDraftLevelInfo,
+      pickWallAtPointer,
+      hostedPreviewSegment,
+      dispatchLinePreviewPayload,
+      handle3dDirectToolClick,
+    } = createDirect3dToolHelpers(
+      {
+        renderer,
+        camera,
+        ndc,
+        raycaster,
+        root,
+        elementsByIdRef,
+        activeLevelIdRef,
+        authoringOverlayRef,
+        onSemanticCommandRef,
+        setAuthoringOverlay,
+        setDraftPlaneAngleWarning,
+        activeDirect3dTool,
+        clearWallDraftPreviewGroup,
+        emitWallDebug,
+        measureDraftPlaneProjectionMmPerPx,
+        isDraftPlaneProjectionStable,
+        projectPointerToDraftPlane,
+        projectPointerToVisibleDraftPlane,
+        pointFromWallDraftScreenBasis,
+        createWallDraftScreenBasis,
+        snapDraftProjectionToActiveWorkPlane,
+        clientToCanvasScreen,
+        projectSemanticPointToScreen,
       },
-      rect: DOMRect,
-    ): {
-      center: ScreenPoint;
-      start?: ScreenPoint;
-      end?: ScreenPoint;
-      outline?: ScreenPoint[];
-      auxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
-      auxArcPath?: string;
-      valid: boolean;
-      invalidReason?: string;
-    } | null {
-      const center = projectSemanticPointToScreen(hit.hitPointMm, rect);
-      if (!center) return null;
-      const spec = hostedToolSpec(tool);
-      const previewWidthMm = spec.widthMm;
-      const dx = hit.wall.end.xMm - hit.wall.start.xMm;
-      const dy = hit.wall.end.yMm - hit.wall.start.yMm;
-      const wallLenMm = Math.hypot(dx, dy);
-      if (wallLenMm < 1) return { center, valid: false };
-      const levelsById = new Map(
-        Object.values(elementsByIdRef.current)
-          .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-          .map((level) => [level.id, level.elevationMm]),
-      );
-      const baseLevelId = hit.wall.baseConstraintLevelId ?? hit.wall.levelId;
-      const baseElevationMm = levelsById.get(baseLevelId) ?? 0;
-      const baseZMm = baseElevationMm + (hit.wall.baseConstraintOffsetMm ?? 0);
-      const topZMm = Math.max(baseZMm + 100, baseZMm + hit.wall.heightMm);
-      const sillMm = tool === 'window' ? (spec.sillHeightMm ?? 900) : (spec.sillHeightMm ?? 0);
-      const headMm =
-        tool === 'window'
-          ? (spec.sillHeightMm ?? 900) + (spec.heightMm ?? 1500)
-          : tool === 'wall-opening'
-            ? (spec.sillHeightMm ?? 200) + (spec.heightMm ?? 2200)
-            : (spec.heightMm ?? 2100);
-      const openingBottomMm = Math.min(topZMm - 50, baseZMm + sillMm);
-      const openingTopMm = Math.max(openingBottomMm + 50, Math.min(topZMm, baseZMm + headMm));
-      const centerT = clampHostedAlongT(tool, hit.wall, hit.alongT);
-      const halfDeltaT = previewWidthMm / 2 / wallLenMm;
-      const startT = Math.max(0, centerT - halfDeltaT);
-      const endT = Math.min(1, centerT + halfDeltaT);
-      const startMm = {
-        xMm: hit.wall.start.xMm + (hit.wall.end.xMm - hit.wall.start.xMm) * startT,
-        yMm: hit.wall.start.yMm + (hit.wall.end.yMm - hit.wall.start.yMm) * startT,
-        zMm: hit.hitPointMm.zMm,
-      };
-      const endMm = {
-        xMm: hit.wall.start.xMm + (hit.wall.end.xMm - hit.wall.start.xMm) * endT,
-        yMm: hit.wall.start.yMm + (hit.wall.end.yMm - hit.wall.start.yMm) * endT,
-        zMm: hit.hitPointMm.zMm,
-      };
-      const lowerStart = projectSemanticPointToScreen({ ...startMm, zMm: openingBottomMm }, rect);
-      const lowerEnd = projectSemanticPointToScreen({ ...endMm, zMm: openingBottomMm }, rect);
-      const upperEnd = projectSemanticPointToScreen({ ...endMm, zMm: openingTopMm }, rect);
-      const upperStart = projectSemanticPointToScreen({ ...startMm, zMm: openingTopMm }, rect);
-      const outline =
-        lowerStart && lowerEnd && upperEnd && upperStart
-          ? [lowerStart, lowerEnd, upperEnd, upperStart]
-          : undefined;
-      const auxLines: Array<{ start: ScreenPoint; end: ScreenPoint }> = [];
-      let auxArcPath: string | undefined;
-      if (tool === 'window' && lowerStart && lowerEnd && upperStart && upperEnd) {
-        const midL = { x: (lowerStart.x + upperStart.x) / 2, y: (lowerStart.y + upperStart.y) / 2 };
-        const midR = { x: (lowerEnd.x + upperEnd.x) / 2, y: (lowerEnd.y + upperEnd.y) / 2 };
-        auxLines.push({ start: midL, end: midR });
-      } else if (tool === 'door' && lowerStart && lowerEnd) {
-        const mx = (lowerStart.x + lowerEnd.x) / 2;
-        const my = (lowerStart.y + lowerEnd.y) / 2;
-        const dx = lowerEnd.x - lowerStart.x;
-        const dy = lowerEnd.y - lowerStart.y;
-        const len = Math.max(1, Math.hypot(dx, dy));
-        const nx = -dy / len;
-        const ny = dx / len;
-        const lift = Math.min(56, len * 0.45);
-        const cx2 = mx + nx * lift;
-        const cy2 = my + ny * lift;
-        auxLines.push({ start: lowerStart, end: { x: mx, y: my } });
-        auxArcPath = `M ${lowerStart.x} ${lowerStart.y} Q ${cx2} ${cy2} ${lowerEnd.x} ${lowerEnd.y}`;
-      }
-      const conflict = hostedOpeningConflictFor(tool, hit.wall, centerT);
-      return {
-        center,
-        start: projectSemanticPointToScreen(startMm, rect) ?? undefined,
-        end: projectSemanticPointToScreen(endMm, rect) ?? undefined,
-        outline,
-        auxLines,
-        auxArcPath,
-        valid: !conflict,
-        invalidReason: conflict
-          ? 'This wall span already contains a door/window/opening. Move along the wall.'
-          : undefined,
-      };
-    }
-
-    function clampHostedAlongT(
-      tool: HostedFamilyTool,
-      wall: Extract<Element, { kind: 'wall' }>,
-      alongT: number,
-    ): number {
-      const dx = wall.end.xMm - wall.start.xMm;
-      const dy = wall.end.yMm - wall.start.yMm;
-      const wallLenMm = Math.max(1, Math.hypot(dx, dy));
-      const nominalWidthMm = hostedToolSpec(tool).widthMm;
-      const edgeClearanceMm = nominalWidthMm / 2 + 80;
-      const margin = Math.max(0.02, Math.min(0.18, edgeClearanceMm / wallLenMm));
-      return Math.max(margin, Math.min(1 - margin, alongT));
-    }
-
-    function hostedOpeningConflictFor(
-      tool: HostedFamilyTool,
-      wall: Extract<Element, { kind: 'wall' }>,
-      alongT: number,
-    ) {
-      const dx = wall.end.xMm - wall.start.xMm;
-      const dy = wall.end.yMm - wall.start.yMm;
-      const wallLengthMm = Math.max(1, Math.hypot(dx, dy));
-      const widthMm = hostedToolSpec(tool).widthMm;
-      const existing: HostedOpeningLike[] = [];
-      for (const element of Object.values(elementsByIdRef.current)) {
-        if (element.kind === 'door' || element.kind === 'window') {
-          existing.push({
-            kind: element.kind,
-            id: element.id,
-            wallId: element.wallId,
-            alongT: element.alongT,
-            widthMm: element.widthMm,
-          });
-        } else if (element.kind === 'wall_opening') {
-          existing.push({
-            kind: 'wall_opening',
-            id: element.id,
-            hostWallId: element.hostWallId,
-            alongTStart: element.alongTStart,
-            alongTEnd: element.alongTEnd,
-          });
-        }
-      }
-      return findHostedOpeningConflict({
-        wallId: wall.id,
-        wallLengthMm,
-        alongT,
-        widthMm,
-        existing,
-      });
-    }
-
-    function handle3dDirectToolClick(cx: number, cy: number): boolean {
-      const tool = activeDirect3dTool();
-      if (!tool) {
-        lineDraftStart = null;
-        polygonDraft = null;
-        hostPreviewLock = false;
-        setAuthoringOverlay(null);
-        return false;
-      }
-      if (tool !== 'door' && tool !== 'window' && tool !== 'wall-opening') {
-        hostPreviewLock = false;
-      }
-      if (!POLYGON_3D_AUTHORING_TOOLS.has(tool)) polygonDraft = null;
-      if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
-      if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
-        setDraftPlaneAngleWarning(false);
-        const overlay = authoringOverlayRef.current;
-        const draftLevelInfo = resolveDraftLevelInfo();
-        const hit = pickWallAtPointer(cx, cy, {
-          tool,
-          preferWallId: overlay?.tool === tool ? overlay.previewHostWallId : undefined,
-          lockToPreferred: hostPreviewLock,
-        });
-        const rect = renderer.domElement.getBoundingClientRect();
-        const clickScreen = { x: cx - rect.left, y: cy - rect.top };
-        let hostWall = hit?.wall ?? null;
-        let alongT = hit?.alongT;
-        if (
-          overlay?.tool === tool &&
-          overlay.previewHostWallId &&
-          typeof overlay.previewHostAlongT === 'number'
-        ) {
-          const overlayHost = elementsByIdRef.current[overlay.previewHostWallId];
-          if (
-            shouldReuseHostedPreviewCommit({
-              clickScreen,
-              previewCenter: overlay.currentScreen,
-              previewOutline: overlay.previewOutlineScreen,
-            }) &&
-            overlayHost?.kind === 'wall' &&
-            isPhysicalHostedOpeningWall(overlayHost) &&
-            isWallOnActiveAuthoringLevel(overlayHost, draftLevelInfo?.id) &&
-            (!hostWall || hostWall.id !== overlayHost.id)
-          ) {
-            hostWall = overlayHost;
-            alongT = overlay.previewHostAlongT;
-          }
-        }
-        if (!hostWall || alongT === undefined) {
-          setAuthoringOverlay((prev) =>
-            prev?.tool === tool
-              ? {
-                  ...prev,
-                  previewOutlineScreen: undefined,
-                  previewStartScreen: undefined,
-                  previewEndScreen: undefined,
-                  previewHostValid: false,
-                  previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
-                  previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
-                  previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason: 'No wall host on the active level under the cursor.',
-                  previewAuxLines: undefined,
-                  previewAuxArcPath: undefined,
-                }
-              : prev,
-          );
-          return true;
-        }
-        alongT = clampHostedAlongT(tool, hostWall, Math.max(0, Math.min(1, alongT)));
-        const conflict = hostedOpeningConflictFor(tool, hostWall, alongT);
-        if (conflict) {
-          setAuthoringOverlay((prev) =>
-            prev?.tool === tool
-              ? {
-                  ...prev,
-                  previewHostValid: false,
-                  previewHostWallId: hostWall.id,
-                  previewHostAlongT: alongT,
-                  previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason:
-                    'This wall span already contains a door/window/opening. Move along the wall.',
-                }
-              : prev,
-          );
-          return true;
-        }
-        const nextPlacementScreen: HostedPlacementDedupeState = {
-          key: `${tool}:${Math.round(clickScreen.x / 8)}:${Math.round(clickScreen.y / 8)}`,
-          atMs: performance.now(),
-        };
-        const nextPlacementHost: HostedPlacementDedupeState = {
-          key: `${tool}:${hostWall.id}:${Math.round(alongT * 1000)}`,
-          atMs: performance.now(),
-        };
-        if (
-          isDuplicateHostedPlacement(lastHostedPlacementScreen, nextPlacementScreen, 900) ||
-          isDuplicateHostedPlacement(lastHostedPlacementHost, nextPlacementHost, 1500)
-        ) {
-          return true;
-        }
-        lastHostedPlacementScreen = nextPlacementScreen;
-        lastHostedPlacementHost = nextPlacementHost;
-        const hostedSpec = hostedToolSpec(tool);
-        const hostedFamilyTypeId = hostedSpec.familyTypeId;
-        if (tool === 'door') {
-          onSemanticCommandRef.current?.({
-            type: 'insertDoorOnWall',
-            wallId: hostWall.id,
-            alongT,
-            widthMm: hostedSpec.widthMm,
-            ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
-          });
-          setAuthoringOverlay((prev) =>
-            prev?.tool === 'door'
-              ? {
-                  ...prev,
-                  previewOutlineScreen: undefined,
-                  previewHostValid: true,
-                  previewHostInvalidReason: undefined,
-                  previewAuxLines: undefined,
-                  previewAuxArcPath: undefined,
-                }
-              : prev,
-          );
-          return true;
-        }
-        if (tool === 'window') {
-          onSemanticCommandRef.current?.({
-            type: 'insertWindowOnWall',
-            wallId: hostWall.id,
-            alongT,
-            widthMm: hostedSpec.widthMm,
-            sillHeightMm: hostedSpec.sillHeightMm ?? 900,
-            heightMm: hostedSpec.heightMm ?? 1500,
-            ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
-          });
-          setAuthoringOverlay((prev) =>
-            prev?.tool === 'window'
-              ? {
-                  ...prev,
-                  previewOutlineScreen: undefined,
-                  previewHostValid: true,
-                  previewHostInvalidReason: undefined,
-                  previewAuxLines: undefined,
-                  previewAuxArcPath: undefined,
-                }
-              : prev,
-          );
-          return true;
-        }
-        onSemanticCommandRef.current?.({
-          type: 'createWallOpening',
-          hostWallId: hostWall.id,
-          alongTStart: Math.max(0, alongT - 0.05),
-          alongTEnd: Math.min(1, alongT + 0.05),
-          sillHeightMm: 200,
-          headHeightMm: 2400,
-        });
-        setAuthoringOverlay((prev) =>
-          prev?.tool === 'wall-opening'
-            ? {
-                ...prev,
-                previewOutlineScreen: undefined,
-                previewHostValid: true,
-                previewHostInvalidReason: undefined,
-                previewAuxLines: undefined,
-                previewAuxArcPath: undefined,
-              }
-            : prev,
-        );
-        return true;
-      }
-      const levelInfo = resolveDraftLevelInfo();
-      if (!levelInfo) return false;
-      if (
-        (LINE_3D_AUTHORING_TOOLS.has(tool) ||
-          POLYGON_3D_AUTHORING_TOOLS.has(tool) ||
-          tool === 'column' ||
-          tool === 'room' ||
-          tool === 'component') &&
-        tool !== 'wall' &&
-        !isDraftPlaneProjectionStable(cx, cy, levelInfo.elevationMm)
-      ) {
-        emitWallDebug('blocked-unstable-plane', {
-          tool,
-          screen: { x: cx, y: cy },
-          levelInfo,
-          mmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-        });
-        setDraftPlaneAngleWarning(true);
-        return true;
-      }
-      setDraftPlaneAngleWarning(false);
-      let projected =
-        tool === 'wall'
-          ? projectPointerToVisibleDraftPlane(cx, cy, levelInfo.elevationMm)
-          : projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
-      if (tool === 'wall' && projected?.blocker) {
-        clearWallDraftPreviewGroup();
-        emitWallDebug('wall-blocked-hidden-work-plane', {
-          screen: clientToCanvasScreen(cx, cy),
-          levelInfo,
-          blocker: projected.blocker,
-          planeDistanceM: projected.distanceM,
-        });
-        setAuthoringOverlay({
-          tool,
-          phase: lineDraftStart?.tool === 'wall' ? 'pick-end' : 'pick-start',
-          levelName: levelInfo.name,
-          startScreen: lineDraftStart?.screen,
-          currentScreen: clientToCanvasScreen(cx, cy),
-          currentPointMm: undefined,
-          wallProjectionMode: 'plane',
-          wallAnchorRequired: true,
-          wallPlaneUnreadable: false,
-          wallPlaneOccluded: true,
-          wallPreviewOutlineScreen: undefined,
-          wallPreviewDirectionStartScreen: undefined,
-          wallPreviewDirectionEndScreen: undefined,
-        });
-        return true;
-      }
-      if (
-        !projected &&
-        tool === 'wall' &&
-        lineDraftStart?.tool === 'wall' &&
-        lineDraftStart.wallBasis
-      ) {
-        projected = pointFromWallDraftScreenBasis(cx, cy, lineDraftStart.wallBasis);
-      }
-      if (!projected && tool === 'wall' && (!lineDraftStart || lineDraftStart.tool !== tool)) {
-        clearWallDraftPreviewGroup();
-        emitWallDebug('wall-blocked-no-draft-plane', {
-          screen: clientToCanvasScreen(cx, cy),
-          levelInfo,
-          rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-        });
-        setAuthoringOverlay({
-          tool,
-          phase: 'pick-start',
-          levelName: levelInfo.name,
-          currentScreen: clientToCanvasScreen(cx, cy),
-          currentPointMm: undefined,
-          wallProjectionMode: 'plane',
-          wallAnchorRequired: true,
-          wallPlaneUnreadable: true,
-          wallPlaneOccluded: false,
-        });
-        return true;
-      }
-      if (!projected && tool === 'wall' && lineDraftStart?.tool === 'wall') {
-        clearWallDraftPreviewGroup();
-        emitWallDebug('wall-blocked-no-draft-plane-end', {
-          screen: clientToCanvasScreen(cx, cy),
-          start: lineDraftStart.point,
-          startScreen: lineDraftStart.screen,
-          levelInfo,
-          rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-        });
-        setAuthoringOverlay((prev) =>
-          prev?.tool === 'wall'
-            ? {
-                ...prev,
-                phase: 'pick-end',
-                levelName: levelInfo.name,
-                currentScreen: clientToCanvasScreen(cx, cy),
-                currentPointMm: undefined,
-                wallAnchorRequired: true,
-                wallPlaneUnreadable: true,
-                wallPlaneOccluded: false,
-                wallPreviewOutlineScreen: undefined,
-                wallPreviewDirectionStartScreen: undefined,
-                wallPreviewDirectionEndScreen: undefined,
-              }
-            : prev,
-        );
-        return true;
-      }
-      if (!projected) return false;
-      projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo, {
-        preferWallConnectivity: tool === 'wall',
-      });
-      if (tool === 'room') {
-        onSemanticCommandRef.current?.({
-          type: 'placeRoomAtPoint',
-          id: crypto.randomUUID(),
-          levelId: levelInfo.id,
-          clickXMm: projected.point.xMm,
-          clickYMm: projected.point.yMm,
-          name: 'Room',
-        });
-        return true;
-      }
-      if (tool === 'column') {
-        onSemanticCommandRef.current?.({
-          type: 'createColumn',
-          levelId: levelInfo.id,
-          positionMm: projected.point,
-        });
-        return true;
-      }
-      if (tool === 'component') {
-        const assetId = activeComponentAssetId;
-        const familyTypeId = activeComponentFamilyTypeId;
-        if (!assetId && !familyTypeId) {
-          setAuthoringOverlay({
-            tool,
-            phase: 'pick-point',
-            levelName: levelInfo.name,
-            currentScreen: projected.screen,
-            currentPointMm: projected.point,
-            workPlaneElevationMm: levelInfo.elevationMm,
-            snapKind: projected.snapKind,
-            snapScreen: projected.snapScreen,
-            previewHostValid: false,
-          });
-          return true;
-        }
-        if (assetId) {
-          onSemanticCommandRef.current?.({
-            type: 'PlaceAsset',
-            assetId,
-            levelId: levelInfo.id,
-            positionMm: projected.point,
-            rotationDeg: pendingComponentRotationDeg,
-          });
-          return true;
-        }
-        const selectedFamilyTypeId = familyTypeId as string;
-        const familyType = elementsByIdRef.current[selectedFamilyTypeId];
-        if (familyType?.kind !== 'family_type' || familyTypePlacesAsDetailComponent(familyType)) {
-          setAuthoringOverlay({
-            tool,
-            phase: 'pick-point',
-            levelName: levelInfo.name,
-            currentScreen: projected.screen,
-            currentPointMm: projected.point,
-            workPlaneElevationMm: levelInfo.elevationMm,
-            snapKind: projected.snapKind,
-            snapScreen: projected.snapScreen,
-            previewHostValid: false,
-          });
-          return true;
-        }
-        if (familyTypeRequiresWallHost(familyType)) {
-          const hostHit = pickWallAtPointer(cx, cy, { tool: 'wall-opening' });
-          if (!hostHit) {
-            setAuthoringOverlay({
-              tool,
-              phase: 'pick-wall',
-              levelName: levelInfo.name,
-              currentScreen: projected.screen,
-              currentPointMm: projected.point,
-              workPlaneElevationMm: levelInfo.elevationMm,
-              snapKind: projected.snapKind,
-              snapScreen: projected.snapScreen,
-              previewHostValid: false,
-            });
-            return true;
-          }
-          onSemanticCommandRef.current?.({
-            type: 'placeFamilyInstance',
-            familyTypeId: selectedFamilyTypeId,
-            levelId: hostHit.wall.levelId,
-            positionMm: { xMm: hostHit.hitPointMm.xMm, yMm: hostHit.hitPointMm.yMm },
-            rotationDeg: pendingComponentRotationDeg,
-            hostElementId: hostHit.wall.id,
-            hostAlongT: hostHit.alongT,
-          });
-          return true;
-        }
-        onSemanticCommandRef.current?.({
-          type: 'placeFamilyInstance',
-          familyTypeId: selectedFamilyTypeId,
-          levelId: levelInfo.id,
-          positionMm: projected.point,
-          rotationDeg: pendingComponentRotationDeg,
-        });
-        return true;
-      }
-      if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
-        if (!lineDraftStart || lineDraftStart.tool !== tool) {
-          const wallDraft =
-            tool === 'wall'
-              ? createWallDraftScreenBasis(cx, cy, levelInfo.elevationMm, projected)
-              : null;
-          if (tool === 'wall' && wallDraft && wallDraft.projection.mode !== 'plane') {
-            clearWallDraftPreviewGroup();
-            emitWallDebug('wall-blocked-unreadable-work-plane', {
-              screen: projected.screen,
-              point: projected.point,
-              levelInfo,
-              projection: wallDraft.projection,
-              rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-            });
-            setAuthoringOverlay({
-              tool,
-              phase: 'pick-start',
-              levelName: levelInfo.name,
-              currentScreen: projected.screen,
-              currentPointMm: undefined,
-              wallProjectionMode: wallDraft.projection.mode,
-              wallAnchorRequired: false,
-              wallPlaneUnreadable: true,
-              wallPlaneOccluded: false,
-            });
-            return true;
-          }
-          lineDraftStart = {
-            tool: tool as 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane',
-            levelId: levelInfo.id,
-            point: projected.point,
-            screen: projected.screen,
-            wallBasis: wallDraft?.basis,
-            wallProjection: wallDraft?.projection,
-          };
-          if (tool === 'wall') {
-            clearWallDraftPreviewGroup();
-            emitWallDebug('wall-start', {
-              screen: projected.screen,
-              point: projected.point,
-              levelInfo,
-              projection: wallDraft?.projection,
-              basis: wallDraft?.basis,
-              rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-            });
-          }
-          useBimStore.getState().select(undefined);
-          setAuthoringOverlay({
-            tool,
-            phase: 'pick-end',
-            levelName: levelInfo.name,
-            startScreen: projected.screen,
-            currentScreen: projected.screen,
-            currentPointMm: projected.point,
-            workPlaneElevationMm: levelInfo.elevationMm,
-            snapKind: projected.snapKind,
-            snapScreen: projected.snapScreen,
-            wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
-            wallProjectionMode: tool === 'wall' ? wallDraft?.projection.mode : undefined,
-            wallAnchorRequired: false,
-            wallPlaneUnreadable: false,
-            wallPlaneOccluded: false,
-          });
-          return true;
-        }
-        const start = lineDraftStart.point;
-        const lineProjected =
-          tool === 'wall' && lineDraftStart.wallBasis
-            ? pointFromWallDraftScreenBasis(cx, cy, lineDraftStart.wallBasis)
-            : projected;
-        const end = lineProjected.point;
-        const levelId = lineDraftStart.levelId;
-        if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
-          if (tool === 'wall') {
-            clearWallDraftPreviewGroup();
-            emitWallDebug('wall-short-segment-reset', {
-              start,
-              end,
-              startScreen: lineDraftStart.screen,
-              endScreen: lineProjected.screen,
-              lengthMm: Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm),
-            });
-          }
-          lineDraftStart = null;
-          setAuthoringOverlay({
-            tool,
-            phase: 'pick-start',
-            levelName: levelInfo.name,
-            workPlaneElevationMm: levelInfo.elevationMm,
-          });
-          return true;
-        }
-        if (tool === 'wall') {
-          const runtime = useBimStore.getState();
-          const flip = wallFlipNextSegment;
-          const effectiveLocationLine = flip
-            ? flipWallLocationLineSide(runtime.wallLocationLine)
-            : runtime.wallLocationLine;
-          const actualStart = start;
-          const actualEnd = end;
-          const previewPayload = buildLinePreviewPayload({
-            tool: 'wall',
-            levelId,
-            start: actualStart,
-            end: actualEnd,
-            wall: {
-              id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
-              locationLine: effectiveLocationLine,
-              wallTypeId: runtime.activeWallTypeId ?? undefined,
-              heightMm: runtime.wallDrawHeightMm,
-            },
-          });
-          const command = linePreviewToSemanticCommand(previewPayload);
-          emitWallDebug('wall-commit', {
-            previewPayload,
-            command,
-            startScreen: lineDraftStart.screen,
-            endScreen: lineProjected.screen,
-            projection: lineDraftStart.wallProjection,
-            basis: lineDraftStart.wallBasis,
-            screenDelta: lineDraftStart.screen
-              ? {
-                  x: lineProjected.screen.x - lineDraftStart.screen.x,
-                  y: lineProjected.screen.y - lineDraftStart.screen.y,
-                }
-              : undefined,
-            modelDelta: {
-              xMm: actualEnd.xMm - actualStart.xMm,
-              yMm: actualEnd.yMm - actualStart.yMm,
-            },
-            lengthMm: Math.hypot(actualEnd.xMm - actualStart.xMm, actualEnd.yMm - actualStart.yMm),
-          });
-          lineDraftStart = null;
-          clearWallDraftPreviewGroup();
-          wallFlipNextSegment = false;
-          dispatchLinePreviewPayload(previewPayload);
-        } else {
-          const previewPayload = buildLinePreviewPayload({
-            tool: lineDraftStart.tool,
-            levelId,
-            start,
-            end,
-          });
-          lineDraftStart = null;
-          if (tool === 'beam') {
-            dispatchLinePreviewPayload(previewPayload);
-          } else if (tool === 'stair') {
-            dispatchLinePreviewPayload(previewPayload);
-          } else if (tool === 'railing') {
-            dispatchLinePreviewPayload(previewPayload);
-          } else if (tool === 'grid') {
-            dispatchLinePreviewPayload(previewPayload);
-          } else if (tool === 'reference-plane') {
-            dispatchLinePreviewPayload(previewPayload);
-          }
-        }
-        setAuthoringOverlay({
-          tool,
-          phase: 'pick-start',
-          levelName: levelInfo.name,
-          workPlaneElevationMm: levelInfo.elevationMm,
-          wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
-          wallProjectionMode: undefined,
-        });
-        return true;
-      }
-      if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
-        if (!polygonDraft || polygonDraft.tool !== tool) {
-          polygonDraft = {
-            tool: tool as 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area',
-            levelId: levelInfo.id,
-            points: [projected.point],
-          };
-          setAuthoringOverlay({
-            tool,
-            phase: 'pick-next',
-            levelName: levelInfo.name,
-            pointsScreen: [projected.screen],
-            currentScreen: projected.screen,
-            currentPointMm: projected.point,
-            workPlaneElevationMm: levelInfo.elevationMm,
-            snapKind: projected.snapKind,
-            snapScreen: projected.snapScreen,
-          });
-          return true;
-        }
-        const priorPoints = authoringOverlayRef.current?.pointsScreen ?? [];
-        if (polygonDraft.points.length >= 3 && priorPoints[0]) {
-          const closeDistancePx = Math.hypot(
-            projected.screen.x - priorPoints[0].x,
-            projected.screen.y - priorPoints[0].y,
-          );
-          if (closeDistancePx <= 14) {
-            if (tool === 'ceiling') {
-              onSemanticCommandRef.current?.(
-                polygonPreviewToSemanticCommand(
-                  buildPolygonPreviewPayload({
-                    tool: 'ceiling',
-                    levelId: polygonDraft.levelId,
-                    points: polygonDraft.points,
-                  }),
-                ),
-              );
-            } else if (tool === 'floor') {
-              onSemanticCommandRef.current?.(
-                polygonPreviewToSemanticCommand(
-                  buildPolygonPreviewPayload({
-                    tool: 'floor',
-                    levelId: polygonDraft.levelId,
-                    points: polygonDraft.points,
-                  }),
-                ),
-              );
-            } else if (tool === 'roof') {
-              onSemanticCommandRef.current?.(
-                polygonPreviewToSemanticCommand(
-                  buildPolygonPreviewPayload({
-                    tool: 'roof',
-                    levelId: polygonDraft.levelId,
-                    points: polygonDraft.points,
-                  }),
-                ),
-              );
-            } else if (tool === 'area') {
-              onSemanticCommandRef.current?.(
-                polygonPreviewToSemanticCommand(
-                  buildPolygonPreviewPayload({
-                    tool: 'area',
-                    levelId: polygonDraft.levelId,
-                    points: polygonDraft.points,
-                  }),
-                ),
-              );
-            } else if (tool === 'shaft') {
-              const boundaryMm = polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm }));
-              const draftLevelId = polygonDraft.levelId;
-              const floors = Object.values(elementsByIdRef.current).filter(
-                (el): el is Extract<Element, { kind: 'floor' }> => el.kind === 'floor',
-              );
-              const hostFloor = floors.find((floor) => floor.levelId === draftLevelId) ?? floors[0];
-              if (hostFloor) {
-                onSemanticCommandRef.current?.({
-                  type: 'createSlabOpening',
-                  hostFloorId: hostFloor.id,
-                  boundaryMm,
-                  isShaft: true,
-                });
-              }
-            }
-            polygonDraft = null;
-            setAuthoringOverlay({
-              tool,
-              phase: 'pick-vertex',
-              levelName: levelInfo.name,
-              pointsScreen: [],
-              workPlaneElevationMm: levelInfo.elevationMm,
-            });
-            return true;
-          }
-        }
-        polygonDraft.points.push(projected.point);
-        setAuthoringOverlay({
-          tool,
-          phase: 'pick-next',
-          levelName: levelInfo.name,
-          pointsScreen: [...priorPoints, projected.screen],
-          currentScreen: projected.screen,
-          currentPointMm: projected.point,
-          workPlaneElevationMm: levelInfo.elevationMm,
-          snapKind: projected.snapKind,
-          snapScreen: projected.snapScreen,
-        });
-      }
-      return true;
-    }
+      draftState,
+    );
 
     /** EDT-03 — raycast against the current selection's grip pickables. */
     function gripPreRaycast(
@@ -2491,9 +1542,9 @@ export function Viewport({
         lastX = ev.clientX;
         lastY = ev.clientY;
         (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
-        if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
+        if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !draftState.lineDraftStart) {
           toolDraftConsumedOnDown = handle3dDirectToolClick(ev.clientX, ev.clientY);
-          const currentDraft = lineDraftStart as { tool: Direct3dAuthoringTool } | null;
+          const currentDraft = draftState.lineDraftStart as { tool: Direct3dAuthoringTool } | null;
           toolDraftStartedLineOnDown = currentDraft?.tool === directTool;
         }
         return;
@@ -2638,7 +1689,7 @@ export function Viewport({
         dragMoved &&
         draftTool &&
         LINE_3D_AUTHORING_TOOLS.has(draftTool) &&
-        lineDraftStart?.tool === draftTool
+        draftState.lineDraftStart?.tool === draftTool
       ) {
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
@@ -2718,7 +1769,7 @@ export function Viewport({
               ? projectPointerToVisibleDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
               : projectPointerToDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm);
           if (projected) {
-            if (directTool === 'wall' && projected.blocker && !lineDraftStart) {
+            if (directTool === 'wall' && projected.blocker && !draftState.lineDraftStart) {
               const blockedProjection = projected;
               setAuthoringOverlay((prev) =>
                 prev?.tool === directTool
@@ -2746,7 +1797,7 @@ export function Viewport({
             if (!snappedProjection) return;
             projected = snappedProjection;
             const activeProjection = projected;
-            if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
+            if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !draftState.lineDraftStart) {
               let currentScreen = activeProjection.screen;
               let currentPointMm: { xMm: number; yMm: number } | undefined = activeProjection.point;
               let wallProjectionMode: WallDraftProjectionMode | undefined;
@@ -2788,7 +1839,10 @@ export function Viewport({
                     }
                   : prev,
               );
-            } else if ((directTool === 'column' || directTool === 'room') && !lineDraftStart) {
+            } else if (
+              (directTool === 'column' || directTool === 'room') &&
+              !draftState.lineDraftStart
+            ) {
               setAuthoringOverlay((prev) =>
                 prev?.tool === directTool
                   ? {
@@ -2805,7 +1859,7 @@ export function Viewport({
               );
             } else if (
               POLYGON_3D_AUTHORING_TOOLS.has(directTool) &&
-              (!polygonDraft || polygonDraft.points.length === 0)
+              (!draftState.polygonDraft || draftState.polygonDraft.points.length === 0)
             ) {
               setAuthoringOverlay((prev) =>
                 prev?.tool === directTool
@@ -2822,7 +1876,7 @@ export function Viewport({
                   : prev,
               );
             }
-          } else if (directTool === 'wall' && !lineDraftStart) {
+          } else if (directTool === 'wall' && !draftState.lineDraftStart) {
             setAuthoringOverlay((prev) =>
               prev?.tool === directTool
                 ? {
@@ -2846,30 +1900,41 @@ export function Viewport({
       }
       if (
         directTool &&
-        lineDraftStart &&
-        authoringOverlayRef.current?.tool === lineDraftStart.tool &&
+        draftState.lineDraftStart &&
+        authoringOverlayRef.current?.tool === draftState.lineDraftStart.tool &&
         authoringOverlayRef.current?.phase === 'pick-end'
       ) {
         const rect = renderer.domElement.getBoundingClientRect();
         const levelInfo = resolveDraftLevelInfo();
         let projected = levelInfo
-          ? lineDraftStart.tool === 'wall' && lineDraftStart.wallBasis
-            ? pointFromWallDraftScreenBasis(ev.clientX, ev.clientY, lineDraftStart.wallBasis)
-            : lineDraftStart.tool === 'wall'
+          ? draftState.lineDraftStart.tool === 'wall' && draftState.lineDraftStart.wallBasis
+            ? pointFromWallDraftScreenBasis(
+                ev.clientX,
+                ev.clientY,
+                draftState.lineDraftStart.wallBasis,
+              )
+            : draftState.lineDraftStart.tool === 'wall'
               ? projectPointerToVisibleDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
               : projectPointerToDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
           : null;
-        if (lineDraftStart.tool === 'wall' && (!projected || projected.blocker || !levelInfo)) {
+        if (
+          draftState.lineDraftStart.tool === 'wall' &&
+          (!projected || projected.blocker || !levelInfo)
+        ) {
           clearWallDraftPreviewGroup();
         }
         if (projected && levelInfo && !projected.blocker) {
           projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo, {
-            preferWallConnectivity: lineDraftStart.tool === 'wall',
+            preferWallConnectivity: draftState.lineDraftStart.tool === 'wall',
           });
         }
         setAuthoringOverlay((prev) =>
           prev?.phase === 'pick-end'
-            ? prev.tool === 'wall' && lineDraftStart && projected && !projected.blocker && levelInfo
+            ? prev.tool === 'wall' &&
+              draftState.lineDraftStart &&
+              projected &&
+              !projected.blocker &&
+              levelInfo
               ? (() => {
                   const workPlaneCheck = validateWorkPlane3d(
                     'wall',
@@ -2877,32 +1942,32 @@ export function Viewport({
                     Boolean(levelInfo),
                   );
                   const previewMesh = updateWallDraftPreviewGroup(
-                    lineDraftStart.point,
+                    draftState.lineDraftStart.point,
                     projected.point,
                     levelInfo,
-                    wallFlipNextSegment,
+                    draftState.wallFlipNextSegment,
                     workPlaneCheck.previewTint === 'red' ? '#ef4444' : undefined,
                   );
                   emitWallDebug('wall-preview', {
-                    start: lineDraftStart.point,
+                    start: draftState.lineDraftStart.point,
                     end: projected.point,
-                    startScreen: lineDraftStart.screen,
+                    startScreen: draftState.lineDraftStart.screen,
                     endScreen: projected.screen,
-                    projection: lineDraftStart.wallProjection,
-                    basis: lineDraftStart.wallBasis,
-                    screenDelta: lineDraftStart.screen
+                    projection: draftState.lineDraftStart.wallProjection,
+                    basis: draftState.lineDraftStart.wallBasis,
+                    screenDelta: draftState.lineDraftStart.screen
                       ? {
-                          x: projected.screen.x - lineDraftStart.screen.x,
-                          y: projected.screen.y - lineDraftStart.screen.y,
+                          x: projected.screen.x - draftState.lineDraftStart.screen.x,
+                          y: projected.screen.y - draftState.lineDraftStart.screen.y,
                         }
                       : undefined,
                     modelDelta: {
-                      xMm: projected.point.xMm - lineDraftStart.point.xMm,
-                      yMm: projected.point.yMm - lineDraftStart.point.yMm,
+                      xMm: projected.point.xMm - draftState.lineDraftStart.point.xMm,
+                      yMm: projected.point.yMm - draftState.lineDraftStart.point.yMm,
                     },
                     lengthMm: Math.hypot(
-                      projected.point.xMm - lineDraftStart.point.xMm,
-                      projected.point.yMm - lineDraftStart.point.yMm,
+                      projected.point.xMm - draftState.lineDraftStart.point.xMm,
+                      projected.point.yMm - draftState.lineDraftStart.point.yMm,
                     ),
                     previewMesh: Boolean(previewMesh),
                   });
@@ -2913,8 +1978,8 @@ export function Viewport({
                     workPlaneElevationMm: levelInfo.elevationMm,
                     snapKind: projected.snapKind,
                     snapScreen: projected.snapScreen,
-                    wallFlipActive: wallFlipNextSegment,
-                    wallProjectionMode: lineDraftStart.wallProjection?.mode,
+                    wallFlipActive: draftState.wallFlipNextSegment,
+                    wallProjectionMode: draftState.lineDraftStart.wallProjection?.mode,
                     wallPreviewOutlineScreen: undefined,
                     wallPreviewDirectionStartScreen: undefined,
                     wallPreviewDirectionEndScreen: undefined,
@@ -2948,9 +2013,9 @@ export function Viewport({
       if (
         directTool &&
         POLYGON_3D_AUTHORING_TOOLS.has(directTool) &&
-        polygonDraft &&
-        polygonDraft.tool === directTool &&
-        polygonDraft.points.length > 0 &&
+        draftState.polygonDraft &&
+        draftState.polygonDraft.tool === directTool &&
+        draftState.polygonDraft.points.length > 0 &&
         authoringOverlayRef.current?.tool === directTool
       ) {
         const levelInfo = resolveDraftLevelInfo();
@@ -2982,7 +2047,7 @@ export function Viewport({
             authoringOverlayRef.current?.tool === directTool
               ? authoringOverlayRef.current.previewHostWallId
               : undefined,
-          lockToPreferred: hostPreviewLock,
+          lockToPreferred: draftState.hostPreviewLock,
         });
         if (!hit) {
           setAuthoringOverlay((prev) =>
@@ -2997,9 +2062,13 @@ export function Viewport({
                   previewStartScreen: undefined,
                   previewEndScreen: undefined,
                   previewHostValid: false,
-                  previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
-                  previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
-                  previewHostLock: hostPreviewLock,
+                  previewHostWallId: draftState.hostPreviewLock
+                    ? prev.previewHostWallId
+                    : undefined,
+                  previewHostAlongT: draftState.hostPreviewLock
+                    ? prev.previewHostAlongT
+                    : undefined,
+                  previewHostLock: draftState.hostPreviewLock,
                   previewHostInvalidReason: 'No wall host on the active level under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
@@ -3020,7 +2089,7 @@ export function Viewport({
                     previewHostValid: preview.valid,
                     previewHostWallId: hit.wall.id,
                     previewHostAlongT: hit.alongT,
-                    previewHostLock: hostPreviewLock,
+                    previewHostLock: draftState.hostPreviewLock,
                     previewHostInvalidReason: preview.invalidReason,
                     previewAuxLines: preview.auxLines,
                     previewAuxArcPath: preview.auxArcPath,
@@ -3162,8 +2231,8 @@ export function Viewport({
       if (
         activeLineTool &&
         LINE_3D_AUTHORING_TOOLS.has(activeLineTool) &&
-        lineDraftStart &&
-        lineDraftStart.tool === activeLineTool
+        draftState.lineDraftStart &&
+        draftState.lineDraftStart.tool === activeLineTool
       ) {
         if (/^[0-9.'"\s]$/.test(ev.key)) {
           ev.preventDefault();
@@ -3200,13 +2269,13 @@ export function Viewport({
           if (parsed.ok && currentEnd && levelInfo) {
             const runtime = useBimStore.getState();
             const effectiveLocationLine =
-              activeLineTool === 'wall' && wallFlipNextSegment
+              activeLineTool === 'wall' && draftState.wallFlipNextSegment
                 ? flipWallLocationLineSide(runtime.wallLocationLine)
                 : runtime.wallLocationLine;
             const basePayload = buildLinePreviewPayload({
-              tool: lineDraftStart.tool,
-              levelId: lineDraftStart.levelId,
-              start: lineDraftStart.point,
+              tool: draftState.lineDraftStart.tool,
+              levelId: draftState.lineDraftStart.levelId,
+              start: draftState.lineDraftStart.point,
               end: currentEnd,
               wall:
                 activeLineTool === 'wall'
@@ -3224,13 +2293,13 @@ export function Viewport({
                 resizedPayload.start,
                 resizedPayload.end,
                 levelInfo,
-                wallFlipNextSegment,
+                draftState.wallFlipNextSegment,
               );
               clearWallDraftPreviewGroup();
-              wallFlipNextSegment = false;
+              draftState.wallFlipNextSegment = false;
             }
             dispatchLinePreviewPayload(resizedPayload);
-            lineDraftStart = null;
+            draftState.lineDraftStart = null;
             setAuthoringOverlay({
               tool: activeLineTool,
               phase: 'pick-start',
@@ -3244,9 +2313,9 @@ export function Viewport({
       if (ev.key === 'Escape') {
         const tool = activeDirect3dTool();
         if (tool && LINE_3D_AUTHORING_TOOLS.has(tool)) {
-          if (lineDraftStart && lineDraftStart.tool === tool) {
-            lineDraftStart = null;
-            wallFlipNextSegment = false;
+          if (draftState.lineDraftStart && draftState.lineDraftStart.tool === tool) {
+            draftState.lineDraftStart = null;
+            draftState.wallFlipNextSegment = false;
             clearWallDraftPreviewGroup();
             setAuthoringOverlay((prev) =>
               prev
@@ -3261,8 +2330,8 @@ export function Viewport({
             ev.preventDefault();
             return;
           }
-        } else if (tool && POLYGON_3D_AUTHORING_TOOLS.has(tool) && polygonDraft) {
-          polygonDraft = null;
+        } else if (tool && POLYGON_3D_AUTHORING_TOOLS.has(tool) && draftState.polygonDraft) {
+          draftState.polygonDraft = null;
           setAuthoringOverlay((prev) =>
             prev
               ? { tool, phase: 'pick-vertex', levelName: prev.levelName, pointsScreen: [] }
@@ -3278,7 +2347,7 @@ export function Viewport({
       if (ev.key === 'Escape') {
         const tool = activeDirect3dTool();
         if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
-          hostPreviewLock = false;
+          draftState.hostPreviewLock = false;
           setAuthoringOverlay((prev) =>
             prev?.tool === tool
               ? {
@@ -3292,12 +2361,12 @@ export function Viewport({
       if (ev.key === 'Tab' || ev.key.toLowerCase() === 'l') {
         const tool = activeDirect3dTool();
         if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
-          hostPreviewLock = !hostPreviewLock;
+          draftState.hostPreviewLock = !draftState.hostPreviewLock;
           setAuthoringOverlay((prev) =>
             prev?.tool === tool
               ? {
                   ...prev,
-                  previewHostLock: hostPreviewLock,
+                  previewHostLock: draftState.hostPreviewLock,
                 }
               : prev,
           );
@@ -3307,23 +2376,27 @@ export function Viewport({
       }
       if (ev.code === 'Space') {
         const tool = activeDirect3dTool();
-        if (tool === 'wall' && lineDraftStart && lineDraftStart.tool === 'wall') {
-          wallFlipNextSegment = !wallFlipNextSegment;
+        if (
+          tool === 'wall' &&
+          draftState.lineDraftStart &&
+          draftState.lineDraftStart.tool === 'wall'
+        ) {
+          draftState.wallFlipNextSegment = !draftState.wallFlipNextSegment;
           const overlay = authoringOverlayRef.current;
           const levelInfo = resolveDraftLevelInfo();
           if (overlay?.currentPointMm && levelInfo) {
             updateWallDraftPreviewGroup(
-              lineDraftStart.point,
+              draftState.lineDraftStart.point,
               overlay.currentPointMm,
               levelInfo,
-              wallFlipNextSegment,
+              draftState.wallFlipNextSegment,
             );
           }
           setAuthoringOverlay((prev) =>
             prev?.tool === 'wall'
               ? {
                   ...prev,
-                  wallFlipActive: wallFlipNextSegment,
+                  wallFlipActive: draftState.wallFlipNextSegment,
                 }
               : prev,
           );

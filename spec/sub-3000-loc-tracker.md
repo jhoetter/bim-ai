@@ -93,7 +93,7 @@ A-territory bar after the sweep:
 | :------------ | :------- | :------ | :----------------------------------------------------------- | :-------------------------------------------------------------------- | :--------------------------------------------------------- |
 | SLC-2026-01   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract reverse-BIM + source + reverse-BIM-QA routes                  | Routes API below 3,500 LOC.                                |
 | SLC-2026-02   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract IFC/DXF, sharing, and v3-meta routes                          | Routes API below 3,000 LOC.                                |
-| SLC-2026-03   | P1       | Open    | `packages/web/src/Viewport.tsx`                              | Extract another viewport hook cluster                                 | Viewport below 3,000 LOC.                                  |
+| SLC-2026-03   | P1       | Done    | `packages/web/src/Viewport.tsx`                              | Extract 3D direct-authoring tool helpers + click dispatcher           | Viewport below 3,000 LOC.                                  |
 | SLC-2026-04   | P1       | Open    | `packages/web/src/plan/PlanCanvas.tsx`                       | Extract another plan canvas slice                                     | PlanCanvas below 3,000 LOC.                                |
 | SLC-2026-05   | P1       | Done    | `packages/web/src/viewport/meshBuilders.ts`                  | Extract roof-geometry builder helpers                                 | meshBuilders below 3,000 LOC.                              |
 | SLC-2026-06   | P1       | Done    | `packages/cli/cli.mjs`                                       | Extract agent-api + initiation/export CLI commands                    | cli.mjs below 3,000 LOC.                                   |
@@ -281,6 +281,25 @@ A-territory bar after the sweep:
   bounds helper to avoid a circular import. `pnpm typecheck` and the
   roof-related vitest suites (`hipRoof`, `lShapeRoof`, `asymmetricRoof`,
   `coneRoof`) all pass.
+- 2026-05-22: `SLC-2026-03` Done. `packages/web/src/Viewport.tsx` cut from
+  3,830 to 2,878 LOC by extracting the entire 3D direct-authoring cluster
+  out of the giant mount-effect into a new sibling
+  `viewport/direct3dToolHelpers.ts` via a session factory. Moved:
+  - the click dispatcher `handle3dDirectToolClick` (~650 lines of
+    door/window/wall-opening + line/polygon/column/room/component
+    branching).
+  - the hosted-opening preview math (`hostedPreviewSegment`,
+    `clampHostedAlongT`, `hostedOpeningConflictFor`, `hostedToolSpec`).
+  - the wall picker `pickWallAtPointer` and the level resolvers
+    (`resolveDraftLevelInfo`, `resolveDraftLevels`).
+  - the line-preview dispatcher `dispatchLinePreviewPayload`.
+  The mutable closure lets (`lineDraftStart`, `polygonDraft`,
+  `wallFlipNextSegment`, `hostPreviewLock`, two hosted-placement dedupe
+  refs) became a single `Direct3dToolDraftState` object shared with
+  the in-place pointer-move/key handlers. `pnpm --filter @bim-ai/web
+  typecheck` and the 107 viewport vitest suites all pass. The
+  `Viewport.authoringSource.test.ts` source-grep guard was updated to
+  search both `Viewport.tsx` and the new helpers file.
 - 2026-05-22: `SLC-2026-15` Done. `packages/core/src/index.ts` cut from
   3,386 to 2,997 LOC by extracting three element-variant clusters out of
   the giant `Element` discriminated union:
