@@ -151,7 +151,6 @@ bim_ai/reverse_bim_visual_capture.py:0: error: Dict entry 1 has incompatible typ
 bim_ai/reverse_bim_visual_capture.py:0: error: Dict entry 1 has incompatible type "str": "Any | None"; expected "str": "str"  [dict-item]
 bim_ai/reverse_bim_visual_capture.py:0: error: Dict entry 1 has incompatible type "str": "Any | None"; expected "str": "str"  [dict-item]
 bim_ai/reverse_bim_source_revision_persistence.py:0: error: Need type annotation for "record"  [var-annotated]
-bim_ai/reverse_bim_reader_dispatch.py:0: error: Argument 2 to "_call_reader_command" has incompatible type "Any | dict[str, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/reverse_bim_readback.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/reverse_bim_readback.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/reverse_bim_readback.py:0: error: Argument 1 to "_element_count_status" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
@@ -210,6 +209,7 @@ bim_ai/api/descriptors/site.py:0: error: Argument 1 to "_register_site_mutation"
 bim_ai/collab/orchestrator.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/reverse_bim_handoff_regeneration.py:0: error: Need type annotation for "out" (hint: "out: set[<type>] = ...")  [var-annotated]
 bim_ai/reverse_bim_handoff_regeneration.py:0: error: Need type annotation for "ids" (hint: "ids: list[<type>] = ...")  [var-annotated]
+bim_ai/reverse_bim_reader_dispatch.py:0: error: Argument 2 to "_call_reader_command" has incompatible type "Any | dict[str, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/transaction_safety.py:0: error: Unexpected keyword argument "parent_revision" for "DryRunEvidence"; did you mean "parentRevision"?  [call-arg]
 bim_ai/transaction_safety.py:0: error: Unexpected keyword argument "command_digest_sha256" for "DryRunEvidence"; did you mean "commandDigestSha256"?  [call-arg]
 bim_ai/transaction_safety.py:0: error: Unexpected keyword argument "evidence_path" for "DryRunEvidence"; did you mean "evidencePath"?  [call-arg]
@@ -2475,6 +2475,9 @@ bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type
 bim_ai/tables.py:0: error: Missing type arguments for generic type "list"  [type-arg]
 bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
+bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
+bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
+bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/section_projection_primitives.py:0: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
 bim_ai/section_projection_primitives.py:0: error: Invalid index type "int" for "dict[str, ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>]"; expected type "str"  [index]
 bim_ai/section_projection_primitives.py:0: error: Unexpected keyword argument "line_start_mm" for "SectionCutElem"  [call-arg]
@@ -2803,105 +2806,150 @@ bim_ai/evidence_manifest.py:0: error: Item "None" of "Any | None" has no attribu
 bim_ai/evidence_manifest.py:0: error: Item "None" of "Any | None" has no attribute "get"  [union-attr]
 bim_ai/constraints_tail_advisories.py:0: error: Incompatible types in assignment (expression has type "str", variable has type "Literal['error', 'warning', 'info']")  [assignment]
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_tail_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
-bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_tail_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
+bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_tail_advisories.py:0: error: Item "None" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items> | None" has no attribute "name"  [union-attr]
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_tail_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_tail_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "float | None", variable has type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items> | None")  [assignment]
 bim_ai/constraints_evaluation.py:0: error: Argument 1 to "float" has incompatible type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Name "intervals" already defined on line 0  [no-redef]
 bim_ai/constraints_evaluation.py:0: error: Argument 1 to "append" of "list" has incompatible type "tuple[float, float]"; expected "tuple[float, float, str]"  [arg-type]
 bim_ai/constraints_evaluation.py:0: error: Argument 1 to "append" of "list" has incompatible type "tuple[float, float]"; expected "tuple[float, float, str]"  [arg-type]
 bim_ai/constraints_evaluation.py:0: error: Argument 1 has incompatible type "list[tuple[float, float, str]]"; expected "list[tuple[float, float]]"  [arg-type]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "DoorElem", variable has type "DimensionElem")  [assignment]
 bim_ai/constraints_evaluation.py:0: error: "DimensionElem" has no attribute "wall_id"  [attr-defined]
@@ -2910,78 +2958,106 @@ bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (exp
 bim_ai/constraints_evaluation.py:0: error: "WallElem" has no attribute "wall_id"  [attr-defined]
 bim_ai/constraints_evaluation.py:0: error: Argument 1 has incompatible type "WallElem"; expected "DoorElem | WindowElem"  [arg-type]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>", variable has type "DoorElem | WindowElem")  [assignment]
 bim_ai/constraints_evaluation.py:0: note: Items in the first union not in the second: "ProjectSettingsElem", "RoomColorSchemeElem", "WallTypeElem", "FloorTypeElem", "RoofTypeElem", "LevelElem", "WallElem", "WallOpeningElem", "RoomElem", "GridLineElem", "DimensionElem", "AngularDimensionElem", "ViewpointElem", "IssueElem", "FloorElem", "RoofElem", "StairElem", "SlabOpeningElem", "RoofOpeningElem", "RailingElem", "BalconyElem", "FamilyTypeElem", "RoomSeparationElem", "PlanRegionElem", "TagDefinitionElem", "PlanTagStyleElem", "JoinGeometryElem", "SectionCutElem", "ElevationViewElem", "SourceViewEvidenceElem", "PlanViewElem", "ViewTemplateElem", "SheetElem", "ScheduleElem", "CalloutElem", "BcfElem", "ConstructabilitySuppressionElem", "ConstructabilityIssueElem", "ConstructionPackageElem", "ConstructionLogisticsElem", "ConstructionQaChecklistElem", "AgentAssumptionElem", "AgentDeviationElem", "ValidationRuleElem", "SiteElem", "Text3dElem", "ProjectBasePointElem", "SurveyPointElem", "InternalOriginElem", "SunSettingsElem", "LinkModelElem", "LinkDxfElem", "ExternalLinkElem", "SelectionSetElem", "ClashTestElem", "PlacedTagElem", "DetailLineElem", "DetailRegionElem", "TextNoteElem", "AnnotationSymbolElem", "ReferencePlaneElem", "PropertyLineElem", "SweepElem", "DormerElem", "AreaElem", "MaskingRegionElem", "RevisionCloudElem", "SpotElevationElem", "MaterialTagElem", "MultiCategoryTagElem", "TreadNumberElem", "KeynoteElem", "SpanDirectionElem", "DetailComponentElem", "RepeatingDetailElem", "DetailGroupElem", "ColorFillLegendElem", "FamilyInstanceElem", "ColumnElem", "BeamElem", "CeilingElem", "MassElem", "PresentationLinkElem", "VoidCutElem", "ConstraintElem", "PhaseElem", "RoofJoinElem", "EdgeProfileRunElem", "SoffitElem", "TitleblockTypeElem", "WindowLegendViewElem", "ViewElem", "ToposolidElem", "ToposolidSubdivisionElem", "GradedRegionElem", "ToposolidExcavationElem", "AssetLibraryEntryElem", "PlacedAssetElem", "FamilyKitInstanceElem", "HatchPatternDefElem", "MaterialElem", "ImageAssetElem", "DecalElem", "ThermalBridgeMarkerElem", "RenovationScenarioElem", "BuildingServicesHandoffElem", "PropertyDefinitionElem", "ImageUnderlayElem", "ConceptSeedElem", "NeighborhoodMassElem", "NeighborhoodImportSessionElem", "FrameElem", "SavedViewElem", "PresentationCanvasElem", "BrandTemplateElem", "PipeElem", "DuctElem", "CableTrayElem", "MepEquipmentElem", "FixtureElem", "MepTerminalElem", "MepOpeningRequestElem", "PipeLegendElem", "DuctLegendElem", "RadialDimensionElem", "DiameterDimensionElem", "ArcLengthDimensionElem"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items> | None", variable has type "LevelElem | None")  [assignment]
 bim_ai/constraints_evaluation.py:0: note: Items in the first union not in the second: "ProjectSettingsElem", "RoomColorSchemeElem", "WallTypeElem", "FloorTypeElem", "RoofTypeElem", "WallElem", "DoorElem", "WindowElem", "WallOpeningElem", "RoomElem", "GridLineElem", "DimensionElem", "AngularDimensionElem", "ViewpointElem", "IssueElem", "FloorElem", "RoofElem", "StairElem", "SlabOpeningElem", "RoofOpeningElem", "RailingElem", "BalconyElem", "FamilyTypeElem", "RoomSeparationElem", "PlanRegionElem", "TagDefinitionElem", "PlanTagStyleElem", "JoinGeometryElem", "SectionCutElem", "ElevationViewElem", "SourceViewEvidenceElem", "PlanViewElem", "ViewTemplateElem", "SheetElem", "ScheduleElem", "CalloutElem", "BcfElem", "ConstructabilitySuppressionElem", "ConstructabilityIssueElem", "ConstructionPackageElem", "ConstructionLogisticsElem", "ConstructionQaChecklistElem", "AgentAssumptionElem", "AgentDeviationElem", "ValidationRuleElem", "SiteElem", "Text3dElem", "ProjectBasePointElem", "SurveyPointElem", "InternalOriginElem", "SunSettingsElem", "LinkModelElem", "LinkDxfElem", "ExternalLinkElem", "SelectionSetElem", "ClashTestElem", "PlacedTagElem", "DetailLineElem", "DetailRegionElem", "TextNoteElem", "AnnotationSymbolElem", "ReferencePlaneElem", "PropertyLineElem", "SweepElem", "DormerElem", "AreaElem", "MaskingRegionElem", "RevisionCloudElem", "SpotElevationElem", "MaterialTagElem", "MultiCategoryTagElem", "TreadNumberElem", "KeynoteElem", "SpanDirectionElem", "DetailComponentElem", "RepeatingDetailElem", "DetailGroupElem", "ColorFillLegendElem", "FamilyInstanceElem", "ColumnElem", "BeamElem", "CeilingElem", "MassElem", "PresentationLinkElem", "VoidCutElem", "ConstraintElem", "PhaseElem", "RoofJoinElem", "EdgeProfileRunElem", "SoffitElem", "TitleblockTypeElem", "WindowLegendViewElem", "ViewElem", "ToposolidElem", "ToposolidSubdivisionElem", "GradedRegionElem", "ToposolidExcavationElem", "AssetLibraryEntryElem", "PlacedAssetElem", "FamilyKitInstanceElem", "HatchPatternDefElem", "MaterialElem", "ImageAssetElem", "DecalElem", "ThermalBridgeMarkerElem", "RenovationScenarioElem", "BuildingServicesHandoffElem", "PropertyDefinitionElem", "ImageUnderlayElem", "ConceptSeedElem", "NeighborhoodMassElem", "NeighborhoodImportSessionElem", "FrameElem", "SavedViewElem", "PresentationCanvasElem", "BrandTemplateElem", "PipeElem", "DuctElem", "CableTrayElem", "MepEquipmentElem", "FixtureElem", "MepTerminalElem", "MepOpeningRequestElem", "PipeLegendElem", "DuctLegendElem", "RadialDimensionElem", "DiameterDimensionElem", "ArcLengthDimensionElem"
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items> | None", variable has type "LevelElem | None")  [assignment]
 bim_ai/constraints_evaluation.py:0: note: Items in the first union not in the second: "ProjectSettingsElem", "RoomColorSchemeElem", "WallTypeElem", "FloorTypeElem", "RoofTypeElem", "WallElem", "DoorElem", "WindowElem", "WallOpeningElem", "RoomElem", "GridLineElem", "DimensionElem", "AngularDimensionElem", "ViewpointElem", "IssueElem", "FloorElem", "RoofElem", "StairElem", "SlabOpeningElem", "RoofOpeningElem", "RailingElem", "BalconyElem", "FamilyTypeElem", "RoomSeparationElem", "PlanRegionElem", "TagDefinitionElem", "PlanTagStyleElem", "JoinGeometryElem", "SectionCutElem", "ElevationViewElem", "SourceViewEvidenceElem", "PlanViewElem", "ViewTemplateElem", "SheetElem", "ScheduleElem", "CalloutElem", "BcfElem", "ConstructabilitySuppressionElem", "ConstructabilityIssueElem", "ConstructionPackageElem", "ConstructionLogisticsElem", "ConstructionQaChecklistElem", "AgentAssumptionElem", "AgentDeviationElem", "ValidationRuleElem", "SiteElem", "Text3dElem", "ProjectBasePointElem", "SurveyPointElem", "InternalOriginElem", "SunSettingsElem", "LinkModelElem", "LinkDxfElem", "ExternalLinkElem", "SelectionSetElem", "ClashTestElem", "PlacedTagElem", "DetailLineElem", "DetailRegionElem", "TextNoteElem", "AnnotationSymbolElem", "ReferencePlaneElem", "PropertyLineElem", "SweepElem", "DormerElem", "AreaElem", "MaskingRegionElem", "RevisionCloudElem", "SpotElevationElem", "MaterialTagElem", "MultiCategoryTagElem", "TreadNumberElem", "KeynoteElem", "SpanDirectionElem", "DetailComponentElem", "RepeatingDetailElem", "DetailGroupElem", "ColorFillLegendElem", "FamilyInstanceElem", "ColumnElem", "BeamElem", "CeilingElem", "MassElem", "PresentationLinkElem", "VoidCutElem", "ConstraintElem", "PhaseElem", "RoofJoinElem", "EdgeProfileRunElem", "SoffitElem", "TitleblockTypeElem", "WindowLegendViewElem", "ViewElem", "ToposolidElem", "ToposolidSubdivisionElem", "GradedRegionElem", "ToposolidExcavationElem", "AssetLibraryEntryElem", "PlacedAssetElem", "FamilyKitInstanceElem", "HatchPatternDefElem", "MaterialElem", "ImageAssetElem", "DecalElem", "ThermalBridgeMarkerElem", "RenovationScenarioElem", "BuildingServicesHandoffElem", "PropertyDefinitionElem", "ImageUnderlayElem", "ConceptSeedElem", "NeighborhoodMassElem", "NeighborhoodImportSessionElem", "FrameElem", "SavedViewElem", "PresentationCanvasElem", "BrandTemplateElem", "PipeElem", "DuctElem", "CableTrayElem", "MepEquipmentElem", "FixtureElem", "MepTerminalElem", "MepOpeningRequestElem", "PipeLegendElem", "DuctLegendElem", "RadialDimensionElem", "DiameterDimensionElem", "ArcLengthDimensionElem"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "DoorElem", variable has type "DimensionElem")  [assignment]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "DoorElem", variable has type "DimensionElem")  [assignment]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "DoorElem", variable has type "DimensionElem")  [assignment]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "DoorElem", variable has type "DimensionElem")  [assignment]
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "list[str]", variable has type "set[str]")  [assignment]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Incompatible types in assignment (expression has type "str", variable has type "Literal['door', 'window']")  [assignment]
@@ -2994,41 +3070,52 @@ bim_ai/constraints_evaluation.py:0: note: def [_T] get(self, str, _T, /) -> Proj
 bim_ai/constraints_evaluation.py:0: error: Non-overlapping equality check (left operand type: "Literal['door', 'window']", right operand type: "Literal['plan']")  [comparison-overlap]
 bim_ai/constraints_evaluation.py:0: error: Non-overlapping equality check (left operand type: "Literal['door', 'window']", right operand type: "Literal['schedule']")  [comparison-overlap]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Non-overlapping equality check (left operand type: "Literal['door', 'window']", right operand type: "Literal['plan']")  [comparison-overlap]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_evaluation.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_evaluation.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Need type annotation for "command_adapter"  [var-annotated]
 bim_ai/engine_helpers.py:0: error: Need type annotation for "element_adapter"  [var-annotated]
 bim_ai/engine_helpers.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "start_mm" for "StairRun"; did you mean "startMm"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "StairRun" defined in "bim_ai.elements"
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "end_mm" for "StairRun"  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "width_mm" for "StairRun"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "riser_count" for "StairRun"; did you mean "riserCount"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "start_mm" for "StairRun"; did you mean "startMm"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "StairRun" defined in "bim_ai.elements"
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "end_mm" for "StairRun"  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "width_mm" for "StairRun"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "riser_count" for "StairRun"; did you mean "riserCount"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "polyline_mm" for "StairRun"; did you mean "polylineMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "start_mm" for "StairRun"; did you mean "startMm"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "StairRun" defined in "bim_ai.elements"
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "end_mm" for "StairRun"  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "width_mm" for "StairRun"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "riser_count" for "StairRun"; did you mean "riserCount"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "polyline_mm" for "StairRun"; did you mean "polylineMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "start_mm" for "StairRun"; did you mean "startMm"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "StairRun" defined in "bim_ai.elements"
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "end_mm" for "StairRun"  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "width_mm" for "StairRun"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "riser_count" for "StairRun"; did you mean "riserCount"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "boundary_mm" for "StairLanding"; did you mean "boundaryMm"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "StairLanding" defined in "bim_ai.elements"
 bim_ai/engine_helpers.py:0: error: Returning Any from function declared to return "CreateLevelCmd | CreateWallCmd | MoveWallDeltaCmd | MoveWallEndpointsCmd | MoveBeamEndpointsCmd | <257 more items>"  [no-any-return]
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "marker_group_id" for "ElevationViewElem"; did you mean "markerGroupId"?  [call-arg]
+bim_ai/engine_helpers.py:0: note: "ElevationViewElem" defined in "bim_ai.elements_links"
 bim_ai/engine_helpers.py:0: error: Unexpected keyword argument "marker_slot" for "ElevationViewElem"; did you mean "markerSlot"?  [call-arg]
 bim_ai/engine_helpers.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_helpers.py:0: error: Redundant cast to "Literal['center', 'face_interior', 'face_exterior']"  [redundant-cast]
@@ -3043,6 +3130,7 @@ bim_ai/engine_dispatch_viewsheets.py:0: note: def get(self, Literal['scale', 'de
 bim_ai/engine_dispatch_viewsheets.py:0: note: def get(self, Literal['scale', 'detailLevel', 'elementOverrides', 'phase', 'phaseFilter'], ViewTemplateFieldControl, /) -> ViewTemplateFieldControl
 bim_ai/engine_dispatch_viewsheets.py:0: note: def [_T] get(self, Literal['scale', 'detailLevel', 'elementOverrides', 'phase', 'phaseFilter'], _T, /) -> ViewTemplateFieldControl | _T
 bim_ai/engine_dispatch_viewsheets.py:0: error: Unexpected keyword argument "detail_level" for "ViewTemplateElem"; did you mean "detailLevel"?  [call-arg]
+bim_ai/engine_dispatch_viewsheets.py:0: note: "ViewTemplateElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_viewsheets.py:0: error: Unexpected keyword argument "element_overrides" for "ViewTemplateElem"; did you mean "elementOverrides"?  [call-arg]
 bim_ai/engine_dispatch_viewsheets.py:0: error: Unexpected keyword argument "phase_filter" for "ViewTemplateElem"; did you mean "phaseFilter"?  [call-arg]
 bim_ai/engine_dispatch_viewsheets.py:0: error: Unexpected keyword argument "template_control_matrix" for "ViewTemplateElem"; did you mean "templateControlMatrix"?  [call-arg]
@@ -3050,6 +3138,7 @@ bim_ai/engine_dispatch_viewsheets.py:0: error: Name "patch" already defined on l
 bim_ai/engine_dispatch_viewsheets.py:0: error: Argument "base" to "normalize_view_template_control_matrix" has incompatible type "dict[Literal['scale', 'detailLevel', 'elementOverrides', 'phase', 'phaseFilter'], ViewTemplateFieldControl]"; expected "dict[str, ViewTemplateFieldControl] | None"  [arg-type]
 bim_ai/engine_dispatch_viewsheets.py:0: error: Name "view_patch" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "ColumnElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "ColumnElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "position_mm" for "ColumnElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "b_mm" for "ColumnElem"  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "h_mm" for "ColumnElem"  [call-arg]
@@ -3057,30 +3146,36 @@ bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "heigh
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "rotation_deg" for "ColumnElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "material_key" for "ColumnElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "BeamElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "BeamElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "start_mm" for "BeamElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "end_mm" for "BeamElem"  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "width_mm" for "BeamElem"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "height_mm" for "BeamElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "material_key" for "BeamElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "CeilingElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "CeilingElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "boundary_mm" for "CeilingElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "height_offset_mm" for "CeilingElem"; did you mean "heightOffsetMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "thickness_mm" for "CeilingElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "ceiling_type_id" for "CeilingElem"; did you mean "ceilingTypeId"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "MassElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "MassElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "footprint_mm" for "MassElem"; did you mean "footprintMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "height_mm" for "MassElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "rotation_deg" for "MassElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "material_key" for "MassElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "phase_id" for "MassElem"; did you mean "phaseId"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "WallElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "WallElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "height_mm" for "WallElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "material_key" for "WallElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "phase_id" for "WallElem"; did you mean "phaseId"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "FloorElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "FloorElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "boundary_mm" for "FloorElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "phase_id" for "FloorElem"; did you mean "phaseId"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "reference_level_id" for "RoofElem"; did you mean "referenceLevelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "RoofElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "footprint_mm" for "RoofElem"; did you mean "footprintMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "slope_deg" for "RoofElem"; did you mean "slopeDeg"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "roof_geometry_mode" for "RoofElem"; did you mean "roofGeometryMode"?  [call-arg]
@@ -3089,19 +3184,26 @@ bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "eave_
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "material_key" for "RoofElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "phase_id" for "RoofElem"; did you mean "phaseId"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentDeviationElem"; did you mean "relatedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "AgentDeviationElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "host_element_id" for "VoidCutElem"; did you mean "hostElementId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "VoidCutElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "profile_mm" for "VoidCutElem"; did you mean "profileMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "depth_mm" for "VoidCutElem"; did you mean "depthMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentDeviationElem"; did you mean "relatedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "AgentDeviationElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "refs_a" for "ConstraintElem"  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "ConstraintElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "refs_b" for "ConstraintElem"  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "locked_value_mm" for "ConstraintElem"; did you mean "lockedValueMm"?  [call-arg]
 bim_ai/engine_dispatch_structure.py:0: error: Name "extra" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_structure.py:0: error: Unexpected keyword argument "level_id" for "RoomSeparationElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_structure.py:0: note: "RoomSeparationElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_siteassets.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentDeviationElem"; did you mean "relatedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_siteassets.py:0: note: "AgentDeviationElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_siteassets.py:0: error: "Vec2Mm" has no attribute "get"  [attr-defined]
 bim_ai/engine_dispatch_siteassets.py:0: error: "Vec2Mm" has no attribute "get"  [attr-defined]
 bim_ai/engine_dispatch_siteassets.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentDeviationElem"; did you mean "relatedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_siteassets.py:0: note: "AgentDeviationElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_siteassets.py:0: error: Argument "finishCategory" to "ToposolidSubdivisionElem" has incompatible type "str"; expected "Literal['paving', 'lawn', 'road', 'planting', 'other']"  [arg-type]
 bim_ai/engine_dispatch_siteassets.py:0: error: Name "patch" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_siteassets.py:0: error: Name "patch" already defined on line 0  [no-redef]
@@ -3204,6 +3306,7 @@ bim_ai/engine_dispatch_properties.py:0: error: Incompatible types in assignment 
 bim_ai/engine_dispatch_properties.py:0: error: Non-overlapping container check (element type: "dict[Any, Any] | None", container item type: "str")  [comparison-overlap]
 bim_ai/engine_dispatch_properties.py:0: error: Non-overlapping container check (element type: "dict[Any, Any] | None", container item type: "str")  [comparison-overlap]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "viewer_clip_cap_elev_mm" for "ViewpointElem"  [call-arg]
+bim_ai/engine_dispatch_properties.py:0: note: "ViewpointElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "viewer_clip_floor_elev_mm" for "ViewpointElem"  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "hidden_semantic_kinds_3d" for "ViewpointElem"; did you mean "hiddenSemanticKinds3d"?  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "cutaway_style" for "ViewpointElem"; did you mean "cutawayStyle"?  [call-arg]
@@ -3219,6 +3322,7 @@ bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "sect
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "section_box_min_mm" for "ViewpointElem"  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "section_box_max_mm" for "ViewpointElem"  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "project_number" for "ProjectSettingsElem"; did you mean "projectNumber"?  [call-arg]
+bim_ai/engine_dispatch_properties.py:0: note: "ProjectSettingsElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "client_name" for "ProjectSettingsElem"; did you mean "clientName"?  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "project_address" for "ProjectSettingsElem"; did you mean "projectAddress"?  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "project_status" for "ProjectSettingsElem"; did you mean "projectStatus"?  [call-arg]
@@ -3226,31 +3330,42 @@ bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "leng
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "angular_unit_deg" for "ProjectSettingsElem"; did you mean "angularUnitDeg"?  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "display_locale" for "ProjectSettingsElem"; did you mean "displayLocale"?  [call-arg]
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "scheme_rows" for "RoomColorSchemeElem"; did you mean "schemeRows"?  [call-arg]
+bim_ai/engine_dispatch_properties.py:0: note: "RoomColorSchemeElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "basis_line" for "WallTypeElem"; did you mean "basisLine"?  [call-arg]
+bim_ai/engine_dispatch_properties.py:0: note: "WallTypeElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_properties.py:0: error: Unexpected keyword argument "basis_line" for "WallTypeElem"; did you mean "basisLine"?  [call-arg]
+bim_ai/engine_dispatch_properties.py:0: note: "WallTypeElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_presentation.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_dispatch_presentation.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_presentation.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_presentation.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_presentation.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_dispatch_presentation.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_dispatch_presentation.py:0: error: Missing named argument "thumbnailDataUri" for "SavedViewElem"  [call-arg]
+bim_ai/engine_dispatch_presentation.py:0: note: "SavedViewElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_presentation.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "PlanRegionElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PlanRegionElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "outline_mm" for "PlanRegionElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "cut_plane_offset_mm" for "PlanRegionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "tag_kind" for "TagDefinitionElem"; did you mean "tagKind"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "TagDefinitionElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "joined_element_ids" for "JoinGeometryElem"; did you mean "joinedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "JoinGeometryElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "line_start_mm" for "SectionCutElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SectionCutElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "line_end_mm" for "SectionCutElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "crop_depth_mm" for "SectionCutElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "custom_angle_deg" for "ElevationViewElem"; did you mean "customAngleDeg"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ElevationViewElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "crop_min_mm" for "ElevationViewElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "crop_max_mm" for "ElevationViewElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_detail_level" for "ElevationViewElem"; did you mean "planDetailLevel"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "marker_group_id" for "ElevationViewElem"; did you mean "markerGroupId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "marker_slot" for "ElevationViewElem"; did you mean "markerSlot"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "view_element_id" for "SourceViewEvidenceElem"; did you mean "viewElementId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SourceViewEvidenceElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "source_document_id" for "SourceViewEvidenceElem"; did you mean "sourceDocumentId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "source_page" for "SourceViewEvidenceElem"; did you mean "sourcePage"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "source_region" for "SourceViewEvidenceElem"; did you mean "sourceRegion"?  [call-arg]
@@ -3260,101 +3375,125 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "o
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "finding_ids" for "SourceViewEvidenceElem"; did you mean "findingIds"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "updated_at" for "SourceViewEvidenceElem"; did you mean "updatedAt"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_element_id" for "PlacedTagElem"; did you mean "hostElementId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PlacedTagElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "PlacedTagElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "PlacedTagElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "tag_definition_id" for "PlacedTagElem"; did you mean "tagDefinitionId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "text_override" for "PlacedTagElem"; did you mean "textOverride"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "auto_generated" for "PlacedTagElem"; did you mean "autoGenerated"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "AngularDimensionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "AngularDimensionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "vertex_mm" for "AngularDimensionElem"; did you mean "vertexMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "ray_a_mm" for "AngularDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "ray_b_mm" for "AngularDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "arc_radius_mm" for "AngularDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DetailLineElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DetailLineElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "points_mm" for "DetailLineElem"; did you mean "pointsMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "stroke_mm" for "DetailLineElem"; did you mean "strokeMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DetailRegionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DetailRegionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "boundary_mm" for "DetailRegionElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "fill_colour" for "DetailRegionElem"; did you mean "fillColour"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "fill_pattern" for "DetailRegionElem"; did you mean "fillPattern"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "stroke_mm" for "DetailRegionElem"; did you mean "strokeMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "stroke_colour" for "DetailRegionElem"; did you mean "strokeColour"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "TextNoteElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "TextNoteElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "TextNoteElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "font_size_mm" for "TextNoteElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "rotation_deg" for "TextNoteElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "AnnotationSymbolElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "AnnotationSymbolElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "AnnotationSymbolElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "symbol_type" for "AnnotationSymbolElem"; did you mean "symbolType"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "rotation_deg" for "AnnotationSymbolElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "SpotElevationElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SpotElevationElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "SpotElevationElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "elevation_mm" for "SpotElevationElem"; did you mean "elevationMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "SpotCoordinateElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SpotCoordinateElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "SpotCoordinateElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "north_mm" for "SpotCoordinateElem"; did you mean "northMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "east_mm" for "SpotCoordinateElem"; did you mean "eastMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "SpotSlopeElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SpotSlopeElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "SpotSlopeElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "slope_pct" for "SpotSlopeElem"; did you mean "slopePct"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "slope_format" for "SpotSlopeElem"; did you mean "slopeFormat"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "InsulationAnnotationElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "InsulationAnnotationElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "InsulationAnnotationElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "InsulationAnnotationElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "width_mm" for "InsulationAnnotationElem"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "RadialDimensionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "RadialDimensionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "center_mm" for "RadialDimensionElem"; did you mean "centerMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "arc_point_mm" for "RadialDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DiameterDimensionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DiameterDimensionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "center_mm" for "DiameterDimensionElem"; did you mean "centerMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "arc_point_mm" for "DiameterDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "ArcLengthDimensionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ArcLengthDimensionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "center_mm" for "ArcLengthDimensionElem"; did you mean "centerMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "radius_mm" for "ArcLengthDimensionElem"; did you mean "radiusMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_angle_deg" for "ArcLengthDimensionElem"; did you mean "startAngleDeg"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_angle_deg" for "ArcLengthDimensionElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "MaterialTagElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "MaterialTagElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_element_id" for "MaterialTagElem"; did you mean "hostElementId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "layer_index" for "MaterialTagElem"; did you mean "layerIndex"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "MaterialTagElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "text_override" for "MaterialTagElem"; did you mean "textOverride"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "leader_end_mm" for "MaterialTagElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "MultiCategoryTagElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "MultiCategoryTagElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_element_id" for "MultiCategoryTagElem"; did you mean "hostElementId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "MultiCategoryTagElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "parameter_name" for "MultiCategoryTagElem"; did you mean "parameterName"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "text_override" for "MultiCategoryTagElem"; did you mean "textOverride"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "TreadNumberElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "TreadNumberElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "stair_element_id" for "TreadNumberElem"; did you mean "stairElementId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_number" for "TreadNumberElem"; did you mean "startNumber"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "KeynoteElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "KeynoteElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "KeynoteElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "keynote_key" for "KeynoteElem"; did you mean "keynoteKey"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "keynote_text" for "KeynoteElem"; did you mean "keynoteText"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_element_id" for "KeynoteElem"; did you mean "hostElementId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "SpanDirectionElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SpanDirectionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "SpanDirectionElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "direction_deg" for "SpanDirectionElem"; did you mean "directionDeg"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "length_mm" for "SpanDirectionElem"; did you mean "lengthMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DetailComponentElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DetailComponentElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "DetailComponentElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "component_shape" for "DetailComponentElem"; did you mean "componentShape"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "rotation_deg" for "DetailComponentElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "RepeatingDetailElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "RepeatingDetailElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "RepeatingDetailElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "RepeatingDetailElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "component_shape" for "RepeatingDetailElem"; did you mean "componentShape"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "spacing_mm" for "RepeatingDetailElem"; did you mean "spacingMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DetailGroupElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DetailGroupElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "member_ids" for "DetailGroupElem"; did you mean "memberIds"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "ColorFillLegendElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ColorFillLegendElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "ColorFillLegendElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "scheme_parameter" for "ColorFillLegendElem"; did you mean "schemeParameter"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "ReferencePlaneElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ReferencePlaneElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "ReferencePlaneElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "ReferencePlaneElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "is_work_plane" for "ReferencePlaneElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "PropertyLineElem"; did you mean "startMm"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PropertyLineElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "PropertyLineElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "setback_mm" for "PropertyLineElem"; did you mean "setbackMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "authoring_mode" for "PropertyLineElem"; did you mean "authoringMode"?  [call-arg]
@@ -3363,6 +3502,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "b
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "closure_error_mm" for "PropertyLineElem"; did you mean "closureErrorMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Name "updates" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "disciplines_visible" for "ViewTemplateElem"; did you mean "disciplinesVisible"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ViewTemplateElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "hidden_categories" for "ViewTemplateElem"; did you mean "hiddenCategories"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_detail_level" for "ViewTemplateElem"; did you mean "planDetailLevel"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_room_fill_opacity_scale" for "ViewTemplateElem"; did you mean "planRoomFillOpacityScale"?  [call-arg]
@@ -3373,6 +3513,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "d
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_category_graphics" for "ViewTemplateElem"; did you mean "planCategoryGraphics"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Name "pcg_t" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "disciplines_visible" for "ViewTemplateElem"; did you mean "disciplinesVisible"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ViewTemplateElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "hidden_categories" for "ViewTemplateElem"; did you mean "hiddenCategories"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_detail_level" for "ViewTemplateElem"; did you mean "planDetailLevel"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_room_fill_opacity_scale" for "ViewTemplateElem"; did you mean "planRoomFillOpacityScale"?  [call-arg]
@@ -3384,14 +3525,17 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "p
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "view_range_bottom_mm" for "ViewTemplateElem"; did you mean "viewRangeBottomMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "view_range_top_mm" for "ViewTemplateElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "title_block" for "SheetElem"; did you mean "titleBlock"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "SheetElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "viewports_mm" for "SheetElem"; did you mean "viewportsMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "paper_width_mm" for "SheetElem"; did you mean "paperWidthMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "paper_height_mm" for "SheetElem"; did you mean "paperHeightMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "titleblock_parameters" for "SheetElem"; did you mean "titleblockParameters"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "sheet_id" for "ScheduleElem"; did you mean "sheetId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "ScheduleElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Argument "propKind" to "PropertyDefinitionElem" has incompatible type "str"; expected "Literal['mm', 'm2', 'currency', 'enum', 'string', 'bool', 'date']"  [arg-type]
 bim_ai/engine_dispatch_documentation.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "PlanViewElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PlanViewElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "view_template_id" for "PlanViewElem"; did you mean "viewTemplateId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_presentation" for "PlanViewElem"; did you mean "planPresentation"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "underlay_level_id" for "PlanViewElem"; did you mean "underlayLevelId"?  [call-arg]
@@ -3413,6 +3557,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "p
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_room_tag_style_id" for "PlanViewElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "plan_category_graphics" for "PlanViewElem"; did you mean "planCategoryGraphics"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "tag_target" for "PlanTagStyleElem"; did you mean "tagTarget"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PlanTagStyleElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "label_fields" for "PlanTagStyleElem"; did you mean "labelFields"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "text_size_pt" for "PlanTagStyleElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "leader_visible" for "PlanTagStyleElem"; did you mean "leaderVisible"?  [call-arg]
@@ -3420,8 +3565,10 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "b
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "color_token" for "PlanTagStyleElem"; did you mean "colorToken"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "sort_key" for "PlanTagStyleElem"; did you mean "sortKey"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "parent_sheet_id" for "CalloutElem"; did you mean "parentSheetId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "CalloutElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "outline_mm" for "CalloutElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "PipeElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PipeElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "PipeElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "PipeElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "elevation_mm" for "PipeElem"; did you mean "elevationMm"?  [call-arg]
@@ -3434,6 +3581,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "c
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "maintain_access_zone" for "PipeElem"; did you mean "maintainAccessZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "material_key" for "PipeElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "DuctElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DuctElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "DuctElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "DuctElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "elevation_mm" for "DuctElem"; did you mean "elevationMm"?  [call-arg]
@@ -3446,6 +3594,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "s
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "clearance_zone" for "DuctElem"; did you mean "clearanceZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "maintain_access_zone" for "DuctElem"; did you mean "maintainAccessZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "CableTrayElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "CableTrayElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "start_mm" for "CableTrayElem"; did you mean "startMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "end_mm" for "CableTrayElem"  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "elevation_mm" for "CableTrayElem"; did you mean "elevationMm"?  [call-arg]
@@ -3457,6 +3606,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "s
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "clearance_zone" for "CableTrayElem"; did you mean "clearanceZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "maintain_access_zone" for "CableTrayElem"; did you mean "maintainAccessZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "MepEquipmentElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "MepEquipmentElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "MepEquipmentElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "elevation_mm" for "MepEquipmentElem"; did you mean "elevationMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "equipment_type" for "MepEquipmentElem"; did you mean "equipmentType"?  [call-arg]
@@ -3468,6 +3618,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "c
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "maintain_access_zone" for "MepEquipmentElem"; did you mean "maintainAccessZone"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "electrical_load_w" for "MepEquipmentElem"; did you mean "electricalLoadW"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "FixtureElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "FixtureElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "FixtureElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "room_id" for "FixtureElem"; did you mean "roomId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "fixture_type" for "FixtureElem"; did you mean "fixtureType"?  [call-arg]
@@ -3475,6 +3626,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "s
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "system_name" for "FixtureElem"; did you mean "systemName"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "electrical_load_w" for "FixtureElem"; did you mean "electricalLoadW"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "terminal_kind" for "MepTerminalElem"; did you mean "terminalKind"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "MepTerminalElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "MepTerminalElem"; did you mean "levelId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "MepTerminalElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "room_id" for "MepTerminalElem"; did you mean "roomId"?  [call-arg]
@@ -3483,6 +3635,7 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "s
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "flow_direction" for "MepTerminalElem"; did you mean "flowDirection"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "service_level" for "MepTerminalElem"; did you mean "serviceLevel"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_element_id" for "MepOpeningRequestElem"; did you mean "hostElementId"?  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "MepOpeningRequestElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "level_id" for "MepOpeningRequestElem"; did you mean "levelId"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "requester_element_ids" for "MepOpeningRequestElem"; did you mean "requesterElementIds"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "opening_kind" for "MepOpeningRequestElem"; did you mean "openingKind"?  [call-arg]
@@ -3494,22 +3647,29 @@ bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "c
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "system_type" for "MepOpeningRequestElem"; did you mean "systemType"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "system_name" for "MepOpeningRequestElem"; did you mean "systemName"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "PipeLegendElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "PipeLegendElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "PipeLegendElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: List comprehension has incompatible type List[DuctLegendEntrySpec]; expected List[PipeLegendEntrySpec]  [misc]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "DuctLegendElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "DuctLegendElem" defined in "bim_ai.elements_mep"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "position_mm" for "DuctLegendElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Argument "entries" to "DuctLegendElem" has incompatible type "list[PipeLegendEntrySpec]"; expected "list[DuctLegendEntrySpec]"  [arg-type]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "host_view_id" for "RevisionCloudElem"  [call-arg]
+bim_ai/engine_dispatch_documentation.py:0: note: "RevisionCloudElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "boundary_mm" for "RevisionCloudElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_documentation.py:0: error: Unexpected keyword argument "stroke_mm" for "RevisionCloudElem"; did you mean "strokeMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "elevation_mm" for "LevelElem"; did you mean "elevationMm"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "LevelElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "datum_kind" for "LevelElem"; did you mean "datumKind"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "parent_level_id" for "LevelElem"; did you mean "parentLevelId"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "offset_from_parent_mm" for "LevelElem"; did you mean "offsetFromParentMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "PlanViewElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "PlanViewElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "wall_type_id" for "WallStackComponent"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WallStackComponent" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WallStackComponent"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "WallElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WallElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "wall_curve" for "WallElem"; did you mean "wallCurve"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "thickness_mm" for "WallElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WallElem"; did you mean "heightMm"?  [call-arg]
@@ -3531,16 +3691,19 @@ bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "lean_mm" f
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "taper_ratio" for "WallElem"; did you mean "taperRatio"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "site_host_id" for "WallElem"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "wall_id" for "DoorElem"; did you mean "wallId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "DoorElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "along_t" for "DoorElem"; did you mean "alongT"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "width_mm" for "DoorElem"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "family_type_id" for "DoorElem"; did you mean "familyTypeId"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "wall_id" for "WindowElem"; did you mean "wallId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WindowElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "along_t" for "WindowElem"; did you mean "alongT"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "width_mm" for "WindowElem"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "sill_height_mm" for "WindowElem"; did you mean "sillHeightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WindowElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "family_type_id" for "WindowElem"; did you mean "familyTypeId"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "WallElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WallElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "thickness_mm" for "WallElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WallElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "wall_type_id" for "WallElem"  [call-arg]
@@ -3550,7 +3713,9 @@ bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "top_constr
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "base_constraint_offset_mm" for "WallElem"; did you mean "baseConstraintOffsetMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "top_constraint_offset_mm" for "WallElem"; did you mean "topConstraintOffsetMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "GridLineElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "GridLineElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "DimensionElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "DimensionElem" defined in "bim_ai.elements_annotations"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "a_mm" for "DimensionElem"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "b_mm" for "DimensionElem"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "offset_mm" for "DimensionElem"; did you mean "offsetMm"?  [call-arg]
@@ -3561,46 +3726,62 @@ bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "ref_elemen
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "tag_definition_id" for "DimensionElem"; did you mean "tagDefinitionId"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "auto_generated" for "DimensionElem"; did you mean "autoGenerated"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "RoomElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "RoomElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "outline_mm" for "RoomElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Incompatible types in assignment (expression has type "Vec2Mm", variable has type "float")  [assignment]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "WallElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WallElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "thickness_mm" for "WallElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WallElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Argument "end" to "WallElem" has incompatible type "float"; expected "Vec2Mm"  [arg-type]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "RoomElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "RoomElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "outline_mm" for "RoomElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Incompatible types in assignment (expression has type "Vec2Mm", variable has type "float")  [assignment]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "WallElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "WallElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "thickness_mm" for "WallElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "height_mm" for "WallElem"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Argument "end" to "WallElem" has incompatible type "float"; expected "Vec2Mm"  [arg-type]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "RoomElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "RoomElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "outline_mm" for "RoomElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "level_id" for "RoomElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "RoomElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "outline_mm" for "RoomElem"; did you mean "outlineMm"?  [call-arg]
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "element_ids" for "IssueElem"; did you mean "elementIds"?  [call-arg]
+bim_ai/engine_dispatch_core.py:0: note: "IssueElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_core.py:0: error: Unexpected keyword argument "viewpoint_id" for "IssueElem"; did you mean "viewpointId"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "viewpoint_ref" for "BcfElem"; did you mean "viewpointRef"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "BcfElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "element_ids" for "BcfElem"; did you mean "elementIds"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "plan_view_id" for "BcfElem"  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "section_cut_id" for "BcfElem"; did you mean "sectionCutId"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "evidence_refs" for "BcfElem"; did you mean "evidenceRefs"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "closure_status" for "AgentAssumptionElem"; did you mean "closureStatus"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "AgentAssumptionElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentAssumptionElem"; did you mean "relatedElementIds"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "related_topic_id" for "AgentAssumptionElem"; did you mean "relatedTopicId"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "related_assumption_id" for "AgentDeviationElem"; did you mean "relatedAssumptionId"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "AgentDeviationElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "related_element_ids" for "AgentDeviationElem"; did you mean "relatedElementIds"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "reference_level_id" for "SiteElem"; did you mean "referenceLevelId"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "SiteElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "boundary_mm" for "SiteElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "pad_thickness_mm" for "SiteElem"; did you mean "padThicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "base_offset_mm" for "SiteElem"; did you mean "baseOffsetMm"?  [call-arg]
@@ -3608,14 +3789,17 @@ bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "no
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "uniform_setback_mm" for "SiteElem"; did you mean "uniformSetbackMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "context_objects" for "SiteElem"; did you mean "contextObjects"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "rule_json" for "ValidationRuleElem"; did you mean "ruleJson"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "ValidationRuleElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Return value expected  [return-value]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "source_model_id" for "LinkModelElem"; did you mean "sourceModelId"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "LinkModelElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "source_model_revision" for "LinkModelElem"; did you mean "sourceModelRevision"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "position_mm" for "LinkModelElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "rotation_deg" for "LinkModelElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "origin_alignment_mode" for "LinkModelElem"; did you mean "originAlignmentMode"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "visibility_mode" for "LinkModelElem"; did you mean "visibilityMode"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "level_id" for "LinkDxfElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "LinkDxfElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "origin_mm" for "LinkDxfElem"; did you mean "originMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "origin_alignment_mode" for "LinkDxfElem"; did you mean "originAlignmentMode"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "unit_override" for "LinkDxfElem"; did you mean "unitOverride"?  [call-arg]
@@ -3633,6 +3817,7 @@ bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "co
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "custom_color" for "LinkDxfElem"; did you mean "customColor"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "overlay_opacity" for "LinkDxfElem"; did you mean "overlayOpacity"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "external_link_type" for "ExternalLinkElem"; did you mean "externalLinkType"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "ExternalLinkElem" defined in "bim_ai.elements_links"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "source_path" for "ExternalLinkElem"; did you mean "sourcePath"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "source_name" for "ExternalLinkElem"; did you mean "sourceName"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "source_metadata" for "ExternalLinkElem"; did you mean "sourceMetadata"?  [call-arg]
@@ -3644,19 +3829,24 @@ bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "ro
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "scale_factor" for "ExternalLinkElem"; did you mean "scaleFactor"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "overlay_opacity" for "ExternalLinkElem"; did you mean "overlayOpacity"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "link_scope" for "SelectionSetRuleSpec"; did you mean "linkScope"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "SelectionSetRuleSpec" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "filter_rules" for "SelectionSetElem"; did you mean "filterRules"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "SelectionSetElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "set_a_ids" for "ClashTestElem"  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "ClashTestElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "set_b_ids" for "ClashTestElem"  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "tolerance_mm" for "ClashTestElem"; did you mean "toleranceMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Name "updates" already defined on line 0  [no-redef]
 bim_ai/engine_dispatch_coordination.py:0: error: Redundant cast to "Literal['all', 'existing', 'demolition', 'new']"  [redundant-cast]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "phase_id" for "ConstructionPackageElem"; did you mean "phaseId"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "ConstructionPackageElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "planned_start" for "ConstructionPackageElem"; did you mean "plannedStart"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "planned_end" for "ConstructionPackageElem"; did you mean "plannedEnd"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "actual_start" for "ConstructionPackageElem"; did you mean "actualStart"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "actual_end" for "ConstructionPackageElem"; did you mean "actualEnd"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "responsible_company" for "ConstructionPackageElem"; did you mean "responsibleCompany"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "logistics_kind" for "ConstructionLogisticsElem"; did you mean "logisticsKind"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "ConstructionLogisticsElem" defined in "bim_ai.elements_constructability"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "boundary_mm" for "ConstructionLogisticsElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "path_mm" for "ConstructionLogisticsElem"; did you mean "pathMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "phase_id" for "ConstructionLogisticsElem"; did you mean "phaseId"?  [call-arg]
@@ -3668,9 +3858,12 @@ bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "re
 bim_ai/engine_dispatch_coordination.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/engine_dispatch_coordination.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "wall_type_id" for "WallStackComponent"  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "WallStackComponent" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "height_mm" for "WallStackComponent"; did you mean "heightMm"?  [call-arg]
 bim_ai/engine_dispatch_coordination.py:0: error: Unexpected keyword argument "is_primary" for "DesignOption"; did you mean "isPrimary"?  [call-arg]
+bim_ai/engine_dispatch_coordination.py:0: note: "DesignOption" defined in "bim_ai.document"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "level_id" for "FloorElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "FloorElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "boundary_mm" for "FloorElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "thickness_mm" for "FloorElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "structure_thickness_mm" for "FloorElem"; did you mean "structureThicknessMm"?  [call-arg]
@@ -3679,6 +3872,7 @@ bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argumen
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "room_bounded" for "FloorElem"; did you mean "roomBounded"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "toposolid_elevation_mm" for "FloorElem"; did you mean "toposolidElevationMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "reference_level_id" for "RoofElem"; did you mean "referenceLevelId"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "RoofElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "footprint_mm" for "RoofElem"; did you mean "footprintMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "overhang_mm" for "RoofElem"; did you mean "overhangMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "slope_deg" for "RoofElem"; did you mean "slopeDeg"?  [call-arg]
@@ -3689,6 +3883,7 @@ bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argumen
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "roof_type_id" for "RoofElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "material_key" for "RoofElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "base_level_id" for "StairElem"  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "StairElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "top_level_id" for "StairElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "run_start" for "StairElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "run_end" for "StairElem"  [call-arg]
@@ -3709,54 +3904,67 @@ bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argumen
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "floating_tread_depth_mm" for "StairElem"; did you mean "floatingTreadDepthMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "floating_host_wall_id" for "StairElem"; did you mean "floatingHostWallId"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_floor_id" for "SlabOpeningElem"  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "SlabOpeningElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "boundary_mm" for "SlabOpeningElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "is_shaft" for "SlabOpeningElem"; did you mean "isShaft"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_roof_id" for "RoofOpeningElem"  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "RoofOpeningElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "boundary_mm" for "RoofOpeningElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "primary_roof_id" for "RoofJoinElem"; did you mean "primaryRoofId"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "RoofJoinElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "secondary_roof_id" for "RoofJoinElem"; did you mean "secondaryRoofId"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "seam_mode" for "RoofJoinElem"; did you mean "seamMode"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_element_id" for "EdgeProfileRunElem"; did you mean "hostElementId"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "EdgeProfileRunElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_edge" for "EdgeProfileRunElem"; did you mean "hostEdge"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "profile_family_id" for "EdgeProfileRunElem"; did you mean "profileFamilyId"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "offset_mm" for "EdgeProfileRunElem"; did you mean "offsetMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "miter_mode" for "EdgeProfileRunElem"; did you mean "miterMode"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "boundary_mm" for "SoffitElem"; did you mean "boundaryMm"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "SoffitElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_roof_id" for "SoffitElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "thickness_mm" for "SoffitElem"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "z_mm" for "SoffitElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "font_family" for "Text3dElem"; did you mean "fontFamily"?  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "Text3dElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "font_size_mm" for "Text3dElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "depth_mm" for "Text3dElem"; did you mean "depthMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "position_mm" for "Text3dElem"; did you mean "positionMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "rotation_deg" for "Text3dElem"; did you mean "rotationDeg"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "material_key" for "Text3dElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "host_wall_id" for "WallOpeningElem"  [call-arg]
+bim_ai/engine_dispatch_building_envelope.py:0: note: "WallOpeningElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "along_t_start" for "WallOpeningElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "along_t_end" for "WallOpeningElem"  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "sill_height_mm" for "WallOpeningElem"; did you mean "sillHeightMm"?  [call-arg]
 bim_ai/engine_dispatch_building_envelope.py:0: error: Unexpected keyword argument "head_height_mm" for "WallOpeningElem"; did you mean "headHeightMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Argument 1 to "float" has incompatible type "Any | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "position_mm" for "ProjectBasePointElem"; did you mean "positionMm"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "ProjectBasePointElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "angle_to_true_north_deg" for "ProjectBasePointElem"  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "position_mm" for "SurveyPointElem"; did you mean "positionMm"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "SurveyPointElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "shared_elevation_mm" for "SurveyPointElem"; did you mean "sharedElevationMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "latitude_deg" for "SunSettingsElem"; did you mean "latitudeDeg"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "SunSettingsElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "longitude_deg" for "SunSettingsElem"; did you mean "longitudeDeg"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "date_iso" for "SunSettingsElem"; did you mean "dateIso"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "time_of_day" for "SunSettingsElem"  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "daylight_saving_strategy" for "SunSettingsElem"; did you mean "daylightSavingStrategy"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "wall_id" for "BalconyElem"; did you mean "wallId"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "BalconyElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "elevation_mm" for "BalconyElem"; did you mean "elevationMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "projection_mm" for "BalconyElem"; did you mean "projectionMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "slab_thickness_mm" for "BalconyElem"; did you mean "slabThicknessMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "balustrade_height_mm" for "BalconyElem"; did you mean "balustradeHeightMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "level_id" for "SweepElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "SweepElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "path_mm" for "SweepElem"; did you mean "pathMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "profile_mm" for "SweepElem"; did you mean "profileMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "profile_plane" for "SweepElem"; did you mean "profilePlane"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "material_key" for "SweepElem"; did you mean "materialKey"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "host_roof_id" for "DormerElem"  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "DormerElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "position_on_roof" for "DormerElem"; did you mean "positionOnRoof"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "width_mm" for "DormerElem"; did you mean "widthMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "wall_height_mm" for "DormerElem"; did you mean "wallHeightMm"?  [call-arg]
@@ -3768,14 +3976,17 @@ bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "w
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "roof_material_key" for "DormerElem"; did you mean "roofMaterialKey"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "has_floor_opening" for "DormerElem"; did you mean "hasFloorOpening"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "host_floor_id" for "SlabOpeningElem"  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "SlabOpeningElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "boundary_mm" for "SlabOpeningElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "is_shaft" for "SlabOpeningElem"; did you mean "isShaft"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "level_id" for "AreaElem"; did you mean "levelId"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "AreaElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "boundary_mm" for "AreaElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "rule_set" for "AreaElem"; did you mean "ruleSet"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "area_scheme" for "AreaElem"; did you mean "areaScheme"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "apply_area_rules" for "AreaElem"; did you mean "applyAreaRules"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "host_view_id" for "MaskingRegionElem"  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "MaskingRegionElem" defined in "bim_ai.elements"
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "boundary_mm" for "MaskingRegionElem"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "void_boundaries_mm" for "MaskingRegionElem"; did you mean "voidBoundariesMm"?  [call-arg]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "fill_color" for "MaskingRegionElem"; did you mean "fillColor"?  [call-arg]
@@ -3796,7 +4007,9 @@ bim_ai/engine_dispatch_building_edit.py:0: error: Incompatible types in assignme
 bim_ai/engine_dispatch_building_edit.py:0: error: Unsupported operand types for <= ("str" and "float")  [operator]
 bim_ai/engine_dispatch_building_edit.py:0: error: Incompatible types in assignment (expression has type "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>", variable has type "float")  [assignment]
 bim_ai/engine_dispatch_building_edit.py:0: error: Unexpected keyword argument "joined_element_ids" for "JoinGeometryElem"; did you mean "joinedElementIds"?  [call-arg]
+bim_ai/engine_dispatch_building_edit.py:0: note: "JoinGeometryElem" defined in "bim_ai.elements_links"
 bim_ai/engine_commit.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/engine_commit.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/engine_commit.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/engine_commit.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
 bim_ai/engine_commit.py:0: error: Unexpected keyword argument "blocking_class" for "Violation"; did you mean "blockingClass"?  [call-arg]
@@ -3811,6 +4024,7 @@ bim_ai/routes_deps.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/routes_deps.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/routes_deps.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/routes_deps.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/routes_deps.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/routes_deps.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/routes_deps.py:0: error: Unexpected keyword argument "blocking_class" for "Violation"; did you mean "blockingClass"?  [call-arg]
 bim_ai/coordination_lens.py:0: error: Item "ProjectSettingsElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reload_status"  [union-attr]

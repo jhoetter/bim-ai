@@ -1,5 +1,5 @@
 {
-  "digest": "184f5cfd01d2d4cc762aa74fba22971a67605550ae90ce518abd5fb97ee944ab",
+  "digest": "c233e9e3a9651882189fcdeb6a0a38a508792b75f7c3448e9f4a1668d965aa37",
   "shape": {
     "paths": {
       "/api/bootstrap": {
@@ -867,7 +867,8 @@
       "/api/v3/reverse-bim/detail-view-create": {
         "post": {
           "operationId": "reverse_bim_detail_view_create_route_api_v3_reverse_bim_detail_view_create_post",
-          "requestModel": "ReverseBimViewBundleRequest"
+          "requestModel": "ReverseBimViewBundleRequest",
+          "responseModel": "ReverseBimViewBundleResponse"
         }
       },
       "/api/v3/reverse-bim/document-authority": {
@@ -885,7 +886,8 @@
       "/api/v3/reverse-bim/exterior-view-create": {
         "post": {
           "operationId": "reverse_bim_exterior_view_create_route_api_v3_reverse_bim_exterior_view_create_post",
-          "requestModel": "ReverseBimViewBundleRequest"
+          "requestModel": "ReverseBimViewBundleRequest",
+          "responseModel": "ReverseBimViewBundleResponse"
         }
       },
       "/api/v3/reverse-bim/final-acceptance": {
@@ -921,7 +923,8 @@
       "/api/v3/reverse-bim/ir/seed": {
         "post": {
           "operationId": "reverse_bim_ir_seed_route_api_v3_reverse_bim_ir_seed_post",
-          "requestModel": "ReverseBimIrSeedRequest"
+          "requestModel": "ReverseBimIrSeedRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/reverse-bim/ir/validate": {
@@ -987,7 +990,8 @@
       "/api/v3/reverse-bim/section-view-create": {
         "post": {
           "operationId": "reverse_bim_section_view_create_route_api_v3_reverse_bim_section_view_create_post",
-          "requestModel": "ReverseBimViewBundleRequest"
+          "requestModel": "ReverseBimViewBundleRequest",
+          "responseModel": "ReverseBimViewBundleResponse"
         }
       },
       "/api/v3/reverse-bim/source-building-scope": {
@@ -1041,7 +1045,8 @@
       "/api/v3/reverse-bim/source-view-evidence-upsert": {
         "post": {
           "operationId": "reverse_bim_source_view_evidence_upsert_route_api_v3_reverse_bim_source_view_evidence_upsert_post",
-          "requestModel": "ReverseBimViewBundleRequest"
+          "requestModel": "ReverseBimViewBundleRequest",
+          "responseModel": "ReverseBimViewBundleResponse"
         }
       },
       "/api/v3/reverse-bim/ui-evidence": {
@@ -1106,121 +1111,141 @@
       "/api/v3/source/ai-reading-packet": {
         "post": {
           "operationId": "source_ai_reading_packet_route_api_v3_source_ai_reading_packet_post",
-          "requestModel": "SourceAiReadingPacketRequest"
+          "requestModel": "SourceAiReadingPacketRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/ai-visual-trace-agent-loop": {
         "post": {
           "operationId": "source_ai_visual_trace_agent_loop_route_api_v3_source_ai_visual_trace_agent_loop_post",
-          "requestModel": "SourceAiVisualTraceAgentLoopRequest"
+          "requestModel": "SourceAiVisualTraceAgentLoopRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/ai-visual-trace-agent-requests": {
         "post": {
           "operationId": "source_ai_visual_trace_agent_requests_route_api_v3_source_ai_visual_trace_agent_requests_post",
-          "requestModel": "SourceAiVisualTraceAgentRequestsRequest"
+          "requestModel": "SourceAiVisualTraceAgentRequestsRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/ai-visual-trace-packet": {
         "post": {
           "operationId": "source_ai_visual_trace_packet_route_api_v3_source_ai_visual_trace_packet_post",
-          "requestModel": "SourceAiVisualTracePacketRequest"
+          "requestModel": "SourceAiVisualTracePacketRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/ai-visual-trace-reader-pass-manifest": {
         "post": {
           "operationId": "source_ai_visual_trace_reader_pass_manifest_route_api_v3_source_ai_visual_trace_reader_pass_manifest_post",
-          "requestModel": "SourceAiVisualTraceReaderPassManifestRequest"
+          "requestModel": "SourceAiVisualTraceReaderPassManifestRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/ai-visual-trace-work-order": {
         "post": {
           "operationId": "source_ai_visual_trace_work_order_route_api_v3_source_ai_visual_trace_work_order_post",
-          "requestModel": "SourceAiVisualTraceWorkOrderRequest"
+          "requestModel": "SourceAiVisualTraceWorkOrderRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/classify-documents": {
         "post": {
           "operationId": "source_classify_documents_route_api_v3_source_classify_documents_post",
-          "requestModel": "SourceClassifyDocumentsRequest"
+          "requestModel": "SourceClassifyDocumentsRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/classify-pages/dispatch-plan": {
         "post": {
           "operationId": "source_classify_pages_dispatch_plan_route_api_v3_source_classify_pages_dispatch_plan_post",
-          "requestModel": "SourceClassifyPagesDispatchPlanRequest"
+          "requestModel": "SourceClassifyPagesDispatchPlanRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/classify-pages/normalize": {
         "post": {
           "operationId": "source_classify_pages_normalize_route_api_v3_source_classify_pages_normalize_post",
-          "requestModel": "SourceClassifyPagesNormalizeRequest"
+          "requestModel": "SourceClassifyPagesNormalizeRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/detect-scale": {
         "post": {
           "operationId": "source_detect_scale_route_api_v3_source_detect_scale_post",
-          "requestModel": "SourceDetectScaleRequest"
+          "requestModel": "SourceDetectScaleRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/extract-facts": {
         "post": {
           "operationId": "source_extract_facts_route_api_v3_source_extract_facts_post",
-          "requestModel": "SourceExtractFactsRequest"
+          "requestModel": "SourceExtractFactsRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/folder-manifest": {
         "post": {
           "operationId": "source_folder_manifest_route_api_v3_source_folder_manifest_post",
-          "requestModel": "SourceFolderManifestRequest"
+          "requestModel": "SourceFolderManifestRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/normalize-ai-visual-trace-reader-responses": {
         "post": {
           "operationId": "source_normalize_ai_visual_trace_reader_responses_route_api_v3_source_normalize_ai_visual_trace_reader_responses_post",
-          "requestModel": "SourceNormalizeAiVisualTraceReaderResponsesRequest"
+          "requestModel": "SourceNormalizeAiVisualTraceReaderResponsesRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/pdf-text": {
         "post": {
           "operationId": "source_pdf_text_route_api_v3_source_pdf_text_post",
-          "requestModel": "SourcePdfTextRequest"
+          "requestModel": "SourcePdfTextRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/prepare-ai-visual-trace-run": {
         "post": {
           "operationId": "source_prepare_ai_visual_trace_run_route_api_v3_source_prepare_ai_visual_trace_run_post",
-          "requestModel": "SourcePrepareAiVisualTraceRunRequest"
+          "requestModel": "SourcePrepareAiVisualTraceRunRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/reader-consensus": {
         "post": {
           "operationId": "source_reader_consensus_route_api_v3_source_reader_consensus_post",
-          "requestModel": "SourceReaderConsensusRequest"
+          "requestModel": "SourceReaderConsensusRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/render-pdf": {
         "post": {
           "operationId": "source_render_pdf_route_api_v3_source_render_pdf_post",
-          "requestModel": "SourceRenderPdfRequest"
+          "requestModel": "SourceRenderPdfRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/rerender-for-legibility": {
         "post": {
           "operationId": "source_rerender_for_legibility_route_api_v3_source_rerender_for_legibility_post",
-          "requestModel": "SourceRerenderForLegibilityRequest"
+          "requestModel": "SourceRerenderForLegibilityRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/validate-ai-facts": {
         "post": {
           "operationId": "source_validate_ai_facts_route_api_v3_source_validate_ai_facts_post",
-          "requestModel": "SourceValidateAiFactsRequest"
+          "requestModel": "SourceValidateAiFactsRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/source/validate-ai-visual-trace-completeness": {
         "post": {
           "operationId": "source_validate_ai_visual_trace_completeness_route_api_v3_source_validate_ai_visual_trace_completeness_post",
-          "requestModel": "SourceValidateAiVisualTraceCompletenessRequest"
+          "requestModel": "SourceValidateAiVisualTraceCompletenessRequest",
+          "responseModel": "OperationResponse"
         }
       },
       "/api/v3/tools": {
@@ -1273,6 +1298,7 @@
       "MarkupCreateBody",
       "MoveSketchVertexRequest",
       "OpenSketchSessionRequest",
+      "OperationResponse",
       "PickWallRequest",
       "QaAdvisorRequest",
       "QaAreaReconciliationRequest",
@@ -1331,6 +1357,7 @@
       "ReverseBimSourceSpecRevisionRequest",
       "ReverseBimUiEvidenceRequest",
       "ReverseBimViewBundleRequest",
+      "ReverseBimViewBundleResponse",
       "ReverseBimViewCaptureExecuteRequest",
       "ReverseBimViewCapturePlanRequest",
       "ReverseBimVisualReviewNormalizeRequest",

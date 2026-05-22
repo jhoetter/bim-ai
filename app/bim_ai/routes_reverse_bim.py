@@ -87,6 +87,10 @@ from bim_ai.models.reverse_bim_requests import (
     SourceValidateAiFactsRequest,
     SourceValidateAiVisualTraceCompletenessRequest,
 )
+from bim_ai.models.reverse_bim_responses import (
+    OperationResponse,
+    ReverseBimViewBundleResponse,
+)
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -180,7 +184,7 @@ def _source_response(payload: dict[str, Any]) -> dict[str, Any] | JSONResponse:
 # ---------------------------------------------------------------------------
 
 
-@reverse_bim_router.post("/v3/source/folder-manifest")
+@reverse_bim_router.post("/v3/source/folder-manifest", response_model=OperationResponse)
 async def source_folder_manifest_route(body: SourceFolderManifestRequest) -> Any:
     root_path = body.root_path or body.path
     if not root_path:
@@ -188,7 +192,7 @@ async def source_folder_manifest_route(body: SourceFolderManifestRequest) -> Any
     return _source_response(build_folder_manifest(str(root_path)))
 
 
-@reverse_bim_router.post("/v3/source/classify-documents")
+@reverse_bim_router.post("/v3/source/classify-documents", response_model=OperationResponse)
 async def source_classify_documents_route(
     body: SourceClassifyDocumentsRequest,
 ) -> dict[str, Any]:
@@ -196,9 +200,7 @@ async def source_classify_documents_route(
     return classify_documents(manifest)
 
 
-def _reverse_bim_view_bundle(
-    operation: str, body: ReverseBimViewBundleRequest
-) -> dict[str, Any]:
+def _reverse_bim_view_bundle(operation: str, body: ReverseBimViewBundleRequest) -> dict[str, Any]:
     payload = body.model_dump(by_alias=True)
     try:
         bundle = build_semantic_authoring_bundle(operation, payload)
@@ -219,35 +221,43 @@ def _reverse_bim_view_bundle(
     return bundle.model_dump(by_alias=True)
 
 
-@reverse_bim_router.post("/v3/reverse-bim/exterior-view-create")
+@reverse_bim_router.post(
+    "/v3/reverse-bim/exterior-view-create", response_model=ReverseBimViewBundleResponse
+)
 async def reverse_bim_exterior_view_create_route(
     body: ReverseBimViewBundleRequest,
 ) -> dict[str, Any]:
     return _reverse_bim_view_bundle("reverse_bim_exterior_view", body)
 
 
-@reverse_bim_router.post("/v3/reverse-bim/detail-view-create")
+@reverse_bim_router.post(
+    "/v3/reverse-bim/detail-view-create", response_model=ReverseBimViewBundleResponse
+)
 async def reverse_bim_detail_view_create_route(
     body: ReverseBimViewBundleRequest,
 ) -> dict[str, Any]:
     return _reverse_bim_view_bundle("reverse_bim_detail_view", body)
 
 
-@reverse_bim_router.post("/v3/reverse-bim/section-view-create")
+@reverse_bim_router.post(
+    "/v3/reverse-bim/section-view-create", response_model=ReverseBimViewBundleResponse
+)
 async def reverse_bim_section_view_create_route(
     body: ReverseBimViewBundleRequest,
 ) -> dict[str, Any]:
     return _reverse_bim_view_bundle("reverse_bim_section_view", body)
 
 
-@reverse_bim_router.post("/v3/reverse-bim/source-view-evidence-upsert")
+@reverse_bim_router.post(
+    "/v3/reverse-bim/source-view-evidence-upsert", response_model=ReverseBimViewBundleResponse
+)
 async def reverse_bim_source_view_evidence_upsert_route(
     body: ReverseBimViewBundleRequest,
 ) -> dict[str, Any]:
     return _reverse_bim_view_bundle("reverse_bim_source_view_evidence", body)
 
 
-@reverse_bim_router.post("/v3/source/rerender-for-legibility")
+@reverse_bim_router.post("/v3/source/rerender-for-legibility", response_model=OperationResponse)
 async def source_rerender_for_legibility_route(
     body: SourceRerenderForLegibilityRequest,
 ) -> dict[str, Any]:
@@ -269,7 +279,9 @@ async def source_rerender_for_legibility_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/classify-pages/dispatch-plan")
+@reverse_bim_router.post(
+    "/v3/source/classify-pages/dispatch-plan", response_model=OperationResponse
+)
 async def source_classify_pages_dispatch_plan_route(
     body: SourceClassifyPagesDispatchPlanRequest,
 ) -> dict[str, Any]:
@@ -295,7 +307,7 @@ async def source_classify_pages_dispatch_plan_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/classify-pages/normalize")
+@reverse_bim_router.post("/v3/source/classify-pages/normalize", response_model=OperationResponse)
 async def source_classify_pages_normalize_route(
     body: SourceClassifyPagesNormalizeRequest,
 ) -> dict[str, Any]:
@@ -314,7 +326,7 @@ async def source_classify_pages_normalize_route(
     return normalized
 
 
-@reverse_bim_router.post("/v3/source/pdf-text")
+@reverse_bim_router.post("/v3/source/pdf-text", response_model=OperationResponse)
 async def source_pdf_text_route(body: SourcePdfTextRequest) -> Any:
     source_path = body.source_path or body.path
     if not source_path:
@@ -322,7 +334,7 @@ async def source_pdf_text_route(body: SourcePdfTextRequest) -> Any:
     return _source_response(extract_pdf_text(str(source_path), max_pages=body.max_pages))
 
 
-@reverse_bim_router.post("/v3/source/render-pdf")
+@reverse_bim_router.post("/v3/source/render-pdf", response_model=OperationResponse)
 async def source_render_pdf_route(body: SourceRenderPdfRequest) -> Any:
     source_path = body.source_path or body.path
     output_dir = body.output_dir or "tmp/pdfs/source-render"
@@ -339,7 +351,7 @@ async def source_render_pdf_route(body: SourceRenderPdfRequest) -> Any:
     )
 
 
-@reverse_bim_router.post("/v3/source/detect-scale")
+@reverse_bim_router.post("/v3/source/detect-scale", response_model=OperationResponse)
 async def source_detect_scale_route(
     body: SourceDetectScaleRequest,
 ) -> dict[str, Any]:
@@ -349,7 +361,7 @@ async def source_detect_scale_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-reading-packet")
+@reverse_bim_router.post("/v3/source/ai-reading-packet", response_model=OperationResponse)
 async def source_ai_reading_packet_route(
     body: SourceAiReadingPacketRequest,
 ) -> dict[str, Any]:
@@ -361,7 +373,7 @@ async def source_ai_reading_packet_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-visual-trace-packet")
+@reverse_bim_router.post("/v3/source/ai-visual-trace-packet", response_model=OperationResponse)
 async def source_ai_visual_trace_packet_route(
     body: SourceAiVisualTracePacketRequest,
 ) -> dict[str, Any]:
@@ -373,7 +385,7 @@ async def source_ai_visual_trace_packet_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-visual-trace-work-order")
+@reverse_bim_router.post("/v3/source/ai-visual-trace-work-order", response_model=OperationResponse)
 async def source_ai_visual_trace_work_order_route(
     body: SourceAiVisualTraceWorkOrderRequest,
 ) -> dict[str, Any]:
@@ -384,14 +396,14 @@ async def source_ai_visual_trace_work_order_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-visual-trace-agent-requests")
+@reverse_bim_router.post(
+    "/v3/source/ai-visual-trace-agent-requests", response_model=OperationResponse
+)
 async def source_ai_visual_trace_agent_requests_route(
     body: SourceAiVisualTraceAgentRequestsRequest,
 ) -> dict[str, Any]:
     work_order = (
-        body.work_order
-        or body.ai_visual_trace_work_order
-        or body.model_dump(by_alias=True)
+        body.work_order or body.ai_visual_trace_work_order or body.model_dump(by_alias=True)
     )
     return build_ai_visual_trace_agent_requests(
         work_order=work_order,
@@ -400,15 +412,14 @@ async def source_ai_visual_trace_agent_requests_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-visual-trace-reader-pass-manifest")
+@reverse_bim_router.post(
+    "/v3/source/ai-visual-trace-reader-pass-manifest", response_model=OperationResponse
+)
 async def source_ai_visual_trace_reader_pass_manifest_route(
     body: SourceAiVisualTraceReaderPassManifestRequest,
 ) -> dict[str, Any]:
     agent_requests = (
-        body.agent_requests
-        or body.ai_visual_trace_agent_requests
-        or body.requests
-        or {}
+        body.agent_requests or body.ai_visual_trace_agent_requests or body.requests or {}
     )
     work_order = body.work_order or body.ai_visual_trace_work_order or {}
     return build_ai_visual_trace_reader_pass_manifest(
@@ -421,7 +432,7 @@ async def source_ai_visual_trace_reader_pass_manifest_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/prepare-ai-visual-trace-run")
+@reverse_bim_router.post("/v3/source/prepare-ai-visual-trace-run", response_model=OperationResponse)
 async def source_prepare_ai_visual_trace_run_route(
     body: SourcePrepareAiVisualTraceRunRequest,
 ) -> Any:
@@ -442,7 +453,7 @@ async def source_prepare_ai_visual_trace_run_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/ai-visual-trace-agent-loop")
+@reverse_bim_router.post("/v3/source/ai-visual-trace-agent-loop", response_model=OperationResponse)
 async def source_ai_visual_trace_agent_loop_route(
     body: SourceAiVisualTraceAgentLoopRequest,
 ) -> dict[str, Any]:
@@ -456,7 +467,9 @@ async def source_ai_visual_trace_agent_loop_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/normalize-ai-visual-trace-reader-responses")
+@reverse_bim_router.post(
+    "/v3/source/normalize-ai-visual-trace-reader-responses", response_model=OperationResponse
+)
 async def source_normalize_ai_visual_trace_reader_responses_route(
     body: SourceNormalizeAiVisualTraceReaderResponsesRequest,
 ) -> dict[str, Any]:
@@ -465,26 +478,27 @@ async def source_normalize_ai_visual_trace_reader_responses_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/reader-consensus")
+@reverse_bim_router.post("/v3/source/reader-consensus", response_model=OperationResponse)
 async def source_reader_consensus_route(
     body: SourceReaderConsensusRequest,
 ) -> dict[str, Any]:
     return build_source_reader_consensus_report(
         body.responses or body.reader_responses or body.model_dump(by_alias=True),
         min_independent_readers=int(body.min_independent_readers or 2),
-        consensus_dispositions=body.reader_consensus_dispositions
-        or body.consensus_dispositions,
+        consensus_dispositions=body.reader_consensus_dispositions or body.consensus_dispositions,
     )
 
 
-@reverse_bim_router.post("/v3/source/validate-ai-facts")
+@reverse_bim_router.post("/v3/source/validate-ai-facts", response_model=OperationResponse)
 async def source_validate_ai_facts_route(
     body: SourceValidateAiFactsRequest,
 ) -> dict[str, Any]:
     return validate_ai_source_facts(body.facts or [])
 
 
-@reverse_bim_router.post("/v3/source/validate-ai-visual-trace-completeness")
+@reverse_bim_router.post(
+    "/v3/source/validate-ai-visual-trace-completeness", response_model=OperationResponse
+)
 async def source_validate_ai_visual_trace_completeness_route(
     body: SourceValidateAiVisualTraceCompletenessRequest,
 ) -> dict[str, Any]:
@@ -494,7 +508,7 @@ async def source_validate_ai_visual_trace_completeness_route(
     )
 
 
-@reverse_bim_router.post("/v3/source/extract-facts")
+@reverse_bim_router.post("/v3/source/extract-facts", response_model=OperationResponse)
 async def source_extract_facts_route(
     body: SourceExtractFactsRequest,
 ) -> dict[str, Any]:
@@ -509,7 +523,7 @@ async def source_extract_facts_route(
 # ---------------------------------------------------------------------------
 
 
-@reverse_bim_router.post("/v3/reverse-bim/ir/seed")
+@reverse_bim_router.post("/v3/reverse-bim/ir/seed", response_model=OperationResponse)
 async def reverse_bim_ir_seed_route(
     body: ReverseBimIrSeedRequest,
 ) -> dict[str, Any]:
@@ -647,8 +661,7 @@ async def reverse_bim_folder_output_route(
         conflict_decisions=body.conflict_decisions or body.source_conflict_decisions,
         coordinate_frame_alignments=body.coordinate_frame_alignments
         or body.coordinate_frame_decisions,
-        site_terrain_decisions=body.site_terrain_decisions
-        or body.site_topology_decisions,
+        site_terrain_decisions=body.site_terrain_decisions or body.site_topology_decisions,
         run_id=body.run_id,
         dpi=int(body.dpi or 240),
         max_pages_per_pdf=body.max_pages_per_pdf,
