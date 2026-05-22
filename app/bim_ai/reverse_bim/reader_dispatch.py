@@ -12,7 +12,7 @@ from bim_ai._io.digest import sha256_json
 from bim_ai._io.json_io import read_json_dict
 from bim_ai._io.log import get_logger
 
-_logger = get_logger("bim_ai.reverse_bim_reader_dispatch")
+_logger = get_logger("bim_ai.reverse_bim.reader_dispatch")
 
 OPEN_PROGRESS_STATUSES = {
     "waiting_for_reader",

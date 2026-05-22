@@ -18,7 +18,7 @@ from bim_ai.reverse_bim import (
     validate_existing_building_ir,
 )
 from bim_ai.routes_api import api_router
-from bim_ai.reverse_bim_reader_dispatch import (
+from bim_ai.reverse_bim.reader_dispatch import (
     build_reverse_bim_reader_dispatch_plan,
     execute_reverse_bim_reader_dispatch,
 )

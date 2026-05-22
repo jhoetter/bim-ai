@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-from bim_ai.reverse_bim_openai_reader import run_openai_reader_assignment
+from bim_ai.reverse_bim.openai_reader import run_openai_reader_assignment
 
 
 def main() -> int:

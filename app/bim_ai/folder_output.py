@@ -18,7 +18,7 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
-from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
+from bim_ai.reverse_bim.evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,

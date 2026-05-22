@@ -9,8 +9,8 @@ from bim_ai.evidence.reverse_bim_acceptance_evidence import (
     build_source_overlay_evidence_report,
     build_ui_evidence_report,
 )
-from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
-from bim_ai.reverse_bim_visual_review import (
+from bim_ai.reverse_bim.visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.reverse_bim.visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
 )

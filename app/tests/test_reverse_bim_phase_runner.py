@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
+from bim_ai.reverse_bim.phase_runner import build_reverse_bim_phase_run_report
 
 
 def _spec() -> dict:

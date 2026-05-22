@@ -12,7 +12,7 @@ from collections import Counter
 from typing import Any
 
 from bim_ai._io.digest import digest as _digest
-from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
+from bim_ai.reverse_bim.phase_runner import build_reverse_bim_phase_run_report
 
 SOURCE_REVISION_CLASSIFICATIONS = {
     "source_fact_misread",

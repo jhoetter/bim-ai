@@ -105,29 +105,29 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
-from bim_ai.reverse_bim_document_authority import (
+from bim_ai.reverse_bim.document_authority import (
     build_reverse_bim_document_authority_report,
 )
-from bim_ai.reverse_bim_evidence_requirements import (
+from bim_ai.reverse_bim.evidence_requirements import (
     build_reverse_bim_evidence_requirements,
 )
-from bim_ai.reverse_bim_handoff_regeneration import (
+from bim_ai.reverse_bim.handoff_regeneration import (
     build_reverse_bim_handoff_regeneration_plan,
 )
-from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
-from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
-from bim_ai.reverse_bim_reader_dispatch import (
+from bim_ai.reverse_bim.phase_runner import build_reverse_bim_phase_run_report
+from bim_ai.reverse_bim.readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim.reader_dispatch import (
     build_reverse_bim_reader_dispatch_plan,
     execute_reverse_bim_reader_dispatch,
 )
-from bim_ai.reverse_bim_source_revision_ledger import (
+from bim_ai.reverse_bim.source_revision_ledger import (
     build_reverse_bim_source_revision_ledger,
 )
-from bim_ai.reverse_bim_source_revision_persistence import (
+from bim_ai.reverse_bim.source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
-from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
-from bim_ai.reverse_bim_visual_review import (
+from bim_ai.reverse_bim.visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.reverse_bim.visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
 )

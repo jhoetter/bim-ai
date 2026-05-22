@@ -4,7 +4,7 @@ import base64
 import json
 from pathlib import Path
 
-from bim_ai.reverse_bim_openai_reader import (
+from bim_ai.reverse_bim.openai_reader import (
     build_openai_reader_request_payload,
     normalize_openai_reader_response,
 )

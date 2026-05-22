@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
+from bim_ai.reverse_bim.evidence_requirements import build_reverse_bim_evidence_requirements
 
 
 def test_evidence_requirements_derives_overlay_and_ui_views() -> None:
