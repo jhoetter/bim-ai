@@ -1,0 +1,965 @@
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import type { Element } from '@bim-ai/core';
+
+export type XYPt = { xMm: number; yMm: number };
+
+function _xzBoundsMm(poly: Array<{ xMm: number; yMm: number }>): {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  spanX: number;
+  spanZ: number;
+} {
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const p of poly) {
+    minX = Math.min(minX, p.xMm);
+    maxX = Math.max(maxX, p.xMm);
+    minZ = Math.min(minZ, p.yMm);
+    maxZ = Math.max(maxZ, p.yMm);
+  }
+  return {
+    minX,
+    maxX,
+    minZ,
+    maxZ,
+    spanX: Math.max(maxX - minX, 1),
+    spanZ: Math.max(maxZ - minZ, 1),
+  };
+}
+
+export function _polygonAreaMm2(pts: XYPt[]): number {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i],
+      b = pts[(i + 1) % pts.length];
+    s += a.xMm * b.yMm - b.xMm * a.yMm;
+  }
+  return Math.abs(s) / 2;
+}
+
+export function _convexHullAreaMm2(pts: XYPt[]): number {
+  const n = pts.length;
+  if (n < 3) return 0;
+  // Gift-wrapping convex hull.
+  let start = 0;
+  for (let i = 1; i < n; i++) if (pts[i].xMm < pts[start].xMm) start = i;
+  const hull: XYPt[] = [];
+  let cur = start;
+  do {
+    hull.push(pts[cur]);
+    let next = (cur + 1) % n;
+    for (let i = 0; i < n; i++) {
+      const cross =
+        (pts[next].xMm - pts[cur].xMm) * (pts[i].yMm - pts[cur].yMm) -
+        (pts[next].yMm - pts[cur].yMm) * (pts[i].xMm - pts[cur].xMm);
+      if (cross < 0) next = i;
+    }
+    cur = next;
+  } while (cur !== start && hull.length <= n);
+  return _polygonAreaMm2(hull);
+}
+
+/** Returns polygon area / convex hull area. < 0.85 indicates an L-shaped footprint. */
+export function _compactnessRatio(pts: XYPt[]): number {
+  const hullArea = _convexHullAreaMm2(pts);
+  if (hullArea < 1) return 1;
+  return _polygonAreaMm2(pts) / hullArea;
+}
+
+export function _buildGableGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+): THREE.BufferGeometry {
+  const halfSpan = ridgeAlongX ? (oz1 - oz0) / 2 : (ox1 - ox0) / 2;
+  const ridgeY = eaveY + halfSpan * Math.tan(slopeRad);
+  let positions: number[];
+  if (ridgeAlongX) {
+    const rz = (oz0 + oz1) / 2;
+    positions = [
+      // South slope
+      ox0,
+      eaveY,
+      oz0,
+      ox1,
+      eaveY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      eaveY,
+      oz0,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
+      // North slope
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      eaveY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+      ox1,
+      eaveY,
+      oz1,
+      ox0,
+      eaveY,
+      oz1,
+      // West gable
+      ox0,
+      eaveY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      eaveY,
+      oz1,
+      // East gable
+      ox1,
+      eaveY,
+      oz0,
+      ox1,
+      eaveY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+    ];
+  } else {
+    const rx = (ox0 + ox1) / 2;
+    positions = [
+      // West slope
+      ox0,
+      eaveY,
+      oz0,
+      ox0,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      ox0,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      // East slope
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveY,
+      oz1,
+      ox1,
+      eaveY,
+      oz0,
+      // South gable
+      ox0,
+      eaveY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      ox1,
+      eaveY,
+      oz0,
+      // North gable
+      ox0,
+      eaveY,
+      oz1,
+      ox1,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+    ];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+// Asymmetric gable: ridge offset transversely from the rectangle center, with
+// optional independent eave heights on each side. Ridge height is derived from
+// the LEFT slope: `ridgeY = eaveLeftY + (halfSpan + offset) * tan(slopeRad)`.
+// The right slope angle is implicit (steeper or shallower depending on offset
+// sign and per-side eave heights).
+//
+// Watertightness: the geometry is closed by a 2-triangle non-planar bottom
+// quad spanning the (potentially split) eave levels. Without this closure
+// three-bvh-csg silently fails when the dormer cutter is subtracted.
+export function _buildAsymmetricGableGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveLeftY: number,
+  eaveRightY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+  ridgeOffsetM: number,
+): THREE.BufferGeometry {
+  let positions: number[];
+  if (ridgeAlongX) {
+    const halfSpan = (oz1 - oz0) / 2;
+    const center = (oz0 + oz1) / 2;
+    const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+    const rz = center + offset;
+    const leftRun = halfSpan + offset;
+    const ridgeY = eaveLeftY + leftRun * Math.tan(slopeRad);
+    positions = [
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+      // Bottom closure (2 triangles, faces -Y). Non-planar quad spanning the
+      // possibly-split eave heights. Without this the geometry is open from
+      // below and three-bvh-csg's SUBTRACTION silently no-ops.
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveLeftY,
+      oz0,
+    ];
+  } else {
+    const halfSpan = (ox1 - ox0) / 2;
+    const center = (ox0 + ox1) / 2;
+    const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+    const rx = center + offset;
+    const leftRun = halfSpan + offset;
+    const ridgeY = eaveLeftY + leftRun * Math.tan(slopeRad);
+    positions = [
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+      // Bottom closure (2 triangles, faces -Y). Eaves run along the Z axis at
+      // x=ox0 (left) and x=ox1 (right), so the bottom quad is non-planar
+      // when eaveLeftY ≠ eaveRightY.
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz1,
+    ];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+export function _buildHipGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+): THREE.BufferGeometry {
+  let positions: number[];
+  if (ridgeAlongX) {
+    const halfSpanZ = (oz1 - oz0) / 2;
+    const ridgeY = eaveY + halfSpanZ * Math.tan(slopeRad);
+    const midZ = (oz0 + oz1) / 2;
+    const rx0 = ox0 + halfSpanZ;
+    const rx1 = ox1 - halfSpanZ;
+
+    if (rx0 >= rx1) {
+      // Square or near-square → pyramid
+      const px = (ox0 + ox1) / 2;
+      positions = [
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        px,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        px,
+        ridgeY,
+        midZ,
+        ox0,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz0,
+        px,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz1,
+        px,
+        ridgeY,
+        midZ,
+      ];
+    } else {
+      positions = [
+        // South slope (trapezoid)
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        ox0,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        rx0,
+        ridgeY,
+        midZ,
+        // North slope (trapezoid)
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
+        rx1,
+        ridgeY,
+        midZ,
+        // West hip (triangle)
+        ox0,
+        eaveY,
+        oz0,
+        ox0,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
+        // East hip (triangle)
+        ox1,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
+      ];
+    }
+  } else {
+    const halfSpanX = (ox1 - ox0) / 2;
+    const ridgeY = eaveY + halfSpanX * Math.tan(slopeRad);
+    const midX = (ox0 + ox1) / 2;
+    const rz0 = oz0 + halfSpanX;
+    const rz1 = oz1 - halfSpanX;
+
+    if (rz0 >= rz1) {
+      const pz = (oz0 + oz1) / 2;
+      positions = [
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        pz,
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        pz,
+        ox0,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        pz,
+        ox1,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        pz,
+      ];
+    } else {
+      positions = [
+        // West slope (trapezoid)
+        ox0,
+        eaveY,
+        oz0,
+        ox0,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz1,
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz1,
+        midX,
+        ridgeY,
+        rz0,
+        // East slope (trapezoid)
+        ox1,
+        eaveY,
+        oz1,
+        ox1,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz0,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz0,
+        midX,
+        ridgeY,
+        rz1,
+        // South hip (triangle)
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz0,
+        ox1,
+        eaveY,
+        oz0,
+        // North hip (triangle)
+        ox0,
+        eaveY,
+        oz1,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz1,
+      ];
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * KRN-03 — pavilion hip mesh for arbitrary convex polygon footprints (≥ 5 vertices).
+ *
+ * Each polygon edge becomes a sloped triangular face whose apex is the polygon
+ * centroid lifted by `inradius * tan(slope)`. All edges share the same pitch,
+ * so for regular polygons the apex is a single point; for irregular convex
+ * polygons the result is a pyramidal hip with all edges sloping inward.
+ */
+export function _buildHipPolygonGeometry(
+  pts: XYPt[],
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  const n = pts.length;
+  let cx = 0;
+  let cz = 0;
+  for (const p of pts) {
+    cx += p.xMm;
+    cz += p.yMm;
+  }
+  cx /= n;
+  cz /= n;
+
+  // Inradius proxy: minimum perpendicular distance from centroid to each edge.
+  let minDist = Infinity;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    const dx = b.xMm - a.xMm;
+    const dz = b.yMm - a.yMm;
+    const len = Math.hypot(dx, dz) || 1;
+    const dist = Math.abs((cx - a.xMm) * dz - (cz - a.yMm) * dx) / len;
+    if (dist < minDist) minDist = dist;
+  }
+  const apexY = eaveY + (minDist / 1000) * Math.tan(slopeRad);
+  const apexXm = cx / 1000;
+  const apexZm = cz / 1000;
+
+  const positions: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    positions.push(
+      a.xMm / 1000,
+      eaveY,
+      a.yMm / 1000,
+      b.xMm / 1000,
+      eaveY,
+      b.yMm / 1000,
+      apexXm,
+      apexY,
+      apexZm,
+    );
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * Split an L-shaped footprint into two overlapping rectangles, build a gable
+ * geometry for each, and merge them. Adds a triangular valley face at the
+ * internal junction.
+ */
+export function _buildLShapeGeometry(
+  rawPts: XYPt[],
+  ovMm: number,
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  const b = _xzBoundsMm(rawPts);
+  const tol = Math.max((b.spanX + b.spanZ) * 0.02, 5); // 2% of span
+
+  // Find which AABB corner is absent from the polygon — that tells us the
+  // missing rectangle and which vertex is the reflex step.
+  const aabbCorners = [
+    { side: 'sw', x: b.minX, y: b.minZ },
+    { side: 'se', x: b.maxX, y: b.minZ },
+    { side: 'nw', x: b.minX, y: b.maxZ },
+    { side: 'ne', x: b.maxX, y: b.maxZ },
+  ] as const;
+
+  let missingSide: 'sw' | 'se' | 'nw' | 'ne' = 'ne';
+  for (const c of aabbCorners) {
+    if (!rawPts.some((p) => Math.abs(p.xMm - c.x) < tol && Math.abs(p.yMm - c.y) < tol)) {
+      missingSide = c.side;
+      break;
+    }
+  }
+
+  // Find the reflex vertex (the step vertex adjacent to the missing corner).
+  // It shares one coordinate with each of the two AABB corners flanking the missing one.
+  let rv: XYPt = rawPts[0];
+  {
+    let area2 = 0;
+    const n = rawPts.length;
+    for (let i = 0; i < n; i++) {
+      const a = rawPts[i],
+        c = rawPts[(i + 1) % n];
+      area2 += a.xMm * c.yMm - c.xMm * a.yMm;
+    }
+    const wsign = area2 > 0 ? 1 : -1;
+    for (let i = 0; i < n; i++) {
+      const A = rawPts[(i - 1 + n) % n];
+      const B = rawPts[i];
+      const C = rawPts[(i + 1) % n];
+      const cross = (B.xMm - A.xMm) * (C.yMm - B.yMm) - (B.yMm - A.yMm) * (C.xMm - B.xMm);
+      if (cross * wsign < 0) {
+        rv = B;
+        break;
+      }
+    }
+  }
+
+  const ovOff = ovMm > 0 ? ovMm : 0;
+
+  // Build the two sub-rectangle AABB bounds (in mm) then convert to metres with overhang.
+  let r1: { x0: number; x1: number; z0: number; z1: number };
+  let r2: { x0: number; x1: number; z0: number; z1: number };
+
+  // Strategy: the two rectangles share one full dimension and each covers the
+  // "arm" of the L.  We choose the split so the rectangles overlap at the step.
+  switch (missingSide) {
+    case 'ne': // missing top-right → step at (rv.xMm, rv.yMm)
+      r1 = { x0: b.minX, x1: b.maxX, z0: b.minZ, z1: rv.yMm }; // full-width bottom
+      r2 = { x0: b.minX, x1: rv.xMm, z0: b.minZ, z1: b.maxZ }; // left-arm full height
+      break;
+    case 'nw': // missing top-left
+      r1 = { x0: b.minX, x1: b.maxX, z0: b.minZ, z1: rv.yMm };
+      r2 = { x0: rv.xMm, x1: b.maxX, z0: b.minZ, z1: b.maxZ };
+      break;
+    case 'se': // missing bottom-right
+      r1 = { x0: b.minX, x1: b.maxX, z0: rv.yMm, z1: b.maxZ };
+      r2 = { x0: b.minX, x1: rv.xMm, z0: b.minZ, z1: b.maxZ };
+      break;
+    case 'sw': // missing bottom-left
+    default:
+      r1 = { x0: b.minX, x1: b.maxX, z0: rv.yMm, z1: b.maxZ };
+      r2 = { x0: rv.xMm, x1: b.maxX, z0: b.minZ, z1: b.maxZ };
+      break;
+  }
+
+  function toM(r: { x0: number; x1: number; z0: number; z1: number }) {
+    return {
+      ox0: r.x0 / 1000 - ovOff / 1000,
+      ox1: r.x1 / 1000 + ovOff / 1000,
+      oz0: r.z0 / 1000 - ovOff / 1000,
+      oz1: r.z1 / 1000 + ovOff / 1000,
+    };
+  }
+
+  const m1 = toM(r1),
+    m2 = toM(r2);
+  const ax1 = m1.ox1 - m1.ox0 >= m1.oz1 - m1.oz0;
+  const ax2 = m2.ox1 - m2.ox0 >= m2.oz1 - m2.oz0;
+
+  const g1 = _buildGableGeometry(m1.ox0, m1.ox1, m1.oz0, m1.oz1, eaveY, slopeRad, ax1);
+  const g2 = _buildGableGeometry(m2.ox0, m2.ox1, m2.oz0, m2.oz1, eaveY, slopeRad, ax2);
+
+  // Valley face — triangular face connecting the inner eave corner to the two ridges.
+  const rvxM = rv.xMm / 1000,
+    rvzM = rv.yMm / 1000;
+  const halfSpan1 = ax1 ? (m1.oz1 - m1.oz0) / 2 : (m1.ox1 - m1.ox0) / 2;
+  const ridgeY1 = eaveY + halfSpan1 * Math.tan(slopeRad);
+  const ridgeMid1x = ax1 ? rvxM : (m1.ox0 + m1.ox1) / 2;
+  const ridgeMid1z = ax1 ? (m1.oz0 + m1.oz1) / 2 : rvzM;
+  const halfSpan2 = ax2 ? (m2.oz1 - m2.oz0) / 2 : (m2.ox1 - m2.ox0) / 2;
+  const ridgeY2 = eaveY + halfSpan2 * Math.tan(slopeRad);
+  const ridgeMid2x = ax2 ? rvxM : (m2.ox0 + m2.ox1) / 2;
+  const ridgeMid2z = ax2 ? (m2.oz0 + m2.oz1) / 2 : rvzM;
+
+  const valleyPositions = [
+    rvxM,
+    eaveY,
+    rvzM,
+    ridgeMid1x,
+    ridgeY1,
+    ridgeMid1z,
+    ridgeMid2x,
+    ridgeY2,
+    ridgeMid2z,
+  ];
+  const gv = new THREE.BufferGeometry();
+  gv.setAttribute('position', new THREE.Float32BufferAttribute(valleyPositions, 3));
+  gv.computeVertexNormals();
+
+  const merged = mergeGeometries([g1, g2, gv]);
+  if (!merged) {
+    // mergeGeometries can return null if all inputs are empty.
+    return g1;
+  }
+  return merged;
+}
+
+export function _buildAsymmetricGableGeometryWithRoofOpenings(
+  roof: Extract<Element, { kind: 'roof' }>,
+  roofOpenings: Array<Extract<Element, { kind: 'roof_opening' }>>,
+  boundsMm: ReturnType<typeof _xzBoundsMm>,
+  refElev: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+): THREE.BufferGeometry | null {
+  if (ridgeAlongX || roofOpenings.length !== 1 || (roof.footprintMm ?? []).length !== 4) {
+    return null;
+  }
+
+  const opening = roofOpenings[0];
+  const rawBounds = _xzBoundsMm(roof.footprintMm ?? []);
+  const xs = opening.boundaryMm.map((p) => p.xMm);
+  const zs = opening.boundaryMm.map((p) => p.yMm);
+  const tolMm = 2;
+  const edgeAware = (v: number, rawMin: number, rawMax: number, outMin: number, outMax: number) => {
+    if (Math.abs(v - rawMin) <= tolMm) return outMin;
+    if (Math.abs(v - rawMax) <= tolMm) return outMax;
+    return v;
+  };
+
+  const ox0 = boundsMm.minX / 1000;
+  const ox1 = boundsMm.maxX / 1000;
+  const oz0 = boundsMm.minZ / 1000;
+  const oz1 = boundsMm.maxZ / 1000;
+  const holeX0 =
+    edgeAware(Math.min(...xs), rawBounds.minX, rawBounds.maxX, boundsMm.minX, boundsMm.maxX) / 1000;
+  const holeX1 =
+    edgeAware(Math.max(...xs), rawBounds.minX, rawBounds.maxX, boundsMm.minX, boundsMm.maxX) / 1000;
+  const holeZ0 =
+    edgeAware(Math.min(...zs), rawBounds.minZ, rawBounds.maxZ, boundsMm.minZ, boundsMm.maxZ) / 1000;
+  const holeZ1 =
+    edgeAware(Math.max(...zs), rawBounds.minZ, rawBounds.maxZ, boundsMm.minZ, boundsMm.maxZ) / 1000;
+
+  const halfSpan = (ox1 - ox0) / 2;
+  const center = (ox0 + ox1) / 2;
+  const offset = THREE.MathUtils.clamp(
+    (roof.ridgeOffsetTransverseMm ?? 0) / 1000,
+    -halfSpan + 1e-6,
+    halfSpan - 1e-6,
+  );
+  const rx = center + offset;
+  const eaveLeftY =
+    roof.eaveHeightLeftMm != null ? refElev + roof.eaveHeightLeftMm / 1000 : refElev;
+  const eaveRightY =
+    roof.eaveHeightRightMm != null ? refElev + roof.eaveHeightRightMm / 1000 : refElev;
+  const ridgeY = eaveLeftY + (halfSpan + offset) * Math.tan(slopeRad);
+
+  const cutIsOnEastSlope = holeX0 > rx && holeX1 >= ox1 - 1e-4;
+  const cutInsideDepth = holeZ0 > oz0 && holeZ1 < oz1 && holeZ0 < holeZ1;
+  if (!cutIsOnEastSlope || !cutInsideDepth) return null;
+
+  const yAtX = (x: number) => {
+    if (x <= rx) {
+      const t = (x - ox0) / Math.max(rx - ox0, 1e-6);
+      return THREE.MathUtils.lerp(eaveLeftY, ridgeY, t);
+    }
+    const t = (x - rx) / Math.max(ox1 - rx, 1e-6);
+    return THREE.MathUtils.lerp(ridgeY, eaveRightY, t);
+  };
+
+  const positions: number[] = [];
+  const addTopRect = (x0: number, x1: number, z0: number, z1: number) => {
+    if (x1 - x0 <= 1e-5 || z1 - z0 <= 1e-5) return;
+    positions.push(
+      x0,
+      yAtX(x0),
+      z0,
+      x0,
+      yAtX(x0),
+      z1,
+      x1,
+      yAtX(x1),
+      z0,
+      x0,
+      yAtX(x0),
+      z1,
+      x1,
+      yAtX(x1),
+      z1,
+      x1,
+      yAtX(x1),
+      z0,
+    );
+  };
+
+  addTopRect(ox0, rx, oz0, oz1);
+  addTopRect(rx, ox1, oz0, holeZ0);
+  addTopRect(rx, holeX0, holeZ0, holeZ1);
+  addTopRect(rx, ox1, holeZ1, oz1);
+
+  // Keep the visible south/north gable end caps; the target opening is an
+  // internal east-slope subtraction and does not intersect either end cap.
+  positions.push(
+    ox0,
+    eaveLeftY,
+    oz0,
+    rx,
+    ridgeY,
+    oz0,
+    ox1,
+    eaveRightY,
+    oz0,
+    ox0,
+    eaveLeftY,
+    oz1,
+    ox1,
+    eaveRightY,
+    oz1,
+    rx,
+    ridgeY,
+    oz1,
+  );
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}

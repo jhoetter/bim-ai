@@ -95,7 +95,7 @@ A-territory bar after the sweep:
 | SLC-2026-02   | P0       | Done    | `app/bim_ai/routes_api.py`                                   | Extract IFC/DXF, sharing, and v3-meta routes                          | Routes API below 3,000 LOC.                                |
 | SLC-2026-03   | P1       | Open    | `packages/web/src/Viewport.tsx`                              | Extract another viewport hook cluster                                 | Viewport below 3,000 LOC.                                  |
 | SLC-2026-04   | P1       | Open    | `packages/web/src/plan/PlanCanvas.tsx`                       | Extract another plan canvas slice                                     | PlanCanvas below 3,000 LOC.                                |
-| SLC-2026-05   | P1       | Open    | `packages/web/src/viewport/meshBuilders.ts`                  | Extract another mesh-builder family                                   | meshBuilders below 3,000 LOC.                              |
+| SLC-2026-05   | P1       | Done    | `packages/web/src/viewport/meshBuilders.ts`                  | Extract roof-geometry builder helpers                                 | meshBuilders below 3,000 LOC.                              |
 | SLC-2026-06   | P1       | Done    | `packages/cli/cli.mjs`                                       | Extract agent-api + initiation/export CLI commands                    | cli.mjs below 3,000 LOC.                                   |
 | SLC-2026-07   | P1       | Done    | `app/bim_ai/elements.py`                                     | Extract annotations, constructability, links                          | elements.py below 3,000 LOC.                               |
 | SLC-2026-08   | P1       | Open    | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract another inspector cluster                                     | InspectorContent below 3,000 LOC.                          |
@@ -193,6 +193,16 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-05` Done. `packages/web/src/viewport/meshBuilders.ts`
+  cut from 3,776 to 2,854 LOC by extracting the entire roof-geometry
+  builder cluster (`_buildGableGeometry`, `_buildAsymmetricGableGeometry`,
+  `_buildHipGeometry`, `_buildHipPolygonGeometry`, `_buildLShapeGeometry`,
+  `_buildAsymmetricGableGeometryWithRoofOpenings`, plus `_polygonAreaMm2`,
+  `_convexHullAreaMm2`, `_compactnessRatio`) into a new sibling
+  `viewport/roofGeometry.ts`. A local `_xzBoundsMm` mirrors the small
+  bounds helper to avoid a circular import. `pnpm typecheck` and the
+  roof-related vitest suites (`hipRoof`, `lShapeRoof`, `asymmetricRoof`,
+  `coneRoof`) all pass.
 - 2026-05-22: `SLC-2026-15` Done. `packages/core/src/index.ts` cut from
   3,386 to 2,997 LOC by extracting three element-variant clusters out of
   the giant `Element` discriminated union:
