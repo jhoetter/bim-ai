@@ -688,7 +688,7 @@ Relevant files:
 | `PERF-M02` | P0 | `Done` | Add bundle size check. | Entry gzip, largest JS chunk gzip, and total JS gzip are checked in CI. |
 | `PERF-M03` | P1 | `Not started` | Add Playwright interaction perf traces. | Orbit, pan, place window, place door, draw wall, and plan hover collect browser timing traces. |
 | `PERF-M04` | P1 | `Not started` | Add render-count regression test harness. | Development/test mode can assert major panes do not render unexpectedly on simple deltas. |
-| `PERF-M05` | P2 | `Not started` | Add benchmark trend artifacts. | CI uploads benchmark JSON/HTML summaries for comparison across commits. |
+| `PERF-M05` | P2 | `Blocked` | Add benchmark trend artifacts. | Implementation prepared (perf-budget step writes `--out app/performance-budget-ci.json`; follow-up `actions/upload-artifact@v7.0.1` publishes `performance-budget-{sha}` with `if: always()` + 30-day retention). Push blocked because the Claude Code OAuth token lacks `workflow` scope. Maintainer must apply the change manually or push via a token with workflow scope. |
 
 ## Proposed Performance Budgets
 
