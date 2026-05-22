@@ -4276,8 +4276,10 @@ bim_ai/routes_integrity.py:0: note: "list" is invariant -- see https://mypy.read
 bim_ai/routes_integrity.py:0: note: Consider using "Sequence" instead, which is covariant
 bim_ai/routes_api.py:0: error: Argument 1 to "int" has incompatible type "Any | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
 bim_ai/routes_api.py:0: error: Unexpected keyword argument "model_id" for "Job"; did you mean "modelId"?  [call-arg]
+bim_ai/routes_api.py:0: note: "Job" defined in "bim_ai.jobs.types"
 bim_ai/routes_api.py:0: error: Unexpected keyword argument "created_at" for "Job"; did you mean "createdAt"?  [call-arg]
 bim_ai/routes_api.py:0: error: Unexpected keyword argument "model_id" for "Job"; did you mean "modelId"?  [call-arg]
+bim_ai/routes_api.py:0: note: "Job" defined in "bim_ai.jobs.types"
 bim_ai/routes_api.py:0: error: Unexpected keyword argument "parent_job_id" for "Job"  [call-arg]
 bim_ai/routes_api.py:0: error: Unexpected keyword argument "created_at" for "Job"; did you mean "createdAt"?  [call-arg]
 bim_ai/routes_api.py:0: error: Unused "type: ignore" comment  [unused-ignore]
