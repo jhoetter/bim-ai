@@ -28,6 +28,7 @@ import { ScheduleTable } from './ScheduleTable';
 import { sortRows, filterRows, groupByKey } from './scheduleSortFilter';
 import { rowsToCsv } from './scheduleCsvExport';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
+import { fetchScheduleTable } from './scheduleTableCache';
 import { compactScheduleSheetExportParityAdvisoryLines } from './scheduleSheetExportParityReadout';
 import type { SchedulePresetCategory } from './scheduleDefinitionPresets';
 import { RegistryColumnPicker } from './RegistryColumnPicker';
@@ -74,6 +75,8 @@ export function SchedulePanel(props: {
   const [registryVisibleCols, setRegistryVisibleCols] = useState<Record<string, string[]>>({});
 
   const violations = useBimStore((s) => s.violations);
+  // PERF-F05: revision-keyed cache invalidation for fetchScheduleTable.
+  const currentRevision = useBimStore((s) => s.revision);
 
   const scheduleOpeningAdvisoryLines = useMemo(() => {
     if (tab !== 'doors' && tab !== 'windows') return [];
@@ -232,33 +235,38 @@ export function SchedulePanel(props: {
 
     const sid = sidForTab;
 
-    let cancel = false;
+    const controller = new AbortController();
     void (async () => {
       setServerErr(null);
       try {
-        const mid = encodeURIComponent(props.modelId!);
-        const sc = encodeURIComponent(sid);
-        const res = await fetch(`/api/models/${mid}/schedules/${sc}/table`);
-        const txt = await res.text();
-        const json = JSON.parse(txt) as Record<string, unknown>;
-        if (!res.ok) throw new Error(String(json.detail ?? txt));
-        if (!cancel)
+        // PERF-F05: client-side cache keyed by (modelId, scheduleId, revision)
+        // so re-mounting the panel or opening the same schedule from a
+        // second surface does not refetch.
+        const json = await fetchScheduleTable({
+          modelId: props.modelId!,
+          scheduleId: sid,
+          revision: currentRevision ?? 0,
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) {
           setServer({
             tab,
             scheduleId: sid,
             data: json,
           });
+        }
       } catch (e) {
-        if (!cancel) {
+        if ((e as { name?: string })?.name === 'AbortError') return;
+        if (!controller.signal.aborted) {
           setServer(null);
           setServerErr(e instanceof Error ? e.message : String(e));
         }
       }
     })();
     return () => {
-      cancel = true;
+      controller.abort();
     };
-  }, [props.modelId, tab, sidForTab]);
+  }, [props.modelId, tab, sidForTab, currentRevision]);
 
   const roomRowsLocal = useMemo(() => {
     const lvl = props.activeLevelId;
