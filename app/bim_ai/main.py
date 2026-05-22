@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from starlette.middleware.base import RequestResponseEndpoint
 
+from bim_ai._errors import register_route_error_handler
 from bim_ai.ai_boundary import load_bill_of_rights_markdown
 from bim_ai.config import get_settings
 from bim_ai.db import init_db_schema
@@ -40,6 +41,11 @@ async def lifespan(app: FastAPI):
 settings = get_settings()
 
 app = FastAPI(title="BIM AI", version="0.1.0", lifespan=lifespan)
+
+# BRT-06: structured RouteError envelopes. Coexists with the legacy
+# `raise HTTPException(...)` sites — the migration of those 234 calls
+# proceeds incrementally per the backend-rework-tracker.
+register_route_error_handler(app)
 
 app.add_middleware(
     CORSMiddleware,
