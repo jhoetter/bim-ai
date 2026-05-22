@@ -3,11 +3,11 @@
 Last updated: 2026-05-22
 
 Purpose: take the remaining hand-written source files below **3,000 LOC**
-(ideally well under). The predecessor `spec/god-file-reduction-tracker.md`
+(ideally well under). The predecessor `spec/archive/god-file-reduction-tracker.md`
 closed at a 4,000 LOC A-territory bar; this tracker raises the standard.
 
 This tracker is the active successor for ongoing god-file reduction. The main
-`spec/code-quality-tracker.md` remains at B / 8.0 with all CQ rows Done.
+`spec/archive/code-quality-tracker.md` remains at B / 8.0 with all CQ rows Done.
 
 Source-of-truth size query:
 

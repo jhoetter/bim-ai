@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-14
 
-Owner intent: make material assignment, display, editing, documentation, and export behave close enough to Revit that a user can trust what they see. This tracker intentionally supersedes the optimistic status in `spec/material-appearance-system-tracker.md`; that file describes foundations, while this file tracks remaining product parity gaps and the order to close them.
+Owner intent: make material assignment, display, editing, documentation, and export behave close enough to Revit that a user can trust what they see. This tracker intentionally supersedes the optimistic status in `spec/archive/material-appearance-system-tracker.md`; that file describes foundations, while this file tracks remaining product parity gaps and the order to close them.
 
 ## Revit Baseline
 

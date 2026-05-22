@@ -28,9 +28,9 @@ This tracker covers:
 
 It does not replace:
 
-- `spec/code-quality-tracker.md` for broad code health;
+- `spec/archive/code-quality-tracker.md` for broad code health;
 - `spec/frontend-monolith-extraction-map.md` for component extraction;
-- `spec/bim-integrity-rendering-sketch-methodology-tracker.md` for Advisor,
+- `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md` for Advisor,
   BIM integrity, renderer fidelity, and sketch-methodology acceptance;
 - `spec/benchmarks/` for benchmark fixtures.
 

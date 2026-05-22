@@ -11,7 +11,7 @@ This is the navigation and coverage document for the BIM AI workspace UX revamp.
 | Document                                                                   | Purpose                                                                                                        | When to use it                                         |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [`ux-bim-ai-rework-spec.md`](./ux-bim-ai-rework-spec.md)                   | Target design principles, layout ownership rules, good/bad patterns, placement matrix, implementation sequence | Read first to understand why controls move             |
-| [`ux-bim-ai-rework-tracker.md`](./ux-bim-ai-rework-tracker.md)             | Detailed current-state inventory, migration backlog, source register, view/mode/command/test coverage          | Use as the implementation queue and audit checklist    |
+| [`ux-bim-ai-rework-tracker.md`](./archive/ux-bim-ai-rework-tracker.md)             | Detailed current-state inventory, migration backlog, source register, view/mode/command/test coverage          | Use as the implementation queue and audit checklist    |
 | [`ux-bim-ai-rework-dynamic-audit.md`](./ux-bim-ai-rework-dynamic-audit.md) | Live seeded UI audit, screenshots, command registry findings, remaining dynamic gaps                           | Use to verify that the tracker matches real app states |
 | [`methodology-prompt.md`](./methodology-prompt.md)                         | Reusable AI-agent kickoff prompt, working method, definition of done, verification expectations                | Give this to implementation agents before code edits   |
 | `UX bim-ai rework.pdf`                                                     | Original user-authored design direction and critique screenshots                                               | Use as the visual source of intent                     |
@@ -51,45 +51,45 @@ This is the navigation and coverage document for the BIM AI workspace UX revamp.
 
 | Section                                         | Link                                                                                       | Why it matters                                  |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| Route And Page Inventory                        | [`tracker`](./ux-bim-ai-rework-tracker.md#route-and-page-inventory)                        | Establishes which routes are in scope           |
-| Layout Backlog                                  | [`tracker`](./ux-bim-ai-rework-tracker.md#layout-backlog)                                  | Top-level region migration rows                 |
-| Header And Tabs                                 | [`tracker`](./ux-bim-ai-rework-tracker.md#header-and-tabs)                                 | Header cleanup rows                             |
-| Secondary Left Sidebar Target Inventory         | [`tracker`](./ux-bim-ai-rework-tracker.md#secondary-left-sidebar-target-inventory)         | First-pass view-wide control inventory          |
-| Ribbon Backlog                                  | [`tracker`](./ux-bim-ai-rework-tracker.md#ribbon-backlog)                                  | First-pass editing command inventory            |
-| Canvas Overlay Backlog                          | [`tracker`](./ux-bim-ai-rework-tracker.md#canvas-overlay-backlog)                          | First-pass canvas chrome inventory              |
-| Element Sidebar Backlog                         | [`tracker`](./ux-bim-ai-rework-tracker.md#element-sidebar-backlog)                         | First-pass selection/property inventory         |
-| Footer Backlog                                  | [`tracker`](./ux-bim-ai-rework-tracker.md#footer-backlog)                                  | First-pass global status inventory              |
-| View-Type Ribbon Matrix                         | [`tracker`](./ux-bim-ai-rework-tracker.md#view-type-ribbon-matrix)                         | View-specific command grouping                  |
-| Implementation Workpackages                     | [`tracker`](./ux-bim-ai-rework-tracker.md#implementation-workpackages)                     | Major implementation chunks                     |
-| Acceptance Checklist                            | [`tracker`](./ux-bim-ai-rework-tracker.md#acceptance-checklist)                            | Release-blocking behavioral checks              |
-| Expanded Audit Coverage Map                     | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-audit-coverage-map)                     | What was inspected and residual risk            |
-| Expanded Primary Sidebar Tracker                | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-primary-sidebar-tracker)                | Detailed primary sidebar rows                   |
-| Expanded Header And Tab Tracker                 | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-header-and-tab-tracker)                 | Detailed header rows                            |
-| Expanded Secondary Sidebar Tracker              | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-secondary-sidebar-tracker)              | Detailed secondary sidebar rows by view type    |
-| Expanded Ribbon Command Tracker                 | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-ribbon-command-tracker)                 | Detailed command/ribbon rows                    |
-| Expanded Canvas Overlay Tracker                 | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-canvas-overlay-tracker)                 | Detailed canvas overlay rows                    |
-| Expanded Element Sidebar Tracker                | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-element-sidebar-tracker)                | Detailed selected-element rows                  |
-| Expanded Footer And Global Status Tracker       | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-footer-and-global-status-tracker)       | Detailed footer rows                            |
-| Expanded Dialog And Modal Tracker               | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-dialog-and-modal-tracker)               | Dialog trigger ownership                        |
-| Expanded View-Mode Surface Tracker              | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-view-mode-surface-tracker)              | Plan/3D/sheet/schedule/concept/agent split      |
-| Expanded Command Reachability Tracker           | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-command-reachability-tracker)           | Cmd+K and direct access requirements            |
-| Expanded Testing And Acceptance Backlog         | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-testing-and-acceptance-backlog)         | Required automated and screenshot checks        |
-| Expanded Implementation Sequencing Detail       | [`tracker`](./ux-bim-ai-rework-tracker.md#expanded-implementation-sequencing-detail)       | Detailed order of operations                    |
-| Usability Score Inputs For Future Agent         | [`tracker`](./ux-bim-ai-rework-tracker.md#usability-score-inputs-for-future-agent)         | Metrics for judging the result                  |
-| Second-Pass Deep Audit Addendum                 | [`tracker`](./ux-bim-ai-rework-tracker.md#second-pass-deep-audit-addendum)                 | Additional source-level coverage                |
-| Source File Surface Register                    | [`tracker`](./ux-bim-ai-rework-tracker.md#source-file-surface-register)                    | File-by-file UI surface map                     |
-| Current Footer Detailed Tracker                 | [`tracker`](./ux-bim-ai-rework-tracker.md#current-footer-detailed-tracker)                 | Footer-specific controls                        |
-| Tool And Active Command Tracker                 | [`tracker`](./ux-bim-ai-rework-tracker.md#tool-and-active-command-tracker)                 | Tool palette, options, modifiers, sketch states |
-| Project Resource And Browser Deep Tracker       | [`tracker`](./ux-bim-ai-rework-tracker.md#project-resource-and-browser-deep-tracker)       | Project browser and resources split             |
-| Plan And Sketch Deep Tracker                    | [`tracker`](./ux-bim-ai-rework-tracker.md#plan-and-sketch-deep-tracker)                    | Plan/sketch transient and persistent UI         |
-| Three-D View Deep Tracker                       | [`tracker`](./ux-bim-ai-rework-tracker.md#three-d-view-deep-tracker)                       | 3D viewport controls and exceptions             |
-| Sheet And Review Deep Tracker                   | [`tracker`](./ux-bim-ai-rework-tracker.md#sheet-and-review-deep-tracker)                   | Sheet/review mode split                         |
-| Schedule Deep Tracker                           | [`tracker`](./ux-bim-ai-rework-tracker.md#schedule-deep-tracker)                           | Schedule table and definition split             |
-| Collaboration Jobs Advisor Coordination Tracker | [`tracker`](./ux-bim-ai-rework-tracker.md#collaboration-jobs-advisor-coordination-tracker) | Global collaboration and advisor workflows      |
-| Family Material And Standalone Editor Tracker   | [`tracker`](./ux-bim-ai-rework-tracker.md#family-material-and-standalone-editor-tracker)   | Family library/editor/material flows            |
-| Inspector And Property Taxonomy Tracker         | [`tracker`](./ux-bim-ai-rework-tracker.md#inspector-and-property-taxonomy-tracker)         | Property ownership split                        |
-| Full-Coverage Risk Register                     | [`tracker`](./ux-bim-ai-rework-tracker.md#full-coverage-risk-register)                     | Risks that can make the revamp incomplete       |
-| Definition Of Full Coverage                     | [`tracker`](./ux-bim-ai-rework-tracker.md#definition-of-full-coverage)                     | Completion gate                                 |
+| Route And Page Inventory                        | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#route-and-page-inventory)                        | Establishes which routes are in scope           |
+| Layout Backlog                                  | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#layout-backlog)                                  | Top-level region migration rows                 |
+| Header And Tabs                                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#header-and-tabs)                                 | Header cleanup rows                             |
+| Secondary Left Sidebar Target Inventory         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#secondary-left-sidebar-target-inventory)         | First-pass view-wide control inventory          |
+| Ribbon Backlog                                  | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#ribbon-backlog)                                  | First-pass editing command inventory            |
+| Canvas Overlay Backlog                          | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#canvas-overlay-backlog)                          | First-pass canvas chrome inventory              |
+| Element Sidebar Backlog                         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#element-sidebar-backlog)                         | First-pass selection/property inventory         |
+| Footer Backlog                                  | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#footer-backlog)                                  | First-pass global status inventory              |
+| View-Type Ribbon Matrix                         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#view-type-ribbon-matrix)                         | View-specific command grouping                  |
+| Implementation Workpackages                     | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#implementation-workpackages)                     | Major implementation chunks                     |
+| Acceptance Checklist                            | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#acceptance-checklist)                            | Release-blocking behavioral checks              |
+| Expanded Audit Coverage Map                     | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-audit-coverage-map)                     | What was inspected and residual risk            |
+| Expanded Primary Sidebar Tracker                | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-primary-sidebar-tracker)                | Detailed primary sidebar rows                   |
+| Expanded Header And Tab Tracker                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-header-and-tab-tracker)                 | Detailed header rows                            |
+| Expanded Secondary Sidebar Tracker              | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-secondary-sidebar-tracker)              | Detailed secondary sidebar rows by view type    |
+| Expanded Ribbon Command Tracker                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-ribbon-command-tracker)                 | Detailed command/ribbon rows                    |
+| Expanded Canvas Overlay Tracker                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-canvas-overlay-tracker)                 | Detailed canvas overlay rows                    |
+| Expanded Element Sidebar Tracker                | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-element-sidebar-tracker)                | Detailed selected-element rows                  |
+| Expanded Footer And Global Status Tracker       | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-footer-and-global-status-tracker)       | Detailed footer rows                            |
+| Expanded Dialog And Modal Tracker               | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-dialog-and-modal-tracker)               | Dialog trigger ownership                        |
+| Expanded View-Mode Surface Tracker              | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-view-mode-surface-tracker)              | Plan/3D/sheet/schedule/concept/agent split      |
+| Expanded Command Reachability Tracker           | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-command-reachability-tracker)           | Cmd+K and direct access requirements            |
+| Expanded Testing And Acceptance Backlog         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-testing-and-acceptance-backlog)         | Required automated and screenshot checks        |
+| Expanded Implementation Sequencing Detail       | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#expanded-implementation-sequencing-detail)       | Detailed order of operations                    |
+| Usability Score Inputs For Future Agent         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#usability-score-inputs-for-future-agent)         | Metrics for judging the result                  |
+| Second-Pass Deep Audit Addendum                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#second-pass-deep-audit-addendum)                 | Additional source-level coverage                |
+| Source File Surface Register                    | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#source-file-surface-register)                    | File-by-file UI surface map                     |
+| Current Footer Detailed Tracker                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#current-footer-detailed-tracker)                 | Footer-specific controls                        |
+| Tool And Active Command Tracker                 | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#tool-and-active-command-tracker)                 | Tool palette, options, modifiers, sketch states |
+| Project Resource And Browser Deep Tracker       | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#project-resource-and-browser-deep-tracker)       | Project browser and resources split             |
+| Plan And Sketch Deep Tracker                    | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#plan-and-sketch-deep-tracker)                    | Plan/sketch transient and persistent UI         |
+| Three-D View Deep Tracker                       | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#three-d-view-deep-tracker)                       | 3D viewport controls and exceptions             |
+| Sheet And Review Deep Tracker                   | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#sheet-and-review-deep-tracker)                   | Sheet/review mode split                         |
+| Schedule Deep Tracker                           | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#schedule-deep-tracker)                           | Schedule table and definition split             |
+| Collaboration Jobs Advisor Coordination Tracker | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#collaboration-jobs-advisor-coordination-tracker) | Global collaboration and advisor workflows      |
+| Family Material And Standalone Editor Tracker   | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#family-material-and-standalone-editor-tracker)   | Family library/editor/material flows            |
+| Inspector And Property Taxonomy Tracker         | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#inspector-and-property-taxonomy-tracker)         | Property ownership split                        |
+| Full-Coverage Risk Register                     | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#full-coverage-risk-register)                     | Risks that can make the revamp incomplete       |
+| Definition Of Full Coverage                     | [`tracker`](./archive/ux-bim-ai-rework-tracker.md#definition-of-full-coverage)                     | Completion gate                                 |
 
 ### Dynamic Audit
 

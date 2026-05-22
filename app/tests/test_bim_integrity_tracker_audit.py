@@ -41,7 +41,7 @@ def test_bim_integrity_tracker_audit_report_has_core_accounting_sections() -> No
 
 
 def test_done_quality_gate_rejects_missing_implementation_evidence(tmp_path: Path) -> None:
-    tracker = REPO_ROOT / "spec" / "bim-integrity-rendering-sketch-methodology-tracker.md"
+    tracker = REPO_ROOT / "spec" / "archive" / "bim-integrity-rendering-sketch-methodology-tracker.md"
     broken_tracker = tmp_path / "tracker.md"
     generated = tmp_path / "generated.md"
     source = tracker.read_text(encoding="utf8")
@@ -83,7 +83,7 @@ def test_done_quality_gate_rejects_missing_implementation_evidence(tmp_path: Pat
 def test_done_quality_gate_rejects_incomplete_implementation_evidence_cells(
     tmp_path: Path,
 ) -> None:
-    tracker = REPO_ROOT / "spec" / "bim-integrity-rendering-sketch-methodology-tracker.md"
+    tracker = REPO_ROOT / "spec" / "archive" / "bim-integrity-rendering-sketch-methodology-tracker.md"
     broken_tracker = tmp_path / "tracker.md"
     generated = tmp_path / "generated.md"
     source = tracker.read_text(encoding="utf8")

@@ -7,7 +7,7 @@ high-churn frontend files so extraction work can continue in small, testable
 slices without creating circular dependencies back into the original files.
 
 Related non-frontend god-file slices are tracked directly in
-`spec/code-quality-tracker.md`.
+`spec/archive/code-quality-tracker.md`.
 
 ## PlanCanvas.tsx
 

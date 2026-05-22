@@ -19,7 +19,7 @@ Runs one deterministic pass of the per-house gate driver:
 This script is **idempotent**: running it twice in a row with no new
 response files produces the same state.
 
-Companion tracker: ``spec/testhouse-convergence-loop-tracker.md``.
+Companion tracker: ``spec/archive/testhouse-convergence-loop-tracker.md``.
 """
 
 from __future__ import annotations

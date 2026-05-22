@@ -1,82 +1,41 @@
-# BIM AI (v1)
+# BIM AI
 
-Browser-first BIM coordination: semantic walls/doors/rooms, realtime WebSocket snapshots, constraint checks, issues, AI propose flow.
+Browser-first BIM authoring with continuous server-authoritative collaboration —
+no central file to synchronize. Semantic walls / doors / rooms, realtime
+WebSocket snapshots, constraint checks, issues, AI propose flow.
 
-> BIM AI is the first BIM authoring environment with continuous server-authoritative collaboration; there is no central file to synchronize. See [`docs/collaboration-model.md`](./docs/collaboration-model.md).
+Collaboration model: [`docs/collaboration-model.md`](./docs/collaboration-model.md).
 
 ## Quickstart
 
 ```bash
 make install
-make dev          # infra + API :8500 + web :2000
+make dev              # default ports
+make dev-forwarded    # forwarded port range (sandboxed / remote-shell setups)
 ```
 
-Health: http://127.0.0.1:8500/api/health
+Ports, infra, and all dev targets are defined in the [`Makefile`](./Makefile);
+`make help` lists them. Stack details live in
+[`package.json`](./package.json) and [`app/pyproject.toml`](./app/pyproject.toml).
 
-Ports follow the sibling “suite” spacing; see `Makefile` comments.
-
-## Stack
-
-- **Frontend**: PNPM workspaces, Turborepo, Vite 6 + React 19 + TypeScript + Tailwind (`packages/web`).
-- **Backend**: FastAPI + SQLAlchemy 2 async + Postgres (`app/`).
-- **Infra**: Docker Compose Postgres (5545 host), Redis (6392), MinIO (9120/9121) — placeholders for uploads v2.
-
-Icon library: [`docs/icon-library.md`](./docs/icon-library.md) — source lives in [github.com/jhoetter/bim-icons](https://github.com/jhoetter/bim-icons).
-
-See `spec/prd.md` for product scope.
-Active UI to-do list: [`OPEN_TASKS.md`](./OPEN_TASKS.md).
-Onboarding for the next agent (or human): [`HANDOVER.md`](./HANDOVER.md).
-
-Revit parity tracker: 120 ✅ fully available / 0 🟡 partial / 0 ❌ not available — see `spec/revit-parity/`.
-
-## Makefile
-
-| Target    | Meaning                                     |
-| --------- | ------------------------------------------- |
-| `install` | JS + Python venv + deps                     |
-| `dev`     | compose up + API + web                      |
-| `verify`  | Format, Python lint, arch, TC, tests, build |
-| `seed`    | Populate demo model idempotently            |
-
-## Quality Gates
-
-The canonical merge gate is automated and is the same gate used by CI:
+## Verify
 
 ```bash
 pnpm verify:strict
 make verify
 ```
 
-`pnpm verify` is the lighter JavaScript workspace check: formatting,
-architecture, and tests. `pnpm verify:strict` adds TypeScript typecheck and
-build. `make verify` is the full local monorepo gate and adds Python ruff,
-Python tests, and the Python lockfile check.
+`make verify` is the full local merge gate and mirrors CI.
+[`AGENTS.md`](./AGENTS.md) lists the exact CI commands and pinned tool
+versions (Node, pnpm, Python, `uv`).
 
-Backend test commands are split by intent:
+## Where to look
 
-```bash
-make test-py
-make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"
-```
-
-`make test-py` is the full coverage-enforced backend gate used by `make verify`.
-`make test-py-focused` disables coverage for narrow development runs so the
-command answers whether the selected tests passed.
-
-JavaScript lint is intentionally exposed as `pnpm lint` / `make lint-js`, but
-is not yet part of the canonical merge gate because the existing frontend lint
-backlog is tracked as an expiring machine-readable waiver in
-`spec/quality-waivers.json`.
-
-Quality waivers are validated by `pnpm quality:waivers` / `make quality-waivers`
-and are part of both `pnpm verify:strict` and `make verify`. Expired P0/P1
-waivers fail the quality gate.
-
-## V1 Release
-
-The v1 release is governed by a deterministic evidence package, a full CI gate suite, and five
-interlocking manifests that prove coherent app behavior, replay determinism, PRD/tracker alignment,
-explicit limitations, and cross-surface evidence coverage. The complete operator procedure —
-pre-flight checks, CI gate invocation, evidence regeneration, fixture replay, manifest
-interpretation, and acceptance verdict — is documented in
-[spec/release-runbook-v1.md](spec/release-runbook-v1.md).
+- [`AGENTS.md`](./AGENTS.md) — operational guide for any agent or contributor.
+- [`CLAUDE.md`](./CLAUDE.md) — instructions Claude Code reads in this repo.
+- [`claude-skills/`](./claude-skills) — recurring complex-task playbooks
+  (each skill carries its own `SKILL.md`).
+- [`spec/`](./spec) — active product, methodology, and parity trackers
+  (closeout snapshots in [`spec/archive/`](./spec/archive)).
+- [`docs/icon-library.md`](./docs/icon-library.md) — icon catalog (source at
+  [github.com/jhoetter/bim-icons](https://github.com/jhoetter/bim-icons)).

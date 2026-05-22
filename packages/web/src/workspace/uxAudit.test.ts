@@ -23,7 +23,10 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 
 describe('UX reachability audit', () => {
   it('uses source, screenshot, and command coverage as revamp quality gates — UX-RISK-001', () => {
-    const tracker = readFileSync(resolve(repoRoot, 'spec/ux-bim-ai-rework-tracker.md'), 'utf8');
+    const tracker = readFileSync(
+      resolve(repoRoot, 'spec/archive/ux-bim-ai-rework-tracker.md'),
+      'utf8',
+    );
     const e2e = readFileSync(
       resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
       'utf8',
@@ -62,7 +65,10 @@ describe('UX reachability audit', () => {
   });
 
   it('keeps seeded live findings synchronized with regression evidence', () => {
-    const tracker = readFileSync(resolve(repoRoot, 'spec/ux-bim-ai-rework-tracker.md'), 'utf8');
+    const tracker = readFileSync(
+      resolve(repoRoot, 'spec/archive/ux-bim-ai-rework-tracker.md'),
+      'utf8',
+    );
     const e2e = readFileSync(
       resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
       'utf8',

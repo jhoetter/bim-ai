@@ -22,7 +22,7 @@ chain, ruff configured) but suffers from three structural debts:
    `models/` `io/` separation.
 
 This tracker is a backend-only complement to
-[`spec/god-file-reduction-tracker.md`](god-file-reduction-tracker.md) (which
+[`spec/archive/god-file-reduction-tracker.md`](archive/god-file-reduction-tracker.md) (which
 covers cross-stack LOC budgets) and
 [`spec/backend-testing-hardening.md`](backend-testing-hardening.md) (which
 covers test-suite reliability). It does **not** duplicate their work packages;
@@ -129,7 +129,7 @@ proper typing — `_digest` typed as `(BaseModel) -> str` is a one-liner;
 ### Theme 3 — God-module decomposition
 
 These five files are within 5% of the 3,000-LOC ceiling. The existing
-god-file tracker (`spec/god-file-reduction-tracker.md`) carried `registry.py`
+god-file tracker (`spec/archive/god-file-reduction-tracker.md`) carried `registry.py`
 through P1 splits; the rest are pure backend and live here. Each work
 package is **one cohesive responsibility extraction**, not a line-count
 shave.
@@ -232,7 +232,7 @@ value).
 ## What This Tracker Does NOT Cover
 
 - **Frontend / cross-stack LOC budgets.** See
-  [`spec/god-file-reduction-tracker.md`](god-file-reduction-tracker.md).
+  [`spec/archive/god-file-reduction-tracker.md`](archive/god-file-reduction-tracker.md).
 - **Backend test-suite reliability / scenario coverage.** See
   [`spec/backend-testing-hardening.md`](backend-testing-hardening.md). New
   tests added under work packages here should follow that doc's conventions

@@ -9,7 +9,7 @@ For current work, use these sources together:
 
 - `spec/sketch-to-bim-readiness-tracker.md` for the active backlog, milestones,
   CLI/MCP gaps, real-BIM methodology gaps, and target-house readiness gates.
-- `spec/bim-integrity-rendering-sketch-methodology-tracker.md` for the new
+- `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md` for the new
   BIM-integrity, renderer-fidelity, Advisor, and sketch-acceptance backlog
   exposed by the target-house dry run.
 - `spec/sketch-to-bim-product-surfaces.md` for the current product/agent
@@ -165,6 +165,6 @@ the external-agent convenience path over the same `cmd-v3.0` bundle semantics.
 
 Before generating `target-house-1`, close or explicitly tolerate the P0 items in
 `spec/sketch-to-bim-readiness-tracker.md` and
-`spec/bim-integrity-rendering-sketch-methodology-tracker.md`, then produce the
+`spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md`, then produce the
 target-house no-seed rehearsal packet defined by `SKB-RDY-F01` through
 `SKB-RDY-F06`.

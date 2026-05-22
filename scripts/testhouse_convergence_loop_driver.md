@@ -1,6 +1,6 @@
 # Testhouse Convergence Loop — `/loop` Driver
 
-Companion to `spec/testhouse-convergence-loop-tracker.md` and the two
+Companion to `spec/archive/testhouse-convergence-loop-tracker.md` and the two
 scripts in this directory (`testhouse_convergence_pass.py` and
 `testhouse_convergence_prompts.py`).
 

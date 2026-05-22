@@ -8,6 +8,7 @@ const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const TRACKER_PATH = path.join(
   REPO_ROOT,
   'spec',
+  'archive',
   'bim-integrity-rendering-sketch-methodology-tracker.md',
 );
 const DEFAULT_OUT_PATH = path.join(

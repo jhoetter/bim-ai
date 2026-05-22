@@ -15,7 +15,7 @@ You are authoring a sketch-to-BIM seed in bim-ai.
 
 Before editing:
 - Read spec/sketch-to-bim-methodology.md, spec/sketch-to-bim-failure-taxonomy.md,
-  spec/bim-integrity-rendering-sketch-methodology-tracker.md, the target brief,
+  spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md, the target brief,
   the required feature pack, and the current seed evidence.
 - Identify the current phase, required sketch/brief features, required views,
   model integrity blockers, renderer diagnostic blockers, Advisor findings,

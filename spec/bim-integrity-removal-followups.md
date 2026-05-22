@@ -1,7 +1,7 @@
 # BIM Integrity Removal Follow-Ups
 
 This ledger is for cleanup/removal candidates discovered while closing
-`spec/bim-integrity-rendering-sketch-methodology-tracker.md`. It exists so work
+`spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md`. It exists so work
 can continue without blocking on user approval while the user is away.
 
 Rules:

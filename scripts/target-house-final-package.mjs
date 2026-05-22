@@ -1306,6 +1306,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
   const trackerPath = path.join(
     REPO_ROOT,
     'spec',
+    'archive',
     'bim-integrity-rendering-sketch-methodology-tracker.md',
   );
   const generatedStatusPath = path.join(

@@ -10,7 +10,7 @@ Before editing code, read these documents in this order:
 
 1. [`spec/ux-bim-ai-rework-master.md`](./ux-bim-ai-rework-master.md)
 2. [`spec/ux-bim-ai-rework-spec.md`](./ux-bim-ai-rework-spec.md)
-3. [`spec/ux-bim-ai-rework-tracker.md`](./ux-bim-ai-rework-tracker.md)
+3. [`spec/archive/ux-bim-ai-rework-tracker.md`](./archive/ux-bim-ai-rework-tracker.md)
 4. [`spec/ux-bim-ai-rework-dynamic-audit.md`](./ux-bim-ai-rework-dynamic-audit.md)
 5. Original source artifact: `spec/UX bim-ai rework.pdf`
 
