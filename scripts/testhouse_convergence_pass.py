@@ -468,6 +468,258 @@ def _source_unavailable_levels_from_iter3(house: str) -> set[str]:
     return out
 
 
+HOUSE_ROOF_SPEC: dict[str, dict[str, Any]] = {
+    "house-alpha": {
+        # 1956 Reinecke Doppelhaus: Satteldach ~48°, ridge along long axis.
+        "referenceLevel": "lvl-dg",
+        "slopeDeg": 48.0,
+        "roofGeometryMode": "mass_box",
+        "overhangMm": 500,
+        "eaveHeightLeftMm": 5000,
+        "eaveHeightRightMm": 5000,
+    },
+    "house-beta": {
+        # 2007 Boss house: Pfettendach 30°, Kniestock 125 cm (1250 mm).
+        "referenceLevel": "lvl-dg",
+        "slopeDeg": 30.0,
+        "roofGeometryMode": "mass_box",
+        "overhangMm": 600,
+        "eaveHeightLeftMm": 1250,
+        "eaveHeightRightMm": 1250,
+    },
+    "house-gamma": {
+        # 1993 Kannenofen Doppelhaushälfte: gable ~45° + Flachdach on
+        # Spitzboden. Authored as one primary gable; the Spitzboden
+        # Flachdach is captured in source facts but not separately
+        # modeled here (would need a second createRoof call with
+        # roofGeometryMode="flat" on the Spitzboden level — left as
+        # iter-4 polish per [[TH-G-F006]]).
+        "referenceLevel": "lvl-spitz",
+        "slopeDeg": 45.0,
+        "roofGeometryMode": "mass_box",
+        "overhangMm": 400,
+        "eaveHeightLeftMm": 1000,
+        "eaveHeightRightMm": 1000,
+    },
+}
+
+
+def _perimeter_polygons_per_level(house: str) -> dict[str, list[dict[str, float]]]:
+    """Collect per-level perimeter polygons by walking the iter-2 authored
+    model + iter-3 reader responses on disk. Iter-3 wall_chains take
+    precedence over iter-2 when both target the same level."""
+
+    LEVEL_ID_MAP = {
+        "KG": "lvl-kg",
+        "EG": "lvl-eg",
+        "OG": "lvl-og",
+        "DG": "lvl-dg",
+        "Spitzboden": "lvl-spitz",
+        "kg": "lvl-kg", "eg": "lvl-eg", "og": "lvl-og", "dg": "lvl-dg",
+    }
+    by_level: dict[str, list[dict[str, float]]] = {}
+
+    # iter-2 authored model — walls stored as elements with start/end.
+    iter2_path = REPO_ROOT / "tmp" / "reverse-bim" / house / "iter-2-authored-model.json"
+    if iter2_path.exists():
+        try:
+            doc = json.loads(iter2_path.read_text(encoding="utf-8"))
+            chains_by_level: dict[str, dict[str, list[dict[str, float]]]] = {}
+            for el in (doc.get("elements") or {}).values():
+                if el.get("kind") != "wall":
+                    continue
+                level_id = str(el.get("levelId") or "")
+                name = str(el.get("name") or "")
+                # Wall name like "wc-lvl-kg-01-1" — group by chain prefix.
+                chain_key = name.rsplit("-", 1)[0] if "-" in name else name
+                slot = chains_by_level.setdefault(level_id, {}).setdefault(chain_key, [])
+                start = el.get("start") or {}
+                if "xMm" in start and "yMm" in start:
+                    slot.append(
+                        {
+                            "name": name,
+                            "xMm": float(start["xMm"]),
+                            "yMm": float(start["yMm"]),
+                        }
+                    )
+            for level_id, chains in chains_by_level.items():
+                # Pick the longest chain (the perimeter, not interior partitions).
+                longest = max(chains.values(), key=len)
+                longest.sort(key=lambda p: p["name"])
+                by_level[level_id] = [
+                    {"xMm": p["xMm"], "yMm": p["yMm"]} for p in longest
+                ]
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # iter-3 reader responses override / supplement when they emit numeric
+    # wall_chain perimeters.
+    iter3_root = (
+        REPO_ROOT / "tmp" / "reverse-bim" / house / "ai-reading" / "responses"
+        / "reader-pass-iter3"
+    )
+    if iter3_root.exists():
+        for path in sorted(iter3_root.glob("*.json")):
+            try:
+                resp = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            for fact in resp.get("facts") or []:
+                if fact.get("kind") != "wall_chain":
+                    continue
+                value = fact.get("value") or {}
+                if value.get("status") == "source_unavailable":
+                    continue
+                level_name = (
+                    value.get("levelId")
+                    or value.get("levelRef")
+                    or value.get("levelName")
+                )
+                canonical = LEVEL_ID_MAP.get(str(level_name))
+                if not canonical:
+                    continue
+                pts = value.get("points")
+                if not (isinstance(pts, list) and len(pts) >= 3):
+                    continue
+                if not all(isinstance(p, dict) and "xMm" in p and "yMm" in p for p in pts):
+                    continue
+                by_level[canonical] = [
+                    {"xMm": float(p["xMm"]), "yMm": float(p["yMm"])} for p in pts
+                ]
+    return by_level
+
+
+def apply_auto_floors_and_roofs(house_state: dict[str, Any]) -> dict[str, Any]:
+    """For each house already loaded into the live dev server, author one
+    CreateFloorCmd per level whose wall_chain perimeter is known and one
+    CreateRoofCmd wrapping the topmost level's wall_chain. Idempotent —
+    skips levels that already have a floor and only authors a roof if
+    none exists yet."""
+
+    model_id = house_state.get("modelId")
+    if not model_id:
+        return {"floorsApplied": 0, "roofsApplied": 0, "skipped": "no_model_id"}
+
+    # Query the live model for what's already authored, so we don't duplicate.
+    elems_resp = http_json(
+        "POST",
+        f"/api/models/{model_id}/query/elements",
+        {"kinds": ["level", "floor", "roof"]},
+    )
+    if elems_resp.get("error"):
+        return {"floorsApplied": 0, "roofsApplied": 0, "error": "query_failed"}
+    elements = (elems_resp.get("data") or {}).get("elements") or []
+
+    levels_by_id: dict[str, dict[str, Any]] = {}
+    floors_by_level: set[str] = set()
+    roof_count = 0
+    for el in elements:
+        kind = el.get("kind")
+        if kind == "level":
+            levels_by_id[str(el.get("id"))] = el
+        elif kind == "floor":
+            floors_by_level.add(str(el.get("levelId")))
+        elif kind == "roof":
+            roof_count += 1
+
+    # Walls / perimeters come from on-disk authoritative iter-2/iter-3 data.
+    perimeters_by_level = _perimeter_polygons_per_level(house_state["house"])
+
+    # Pull current model revision for the bundle parentRevision tracking.
+    summary = http_json("GET", f"/api/models/{model_id}/summary")
+    parent_revision = int(summary.get("revision") or summary.get("modelRevision") or 1)
+
+    floors_applied = 0
+    roofs_applied = 0
+    errors: list[str] = []
+
+    def commit_bundle(operation: str, command: dict[str, Any], assumption_key: str) -> bool:
+        nonlocal parent_revision
+        bundle_body = {
+            "mode": "commit",
+            "bundle": {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [command],
+                "assumptions": [
+                    {
+                        "key": assumption_key,
+                        "value": command.get("name") or command.get("id") or operation,
+                        "confidence": 0.7,
+                        "source": "convergence_loop_auto_envelope",
+                        "contestable": True,
+                        "evidence": (
+                            "Derived programmatically from authored "
+                            "wall_chains and per-house roof spec; see "
+                            "scripts/testhouse_convergence_pass.py."
+                        ),
+                    }
+                ],
+                "parentRevision": parent_revision,
+            },
+        }
+        resp = http_json("POST", f"/api/models/{model_id}/bundles", bundle_body)
+        if resp.get("error") or not resp.get("applied"):
+            return False
+        new_rev = resp.get("newRevision")
+        if new_rev:
+            parent_revision = int(new_rev)
+        return True
+
+    # ---- Floors: one per level with a known perimeter + no existing floor.
+    for level_id in levels_by_id:
+        if level_id in floors_by_level:
+            continue
+        boundary = list(perimeters_by_level.get(level_id) or [])
+        if len(boundary) < 3:
+            continue
+        if boundary[0] != boundary[-1]:
+            boundary.append(boundary[0])
+        cmd = {
+            "type": "createFloor",
+            "name": f"Floor {level_id}",
+            "levelId": level_id,
+            "boundaryMm": boundary,
+            "thicknessMm": 220,
+            "allowDetached": True,
+        }
+        if commit_bundle("floor", cmd, f"iter4.floor.{level_id}"):
+            floors_applied += 1
+        else:
+            errors.append(f"floor_apply_failed:{level_id}")
+
+    # ---- Roof: only one, on the topmost level's perimeter.
+    if roof_count == 0:
+        spec = HOUSE_ROOF_SPEC.get(house_state["house"])
+        if spec:
+            top_level_id = spec["referenceLevel"]
+            footprint = list(perimeters_by_level.get(top_level_id) or [])
+            # Strip the closing repeat — createRoof needs ≥3 distinct vertices.
+            if len(footprint) > 1 and footprint[0] == footprint[-1]:
+                footprint = footprint[:-1]
+            if len(footprint) >= 3:
+                cmd = {
+                    "type": "createRoof",
+                    "name": f"Roof {house_state['house']}",
+                    "referenceLevelId": top_level_id,
+                    "footprintMm": footprint,
+                    "overhangMm": spec["overhangMm"],
+                    "slopeDeg": spec["slopeDeg"],
+                    "roofGeometryMode": spec["roofGeometryMode"],
+                    "eaveHeightLeftMm": spec["eaveHeightLeftMm"],
+                    "eaveHeightRightMm": spec["eaveHeightRightMm"],
+                }
+                if commit_bundle("roof", cmd, f"iter4.roof.{house_state['house']}"):
+                    roofs_applied += 1
+                else:
+                    errors.append("roof_apply_failed")
+
+    return {
+        "floorsApplied": floors_applied,
+        "roofsApplied": roofs_applied,
+        "errors": errors,
+    }
+
+
 def build_live_level_completeness_report(house_state: dict[str, Any]) -> dict[str, Any]:
     """Synthesize a level_completeness report from the live model: query
     elements, count walls per level, accept any source-required level that
@@ -1043,6 +1295,15 @@ def run_pass() -> dict[str, Any]:
 
     for house_state in state["houses"].values():
         house_state["actionsThisPass"] = []
+        # Auto-envelope authoring runs even for terminal houses so iter-4
+        # additions (floors, roofs, rooms, openings) materialise the
+        # accepted houses into actually-built BIMs.
+        if house_state.get("modelId"):
+            envelope = apply_auto_floors_and_roofs(house_state)
+            if envelope.get("floorsApplied") or envelope.get("roofsApplied"):
+                house_state["actionsThisPass"].append(
+                    {"at": _now(), "appliedEnvelope": envelope}
+                )
         if house_state["terminal"]:
             continue
         ingest_subagent_responses(house_state)
