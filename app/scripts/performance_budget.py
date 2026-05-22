@@ -10,7 +10,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 # PERF-A07: default persistence path. Lives under spec/generated so the
 # committed snapshot doubles as the budget-trend artifact — `git log -p
@@ -34,8 +34,8 @@ from bim_ai.elements import (
 from bim_ai.engine import try_commit
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
 from bim_ai.room_derivation import compute_room_boundary_derivation
-from bim_ai.routes_api import build_evidence_package_payload
-from bim_ai.routes_deps import violations_wire
+from bim_ai.routes.api import build_evidence_package_payload
+from bim_ai.routes.deps import violations_wire
 from bim_ai.schedule_derivation import derive_schedule_table
 
 MODEL_ID = UUID("00000000-0000-0000-0000-000000000001")
@@ -45,6 +45,8 @@ BUDGETS_MS: dict[str, float] = {
     "small.room_derivation": 250.0,
     "small.plan_projection": 250.0,
     "small.insert_window_commit": 150.0,
+    "small.insert_door_commit": 150.0,  # PERF-B05
+    "small.create_wall_commit": 150.0,  # PERF-B05
     "small.evidence_package": 1_500.0,
     "schedule_heavy.room_schedule": 500.0,
     "schedule_heavy.door_schedule": 250.0,
@@ -393,6 +395,37 @@ def run_budgets() -> dict[str, Any]:
                     "widthMm": 1_200,
                     "sillHeightMm": 900,
                     "heightMm": 1_300,
+                },
+            ),
+        ),
+        # PERF-B05: hosted-opening + wall-creation budgets beyond
+        # insert_window. Each command targets a fresh id so re-running
+        # within one process does not collide.
+        _measure(
+            "small.insert_door_commit",
+            lambda: try_commit(
+                small,
+                {
+                    "type": "insertDoorOnWall",
+                    "id": f"perf-door-{uuid4().hex[:6]}",
+                    "wallId": "small-wall-south",
+                    "alongT": 0.5,
+                    "widthMm": 900,
+                },
+            ),
+        ),
+        _measure(
+            "small.create_wall_commit",
+            lambda: try_commit(
+                small,
+                {
+                    "type": "createWall",
+                    "id": f"perf-wall-{uuid4().hex[:6]}",
+                    "levelId": "small-level",
+                    "start": {"xMm": 1, "yMm": 1},
+                    "end": {"xMm": 1, "yMm": 5_000},
+                    "thicknessMm": 240,
+                    "heightMm": 3_000,
                 },
             ),
         ),
