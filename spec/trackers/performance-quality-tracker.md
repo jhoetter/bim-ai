@@ -668,7 +668,7 @@ Relevant files:
 | `PERF-K01` | P1 | `Partial` | Split `PlanCanvas` into interaction, rendering, projection, and overlays modules. | LOC-only split landed (`PlanCanvas.tsx` 9334→1897 via SLC-2026 sweep with `planCanvasClickHandler.ts`, `planCanvasHoverHandlers.ts`, `planCanvasRenderPasses.ts`, etc.); parent still threads `elementsById` into siblings, so render-ownership boundary not met yet. |
 | `PERF-K02` | P1 | `Partial` | Split `Viewport` into renderer runtime, controls, mesh sync, overlays, and tools modules. | LOC-only split landed (`Viewport.tsx` 6192→2902 with `useViewport*` hooks + `ViewportOverlays.tsx`); camera/orbit, mesh sync, tools still co-located. |
 | `PERF-K03` | P1 | `Partial` | Split `Workspace` shell from domain panels and command handlers. | LOC-only split landed (`Workspace.tsx` 6851→2996 with `WorkspaceLeftRail`, `WorkspaceRightRail`, `useWorkspace*` hooks); top-level still subscribes to `elementsById` (line 199). |
-| `PERF-K04` | P2 | `Not started` | Add render ownership docs. | Each large pane documents which state it owns, which selectors it consumes, and its expected render frequency. |
+| `PERF-K04` | P2 | `Done` | Add render ownership docs. | `spec/methodology/render-ownership.md` documents Workspace/PlanCanvas/Viewport state ownership, store-read dependencies, and expected render frequency contract per pane, plus the G03→G04→G05→G06 roadmap to bring renders down to budget. |
 
 ### L. Performance UX And Perceived Responsiveness
 
@@ -677,7 +677,7 @@ Relevant files:
 | `PERF-L01` | P0 | `Done` | Make command pending state explicit. | UI clearly shows saving state and a pending command count beside the undo stack while authoritative commit/undo/redo is in flight. |
 | `PERF-L02` | P0 | `Done` | Optimistic hosted openings. | Door/window/opening placement materializes an optimistic element before the server round trip, command pending state is visible, and undo-stack authority remains backend-owned by design; speculative undo reservation is tracked separately as P1 correctness work. |
 | `PERF-L03` | P1 | `Not started` | Make undo/redo stack latency visible and bounded. | Undo depth updates within target budget or shows pending commit state. |
-| `PERF-L04` | P1 | `Not started` | Avoid cascading spinners after every command. | Projection/schedule refreshes should not reset whole panels unless data actually changes or is stale. |
+| `PERF-L04` | P1 | `Done` | Avoid cascading spinners after every command. | Plan projection (`usePlanProjectionWireSync.ts`) only clears wire data on `!modelId`, never on a revision change; schedule panel (`SchedulePanel.tsx` post-F05) keeps prior data through cancellation thanks to AbortController + cached LRU. |
 | `PERF-L05` | P2 | `Not started` | Add user-facing degraded-mode warnings. | Large models can surface reduced rendering/detail modes when budgets are exceeded. |
 
 ### M. CI And Regression Gates
