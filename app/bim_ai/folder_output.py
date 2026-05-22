@@ -10,6 +10,7 @@ from typing import Any
 
 from bim_ai._io.digest import sha256_json
 from bim_ai._io.json_io import write_json as _write_json_shared
+from bim_ai._io.log import get_logger
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -60,6 +61,8 @@ from bim_ai.source_site_terrain import (
     apply_source_site_terrain_decisions,
     build_source_site_terrain_report,
 )
+
+_logger = get_logger("bim_ai.folder_output")
 
 PHASE_BY_FACT_KIND = {
     "building_scope": "P0-source-inventory",
@@ -138,6 +141,19 @@ def build_reverse_bim_folder_output(
 
     source_root = Path(root_path).expanduser().resolve()
     out_dir = Path(output_dir).expanduser().resolve()
+    _logger.info(
+        "build_reverse_bim_folder_output.start",
+        extra={
+            "phase": "entry",
+            "source_root": str(source_root),
+            "output_dir": str(out_dir),
+            "run_id": run_id,
+            "reader_response_count": (
+                len(reader_responses) if isinstance(reader_responses, list) else None
+            ),
+            "reset_output": reset_output,
+        },
+    )
     if reset_output and out_dir.exists():
         shutil.rmtree(out_dir)
     _ensure_tree(out_dir)

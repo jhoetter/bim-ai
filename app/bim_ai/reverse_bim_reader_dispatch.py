@@ -10,6 +10,9 @@ from typing import Any
 
 from bim_ai._io.digest import sha256_json
 from bim_ai._io.json_io import read_json_dict
+from bim_ai._io.log import get_logger
+
+_logger = get_logger("bim_ai.reverse_bim_reader_dispatch")
 
 OPEN_PROGRESS_STATUSES = {
     "waiting_for_reader",
@@ -32,6 +35,15 @@ def build_reverse_bim_reader_dispatch_plan(
     """
 
     out_dir = Path(output_dir).expanduser().resolve()
+    _logger.info(
+        "reader_dispatch_plan.start",
+        extra={
+            "phase": "dispatch_plan",
+            "output_dir": str(out_dir),
+            "include_completed": include_completed,
+            "limit": limit,
+        },
+    )
     requests = read_json_dict(out_dir / "ai-reading" / "ai-visual-agent-requests.json")
     manifest = read_json_dict(out_dir / "ai-reading" / "reader-pass-manifest.json")
     prompts = read_json_dict(out_dir / "ai-reading" / "reader-assignment-prompts.json")
@@ -151,6 +163,17 @@ def execute_reverse_bim_reader_dispatch(
 ) -> dict[str, Any]:
     """Execute open reader assignments and write response JSON files."""
 
+    _logger.info(
+        "reader_dispatch_execute.start",
+        extra={
+            "phase": "dispatch_execute",
+            "output_dir": str(output_dir),
+            "include_completed": include_completed,
+            "force": force,
+            "limit": limit,
+            "timeout_seconds": timeout_seconds,
+        },
+    )
     plan = build_reverse_bim_reader_dispatch_plan(
         output_dir=output_dir,
         include_completed=include_completed,
