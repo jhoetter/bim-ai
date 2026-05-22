@@ -98,7 +98,7 @@ A-territory bar after the sweep:
 | SLC-2026-05   | P1       | Done    | `packages/web/src/viewport/meshBuilders.ts`                  | Extract roof-geometry builder helpers                                 | meshBuilders below 3,000 LOC.                              |
 | SLC-2026-06   | P1       | Done    | `packages/cli/cli.mjs`                                       | Extract agent-api + initiation/export CLI commands                    | cli.mjs below 3,000 LOC.                                   |
 | SLC-2026-07   | P1       | Done    | `app/bim_ai/elements.py`                                     | Extract annotations, constructability, links                          | elements.py below 3,000 LOC.                               |
-| SLC-2026-08   | P1       | Open    | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract another inspector cluster                                     | InspectorContent below 3,000 LOC.                          |
+| SLC-2026-08   | P1       | Done    | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract column / beam / stair inspector sections                      | InspectorContent below 3,000 LOC.                          |
 | SLC-2026-09   | P2       | Done    | `scripts/audit-ui-mcp-parity.mjs`                            | Extract M3/M4 workstream builders                                     | Audit script below 3,000 LOC.                              |
 | SLC-2026-10   | P1       | Done    | `packages/web/src/cmdPalette/defaultCommands.ts`             | Split Display/extras palette commands                                 | defaultCommands below 3,000 LOC.                           |
 | SLC-2026-11   | P1       | Done    | `packages/web/src/tools/toolGrammar.ts`                      | Extract annotation reducer cluster                                    | toolGrammar below 3,000 LOC.                               |
@@ -193,6 +193,17 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-08` Done. `packages/web/src/workspace/inspector/InspectorContent.tsx`
+  cut from 3,678 to 2,932 LOC by extracting three element-inspector
+  switch-cases out of the giant `InspectorPropertiesFor` function:
+  - `ColumnInspectorSection` and `BeamInspectorSection` in a new
+    `structuralInspectorSections.tsx` (combined: column + beam inline
+    JSX, ~480 lines).
+  - `StairInspectorSection` in a new `stairInspectorSection.tsx`
+    (the multi-run stair inline JSX, ~310 lines).
+  Each switch-case in `InspectorContent.tsx` becomes a single
+  `<ColumnInspectorSection ... />` / `<BeamInspectorSection ... />` /
+  `<StairInspectorSection ... />` render. `pnpm typecheck` is clean.
 - 2026-05-22: `SLC-2026-17` Done. `packages/web/src/workspace/Workspace.tsx`
   cut from 3,292 to 2,973 LOC by extracting four cohesive helpers out of
   the monolithic component into sibling files:
