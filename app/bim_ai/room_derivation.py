@@ -10,7 +10,6 @@ from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from copy import deepcopy
 from typing import Any, Literal
 
 from bim_ai.document import Document
@@ -18,9 +17,9 @@ from bim_ai.elements import LevelElem, ProjectSettingsElem, RoomElem, RoomSepara
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 BOUNDARY_SEGMENT_VERSION_V1 = "boundary_segment_v1"
-_ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[dict[tuple[int, int], dict[str, Any]] | None] = ContextVar(
-    "room_boundary_request_cache", default=None
-)
+_ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[
+    dict[tuple[int, tuple[str, ...]], dict[str, Any]] | None
+] = ContextVar("room_boundary_request_cache", default=None)
 
 # Shared with preview (orthogonal snap / closure tests)
 _SNAP_MM = 50.0
@@ -519,12 +518,17 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     cache = _ROOM_BOUNDARY_REQUEST_CACHE.get()
     if cache is None:
         return _compute_room_boundary_derivation_uncached(doc)
-    key = (id(doc), id(doc.elements))
+    # Cache key is a content fingerprint stable across pydantic Document
+    # wraps of the same underlying elements set. Pydantic v2 builds a new
+    # dict during validation, so `id(doc.elements)` is unstable — but the
+    # element ids and ordering are preserved within a request. The bundle
+    # is returned by reference; callers must treat it as read-only.
+    key: tuple[int, tuple[str, ...]] = (len(doc.elements), tuple(doc.elements.keys()))
     cached = cache.get(key)
     if cached is not None:
-        return deepcopy(cached)
+        return cached
     bundle = _compute_room_boundary_derivation_uncached(doc)
-    cache[key] = deepcopy(bundle)
+    cache[key] = bundle
     return bundle
 
 

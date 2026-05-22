@@ -779,7 +779,7 @@ def evaluate(
                     )
                 )
 
-    doc_snap = Document(elements=dict(elements))
+    doc_snap = Document(elements=elements)  # preserve elements dict identity for C04 cache
     rb = compute_room_boundary_derivation(doc_snap)
     for d in rb.get("diagnostics") or []:
         if not isinstance(d, dict):
@@ -1617,7 +1617,7 @@ def evaluate(
                 )
             )
 
-    parity_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+    parity_doc = Document(revision=1, elements=elements)  # type: ignore[arg-type]  # share elements dict identity
     parity_rows = collect_schedule_sheet_export_parity_rows_for_doc(
         parity_doc,
         room_boundary_derivation=rb,
