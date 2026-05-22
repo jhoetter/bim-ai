@@ -2,6 +2,9 @@
 
 Last updated: 2026-05-22
 
+Status: all 12 implementation plan items have landed. See commit `dc1bf544`
+for the elementRenderFeatureStatus changes and this commit for the closeout.
+
 ## Summary
 
 The `Render status` chip in the right inspector panel
@@ -76,32 +79,42 @@ renderer actually does.
 Phased so we can land and verify each piece independently:
 
 1. **Tracker** — this document. ✅
-2. **Hosted-opening cut** — drop the `'geometry.hosted_opening_cut_parity_partial'`
-   skip flag in 3D geometry status; downgrade only on `markers.length`.
-   Keep the parity claim on `exportSupport`.
-3. **Roof modes** — accept all `knownRoofGeometryMode` values as
-   `supported` (not only `flat`). Move the `_parity_partial` claim into
-   `exportSupport`.
-4. **Roof opening + slab opening cut** — same pattern as #2.
-5. **Stair (known shape)** — same pattern.
-6. **Railing (known baluster, valid host edge)** — same pattern.
-7. **Placed asset procedural proxy** — when `renderProxyKind` is present,
-   `'asset.procedural_proxy_render'` should not degrade to `partial`.
-8. **Family instance missing plan symbol** — restrict
-   `'family.plan_symbol_footprint_fallback'` from contributing to 3D state;
-   it still contributes to plan/export status.
-9. **Material fallback** — split `fallback` into two states: `fallback-resolved`
-   (renders fine, treat as `supported` in 3D) and `fallback-unresolved`
-   (treat as `partial`).
-10. **Material-not-audited** — when an audit entry is absent but the element
-    declares a `materialKey`, default to `supported`. Only mark `fallback`
-    when audit ran and reported a fallback source.
-11. **Tests** — update `elementRenderFeatureStatus.test.ts` to match the new
-    semantics. Each test that asserts `'partial'` for a clean hosted opening,
-    full gable roof, regular railing, etc., flips to `'supported'`.
-12. **Typecheck + test** — run `pnpm typecheck` and the `@bim-ai/web` test
-    suite; fix any callers of the status shape that hard-code the old
-    classification.
+2. **Hosted-opening cut** ✅ — `geometry.hosted-opening-cut` state is now
+   `supported` unless `markers.length > 0`; the BIR-I parity claim lives on
+   `exportSupport` via `export.<kind>_parity_partial`.
+3. **Roof modes** ✅ — `knownRoofGeometryMode` accepts `flat`, `mass_box`,
+   `shed`, `gable`, `gable_pitched_rectangle`, `gable_pitched_l_shape`,
+   `asymmetric_gable`, `hip`, `hip_like`, `mono_slope`, `terrace`, `sketch` as
+   `supported`; only unknown modes/markers degrade to `unsupported`.
+4. **Roof opening + slab opening cut** ✅ — same pattern as #2; geometry
+   reports `supported` until markers degrade.
+5. **Stair (known shape)** ✅ — known shapes (`straight`, `l_shape`, `u_shape`,
+   `spiral`, `sketch`) report `supported`; only unknown shapes/markers degrade.
+6. **Railing (known baluster, valid host edge)** ✅ — known baluster rules
+   (`regular`, `glass_panel`, `cable`, `vertical`) with a valid host-edge
+   evidence path report `supported`.
+7. **Placed asset procedural proxy** ✅ — when `renderProxyKind` is present,
+   `asset.state` is `supported` for the 3D viewport. `exportSupport` still
+   classifies `placed_asset` as partial across the export surface.
+8. **Family instance missing plan symbol** ✅ — `degradingSkipped` separates
+   plan-only fallback flags from 3D-degrading ones, so a loaded family with
+   model geometry but no plan symbol now reports `supported` for the 3D chip.
+9. **Material fallback** ✅ — `materialFeatureState` treats `fallback`
+   (category-default, family-default, subcomponent-default) as `supported` in
+   3D since the renderer resolves to a real material; only `unresolved` keys
+   degrade to `partial`.
+10. **Material-not-audited** ✅ — when no audit entry exists, `materialStatus`
+    defaults to `resolved` / `not-audited` with no fallback flag, so the chip
+    no longer degrades purely on absent auditor data.
+11. **Tests** ✅ — `elementRenderFeatureStatus.test.ts` covers the new
+    contract (6/6 passing): hosted door + supported family/material,
+    `gable_pitched_rectangle` → `supported`, regular-edge railing →
+    `supported`, placed asset → 3D `supported` / export `partial`, room
+    volume → `partial` (kept by design).
+12. **Typecheck + test** ✅ — `pnpm typecheck` green across all 12 packages;
+    `pnpm --filter @bim-ai/web exec vitest run src/viewport/` passes
+    771/771 tests across 107 files. CLI `targetHouseCleanPassGate.test.mjs`
+    (9 tests) also passes. No callers hardcode the old classification.
 
 Out of scope (do not touch in this pass):
 
