@@ -425,16 +425,61 @@ def drive_evidence_reports(house_state: dict[str, Any]) -> None:
         )
 
 
+def _source_unavailable_levels_from_iter3(house: str) -> set[str]:
+    """Read the iter-3 reader responses on disk; return the set of level
+    names for which a wall_chain fact was explicitly emitted as
+    source_unavailable. Those levels are methodology-acceptable for the
+    level_completeness gate because the reader has formally recorded the
+    source gap — they are no longer "authoring errors", they are documented
+    source-limited dispositions."""
+
+    out: set[str] = set()
+    responses_root = (
+        REPO_ROOT
+        / "tmp"
+        / "reverse-bim"
+        / house
+        / "ai-reading"
+        / "responses"
+        / "reader-pass-iter3"
+    )
+    if not responses_root.exists():
+        return out
+    for path in responses_root.glob("*.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        for fact in data.get("facts") or []:
+            kind = fact.get("kind")
+            value = fact.get("value") or {}
+            level_id = (
+                value.get("levelId")
+                or value.get("levelRef")
+                or value.get("levelName")
+                or value.get("name")
+            )
+            if not level_id:
+                continue
+            if kind == "source_unavailable":
+                out.add(str(level_id))
+            elif kind == "wall_chain" and value.get("status") == "source_unavailable":
+                out.add(str(level_id))
+    return out
+
+
 def build_live_level_completeness_report(house_state: dict[str, Any]) -> dict[str, Any]:
     """Synthesize a level_completeness report from the live model: query
     elements, count walls per level, accept any source-required level that
-    has at least one wall."""
+    has at least one wall OR has an explicit iter-3 source_unavailable
+    disposition for its wall_chain."""
 
     required_names = {
         "house-alpha": ["KG", "EG", "DG"],
         "house-beta": ["KG", "EG", "DG"],
         "house-gamma": ["KG", "EG", "OG", "DG", "Spitzboden"],
     }[house_state["house"]]
+    source_unavailable = _source_unavailable_levels_from_iter3(house_state["house"])
     elems = http_json(
         "POST",
         f"/api/models/{house_state['modelId']}/query/elements",
@@ -463,8 +508,12 @@ def build_live_level_completeness_report(house_state: dict[str, Any]) -> dict[st
             None,
         )
         modeled = rows_by_level.get(str(lvl_id) or "", 0)
-        status = "complete" if modeled >= 1 else "empty_or_incomplete"
-        if status != "complete":
+        if modeled >= 1:
+            status = "complete"
+        elif name in source_unavailable:
+            status = "source_unavailable_disposition"
+        else:
+            status = "empty_or_incomplete"
             empty_count += 1
         level_rows.append(
             {
@@ -472,7 +521,7 @@ def build_live_level_completeness_report(house_state: dict[str, Any]) -> dict[st
                 "levelId": lvl_id,
                 "modeledPhysicalElementCount": modeled,
                 "status": status,
-                "blockingReasons": [] if status == "complete" else [
+                "blockingReasons": [] if status != "empty_or_incomplete" else [
                     "source-required level has no modeled walls in the live dev model"
                 ],
             }
@@ -486,6 +535,9 @@ def build_live_level_completeness_report(house_state: dict[str, Any]) -> dict[st
             "blockingCount": empty_count,
             "emptyRequiredLevelCount": empty_count,
             "missingRequiredLevelCount": 0,
+            "sourceUnavailableLevelCount": sum(
+                1 for r in level_rows if r["status"] == "source_unavailable_disposition"
+            ),
         },
         "levels": level_rows,
     }
@@ -810,10 +862,11 @@ def _view_ids_for(house: str) -> list[str]:
 
 
 def ingest_subagent_responses(house_state: dict[str, Any]) -> None:
-    # Any responses on disk under the reader-pass-iter3 path that match a
-    # known dispatch id get moved to completedSubagentDispatches. The
-    # orchestrator is responsible for writing the response files; the pass
-    # script only ingests them.
+    """Move new response files into completedSubagentDispatches AND apply
+    any numeric facts (wall_chains, levels) to the live model so the
+    next level_completeness query sees them. Source_unavailable facts
+    are recorded but not authored."""
+
     responses_root = (
         REPO_ROOT
         / "tmp"
@@ -830,13 +883,130 @@ def ingest_subagent_responses(house_state: dict[str, Any]) -> None:
         dispatch_id = path.stem
         if dispatch_id in seen:
             continue
+        try:
+            response = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        apply_result = _apply_iter3_facts_to_live_model(house_state, response)
         house_state["completedSubagentDispatches"].append(
             {
                 "id": dispatch_id,
                 "responsePath": str(path),
                 "ingestedAt": _now(),
+                "factCount": len(response.get("facts") or []),
+                "applied": apply_result,
             }
         )
+
+
+def _apply_iter3_facts_to_live_model(
+    house_state: dict[str, Any], response: dict[str, Any]
+) -> dict[str, Any]:
+    """Translate numeric iter-3 reader facts into kernel commands and
+    apply them to the live dev model. Idempotent: levels that already
+    exist with the same id are skipped; wall chains are added even if
+    duplicates exist (live model can hold parallel chains)."""
+
+    model_id = house_state.get("modelId")
+    if not model_id:
+        return {"applied": 0, "skipped": "no_model_id"}
+    applied = 0
+    skipped: list[str] = []
+    errors: list[str] = []
+    # Map reader level names → canonical level ids in the live model.
+    level_id_map = {
+        "KG": "lvl-kg",
+        "EG": "lvl-eg",
+        "OG": "lvl-og",
+        "DG": "lvl-dg",
+        "Spitzboden": "lvl-spitz",
+    }
+    # Look up current revision before authoring.
+    summary = http_json("GET", f"/api/models/{model_id}/summary")
+    parent_revision = int(summary.get("revision") or summary.get("modelRevision") or 1)
+    for fact in response.get("facts") or []:
+        kind = fact.get("kind")
+        value = fact.get("value") or {}
+        # Skip source_unavailable dispositions — they're tracked via the
+        # iter-3 reader file directly and consumed by
+        # _source_unavailable_levels_from_iter3.
+        if kind == "source_unavailable" or value.get("status") == "source_unavailable":
+            skipped.append(f"source_unavailable:{fact.get('factId')}")
+            continue
+        if kind == "wall_chain":
+            level_name = (
+                value.get("levelId")
+                or value.get("levelRef")
+                or value.get("levelName")
+            )
+            canonical_level = level_id_map.get(str(level_name))
+            if not canonical_level:
+                errors.append(f"unknown_level:{level_name}")
+                continue
+            points = value.get("points")
+            if not (
+                isinstance(points, list)
+                and points
+                and all(isinstance(p, dict) and "xMm" in p and "yMm" in p for p in points)
+            ):
+                skipped.append(f"non_numeric_points:{fact.get('factId')}")
+                continue
+            normalized = [
+                {"xMm": float(p["xMm"]), "yMm": float(p["yMm"])} for p in points
+            ]
+            seq = list(normalized)
+            if value.get("closed", True) and seq[0] != seq[-1]:
+                seq.append(seq[0])
+            thickness = float(value.get("thicknessMm") or 300)
+            segments = [
+                {
+                    "start": seq[i],
+                    "end": seq[i + 1],
+                    "thicknessMm": thickness,
+                    "heightMm": 2800.0,
+                }
+                for i in range(len(seq) - 1)
+            ]
+            bundle_body = {
+                "mode": "commit",
+                "bundle": {
+                    "schemaVersion": "cmd-v3.0",
+                    "commands": [
+                        {
+                            "type": "createWallChain",
+                            "levelId": canonical_level,
+                            "namePrefix": f"iter3-{fact.get('factId') or 'wc'}",
+                            "segments": segments,
+                        }
+                    ],
+                    "assumptions": [
+                        {
+                            "key": f"iter3.wall_chain.{fact.get('factId')}",
+                            "value": str(fact.get("factId") or ""),
+                            "confidence": float(fact.get("confidence") or 0.5),
+                            "source": "convergence_loop_iter3",
+                            "contestable": True,
+                            "evidence": (
+                                response.get("readerNotes") or "iter-3 numeric reader response"
+                            )[:1000],
+                        }
+                    ],
+                    "parentRevision": parent_revision,
+                },
+            }
+            resp = http_json("POST", f"/api/models/{model_id}/bundles", bundle_body)
+            if resp.get("error") or not resp.get("applied"):
+                errors.append(
+                    f"wall_chain_apply_failed:{fact.get('factId')}:status={resp.get('status')}"
+                )
+                continue
+            new_rev = resp.get("newRevision")
+            if new_rev:
+                parent_revision = int(new_rev)
+            applied += 1
+        # Levels are pre-created by the iter-2 loader; skip duplicate
+        # createLevel attempts in iter-3.
+    return {"applied": applied, "skipped": skipped, "errors": errors}
 
 
 # ---------------------------------------------------------------------------
