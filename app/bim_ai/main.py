@@ -10,6 +10,7 @@ from fastapi.responses import PlainTextResponse
 from starlette.middleware.base import RequestResponseEndpoint
 
 from bim_ai._errors import register_route_error_handler
+from bim_ai._io.log import set_correlation_id
 from bim_ai.ai_boundary import load_bill_of_rights_markdown
 from bim_ai.config import get_settings
 from bim_ai.db import init_db_schema
@@ -68,6 +69,31 @@ async def derived_payload_cache_middleware(
         plan_projection_wire_request_cache(),
     ):
         return await call_next(request)
+
+
+@app.middleware("http")
+async def correlation_id_middleware(
+    request: Request, call_next: RequestResponseEndpoint
+) -> Response:
+    """BRT-62: propagate a request-ID across logs.
+
+    Reads X-Request-ID if the client sent one; otherwise mints a
+    uuid4 hex prefix. Echoes the ID back on the response and binds
+    it to the contextvar `_io.log` reads, so any `get_logger(...)`
+    call inside the request's handlers includes `correlation_id`
+    in its JSON output automatically.
+    """
+    import uuid
+
+    incoming = request.headers.get("x-request-id") or ""
+    rid = incoming.strip() or uuid.uuid4().hex[:16]
+    set_correlation_id(rid)
+    try:
+        response = await call_next(request)
+    finally:
+        set_correlation_id(None)
+    response.headers["x-request-id"] = rid
+    return response
 
 
 @app.get("/bill-of-rights", response_class=PlainTextResponse)
