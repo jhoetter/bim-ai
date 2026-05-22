@@ -117,6 +117,7 @@ import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore, type PlanTool } from '../state/store';
+import { useRenderCount } from '../state/renderCountProbe';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
 import { snapPlanPoint, type SegmentLine, type SnapHit, type SnapKind } from './snapEngine';
@@ -261,6 +262,8 @@ export function PlanCanvas({
   onActivePlanToolChange,
   snapSettings: controlledSnapSettings,
 }: Props) {
+  // PERF-G07: dev-only render-count probe. No-op in production.
+  useRenderCount('PlanCanvas');
   void wsConnected;
   const theme = useTheme();
   const mountRef = useRef<HTMLDivElement | null>(null);

@@ -14,6 +14,7 @@ import { parseDimensionInput, type Element, type LensMode, type SavedViewElem } 
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
+import { useRenderCount } from './state/renderCountProbe';
 import { useTheme } from './state/useTheme';
 import type { SnapSettings } from './plan/snapSettings';
 import {
@@ -237,6 +238,8 @@ export function Viewport({
   snapSettings,
   viewOverlayRightInset,
 }: Props) {
+  // PERF-G07: dev-only render-count probe. No-op in production.
+  useRenderCount('Viewport');
   void wsConnected;
   void snapSettings;
   const { t } = useTranslation();

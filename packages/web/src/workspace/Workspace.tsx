@@ -36,6 +36,7 @@ import {
   type PlanTool,
   type Theme,
 } from '../state/store';
+import { useRenderCount } from '../state/renderCountProbe';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import {
   loadSnapSettings,
@@ -194,6 +195,8 @@ type RailOverride = 'open' | 'collapsed' | null;
 const PANE_SECONDARY_SIDEBAR_WIDTH = 'min(248px, 34%)';
 
 export function Workspace(): JSX.Element {
+  // PERF-G07: dev-only render-count probe. No-op in production.
+  useRenderCount('Workspace');
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
