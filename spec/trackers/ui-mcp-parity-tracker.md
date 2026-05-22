@@ -1370,7 +1370,7 @@ they are necessary for the M3 product surfaces.
 - M3-A should start by reading the sketch-to-BIM skill workflow and mapping it
   to stable product surfaces. It should not assume skill-local scripts are
   already safe public MCP tools.
-- M3-A inventory lives in `spec/sketch-to-bim-product-surfaces.md`. The first
+- M3-A inventory lives in `spec/methodology/sketch-to-bim-product-surfaces.md`. The first
   product slice promotes the full image-underlay lifecycle
   (`import/move/scale/rotate/delete`) to API v3 descriptors backed by the
   existing bundle route; remaining SKB helper operations stay local until a
@@ -1395,7 +1395,7 @@ they are necessary for the M3 product surfaces.
 Wave 1 result:
 
 - Sketch-to-BIM product mapping is now tracked in
-  `spec/sketch-to-bim-product-surfaces.md`. Image-underlay import, move, scale,
+  `spec/methodology/sketch-to-bim-product-surfaces.md`. Image-underlay import, move, scale,
   rotate, and delete are promoted to API v3 descriptors backed by the existing
   bundle route; stable sketch IR validation, seed compile, phase apply,
   advisor/evidence loop, and acceptance remain next-wave productization work.
@@ -1428,7 +1428,7 @@ semantics, and audit gates, while keeping each lane independently reviewable.
 
 | Workstream                                           | Status  | Owner scope                                                                                                                                                    | Tracker items                            | Done when                                                                                                                                                                                                                  |
 | ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M3-F. Sketch IR, seed, and phase product tools       | Done    | Sketch-to-BIM product descriptors/routes/CLI/tests; own `spec/sketch-to-bim-product-surfaces.md` updates; avoid benchmark/export/audit ownership.              | WP-005, WP-013, Sketch-to-BIM workflow.  | `sketch.ir.validate`, `sketch.seed.compile`, `sketch.phase.apply`, and `sketch.phase.accept` are product-described API/CLI/MCP surfaces or precisely blocked with route-tested contracts and examples.                     |
+| M3-F. Sketch IR, seed, and phase product tools       | Done    | Sketch-to-BIM product descriptors/routes/CLI/tests; own `spec/methodology/sketch-to-bim-product-surfaces.md` updates; avoid benchmark/export/audit ownership.              | WP-005, WP-013, Sketch-to-BIM workflow.  | `sketch.ir.validate`, `sketch.seed.compile`, `sketch.phase.apply`, and `sketch.phase.accept` are product-described API/CLI/MCP surfaces or precisely blocked with route-tested contracts and examples.                     |
 | M3-G. Two-storey stair benchmark executable path     | Partial | `two-storey-house-with-stair` benchmark fixture, runner, expected semantics, MCP/CLI bundle, UI/Cmd+K traceability artifact, and benchmark tests only.         | WP-008, same-house benchmark suite.      | The two-storey stair scenario advances from spec seed to executable MCP/CLI fixture with semantic diff, advisor, visual/export evidence hooks, and honest UI/Cmd+K traceability classification.                            |
 | M3-H. Documentation/export production evidence depth | Partial | Sheet preview/export/render/schedule/tag/dimension evidence quality and focused backend tests; avoid registry/audit/tracker ownership except test fixtures.    | WP-006, documentation/export parity.     | Documentation/export workflows produce reusable artifacts for sheets, schedules, tags, dimensions, PDF, IFC, glTF/GLB, and external export markers beyond the first smoke test, with optional-backend behavior explicit.   |
 | M3-I. Transaction idempotency and workflow metadata  | Partial | Transaction metadata, command log, idempotent replay/dedup, undo/redo metadata, collaboration deltas, and route tests; avoid sketch/export feature semantics.  | WP-009, transaction and audit hardening. | Successful replays with stable `clientOpId` or bundle digest are deduplicated or reported deterministically, stale revisions remain protected, and M3 sketch/export/import workflows assert transaction metadata coverage. |

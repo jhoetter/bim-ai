@@ -66,7 +66,7 @@ def _gate_rows(*, ci_yml_text: str | None) -> list[dict[str, Any]]:
     add_path_gate(
         gate_id="seed_artifact_contract",
         gate_kind="seed_artifact_contract",
-        rel_path="spec/seed-artifacts.md",
+        rel_path="spec/methodology/seed-artifacts.md",
         note="Named seed artifact contract for clean sketch-to-BIM seed handoff.",
     )
     add_path_gate(

@@ -14,7 +14,7 @@ authorize generation.
 | Phase plan                         | `spec/target-house/target-house-1-phase-plan.md`                   |
 | Risk register                      | `spec/target-house/target-house-1-risk-register.md`                |
 | Acceptance checklist               | `spec/target-house/target-house-1-acceptance-checklist.md`         |
-| External-agent quickstart          | `spec/sketch-to-bim-agent-quickstart.md`                           |
+| External-agent quickstart          | `spec/methodology/sketch-to-bim-agent-quickstart.md`                           |
 
 ## Readiness Position
 

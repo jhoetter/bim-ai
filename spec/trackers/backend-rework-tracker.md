@@ -24,7 +24,7 @@ chain, ruff configured) but suffers from three structural debts:
 This tracker is a backend-only complement to
 [`spec/archive/god-file-reduction-tracker.md`](archive/god-file-reduction-tracker.md) (which
 covers cross-stack LOC budgets) and
-[`spec/backend-testing-hardening.md`](backend-testing-hardening.md) (which
+[`spec/methodology/backend-testing-hardening.md`](backend-testing-hardening.md) (which
 covers test-suite reliability). It does **not** duplicate their work packages;
 it captures the architecture-level fixes those trackers leave on the table.
 
@@ -234,7 +234,7 @@ value).
 - **Frontend / cross-stack LOC budgets.** See
   [`spec/archive/god-file-reduction-tracker.md`](archive/god-file-reduction-tracker.md).
 - **Backend test-suite reliability / scenario coverage.** See
-  [`spec/backend-testing-hardening.md`](backend-testing-hardening.md). New
+  [`spec/methodology/backend-testing-hardening.md`](backend-testing-hardening.md). New
   tests added under work packages here should follow that doc's conventions
   (real-app routes for new typed contracts, scenario tests for new services).
 - **Reverse-BIM methodology / kernel correctness.** See

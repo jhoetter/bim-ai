@@ -9,7 +9,7 @@ Sources:
 - `spec/target-house/target-house-2.png`
 - `spec/target-house/floorplan.png`
 - `spec/target-house/target-house-seed.md`
-- `spec/sketch-to-bim-methodology.md`
+- `spec/methodology/sketch-to-bim-methodology.md`
 
 ## Exchange Goal
 

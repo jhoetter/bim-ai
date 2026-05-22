@@ -300,7 +300,7 @@ function scanHistory() {
   const excludePaths = [
     ':(exclude)scripts/check-security-hygiene.mjs',
     ':(exclude)spec/security-waivers.json',
-    ':(exclude)spec/security-dependency-policy.md',
+    ':(exclude)spec/methodology/security-dependency-policy.md',
   ];
   const result = spawnSync(
     'git',

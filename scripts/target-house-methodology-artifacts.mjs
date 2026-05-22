@@ -296,7 +296,7 @@ function buildMethodologyDashboardPayload({
       trackerId: 'BIR-M10',
       title: 'agent prompt/workflow templates',
       ok: true,
-      evidence: ['spec/sketch-to-bim-agent-workflow-templates.md', 'methodology-dashboard.json'],
+      evidence: ['spec/methodology/sketch-to-bim-agent-workflow-templates.md', 'methodology-dashboard.json'],
       summary: {
         launchSurface: 'target-house-methodology-artifacts',
       },

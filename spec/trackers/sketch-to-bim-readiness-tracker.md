@@ -13,8 +13,8 @@ Related sources:
 
 - `claude-skills/sketch-to-bim/SKILL.md`
 - `claude-skills/sketch-to-bim/sketch_bim.py`
-- `spec/sketch-to-bim-methodology.md`
-- `spec/sketch-to-bim-product-surfaces.md`
+- `spec/methodology/sketch-to-bim-methodology.md`
+- `spec/methodology/sketch-to-bim-product-surfaces.md`
 - `spec/sketch-to-bim-capability-matrix.json`
 - `spec/ui-mcp-parity-tracker.md`
 - `spec/generated/api-descriptor-ledger.md`
@@ -136,7 +136,7 @@ legitimate, or write a tolerance with evidence and expiry.
 
 | ID            | Priority | Status | Item                                      | Acceptance                                                                                                                                                                            |
 | ------------- | -------- | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SKB-RDY-A01` | P0       | Done   | Create active methodology entrypoint.     | `spec/sketch-to-bim-methodology.md` exists and points to the current workflow, readiness tracker, capability matrix, product surfaces, and target-house process.                      |
+| `SKB-RDY-A01` | P0       | Done   | Create active methodology entrypoint.     | `spec/methodology/sketch-to-bim-methodology.md` exists and points to the current workflow, readiness tracker, capability matrix, product surfaces, and target-house process.                      |
 | `SKB-RDY-A02` | P0       | Done   | Replace stale archive path defaults.      | Skill examples and `sketch_bim.py` default to `spec/sketch-to-bim-capability-matrix.json`; no active workflow command requires `spec/archive/*` unless explicitly reading history.    |
 | `SKB-RDY-A03` | P0       | Done   | Restore active archetype manifest.        | `spec/sketch-to-bim-archetypes.json` exists or the helper intentionally points to the archived manifest with a clear reason. `archetypes --query` works from a clean checkout.        |
 | `SKB-RDY-A04` | P0       | Done   | Define current process audit tracker.     | `spec/archive/sketch-to-bim-process-audit-tracker.md` exists and identifies this tracker as the current source of readiness work, not the old archived audit.                                 |
@@ -257,7 +257,7 @@ pass/fail status plus evidence before final BIM acceptance can pass.
 | ------------- | -------- | ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SKB-RDY-G01` | P0       | Done   | Clarify source-of-truth docs.           | Active docs explain which files are current and which archive files are historical.                                                                                                                                                                                  |
 | `SKB-RDY-G02` | P0       | Done   | Clarify CLI vs MCP decision.            | Docs state when to use CLI, API/MCP descriptor, raw bundle, or skill helper.                                                                                                                                                                                         |
-| `SKB-RDY-G03` | P1       | Done   | Add one-page external-agent quickstart. | `spec/sketch-to-bim-agent-quickstart.md` gives the canonical CLI path to run doctor, validate IR/capability coverage, compile/apply phases, collect evidence, and accept/reject.                                                                                     |
+| `SKB-RDY-G03` | P1       | Done   | Add one-page external-agent quickstart. | `spec/methodology/sketch-to-bim-agent-quickstart.md` gives the canonical CLI path to run doctor, validate IR/capability coverage, compile/apply phases, collect evidence, and accept/reject.                                                                                     |
 | `SKB-RDY-G04` | P1       | Done   | Add target-house readiness checklist.   | `spec/target-house/target-house-1-acceptance-checklist.md` can be filled before generation and attached to seed evidence after generation.                                                                                                                           |
 | `SKB-RDY-G05` | P1       | Done   | Add examples for real BIM data.         | `spec/examples/seed-dsl-modern-house.example.json`, `spec/examples/sketch-understanding-ir.example.json`, and the external-agent quickstart show spaces, classifications, material layers, MEP-lite, structure-lite, schedules, exports, and room-associated assets. |
 

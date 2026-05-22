@@ -247,7 +247,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
             },
             {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB",
             },
             {"kind": "wp_ref", "id": "WP-V01"},
@@ -286,7 +286,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "goldenBundleCoverage": [
             {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB",
             },
             {
@@ -311,7 +311,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "goldenBundleCoverage": [
             {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB",
             },
             {

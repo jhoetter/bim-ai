@@ -29,7 +29,7 @@ This tracker covers:
 It does not replace:
 
 - `spec/archive/code-quality-tracker.md` for broad code health;
-- `spec/frontend-monolith-extraction-map.md` for component extraction;
+- `spec/methodology/frontend-monolith-extraction-map.md` for component extraction;
 - `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md` for Advisor,
   BIM integrity, renderer fidelity, and sketch-methodology acceptance;
 - `spec/benchmarks/` for benchmark fixtures.
@@ -415,7 +415,7 @@ Risk:
 
 Relevant tracker:
 
-- `spec/frontend-monolith-extraction-map.md`
+- `spec/methodology/frontend-monolith-extraction-map.md`
 
 #### Finding FE-2: Single Global `elementsById` Object Invalidates Many Subscribers
 

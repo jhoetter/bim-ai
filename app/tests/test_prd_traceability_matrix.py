@@ -25,7 +25,7 @@ _TRACEABILITY_ROWS: list[dict[str, object]] = [
         "description": "Seed artifact contract for clean project-initiation bundles.",
         "paths": [
             "app/tests/test_seed_artifact_roundtrip.py",
-            "spec/seed-artifacts.md",
+            "spec/methodology/seed-artifacts.md",
             "scripts/create-seed-artifact.mjs",
         ],
     },

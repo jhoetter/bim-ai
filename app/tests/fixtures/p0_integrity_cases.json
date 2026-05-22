@@ -64,7 +64,7 @@
       "auditable": true,
       "ownerTrackerItems": ["BIR-O04", "BIR-W01"],
       "canonicalEvidencePaths": [
-        "spec/sketch-to-bim-agent-workflow-templates.md",
+        "spec/methodology/sketch-to-bim-agent-workflow-templates.md",
         "scripts/target-house-final-package.test.mjs"
       ],
       "proofHooks": ["node --test scripts/target-house-final-package.test.mjs"]

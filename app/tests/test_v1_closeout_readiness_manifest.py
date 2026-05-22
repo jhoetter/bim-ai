@@ -48,7 +48,7 @@ def test_required_gate_paths_and_kinds() -> None:
         by_id["pytest_seed_artifact_roundtrip"]["path"]
         == "app/tests/test_seed_artifact_roundtrip.py"
     )
-    assert by_id["seed_artifact_contract"]["path"] == "spec/seed-artifacts.md"
+    assert by_id["seed_artifact_contract"]["path"] == "spec/methodology/seed-artifacts.md"
     assert (
         by_id["pytest_evidence_manifest_closure"]["path"]
         == "app/tests/test_evidence_manifest_closure.py"

@@ -9,7 +9,7 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
-Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, `spec/trackers/sketch-to-bim-readiness-tracker.md`, and `spec/sketch-to-bim-agent-workflow-templates.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, agent closeout gates, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
+Before any substantial sketch-to-BIM run, read `spec/methodology/sketch-to-bim-methodology.md`, `spec/methodology/sketch-to-bim-failure-taxonomy.md`, `spec/trackers/sketch-to-bim-readiness-tracker.md`, and `spec/methodology/sketch-to-bim-agent-workflow-templates.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, agent closeout gates, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
 
 ## Tooling contract
 
@@ -128,7 +128,7 @@ with a hand-run weaker command unless you document why in the phase packet.
 
 You will fail this task if you treat it as a single translation problem (read sketch → emit one big command bundle → declare done). The previous attempt did exactly that and shipped a featureless box; see `nightshift/seed-fidelity-status.md` for the post-mortem.
 
-You will also fail if you treat `make seed` or `bim-ai plan-house` as the design generator. `make seed` only loads named artifact folders from `seed-artifacts/<name>/`; `bim-ai plan-house` only emits a neutral starter. The actual design work is the phased creation of a clean artifact set with `manifest.json`, `bundle.json`, `source/`, and `evidence/` as documented in `spec/seed-artifacts.md`.
+You will also fail if you treat `make seed` or `bim-ai plan-house` as the design generator. `make seed` only loads named artifact folders from `seed-artifacts/<name>/`; `bim-ai plan-house` only emits a neutral starter. The actual design work is the phased creation of a clean artifact set with `manifest.json`, `bundle.json`, `source/`, and `evidence/` as documented in `spec/methodology/seed-artifacts.md`.
 
 The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
 
@@ -225,7 +225,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 
 ## Pre-flight (before you touch the engine)
 
-0. **Load the methodology tracker.** Read `spec/sketch-to-bim-methodology.md` and identify:
+0. **Load the methodology tracker.** Read `spec/methodology/sketch-to-bim-methodology.md` and identify:
    - the expected user input level (sketch-only, sketch + brief, or fully dimensioned);
    - the target output level (massing-only, concept BIM, project-initiation BIM, documentation-ready);
    - the required acceptance gates for this run;
@@ -245,7 +245,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 
    If the written brief conflicts with what the image clearly shows, treat the image as authoritative and update the brief/spec before rebuilding the seed. Do not proceed from a generic architectural label such as "asymmetric gable"; translate the visible geometry into buildable elements.
 
-3. **Fill out the Sketch Understanding IR.** Produce the structured brief described in `spec/sketch-to-bim-methodology.md` (SKB-21 format when it lands; today, write it as JSON or Markdown at `nightshift/<sprint>/brief.md`). Required fields:
+3. **Fill out the Sketch Understanding IR.** Produce the structured brief described in `spec/methodology/sketch-to-bim-methodology.md` (SKB-21 format when it lands; today, write it as JSON or Markdown at `nightshift/<sprint>/brief.md`). Required fields:
 
    ```
    - style: "modernist" | "traditional" | "minimalist" | "industrial" | …
@@ -566,7 +566,7 @@ Any one of these resets the current phase to `failed` until fixed or escalated.
 
 ### Failure taxonomy for phase packets
 
-Use `spec/sketch-to-bim-failure-taxonomy.md` for every unresolved issue:
+Use `spec/methodology/sketch-to-bim-failure-taxonomy.md` for every unresolved issue:
 
 - `model-integrity`: normal deterministic Advisor, constructability,
   constraints, BIM semantics, code/physics/coordination, schedules, and export

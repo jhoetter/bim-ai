@@ -218,7 +218,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
         "apiHealth": http_probe(f"{base_url}/api/health"),
         "web": http_probe(web_url),
         "files": {
-            "methodology": (ROOT / "spec/sketch-to-bim-methodology.md").is_file(),
+            "methodology": (ROOT / "spec/methodology/sketch-to-bim-methodology.md").is_file(),
             "tracker": (ROOT / "spec/archive/sketch-to-bim-process-audit-tracker.md").is_file(),
             "capabilityMatrix": (ROOT / DEFAULT_CAPABILITIES).is_file(),
             "rendererSupportMatrix": (ROOT / DEFAULT_RENDERER_SUPPORT_MATRIX).is_file(),

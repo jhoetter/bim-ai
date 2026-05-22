@@ -5085,7 +5085,7 @@
           {
             "id": "seed_artifact_contract",
             "gateKind": "seed_artifact_contract",
-            "path": "spec/seed-artifacts.md",
+            "path": "spec/methodology/seed-artifacts.md",
             "structuralOk": true,
             "note": "Named seed artifact contract for clean sketch-to-BIM seed handoff."
           }
@@ -5586,7 +5586,7 @@
               },
               {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB"
               },
               {
@@ -5633,7 +5633,7 @@
             "goldenBundleCoverage": [
               {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB"
               },
               {
@@ -5660,7 +5660,7 @@
             "goldenBundleCoverage": [
               {
                 "kind": "seed_artifact_contract",
-                "path": "spec/seed-artifacts.md",
+                "path": "spec/methodology/seed-artifacts.md",
                 "bundleRef": "SKB"
               },
               {

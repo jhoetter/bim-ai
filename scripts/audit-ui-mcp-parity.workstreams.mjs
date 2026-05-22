@@ -76,7 +76,7 @@ function sketchSurfaceEvidence(apiLedger, surfaceId) {
     };
   }
 
-  const productMap = read('spec/sketch-to-bim-product-surfaces.md');
+  const productMap = read('spec/methodology/sketch-to-bim-product-surfaces.md');
   const text = productMap.toLowerCase();
   const mentionsSurface = text.includes(surfaceId.toLowerCase());
   const mentionsCli =
@@ -88,7 +88,7 @@ function sketchSurfaceEvidence(apiLedger, surfaceId) {
   return {
     type: 'product-map',
     status: mentionsCli || mentionsSurface ? 'cli-or-gap-documented' : 'missing',
-    source: 'spec/sketch-to-bim-product-surfaces.md',
+    source: 'spec/methodology/sketch-to-bim-product-surfaces.md',
     detail:
       mentionsCli || mentionsSurface
         ? 'Product map documents a CLI/generic path or explicit gap, but no stable API/MCP descriptor was detected.'

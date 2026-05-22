@@ -2,12 +2,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
+import subprocess
 import time
 from collections.abc import Callable
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import UUID
+
+# PERF-A07: default persistence path. Lives under spec/generated so the
+# committed snapshot doubles as the budget-trend artifact — `git log -p
+# spec/generated/performance-budget.json` produces a readable diff over time.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+PERSIST_DEFAULT_PATH = _REPO_ROOT / "spec" / "generated" / "performance-budget.json"
 
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -453,10 +462,43 @@ def run_budgets() -> dict[str, Any]:
     }
 
 
+def _git_commit_sha() -> str | None:
+    """Best-effort short commit SHA for the persisted snapshot."""
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=str(_REPO_ROOT),
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+        )
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+    sha = out.decode("utf-8").strip()
+    return sha or None
+
+
+def _enrich_with_traceability(report: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **report,
+        "capturedAt": datetime.now(timezone.utc).isoformat(),
+        "commitSha": _git_commit_sha(),
+        "host": os.uname().nodename if hasattr(os, "uname") else None,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run BIM AI backend performance budgets.")
     parser.add_argument("--json", action="store_true", help="Print the full JSON report.")
     parser.add_argument("--out", type=Path, help="Optional path for the JSON report.")
+    parser.add_argument(
+        "--persist",
+        action="store_true",
+        help=(
+            "PERF-A07: also write the report to spec/generated/performance-budget.json "
+            "with commitSha + capturedAt + host metadata so the committed snapshot "
+            "doubles as a trend artifact under git history."
+        ),
+    )
     parser.add_argument(
         "--fail-on-budget",
         action="store_true",
@@ -465,9 +507,14 @@ def main() -> int:
     args = parser.parse_args()
 
     report = run_budgets()
-    if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    if args.persist or args.out:
+        enriched = _enrich_with_traceability(report)
+        if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(json.dumps(enriched, indent=2, sort_keys=True) + "\n")
+        if args.persist:
+            PERSIST_DEFAULT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            PERSIST_DEFAULT_PATH.write_text(json.dumps(enriched, indent=2, sort_keys=True) + "\n")
 
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
