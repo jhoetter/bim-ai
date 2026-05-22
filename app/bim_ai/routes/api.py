@@ -1007,12 +1007,25 @@ async def evidence_package(
             status_code=400, detail="mode must be one of summary|default|full"
         )
     doc = Document.model_validate(row.document)
-    return build_evidence_package_payload(
+    # PERF-D08: surface wall-clock probe in the payload so the Agent Review
+    # performance gate can flip from advisory mock to a real budget-backed
+    # warning. Budget threshold (ms) here matches the small.evidence_package
+    # CI budget (1500 ms); larger fixtures will need their own thresholds.
+    import time as _ep_time
+
+    _ep_start = _ep_time.perf_counter()
+    payload = build_evidence_package_payload(
         model_id=model_id,
         doc=doc,
         source_document=row.document,
         mode=normalised,
     )
+    payload["_packageGenerationMs"] = round((_ep_time.perf_counter() - _ep_start) * 1000.0, 2)
+    payload["_packageGenerationBudgetMs"] = 1500.0
+    payload["_packageGenerationOverBudget"] = bool(
+        payload["_packageGenerationMs"] > payload["_packageGenerationBudgetMs"]
+    )
+    return payload
 
 
 def build_evidence_package_payload(

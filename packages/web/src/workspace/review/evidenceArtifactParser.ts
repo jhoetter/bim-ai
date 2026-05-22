@@ -99,6 +99,13 @@ export type EvidenceArtifactSummary = {
     enforcement: string | null;
     probeKind: string | null;
     blockerCodesEcho: string[];
+    // PERF-D08: real wall-clock probe of the evidence-package route.
+    // When the route handler measured the build path, these carry the
+    // measured ms + budget + overBudget verdict so the panel can flip
+    // from advisory mock to a real warning.
+    packageGenerationMs?: number;
+    packageGenerationBudgetMs?: number;
+    packageGenerationOverBudget?: boolean;
   } | null;
   reviewActions: AgentReviewActionRow[];
   artifactUploadManifestReadout: string[] | null;
@@ -302,11 +309,28 @@ export function parseEvidenceArtifact(
         const blockerCodesEcho = Array.isArray(echoRaw)
           ? echoRaw.filter((x): x is string => typeof x === 'string')
           : [];
+        // PERF-D08: pull wall-clock probe from the top-level payload (the
+        // route handler stamps it on every evidence-package response).
+        const pkgMs =
+          typeof payload._packageGenerationMs === 'number'
+            ? payload._packageGenerationMs
+            : undefined;
+        const pkgBudget =
+          typeof payload._packageGenerationBudgetMs === 'number'
+            ? payload._packageGenerationBudgetMs
+            : undefined;
+        const pkgOver =
+          typeof payload._packageGenerationOverBudget === 'boolean'
+            ? payload._packageGenerationOverBudget
+            : undefined;
         performanceGate = {
           gateClosed: g.gateClosed === true,
           enforcement: typeof g.enforcement === 'string' ? g.enforcement : null,
           probeKind: typeof g.probeKind === 'string' ? g.probeKind : null,
           blockerCodesEcho,
+          packageGenerationMs: pkgMs,
+          packageGenerationBudgetMs: pkgBudget,
+          packageGenerationOverBudget: pkgOver,
         };
       }
     }

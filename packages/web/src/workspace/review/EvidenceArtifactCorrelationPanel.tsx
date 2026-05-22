@@ -348,9 +348,40 @@ export function EvidenceArtifactCorrelationPanel({
               {evidenceArtifactSummary.performanceGate.blockerCodesEcho.join(', ') || '—'}
             </code>
           </p>
-          <p className="mt-0.5 text-[9px] text-muted">
-            Advisory mock gate (no wall-clock probe); echoes fix-loop blockers only.
-          </p>
+          {/* PERF-D08: real wall-clock probe (replaces the legacy mock note). */}
+          {evidenceArtifactSummary.performanceGate.packageGenerationMs !== undefined ? (
+            <p
+              className={`mt-1 text-[10px] ${
+                evidenceArtifactSummary.performanceGate.packageGenerationOverBudget
+                  ? 'font-semibold text-amber-600'
+                  : 'text-muted'
+              }`}
+              data-testid="evidence-review-perf-gate-wall-clock"
+            >
+              wall-clock:{' '}
+              <code className="font-mono text-[9px]">
+                {evidenceArtifactSummary.performanceGate.packageGenerationMs.toFixed(1)}
+                {' ms'}
+              </code>
+              {evidenceArtifactSummary.performanceGate.packageGenerationBudgetMs !== undefined ? (
+                <>
+                  {' '}
+                  · budget{' '}
+                  <code className="font-mono text-[9px]">
+                    {evidenceArtifactSummary.performanceGate.packageGenerationBudgetMs.toFixed(0)}
+                    {' ms'}
+                  </code>
+                </>
+              ) : null}
+              {evidenceArtifactSummary.performanceGate.packageGenerationOverBudget
+                ? ' — over budget'
+                : ''}
+            </p>
+          ) : (
+            <p className="mt-0.5 text-[9px] text-muted">
+              Wall-clock probe missing from this payload (older route or summary mode).
+            </p>
+          )}
         </div>
       ) : null}
       {evidenceArtifactSummary.baselineLifecycleReadout ? (
