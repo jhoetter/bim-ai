@@ -1,6 +1,6 @@
 # BIM AI Performance Quality Tracker
 
-Last updated: 2026-05-22 (audit pass)
+Last updated: 2026-05-23 (audit pass + implementation sweep)
 
 Purpose: track the application-wide performance work needed to make BIM AI feel
 responsive during ordinary authoring, remain predictable on larger projects, and
@@ -547,10 +547,10 @@ Relevant files:
 | `PERF-A01` | P0 | `Done` | Record current measured baselines. | This tracker includes endpoint timings, compute timings, bundle size, and grades from the 2026-05-19 investigation. |
 | `PERF-A02` | P0 | `Done` | Add repeatable backend benchmark script. | `app/scripts/performance_budget.py` emits JSON timings and enforces budgets for evaluate, projection, schedules, evidence package, and room derivation. |
 | `PERF-A03` | P0 | `Done` | Add standard performance fixtures. | Synthetic small, schedule-heavy, room-separation stress, and documentation-heavy fixtures exist in the backend performance budget harness. |
-| `PERF-A04` | P1 | `Not started` | Add route timing middleware in dev/test. | Slow backend routes log route, model id, revision, elapsed time, and top-level compute phase labels. |
-| `PERF-A05` | P1 | `Not started` | Add compute-phase timers for expensive derivations. | Room derivation, schedule derivation, plan projection, sheet evidence, validation, and evidence package expose phase timings in debug logs or optional response metadata. |
+| `PERF-A04` | P1 | `Done` | Add route timing middleware in dev/test. | `route_timing_middleware` in `app/bim_ai/main.py` logs route, method, status, elapsed_ms, model_id, revision via structured `bim_ai.route_timing` logger. Default threshold 250 ms (override via `BIM_AI_ROUTE_TIMING_THRESHOLD_MS`). |
+| `PERF-A05` | P1 | `Partial` | Add compute-phase timers for expensive derivations. | `/validate?debug=true` and `/projection/plan?debug=true` return a `_perfDebug` block (docValidateMs, projectionMs, violationsMs, summaryMs, primitiveCount). Evidence-package + schedule routes still pending the same flag. |
 | `PERF-A06` | P1 | `Done` | Add CI backend budgets. | CI runs the backend performance budget harness with stable synthetic fixtures and failure thresholds. |
-| `PERF-A07` | P2 | `Not started` | Store historical benchmark output. | Benchmark JSON is written to `spec/generated` or artifacts so regressions can be compared over time. |
+| `PERF-A07` | P2 | `Done` | Store historical benchmark output. | `app/scripts/performance_budget.py --persist` writes `spec/generated/performance-budget.json` enriched with capturedAt, commitSha, host; the committed file doubles as a git-diffable trend artifact. |
 
 ### B. Command Commit And Undo/Redo Responsiveness
 
@@ -560,7 +560,7 @@ Relevant files:
 | `PERF-B02` | P0 | `Done` | Remove hidden transaction-metadata full evaluation. | Transaction metadata computes changed/removed/patch ids directly without calling full delta/evaluate. |
 | `PERF-B03` | P0 | `Done` | Avoid old-document evaluation unless needed for blocking comparison. | `try_commit` and bundle commit evaluate the previous document only when the new document contains blocking/error violations. |
 | `PERF-B04` | P0 | `Done` | Keep common command server time near 200 ms or lower. | `small.insert_window_commit` is covered by the backend performance budget harness with a 150 ms p50 budget; local run was about 18 ms p50 on the synthetic small fixture. |
-| `PERF-B05` | P1 | `Not started` | Add interactive command budget tests. | Common commands such as place window, place door, move wall, create wall, move level, and undo/redo have measured budgets. |
+| `PERF-B05` | P1 | `Partial` | Add interactive command budget tests. | `small.insert_door_commit` and `small.create_wall_commit` budgets added alongside `small.insert_window_commit` (`app/scripts/performance_budget.py` BUDGETS_MS, all 150 ms p50). move_wall + undo/redo coverage still pending — those need a replay fixture that exercises the undo stack. |
 | `PERF-B06` | P1 | `Not started` | Separate undo-stack optimistic availability from full authoritative refresh where safe. | UI can show pending undo/redo state immediately while preserving authoritative failure rollback semantics. |
 | `PERF-B07` | P1 | `Not started` | Add command-specific validation fast paths. | Simple hosted opening operations avoid full expensive advisors where only nonblocking documentation advisories changed. |
 | `PERF-B08` | P2 | `Not started` | Add incremental validation boundary. | Constraint evaluation can receive changed ids and skip unrelated expensive advisors where sound. |
@@ -588,9 +588,9 @@ Relevant files:
 | `PERF-D03` | P0 | `Done` | Remove repeated room-boundary derivation from sheet evidence for current seed. | Current seed evidence package observed one room-boundary derivation call; keep regression coverage before treating this as scale-complete. |
 | `PERF-D04` | P1 | `Done` | Cache schedule table derivation inside evidence package. | Each schedule id plus room-boundary bundle is derived once per request and reused by evidence/sheet callers. |
 | `PERF-D05` | P1 | `Done` | Cache plan projection wire sample inside evidence package. | Each `(planViewId, fallbackLevelId, presentation, crop)` projection is resolved once per request and reused by evidence/sheet callers. |
-| `PERF-D06` | P1 | `Not started` | Provide evidence-package modes. | Route supports `summary`, `default`, and `full` modes so UI panels do not fetch expensive full evidence unless needed. |
+| `PERF-D06` | P1 | `Done` | Provide evidence-package modes. | `/api/models/{id}/evidence-package?mode=summary` short-circuits before the deterministic*Evidence + evidenceClosureReview + agentReview*/agentBrief* chain. `default` is back-compat; `full` is reserved for verbose debug. Invalid modes return 400. |
 | `PERF-D07` | P1 | `Not started` | Make full evidence package asynchronous or job-backed if still expensive. | Long-running full evidence generation returns job id/progress instead of blocking UI request. |
-| `PERF-D08` | P2 | `Not started` | Add evidence package perf gate to Agent Review. | UI warns when evidence generation exceeds budget and links to expensive phase diagnostics. |
+| `PERF-D08` | P2 | `Done` | Add evidence package perf gate to Agent Review. | Server stamps every evidence-package response with `_packageGenerationMs` + `_packageGenerationBudgetMs` + `_packageGenerationOverBudget`; `EvidenceArtifactCorrelationPanel` renders a real wall-clock line that turns amber + bold when over budget (replaced the legacy "advisory mock" note). |
 
 ### E. Snapshot, Websocket, And Collaboration
 
@@ -599,7 +599,7 @@ Relevant files:
 | `PERF-E01` | P0 | `Done` | Bypass Vite websocket proxy for app websocket in dev. | Dev websocket URLs resolve directly to the API port with `VITE_API_WS_BASE` override support, and benign Vite proxy `EPIPE`/`ECONNRESET` errors are quieted. |
 | `PERF-E02` | P0 | `Done` | Prevent backend traceback on initial websocket send disconnect. | Initial websocket bootstrap send is inside disconnect handling and unregisters cleanly. |
 | `PERF-E03` | P0 | `Done` | Remove duplicate REST + websocket snapshot bootstrap. | After REST snapshot load, websocket can connect in delta/resume-only mode without sending another full snapshot. |
-| `PERF-E04` | P1 | `Not started` | Add websocket bootstrap timing telemetry. | Dev logs show snapshot send time, payload bytes, violations time, replay count, and resume status. |
+| `PERF-E04` | P1 | `Done` | Add websocket bootstrap timing telemetry. | `websocket_loop` emits structured JSON via `bim_ai.ws_bootstrap` for all four bootstrap modes (snapshot/skip/resume-RESYNC/resume-replay) with model_id, revision, element_count, violations_count, violations_ms, send_ms, total_bootstrap_ms. |
 | `PERF-E05` | P1 | `Not started` | Implement per-socket send tasks/queues. | One slow websocket cannot block broadcast to other clients. |
 | `PERF-E06` | P1 | `Not started` | Add large-delta/presence backpressure policy. | Slow clients receive RESYNC or disconnect based on queue size and age, not just synchronous send failure. |
 | `PERF-E07` | P2 | `Not started` | Compress or slim initial websocket snapshot. | Snapshot payload avoids duplicate fields and can use HTTP snapshot plus websocket deltas for cold start. |
@@ -610,10 +610,10 @@ Relevant files:
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-F01` | P0 | `Done` | Add server-side plan projection cache by revision and params. | Repeated projection requests for the same revision/plan/presentation return from cache. |
 | `PERF-F02` | P0 | `Done` | Add client-side projection request dedupe and `AbortController`. | Rapid revision/view changes cancel stale fetches and avoid setting stale projection state. |
-| `PERF-F03` | P1 | `Not started` | Add projection timing metadata in debug mode. | Plan projection response can include optional phase timings and primitive counts. |
-| `PERF-F04` | P1 | `Not started` | Add server-side schedule table cache by revision and schedule id. | Repeated `/schedules/{id}/table` requests for unchanged revision reuse cached derivation. |
-| `PERF-F05` | P1 | `Not started` | Add client schedule table cache. | SchedulePanel and ModeShells share a cache instead of independently refetching the same table. |
-| `PERF-F06` | P1 | `Not started` | Avoid full room closure payload in schedule table when caller does not need it. | Schedule endpoint supports a mode that omits expensive room programme closure/evidence for lightweight grid display. |
+| `PERF-F03` | P1 | `Done` | Add projection timing metadata in debug mode. | `/projection/plan?debug=true` returns `_perfDebug` (totalMs, cacheHit, docValidateMs, projectionMs, primitiveCount); debug requests bypass the cross-request cache so timings reflect actual recomputation. |
+| `PERF-F04` | P1 | `Done` | Add server-side schedule table cache by revision and schedule id. | `_SCHEDULE_TABLE_CACHE` in `app/bim_ai/routes/api.py` keys on `(model_id, revision, schedule_id, lightweight)` with the same LRU shape as `_PLAN_PROJECTION_CACHE`. |
+| `PERF-F05` | P1 | `Done` | Add client schedule table cache. | `packages/web/src/schedules/scheduleTableCache.ts` exposes `fetchScheduleTable()` with an LRU keyed by (modelId, scheduleId, revision, lightweight). `SchedulePanel` consumes it; revision changes invalidate via the effect deps. AbortController replaces the cancel flag. |
+| `PERF-F06` | P1 | `Done` | Avoid full room closure payload in schedule table when caller does not need it. | `derive_schedule_table(..., lightweight=True)` + route `?lightweight=true` skip `peer_finish_set_by_level` and `room_finish_schedule_row_extensions` for room/finish categories. Cache key carries the lightweight axis to avoid collisions. |
 | `PERF-F07` | P2 | `Done` | Add projection/schedule CI budgets. | `small.plan_projection=250ms`, `schedule_heavy.{room,door,window}_schedule`, `documentation_heavy.plan_projection=500ms` already enforced (`app/scripts/performance_budget.py:37-44`). |
 
 ### G. Frontend State, Selectors, And Derived Indices
@@ -624,9 +624,9 @@ Relevant files:
 | `PERF-G02` | P0 | `Done` | Add derived model indices to store/selectors. | Store exposes levels, walls by level, openings by wall, schedules, sheets, project settings, rooms by level, and selectable ids. |
 | `PERF-G03` | P1 | `Not started` | Migrate `Workspace` off broad full-model scans for common derived values. | Workspace uses narrow selectors for levels, sheets, schedules, project settings, saved views, and counts. |
 | `PERF-G04` | P1 | `Not started` | Migrate `PlanCanvas` interaction paths to indices. | Snapping, picking, hover, tags, dimensions, walls, and floors use precomputed indices where possible. |
-| `PERF-G05` | P1 | `Not started` | Migrate `Viewport` placement/conflict paths to indices. | Hosted opening conflict and level/project-settings lookups avoid repeated full scans. |
-| `PERF-G06` | P1 | `Not started` | Add selector equality strategy. | Zustand selectors use stable derived references or shallow equality so unrelated state changes do not wake large consumers. |
-| `PERF-G07` | P2 | `Not started` | Add frontend render-count instrumentation in dev. | Major panes can log render count and render cause under a dev flag. |
+| `PERF-G05` | P1 | `Partial` | Migrate `Viewport` placement/conflict paths to indices. | `Viewport.tsx` georeferenceKey + georeference + walkLevels + direct3dDraftLevelName now consume `modelIndices.projectSettings` / `modelIndices.levels` (4 full-model scans removed). Hosted-opening conflict + remaining ref-snap scans still pending. |
+| `PERF-G06` | P1 | `Done` | Add selector equality strategy. | `packages/web/src/state/useShallowSelector.ts` re-exports zustand v5's `useShallow` as the canonical primitive; regression test asserts three consecutive set() calls produce zero extra renders when projected fields don't change. Broader adoption is bundled with G03/G04/G05 migrations. |
+| `PERF-G07` | P2 | `Done` | Add frontend render-count instrumentation in dev. | `packages/web/src/state/renderCountProbe.ts` exposes `useRenderCount(name)`; wired into Workspace, PlanCanvas, Viewport. Counts accumulate in `window.__BIM_AI_RENDER_COUNTS__` (auto-on in DEV). Pairs with PERF-M04. |
 
 ### H. 2D Plan Canvas Interaction Performance
 
@@ -657,9 +657,9 @@ Relevant files:
 | `PERF-J01` | P0 | `Done` | Record current production bundle baseline. | Main app chunk is recorded as 4.19 MB minified / 1.08 MB gzip. |
 | `PERF-J02` | P0 | `Done` | Add bundle size budget. | `scripts/check-bundle-budgets.mjs` fails CI when entry, largest JS chunk, or total JS gzip budgets regress. |
 | `PERF-J03` | P0 | `Done` | Code split non-default routes. | Workspace, family editor, presentation viewer, and icon gallery routes load through `React.lazy`. |
-| `PERF-J04` | P1 | `Not started` | Code split heavy panels. | Evidence/Agent Review, Sheet Documentation, Schedule focus, Family Library, PDF/export, map/Leaflet surfaces load on demand. |
-| `PERF-J05` | P1 | `Not started` | Add manual chunks for stable heavy dependencies. | Three.js, Leaflet, html2canvas/jsPDF, command registry, and large feature modules are split where appropriate. |
-| `PERF-J06` | P2 | `Not started` | Add bundle analyzer report. | A generated report identifies top modules in the main chunk. |
+| `PERF-J04` | P1 | `Not started` | Code split heavy panels. | Evidence/Agent Review, Sheet Documentation, Schedule focus, Family Library, PDF/export, map/Leaflet surfaces load on demand. Workspace lazy chunk currently 1.75 MB / 437 KB gzip after J05 vendor splits; deeper panel splits still pending. |
+| `PERF-J05` | P1 | `Done` | Add manual chunks for stable heavy dependencies. | `packages/web/vite.config.ts` `manualChunks` splits vendor-three (153 KB gzip), vendor-pdf (177 KB gzip), vendor-leaflet (43 KB gzip), vendor-i18n (19 KB gzip), vendor-command-palette (3 KB gzip) — Workspace chunk dropped 568→437 KB gzip. |
+| `PERF-J06` | P2 | `Done` | Add bundle analyzer report. | `rollup-plugin-visualizer` wired conditionally via `ANALYZE=1 pnpm build` → `dist/bundle-analysis.html` (treemap, gzip + brotli sized). Default builds unaffected. |
 
 ### K. Monolith Extraction And Render Ownership
 
@@ -686,8 +686,8 @@ Relevant files:
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-M01` | P0 | `Done` | Add backend perf smoke test for current small fixture. | Synthetic small, schedule-heavy, and room-stress fixtures measure evaluate, projection, schedules, evidence, and room derivation in CI. |
 | `PERF-M02` | P0 | `Done` | Add bundle size check. | Entry gzip, largest JS chunk gzip, and total JS gzip are checked in CI. |
-| `PERF-M03` | P1 | `Not started` | Add Playwright interaction perf traces. | Orbit, pan, place window, place door, draw wall, and plan hover collect browser timing traces. |
-| `PERF-M04` | P1 | `Not started` | Add render-count regression test harness. | Development/test mode can assert major panes do not render unexpectedly on simple deltas. |
+| `PERF-M03` | P1 | `Partial` | Add Playwright interaction perf traces. | `packages/web/e2e/perf-interaction-traces.spec.ts` captures plan-hover, pan, and place-window-hover scenarios opt-in via `PLAYWRIGHT_PERF=1`; writes `spec/generated/perf-interaction-traces.json`. orbit/draw-wall/place-door variants need a model loader fixture before they can run. |
+| `PERF-M04` | P1 | `Done` | Add render-count regression test harness. | `packages/web/src/state/renderCountProbe.test.ts` asserts the useRenderCount probe records exactly one sample per render and isolates names. Builds the primitive future per-pane budgets layer on. |
 | `PERF-M05` | P2 | `Blocked` | Add benchmark trend artifacts. | Implementation prepared (perf-budget step writes `--out app/performance-budget-ci.json`; follow-up `actions/upload-artifact@v7.0.1` publishes `performance-budget-{sha}` with `if: always()` + 30-day retention). Push blocked because the Claude Code OAuth token lacks `workflow` scope. Maintainer must apply the change manually or push via a token with workflow scope. |
 
 ## Proposed Performance Budgets
