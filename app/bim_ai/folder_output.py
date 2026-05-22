@@ -44,6 +44,11 @@ from bim_ai.source_ingestion import (
     extract_pdf_text,
     render_pdf_pages,
 )
+from bim_ai.source_page_classification import (
+    apply_page_classifications,
+    build_page_classification_dispatch_plan,
+    load_page_classification_responses,
+)
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_openings import build_source_opening_reconciliation
@@ -186,6 +191,17 @@ def build_reverse_bim_folder_output(
         classifications=classifications,
         rendered_pages=rendered_pages,
         text_extractions=text_extractions,
+    )
+    page_classification_dispatch = build_page_classification_dispatch_plan(
+        visual_packet=visual_packet,
+        output_dir=out_dir,
+        mode="auto",
+        write_assignments=True,
+    )
+    page_classification_responses = load_page_classification_responses(out_dir)
+    page_classification_application = apply_page_classifications(
+        visual_packet,
+        responses=page_classification_responses.get("responses") or [],
     )
     work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=visual_packet)
     requests = build_ai_visual_trace_agent_requests(
@@ -358,6 +374,15 @@ def build_reverse_bim_folder_output(
         reader_pass_manifest=reader_pass_manifest,
     )
     run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get("promptCount", 0)
+    run_summary["summary"]["pageClassificationAssignmentCount"] = (
+        page_classification_dispatch.get("assignmentCount", 0)
+    )
+    run_summary["summary"]["pageClassificationResponseCount"] = (
+        page_classification_responses.get("responseCount", 0)
+    )
+    run_summary["summary"]["pageClassificationAppliedPageCount"] = (
+        page_classification_application.get("appliedPageCount", 0)
+    )
     repair_requests_open = {
         "format": "reverseBimOpenRepairRequests_v1",
         "requests": _build_open_repair_requests(
@@ -386,6 +411,9 @@ def build_reverse_bim_folder_output(
         "documentRegistry": out_dir / "source" / "document-registry.json",
         "documentClassification": out_dir / "source" / "document-classification.json",
         "renderedPages": out_dir / "source" / "rendered-pages.json",
+        "pageClassificationDispatch": out_dir / "ai-reading" / "page-classifications" / "dispatch-plan.json",
+        "pageClassificationResponses": out_dir / "ai-reading" / "page-classifications" / "responses-normalized.json",
+        "pageClassificationApplication": out_dir / "ai-reading" / "page-classifications" / "application-report.json",
         "nativeTextExtractions": out_dir / "source" / "native-text-extractions.json",
         "sourcePageIndex": out_dir / "source" / "source-page-index.json",
         "aiVisualTracePacket": out_dir / "ai-reading" / "ai-visual-trace-packet.json",
@@ -442,6 +470,9 @@ def build_reverse_bim_folder_output(
         "documentRegistry": document_registry,
         "documentClassification": classifications,
         "renderedPages": rendered_pages,
+        "pageClassificationDispatch": page_classification_dispatch,
+        "pageClassificationResponses": page_classification_responses,
+        "pageClassificationApplication": page_classification_application,
         "nativeTextExtractions": text_extractions,
         "sourcePageIndex": source_page_index,
         "aiVisualTracePacket": visual_packet,

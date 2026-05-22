@@ -89,6 +89,11 @@ from bim_ai.source_ingestion import (
     validate_ai_source_facts,
     validate_ai_visual_trace_completeness,
 )
+from bim_ai.source_page_classification import (
+    apply_page_classifications,
+    build_page_classification_dispatch_plan,
+    load_page_classification_responses,
+)
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
@@ -121,6 +126,46 @@ async def source_classify_documents_route(
 ) -> dict[str, Any]:
     manifest = body.get("manifest") or body.get("files") or body
     return classify_documents(manifest)
+
+
+@reverse_bim_router.post("/v3/source/classify-pages/dispatch-plan")
+async def source_classify_pages_dispatch_plan_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    packet = body.get("aiVisualTracePacket") or body.get("packet") or {}
+    output_dir = body.get("outputDir")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    if not isinstance(packet, dict) or not packet.get("documents"):
+        raise HTTPException(
+            status_code=422,
+            detail="aiVisualTracePacket with documents is required",
+        )
+    return build_page_classification_dispatch_plan(
+        visual_packet=packet,
+        output_dir=str(output_dir),
+        mode=str(body.get("mode") or "auto"),
+        write_assignments=bool(body.get("writeAssignments", True)),
+    )
+
+
+@reverse_bim_router.post("/v3/source/classify-pages/normalize")
+async def source_classify_pages_normalize_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    output_dir = body.get("outputDir")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    normalized = load_page_classification_responses(str(output_dir))
+    packet = body.get("aiVisualTracePacket") or body.get("packet")
+    if isinstance(packet, dict) and packet.get("documents"):
+        application = apply_page_classifications(
+            packet,
+            responses=normalized.get("responses") or [],
+        )
+        normalized["application"] = application
+        normalized["aiVisualTracePacket"] = packet
+    return normalized
 
 
 @reverse_bim_router.post("/v3/source/pdf-text")

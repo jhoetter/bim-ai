@@ -292,6 +292,32 @@ for _source_tool in (
         "cli": "bim-ai source extract-facts --classifications classifications.json --output json",
         "notes": "Builds a source fact ledger with provenance from classifications and extracted text.",
     },
+    {
+        "name": "source.classify_pages_dispatch_plan",
+        "title": "SourceClassifyPagesDispatchPlanInput",
+        "path": "/api/v3/source/classify-pages/dispatch-plan",
+        "required": ["aiVisualTracePacket", "outputDir"],
+        "properties": {
+            "aiVisualTracePacket": {"type": "object"},
+            "outputDir": {"type": "string"},
+            "mode": {"type": "string", "enum": ["auto", "all", "none"], "default": "auto"},
+            "writeAssignments": {"type": "boolean", "default": True},
+        },
+        "cli": "bim-ai source classify-pages-dispatch-plan --packet ai-visual-trace-packet.json --output-dir tmp/reverse-bim/run",
+        "notes": "Identifies compound or unknown source PDFs that need per-page visual classification before work-order routing, and emits markdown reader assignments under ai-reading/page-classifications/assignments/. Walks an aiVisualTracePacket (so the manifest/classification/rendered-page join is already done). Use when document-level classification under-fits (gamma 'unknown' / beta multi-role single PDF).",
+    },
+    {
+        "name": "source.classify_pages_normalize",
+        "title": "SourceClassifyPagesNormalizeInput",
+        "path": "/api/v3/source/classify-pages/normalize",
+        "required": ["outputDir"],
+        "properties": {
+            "outputDir": {"type": "string"},
+            "aiVisualTracePacket": {"type": "object"},
+        },
+        "cli": "bim-ai source classify-pages-normalize --output-dir tmp/reverse-bim/run --packet ai-visual-trace-packet.json",
+        "notes": "Reads visual page-classification responses under ai-reading/page-classifications/responses/ and (when an aiVisualTracePacket is supplied) merges the per-page roles back into pageClassificationRoles[] on each rendered page. Idempotent: missing responses are not an error.",
+    },
 ):
     register(
         ToolDescriptor(
