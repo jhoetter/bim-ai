@@ -462,7 +462,20 @@ def ingest_responses(state: dict[str, Any]) -> dict[str, Any]:
         if not responses_dir.exists():
             continue
         completed = set(state["houses"].setdefault(house, {}).setdefault("completedDispatchIds", []))
-        for path in sorted(responses_dir.glob("*.json")):
+        # Process in dependency order: rooms → partitions → openings, so the
+        # nearest-wall resolver sees interior partitions before trying to
+        # host interior doors.
+        def _ordering(p: Path) -> tuple[int, str]:
+            stem = p.stem
+            if "rooms" in stem:
+                return (0, stem)
+            if "partitions" in stem:
+                return (1, stem)
+            if "openings" in stem:
+                return (2, stem)
+            return (3, stem)
+
+        for path in sorted(responses_dir.glob("*.json"), key=_ordering):
             dispatch_id = path.stem
             if dispatch_id in completed:
                 continue
