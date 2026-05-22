@@ -28,6 +28,11 @@
   color: #444;
 }
 
+.agents-house-links {
+  margin: 6px 0;
+  font-size: 13px;
+}
+
 .agents-count {
   font-size: 12px;
   color: #777;
@@ -197,4 +202,137 @@
 .agents-warning {
   color: #b56c00;
   font-size: 13px;
+}
+
+.agents-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 12px 0 24px;
+}
+
+.agents-card {
+  background: #fafafa;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  padding: 12px 14px;
+}
+.agents-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.agents-stats {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #444;
+}
+.agents-stats li {
+  padding: 2px 0;
+}
+
+.agents-iterlist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.agents-iter-btn {
+  background: #fff;
+  border: 1px solid #cfd6dc;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #333;
+}
+.agents-iter-btn:hover:not(:disabled) {
+  border-color: #1659b8;
+  color: #1659b8;
+}
+.agents-iter-btn--active {
+  background: #1659b8;
+  border-color: #1659b8;
+  color: white;
+}
+.agents-iter-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.agents-iter-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
+.agents-capture-section {
+  margin-top: 24px;
+}
+.agents-capture-section h2 {
+  margin: 8px 0 4px;
+  font-size: 16px;
+}
+
+.agents-capture-toolbar {
+  display: flex;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.agents-tab-row {
+  display: flex;
+  gap: 4px;
+}
+
+.agents-tab {
+  background: #fff;
+  border: 1px solid #cfd6dc;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.agents-tab--active {
+  background: #1659b8;
+  border-color: #1659b8;
+  color: white;
+}
+
+.agents-capture-frame {
+  border: 1px solid #e3e3e3;
+  background: #f3f3f3;
+  padding: 8px;
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.agents-capture-img {
+  max-width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  background: white;
+}
+
+.agents-scoring-title {
+  margin: 16px 0 4px;
+  font-size: 14px;
+}
+
+.agents-scoring {
+  background: #f7f7f7;
+  border: 1px solid #e3e3e3;
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  max-height: 500px;
+  overflow: auto;
 }

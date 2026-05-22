@@ -21,6 +21,9 @@ const AgentsIndex = lazy(() =>
 const AgentSessionDetail = lazy(() =>
   import('./agents/AgentSessionDetail').then((m) => ({ default: m.AgentSessionDetail })),
 );
+const AgentHouseDashboard = lazy(() =>
+  import('./agents/AgentHouseDashboard').then((m) => ({ default: m.AgentHouseDashboard })),
+);
 
 export function App() {
   return (
@@ -33,6 +36,7 @@ export function App() {
           <Route path="/family-editor" element={<FamilyEditorWorkbench />} />
           <Route path="/agents" element={<AgentsIndex />} />
           <Route path="/agents/sessions/:sessionId" element={<AgentSessionDetail />} />
+          <Route path="/agents/houses/:house" element={<AgentHouseDashboard />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

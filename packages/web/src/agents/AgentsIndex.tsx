@@ -81,6 +81,20 @@ export function AgentsIndex(): JSX.Element {
             <code>{data.sessionsDir}</code>
           </p>
         ) : null}
+        <p className="agents-house-links">
+          <strong>Per-house dashboards:</strong>{' '}
+          <Link to="/agents/houses/alpha" className="agents-link">
+            alpha
+          </Link>{' '}
+          ·{' '}
+          <Link to="/agents/houses/beta" className="agents-link">
+            beta
+          </Link>{' '}
+          ·{' '}
+          <Link to="/agents/houses/gamma" className="agents-link">
+            gamma
+          </Link>
+        </p>
       </header>
 
       {loading ? <p>Loading sessions…</p> : null}
