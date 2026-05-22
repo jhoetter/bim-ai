@@ -589,6 +589,111 @@ def _perimeter_polygons_per_level(house: str) -> dict[str, list[dict[str, float]
     return by_level
 
 
+def apply_default_views(house_state: dict[str, Any]) -> dict[str, Any]:
+    """Author one plan_view per level + one default 3D viewpoint per house
+    if neither already exist in the live model. Without these the model
+    opens to an empty viewport and the user can't navigate."""
+
+    model_id = house_state.get("modelId")
+    if not model_id:
+        return {"plansApplied": 0, "viewpointsApplied": 0}
+
+    views = http_json("POST", f"/api/models/{model_id}/query/views", {})
+    if views.get("error"):
+        return {"plansApplied": 0, "viewpointsApplied": 0, "error": "query_failed"}
+    existing = (views.get("data") or {}).get("views") or []
+    plan_level_ids = {
+        str(v.get("levelId"))
+        for v in existing
+        if v.get("kind") == "plan_view" and v.get("levelId")
+    }
+    viewpoint_count = sum(
+        1 for v in existing if v.get("kind") in {"viewpoint", "saved_view"}
+    )
+
+    elems = http_json(
+        "POST",
+        f"/api/models/{model_id}/query/elements",
+        {"kinds": ["level"]},
+    )
+    levels = [
+        e for e in (elems.get("data") or {}).get("elements") or []
+        if e.get("kind") == "level"
+    ]
+
+    summary = http_json("GET", f"/api/models/{model_id}/summary")
+    parent_revision = int(summary.get("revision") or summary.get("modelRevision") or 1)
+    plans_applied = 0
+    viewpoints_applied = 0
+
+    def commit_bundle(operation: str, command: dict[str, Any], assumption_key: str) -> bool:
+        nonlocal parent_revision
+        bundle_body = {
+            "mode": "commit",
+            "bundle": {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [command],
+                "assumptions": [
+                    {
+                        "key": assumption_key,
+                        "value": command.get("name") or operation,
+                        "confidence": 0.9,
+                        "source": "convergence_loop_default_views",
+                        "contestable": False,
+                        "evidence": (
+                            "Auto-authored default plan / 3D view by the "
+                            "iter-4 convergence loop so the model opens "
+                            "with a navigable viewport."
+                        ),
+                    }
+                ],
+                "parentRevision": parent_revision,
+            },
+        }
+        resp = http_json("POST", f"/api/models/{model_id}/bundles", bundle_body)
+        if resp.get("error") or not resp.get("applied"):
+            return False
+        new_rev = resp.get("newRevision")
+        if new_rev:
+            parent_revision = int(new_rev)
+        return True
+
+    # One plan_view per level.
+    for level in sorted(levels, key=lambda lv: float(lv.get("elevationMm") or 0)):
+        level_id = str(level.get("id") or "")
+        if not level_id or level_id in plan_level_ids:
+            continue
+        cmd = {
+            "type": "upsertPlanView",
+            "name": f"Plan — {level.get('name')}",
+            "levelId": level_id,
+            "discipline": "architecture",
+            "planPresentation": "default",
+        }
+        if commit_bundle("plan_view", cmd, f"iter4.plan_view.{level_id}"):
+            plans_applied += 1
+
+    # One default 3D viewpoint per house — orbit camera looking down at the
+    # building roughly from the SE. Use a generous distance so the whole
+    # envelope fits in frame regardless of house size.
+    if viewpoint_count == 0:
+        # Camera distance heuristic: 25 m from origin, looking back at it.
+        cmd = {
+            "type": "saveViewpoint",
+            "name": "Default 3D",
+            "mode": "orbit_3d",
+            "camera": {
+                "position": {"xMm": 25000, "yMm": -20000, "zMm": 15000},
+                "target": {"xMm": 5000, "yMm": 5000, "zMm": 2500},
+                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
+            },
+        }
+        if commit_bundle("viewpoint", cmd, f"iter4.viewpoint.{house_state['house']}"):
+            viewpoints_applied += 1
+
+    return {"plansApplied": plans_applied, "viewpointsApplied": viewpoints_applied}
+
+
 def apply_auto_floors_and_roofs(house_state: dict[str, Any]) -> dict[str, Any]:
     """For each house already loaded into the live dev server, author one
     CreateFloorCmd per level whose wall_chain perimeter is known and one
@@ -1504,6 +1609,11 @@ def run_pass() -> dict[str, Any]:
             if envelope.get("floorsApplied") or envelope.get("roofsApplied"):
                 house_state["actionsThisPass"].append(
                     {"at": _now(), "appliedEnvelope": envelope}
+                )
+            view_result = apply_default_views(house_state)
+            if view_result.get("plansApplied") or view_result.get("viewpointsApplied"):
+                house_state["actionsThisPass"].append(
+                    {"at": _now(), "appliedDefaultViews": view_result}
                 )
         # Iter-4 additive ingest runs for every house, terminal or not,
         # so room / opening dispatches keep landing.
