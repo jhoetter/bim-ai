@@ -106,7 +106,7 @@ A-territory bar after the sweep:
 | SLC-2026-13   | P1       | Done    | `packages/web/src/workspace/project/ProjectBrowser.tsx`      | Extract ProjectBrowserV3 to its own module                            | ProjectBrowser below 3,000 LOC.                            |
 | SLC-2026-14   | P1       | Done    | `app/bim_ai/commands.py`                                     | Extract annotation + late command schemas                             | commands.py below 3,000 LOC.                               |
 | SLC-2026-15   | P2       | Done    | `packages/core/src/index.ts`                                 | Extract MEP / structural / annotation element variants                | core/index below 3,000 LOC.                                |
-| SLC-2026-16   | P1       | Open    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract another panel cluster                                         | Workbench below 3,000 LOC.                                 |
+| SLC-2026-16   | P1       | Done    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract aligned-dimensions + parameters editor sections               | Workbench below 3,000 LOC.                                 |
 | SLC-2026-17   | P1       | Done    | `packages/web/src/workspace/Workspace.tsx`                   | Extract hotkeys / default-tab / undo-redo / array-formula helpers     | Workspace below 3,000 LOC.                                 |
 | SLC-2026-18   | P1       | Done    | `app/bim_ai/api/registry.py`                                 | Extract OUT-V3-02/03 + EXP-V3-01 descriptor group                     | registry.py below 3,000 LOC.                               |
 | SLC-2026-19   | P1       | Done    | `app/bim_ai/model_integrity.py`                              | Extract v1 contract/evidence emitters                                 | model_integrity below 3,000 LOC.                           |
@@ -193,6 +193,17 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-16` Done. `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`
+  cut from 3,340 to 2,991 LOC by extracting two cohesive JSX sections
+  out of the monolithic component into sibling files:
+  - `FamilyEditorAlignedDimensionsSection.tsx` — the §13.x aligned
+    dimensions panel (SVG canvas + dimension creation form + EQ
+    constraint toolbar). Takes all needed state and handlers as
+    props.
+  - `FamilyEditorParametersSection.tsx` — the parameters editor
+    table (Key / Label / Type / Default / Scope / Formula rows) plus
+    the "+ Add parameter" button.
+  `pnpm typecheck` is clean across all packages.
 - 2026-05-22: late session re-shrink. Two files crept back over 3,000 LOC
   after parallel-agent landings of the TH-X-F006 source-view-evidence
   feature. Re-extracted to put them back under the bar:
