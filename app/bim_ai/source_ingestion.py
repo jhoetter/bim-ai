@@ -354,6 +354,141 @@ def render_pdf_pages(
     }
 
 
+def rerender_for_legibility(
+    *,
+    output_dir: str | Path,
+    targets: list[dict[str, Any]],
+    dpi: int = 300,
+) -> dict[str, Any]:
+    """TH-X-F010 — re-render specific PDF pages at a higher DPI in place.
+
+    Use when reader passes flag ``dimension_legibility`` conflicts on a known
+    (sourceDocumentId, page) pair. The original render lives under
+    ``<output_dir>/source/rendered-pages/<sourceDocumentId>/`` and is
+    overwritten at the new DPI. The on-disk rendered-pages.json index is
+    rewritten so downstream code keeps the same paths.
+
+    ``targets`` is a list of ``{sourceDocumentId, pages: [int]}`` (or
+    ``{sourceDocumentId, page: int}``). Documents not present in the existing
+    ``source/folder-manifest.json`` are reported as diagnostics and skipped.
+    """
+
+    out_dir = Path(output_dir).expanduser().resolve()
+    manifest_path = out_dir / "source" / "folder-manifest.json"
+    rendered_pages_path = out_dir / "source" / "rendered-pages.json"
+
+    if not manifest_path.exists():
+        return _error(
+            "rerender_manifest_missing",
+            f"No source/folder-manifest.json under {out_dir}; run preflight first.",
+            422,
+        )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files_by_doc_id: dict[str, dict[str, Any]] = {
+        str(row.get("sourceDocumentId")): row
+        for row in manifest.get("files") or []
+        if isinstance(row, dict) and row.get("sourceDocumentId")
+    }
+    rendered_pages: list[dict[str, Any]] = (
+        json.loads(rendered_pages_path.read_text(encoding="utf-8"))
+        if rendered_pages_path.exists()
+        else []
+    )
+    rendered_by_source: dict[str, dict[str, Any]] = {
+        str(row.get("sourcePath") or ""): row
+        for row in rendered_pages
+        if isinstance(row, dict)
+    }
+
+    re_renders: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    for target in targets or []:
+        if not isinstance(target, dict):
+            continue
+        doc_id = str(target.get("sourceDocumentId") or "")
+        if not doc_id:
+            diagnostics.append(
+                {"code": "rerender_target_missing_document_id", "target": target}
+            )
+            continue
+        manifest_row = files_by_doc_id.get(doc_id)
+        if manifest_row is None or manifest_row.get("kind") != "pdf":
+            diagnostics.append(
+                {
+                    "code": "rerender_target_not_pdf",
+                    "sourceDocumentId": doc_id,
+                }
+            )
+            continue
+        source_path = str(manifest_row.get("absolutePath") or "")
+        if not source_path or not Path(source_path).exists():
+            diagnostics.append(
+                {
+                    "code": "rerender_target_source_missing",
+                    "sourceDocumentId": doc_id,
+                    "sourcePath": source_path,
+                }
+            )
+            continue
+        pages = target.get("pages")
+        if pages is None and target.get("page") is not None:
+            pages = [target.get("page")]
+        if pages is None:
+            existing = rendered_by_source.get(source_path)
+            if existing is not None:
+                pages = [p.get("page") for p in existing.get("pages") or [] if isinstance(p, dict)]
+        page_numbers = sorted(
+            {int(p) for p in (pages or []) if isinstance(p, int) and p > 0}
+        )
+        if not page_numbers:
+            diagnostics.append(
+                {"code": "rerender_target_no_pages", "sourceDocumentId": doc_id}
+            )
+            continue
+        render_target_dir = out_dir / "source" / "rendered-pages" / doc_id
+        first = page_numbers[0]
+        last = page_numbers[-1]
+        result = render_pdf_pages(
+            source_path,
+            output_dir=render_target_dir,
+            dpi=dpi,
+            first_page=first,
+            last_page=last,
+        )
+        re_renders.append(
+            {
+                "sourceDocumentId": doc_id,
+                "sourcePath": source_path,
+                "pages": page_numbers,
+                "dpi": dpi,
+                "diagnostics": result.get("diagnostics") or [],
+            }
+        )
+        rendered_by_source[source_path] = {
+            "sourcePath": source_path,
+            "pages": result.get("pages") or [],
+            "dpi": dpi,
+        }
+
+    rendered_pages_updated = list(rendered_by_source.values())
+    rendered_pages_path.parent.mkdir(parents=True, exist_ok=True)
+    rendered_pages_path.write_text(
+        json.dumps(rendered_pages_updated, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "ok": True,
+        "format": "sourceRerenderForLegibility_v1",
+        "outputDir": str(out_dir),
+        "dpi": dpi,
+        "rerenderedDocumentCount": len(re_renders),
+        "rerenders": re_renders,
+        "diagnostics": diagnostics,
+    }
+
+
 def detect_scale_from_text(text: str, *, source_document_id: str | None = None) -> dict[str, Any]:
     candidates: list[dict[str, Any]] = []
     for match in SCALE_RE.finditer(text or ""):

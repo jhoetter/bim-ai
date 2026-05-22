@@ -700,7 +700,7 @@ def prepare_ai_visual_trace_run_from_folder(
     root_path: str | Path,
     output_dir: str | Path,
     run_id: str | None = None,
-    dpi: int = 200,
+    dpi: int = 240,
     max_pages_per_pdf: int | None = None,
 ) -> dict[str, Any]:
     """Prepare the full folder-to-multimodal-reader run scaffold."""

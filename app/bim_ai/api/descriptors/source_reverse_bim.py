@@ -108,7 +108,7 @@ for _source_tool in (
         "properties": {
             "sourcePath": {"type": "string"},
             "outputDir": {"type": "string"},
-            "dpi": {"type": "integer", "default": 200},
+            "dpi": {"type": "integer", "default": 240},
             "firstPage": {"type": "integer"},
             "lastPage": {"type": "integer"},
         },
@@ -291,6 +291,30 @@ for _source_tool in (
         },
         "cli": "bim-ai source extract-facts --classifications classifications.json --output json",
         "notes": "Builds a source fact ledger with provenance from classifications and extracted text.",
+    },
+    {
+        "name": "source.rerender_for_legibility",
+        "title": "SourceRerenderForLegibilityInput",
+        "path": "/api/v3/source/rerender-for-legibility",
+        "required": ["outputDir", "targets"],
+        "properties": {
+            "outputDir": {"type": "string"},
+            "targets": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "sourceDocumentId": {"type": "string"},
+                        "pages": {"type": "array", "items": {"type": "integer"}},
+                        "page": {"type": "integer"},
+                    },
+                    "required": ["sourceDocumentId"],
+                },
+            },
+            "dpi": {"type": "integer", "default": 300},
+        },
+        "cli": "bim-ai source rerender-for-legibility --output-dir tmp/reverse-bim/run --targets '[{\"sourceDocumentId\":\"srcdoc-eg\",\"pages\":[1]}]' --dpi 300",
+        "notes": "Re-renders specific (sourceDocumentId, page) pairs at a higher DPI when readers flag dimension_legibility conflicts. Overwrites the existing PNGs in source/rendered-pages/<docId>/ and updates source/rendered-pages.json in place. Default DPI is 300; use 360+ for very faint dimension strings.",
     },
     {
         "name": "source.classify_pages_dispatch_plan",

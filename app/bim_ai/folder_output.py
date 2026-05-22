@@ -123,7 +123,7 @@ def build_reverse_bim_folder_output(
     coordinate_frame_alignments: list[dict[str, Any]] | dict[str, Any] | None = None,
     site_terrain_decisions: list[dict[str, Any]] | dict[str, Any] | None = None,
     run_id: str | None = None,
-    dpi: int = 200,
+    dpi: int = 240,
     max_pages_per_pdf: int | None = None,
     reset_output: bool = False,
 ) -> dict[str, Any]:

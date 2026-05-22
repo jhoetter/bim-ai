@@ -91,6 +91,7 @@ from bim_ai.source_ingestion import (
     extract_pdf_text,
     extract_source_facts,
     render_pdf_pages,
+    rerender_for_legibility,
     validate_ai_source_facts,
     validate_ai_visual_trace_completeness,
 )
@@ -181,6 +182,28 @@ async def reverse_bim_source_view_evidence_upsert_route(
     return _reverse_bim_view_bundle("reverse_bim_source_view_evidence", body)
 
 
+@reverse_bim_router.post("/v3/source/rerender-for-legibility")
+async def source_rerender_for_legibility_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    output_dir = body.get("outputDir")
+    targets = body.get("targets")
+    if not output_dir:
+        raise HTTPException(status_code=422, detail="outputDir is required")
+    if not isinstance(targets, list) or not targets:
+        raise HTTPException(
+            status_code=422,
+            detail="targets must be a non-empty list of {sourceDocumentId, pages?, page?}",
+        )
+    return _source_response(
+        rerender_for_legibility(
+            output_dir=str(output_dir),
+            targets=targets,
+            dpi=int(body.get("dpi") or 300),
+        )
+    )
+
+
 @reverse_bim_router.post("/v3/source/classify-pages/dispatch-plan")
 async def source_classify_pages_dispatch_plan_route(
     body: dict[str, Any] = Body(default_factory=dict),
@@ -241,7 +264,7 @@ async def source_render_pdf_route(body: dict[str, Any] = Body(default_factory=di
         render_pdf_pages(
             str(source_path),
             output_dir=str(output_dir),
-            dpi=int(body.get("dpi") or 200),
+            dpi=int(body.get("dpi") or 240),
             first_page=body.get("firstPage"),
             last_page=body.get("lastPage"),
         )
@@ -341,7 +364,7 @@ async def source_prepare_ai_visual_trace_run_route(
             root_path=str(root_path),
             output_dir=str(output_dir),
             run_id=body.get("runId"),
-            dpi=int(body.get("dpi") or 200),
+            dpi=int(body.get("dpi") or 240),
             max_pages_per_pdf=body.get("maxPagesPerPdf"),
         )
     )
@@ -566,7 +589,7 @@ async def reverse_bim_folder_output_route(
         or body.get("coordinateFrameDecisions"),
         site_terrain_decisions=body.get("siteTerrainDecisions") or body.get("siteTopologyDecisions"),
         run_id=body.get("runId"),
-        dpi=int(body.get("dpi") or 200),
+        dpi=int(body.get("dpi") or 240),
         max_pages_per_pdf=body.get("maxPagesPerPdf"),
         reset_output=bool(body.get("resetOutput") or False),
     )

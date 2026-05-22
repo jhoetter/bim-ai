@@ -391,6 +391,88 @@ def test_additional_work_package_ids_fan_out_a_single_rescue_response() -> None:
         } == primary_fact_ids
 
 
+def test_rerender_for_legibility_writes_updated_rendered_pages_index(tmp_path: Path) -> None:
+    """TH-X-F010 — rerender_for_legibility re-renders specific pages and
+    overwrites the rendered-pages.json index in place. When the source PDF
+    cannot be re-rendered (no Poppler / not found), the helper still reports
+    the attempt and emits diagnostics instead of crashing."""
+
+    from bim_ai.source_ingestion import rerender_for_legibility
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    pdf_path = source_dir / "EG.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n% stub\n")
+
+    output_dir = tmp_path / "out"
+    (output_dir / "source").mkdir(parents=True)
+    manifest = {
+        "ok": True,
+        "format": "sourceFolderManifest_v1",
+        "files": [
+            {
+                "sourceDocumentId": "srcdoc-eg",
+                "relativePath": "source/EG.pdf",
+                "absolutePath": str(pdf_path),
+                "kind": "pdf",
+                "name": "EG.pdf",
+                "mimeType": "application/pdf",
+                "sha256": "deadbeef",
+            }
+        ],
+    }
+    (output_dir / "source" / "folder-manifest.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
+    initial_rendered = [
+        {
+            "sourcePath": str(pdf_path),
+            "pages": [{"page": 1, "path": "stale.png"}],
+            "dpi": 200,
+        }
+    ]
+    (output_dir / "source" / "rendered-pages.json").write_text(
+        json.dumps(initial_rendered), encoding="utf-8"
+    )
+
+    result = rerender_for_legibility(
+        output_dir=output_dir,
+        targets=[{"sourceDocumentId": "srcdoc-eg", "pages": [1]}],
+        dpi=300,
+    )
+    assert result["ok"] is True
+    assert result["dpi"] == 300
+    assert result["rerenderedDocumentCount"] == 1
+    rerender_row = result["rerenders"][0]
+    assert rerender_row["sourceDocumentId"] == "srcdoc-eg"
+    assert rerender_row["pages"] == [1]
+
+    rewritten = json.loads(
+        (output_dir / "source" / "rendered-pages.json").read_text(encoding="utf-8")
+    )
+    assert rewritten[0]["sourcePath"] == str(pdf_path)
+    assert rewritten[0]["dpi"] == 300
+
+
+def test_rerender_for_legibility_emits_diagnostics_for_unknown_document(tmp_path: Path) -> None:
+    from bim_ai.source_ingestion import rerender_for_legibility
+
+    output_dir = tmp_path / "out"
+    (output_dir / "source").mkdir(parents=True)
+    (output_dir / "source" / "folder-manifest.json").write_text(
+        json.dumps({"ok": True, "files": []}), encoding="utf-8"
+    )
+
+    result = rerender_for_legibility(
+        output_dir=output_dir,
+        targets=[{"sourceDocumentId": "missing-doc", "pages": [1]}],
+        dpi=300,
+    )
+    diag_codes = {row["code"] for row in result["diagnostics"]}
+    assert "rerender_target_not_pdf" in diag_codes
+    assert result["rerenderedDocumentCount"] == 0
+
+
 def test_document_classification_uses_native_text_when_filename_is_opaque(tmp_path: Path) -> None:
     pdf_path = tmp_path / "NW-2025-opaque.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n% test\n")
