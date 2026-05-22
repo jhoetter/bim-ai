@@ -193,6 +193,16 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: end of follow-up sweep. Of the nine files flagged above
+  3,000 LOC at tracker start, **seven are now under 3,000 LOC**
+  (every P1 except `Viewport.tsx` and `PlanCanvas.tsx`). The two
+  remaining files share the same shape — one ~2,650-3,000 line
+  `useEffect` body holding the entire authoring state machine with
+  closure-captured mutable locals (drag state, polygon draft, RAF
+  flags, etc.). Surface-level extraction does not help here; the
+  fix is a `useEffect` split (event listeners vs. scene mount vs.
+  animation loop) or a reducer/state-machine extraction. Tracked
+  as `SLC-2026-03` and `SLC-2026-04` for a later session.
 - 2026-05-22: `SLC-2026-16` Done. `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`
   cut from 3,340 to 2,991 LOC by extracting two cohesive JSX sections
   out of the monolithic component into sibling files:
