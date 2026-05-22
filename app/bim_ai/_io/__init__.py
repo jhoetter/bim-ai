@@ -11,12 +11,13 @@ existing impls so persisted digests do not change on migration.
 """
 
 from bim_ai._io.digest import canonical_json_bytes, digest, sha256_bytes, sha256_json
-from bim_ai._io.json_io import read_json, write_json
+from bim_ai._io.json_io import read_json, read_json_dict, write_json
 
 __all__ = [
     "canonical_json_bytes",
     "digest",
     "read_json",
+    "read_json_dict",
     "sha256_bytes",
     "sha256_json",
     "write_json",

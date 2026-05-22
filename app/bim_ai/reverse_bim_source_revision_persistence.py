@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from bim_ai._io.digest import digest as _digest
+from bim_ai._io.json_io import read_json_dict
 
 
 def persist_reverse_bim_source_revision_ledger(
@@ -23,7 +24,7 @@ def persist_reverse_bim_source_revision_ledger(
     validation_dir.mkdir(parents=True, exist_ok=True)
     ledger_path = validation_dir / "source-revision-ledger.json"
     history_path = validation_dir / "source-revision-ledger.history.jsonl"
-    existing = _load_json(ledger_path)
+    existing = read_json_dict(ledger_path)
     merged = _merge_ledgers(existing, source_revision_ledger)
     record = {
         "persistedAt": datetime.now(UTC).isoformat(),
@@ -74,13 +75,3 @@ def _merge_ledgers(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[s
         "summary": summary,
         "entries": entries,
     }
-
-
-def _load_json(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}

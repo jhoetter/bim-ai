@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from bim_ai._io.digest import sha256_json
+from bim_ai._io.json_io import write_json as _write_json_shared
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -170,13 +171,15 @@ def build_reverse_bim_folder_output(
             },
             "nextStep": "Use the original source-document folder, not seed-artifacts or generated reverse-BIM outputs.",
         }
-        _write_json(out_dir / "run-summary.json", result)
-        _write_json(out_dir / "validation" / "package-acceptance-report.json", result["acceptance"])
+        _write_json_shared(out_dir / "run-summary.json", result)
+        _write_json_shared(
+            out_dir / "validation" / "package-acceptance-report.json", result["acceptance"]
+        )
         return result
 
     manifest = build_folder_manifest(source_root)
     if manifest.get("ok") is False:
-        _write_json(out_dir / "run-summary.json", manifest)
+        _write_json_shared(out_dir / "run-summary.json", manifest)
         return manifest
 
     rendered_pages, text_extractions = _render_and_extract(
@@ -549,7 +552,7 @@ def build_reverse_bim_folder_output(
         "packageAcceptanceReport": acceptance,
     }
     for key, payload in payloads.items():
-        _write_json(artifacts[key], payload)
+        _write_json_shared(artifacts[key], payload)
     artifacts["sourceRepairPlanMarkdown"].write_text(
         _source_repair_plan_markdown(source_repair_plan),
         encoding="utf-8",
@@ -2537,11 +2540,6 @@ def _hard_mcp_readiness_blocker_count(readiness: dict[str, Any]) -> int:
         + int(summary.get("sourceConflictCount") or 0)
         + int(summary.get("missingMcpToolCount") or 0)
     )
-
-
-def _write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def _role_for_classification(classification: str) -> str:

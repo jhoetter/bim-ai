@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from bim_ai._io.digest import sha256_json
+from bim_ai._io.json_io import read_json_dict
 
 OPEN_PROGRESS_STATUSES = {
     "waiting_for_reader",
@@ -31,10 +32,10 @@ def build_reverse_bim_reader_dispatch_plan(
     """
 
     out_dir = Path(output_dir).expanduser().resolve()
-    requests = _read_json(out_dir / "ai-reading" / "ai-visual-agent-requests.json")
-    manifest = _read_json(out_dir / "ai-reading" / "reader-pass-manifest.json")
-    prompts = _read_json(out_dir / "ai-reading" / "reader-assignment-prompts.json")
-    progress = _read_json(out_dir / "ai-reading" / "reader-assignment-progress.json")
+    requests = read_json_dict(out_dir / "ai-reading" / "ai-visual-agent-requests.json")
+    manifest = read_json_dict(out_dir / "ai-reading" / "reader-pass-manifest.json")
+    prompts = read_json_dict(out_dir / "ai-reading" / "reader-assignment-prompts.json")
+    progress = read_json_dict(out_dir / "ai-reading" / "reader-assignment-progress.json")
 
     request_by_id = {
         str(row.get("requestId") or ""): row
@@ -316,16 +317,6 @@ def _call_reader_command(
             "Reader command must return one JSON object.",
         )
     return payload, None
-
-
-def _read_json(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    return payload if isinstance(payload, dict) else {}
 
 
 def _diagnostic(code: str, message: str, **extra: Any) -> dict[str, Any]:

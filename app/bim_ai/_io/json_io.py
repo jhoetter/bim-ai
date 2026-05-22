@@ -28,6 +28,22 @@ def read_json(path: Path, *, default: Any = None) -> Any:
         return default
 
 
+def read_json_dict(path: Path) -> dict[str, Any]:
+    """Variant of `read_json` that also enforces a dict shape.
+
+    Matches the previous `_read_json` / `_load_json` impls in
+    `reverse_bim_reader_dispatch` and
+    `reverse_bim_source_revision_persistence`: returns `{}` for
+    missing files, parse errors, AND non-dict payloads (e.g. a JSON
+    list at the top level). Several callers chain `.get(...)`
+    on the result, so the guard is load-bearing.
+    """
+    payload = read_json(path, default=None)
+    if isinstance(payload, dict):
+        return payload
+    return {}
+
+
 def write_json(
     path: Path,
     payload: Any,
