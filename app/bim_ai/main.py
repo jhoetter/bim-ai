@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from contextlib import asynccontextmanager
 from uuid import UUID
 
@@ -10,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 from starlette.middleware.base import RequestResponseEndpoint
 
 from bim_ai._errors import register_route_error_handler
-from bim_ai._io.log import set_correlation_id
+from bim_ai._io.log import get_logger, set_correlation_id
 from bim_ai.ai_boundary import load_bill_of_rights_markdown
 from bim_ai.config import get_settings
 from bim_ai.db import init_db_schema
@@ -69,6 +70,72 @@ async def derived_payload_cache_middleware(
         plan_projection_wire_request_cache(),
     ):
         return await call_next(request)
+
+
+_route_timing_log = get_logger("bim_ai.route_timing")
+
+
+def _route_timing_threshold_ms() -> float:
+    """PERF-A04: only emit a log line when a route takes longer than this.
+
+    Default 250 ms keeps prod logs quiet but surfaces the obvious offenders.
+    Set BIM_AI_ROUTE_TIMING_THRESHOLD_MS=0 to log every request (dev/test).
+    """
+    raw = os.getenv("BIM_AI_ROUTE_TIMING_THRESHOLD_MS")
+    if raw is None or raw == "":
+        return 250.0
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return 250.0
+
+
+@app.middleware("http")
+async def route_timing_middleware(
+    request: Request, call_next: RequestResponseEndpoint
+) -> Response:
+    """PERF-A04: log slow HTTP routes with route, method, status, elapsed.
+
+    Pulls model_id/revision from path/query params when present. Correlation
+    ID rides via the contextvar from `correlation_id_middleware` below.
+    """
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+        status = response.status_code
+    except Exception:
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        _route_timing_log.warning(
+            "route raised",
+            extra={
+                "route": request.scope.get("route").path  # type: ignore[union-attr]
+                if request.scope.get("route") is not None
+                else request.url.path,
+                "method": request.method,
+                "status": 500,
+                "elapsed_ms": round(elapsed_ms, 2),
+                "model_id": request.path_params.get("model_id")
+                or request.path_params.get("id"),
+                "revision": request.query_params.get("revision"),
+            },
+        )
+        raise
+    elapsed_ms = (time.perf_counter() - start) * 1000.0
+    if elapsed_ms >= _route_timing_threshold_ms():
+        route = request.scope.get("route")
+        _route_timing_log.info(
+            "route slow",
+            extra={
+                "route": route.path if route is not None else request.url.path,
+                "method": request.method,
+                "status": status,
+                "elapsed_ms": round(elapsed_ms, 2),
+                "model_id": request.path_params.get("model_id")
+                or request.path_params.get("id"),
+                "revision": request.query_params.get("revision"),
+            },
+        )
+    return response
 
 
 @app.middleware("http")
