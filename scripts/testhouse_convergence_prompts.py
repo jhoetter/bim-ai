@@ -235,22 +235,31 @@ extracted and whether you hit any source-unavailable cases.
 """
 
 
-def room_opening_reader(args: dict[str, Any]) -> str:
+def room_outline_reader(args: dict[str, Any]) -> str:
     house = args["house"]
+    level = args.get("level") or "EG"
     retry = int(args.get("retry") or 1)
-    dispatch_id = f"{house}-rooms-pass-{retry:02d}"
+    dispatch_id = f"{house}-rooms-{level.lower()}-pass-{retry:02d}"
     house_meta = HOUSE_SOURCE[house]
+    doc_id, doc_label = house_meta["sourceDocs"].get(level, (None, None))
+    rendered_dir = (
+        REPO_ROOT
+        / "tmp"
+        / "reverse-bim"
+        / house
+        / "source"
+        / "rendered-pages"
+        / (doc_id or "")
+    )
     response_path = _response_path(house, dispatch_id)
-    return f"""You are a room-and-opening reader for reverse-BIM testhouse `{house}`.
+    return f"""You are a room-outline reader for reverse-BIM testhouse `{house}`, level `{level}`.
 
-{_retry_preamble(retry, "room_opening_reader")}**Goal**: extract numeric room outlines and door/window opening positions
-from the dimensioned floor-plan pages so the model can build a
-`physical_topology` that passes the methodology's room-access-graph
-check.
+{_retry_preamble(retry, "room_outline_reader")}**Goal**: extract one numeric room outline per enclosed room visible on the
+plan so the model can author `createRoomOutline` commands.
 
-**Source pages** are under
-`tmp/reverse-bim/{house}/source/rendered-pages/*/<plan PNGs>`. Read each
-page that contains a plan. Skip elevation / section / detail pages.
+**Source page**: {doc_label} (sourceDocumentId `{doc_id}`).
+Read every PNG in `{rendered_dir}/` that depicts level `{level}`. Skip
+elevation / section / detail pages.
 
 **Context**: {house_meta['context']}
 
@@ -258,23 +267,97 @@ page that contains a plan. Skip elevation / section / detail pages.
 
     {response_path}
 
-with `kind: "room"`, `kind: "opening"` (subtype `door` or `window`),
-and `kind: "wall_opening"` facts. Each room fact must have a numeric
-`value.boundaryPointsMm: [{{xMm, yMm}}, ...]` polygon and an
-`areaM2` measured from the plan. Each opening fact must have a numeric
-`value.position: {{xMm, yMm}}` and `value.widthMm` / `value.heightMm` /
-`value.sillHeightMm` from the dimension marks.
+Each fact:
 
-Follow the same shape and constraints as the `numeric_reader_for_level`
-output — same envelope (`format`, `readerPassId`, `workPackageId`,
-`facts`).  workPackageId should be `wp-dimensional-floorplans` with
+```json
+{{
+  "factId": "{house}-r3-room-{level.lower()}-<slug>",
+  "kind": "room",
+  "value": {{
+    "levelId": "{level}",
+    "name": "<room label from plan, e.g. Wohnen, Kueche, Bad>",
+    "outlineMm": [{{"xMm": <N>, "yMm": <N>}}, ...],
+    "areaM2": <number>
+  }},
+  "confidence": <0..1>,
+  "provenance": {{"sourceDocumentId": "{doc_id}", "page": <int>, "region": "<room cluster>", "method": "ai_document_read"}}
+}}
+```
+
+Use the same envelope as numeric_reader_for_level:
+`format: "sourceAiVisualTraceReaderResponse_v1"`,
+`readerPassId: "reader-pass-iter3"`,
+`workPackageId: "wp-dimensional-floorplans"`,
 `additionalWorkPackageIds: ["wp-current-condition"]`.
 
-If a page is genuinely unreadable, emit a single `kind: "conflict"`
-fact with `value.status: "source_unavailable"` and a clear reason. Do
-not invent rooms or openings that aren't on the page.
+**Hard constraints**:
+* `outlineMm` MUST be a numeric polygon (≥3 points, axis-aligned
+  rectangles are fine — 4 corner points).
+* `levelId` exactly `{level}`.
+* If a room cluster is genuinely unmeasurable (heavy noise, hidden
+  dimensions), emit a fact with `value.status: "source_unavailable"`
+  and `confidence: 0`. Do not invent rooms.
 
-Print a one-line summary after writing the file.
+After writing, print a one-line summary: room count + total area.
+"""
+
+
+def opening_reader(args: dict[str, Any]) -> str:
+    house = args["house"]
+    level = args.get("level") or "EG"
+    retry = int(args.get("retry") or 1)
+    dispatch_id = f"{house}-openings-{level.lower()}-pass-{retry:02d}"
+    house_meta = HOUSE_SOURCE[house]
+    doc_id, doc_label = house_meta["sourceDocs"].get(level, (None, None))
+    rendered_dir = (
+        REPO_ROOT
+        / "tmp"
+        / "reverse-bim"
+        / house
+        / "source"
+        / "rendered-pages"
+        / (doc_id or "")
+    )
+    response_path = _response_path(house, dispatch_id)
+    return f"""You are a door / window opening reader for reverse-BIM testhouse `{house}`, level `{level}`.
+
+{_retry_preamble(retry, "opening_reader")}**Source page**: {doc_label} (sourceDocumentId `{doc_id}`). Read every PNG in
+`{rendered_dir}/` that depicts the `{level}` floor plan.
+
+**Context**: {house_meta['context']}
+
+**Goal**: for each visible door and window opening, emit one fact:
+
+```json
+{{
+  "factId": "{house}-r3-{level.lower()}-opening-<slug>",
+  "kind": "opening",
+  "value": {{
+    "levelId": "{level}",
+    "openingType": "door" | "window",
+    "position": {{"xMm": <N>, "yMm": <N>}},
+    "widthMm": <number>,
+    "heightMm": <number>,
+    "sillHeightMm": <number> // windows only
+  }},
+  "confidence": <0..1>,
+  "provenance": {{"sourceDocumentId": "{doc_id}", "page": <int>, "region": "<wall segment>", "method": "ai_document_read"}}
+}}
+```
+
+`position` is the opening center in the same coordinate frame as the
+authored wall_chains (xMm/yMm relative to the building origin). Use
+the printed dimension chain to locate it; if a dimension is illegible,
+estimate from the scale and lower confidence.
+
+Envelope: `format: "sourceAiVisualTraceReaderResponse_v1"`,
+`readerPassId: "reader-pass-iter3"`,
+`workPackageId: "wp-dimensional-floorplans"`.
+
+If openings are unmeasurable on this page, emit ONE
+source_unavailable fact for the page.
+
+After writing, print a one-line summary: door count + window count.
 """
 
 
@@ -333,7 +416,8 @@ Print a one-line summary after writing the file.
 
 PROMPT_BUILDERS = {
     "numeric_reader_for_level": numeric_reader_for_level,
-    "room_opening_reader": room_opening_reader,
+    "room_outline_reader": room_outline_reader,
+    "opening_reader": opening_reader,
     "area_schedule_reader": area_schedule_reader,
 }
 

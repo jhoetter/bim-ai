@@ -993,16 +993,58 @@ def check_plateau(house_state: dict[str, Any]) -> None:
 
 
 def identify_pending_subagent_dispatches(house_state: dict[str, Any]) -> None:
-    if house_state["terminal"]:
-        return
     last = house_state.get("lastFinalAcceptance") or {}
     blocking = set(last.get("blockingGates") or [])
-    if not blocking:
-        return
     pending: list[dict[str, Any]] = []
-    # Reset pending each pass; the orchestrator re-dispatches what's still
-    # needed. (Already-dispatched-but-completed entries are tracked
-    # separately under completedSubagentDispatches.)
+
+    # Iter-4 additive actions: dispatch room_outline + opening readers
+    # for any level that has a wall_chain perimeter but no rooms yet,
+    # regardless of whether the house is already at terminal=accepted.
+    # Adding rooms/openings strictly increases architectural fidelity.
+    levels_with_walls = sorted(
+        _perimeter_polygons_per_level(house_state["house"]).keys()
+    )
+    level_name_by_id = {
+        "lvl-kg": "KG",
+        "lvl-eg": "EG",
+        "lvl-og": "OG",
+        "lvl-dg": "DG",
+        "lvl-spitz": "Spitzboden",
+    }
+    for level_id in levels_with_walls:
+        level_name = level_name_by_id.get(level_id)
+        if not level_name:
+            continue
+        for action in ("room_outline_reader", "opening_reader"):
+            counter_key = f"{action}:{level_name}"
+            retries = house_state["retryCounters"].get(counter_key, 0)
+            if retries >= SUBAGENT_RETRY_BUDGET:
+                continue
+            pending.append(
+                {
+                    "id": (
+                        f"{house_state['house']}-"
+                        f"{'rooms' if action == 'room_outline_reader' else 'openings'}-"
+                        f"{level_name.lower()}-pass-{retries + 1:02d}"
+                    ),
+                    "action": action,
+                    "args": {
+                        "house": house_state["house"],
+                        "level": level_name,
+                        "retry": retries + 1,
+                    },
+                    "promptKey": action,
+                }
+            )
+
+    # If the house is terminal AND iter-4 dispatches saturated, nothing
+    # further to do; stop here.
+    if house_state["terminal"] and not pending:
+        house_state["pendingSubagentDispatches"] = []
+        return
+    if not blocking:
+        house_state["pendingSubagentDispatches"] = pending[:PER_HOUSE_ACTION_BUDGET]
+        return
     if "level_completeness" in blocking:
         for level in _empty_levels_for(house_state):
             counter_key = f"numeric_reader_for_level:{level}"
@@ -1020,18 +1062,7 @@ def identify_pending_subagent_dispatches(house_state: dict[str, Any]) -> None:
                         "promptKey": "numeric_reader_for_level",
                     }
                 )
-    if "physical_topology" in blocking:
-        counter_key = "room_opening_reader"
-        retries = house_state["retryCounters"].get(counter_key, 0)
-        if retries < SUBAGENT_RETRY_BUDGET:
-            pending.append(
-                {
-                    "id": f"{house_state['house']}-rooms-pass-{retries + 1:02d}",
-                    "action": "room_opening_reader",
-                    "args": {"house": house_state["house"], "retry": retries + 1},
-                    "promptKey": "room_opening_reader",
-                }
-            )
+    # physical_topology — already handled by the iter-4 additive block above.
     if "area_reconciled" in blocking:
         counter_key = "area_schedule_reader"
         retries = house_state["retryCounters"].get(counter_key, 0)
@@ -1149,6 +1180,28 @@ def ingest_subagent_responses(house_state: dict[str, Any]) -> None:
                 "applied": apply_result,
             }
         )
+        # Bump retryCounters so the dispatch isn't re-emitted on the
+        # next pass. Counter key derives from dispatch id:
+        # "<house>-<rooms|openings|num>-<level>-pass-NN" → action+level.
+        parts = dispatch_id.split("-")
+        if "rooms" in parts:
+            level_segment = parts[parts.index("rooms") + 1]
+            counter_key = f"room_outline_reader:{level_segment.upper() if level_segment != 'spitzboden' else 'Spitzboden'}"
+            house_state["retryCounters"][counter_key] = (
+                house_state["retryCounters"].get(counter_key, 0) + 1
+            )
+        elif "openings" in parts:
+            level_segment = parts[parts.index("openings") + 1]
+            counter_key = f"opening_reader:{level_segment.upper() if level_segment != 'spitzboden' else 'Spitzboden'}"
+            house_state["retryCounters"][counter_key] = (
+                house_state["retryCounters"].get(counter_key, 0) + 1
+            )
+        elif "num" in parts:
+            level_segment = parts[parts.index("num") + 1]
+            counter_key = f"numeric_reader_for_level:{level_segment.upper() if level_segment != 'spitzboden' else 'Spitzboden'}"
+            house_state["retryCounters"][counter_key] = (
+                house_state["retryCounters"].get(counter_key, 0) + 1
+            )
 
 
 def _apply_iter3_facts_to_live_model(
@@ -1185,6 +1238,151 @@ def _apply_iter3_facts_to_live_model(
         if kind == "source_unavailable" or value.get("status") == "source_unavailable":
             skipped.append(f"source_unavailable:{fact.get('factId')}")
             continue
+        if kind == "room":
+            level_name = (
+                value.get("levelId")
+                or value.get("levelRef")
+                or value.get("levelName")
+            )
+            canonical_level = level_id_map.get(str(level_name))
+            if not canonical_level:
+                errors.append(f"unknown_level:{level_name}")
+                continue
+            outline = value.get("outlineMm") or value.get("boundaryPointsMm") or value.get("boundaryMm")
+            if not (
+                isinstance(outline, list)
+                and len(outline) >= 3
+                and all(isinstance(p, dict) and "xMm" in p and "yMm" in p for p in outline)
+            ):
+                skipped.append(f"non_numeric_outline:{fact.get('factId')}")
+                continue
+            outline_pts = [
+                {"xMm": float(p["xMm"]), "yMm": float(p["yMm"])} for p in outline
+            ]
+            bundle_body = {
+                "mode": "commit",
+                "bundle": {
+                    "schemaVersion": "cmd-v3.0",
+                    "commands": [
+                        {
+                            "type": "createRoomOutline",
+                            "name": value.get("name") or "Room",
+                            "levelId": canonical_level,
+                            "outlineMm": outline_pts,
+                            "targetAreaM2": value.get("areaM2"),
+                        }
+                    ],
+                    "assumptions": [
+                        {
+                            "key": f"iter4.room.{fact.get('factId')}",
+                            "value": str(value.get("name") or fact.get("factId") or "room"),
+                            "confidence": float(fact.get("confidence") or 0.6),
+                            "source": "convergence_loop_iter4",
+                            "contestable": True,
+                            "evidence": (
+                                response.get("readerNotes")
+                                or "iter-4 room_outline_reader response"
+                            )[:1000],
+                        }
+                    ],
+                    "parentRevision": parent_revision,
+                },
+            }
+            resp = http_json("POST", f"/api/models/{model_id}/bundles", bundle_body)
+            if resp.get("error") or not resp.get("applied"):
+                errors.append(
+                    f"room_apply_failed:{fact.get('factId')}:status={resp.get('status')}"
+                )
+                continue
+            new_rev = resp.get("newRevision")
+            if new_rev:
+                parent_revision = int(new_rev)
+            applied += 1
+            continue
+
+        if kind == "opening":
+            opening_type = value.get("openingType") or value.get("subtype")
+            position = value.get("position") or value.get("positionMm")
+            if not (isinstance(position, dict) and "xMm" in position and "yMm" in position):
+                skipped.append(f"non_numeric_position:{fact.get('factId')}")
+                continue
+            # Resolve wall_id via the nearest-wall query.
+            level_name = (
+                value.get("levelId") or value.get("levelRef") or value.get("levelName")
+            )
+            canonical_level = level_id_map.get(str(level_name))
+            if not canonical_level:
+                errors.append(f"unknown_level:{level_name}")
+                continue
+            nearest = http_json(
+                "POST",
+                f"/api/models/{model_id}/query/nearest-wall",
+                {
+                    "point": {"xMm": float(position["xMm"]), "yMm": float(position["yMm"])},
+                    "levelId": canonical_level,
+                },
+            )
+            wall_id = (nearest.get("data") or {}).get("wallId") or nearest.get("wallId")
+            if not wall_id:
+                skipped.append(f"no_host_wall:{fact.get('factId')}")
+                continue
+            # Compute along_t from the printed position. nearest-wall response
+            # often includes an `alongT` already; fall back to 0.5 (mid-wall).
+            along_t = (nearest.get("data") or {}).get("alongT")
+            if not isinstance(along_t, int | float):
+                along_t = 0.5
+            along_t = max(0.0, min(1.0, float(along_t)))
+            if opening_type == "door":
+                cmd = {
+                    "type": "insertDoorOnWall",
+                    "name": value.get("name") or "Door",
+                    "wallId": wall_id,
+                    "alongT": along_t,
+                    "widthMm": float(value.get("widthMm") or 900),
+                }
+            else:
+                cmd = {
+                    "type": "insertWindowOnWall",
+                    "name": value.get("name") or "Window",
+                    "wallId": wall_id,
+                    "alongT": along_t,
+                    "widthMm": float(value.get("widthMm") or 1200),
+                    "sillHeightMm": float(value.get("sillHeightMm") or 900),
+                    "heightMm": float(value.get("heightMm") or 1500),
+                }
+            bundle_body = {
+                "mode": "commit",
+                "bundle": {
+                    "schemaVersion": "cmd-v3.0",
+                    "commands": [cmd],
+                    "assumptions": [
+                        {
+                            "key": f"iter4.opening.{fact.get('factId')}",
+                            "value": str(cmd.get("name") or fact.get("factId") or "opening"),
+                            "confidence": float(fact.get("confidence") or 0.6),
+                            "source": "convergence_loop_iter4",
+                            "contestable": True,
+                            "evidence": (
+                                response.get("readerNotes")
+                                or "iter-4 opening_reader response"
+                            )[:1000],
+                        }
+                    ],
+                    "parentRevision": parent_revision,
+                },
+            }
+            resp = http_json("POST", f"/api/models/{model_id}/bundles", bundle_body)
+            if resp.get("error") or not resp.get("applied"):
+                errors.append(
+                    f"opening_apply_failed:{fact.get('factId')}:status={resp.get('status')}"
+                )
+                continue
+            new_rev = resp.get("newRevision")
+            if new_rev:
+                parent_revision = int(new_rev)
+            applied += 1
+            continue
+
         if kind == "wall_chain":
             level_name = (
                 value.get("levelId")
@@ -1304,9 +1502,15 @@ def run_pass() -> dict[str, Any]:
                 house_state["actionsThisPass"].append(
                     {"at": _now(), "appliedEnvelope": envelope}
                 )
-        if house_state["terminal"]:
-            continue
+        # Iter-4 additive ingest runs for every house, terminal or not,
+        # so room / opening dispatches keep landing.
         ingest_subagent_responses(house_state)
+        if house_state["terminal"]:
+            # Even terminal houses get fresh subagent dispatch
+            # identification — iter-4 keeps adding rooms/openings until
+            # the per-level budget is saturated.
+            identify_pending_subagent_dispatches(house_state)
+            continue
         run_load_to_dev_if_needed(house_state)
         drive_view_capture_plan(house_state)
         run_playwright_capture(house_state)
