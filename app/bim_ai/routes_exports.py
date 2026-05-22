@@ -57,6 +57,7 @@ from bim_ai.sheet_preview_svg import (
 )
 from bim_ai.sustainability_lca import sustainability_lca_export_v1
 from bim_ai.tables import UndoStackRecord
+from bim_ai.versioning import current_commit_id
 
 exports_router = APIRouter()
 
@@ -482,6 +483,7 @@ async def import_bcf_topics_json(
         revision_after=new_doc.revision,
         forward_commands=commands,
         undo_commands=undo_cmds,
+        commit_id=current_commit_id(),
         created_at=datetime.now(UTC),
     )
 

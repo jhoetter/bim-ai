@@ -54,6 +54,7 @@ from bim_ai.sketch_validation import (
     validate_sketch_session,
 )
 from bim_ai.tables import UndoStackRecord
+from bim_ai.versioning import current_commit_id
 
 sketch_router = APIRouter()
 _FLOOR_SKETCH_OVERLAP_EPS_MM2 = 1.0
@@ -548,6 +549,7 @@ async def finish_sketch_session(
             revision_after=new_doc.revision,
             forward_commands=cmds,
             undo_commands=undo_cmds,
+            commit_id=current_commit_id(),
             created_at=datetime.now(UTC),
         )
     )

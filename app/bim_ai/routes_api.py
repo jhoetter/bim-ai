@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 from collections import OrderedDict
 from copy import deepcopy
@@ -177,7 +178,7 @@ from bim_ai.renderer_diagnostic_persistence import (
     normalize_renderer_diagnostic_packet,
     renderer_diagnostic_packet_embedding,
 )
-from bim_ai.room_color_scheme_override_evidence import (
+from bim_ai.evidence.room_color_scheme_override_evidence import (
     build_room_color_scheme_override_evidence_v1,
     roomColourSchemeLegendEvidence_v1,
 )
@@ -232,6 +233,7 @@ from bim_ai.tables import (
     ProjectRecord,
     UndoStackRecord,
 )
+from bim_ai.versioning import commit_context, current_commit_id
 from bim_ai.template_loader import (
     list_templates,
     load_template_snapshot,
@@ -1494,13 +1496,28 @@ async def reverse_bim_hybrid_slice_execute_route(
             client_op_id=client_op_id,
             dry_run_evidence=dry_run_evidence,
         )
-        commit_result = await apply_bundle_route(
-            model_id,
-            commit_request,
-            session=session,
-            hub=hub,
-            token=token,
+        slice_ctx = _hybrid_slice_commit_context(
+            body_dict=body_dict,
+            phase=phase,
+            phase_id=phase_id,
+            source_fact_ids=source_fact_ids,
+            user_id=user_id,
+            submitter=submitter,
         )
+        slice_summary = f"hybrid slice: phase={phase_id}"
+        async with commit_context(
+            session,
+            model_id=model_id,
+            summary=slice_summary,
+            context=slice_ctx,
+        ):
+            commit_result = await apply_bundle_route(
+                model_id,
+                commit_request,
+                session=session,
+                hub=hub,
+                token=token,
+            )
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1869,6 +1886,88 @@ def _hybrid_source_fact_ids(
         if value:
             ids.append(str(value))
     return sorted(set(ids))
+
+
+_ITERATION_PATH_RE = re.compile(r"(?:^|/)iter[-_]?(\d+[a-z]?)(?:[-_/]|$)", re.IGNORECASE)
+_HOUSE_PATH_RE = re.compile(r"(?:^|/)house[-_/]([a-z0-9]+)(?:[-_/]|$)", re.IGNORECASE)
+
+
+def _infer_iteration_label(*candidates: Any) -> str | None:
+    for value in candidates:
+        if not isinstance(value, str):
+            continue
+        match = _ITERATION_PATH_RE.search(value)
+        if match:
+            return f"iter-{match.group(1).lower()}"
+    return None
+
+
+def _infer_house_name(*candidates: Any) -> str | None:
+    for value in candidates:
+        if not isinstance(value, str):
+            continue
+        match = _HOUSE_PATH_RE.search(value)
+        if match:
+            return match.group(1).lower()
+    return None
+
+
+def _hybrid_slice_commit_context(
+    *,
+    body_dict: dict[str, Any],
+    phase: dict[str, Any],
+    phase_id: str,
+    source_fact_ids: list[str],
+    user_id: str,
+    submitter: str,
+) -> dict[str, Any]:
+    """Build the agent-context payload for a hybrid-slice commit.
+
+    See spec/model-time-travel-tracker.md "Commit Semantics" for the
+    conventional fields. Missing fields are tolerated by the inspector.
+    """
+
+    slice_id = (
+        body_dict.get("sliceId")
+        or body_dict.get("slice_id")
+        or phase.get("sliceId")
+        or phase.get("slice_id")
+    )
+    output_dir = body_dict.get("outputDir") or body_dict.get("output_dir")
+    iteration_label = (
+        body_dict.get("iterationLabel")
+        or body_dict.get("iteration_label")
+        or phase.get("iterationLabel")
+        or phase.get("iteration_label")
+        or _infer_iteration_label(output_dir)
+    )
+    house_name = (
+        body_dict.get("houseName")
+        or body_dict.get("house_name")
+        or phase.get("houseName")
+        or phase.get("house_name")
+        or _infer_house_name(output_dir)
+    )
+    session_id = (
+        body_dict.get("sessionId")
+        or body_dict.get("session_id")
+        or body_dict.get("clientOpId")
+        or body_dict.get("client_op_id")
+    )
+    return {
+        "source": "mcp_slice",
+        "phaseId": phase_id,
+        "sliceId": str(slice_id) if slice_id else None,
+        "iterationLabel": str(iteration_label) if iteration_label else None,
+        "houseName": str(house_name) if house_name else None,
+        "outputDir": str(output_dir) if output_dir else None,
+        "sessionId": str(session_id) if session_id else None,
+        "submitter": submitter,
+        "userId": user_id,
+        "factIds": list(source_fact_ids),
+        "methodologyVersion": "2026-05-22",
+        "commandSchemaVersion": "2026-05-22",
+    }
 
 
 def _hybrid_changed_ids(result: dict[str, Any] | None) -> list[str]:
@@ -2264,6 +2363,7 @@ async def apply_bundle_route(
                 forward_commands=body.bundle.commands,
                 undo_commands=undo_cmds,
                 transaction_metadata=transaction_metadata,
+                commit_id=current_commit_id(),
                 created_at=datetime.now(UTC),
             )
         )

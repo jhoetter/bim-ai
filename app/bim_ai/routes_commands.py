@@ -31,12 +31,14 @@ from bim_ai.engine import (
     try_commit,
     try_commit_bundle,
 )
+from bim_ai.evidence.level_datum_propagation_evidence import (
+    build_level_elevation_propagation_evidence_v0,
+)
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
     export_link_map,
 )
 from bim_ai.hub import Hub
-from bim_ai.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
 from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.routes_deps import (
@@ -56,6 +58,7 @@ from bim_ai.transaction_safety import (
     build_transaction_preflight_audit,
     build_undo_redo_integrity_metadata,
 )
+from bim_ai.versioning import current_commit_id
 
 commands_router = APIRouter()
 
@@ -617,6 +620,7 @@ async def apply_command(
         forward_commands=[command_for_commit],
         undo_commands=undo_cmds,
         transaction_metadata=transaction_metadata,
+        commit_id=current_commit_id(),
         created_at=datetime.now(UTC),
     )
     session.add(undo_row)
@@ -837,6 +841,7 @@ async def apply_command_bundle(
         forward_commands=commands_for_commit,
         undo_commands=undo_cmds,
         transaction_metadata=transaction_metadata,
+        commit_id=current_commit_id(),
         created_at=datetime.now(UTC),
     )
 
@@ -1231,6 +1236,7 @@ async def redo_model(
             forward_commands=list(redo_row.forward_commands),
             undo_commands=undo_cmds,
             transaction_metadata=transaction_metadata,
+            commit_id=current_commit_id(),
             created_at=datetime.now(UTC),
         ),
     )

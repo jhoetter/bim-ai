@@ -285,24 +285,40 @@ async def commit_context(
 ) -> AsyncIterator[ModelCommitRecord]:
     """Async context manager that opens a commit, sets the contextvar, and closes on exit.
 
-    On a normal exit the commit is closed and snapshotted. On exception
-    it is aborted (no snapshot) and the original exception propagates.
+    On a normal exit the commit is closed, snapshotted, and the
+    transaction is committed (so the snapshot persists even when the
+    inner block already called ``session.commit()`` for its own work).
+
+    On exception the commit is aborted; the snapshot is skipped; the
+    abort row is committed; and the original exception propagates.
     """
 
+    # open_commit + the model-row read need their own committed
+    # transaction so the partial unique index can enforce the
+    # single-open invariant across concurrent writers.
     commit = await open_commit(
         session,
         model_id=model_id,
         summary=summary,
         context=context,
     )
+    await session.commit()
     token = _current_commit.set(commit.commit_id)
     try:
         yield commit
         await close_commit(session, commit_id=commit.commit_id)
+        await session.commit()
     except Exception:
-        # Best-effort abort; the original exception always wins.
+        # Best-effort abort. Rollback first because the failing inner
+        # block may have left the session in a poisoned state; then
+        # mutate the commit row in a fresh transaction.
+        try:
+            await session.rollback()
+        except Exception:
+            pass
         try:
             await abort_commit(session, commit_id=commit.commit_id)
+            await session.commit()
         except Exception:
             pass
         raise
