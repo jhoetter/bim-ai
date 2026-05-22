@@ -100,6 +100,7 @@ from bim_ai.elements_links import (
     PlanTagTarget,
     RoomSeparationElem,
     SectionCutElem,
+    SourceViewEvidenceElem,
     TagDefinitionElem,
 )
 from bim_ai.elements_mep import (
@@ -2830,6 +2831,7 @@ Element = Annotated[
     | JoinGeometryElem
     | SectionCutElem
     | ElevationViewElem
+    | SourceViewEvidenceElem
     | PlanViewElem
     | ViewTemplateElem
     | SheetElem

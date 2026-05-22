@@ -298,6 +298,53 @@ class ElevationViewElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+SourceViewEvidenceCategory = Literal["exterior", "detail", "section"]
+SourceViewEvidenceStatus = Literal[
+    "missing_source_link",
+    "source_linked",
+    "screenshot_captured",
+    "overlay_compared",
+    "findings_open",
+    "accepted",
+]
+SourceViewEvidenceComparison = Literal[
+    "overlay",
+    "screenshot",
+    "side_by_side",
+    "not_applicable",
+]
+
+
+class SourceViewEvidenceElem(BaseModel):
+    """TH-X-F006 — source-derived view evidence joined to a section_cut /
+    elevation_view / detail (callout plan_view) by ``view_element_id``.
+
+    Persistent backing for the project-browser evidence pill. Status moves
+    monotonically along the tracker's six-state ladder:
+    ``missing_source_link`` → ``source_linked`` → ``screenshot_captured`` →
+    ``overlay_compared`` → ``findings_open`` → ``accepted``. ``findings_open``
+    may be re-entered from any later state when a reviewer reopens an issue.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["source_view_evidence"] = "source_view_evidence"
+    id: str
+    view_element_id: str = Field(alias="viewElementId")
+    category: SourceViewEvidenceCategory
+    status: SourceViewEvidenceStatus = "missing_source_link"
+    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    source_region: list[Vec2Mm] | None = Field(default=None, alias="sourceRegion")
+    comparison_type: SourceViewEvidenceComparison | None = Field(
+        default=None, alias="comparisonType"
+    )
+    screenshot_path: str | None = Field(default=None, alias="screenshotPath")
+    overlay_path: str | None = Field(default=None, alias="overlayPath")
+    finding_ids: list[str] = Field(default_factory=list, alias="findingIds")
+    notes: str | None = None
+    updated_at: str | None = Field(default=None, alias="updatedAt")
+
+
 PlanTagTarget = Literal["opening", "room"]
 PlanTagBadgeStyle = Literal["none", "rounded", "flag"]
 

@@ -267,6 +267,97 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 marker_slot=cmd.marker_slot,
             )
 
+        case UpsertSourceViewEvidenceCmd():
+            view = els.get(cmd.view_element_id)
+            if view is None or view.kind not in {
+                "section_cut",
+                "elevation_view",
+                "plan_view",
+            }:
+                raise ValueError(
+                    "upsertSourceViewEvidence.viewElementId must reference an "
+                    "existing section_cut / elevation_view / plan_view"
+                )
+            ev_id = cmd.id
+            existing: SourceViewEvidenceElem | None = None
+            if ev_id is not None:
+                candidate = els.get(ev_id)
+                if candidate is not None:
+                    if not isinstance(candidate, SourceViewEvidenceElem):
+                        raise ValueError(
+                            f"element '{ev_id}' is not a source_view_evidence"
+                        )
+                    existing = candidate
+            if existing is None:
+                ev_id = ev_id or new_id()
+                els[ev_id] = SourceViewEvidenceElem(
+                    kind="source_view_evidence",
+                    id=ev_id,
+                    view_element_id=cmd.view_element_id,
+                    category=cmd.category,
+                    status=cmd.status,
+                    source_document_id=cmd.source_document_id,
+                    source_page=cmd.source_page,
+                    source_region=cmd.source_region,
+                    comparison_type=cmd.comparison_type,
+                    screenshot_path=cmd.screenshot_path,
+                    overlay_path=cmd.overlay_path,
+                    finding_ids=cmd.finding_ids or [],
+                    notes=cmd.notes,
+                    updated_at=cmd.updated_at,
+                )
+            else:
+                els[ev_id] = existing.model_copy(
+                    update={
+                        "view_element_id": cmd.view_element_id,
+                        "category": cmd.category,
+                        "status": cmd.status,
+                        "source_document_id": (
+                            cmd.source_document_id
+                            if cmd.source_document_id is not None
+                            else existing.source_document_id
+                        ),
+                        "source_page": (
+                            cmd.source_page
+                            if cmd.source_page is not None
+                            else existing.source_page
+                        ),
+                        "source_region": (
+                            cmd.source_region
+                            if cmd.source_region is not None
+                            else existing.source_region
+                        ),
+                        "comparison_type": (
+                            cmd.comparison_type
+                            if cmd.comparison_type is not None
+                            else existing.comparison_type
+                        ),
+                        "screenshot_path": (
+                            cmd.screenshot_path
+                            if cmd.screenshot_path is not None
+                            else existing.screenshot_path
+                        ),
+                        "overlay_path": (
+                            cmd.overlay_path
+                            if cmd.overlay_path is not None
+                            else existing.overlay_path
+                        ),
+                        "finding_ids": (
+                            cmd.finding_ids
+                            if cmd.finding_ids is not None
+                            else existing.finding_ids
+                        ),
+                        "notes": (
+                            cmd.notes if cmd.notes is not None else existing.notes
+                        ),
+                        "updated_at": (
+                            cmd.updated_at
+                            if cmd.updated_at is not None
+                            else existing.updated_at
+                        ),
+                    }
+                )
+
         case PlaceTagCmd():
             tid = cmd.id or new_id()
             if tid in els:
