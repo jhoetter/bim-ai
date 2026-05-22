@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from bim_ai.routes_api import bootstrap
+from bim_ai.routes.api import bootstrap
 from bim_ai.seed_library import SEED_PROJECT_ID
 
 

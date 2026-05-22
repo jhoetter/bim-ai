@@ -14,7 +14,7 @@ from bim_ai.model_integrity import (
     resolve_type_instance_inheritance_v1,
     schema_migration_compatibility_v1,
 )
-from bim_ai.routes_integrity import integrity_router
+from bim_ai.routes.integrity import integrity_router
 
 
 def _rules(findings):

@@ -28,7 +28,7 @@ from bim_ai.engine import (
     try_commit,
 )
 from bim_ai.hub import Hub
-from bim_ai.routes_deps import (
+from bim_ai.routes.deps import (
     delete_redos,
     document_to_wire,
     get_hub,

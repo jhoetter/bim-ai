@@ -16,7 +16,7 @@ from bim_ai.ai_boundary import (
     load_bill_of_rights_markdown,
     validate_external_model_call,
 )
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 
 
 def _valid_payload() -> dict[str, object]:

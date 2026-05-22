@@ -37,7 +37,7 @@ from bim_ai.export_stl import (
 )
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
-from bim_ai.routes_deps import (
+from bim_ai.routes.deps import (
     delete_redos,
     document_to_wire,
     get_hub,

@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from starlette.websockets import WebSocketDisconnect
 
-from bim_ai import routes_api
+from bim_ai.routes import api as routes_api
 from bim_ai.hub import Hub
 
 

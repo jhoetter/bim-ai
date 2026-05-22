@@ -63,7 +63,7 @@ from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 from bim_ai.db import SessionMaker  # noqa: E402
 from bim_ai.document import Document  # noqa: E402
 from bim_ai.engine import clone_document, try_commit_bundle  # noqa: E402
-from bim_ai.routes_deps import document_to_wire  # noqa: E402
+from bim_ai.routes.deps import document_to_wire  # noqa: E402
 from bim_ai.tables import (  # noqa: E402
     ModelCommitRecord,
     ModelRecord,

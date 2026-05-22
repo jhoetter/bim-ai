@@ -1,7 +1,42 @@
 {
-  "digest": "2d9c9dcc7f6c33cc25c9456c2c9d9f21987c441762f8c3d188fe28b78aa059d7",
+  "digest": "f4cd72869bf4f4ff1afb47aeef4d57b91052d28708517dd9a1c622e9f24c1e02",
   "shape": {
     "paths": {
+      "/api/agent-runs/houses": {
+        "get": {
+          "operationId": "list_houses_api_agent_runs_houses_get"
+        }
+      },
+      "/api/agent-runs/houses/{house}/dashboard": {
+        "get": {
+          "operationId": "get_house_dashboard_api_agent_runs_houses__house__dashboard_get"
+        }
+      },
+      "/api/agent-runs/houses/{house}/iterations": {
+        "get": {
+          "operationId": "list_house_iterations_api_agent_runs_houses__house__iterations_get"
+        }
+      },
+      "/api/agent-runs/houses/{house}/iterations/{iteration}/captures/{filename}": {
+        "get": {
+          "operationId": "get_iteration_capture_api_agent_runs_houses__house__iterations__iteration__captures__filename__get"
+        }
+      },
+      "/api/agent-runs/houses/{house}/iterations/{iteration}/scoring": {
+        "get": {
+          "operationId": "get_iteration_scoring_api_agent_runs_houses__house__iterations__iteration__scoring_get"
+        }
+      },
+      "/api/agent-runs/sessions": {
+        "get": {
+          "operationId": "list_session_runs_api_agent_runs_sessions_get"
+        }
+      },
+      "/api/agent-runs/sessions/{session_id}": {
+        "get": {
+          "operationId": "get_session_run_api_agent_runs_sessions__session_id__get"
+        }
+      },
       "/api/bootstrap": {
         "get": {
           "operationId": "bootstrap_api_bootstrap_get"

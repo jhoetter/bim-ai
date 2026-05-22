@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai.db import get_session
 from bim_ai.document import Document
-from bim_ai.routes_deps import load_model_row, resolve_caller_role, violations_wire
+from bim_ai.routes.deps import load_model_row, resolve_caller_role, violations_wire
 from bim_ai.tables import (
     PublicLinkRecord,
     RoleAssignmentRecord,

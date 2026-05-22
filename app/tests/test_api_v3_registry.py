@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI
 
 from bim_ai.api.registry import get_catalog, get_descriptor
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 
 EXPECTED_SEED_TOOLS = {
     "api-list-tools",

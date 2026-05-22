@@ -14,7 +14,7 @@ from bim_ai.reverse_bim.visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
 )
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 
 
 def test_level_completeness_blocks_empty_kg() -> None:

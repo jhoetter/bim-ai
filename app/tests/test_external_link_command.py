@@ -5,7 +5,7 @@ from __future__ import annotations
 from bim_ai.document import Document
 from bim_ai.elements import ExternalLinkElem
 from bim_ai.engine import try_commit_bundle
-from bim_ai.routes_commands import _expand_external_link_reload_command
+from bim_ai.routes.commands import _expand_external_link_reload_command
 
 
 def test_create_external_link_accepts_ifc_pdf_and_image_variants() -> None:

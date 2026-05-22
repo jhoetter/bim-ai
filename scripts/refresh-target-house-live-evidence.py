@@ -28,7 +28,7 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.model_summary import compute_model_summary
-from bim_ai.routes_deps import violations_wire
+from bim_ai.routes.deps import violations_wire
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

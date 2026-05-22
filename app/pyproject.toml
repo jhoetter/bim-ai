@@ -63,7 +63,7 @@ ignore = ["E501"]
 # Cleared once BRT-24 splits the file. B008 stays until that split — the
 # Annotated[T, Depends(...)] migration ran in BRT-51 but the carve-out lives
 # alongside the other routes_api-only suppressions.
-"bim_ai/routes_api.py" = ["B008", "E402", "I001", "F401"]
+"bim_ai/routes/api.py" = ["B008", "E402", "I001", "F401"]
 # tests/api/test_jobs_routes.py: B008 stays — that file uses `Body(...)`
 # directly to test ingress validation (BRT-52 reviewed and kept).
 "tests/api/test_jobs_routes.py" = ["B008"]

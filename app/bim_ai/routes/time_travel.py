@@ -25,7 +25,7 @@ from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai.db import get_session
-from bim_ai.routes_deps import load_model_row
+from bim_ai.routes.deps import load_model_row
 from bim_ai.tables import (
     ModelCommitRecord,
     ModelRecord,

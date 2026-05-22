@@ -7,7 +7,7 @@ from uuid import UUID
 
 import pytest
 
-from bim_ai import routes_exports
+from bim_ai.routes import exports as routes_exports
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, WallElem
 from bim_ai.evidence_manifest import export_link_map

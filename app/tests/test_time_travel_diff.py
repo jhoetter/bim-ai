@@ -6,7 +6,7 @@ HTTP layer; full route coverage lives in the DB-backed integration tier.
 
 from __future__ import annotations
 
-from bim_ai.routes_time_travel import (
+from bim_ai.routes.time_travel import (
     _diff_documents_cheap,
     _diff_documents_deep,
 )

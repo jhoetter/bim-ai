@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bim_ai.api.registry import get_descriptor
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 
 
 def _client() -> TestClient:

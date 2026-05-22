@@ -13,7 +13,7 @@ from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
 from bim_ai.hub import Hub
 from bim_ai.main import app as real_app
-from bim_ai.routes_deps import document_to_wire
+from bim_ai.routes.deps import document_to_wire
 from bim_ai.seed_library import SEED_PROJECT_ID
 from bim_ai.tables import (
     ActivityRowRecord,
@@ -146,7 +146,7 @@ def _real_path_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[TestCli
     async def override_session() -> Any:
         yield session
 
-    monkeypatch.setattr("bim_ai.routes_api.SessionMaker", lambda: _SessionContext(session))
+    monkeypatch.setattr("bim_ai.routes.api.SessionMaker", lambda: _SessionContext(session))
     real_app.state.hub = hub
     real_app.dependency_overrides[get_session] = override_session
     try:

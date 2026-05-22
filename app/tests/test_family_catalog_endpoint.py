@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bim_ai.family_catalog_format import load_catalog_index
-from bim_ai.routes_catalogs import get_family_catalog, list_family_catalogs
+from bim_ai.routes.catalogs import get_family_catalog, list_family_catalogs
 
 
 def _build_test_app() -> FastAPI:

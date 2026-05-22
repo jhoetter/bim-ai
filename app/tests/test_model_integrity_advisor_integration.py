@@ -10,7 +10,7 @@ from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import try_commit_bundle
-from bim_ai.routes_deps import violations_wire
+from bim_ai.routes.deps import violations_wire
 
 
 def _pt(x: float, y: float) -> Vec2Mm:

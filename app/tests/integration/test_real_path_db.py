@@ -13,7 +13,7 @@ from bim_ai.db import SessionMaker, engine, init_db_schema
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
 from bim_ai.main import app as real_app
-from bim_ai.routes_deps import document_to_wire
+from bim_ai.routes.deps import document_to_wire
 from bim_ai.tables import (
     ActivityRowRecord,
     CommentRecord,

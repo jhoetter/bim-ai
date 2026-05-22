@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 from bim_ai.source_coordinate_frames import (
     apply_coordinate_frame_alignments,
     build_coordinate_frame_alignment_worklist,

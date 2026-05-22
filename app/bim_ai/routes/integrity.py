@@ -21,7 +21,7 @@ from bim_ai.models.integrity_requests import (
     IntegrityRemediationRequest,
     InvariantSmokeRequest,
 )
-from bim_ai.routes_deps import load_model_row
+from bim_ai.routes.deps import load_model_row
 from bim_ai.tables import UndoStackRecord
 from bim_ai.transaction_safety import build_dry_run_evidence
 

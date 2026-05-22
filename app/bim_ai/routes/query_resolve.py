@@ -66,7 +66,7 @@ from bim_ai.query_resolve import (
     success_envelope,
     validate_roof_dormer_source_alignment,
 )
-from bim_ai.routes_deps import load_model_row
+from bim_ai.routes.deps import load_model_row
 
 query_resolve_router = APIRouter()
 

@@ -663,7 +663,7 @@ def test_save_3d_view_generates_viewpoint_or_saved_view_command() -> None:
 
 
 def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
-    from bim_ai.routes_api import api_router
+    from bim_ai.routes.api import api_router
 
     app = FastAPI()
     app.include_router(api_router)

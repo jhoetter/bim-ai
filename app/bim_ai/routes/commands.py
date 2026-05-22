@@ -41,7 +41,7 @@ from bim_ai.evidence_manifest import (
 from bim_ai.hub import Hub
 from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.model_summary import compute_model_summary
-from bim_ai.routes_deps import (
+from bim_ai.routes.deps import (
     _commands_include_move_level_elevation,
     delete_redos,
     document_to_wire,

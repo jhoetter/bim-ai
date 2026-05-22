@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bim_ai.db import get_session
 from bim_ai.document import Document
 from bim_ai.hub import Hub
-from bim_ai.routes_deps import get_hub, load_model_row
+from bim_ai.routes.deps import get_hub, load_model_row
 from bim_ai.tables import PublicLinkRecord
 
 presentation_router = APIRouter()

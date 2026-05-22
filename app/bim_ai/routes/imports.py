@@ -29,7 +29,7 @@ from bim_ai.material_image_assets import (
     ImageAssetUpload,
     build_image_asset_from_upload,
 )
-from bim_ai.routes_deps import document_to_wire, get_hub, load_model_row
+from bim_ai.routes.deps import document_to_wire, get_hub, load_model_row
 from bim_ai.tables import ModelRecord
 
 imports_router = APIRouter()

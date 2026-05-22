@@ -279,7 +279,7 @@ def test_build_link_dxf_payload_includes_import_time_options(tmp_path: Path) -> 
 def test_expand_dxf_reload_command_reparses_current_source(tmp_path: Path) -> None:
     from bim_ai.document import Document
     from bim_ai.elements import LevelElem, LinkDxfElem
-    from bim_ai.routes_commands import _expand_dxf_reload_command
+    from bim_ai.routes.commands import _expand_dxf_reload_command
 
     doc_file = _new_dxf()
     doc_file.header["$INSUNITS"] = 0

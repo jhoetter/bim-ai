@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
 
-from bim_ai import routes_api
+from bim_ai.routes import api as routes_api
 
 
 async def test_projection_plan_route_reuses_revision_cache(monkeypatch: Any) -> None:

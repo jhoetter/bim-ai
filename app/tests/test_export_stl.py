@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from fastapi import HTTPException
 
-from bim_ai import routes_exports
+from bim_ai.routes import exports as routes_exports
 from bim_ai.document import Document
 from bim_ai.elements import (
     BalconyElem,

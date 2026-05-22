@@ -18,7 +18,7 @@ from bim_ai.reverse_bim.source_revision_ledger import build_reverse_bim_source_r
 from bim_ai.reverse_bim.source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
-from bim_ai.routes_api import api_router
+from bim_ai.routes.api import api_router
 
 
 def _expectation() -> dict:

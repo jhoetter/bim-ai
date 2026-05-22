@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import FloorElem, LevelElem, Vec2Mm
-from bim_ai.routes_sketch import validate_sketch_session_against_document
+from bim_ai.routes.sketch import validate_sketch_session_against_document
 from bim_ai.sketch_session import SketchLine, SketchSession
 
 
