@@ -19,7 +19,11 @@ const __dirname = path.dirname(__filename);
 const readSource = (filename: string) => readFileSync(path.join(__dirname, filename), 'utf8');
 const SRC = readSource('PlanCanvas.tsx');
 const KEYBOARD_AUX_SRC = readSource('planCanvasKeyboardAuxHandlers.ts');
-const PLAN_CANVAS_INTERACTION_SRC = `${SRC}\n${KEYBOARD_AUX_SRC}`;
+const CLICK_HANDLER_SRC = readSource('planCanvasClickHandler.ts');
+// The plan-canvas tool-click dispatcher was extracted from PlanCanvas.tsx into
+// planCanvasClickHandler.ts. Source guards must concatenate all three files so
+// the regexes anchored against the click handler body still resolve.
+const PLAN_CANVAS_INTERACTION_SRC = `${SRC}\n${KEYBOARD_AUX_SRC}\n${CLICK_HANDLER_SRC}`;
 const TOOL_OVERLAYS_SRC = readSource('PlanCanvasToolOverlays.tsx');
 const READOUTS_SRC = readSource('PlanCanvasReadouts.tsx');
 const WALL_DRAFT_OVERLAYS_SRC = readSource('PlanCanvasWallDraftOverlays.tsx');
@@ -61,58 +65,70 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
 
   it('keeps splitWallAt guarded against the wall endpoints (alongT 0 / 1)', () => {
     // The split tool must not emit splitWallAt with endpoint alongT — engine rejects gt(0)/lt(1).
-    expect(SRC).toMatch(/nearest\.alongT\s*>\s*0\.\d+\s*&&\s*nearest\.alongT\s*<\s*0\.9/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /nearest\.alongT\s*>\s*0\.\d+\s*&&\s*nearest\.alongT\s*<\s*0\.9/,
+    );
   });
 
   it('routes the Shaft tool to createSlabOpening with isShaft=true', () => {
     // Shaft is a slab opening with the shaft flag set.
-    expect(SRC).toMatch(/type:\s*['"]createSlabOpening['"][\s\S]{0,400}isShaft:\s*true/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /type:\s*['"]createSlabOpening['"][\s\S]{0,400}isShaft:\s*true/,
+    );
   });
 
   it('uses the visible wall options-bar state for wall location and offset', () => {
-    expect(SRC).toMatch(
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
       /const\s+\{[\s\S]*wallLocationLine[\s\S]*wallDrawOffsetMm[\s\S]*wallDrawRadiusMm[\s\S]*\}\s*=\s*useBimStore\.getState\(\)/,
     );
-    expect(SRC).toMatch(/const\s+effectiveLocationLine\s*=/);
-    expect(SRC).toMatch(/locationLine:\s*effectiveLocationLine/);
-    expect(SRC).toMatch(/buildWallRadiusFillet\(/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/const\s+effectiveLocationLine\s*=/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/locationLine:\s*effectiveLocationLine/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/buildWallRadiusFillet\(/);
   });
 
   it('flips wall side without reversing authored wall endpoints', () => {
-    expect(SRC).toContain('flipWallLocationLineSide(wallLocationLine)');
-    expect(SRC).not.toMatch(/const\s+actualStart\s*=\s*reverse\s*\?\s*end\s*:\s*start/);
-    expect(SRC).not.toMatch(/const\s+actualEnd\s*=\s*reverse\s*\?\s*start\s*:\s*end/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toContain('flipWallLocationLineSide(wallLocationLine)');
+    expect(PLAN_CANVAS_INTERACTION_SRC).not.toMatch(
+      /const\s+actualStart\s*=\s*reverse\s*\?\s*end\s*:\s*start/,
+    );
+    expect(PLAN_CANVAS_INTERACTION_SRC).not.toMatch(
+      /const\s+actualEnd\s*=\s*reverse\s*\?\s*start\s*:\s*end/,
+    );
   });
 
   it('wires the Offset modify tool through a selected-wall moveElementsDelta command', () => {
-    expect(SRC).toContain("planTool === 'offset'");
-    expect(SRC).toContain('wallOffsetMoveCommandFromPoint(');
+    expect(PLAN_CANVAS_INTERACTION_SRC).toContain("planTool === 'offset'");
+    expect(PLAN_CANVAS_INTERACTION_SRC).toContain('wallOffsetMoveCommandFromPoint(');
     expect(TOOL_OVERLAYS_SRC).toContain('testId="offset-tool-chip"');
   });
 
   it('snaps wall authoring points to shared wall connectivity before generic plan snaps', () => {
-    expect(SRC).toContain('snapWallPointToConnectivity(');
-    expect(SRC).toMatch(/planTool\s*===\s*['"]wall['"][\s\S]{0,280}snapWallPointToConnectivity/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toContain('snapWallPointToConnectivity(');
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /planTool\s*===\s*['"]wall['"][\s\S]{0,280}snapWallPointToConnectivity/,
+    );
   });
 
   it('lets the Wall tool pick floor edges and imported CAD/reference lines directly', () => {
     expect(PICK_HELPERS_SRC).toContain('pickFloorBoundaryEdgeForWall(');
     expect(PICK_HELPERS_SRC).toContain('pickDxfLineForWall(');
-    expect(SRC).toContain('createWallFromPickedLineCommand(');
+    expect(PLAN_CANVAS_INTERACTION_SRC).toContain('createWallFromPickedLineCommand(');
     expect(WALL_DRAFT_OVERLAYS_SRC).toContain('data-testid="wall-pick-line-preview"');
   });
 
   it('blocks wall commit outside an enabled crop region with explicit user warning', () => {
-    expect(SRC).toMatch(
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
       /shouldBlockWallCommitOutsideCrop\(\s*activeCropState,\s*pathStart,\s*pathEnd\s*\)/,
     );
-    expect(SRC).toMatch(/setWallDraftNotice\(\s*WALL_CROP_BLOCK_MESSAGE\s*\)/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(
+      /setWallDraftNotice\(\s*WALL_CROP_BLOCK_MESSAGE\s*\)/,
+    );
     expect(WALL_DRAFT_OVERLAYS_SRC).toContain('data-testid="wall-draft-notice"');
   });
 
   it('re-arms wall loop continuation through deterministic helper state', () => {
-    expect(SRC).toMatch(/nextWallDraftAfterCommit\(\s*\{/);
-    expect(SRC).toMatch(/loopMode:\s*useToolPrefs\.getState\(\)\.loopMode/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/nextWallDraftAfterCommit\(\s*\{/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/loopMode:\s*useToolPrefs\.getState\(\)\.loopMode/);
   });
 
   it('clears draft preview artifacts on Escape for wall lifecycle stability', () => {
@@ -151,8 +167,8 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
   });
 
   it('keeps Rotate on the reference-ray and typed-angle workflow', () => {
-    expect(SRC).toMatch(/rotateReferenceRef/);
-    expect(SRC).toMatch(/rotateDeltaAngleFromReference/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/rotateReferenceRef/);
+    expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/rotateDeltaAngleFromReference/);
     expect(PLAN_CANVAS_INTERACTION_SRC).toMatch(/parseTypedRotateAngle/);
     expect(TOOL_OVERLAYS_SRC).toContain('Click end ray or type angle + Enter');
   });
