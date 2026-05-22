@@ -264,3 +264,83 @@ The backend rework is "done" when **all** of the following hold:
 
 At that point the backend rates 8+ / 10 on the same axis the 2026-05-22 audit
 used to score it at 6.5 / 10.
+
+## 2026-05-22 Implementation Session — Summary
+
+20 of 36 work packages landed in a single session. Two themes are
+**complete**; three more are **operationally complete** even though
+individual exit-condition greps for the largest god files remain
+above target.
+
+### Done
+- **Theme 2 (shared utilities) — complete.** BRT-10/11/12/13/14 all
+  done. `bim_ai._io.*` exists with `digest`, `sha256_json`,
+  `sha256_bytes`, `canonical_json_bytes`, `read_json`,
+  `read_json_dict`, `write_json` (atomic), `get_logger`,
+  `set_correlation_id`, `run_subprocess`, `SubprocessOk`,
+  `SubprocessFailure`. 16 legacy `_digest`/`_sha256_json` defs and
+  3 `_read_json`/`_load_json`/`_write_json` defs all migrated with
+  byte-parity tests. BRT-14 adds the duplicate-helpers gate so the
+  *next* round of copy-paste can't accumulate quietly.
+- **Theme 5 (static type enforcement) — complete in CI.** mypy 1.20
+  + mypy-baseline 0.7 in dev deps; 4,276-error baseline checked in;
+  CI fails on new errors above baseline. `bim_ai._io.*`,
+  `bim_ai._errors`, `bim_ai.models.*` held to strict typing today;
+  add modules to the strict list as their baseline entries reach
+  zero. Plus the typed-contracts gate (`-> dict[str, Any]` and
+  `body: dict[str, Any]` per-file ceilings) and the
+  duplicate-helpers gate.
+- **Theme 1 (typed REST contracts) — operationally complete.**
+  Zero `body: dict[str, Any]` in any `routes_*.py` file (was 107).
+  BRT-01 / BRT-02 / BRT-03 all done; 60+ Pydantic request models
+  live under `bim_ai.models.*`. BRT-06 RouteError type + handler
+  landed; the 234 `raise HTTPException` migration is incremental
+  follow-up. BRT-07 OpenAPI snapshot test guards the path/model
+  surface.
+- **Theme 6 (ruff carve-out cleanup) — partially complete.**
+  BRT-51: 4 of 5 `B008` carve-outs removed alongside ~180-site
+  Annotated[T, Depends(...)] migration. BRT-52: `B905` carve-out
+  cleared. routes_api.py keeps its full carve-out pending BRT-24
+  (file-body imports).
+- **Theme 7 (observability) — infrastructure complete.** BRT-60
+  `_io/log.py` + JSON formatter + contextvar correlation_id.
+  BRT-62 request-ID middleware. BRT-61 entry logs in folder_output
+  + reader_dispatch (per-phase exit logs depend on BRT-20 split).
+- **Theme 8 (subprocess hygiene) — helper complete.** BRT-71
+  `run_subprocess` with mandatory timeout, narrow
+  `FileNotFoundError`/`TimeoutExpired` handling, typed
+  `SubprocessOk | SubprocessFailure` return. BRT-70 catalogues
+  the 7 existing sites; per-site migration is incremental follow-up.
+
+### Still Pending — large structural work
+- **BRT-04 / BRT-05** (response_model lift + pipeline boundary
+  types): typing the ~800 `-> dict[str, Any]` return types. Blocks
+  BRT-21 (defensive isinstance) which is downstream of typed
+  pipeline payloads.
+- **BRT-20 / BRT-22 / BRT-23 / BRT-24 / BRT-25 / BRT-26** (god-file
+  splits): commands.py (2,995), elements.py (2,936), routes_api.py
+  (2,909), api/registry.py (2,946), folder_output.py (2,851), and
+  the 440-LOC `build_reverse_bim_folder_output` orchestrator. Each
+  is genuinely many commits of careful per-phase extraction.
+- **BRT-30 / BRT-32 / BRT-33 / BRT-34** (package layering): moves
+  routes/, services/, evidence/, reverse_bim/ subpackages. High
+  merge-conflict risk while parallel agents are actively touching
+  the repo; deferred to a quieter window.
+- **BRT-50** (routes_api carve-out): blocked on BRT-24.
+
+### CI guardrails added this session
+The user explicitly asked for "automated checks" so quality
+doesn't decay between work packages. Five new gates live in
+`make verify`:
+
+1. `make typecheck-py` — mypy + baseline filter
+2. `make typed-contracts` — per-file ceiling for `dict[str, Any]`
+3. `make duplicate-helpers` — per-name ceiling for ≥3-site private
+   helpers
+4. `tests/test_openapi_snapshot.py` — schema-surface drift
+5. `tests/test_io_*` — parity tests for the shared helpers
+
+Plus 17 new test files / 100+ new test cases (route error
+envelope, JSON formatter, correlation_id middleware, subprocess
+helper, OpenAPI snapshot, plus the Pydantic request-model tests
+indirectly exercised through the existing route tests).
