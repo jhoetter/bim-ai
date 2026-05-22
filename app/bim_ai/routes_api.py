@@ -60,21 +60,23 @@ def _set_plan_projection_cache(
 
 
 # PERF-F04: cross-request schedule table cache keyed by
-# (model_id, revision, schedule_id). Same LRU shape as
+# (model_id, revision, schedule_id, lightweight). Same LRU shape as
 # _PLAN_PROJECTION_CACHE — repeated /schedules/{id}/table requests for
 # unchanged revisions skip the derive_schedule_table call, which is the
-# dominant ~230 ms cost on room schedules (tracker baseline).
+# dominant ~230 ms cost on room schedules (tracker baseline). The
+# `lightweight` axis is part of the key so PERF-F06 lightweight mode and
+# the full derivation never collide.
 _SCHEDULE_TABLE_CACHE_MAX = 128
-_SCHEDULE_TABLE_CACHE: OrderedDict[tuple[str, int, str], dict[str, Any]] = OrderedDict()
+_SCHEDULE_TABLE_CACHE: OrderedDict[tuple[str, int, str, bool], dict[str, Any]] = OrderedDict()
 
 
 def _schedule_table_cache_key(
-    *, model_id: UUID, revision: int, schedule_id: str
-) -> tuple[str, int, str]:
-    return (str(model_id), revision, schedule_id)
+    *, model_id: UUID, revision: int, schedule_id: str, lightweight: bool = False
+) -> tuple[str, int, str, bool]:
+    return (str(model_id), revision, schedule_id, lightweight)
 
 
-def _get_schedule_table_cache(key: tuple[str, int, str]) -> dict[str, Any] | None:
+def _get_schedule_table_cache(key: tuple[str, int, str, bool]) -> dict[str, Any] | None:
     cached = _SCHEDULE_TABLE_CACHE.get(key)
     if cached is None:
         return None
@@ -82,7 +84,9 @@ def _get_schedule_table_cache(key: tuple[str, int, str]) -> dict[str, Any] | Non
     return deepcopy(cached)
 
 
-def _set_schedule_table_cache(key: tuple[str, int, str], payload: dict[str, Any]) -> None:
+def _set_schedule_table_cache(
+    key: tuple[str, int, str, bool], payload: dict[str, Any]
+) -> None:
     _SCHEDULE_TABLE_CACHE[key] = deepcopy(payload)
     _SCHEDULE_TABLE_CACHE.move_to_end(key)
     while len(_SCHEDULE_TABLE_CACHE) > _SCHEDULE_TABLE_CACHE_MAX:
@@ -194,14 +198,14 @@ from bim_ai.reverse_bim import (
     build_mcp_authoring_readiness,
     build_reverse_bim_phase_packet,
 )
-from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
-from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
-from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
-from bim_ai.reverse_bim_source_revision_persistence import (
+from bim_ai.reverse_bim.evidence_requirements import build_reverse_bim_evidence_requirements
+from bim_ai.reverse_bim.handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
+from bim_ai.reverse_bim.readback import build_reverse_bim_readback_comparison
+from bim_ai.reverse_bim.source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
-from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
-from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.reverse_bim.source_revision_ledger import build_reverse_bim_source_revision_ledger
+from bim_ai.reverse_bim.visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.renderer_diagnostic_persistence import (
     append_renderer_diagnostic_packet,
     latest_renderer_diagnostic_packet_for_evidence,
@@ -2102,20 +2106,31 @@ async def schedule_derived_table(
     fmt: Annotated[str, Query(alias="format")] = "json",
     columns: Annotated[str | None, Query(alias="columns")] = None,
     include_schedule_totals_csv: Annotated[bool, Query(alias="includeScheduleTotalsCsv")] = False,
+    lightweight: Annotated[bool, Query()] = False,
 ) -> dict[str, Any] | PlainTextResponse:
+    """PERF-F06: `?lightweight=true` skips the expensive room programme
+    closure pass (peer_finish_set_by_level +
+    room_finish_schedule_row_extensions) for room/finish schedules. Other
+    category types are unaffected. Use for lightweight grid display
+    surfaces that don't need the finish-set closure.
+    """
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
-    # PERF-F04: cross-request cache keyed by (model_id, revision, schedule_id).
+    # PERF-F04: cross-request cache keyed by
+    # (model_id, revision, schedule_id, lightweight).
     # columns/format/totals only affect post-processing, not the derivation.
     cache_key = _schedule_table_cache_key(
-        model_id=model_id, revision=_row_revision(row), schedule_id=schedule_id
+        model_id=model_id,
+        revision=_row_revision(row),
+        schedule_id=schedule_id,
+        lightweight=lightweight,
     )
     payload = _get_schedule_table_cache(cache_key)
     if payload is None:
         doc = Document.model_validate(row.document)
         try:
-            payload = derive_schedule_table(doc, schedule_id)
+            payload = derive_schedule_table(doc, schedule_id, lightweight=lightweight)
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         _set_schedule_table_cache(cache_key, payload)

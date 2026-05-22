@@ -738,15 +738,22 @@ def derive_schedule_table(
     schedule_id: str,
     *,
     room_boundary_derivation: dict[str, Any] | None = None,
+    lightweight: bool = False,
 ) -> dict[str, Any]:
+    """PERF-F06: when `lightweight=True`, room/finish schedules skip the
+    expensive `peer_finish_set_by_level` + `room_finish_schedule_row_extensions`
+    pass. Other category types are unaffected. Suitable for lightweight grid
+    display where the closure/finish-set extensions are not needed.
+    """
     cache = _SCHEDULE_TABLE_REQUEST_CACHE.get()
     if cache is None:
         return _derive_schedule_table_uncached(
             doc,
             schedule_id,
             room_boundary_derivation=room_boundary_derivation,
+            lightweight=lightweight,
         )
-    key = (id(doc), id(doc.elements), schedule_id, id(room_boundary_derivation))
+    key = (id(doc), id(doc.elements), schedule_id, id(room_boundary_derivation), lightweight)
     cached = cache.get(key)
     if cached is not None:
         return deepcopy(cached)
@@ -754,6 +761,7 @@ def derive_schedule_table(
         doc,
         schedule_id,
         room_boundary_derivation=room_boundary_derivation,
+        lightweight=lightweight,
     )
     cache[key] = deepcopy(table)
     return table
@@ -764,6 +772,7 @@ def _derive_schedule_table_uncached(
     schedule_id: str,
     *,
     room_boundary_derivation: dict[str, Any] | None = None,
+    lightweight: bool = False,
 ) -> dict[str, Any]:
     sch = doc.elements.get(schedule_id)
     if not isinstance(sch, ScheduleElem):
@@ -806,10 +815,17 @@ def _derive_schedule_table_uncached(
         rows = derive_scenario_delta_rows(doc, baseline_scenario_id=baseline)
 
     elif cat in {"room", "finish"}:
-        room_peer_finish = peer_finish_set_by_level(
-            e for e in doc.elements.values() if isinstance(e, RoomElem)
-        )
-        unbounded_room_ids: frozenset[str] = frozenset(detect_unbounded_rooms_v1(doc))
+        # PERF-F06: skip peer_finish + finish-row extensions in lightweight
+        # mode. Both are O(rooms) but each row triggers full programme
+        # closure inspection — meaningful share of room-schedule cost.
+        if lightweight:
+            room_peer_finish: dict[str, Any] = {}
+            unbounded_room_ids: frozenset[str] = frozenset()
+        else:
+            room_peer_finish = peer_finish_set_by_level(
+                e for e in doc.elements.values() if isinstance(e, RoomElem)
+            )
+            unbounded_room_ids = frozenset(detect_unbounded_rooms_v1(doc))
         for e in doc.elements.values():
             if isinstance(e, RoomElem):
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.outline_mm]
@@ -830,9 +846,10 @@ def _derive_schedule_table_uncached(
                     "functionLabel": (e.function_label or "").strip(),
                     "finishSet": (e.finish_set or "").strip(),
                 }
-                row.update(
-                    room_finish_schedule_row_extensions(e, peer_by_level=room_peer_finish),
-                )
+                if not lightweight:
+                    row.update(
+                        room_finish_schedule_row_extensions(e, peer_by_level=room_peer_finish),
+                    )
                 if e.target_area_m2 is not None:
                     tgm = float(e.target_area_m2)
                     row["targetAreaM2"] = round(tgm, 3)
