@@ -44,6 +44,18 @@ import type {
   TextNoteElement,
   TextTagElement,
 } from './elements/annotations';
+import type { SourceViewEvidenceElement } from './elements/sourceViewEvidence';
+export type { SourceViewEvidenceElement } from './elements/sourceViewEvidence';
+import type {
+  RoofOpeningElement,
+  SlabOpeningElement,
+  WallOpeningElement,
+} from './elements/openings';
+export type {
+  RoofOpeningElement,
+  SlabOpeningElement,
+  WallOpeningElement,
+} from './elements/openings';
 
 export type {
   CableTrayElement,
@@ -1355,20 +1367,7 @@ export type Element =
       /** §3.6.2: visual/operation style of the window. */
       windowStyle?: 'casement' | 'double_hung' | 'awning' | 'fixed' | 'sliding' | null;
     }
-  | {
-      kind: 'wall_opening';
-      id: string;
-      name?: string;
-      hostWallId: string;
-      alongTStart: number;
-      alongTEnd: number;
-      sillHeightMm: number;
-      headHeightMm: number;
-      /** DSC-V3-01: discipline tag. */
-      discipline?: DisciplineTag | null;
-      /** SCH-V3-01: custom property values. */
-      props?: Record<string, unknown>;
-    }
+  | WallOpeningElement
   | {
       /** ANN-04 — angular dimension between two rays from a shared vertex. */
       kind: 'angular_dimension';
@@ -1690,24 +1689,8 @@ export type Element =
       /** §8.6.4: when true, the stair component edit panel is shown in the inspector. */
       editStairActive?: boolean;
     }
-  | {
-      kind: 'slab_opening';
-      id: string;
-      name: string;
-      hostFloorId: string;
-      boundaryMm: XY[];
-      isShaft?: boolean;
-      pinned?: boolean;
-    }
-  | {
-      /** IFC-03: opening hosted on a roof (skylight / roof penetration). */
-      kind: 'roof_opening';
-      id: string;
-      name: string;
-      hostRoofId: string;
-      boundaryMm: XY[];
-      pinned?: boolean;
-    }
+  | SlabOpeningElement
+  | RoofOpeningElement
   | {
       kind: 'railing';
       id: string;
@@ -1830,38 +1813,7 @@ export type Element =
       markerSlot?: 'north' | 'south' | 'east' | 'west' | 'custom' | null;
       pinned?: boolean;
     }
-  | {
-      /**
-       * TH-X-F006: source-derived view evidence attached to a section_cut /
-       * elevation_view / detail (callout plan_view). Joins to the view by
-       * viewElementId; status drives the project-browser evidence pill.
-       */
-      kind: 'source_view_evidence';
-      id: string;
-      viewElementId: string;
-      /**
-       * Which sidebar category the view sits in. Drives the pill icon and
-       * helps the project-browser dedupe one evidence row per view.
-       */
-      category: 'exterior' | 'detail' | 'section';
-      status:
-        | 'missing_source_link'
-        | 'source_linked'
-        | 'screenshot_captured'
-        | 'overlay_compared'
-        | 'findings_open'
-        | 'accepted';
-      sourceDocumentId?: string | null;
-      sourcePage?: number | null;
-      /** Optional page-region polygon in page-pixel or normalized coords. */
-      sourceRegion?: XY[] | null;
-      comparisonType?: 'overlay' | 'screenshot' | 'side_by_side' | 'not_applicable' | null;
-      screenshotPath?: string | null;
-      overlayPath?: string | null;
-      findingIds?: string[];
-      notes?: string | null;
-      updatedAt?: string | null;
-    }
+  | SourceViewEvidenceElement
   | {
       kind: 'plan_tag_style';
       id: string;
