@@ -5,39 +5,50 @@ BIM models actually look like the source PDFs" effort. Picks up
 where `spec/testhouse-hybrid-reverse-bim-tracker.md` left off after
 iter-2 acceptance gates passed.
 
-## Session resume / handoff (2026-05-23 — post iter-17)
+## Session resume / handoff (2026-05-23 — post iter-19)
 
 If you are picking this up after a context reset or a PC reboot, read
 this section first.
 
-**Current state of the work.** The methodology pivot from outside-in to
-inside-out is complete and landing. Iter-14 closed the elevation-capture
-wireframe bug and pushed exterior scores to alpha 7 / beta 7 / gamma 8.
-Iter-15 added terracotta roof material + steeper beta pitch + viewport
-refit + 8 alpha + 4 gamma dormers. **Iter-16** authored 36 alpha rooms
-(from fact ledger), 17 beta rooms + 32 gamma rooms (via floor-plan-reader
-subagents) — but the FIRST iter-16 plan captures were ~empty because
-(a) `planShowRoomLabels` defaulted false and (b) `createRoomOutline`
-doesn't emit partition walls. **Iter-16d** flipped planShowRoomLabels=true
-on all 11 plan_views; iter-16b + iter-16c derived 31 alpha + 29 beta + 64
-gamma interior partition walls algorithmically from the room polygons.
-**Iter-17** added the first authored stair (alpha EG → DG east half, 14
-steps). Plan-view captures now show the room program with labels +
-visible partitions.
+**Current scores (iter-19 subagent-graded, exterior + interior split):**
 
-**Known carryover for iter-18+:**
+| House | Iter-11 | Iter-14 | Iter-19 ext | Iter-19 int | Cumulative |
+|-------|--------:|--------:|------------:|------------:|-----------:|
+| alpha | 3/10    | 7/10    | **7/10**    | **6/10**    | 13/20 |
+| beta  | 3/10    | 7/10    | **7/10**    | **7/10**    | 14/20 |
+| gamma | 5/10    | 8/10    | **9/10 (composite)** | **8/10** | 17/20 |
 
-- Alpha west-half stair rejected `physical_stair_without_floor_landings`
-  because the floor only spans 0..9935 (east half). Need to extend the
-  floor across the full doppelhaus footprint OR drop the west-half stair.
-- Beta + gamma have rooms + partitions but NO interior doors yet. Alpha
-  has 7 doors in the fact ledger (`accessRefs` per room) but they were
-  never authored.
-- The 3D view shows windows + dormers + roof material correctly, but
-  doesn't show interior partition walls (3D opacity hides them — section
-  views would help, not yet scripted).
-- Gamma carport's flat roof reads as ground-level patio rather than
-  raised slab (iter-12 visibility bug carried forward through iter-15).
+**Current state of the work.** Methodology pivot from outside-in to
+inside-out is landed and proven. Twelve iterations (iter-12 through
+iter-19, plus the iter-12 typology rewrites, iter-14 elevation-capture
+fix, iter-15 roof material, iter-16 rooms+partitions, iter-17 stairs,
+iter-18 floor extension, iter-19 doors + cut-plane fix) collectively
+moved cumulative score from ~11/30 at iter-11 baseline to ~44/60 at
+iter-19 — passing the original stop criterion (≥7/10 per house with
+named items) on every house, and gamma at composite 9/10.
+
+**Per-house element counts at iter-19:**
+
+- **alpha**: 21+ exterior walls + 31 partitions + 36 rooms + 8 dormers + 38 windows + 2 doors + 2 stairs + 6 floors (3 east-only + 3 doppelhaus) + 1 terracotta roof
+- **beta**: 15 exterior walls + 29 partitions + 17 rooms + 25+8 windows + 8+1 (garage) doors + 2 roofs (gable + flat garage)
+- **gamma**: 25 exterior walls + 64 partitions + 32 rooms + 4 dormers + 44 windows + 27 doors (24 iter-19 + 2 iter-14 + 1 iter-13) + 3 roofs (main + Praxis + carport)
+
+**Known carryover for iter-20+:**
+
+- **alpha**: DG east-half rooms render outside footprint (mirror sign-flip
+  bug — should be `x = 2·x_party - x_west` not `x = -x_west` where the
+  rooms have non-zero offset). 39 of 70 partitions failed wall_overlap
+  (canonical edge sort fix would dedupe). 8 exterior doors collided with
+  iter-14 windows on same walls (need deconfliction).
+- **beta**: 4/12 doors collided with iter-9 sliders + iter-14 windows
+  (3 south, 1 north). KG layout mirrored vs source p1.
+- **gamma**: 1 door collided with iter-14 residential entry. Stair core
+  not yet authored as vertical-circulation room across 5 levels (top
+  iter-20 priority per the gamma subagent).
+- **Cross-cutting**: createRoof ratchet pending on beta (6 iters without
+  attempt). Window-overlap QA should be a hard gate not a warning.
+  Per-iter capture dirs are getting mixed (iter-16-captures contains
+  iter-17 + iter-19 outputs because the .mjs writes to the same dir).
 
 ## METHODOLOGY PIVOT (2026-05-22 — between iter-15 and iter-16)
 
@@ -315,6 +326,13 @@ files under `tmp/reverse-bim/`.
 | 11 | **Per-view capture + subagent visual scoring** | `testhouse_iter11_capture.mjs` + `Workspace.tsx` URL-param view activation + 3 visual-diff subagents | Re-added `?activeElevationView=<id>` URL handling (had been dropped since iter-3), captured 3D + 4 elevations per house, dispatched 3 visual-diff subagents with source PDFs attached. Subagent scores **confirmed iter-10's by-hand judgment** (alpha 3/10, beta 3/10, gamma 5/10) — and independently surfaced a **major upstream gap**: alpha is "Zweifamilien-Doppelwohnhaus" and gamma is "Wohn- und Praxisgebäude mit Carport als Doppelhaushälfte" per their German source title blocks — both modeled as freestanding solos. Iter-1's fact ledger missed both typology declarations. |
 | 12 | **Typology rewrites — close the iter-11 root-cause gap** | `testhouse_iter12_titleblock_parse.py` + `testhouse_iter12_alpha_doppelhaus.py` + `testhouse_iter12_beta_garage.py` + `testhouse_iter12_gamma_typology.py` | Title-block parser reads the iter-1 fact-ledger and emits per-house `building-class.json` (alpha=`zweifamilien_doppelhaus`, beta=`einfamilienhaus`, gamma=`doppelhaushälfte` + `[carport, praxis_wing]`). Alpha expanded from east-half-only to full Doppelhaus by mirroring the perimeter across x=0 + replacing the roof (9 walls + 1 roof applied, dormers deleted to be re-emitted in iter-13). Beta garage promoted from "low parapet" to walled volume via 3 createWall with `allowDetached: true` (sharing house east wall as party wall). Gamma got 3 sub-bundles: Praxis cross-wing (3 walls + perpendicular gable roof), carport (2 walls + flat roof slab), party-wall stub. **Iter-12 subagent scores: alpha 3→5 (+2), beta 3→4 (+1), gamma 5→6 (+1)** — fidelity lift earned by closing the typology gap, but iter-13 needs to re-emit dormers + window grids that iter-12 deliberately left out. Surfaced **CreateWallChain doesn't propagate `allowDetached`** as a kernel methodology gap — individual `createWall` is the only path for detached walls. |
 | 13 | **iter-12 carryover — dormers, garage door, gamma reposition, viewport refit** | `testhouse_iter13_alpha_dormers.py` + `testhouse_iter13_beta_garage_door.py` + `testhouse_iter13_gamma_reposition.py` + `testhouse_iter13_viewport_refit.py` | Alpha 4 Schleppgauben re-emitted on the iter-12 doppelhaus roof (kind=shed, 2 per slope at alongRidgeMm ±7200/±2400 × acrossRidgeMm ±2200). Beta garage door punched on iter12-beta-garage-wall-e at alongT=0.5, w=2400. Gamma reposition: carport moved from west to east end (x=18000..22000) per source EG p2 CARPORT label; party-wall stub deleted from east gable and re-emitted on the north long facade at y=8500 per "GEPLANTE NACHBARLICHE BEBAUUNG" annotation; Praxis wing upsized from 4×3m token to 8×3m (still y=-3000..0). All 3 default 3D viewpoints refit via deleteElement + saveViewpoint with bbox-derived camera (sidestepping the kernel's "duplicate element id" on saveViewpoint-with-existing-id). **Iter-13 subagent scores: alpha 5→6 (+1), beta 4→4 (0), gamma 6→7 (+1)**. Beta held at 4 because both changes (door + viewport) were narrow vs the dominant fenestration/material/topo carryover gaps. Surfaced **methodology gap #20**: gamma Praxis still on wrong half (placed x=8000..16000, source places on western half = x=0..9000) — re-grounding step needed but only ran on the MOVED elements, not the carryover positions. |
+| 14 | **Elevation capture fix + per-facade window rhythm** | `testhouse_iter14_author_ortho_viewpoints.py` + `testhouse_iter14_ortho_capture.mjs` + 3 window-rhythm subagents + `testhouse_iter14_apply_windows.py` | 4 ortho-style 3D viewpoints per house (north/east/south/west, 2.5×diag offset) close methodology #13 (wireframe-stub elevations). Per-facade window-rhythm subagents author alpha 38 + beta 25 + gamma 44 windows + 2 doors each. DG window retry script lowered sill 1500→1300 to clear `hosted_opening_lintel_clearance`. **Subagent scores: alpha 6→7 (+1), beta 4→7 (+3 — largest single-iter beta jump), gamma 7→8 (+1)**. |
+| 15 | **Roof material + pitch + viewport polish** | `testhouse_iter15_polish.py` + `testhouse_iter15b_roof_material.py` + `testhouse_iter15c_fixup_dormers.py` | Main gable roofs re-emitted with `materialKey="roof_tile_terracotta"` (closing the 4-iter "white roof" overhang). Beta pitch 35→42° + overhang 800→500. Default 3D viewpoints refit. Iter-15b's re-emit accidentally collapsed alpha 8 dormers → 4 unique-suffix ids; iter-15c emitted the missing 4 alpha + 4 gamma (gamma had also lost its 4 dormers to the same bug). |
+| 16 | **METHODOLOGY PIVOT — inside-out, rooms first** | `testhouse_iter16_alpha_rooms.py` + 2 floor-plan-reader subagents + `testhouse_iter16_apply_rooms.py` + `testhouse_iter16_plan_capture.mjs` | User feedback: exterior is converging but interior is empty/wrong. Pivot to read source floor plans per-level. Alpha 36 rooms emitted from existing fact-ledger boundaries; beta 17 + gamma 32 rooms via dispatch subagents (gamma subagent uncovered correct Praxis-on-EG / residence-on-OG program mapping). Plan-view capture pipeline added. **First iter-16 plan captures showed nothing visible** — methodology gap #24/#25/#27. |
+| 16b/c/d | **Plan-view config + interior partitions** | `testhouse_iter16b_alpha_partitions.py` + `testhouse_iter16c_partitions_from_rooms.py` + `testhouse_iter16d_fix_plan_views.py` | Iter-16b: 31 alpha interior partitions from fact-ledger edge classifications. Iter-16c: 29 beta + 64 gamma partitions derived algorithmically from room polygons (unique edges minus exterior-bbox edges). Iter-16d: `planShowRoomLabels=true` on all 11 plan_views via updateElementProperty. After these three, plan-view captures finally show room labels + partition walls. |
+| 17 | **Alpha stair authoring** | `testhouse_iter17_alpha_stairs.py` | First stair across any testhouse: alpha EG → DG east half (14 steps × 193 mm riser × 240 mm tread, 900 mm wide, straight). West-half mirror rejected `physical_stair_without_floor_landings` because iter-5 floor only spans 0..9935. **Iter-17 subagent scores: alpha 7+3 → 7+5 (int +2), beta 7+2 → 7+6 (int +4), gamma 8 → 9 (int 2 → 6)** — confirming the inside-out pivot delivered real visible lift once labels + partitions rendered. |
+| 18 | **Alpha floor extension to full doppelhaus** | `testhouse_iter18_alpha_floors.py` | Floor extents extended from 0..9935 to -9935..+9935 × 0..8100 by deleteElement + createFloor with allowDetached=true. 4/6 commands applied (EG + DG old-floor deletes rejected because iter-17 stair lands on them, but new floors landed alongside). After this, iter-17 west-half stair re-applied successfully → alpha has 2 stairs. |
+| 19 | **Plan-view cut plane + interior doors** | `testhouse_iter19_fix_cut_plane.py` + 3 door-reader subagents + `testhouse_iter19_apply_doors.py` | Plan-view `cutPlaneOffsetMm` set to +1200 (was -500) so alpha KG no longer renders blank. 3 door-reader subagents emit 8 alpha + 12 beta + 25 gamma `insertDoorOnWall` commands. Apply: alpha 0/8 (all collided with iter-14 windows), beta 8/12 (4 window collisions), gamma 24/25 (1 collision). Door swing arcs now visible at plan cut. **Iter-19 subagent scores: alpha 7+5 → 7+6 (+1 from KG unblock), beta 7+6 → 7+7 (+1 from door arcs), gamma 9 / int 6 → 9 / int 8 (+2 from 24 doors)**. |
 
 ## Honest fidelity scoring (after iter-10, measured by hand)
 
