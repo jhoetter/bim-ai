@@ -345,29 +345,25 @@ export function Viewport({
   elementsByIdRef.current = elementsById;
   const groupRegistry = useBimStore((s) => s.groupRegistry);
   const theme = useTheme();
+  // PERF-G05: read derived indices instead of scanning Object.values per memo.
+  const projectSettings = useBimStore((s) => s.modelIndices.projectSettings);
+  const levelsIndex = useBimStore((s) => s.modelIndices.levels);
 
   // Serialised key — only changes when georeference VALUES change, not on every elementsById ref update.
   const georeferenceKey = useMemo(() => {
-    const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
-    const g = ps?.kind === 'project_settings' ? ps.georeference : null;
+    const g = projectSettings?.georeference ?? null;
     if (!g) return null;
     return `${g.anchorLat}:${g.anchorLon}:${g.bboxNorth ?? g.contextRadiusM ?? ''}:${g.bboxSouth ?? ''}:${g.bboxEast ?? ''}:${g.bboxWest ?? ''}`;
-  }, [elementsById]);
+  }, [projectSettings]);
 
   const georeference = useMemo(() => {
-    const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
-    if (ps?.kind === 'project_settings') return ps.georeference ?? null;
-    return null;
+    return projectSettings?.georeference ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [georeferenceKey]); // stable: only recalculates when values actually change
 
   const walkLevels = useMemo(
-    () =>
-      Object.values(elementsById)
-        .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
-        .map((e) => e.elevationMm / 1000)
-        .sort((a, b) => a - b),
-    [elementsById],
+    () => levelsIndex.map((e) => e.elevationMm / 1000).sort((a, b) => a - b),
+    [levelsIndex],
   );
   const walkLevelsRef = useRef<number[]>([]);
   walkLevelsRef.current = walkLevels;
@@ -424,13 +420,15 @@ export function Viewport({
   handleGripCommandRef.current = handleGripCommand;
 
   const direct3dDraftLevelName = useMemo(() => {
-    const levels = Object.values(elementsById)
-      .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-      .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }));
+    const levels = levelsIndex.map((level) => ({
+      id: level.id,
+      elevationMm: level.elevationMm,
+      name: level.name,
+    }));
     const resolved = resolve3dDraftLevel(levels, activeLevelId);
     const resolvedName = resolved ? levels.find((level) => level.id === resolved.id)?.name : null;
     return resolvedName ?? 'Active level';
-  }, [activeLevelId, elementsById]);
+  }, [activeLevelId, levelsIndex]);
 
   useEffect(() => {
     if (!DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool)) {
