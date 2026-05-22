@@ -7,7 +7,7 @@ methodology under `spec/archive/` is historical context only.
 
 For current work, use these sources together:
 
-- `spec/sketch-to-bim-readiness-tracker.md` for the active backlog, milestones,
+- `spec/trackers/sketch-to-bim-readiness-tracker.md` for the active backlog, milestones,
   CLI/MCP gaps, real-BIM methodology gaps, and target-house readiness gates.
 - `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md` for the new
   BIM-integrity, renderer-fidelity, Advisor, and sketch-acceptance backlog
@@ -18,7 +18,7 @@ For current work, use these sources together:
   owner layers, examples, and expected evidence.
 - `spec/sketch-to-bim-capability-matrix.json` for feature-to-capability
   readiness.
-- `spec/ui-mcp-parity-tracker.md` for the broader UI/Cmd+K/CLI/MCP parity
+- `spec/trackers/ui-mcp-parity-tracker.md` for the broader UI/Cmd+K/CLI/MCP parity
   design.
 - `claude-skills/sketch-to-bim/SKILL.md` for the operational phase checklist.
 
@@ -164,7 +164,7 @@ the external-agent convenience path over the same `cmd-v3.0` bundle semantics.
 ## Current Gate
 
 Before generating `target-house-1`, close or explicitly tolerate the P0 items in
-`spec/sketch-to-bim-readiness-tracker.md` and
+`spec/trackers/sketch-to-bim-readiness-tracker.md` and
 `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md`, then produce the
 target-house no-seed rehearsal packet defined by `SKB-RDY-F01` through
 `SKB-RDY-F06`.

@@ -25,7 +25,7 @@ Mirrors the existing reverse-BIM reader-dispatch shape:
   "confidence"?: float, "reason"?: str}, ...]}``.
 
 Tracker reference: TH-X-F008 in
-``spec/testhouse-hybrid-reverse-bim-tracker.md``.
+``spec/trackers/testhouse-hybrid-reverse-bim-tracker.md``.
 """
 
 from __future__ import annotations

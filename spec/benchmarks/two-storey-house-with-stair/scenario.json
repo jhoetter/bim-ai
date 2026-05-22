@@ -2,7 +2,7 @@
   "schemaVersion": "bim-ai.benchmark.scenario.v1",
   "scenarioId": "two-storey-house-with-stair",
   "title": "Two-Storey House With Stair",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "lifecycle": "m3-l-evidence-collected",
   "summary": "M3 executable fixture for cross-level residential authoring: two levels, raw-bundle stair, raw-bundle stair opening, raw-bundle railing, hosted openings, plan/section evidence, drawing-sheet output, and advisor/visual/export route evidence.",
   "fixtures": {

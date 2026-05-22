@@ -16,7 +16,7 @@ From any conversation in the bim-ai repo, paste:
    tmp/reverse-bim/convergence-state.json so a context-reset wakeup can pick it up.
 
 2. If summary.allTerminal is true:
-     - Update spec/testhouse-hybrid-reverse-bim-tracker.md with the final
+     - Update spec/trackers/testhouse-hybrid-reverse-bim-tracker.md with the final
        per-house outcome (accepted vs blocked_with_disposition vs
        blocked_pass_budget_exhausted), commit, and exit the loop
        (omit ScheduleWakeup).

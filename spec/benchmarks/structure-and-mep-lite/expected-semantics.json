@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
   "benchmarkId": "structure-and-mep-lite",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
   "expected": {
     "structure": {
       "columns": 2,

@@ -3,7 +3,7 @@
 // the four orthographic elevations (east / north / south / west). Output:
 // tmp/reverse-bim/iter-11-captures/{house}-{view}-{cropped,full}.png.
 //
-// Methodology cues honored (see spec/testhouse-visual-fidelity-tracker.md
+// Methodology cues honored (see spec/trackers/testhouse-visual-fidelity-tracker.md
 // "Iter-10 methodology learnings" #11):
 //   - largest-canvas selector for the cropped capture (skip the nav-cube widget)
 //   - always also save the full-page screenshot for context

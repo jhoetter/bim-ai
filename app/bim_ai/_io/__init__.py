@@ -3,7 +3,7 @@
 This subpackage exists to break the copy-paste epidemic the
 2026-05-22 backend audit identified: 16 modules each defined their
 own `_digest` / `_sha256_json` / `_read_json` / `_write_json`. Per
-BRT-10 / BRT-11 in `spec/backend-rework-tracker.md`, those duties
+BRT-10 / BRT-11 in `spec/trackers/backend-rework-tracker.md`, those duties
 live here once.
 
 The signatures preserve byte-for-byte parity with the most common

@@ -4,7 +4,7 @@
   "scenarioId": "presentation-pack",
   "title": "Presentation Pack",
   "trackerRefs": ["BIR-L01", "BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"],
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "runner": {
     "kind": "node-test",
     "command": "node --test scripts/benchmarks/m4-presentation-documentation.test.mjs",

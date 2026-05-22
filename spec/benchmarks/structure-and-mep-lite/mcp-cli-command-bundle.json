@@ -2,7 +2,7 @@
   "schemaVersion": "cmd-v3.0",
   "meta": {
     "benchmarkId": "structure-and-mep-lite",
-    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
+    "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
     "description": "Combined M4-B/M4-C typed command bundle for structural framing, construction-lite coordination, and MEP-lite routing."
   },
   "commands": [

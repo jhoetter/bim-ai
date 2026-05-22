@@ -4,7 +4,7 @@
   "scenarioId": "structure-and-mep-lite",
   "title": "Structure and MEP Lite",
   "trackerRefs": ["BIR-L01", "BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"],
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "runner": {
     "kind": "node-script",
     "command": "node scripts/benchmarks/structure-and-mep-lite.mjs --mode offline --json",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.ui-cmdk-equivalence.v1",
   "benchmarkId": "two-storey-house-with-stair",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "status": "validated-replay",
   "pathKind": "validated-replay",
   "auditClassification": "validated-replay",

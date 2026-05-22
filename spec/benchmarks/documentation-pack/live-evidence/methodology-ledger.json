@@ -3,7 +3,7 @@
   "generatedAtIso": "2026-05-19T00:00:00.000Z",
   "scenarioId": "documentation-pack",
   "trackerRefs": ["BIR-L01", "BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"],
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "fixtures": {
     "expectedSemantics": "expected-semantics.json",
     "mcpCliCommandBundle": "mcp-cli-command-bundle.json",

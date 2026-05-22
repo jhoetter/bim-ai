@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.ui-cmdk-traceability.v1",
   "benchmarkId": "simple-single-storey-house",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "pathKind": "traceability-only",
   "parityClaim": "none",
   "latestEquivalenceArtifact": "ui-equivalence.json",

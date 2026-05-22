@@ -18,7 +18,7 @@ Your job is a three-phase mission:
 
 1. **Audit** — read the existing codebase and understand what is already
    implemented in terms of norms, calculations, and compliance checks
-2. **Build a tracker** — create `spec/norms-calculations-tracker.md` that
+2. **Build a tracker** — create `spec/trackers/norms-calculations-tracker.md` that
    maps every domain of a fully norm-compliant German BIM solution to its
    implementation status and what still needs to be built
 3. **Implement** — work through the tracker top-down, implementing missing
@@ -68,7 +68,7 @@ Key findings you will confirm as you read:
 
 ## PHASE 2: BUILD THE TRACKER
 
-Create `spec/norms-calculations-tracker.md` with the following structure.
+Create `spec/trackers/norms-calculations-tracker.md` with the following structure.
 
 For each domain, the tracker must record:
 
@@ -400,11 +400,11 @@ from commercial norm publications. Implement the math; cite the source.
 
 ## Output of Phase 2 (the tracker file)
 
-`spec/norms-calculations-tracker.md` must be machine-readable enough that
+`spec/trackers/norms-calculations-tracker.md` must be machine-readable enough that
 a future agent can:
 
-- `grep "❌ missing" spec/norms-calculations-tracker.md` to find remaining work
-- `grep "P0" spec/norms-calculations-tracker.md` to find next priority items
+- `grep "❌ missing" spec/trackers/norms-calculations-tracker.md` to find remaining work
+- `grep "P0" spec/trackers/norms-calculations-tracker.md` to find next priority items
 - Update a row's status from `❌ missing` to `⚠️ partial` or `✅ implemented`
   as work progresses
 

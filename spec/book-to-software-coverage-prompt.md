@@ -81,7 +81,7 @@ Search across:
 ~/repos/bim-ai/app/bim_ai/          # core Python modules
 ~/repos/bim-ai/app/tests/           # tests (indicate what is tested)
 ~/repos/bim-ai/spec/lenses/         # lens specs (may describe planned features)
-~/repos/bim-ai/spec/norms-calculations-tracker.md  # if it exists from prior run
+~/repos/bim-ai/spec/trackers/norms-calculations-tracker.md  # if it exists from prior run
 ```
 
 For each claim, assign one status:

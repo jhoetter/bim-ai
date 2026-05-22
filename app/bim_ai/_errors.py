@@ -19,7 +19,7 @@ into a uniform JSON envelope:
       }
     }
 
-Migration plan (see `spec/backend-rework-tracker.md` BRT-06):
+Migration plan (see `spec/trackers/backend-rework-tracker.md` BRT-06):
 1. Land this module + global handler.
 2. Migrate route files incrementally — each file's `HTTPException`
    sites become `raise RouteError(code=..., message=..., status=...)`.

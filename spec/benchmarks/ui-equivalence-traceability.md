@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18
 
-Source of intent: `spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks`.
+Source of intent: `spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks`.
 
 ## Simple Single-Storey House
 

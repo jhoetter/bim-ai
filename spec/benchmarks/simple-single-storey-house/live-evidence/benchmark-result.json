@@ -7959,7 +7959,7 @@
   "expectedSemantics": {
     "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
     "benchmarkId": "simple-single-storey-house",
-    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+    "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
     "paths": {
       "mcpCli": {
         "status": "fixture-validated-live-dry-run-and-commit-capable",

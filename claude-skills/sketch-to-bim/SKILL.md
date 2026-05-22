@@ -9,7 +9,7 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
-Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, `spec/sketch-to-bim-readiness-tracker.md`, and `spec/sketch-to-bim-agent-workflow-templates.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, agent closeout gates, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
+Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, `spec/trackers/sketch-to-bim-readiness-tracker.md`, and `spec/sketch-to-bim-agent-workflow-templates.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, agent closeout gates, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
 
 ## Tooling contract
 

@@ -13,7 +13,7 @@ closes that gap by reading the AI-vision evidence already captured in
 extracts as `evidenceSummary` on `building_scope`-kind facts) and emitting
 a canonical typology record per house.
 
-Output shape (per the iter-12 plan in spec/testhouse-visual-fidelity-tracker.md):
+Output shape (per the iter-12 plan in spec/trackers/testhouse-visual-fidelity-tracker.md):
 
     {
       "building_class": "zweifamilien_doppelhaus" | "einfamilienhaus" | "doppelhaushälfte",

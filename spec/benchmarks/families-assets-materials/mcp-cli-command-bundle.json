@@ -6,7 +6,7 @@
     "benchmarkId": "families-assets-materials",
     "path": "mcp-cli",
     "generatedBy": "M4-I deterministic fixture",
-    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
+    "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
     "parityClassification": {
       "family": "AG-F",
       "asset": "AG-F",

@@ -164,7 +164,7 @@ class RoleAssignmentRecord(Base):
 class ModelCommitRecord(Base):
     """Git-like commit grouping a contiguous range of bim_undo_stack rows.
 
-    See spec/model-time-travel-tracker.md for the methodology and lifecycle.
+    See spec/trackers/model-time-travel-tracker.md for the methodology and lifecycle.
     """
 
     __tablename__ = "bim_model_commits"

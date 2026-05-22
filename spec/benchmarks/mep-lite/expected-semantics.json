@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
   "benchmarkId": "mep-lite",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-c-mep-lite-mcp-pack",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#m4-c-mep-lite-mcp-pack",
   "expected": {
     "routes": {
       "pipe": 1,

@@ -8,7 +8,7 @@ The hybrid-slice-execute and hybrid-run-execute routes remain in
 ``routes_api.py`` for now because they depend on the bundle apply route. They
 will move once the bundle apply path is split into its own module.
 
-Per BRT-01 in ``spec/backend-rework-tracker.md``, every handler binds a
+Per BRT-01 in ``spec/trackers/backend-rework-tracker.md``, every handler binds a
 Pydantic model from ``bim_ai.models.reverse_bim_requests`` rather than an
 untyped ``dict[str, Any]``. Validation that used to raise
 ``HTTPException(422, ...)`` after a ``body.get(...) is None`` check is
@@ -24,6 +24,12 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from bim_ai.evidence.reverse_bim_acceptance_evidence import (
+    build_level_completeness_report,
+    build_physical_topology_report,
+    build_source_overlay_evidence_report,
+    build_ui_evidence_report,
+)
 from bim_ai.final_acceptance import build_final_acceptance_report
 from bim_ai.folder_output import build_reverse_bim_folder_output
 from bim_ai.hybrid_reverse_bim import (
@@ -98,12 +104,6 @@ from bim_ai.reverse_bim import (
     build_source_coverage_matrix,
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
-)
-from bim_ai.reverse_bim_acceptance_evidence import (
-    build_level_completeness_report,
-    build_physical_topology_report,
-    build_source_overlay_evidence_report,
-    build_ui_evidence_report,
 )
 from bim_ai.reverse_bim_document_authority import (
     build_reverse_bim_document_authority_report,

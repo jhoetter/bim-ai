@@ -1,6 +1,6 @@
 """Typed request/response models for the bim_ai HTTP surface.
 
-Per the BRT-30/BRT-31 plan in `spec/backend-rework-tracker.md`, this
+Per the BRT-30/BRT-31 plan in `spec/trackers/backend-rework-tracker.md`, this
 subpackage is where Pydantic request bodies and response shapes that
 back the FastAPI routes live. BRT-01 seeds it with the request models
 behind `routes_reverse_bim.py`.

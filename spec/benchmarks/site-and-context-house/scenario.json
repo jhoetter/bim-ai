@@ -2,7 +2,7 @@
   "schemaVersion": "bim-ai.professional-benchmark.scenario.v1",
   "scenarioId": "site-and-context-house",
   "title": "Site and Context House",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "lifecycle": "m4-g-evidence-closed",
   "summary": "Professional M4 site/context benchmark fixture covering toposolid, grading, property line, base/survey point, sun settings, georeference, and context evidence parity.",
   "fixtures": {

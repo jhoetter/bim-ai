@@ -8,7 +8,7 @@ canonical transport until MCP/API routes are executable for the same operation.
 Read:
 
 - `spec/sketch-to-bim-methodology.md`
-- `spec/sketch-to-bim-readiness-tracker.md`
+- `spec/trackers/sketch-to-bim-readiness-tracker.md`
 - `spec/sketch-to-bim-product-surfaces.md`
 - the project-specific source images, brief, IR, capability map, phase plan, and
   checklist.

@@ -821,7 +821,7 @@ for _semantic_arch_tool in (
 # `createSectionCut`). The companion `reverse_bim.source_view_evidence_upsert`
 # tool documents the evidence-record surface; the persistent backing element
 # kind (`source_view_evidence`) is tracked as follow-up in
-# `spec/testhouse-hybrid-reverse-bim-tracker.md` finding `TH-X-F006`.
+# `spec/trackers/testhouse-hybrid-reverse-bim-tracker.md` finding `TH-X-F006`.
 # ---------------------------------------------------------------------------
 
 

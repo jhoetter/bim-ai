@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.suite.v1",
   "suiteId": "same-house-core-product-cases",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "milestone": "M3-C",
   "requiredEvidenceKinds": [
     "ui",

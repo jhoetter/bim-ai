@@ -6,7 +6,7 @@
     "benchmarkId": "simple-single-storey-house",
     "path": "mcp-cli",
     "generatedBy": "M2-D deterministic fixture",
-    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks"
+    "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks"
   },
   "assumptions": [
     {

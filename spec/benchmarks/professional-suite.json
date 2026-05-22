@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.professional-benchmark.suite.v1",
   "suiteId": "m4-professional-domain-packs",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
   "milestone": "M4-F",
   "requiredEvidenceKinds": [
     "ui",

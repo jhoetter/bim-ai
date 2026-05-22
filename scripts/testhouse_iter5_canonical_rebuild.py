@@ -199,7 +199,7 @@ def commit(model_id: str, command: dict[str, Any], parent_revision: int, op: str
                     "evidence": (
                         "Authored in canonical per-house building frame "
                         "by scripts/testhouse_iter5_canonical_rebuild.py. "
-                        "See spec/testhouse-hybrid-reverse-bim-tracker.md."
+                        "See spec/trackers/testhouse-hybrid-reverse-bim-tracker.md."
                     ),
                 }
             ],

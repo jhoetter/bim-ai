@@ -1340,7 +1340,7 @@ function buildAudit() {
       evidence: [],
       priority: priorityFor(cmd.domain),
       status: parityStatus(uiCompletionKind, agentCompletionKind),
-      ownerSpecLink: 'spec/ui-mcp-parity-tracker.md#milestone-1-workstreams',
+      ownerSpecLink: 'spec/trackers/ui-mcp-parity-tracker.md#milestone-1-workstreams',
       source: cmd.source,
       parserNotes: [
         cmd.inCommandUnion
@@ -1568,7 +1568,7 @@ function buildAudit() {
 
   return {
     generatedAt: new Date().toISOString(),
-    sourceOfIntent: 'spec/ui-mcp-parity-tracker.md',
+    sourceOfIntent: 'spec/trackers/ui-mcp-parity-tracker.md',
     sources: SOURCES,
     parserLimitations: [
       'TypeScript and Python are parsed with balanced-block and regex extraction; no AST/typechecker is invoked.',

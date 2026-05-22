@@ -1,7 +1,7 @@
 {
   "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
   "benchmarkId": "two-storey-house-with-stair",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "paths": {
     "mcpCli": {
       "status": "fixture-validated-offline-raw-bundle-live-dry-run-capable",

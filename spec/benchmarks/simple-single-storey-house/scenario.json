@@ -2,7 +2,7 @@
   "schemaVersion": "bim-ai.benchmark.scenario.v1",
   "scenarioId": "simple-single-storey-house",
   "title": "Simple Single-Storey House",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "lifecycle": "m2-closed-fixture",
   "summary": "Canonical M2 house-capable fixture covering a single-level residential model, documentation shell, advisor, visual surrogate, export manifests, and semantic diff.",
   "fixtures": {

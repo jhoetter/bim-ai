@@ -1474,7 +1474,7 @@ export function Workspace(): JSX.Element {
     [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
   );
 
-  // Iter-11 capture toolchain hook (see spec/testhouse-visual-fidelity-tracker.md
+  // Iter-11 capture toolchain hook (see spec/trackers/testhouse-visual-fidelity-tracker.md
   // methodology learning #11). Honors `?activeElevationView=<id>`,
   // `?activePlanView=<id>`, and `?activeViewpoint=<id>` so headless capture
   // scripts can deep-link straight into a specific view without driving the UI.

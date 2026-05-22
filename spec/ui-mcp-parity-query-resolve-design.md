@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18
 
-Source of intent: `spec/ui-mcp-parity-tracker.md`, Milestone 1-E / WP-007.
+Source of intent: `spec/trackers/ui-mcp-parity-tracker.md`, Milestone 1-E / WP-007.
 
 ## Purpose
 

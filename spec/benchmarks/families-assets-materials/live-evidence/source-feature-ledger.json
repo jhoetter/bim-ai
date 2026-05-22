@@ -2,7 +2,7 @@
   "format": "professionalBenchmarkSourceFeatureLedger_v1",
   "generatedAtIso": "2026-05-19T00:00:00.000Z",
   "scenarioId": "families-assets-materials",
-  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "trackerRefs": ["BIR-O05"],
   "features": [
     {

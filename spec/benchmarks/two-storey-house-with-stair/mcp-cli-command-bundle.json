@@ -6,7 +6,7 @@
     "benchmarkId": "two-storey-house-with-stair",
     "path": "mcp-cli",
     "generatedBy": "M3-G deterministic fixture",
-    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+    "sourceOfIntent": "spec/trackers/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
     "parityClassification": {
       "stair": "AG-R",
       "stairOpening": "AG-R",
@@ -25,7 +25,7 @@
       "key": "vertical-circulation-agent-surface",
       "value": "Stair, slab opening, and railing use raw kernel command payloads because typed author.stair_between_levels/opening.shaft/railing path tools are not present in this benchmark surface.",
       "confidence": 1,
-      "source": "spec/ui-mcp-parity-tracker.md"
+      "source": "spec/trackers/ui-mcp-parity-tracker.md"
     }
   ],
   "commands": [

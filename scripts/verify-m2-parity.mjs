@@ -151,7 +151,7 @@ const checks = [
       'prettier',
       '--check',
       'scripts/verify-m2-parity.mjs',
-      'spec/ui-mcp-parity-tracker.md',
+      'spec/trackers/ui-mcp-parity-tracker.md',
     ],
   },
   {
