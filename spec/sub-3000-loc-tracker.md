@@ -105,7 +105,7 @@ A-territory bar after the sweep:
 | SLC-2026-12   | P1       | Done    | `packages/web/src/workspace/commandCapabilities.ts`          | Split NAVIGATION + SYSTEM capability arrays                           | commandCapabilities below 3,000 LOC.                       |
 | SLC-2026-13   | P1       | Open    | `packages/web/src/workspace/project/ProjectBrowser.tsx`      | Extract another browser group                                         | ProjectBrowser below 3,000 LOC.                            |
 | SLC-2026-14   | P1       | Done    | `app/bim_ai/commands.py`                                     | Extract annotation + late command schemas                             | commands.py below 3,000 LOC.                               |
-| SLC-2026-15   | P2       | Open    | `packages/core/src/index.ts`                                 | Extract another type cluster                                          | core/index below 3,000 LOC.                                |
+| SLC-2026-15   | P2       | Done    | `packages/core/src/index.ts`                                 | Extract MEP / structural / annotation element variants                | core/index below 3,000 LOC.                                |
 | SLC-2026-16   | P1       | Open    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract another panel cluster                                         | Workbench below 3,000 LOC.                                 |
 | SLC-2026-17   | P1       | Open    | `packages/web/src/workspace/Workspace.tsx`                   | Extract another workspace hook cluster                                | Workspace below 3,000 LOC.                                 |
 | SLC-2026-18   | P1       | Done    | `app/bim_ai/api/registry.py`                                 | Extract OUT-V3-02/03 + EXP-V3-01 descriptor group                     | registry.py below 3,000 LOC.                               |
@@ -193,3 +193,18 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-15` Done. `packages/core/src/index.ts` cut from
+  3,386 to 2,997 LOC by extracting three element-variant clusters out of
+  the giant `Element` discriminated union:
+  - `elements/mep.ts`: `PipeElement`, `DuctElement`, `PipeLegendElement`,
+    `DuctLegendElement`, `CableTrayElement`, `MepEquipmentElement`,
+    `MepTerminalElement`, `FixtureElement`, `MepOpeningRequestElement`.
+  - `elements/structural.ts`: `ColumnElement`, `BeamElement`,
+    `SteelConnectionElement`, `BeamSectionProfileElement`,
+    `BeamSystemElement`, `BraceElement`.
+  - `elements/annotations.ts`: `PlacedTagElement`, `DetailLineElement`,
+    `DetailArcElement`, `DetailFilledRegionElement`, `DetailRegionElement`,
+    `TextNoteElement`, `AnnotationSymbolElement`, `LeaderTextElement`,
+    `ColorFillLegendElement`, `Text3dElement`, `TextTagElement`.
+  All new types are re-exported from `index.ts` so external imports remain
+  unchanged. `pnpm typecheck` is clean across all packages.
