@@ -1,0 +1,1374 @@
+{
+  "digest": "184f5cfd01d2d4cc762aa74fba22971a67605550ae90ce518abd5fb97ee944ab",
+  "shape": {
+    "paths": {
+      "/api/bootstrap": {
+        "get": {
+          "operationId": "bootstrap_api_bootstrap_get"
+        }
+      },
+      "/api/building-presets": {
+        "get": {
+          "operationId": "building_presets_api_building_presets_get"
+        }
+      },
+      "/api/family-catalogs": {
+        "get": {
+          "operationId": "list_family_catalogs_api_family_catalogs_get"
+        }
+      },
+      "/api/family-catalogs/{catalog_id}": {
+        "get": {
+          "operationId": "get_family_catalog_api_family_catalogs__catalog_id__get"
+        }
+      },
+      "/api/health": {
+        "get": {
+          "operationId": "health_api_health_get"
+        }
+      },
+      "/api/jobs": {
+        "get": {
+          "operationId": "list_jobs_api_jobs_get"
+        },
+        "post": {
+          "operationId": "create_job_api_jobs_post",
+          "requestModel": "CreateJobRequest"
+        }
+      },
+      "/api/jobs/{job_id}": {
+        "get": {
+          "operationId": "get_job_api_jobs__job_id__get"
+        }
+      },
+      "/api/jobs/{job_id}/cancel": {
+        "post": {
+          "operationId": "cancel_job_api_jobs__job_id__cancel_post"
+        }
+      },
+      "/api/jobs/{job_id}/retry": {
+        "post": {
+          "operationId": "retry_job_api_jobs__job_id__retry_post"
+        }
+      },
+      "/api/material-assets/validate-upload": {
+        "post": {
+          "operationId": "validate_material_asset_upload_api_material_assets_validate_upload_post"
+        }
+      },
+      "/api/models/{host_id}/import-dxf": {
+        "post": {
+          "operationId": "import_dxf_api_models__host_id__import_dxf_post",
+          "requestModel": "ImportDxfBody"
+        }
+      },
+      "/api/models/{host_id}/import-ifc": {
+        "post": {
+          "operationId": "import_ifc_to_shadow_link_api_models__host_id__import_ifc_post",
+          "requestModel": "ImportIfcBody"
+        }
+      },
+      "/api/models/{host_id}/upload-dxf-file": {
+        "post": {
+          "operationId": "upload_dxf_file_api_models__host_id__upload_dxf_file_post"
+        }
+      },
+      "/api/models/{model_id}/activity": {
+        "get": {
+          "operationId": "list_activity_api_models__model_id__activity_get"
+        }
+      },
+      "/api/models/{model_id}/activity/{row_id}/restore": {
+        "post": {
+          "operationId": "restore_activity_row_api_models__model_id__activity__row_id__restore_post"
+        }
+      },
+      "/api/models/{model_id}/agent-iterate": {
+        "post": {
+          "operationId": "agent_iterate_api_models__model_id__agent_iterate_post",
+          "requestModel": "AgentIterateRequest"
+        }
+      },
+      "/api/models/{model_id}/architecture/query": {
+        "get": {
+          "operationId": "architecture_lens_query_api_models__model_id__architecture_query_get"
+        }
+      },
+      "/api/models/{model_id}/assets/search": {
+        "get": {
+          "operationId": "search_model_assets_api_models__model_id__assets_search_get"
+        }
+      },
+      "/api/models/{model_id}/bundles": {
+        "post": {
+          "operationId": "apply_bundle_route_api_models__model_id__bundles_post",
+          "requestModel": "CommandBundleRequest"
+        }
+      },
+      "/api/models/{model_id}/command-log": {
+        "get": {
+          "operationId": "command_log_full_api_models__model_id__command_log_get"
+        }
+      },
+      "/api/models/{model_id}/commands": {
+        "post": {
+          "operationId": "apply_command_api_models__model_id__commands_post",
+          "requestModel": "CommandEnvelope"
+        }
+      },
+      "/api/models/{model_id}/commands/bundle": {
+        "post": {
+          "operationId": "apply_command_bundle_api_models__model_id__commands_bundle_post",
+          "requestModel": "BundleEnvelope"
+        }
+      },
+      "/api/models/{model_id}/commands/bundle/dry-run": {
+        "post": {
+          "operationId": "dry_run_command_bundle_api_models__model_id__commands_bundle_dry_run_post",
+          "requestModel": "BundleEnvelope"
+        }
+      },
+      "/api/models/{model_id}/commands/dry-run": {
+        "post": {
+          "operationId": "dry_run_command_api_models__model_id__commands_dry_run_post",
+          "requestModel": "CommandEnvelope"
+        }
+      },
+      "/api/models/{model_id}/comments": {
+        "get": {
+          "operationId": "list_comments_api_models__model_id__comments_get"
+        },
+        "post": {
+          "operationId": "create_comment_api_models__model_id__comments_post",
+          "requestModel": "CommentCreateBody"
+        }
+      },
+      "/api/models/{model_id}/comments/{comment_id}": {
+        "patch": {
+          "operationId": "patch_comment_api_models__model_id__comments__comment_id__patch",
+          "requestModel": "CommentResolveBody"
+        }
+      },
+      "/api/models/{model_id}/constructability-bcf": {
+        "get": {
+          "operationId": "constructability_bcf_export_api_models__model_id__constructability_bcf_get"
+        }
+      },
+      "/api/models/{model_id}/constructability-report": {
+        "get": {
+          "operationId": "constructability_report_api_models__model_id__constructability_report_get"
+        }
+      },
+      "/api/models/{model_id}/construction-lens": {
+        "get": {
+          "operationId": "construction_lens_report_api_models__model_id__construction_lens_get"
+        }
+      },
+      "/api/models/{model_id}/coordination-lens": {
+        "get": {
+          "operationId": "coordination_lens_snapshot_api_models__model_id__coordination_lens_get"
+        }
+      },
+      "/api/models/{model_id}/cost-quantity-lens": {
+        "get": {
+          "operationId": "cost_quantity_lens_status_api_models__model_id__cost_quantity_lens_get"
+        }
+      },
+      "/api/models/{model_id}/diff": {
+        "get": {
+          "operationId": "model_diff_api_models__model_id__diff_get"
+        }
+      },
+      "/api/models/{model_id}/energy/handoff": {
+        "get": {
+          "operationId": "energy_handoff_route_api_models__model_id__energy_handoff_get"
+        }
+      },
+      "/api/models/{model_id}/evidence-package": {
+        "get": {
+          "operationId": "evidence_package_api_models__model_id__evidence_package_get"
+        }
+      },
+      "/api/models/{model_id}/export/bcf": {
+        "get": {
+          "operationId": "export_model_bcf_api_models__model_id__export_bcf_get"
+        }
+      },
+      "/api/models/{model_id}/export/glb": {
+        "get": {
+          "operationId": "export_model_glb_redirect_api_models__model_id__export_glb_get"
+        }
+      },
+      "/api/models/{model_id}/export/gltf": {
+        "get": {
+          "operationId": "export_model_gltf_redirect_api_models__model_id__export_gltf_get"
+        }
+      },
+      "/api/models/{model_id}/export/ids": {
+        "get": {
+          "operationId": "export_model_ids_report_api_models__model_id__export_ids_get"
+        }
+      },
+      "/api/models/{model_id}/export/ifc": {
+        "get": {
+          "operationId": "export_model_ifc_redirect_api_models__model_id__export_ifc_get"
+        }
+      },
+      "/api/models/{model_id}/export/json": {
+        "get": {
+          "operationId": "export_model_json_api_models__model_id__export_json_get"
+        }
+      },
+      "/api/models/{model_id}/export/stl": {
+        "get": {
+          "operationId": "export_model_stl_redirect_api_models__model_id__export_stl_get"
+        }
+      },
+      "/api/models/{model_id}/exports/3mf-manifest": {
+        "get": {
+          "operationId": "export_3mf_manifest_api_models__model_id__exports_3mf_manifest_get"
+        }
+      },
+      "/api/models/{model_id}/exports/bcf-topics-json": {
+        "get": {
+          "operationId": "export_bcf_topics_api_models__model_id__exports_bcf_topics_json_get"
+        }
+      },
+      "/api/models/{model_id}/exports/gltf-manifest": {
+        "get": {
+          "operationId": "export_gltf_manifest_api_models__model_id__exports_gltf_manifest_get"
+        }
+      },
+      "/api/models/{model_id}/exports/ifc-empty-skeleton.ifc": {
+        "get": {
+          "operationId": "export_ifc_skeleton_api_models__model_id__exports_ifc_empty_skeleton_ifc_get"
+        }
+      },
+      "/api/models/{model_id}/exports/ifc-manifest": {
+        "get": {
+          "operationId": "export_ifc_manifest_route_api_models__model_id__exports_ifc_manifest_get"
+        }
+      },
+      "/api/models/{model_id}/exports/model.3mf": {
+        "get": {
+          "operationId": "export_model_3mf_bundle_api_models__model_id__exports_model_3mf_get"
+        }
+      },
+      "/api/models/{model_id}/exports/model.glb": {
+        "get": {
+          "operationId": "export_model_glb_bundle_api_models__model_id__exports_model_glb_get"
+        }
+      },
+      "/api/models/{model_id}/exports/model.gltf": {
+        "get": {
+          "operationId": "export_model_gltf_json_api_models__model_id__exports_model_gltf_get"
+        }
+      },
+      "/api/models/{model_id}/exports/model.ifc": {
+        "get": {
+          "operationId": "export_model_ifc_bundle_api_models__model_id__exports_model_ifc_get"
+        }
+      },
+      "/api/models/{model_id}/exports/model.stl": {
+        "get": {
+          "operationId": "export_model_stl_bundle_api_models__model_id__exports_model_stl_get"
+        }
+      },
+      "/api/models/{model_id}/exports/sheet-preview.pdf": {
+        "get": {
+          "operationId": "sheet_preview_pdf_export_api_models__model_id__exports_sheet_preview_pdf_get"
+        }
+      },
+      "/api/models/{model_id}/exports/sheet-preview.svg": {
+        "get": {
+          "operationId": "sheet_preview_svg_export_api_models__model_id__exports_sheet_preview_svg_get"
+        }
+      },
+      "/api/models/{model_id}/exports/sheet-print-raster.png": {
+        "get": {
+          "operationId": "sheet_print_raster_png_export_api_models__model_id__exports_sheet_print_raster_png_get"
+        }
+      },
+      "/api/models/{model_id}/exports/stl-manifest": {
+        "get": {
+          "operationId": "export_stl_manifest_api_models__model_id__exports_stl_manifest_get"
+        }
+      },
+      "/api/models/{model_id}/exports/sustainability-lca.json": {
+        "get": {
+          "operationId": "export_sustainability_lca_json_api_models__model_id__exports_sustainability_lca_json_get"
+        }
+      },
+      "/api/models/{model_id}/fire-safety-lens": {
+        "get": {
+          "operationId": "fire_safety_lens_status_api_models__model_id__fire_safety_lens_get"
+        }
+      },
+      "/api/models/{model_id}/imports/bcf-topics-json": {
+        "post": {
+          "operationId": "import_bcf_topics_json_api_models__model_id__imports_bcf_topics_json_post",
+          "requestModel": "BcfTopicsImportEnvelope"
+        }
+      },
+      "/api/models/{model_id}/markups": {
+        "get": {
+          "operationId": "list_markups_api_models__model_id__markups_get"
+        },
+        "post": {
+          "operationId": "create_markup_api_models__model_id__markups_post",
+          "requestModel": "MarkupCreateBody"
+        }
+      },
+      "/api/models/{model_id}/markups/{markup_id}": {
+        "delete": {
+          "operationId": "delete_markup_api_models__model_id__markups__markup_id__delete"
+        }
+      },
+      "/api/models/{model_id}/markups/{markup_id}/resolve": {
+        "patch": {
+          "operationId": "resolve_markup_api_models__model_id__markups__markup_id__resolve_patch"
+        }
+      },
+      "/api/models/{model_id}/mep": {
+        "get": {
+          "operationId": "mep_lens_projection_api_models__model_id__mep_get"
+        }
+      },
+      "/api/models/{model_id}/milestones": {
+        "get": {
+          "operationId": "list_milestones_api_models__model_id__milestones_get"
+        },
+        "post": {
+          "operationId": "create_milestone_api_models__model_id__milestones_post",
+          "requestModel": "CreateMilestoneBody"
+        }
+      },
+      "/api/models/{model_id}/milestones/{milestone_id}": {
+        "delete": {
+          "operationId": "delete_milestone_api_models__model_id__milestones__milestone_id__delete"
+        }
+      },
+      "/api/models/{model_id}/presentations": {
+        "get": {
+          "operationId": "list_presentations_api_models__model_id__presentations_get"
+        },
+        "post": {
+          "operationId": "create_presentation_api_models__model_id__presentations_post",
+          "requestModel": "CreatePresentationBody"
+        }
+      },
+      "/api/models/{model_id}/presentations/{link_id}/activate": {
+        "post": {
+          "operationId": "activate_presentation_api_models__model_id__presentations__link_id__activate_post"
+        }
+      },
+      "/api/models/{model_id}/presentations/{link_id}/revoke": {
+        "post": {
+          "operationId": "revoke_presentation_api_models__model_id__presentations__link_id__revoke_post"
+        }
+      },
+      "/api/models/{model_id}/projection/plan": {
+        "get": {
+          "operationId": "projection_plan_wire_route_api_models__model_id__projection_plan_get"
+        }
+      },
+      "/api/models/{model_id}/projection/section/{section_cut_id}": {
+        "get": {
+          "operationId": "projection_section_wire_route_api_models__model_id__projection_section__section_cut_id__get"
+        }
+      },
+      "/api/models/{model_id}/public-link": {
+        "post": {
+          "operationId": "create_public_link_api_models__model_id__public_link_post",
+          "requestModel": "CreatePublicLinkBody"
+        }
+      },
+      "/api/models/{model_id}/public-links": {
+        "get": {
+          "operationId": "list_public_links_api_models__model_id__public_links_get"
+        },
+        "post": {
+          "operationId": "create_public_link_v3_api_models__model_id__public_links_post",
+          "requestModel": "CreatePublicLinkBodyV3"
+        }
+      },
+      "/api/models/{model_id}/public-links/{link_id}/revoke": {
+        "post": {
+          "operationId": "revoke_public_link_api_models__model_id__public_links__link_id__revoke_post"
+        }
+      },
+      "/api/models/{model_id}/qa/advisor": {
+        "post": {
+          "operationId": "qa_advisor_route_api_models__model_id__qa_advisor_post",
+          "requestModel": "QaAdvisorRequest"
+        }
+      },
+      "/api/models/{model_id}/qa/area-reconciliation": {
+        "post": {
+          "operationId": "qa_area_reconciliation_route_api_models__model_id__qa_area_reconciliation_post",
+          "requestModel": "QaAreaReconciliationRequest"
+        }
+      },
+      "/api/models/{model_id}/qa/bim-requirement-validation": {
+        "get": {
+          "operationId": "qa_bim_requirement_validation_route_api_models__model_id__qa_bim_requirement_validation_get"
+        }
+      },
+      "/api/models/{model_id}/qa/integrity-preflight": {
+        "get": {
+          "operationId": "integrity_preflight_route_api_models__model_id__qa_integrity_preflight_get"
+        }
+      },
+      "/api/models/{model_id}/qa/integrity-remediation": {
+        "post": {
+          "operationId": "integrity_remediation_route_api_models__model_id__qa_integrity_remediation_post",
+          "requestModel": "IntegrityRemediationRequest"
+        }
+      },
+      "/api/models/{model_id}/qa/profile-comparison": {
+        "get": {
+          "operationId": "profile_comparison_route_api_models__model_id__qa_profile_comparison_get"
+        }
+      },
+      "/api/models/{model_id}/query/elements": {
+        "post": {
+          "operationId": "query_elements_route_api_models__model_id__query_elements_post",
+          "requestModel": "QueryElementsRequest"
+        }
+      },
+      "/api/models/{model_id}/query/enclosed-loops": {
+        "post": {
+          "operationId": "query_enclosed_loops_route_api_models__model_id__query_enclosed_loops_post",
+          "requestModel": "QueryEnclosedLoopsRequest"
+        }
+      },
+      "/api/models/{model_id}/query/hosts": {
+        "post": {
+          "operationId": "query_hosts_route_api_models__model_id__query_hosts_post",
+          "requestModel": "QueryHostsRequest"
+        }
+      },
+      "/api/models/{model_id}/query/levels": {
+        "post": {
+          "operationId": "query_levels_route_api_models__model_id__query_levels_post",
+          "requestModel": "QueryLevelsRequest"
+        }
+      },
+      "/api/models/{model_id}/query/nearest-wall": {
+        "post": {
+          "operationId": "query_nearest_wall_route_api_models__model_id__query_nearest_wall_post",
+          "requestModel": "QueryNearestWallRequest"
+        }
+      },
+      "/api/models/{model_id}/query/room-access-graph": {
+        "post": {
+          "operationId": "query_room_access_graph_route_api_models__model_id__query_room_access_graph_post",
+          "requestModel": "QueryRoomAccessGraphRequest"
+        }
+      },
+      "/api/models/{model_id}/query/summary": {
+        "get": {
+          "operationId": "query_model_summary_route_api_models__model_id__query_summary_get"
+        }
+      },
+      "/api/models/{model_id}/query/types": {
+        "post": {
+          "operationId": "query_types_route_api_models__model_id__query_types_post",
+          "requestModel": "QueryTypesRequest"
+        }
+      },
+      "/api/models/{model_id}/query/views": {
+        "post": {
+          "operationId": "query_views_route_api_models__model_id__query_views_post",
+          "requestModel": "QueryViewsRequest"
+        }
+      },
+      "/api/models/{model_id}/redo": {
+        "post": {
+          "operationId": "redo_model_api_models__model_id__redo_post",
+          "requestModel": "UndoRedoEnvelope"
+        }
+      },
+      "/api/models/{model_id}/registry/type-material": {
+        "get": {
+          "operationId": "type_material_registry_api_models__model_id__registry_type_material_get"
+        }
+      },
+      "/api/models/{model_id}/renderer-diagnostics": {
+        "post": {
+          "operationId": "persist_renderer_diagnostics_api_models__model_id__renderer_diagnostics_post",
+          "requestModel": "RendererDiagnosticPacketPersistBody"
+        }
+      },
+      "/api/models/{model_id}/resolve/active-or-default-level": {
+        "post": {
+          "operationId": "resolve_active_or_default_level_route_api_models__model_id__resolve_active_or_default_level_post",
+          "requestModel": "ResolveActiveOrDefaultLevelRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/default-plan-view": {
+        "post": {
+          "operationId": "resolve_default_plan_view_route_api_models__model_id__resolve_default_plan_view_post",
+          "requestModel": "ResolveDefaultPlanViewRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/dormer-opening-host": {
+        "post": {
+          "operationId": "resolve_dormer_opening_host_route_api_models__model_id__resolve_dormer_opening_host_post",
+          "requestModel": "ResolveDormerOpeningHostRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/family-type": {
+        "post": {
+          "operationId": "resolve_family_type_route_api_models__model_id__resolve_family_type_post",
+          "requestModel": "ResolveFamilyTypeRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/floor-supports": {
+        "post": {
+          "operationId": "resolve_floor_supports_route_api_models__model_id__resolve_floor_supports_post",
+          "requestModel": "ResolveFloorSupportsRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/host-face": {
+        "post": {
+          "operationId": "resolve_host_face_route_api_models__model_id__resolve_host_face_post",
+          "requestModel": "ResolveHostFaceRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/loop-for-boundary": {
+        "post": {
+          "operationId": "resolve_loop_for_boundary_route_api_models__model_id__resolve_loop_for_boundary_post",
+          "requestModel": "ResolveLoopForBoundaryRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/opening-source-match": {
+        "post": {
+          "operationId": "resolve_opening_source_match_route_api_models__model_id__resolve_opening_source_match_post",
+          "requestModel": "ResolveOpeningSourceMatchRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/roof-position-from-source-point": {
+        "post": {
+          "operationId": "resolve_roof_position_from_source_point_route_api_models__model_id__resolve_roof_position_from_source_point_post",
+          "requestModel": "ResolveRoofPositionFromSourcePointRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/room-boundary": {
+        "post": {
+          "operationId": "resolve_room_boundary_route_api_models__model_id__resolve_room_boundary_post",
+          "requestModel": "ResolveRoomBoundaryRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/room-boundary-edges": {
+        "post": {
+          "operationId": "resolve_room_boundary_edges_route_api_models__model_id__resolve_room_boundary_edges_post",
+          "requestModel": "ResolveRoomBoundaryEdgesRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/wall-by-line": {
+        "post": {
+          "operationId": "resolve_wall_by_line_route_api_models__model_id__resolve_wall_by_line_post",
+          "requestModel": "ResolveWallByLineRequest"
+        }
+      },
+      "/api/models/{model_id}/resolve/wall-opening-host": {
+        "post": {
+          "operationId": "resolve_wall_opening_host_route_api_models__model_id__resolve_wall_opening_host_post",
+          "requestModel": "ResolveWallOpeningHostRequest"
+        }
+      },
+      "/api/models/{model_id}/roles": {
+        "get": {
+          "operationId": "list_roles_api_models__model_id__roles_get"
+        },
+        "post": {
+          "operationId": "grant_role_api_models__model_id__roles_post",
+          "requestModel": "GrantRoleBody"
+        }
+      },
+      "/api/models/{model_id}/roles/{assignment_id}": {
+        "delete": {
+          "operationId": "revoke_role_api_models__model_id__roles__assignment_id__delete"
+        }
+      },
+      "/api/models/{model_id}/room-derivation-candidates": {
+        "get": {
+          "operationId": "room_derivation_candidates_api_models__model_id__room_derivation_candidates_get"
+        }
+      },
+      "/api/models/{model_id}/schedules/{schedule_id}/table": {
+        "get": {
+          "operationId": "schedule_derived_table_api_models__model_id__schedules__schedule_id__table_get"
+        }
+      },
+      "/api/models/{model_id}/sheets/{sheet_id}/pixel-map": {
+        "get": {
+          "operationId": "get_sheet_pixel_map_api_models__model_id__sheets__sheet_id__pixel_map_get"
+        }
+      },
+      "/api/models/{model_id}/snapshot": {
+        "get": {
+          "operationId": "snapshot_api_models__model_id__snapshot_get"
+        }
+      },
+      "/api/models/{model_id}/structure/analysis-export": {
+        "get": {
+          "operationId": "structure_analysis_export_route_api_models__model_id__structure_analysis_export_get"
+        }
+      },
+      "/api/models/{model_id}/summary": {
+        "get": {
+          "operationId": "model_summary_api_models__model_id__summary_get"
+        }
+      },
+      "/api/models/{model_id}/sustainability": {
+        "get": {
+          "operationId": "sustainability_lens_projection_api_models__model_id__sustainability_get"
+        }
+      },
+      "/api/models/{model_id}/tokens/decode": {
+        "post": {
+          "operationId": "tokens_decode_api_models__model_id__tokens_decode_post",
+          "requestModel": "TknDecodeRequest"
+        }
+      },
+      "/api/models/{model_id}/tokens/diff": {
+        "post": {
+          "operationId": "tokens_diff_api_models__model_id__tokens_diff_post",
+          "requestModel": "TknDiffRequest"
+        }
+      },
+      "/api/models/{model_id}/tokens/encode": {
+        "get": {
+          "operationId": "tokens_encode_api_models__model_id__tokens_encode_get"
+        }
+      },
+      "/api/models/{model_id}/undo": {
+        "post": {
+          "operationId": "undo_model_api_models__model_id__undo_post",
+          "requestModel": "UndoRedoEnvelope"
+        }
+      },
+      "/api/models/{model_id}/validate": {
+        "get": {
+          "operationId": "validate_model_snapshot_api_models__model_id__validate_get"
+        }
+      },
+      "/api/models/{model_id}/validate/roof-dormer-source-alignment": {
+        "post": {
+          "operationId": "validate_roof_dormer_source_alignment_route_api_models__model_id__validate_roof_dormer_source_alignment_post",
+          "requestModel": "ValidateRoofDormerSourceAlignmentRequest"
+        }
+      },
+      "/api/p/{token}": {
+        "get": {
+          "operationId": "resolve_presentation_token_api_p__token__get"
+        }
+      },
+      "/api/projects/{project_id}/models": {
+        "post": {
+          "operationId": "create_empty_model_api_projects__project_id__models_post",
+          "requestModel": "CreateEmptyModelBody"
+        }
+      },
+      "/api/schema": {
+        "get": {
+          "operationId": "api_schema_api_schema_get"
+        }
+      },
+      "/api/semantic-authoring/{surface_id}": {
+        "post": {
+          "operationId": "semantic_authoring_route_api_semantic_authoring__surface_id__post",
+          "requestModel": "SemanticAuthoringRequest"
+        }
+      },
+      "/api/shared/{token}": {
+        "get": {
+          "operationId": "resolve_shared_token_api_shared__token__get"
+        }
+      },
+      "/api/shared/{token}/verify-password": {
+        "post": {
+          "operationId": "verify_public_link_password_api_shared__token__verify_password_post",
+          "requestModel": "VerifyPasswordBody"
+        }
+      },
+      "/api/sketch-sessions": {
+        "post": {
+          "operationId": "open_sketch_session_api_sketch_sessions_post",
+          "requestModel": "OpenSketchSessionRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}": {
+        "get": {
+          "operationId": "get_sketch_session_api_sketch_sessions__session_id__get"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/cancel": {
+        "post": {
+          "operationId": "cancel_sketch_session_api_sketch_sessions__session_id__cancel_post"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/finish": {
+        "post": {
+          "operationId": "finish_sketch_session_api_sketch_sessions__session_id__finish_post",
+          "requestModel": "FinishSketchSessionRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/lines": {
+        "post": {
+          "operationId": "add_sketch_line_api_sketch_sessions__session_id__lines_post",
+          "requestModel": "AddSketchLineRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/move-vertex": {
+        "post": {
+          "operationId": "move_sketch_vertex_api_sketch_sessions__session_id__move_vertex_post",
+          "requestModel": "MoveSketchVertexRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/pick-wall": {
+        "post": {
+          "operationId": "pick_wall_api_sketch_sessions__session_id__pick_wall_post",
+          "requestModel": "PickWallRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/pick-walls-offset-mode": {
+        "post": {
+          "operationId": "set_pick_walls_offset_mode_api_sketch_sessions__session_id__pick_walls_offset_mode_post",
+          "requestModel": "SetPickWallsOffsetModeRequest"
+        }
+      },
+      "/api/sketch-sessions/{session_id}/remove-line": {
+        "post": {
+          "operationId": "remove_sketch_line_api_sketch_sessions__session_id__remove_line_post",
+          "requestModel": "RemoveSketchLineRequest"
+        }
+      },
+      "/api/templates": {
+        "get": {
+          "operationId": "list_template_catalog_api_templates_get"
+        }
+      },
+      "/api/v3/advisor-rules": {
+        "get": {
+          "operationId": "v3_advisor_rules_api_v3_advisor_rules_get"
+        }
+      },
+      "/api/v3/ai/audit-log.csv": {
+        "get": {
+          "operationId": "external_ai_audit_log_csv_api_v3_ai_audit_log_csv_get"
+        }
+      },
+      "/api/v3/bill-of-rights": {
+        "get": {
+          "operationId": "bill_of_rights_markdown_api_v3_bill_of_rights_get"
+        }
+      },
+      "/api/v3/catalog": {
+        "get": {
+          "operationId": "catalog_query_endpoint_api_v3_catalog_get"
+        }
+      },
+      "/api/v3/commands": {
+        "get": {
+          "operationId": "v3_list_command_schemas_api_v3_commands_get"
+        }
+      },
+      "/api/v3/commands/{name}": {
+        "get": {
+          "operationId": "v3_inspect_command_schema_api_v3_commands__name__get"
+        }
+      },
+      "/api/v3/compare": {
+        "post": {
+          "operationId": "compare_snapshots_endpoint_api_v3_compare_post"
+        }
+      },
+      "/api/v3/invariants/smoke": {
+        "post": {
+          "operationId": "invariant_smoke_route_api_v3_invariants_smoke_post",
+          "requestModel": "InvariantSmokeRequest"
+        }
+      },
+      "/api/v3/models/{model_id}/concept-seeds": {
+        "get": {
+          "operationId": "list_concept_seeds_api_v3_models__model_id__concept_seeds_get"
+        }
+      },
+      "/api/v3/models/{model_id}/export": {
+        "get": {
+          "operationId": "render_export_api_v3_models__model_id__export_get"
+        }
+      },
+      "/api/v3/models/{model_id}/export/pdf": {
+        "get": {
+          "operationId": "export_branded_pdf_api_v3_models__model_id__export_pdf_get"
+        }
+      },
+      "/api/v3/models/{model_id}/neighborhood-import": {
+        "post": {
+          "operationId": "import_neighborhood_api_v3_models__model_id__neighborhood_import_post"
+        }
+      },
+      "/api/v3/models/{model_id}/presentation-canvases/{canvas_id}/export": {
+        "get": {
+          "operationId": "export_presentation_canvas_api_v3_models__model_id__presentation_canvases__canvas_id__export_get"
+        }
+      },
+      "/api/v3/models/{model_id}/reverse-bim/hybrid-run-execute": {
+        "post": {
+          "operationId": "reverse_bim_hybrid_run_execute_route_api_v3_models__model_id__reverse_bim_hybrid_run_execute_post",
+          "requestModel": "ReverseBimHybridRunExecuteRequest"
+        }
+      },
+      "/api/v3/models/{model_id}/reverse-bim/hybrid-slice-execute": {
+        "post": {
+          "operationId": "reverse_bim_hybrid_slice_execute_route_api_v3_models__model_id__reverse_bim_hybrid_slice_execute_post",
+          "requestModel": "ReverseBimHybridSliceExecuteRequest"
+        }
+      },
+      "/api/v3/models/{model_id}/schedules/{schedule_id}/rows": {
+        "get": {
+          "operationId": "schedule_view_rows_api_v3_models__model_id__schedules__schedule_id__rows_get"
+        }
+      },
+      "/api/v3/qa/level-completeness": {
+        "post": {
+          "operationId": "qa_level_completeness_route_api_v3_qa_level_completeness_post",
+          "requestModel": "ReverseBimLevelCompletenessRequest"
+        }
+      },
+      "/api/v3/qa/physical-topology": {
+        "post": {
+          "operationId": "qa_physical_topology_route_api_v3_qa_physical_topology_post",
+          "requestModel": "ReverseBimPhysicalTopologyRequest"
+        }
+      },
+      "/api/v3/qa/source-overlay-compare": {
+        "post": {
+          "operationId": "qa_source_overlay_compare_route_api_v3_qa_source_overlay_compare_post",
+          "requestModel": "ReverseBimSourceOverlayEvidenceRequest"
+        }
+      },
+      "/api/v3/reverse-bim/coordinate-frame-alignment": {
+        "post": {
+          "operationId": "reverse_bim_coordinate_frame_alignment_route_api_v3_reverse_bim_coordinate_frame_alignment_post",
+          "requestModel": "ReverseBimCoordinateFrameAlignmentRequest"
+        }
+      },
+      "/api/v3/reverse-bim/coordinate-frame-worklist": {
+        "post": {
+          "operationId": "reverse_bim_coordinate_frame_worklist_route_api_v3_reverse_bim_coordinate_frame_worklist_post",
+          "requestModel": "ReverseBimCoordinateFrameWorklistRequest"
+        }
+      },
+      "/api/v3/reverse-bim/detail-view-create": {
+        "post": {
+          "operationId": "reverse_bim_detail_view_create_route_api_v3_reverse_bim_detail_view_create_post",
+          "requestModel": "ReverseBimViewBundleRequest"
+        }
+      },
+      "/api/v3/reverse-bim/document-authority": {
+        "post": {
+          "operationId": "reverse_bim_document_authority_route_api_v3_reverse_bim_document_authority_post",
+          "requestModel": "ReverseBimDocumentAuthorityRequest"
+        }
+      },
+      "/api/v3/reverse-bim/evidence-requirements": {
+        "post": {
+          "operationId": "reverse_bim_evidence_requirements_route_api_v3_reverse_bim_evidence_requirements_post",
+          "requestModel": "ReverseBimEvidenceRequirementsRequest"
+        }
+      },
+      "/api/v3/reverse-bim/exterior-view-create": {
+        "post": {
+          "operationId": "reverse_bim_exterior_view_create_route_api_v3_reverse_bim_exterior_view_create_post",
+          "requestModel": "ReverseBimViewBundleRequest"
+        }
+      },
+      "/api/v3/reverse-bim/final-acceptance": {
+        "post": {
+          "operationId": "reverse_bim_final_acceptance_route_api_v3_reverse_bim_final_acceptance_post",
+          "requestModel": "ReverseBimFinalAcceptanceRequest"
+        }
+      },
+      "/api/v3/reverse-bim/folder-output": {
+        "post": {
+          "operationId": "reverse_bim_folder_output_route_api_v3_reverse_bim_folder_output_post",
+          "requestModel": "ReverseBimFolderOutputRequest"
+        }
+      },
+      "/api/v3/reverse-bim/handoff-regeneration": {
+        "post": {
+          "operationId": "reverse_bim_handoff_regeneration_route_api_v3_reverse_bim_handoff_regeneration_post",
+          "requestModel": "ReverseBimHandoffRegenerationRequest"
+        }
+      },
+      "/api/v3/reverse-bim/hybrid-run": {
+        "post": {
+          "operationId": "reverse_bim_hybrid_run_route_api_v3_reverse_bim_hybrid_run_post",
+          "requestModel": "ReverseBimHybridRunRequest"
+        }
+      },
+      "/api/v3/reverse-bim/hybrid-slice": {
+        "post": {
+          "operationId": "reverse_bim_hybrid_slice_route_api_v3_reverse_bim_hybrid_slice_post",
+          "requestModel": "ReverseBimHybridSliceRequest"
+        }
+      },
+      "/api/v3/reverse-bim/ir/seed": {
+        "post": {
+          "operationId": "reverse_bim_ir_seed_route_api_v3_reverse_bim_ir_seed_post",
+          "requestModel": "ReverseBimIrSeedRequest"
+        }
+      },
+      "/api/v3/reverse-bim/ir/validate": {
+        "post": {
+          "operationId": "reverse_bim_ir_validate_route_api_v3_reverse_bim_ir_validate_post",
+          "requestModel": "ReverseBimIrValidateRequest"
+        }
+      },
+      "/api/v3/reverse-bim/level-completeness": {
+        "post": {
+          "operationId": "reverse_bim_level_completeness_route_api_v3_reverse_bim_level_completeness_post",
+          "requestModel": "ReverseBimLevelCompletenessRequest"
+        }
+      },
+      "/api/v3/reverse-bim/mcp-readiness": {
+        "post": {
+          "operationId": "reverse_bim_mcp_readiness_route_api_v3_reverse_bim_mcp_readiness_post",
+          "requestModel": "ReverseBimMcpReadinessRequest"
+        }
+      },
+      "/api/v3/reverse-bim/phase-packet": {
+        "post": {
+          "operationId": "reverse_bim_phase_packet_route_api_v3_reverse_bim_phase_packet_post",
+          "requestModel": "ReverseBimPhasePacketRequest"
+        }
+      },
+      "/api/v3/reverse-bim/phase-run": {
+        "post": {
+          "operationId": "reverse_bim_phase_run_route_api_v3_reverse_bim_phase_run_post",
+          "requestModel": "ReverseBimPhaseRunRequest"
+        }
+      },
+      "/api/v3/reverse-bim/physical-topology": {
+        "post": {
+          "operationId": "reverse_bim_physical_topology_route_api_v3_reverse_bim_physical_topology_post",
+          "requestModel": "ReverseBimPhysicalTopologyRequest"
+        }
+      },
+      "/api/v3/reverse-bim/plan-authoring": {
+        "post": {
+          "operationId": "reverse_bim_plan_authoring_route_api_v3_reverse_bim_plan_authoring_post",
+          "requestModel": "ReverseBimPlanAuthoringRequest"
+        }
+      },
+      "/api/v3/reverse-bim/readback-compare": {
+        "post": {
+          "operationId": "reverse_bim_readback_compare_route_api_v3_reverse_bim_readback_compare_post",
+          "requestModel": "ReverseBimReadbackCompareRequest"
+        }
+      },
+      "/api/v3/reverse-bim/reader-dispatch-execute": {
+        "post": {
+          "operationId": "reverse_bim_reader_dispatch_execute_route_api_v3_reverse_bim_reader_dispatch_execute_post",
+          "requestModel": "ReverseBimReaderDispatchExecuteRequest"
+        }
+      },
+      "/api/v3/reverse-bim/reader-dispatch-plan": {
+        "post": {
+          "operationId": "reverse_bim_reader_dispatch_plan_route_api_v3_reverse_bim_reader_dispatch_plan_post",
+          "requestModel": "ReverseBimReaderDispatchPlanRequest"
+        }
+      },
+      "/api/v3/reverse-bim/section-view-create": {
+        "post": {
+          "operationId": "reverse_bim_section_view_create_route_api_v3_reverse_bim_section_view_create_post",
+          "requestModel": "ReverseBimViewBundleRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-building-scope": {
+        "post": {
+          "operationId": "reverse_bim_source_building_scope_route_api_v3_reverse_bim_source_building_scope_post",
+          "requestModel": "ReverseBimSourceBuildingScopeRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-coverage": {
+        "post": {
+          "operationId": "reverse_bim_source_coverage_route_api_v3_reverse_bim_source_coverage_post",
+          "requestModel": "ReverseBimSourceCoverageRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-level-completeness": {
+        "post": {
+          "operationId": "reverse_bim_source_level_completeness_route_api_v3_reverse_bim_source_level_completeness_post",
+          "requestModel": "ReverseBimSourceLevelCompletenessRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-material-assemblies": {
+        "post": {
+          "operationId": "reverse_bim_source_material_assemblies_route_api_v3_reverse_bim_source_material_assemblies_post",
+          "requestModel": "ReverseBimSourceMaterialAssembliesRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-overlay-evidence": {
+        "post": {
+          "operationId": "reverse_bim_source_overlay_evidence_route_api_v3_reverse_bim_source_overlay_evidence_post",
+          "requestModel": "ReverseBimSourceOverlayEvidenceRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-revision-ledger": {
+        "post": {
+          "operationId": "reverse_bim_source_revision_ledger_route_api_v3_reverse_bim_source_revision_ledger_post",
+          "requestModel": "ReverseBimSourceRevisionLedgerRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-revision-ledger-persist": {
+        "post": {
+          "operationId": "reverse_bim_source_revision_ledger_persist_route_api_v3_reverse_bim_source_revision_ledger_persist_post",
+          "requestModel": "ReverseBimSourceRevisionLedgerPersistRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-spec-revision": {
+        "post": {
+          "operationId": "reverse_bim_source_spec_revision_route_api_v3_reverse_bim_source_spec_revision_post",
+          "requestModel": "ReverseBimSourceSpecRevisionRequest"
+        }
+      },
+      "/api/v3/reverse-bim/source-view-evidence-upsert": {
+        "post": {
+          "operationId": "reverse_bim_source_view_evidence_upsert_route_api_v3_reverse_bim_source_view_evidence_upsert_post",
+          "requestModel": "ReverseBimViewBundleRequest"
+        }
+      },
+      "/api/v3/reverse-bim/ui-evidence": {
+        "post": {
+          "operationId": "reverse_bim_ui_evidence_route_api_v3_reverse_bim_ui_evidence_post",
+          "requestModel": "ReverseBimUiEvidenceRequest"
+        }
+      },
+      "/api/v3/reverse-bim/view-capture-execute": {
+        "post": {
+          "operationId": "reverse_bim_view_capture_execute_route_api_v3_reverse_bim_view_capture_execute_post",
+          "requestModel": "ReverseBimViewCaptureExecuteRequest"
+        }
+      },
+      "/api/v3/reverse-bim/view-capture-plan": {
+        "post": {
+          "operationId": "reverse_bim_view_capture_plan_route_api_v3_reverse_bim_view_capture_plan_post",
+          "requestModel": "ReverseBimViewCapturePlanRequest"
+        }
+      },
+      "/api/v3/reverse-bim/visual-review-normalize": {
+        "post": {
+          "operationId": "reverse_bim_visual_review_normalize_route_api_v3_reverse_bim_visual_review_normalize_post",
+          "requestModel": "ReverseBimVisualReviewNormalizeRequest"
+        }
+      },
+      "/api/v3/reverse-bim/visual-review-requests": {
+        "post": {
+          "operationId": "reverse_bim_visual_review_requests_route_api_v3_reverse_bim_visual_review_requests_post",
+          "requestModel": "ReverseBimVisualReviewRequestsRequest"
+        }
+      },
+      "/api/v3/skb/checkpoint": {
+        "post": {
+          "operationId": "skb_visual_checkpoint_api_v3_skb_checkpoint_post"
+        }
+      },
+      "/api/v3/sketch/ir/validate": {
+        "post": {
+          "operationId": "sketch_ir_validate_api_v3_sketch_ir_validate_post",
+          "requestModel": "SketchIrValidateRequest"
+        }
+      },
+      "/api/v3/sketch/phase/accept": {
+        "post": {
+          "operationId": "sketch_phase_accept_api_v3_sketch_phase_accept_post",
+          "requestModel": "SketchPhaseAcceptRequest"
+        }
+      },
+      "/api/v3/sketch/phase/apply": {
+        "post": {
+          "operationId": "sketch_phase_apply_api_v3_sketch_phase_apply_post",
+          "requestModel": "SketchPhaseApplyRequest"
+        }
+      },
+      "/api/v3/sketch/seed/compile": {
+        "post": {
+          "operationId": "sketch_seed_compile_api_v3_sketch_seed_compile_post",
+          "requestModel": "SketchSeedCompileRequest"
+        }
+      },
+      "/api/v3/source/ai-reading-packet": {
+        "post": {
+          "operationId": "source_ai_reading_packet_route_api_v3_source_ai_reading_packet_post",
+          "requestModel": "SourceAiReadingPacketRequest"
+        }
+      },
+      "/api/v3/source/ai-visual-trace-agent-loop": {
+        "post": {
+          "operationId": "source_ai_visual_trace_agent_loop_route_api_v3_source_ai_visual_trace_agent_loop_post",
+          "requestModel": "SourceAiVisualTraceAgentLoopRequest"
+        }
+      },
+      "/api/v3/source/ai-visual-trace-agent-requests": {
+        "post": {
+          "operationId": "source_ai_visual_trace_agent_requests_route_api_v3_source_ai_visual_trace_agent_requests_post",
+          "requestModel": "SourceAiVisualTraceAgentRequestsRequest"
+        }
+      },
+      "/api/v3/source/ai-visual-trace-packet": {
+        "post": {
+          "operationId": "source_ai_visual_trace_packet_route_api_v3_source_ai_visual_trace_packet_post",
+          "requestModel": "SourceAiVisualTracePacketRequest"
+        }
+      },
+      "/api/v3/source/ai-visual-trace-reader-pass-manifest": {
+        "post": {
+          "operationId": "source_ai_visual_trace_reader_pass_manifest_route_api_v3_source_ai_visual_trace_reader_pass_manifest_post",
+          "requestModel": "SourceAiVisualTraceReaderPassManifestRequest"
+        }
+      },
+      "/api/v3/source/ai-visual-trace-work-order": {
+        "post": {
+          "operationId": "source_ai_visual_trace_work_order_route_api_v3_source_ai_visual_trace_work_order_post",
+          "requestModel": "SourceAiVisualTraceWorkOrderRequest"
+        }
+      },
+      "/api/v3/source/classify-documents": {
+        "post": {
+          "operationId": "source_classify_documents_route_api_v3_source_classify_documents_post",
+          "requestModel": "SourceClassifyDocumentsRequest"
+        }
+      },
+      "/api/v3/source/classify-pages/dispatch-plan": {
+        "post": {
+          "operationId": "source_classify_pages_dispatch_plan_route_api_v3_source_classify_pages_dispatch_plan_post",
+          "requestModel": "SourceClassifyPagesDispatchPlanRequest"
+        }
+      },
+      "/api/v3/source/classify-pages/normalize": {
+        "post": {
+          "operationId": "source_classify_pages_normalize_route_api_v3_source_classify_pages_normalize_post",
+          "requestModel": "SourceClassifyPagesNormalizeRequest"
+        }
+      },
+      "/api/v3/source/detect-scale": {
+        "post": {
+          "operationId": "source_detect_scale_route_api_v3_source_detect_scale_post",
+          "requestModel": "SourceDetectScaleRequest"
+        }
+      },
+      "/api/v3/source/extract-facts": {
+        "post": {
+          "operationId": "source_extract_facts_route_api_v3_source_extract_facts_post",
+          "requestModel": "SourceExtractFactsRequest"
+        }
+      },
+      "/api/v3/source/folder-manifest": {
+        "post": {
+          "operationId": "source_folder_manifest_route_api_v3_source_folder_manifest_post",
+          "requestModel": "SourceFolderManifestRequest"
+        }
+      },
+      "/api/v3/source/normalize-ai-visual-trace-reader-responses": {
+        "post": {
+          "operationId": "source_normalize_ai_visual_trace_reader_responses_route_api_v3_source_normalize_ai_visual_trace_reader_responses_post",
+          "requestModel": "SourceNormalizeAiVisualTraceReaderResponsesRequest"
+        }
+      },
+      "/api/v3/source/pdf-text": {
+        "post": {
+          "operationId": "source_pdf_text_route_api_v3_source_pdf_text_post",
+          "requestModel": "SourcePdfTextRequest"
+        }
+      },
+      "/api/v3/source/prepare-ai-visual-trace-run": {
+        "post": {
+          "operationId": "source_prepare_ai_visual_trace_run_route_api_v3_source_prepare_ai_visual_trace_run_post",
+          "requestModel": "SourcePrepareAiVisualTraceRunRequest"
+        }
+      },
+      "/api/v3/source/reader-consensus": {
+        "post": {
+          "operationId": "source_reader_consensus_route_api_v3_source_reader_consensus_post",
+          "requestModel": "SourceReaderConsensusRequest"
+        }
+      },
+      "/api/v3/source/render-pdf": {
+        "post": {
+          "operationId": "source_render_pdf_route_api_v3_source_render_pdf_post",
+          "requestModel": "SourceRenderPdfRequest"
+        }
+      },
+      "/api/v3/source/rerender-for-legibility": {
+        "post": {
+          "operationId": "source_rerender_for_legibility_route_api_v3_source_rerender_for_legibility_post",
+          "requestModel": "SourceRerenderForLegibilityRequest"
+        }
+      },
+      "/api/v3/source/validate-ai-facts": {
+        "post": {
+          "operationId": "source_validate_ai_facts_route_api_v3_source_validate_ai_facts_post",
+          "requestModel": "SourceValidateAiFactsRequest"
+        }
+      },
+      "/api/v3/source/validate-ai-visual-trace-completeness": {
+        "post": {
+          "operationId": "source_validate_ai_visual_trace_completeness_route_api_v3_source_validate_ai_visual_trace_completeness_post",
+          "requestModel": "SourceValidateAiVisualTraceCompletenessRequest"
+        }
+      },
+      "/api/v3/tools": {
+        "get": {
+          "operationId": "v3_list_tools_api_v3_tools_get"
+        }
+      },
+      "/api/v3/tools/{name}": {
+        "get": {
+          "operationId": "v3_inspect_tool_api_v3_tools__name__get"
+        }
+      },
+      "/api/v3/version": {
+        "get": {
+          "operationId": "v3_api_version_api_v3_version_get"
+        }
+      },
+      "/bill-of-rights": {
+        "get": {
+          "operationId": "public_bill_of_rights_bill_of_rights_get"
+        }
+      }
+    },
+    "schemas": [
+      "AddSketchLineRequest",
+      "AgentIterateRequest",
+      "AssumptionEntry",
+      "BcfTopicsImportEnvelope",
+      "Body_upload_dxf_file_api_models__host_id__upload_dxf_file_post",
+      "Body_validate_material_asset_upload_api_material_assets_validate_upload_post",
+      "BundleEnvelope",
+      "CommandBundle",
+      "CommandBundleRequest",
+      "CommandEnvelope",
+      "CommentCreateBody",
+      "CommentResolveBody",
+      "CreateEmptyModelBody",
+      "CreateJobRequest",
+      "CreateMilestoneBody",
+      "CreatePresentationBody",
+      "CreatePublicLinkBody",
+      "CreatePublicLinkBodyV3",
+      "FinishSketchSessionRequest",
+      "GrantRoleBody",
+      "HTTPValidationError",
+      "ImportDxfBody",
+      "ImportIfcBody",
+      "IntegrityRemediationRequest",
+      "InvariantSmokeRequest",
+      "MarkupCreateBody",
+      "MoveSketchVertexRequest",
+      "OpenSketchSessionRequest",
+      "PickWallRequest",
+      "QaAdvisorRequest",
+      "QaAreaReconciliationRequest",
+      "QueryElementsRequest",
+      "QueryEnclosedLoopsRequest",
+      "QueryHostsRequest",
+      "QueryLevelsRequest",
+      "QueryNearestWallRequest",
+      "QueryRoomAccessGraphRequest",
+      "QueryTypesRequest",
+      "QueryViewsRequest",
+      "RemoveSketchLineRequest",
+      "RendererDiagnosticPacketPersistBody",
+      "ResolveActiveOrDefaultLevelRequest",
+      "ResolveDefaultPlanViewRequest",
+      "ResolveDormerOpeningHostRequest",
+      "ResolveFamilyTypeRequest",
+      "ResolveFloorSupportsRequest",
+      "ResolveHostFaceRequest",
+      "ResolveLoopForBoundaryRequest",
+      "ResolveOpeningSourceMatchRequest",
+      "ResolveRoofPositionFromSourcePointRequest",
+      "ResolveRoomBoundaryEdgesRequest",
+      "ResolveRoomBoundaryRequest",
+      "ResolveWallByLineRequest",
+      "ResolveWallOpeningHostRequest",
+      "ReverseBimCoordinateFrameAlignmentRequest",
+      "ReverseBimCoordinateFrameWorklistRequest",
+      "ReverseBimDocumentAuthorityRequest",
+      "ReverseBimEvidenceRequirementsRequest",
+      "ReverseBimFinalAcceptanceRequest",
+      "ReverseBimFolderOutputRequest",
+      "ReverseBimHandoffRegenerationRequest",
+      "ReverseBimHybridRunExecuteRequest",
+      "ReverseBimHybridRunRequest",
+      "ReverseBimHybridSliceExecuteRequest",
+      "ReverseBimHybridSliceRequest",
+      "ReverseBimIrSeedRequest",
+      "ReverseBimIrValidateRequest",
+      "ReverseBimLevelCompletenessRequest",
+      "ReverseBimMcpReadinessRequest",
+      "ReverseBimPhasePacketRequest",
+      "ReverseBimPhaseRunRequest",
+      "ReverseBimPhysicalTopologyRequest",
+      "ReverseBimPlanAuthoringRequest",
+      "ReverseBimReadbackCompareRequest",
+      "ReverseBimReaderDispatchExecuteRequest",
+      "ReverseBimReaderDispatchPlanRequest",
+      "ReverseBimSourceBuildingScopeRequest",
+      "ReverseBimSourceCoverageRequest",
+      "ReverseBimSourceLevelCompletenessRequest",
+      "ReverseBimSourceMaterialAssembliesRequest",
+      "ReverseBimSourceOverlayEvidenceRequest",
+      "ReverseBimSourceRevisionLedgerPersistRequest",
+      "ReverseBimSourceRevisionLedgerRequest",
+      "ReverseBimSourceSpecRevisionRequest",
+      "ReverseBimUiEvidenceRequest",
+      "ReverseBimViewBundleRequest",
+      "ReverseBimViewCaptureExecuteRequest",
+      "ReverseBimViewCapturePlanRequest",
+      "ReverseBimVisualReviewNormalizeRequest",
+      "ReverseBimVisualReviewRequestsRequest",
+      "SemanticAuthoringRequest",
+      "SetPickWallsOffsetModeRequest",
+      "SketchIrValidateRequest",
+      "SketchPhaseAcceptRequest",
+      "SketchPhaseApplyRequest",
+      "SketchSeedCompileRequest",
+      "SourceAiReadingPacketRequest",
+      "SourceAiVisualTraceAgentLoopRequest",
+      "SourceAiVisualTraceAgentRequestsRequest",
+      "SourceAiVisualTracePacketRequest",
+      "SourceAiVisualTraceReaderPassManifestRequest",
+      "SourceAiVisualTraceWorkOrderRequest",
+      "SourceClassifyDocumentsRequest",
+      "SourceClassifyPagesDispatchPlanRequest",
+      "SourceClassifyPagesNormalizeRequest",
+      "SourceDetectScaleRequest",
+      "SourceExtractFactsRequest",
+      "SourceFolderManifestRequest",
+      "SourceNormalizeAiVisualTraceReaderResponsesRequest",
+      "SourcePdfTextRequest",
+      "SourcePrepareAiVisualTraceRunRequest",
+      "SourceReaderConsensusRequest",
+      "SourceRenderPdfRequest",
+      "SourceRerenderForLegibilityRequest",
+      "SourceValidateAiFactsRequest",
+      "SourceValidateAiVisualTraceCompletenessRequest",
+      "TknDecodeRequest",
+      "TknDiffRequest",
+      "ToleranceEntry",
+      "UndoRedoEnvelope",
+      "ValidateRoofDormerSourceAlignmentRequest",
+      "ValidationError",
+      "Vec2Mm",
+      "VerifyPasswordBody"
+    ]
+  }
+}
