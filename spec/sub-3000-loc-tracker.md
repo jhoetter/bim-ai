@@ -99,7 +99,7 @@ A-territory bar after the sweep:
 | SLC-2026-06   | P1       | Done    | `packages/cli/cli.mjs`                                       | Extract agent-api + initiation/export CLI commands                    | cli.mjs below 3,000 LOC.                                   |
 | SLC-2026-07   | P1       | Done    | `app/bim_ai/elements.py`                                     | Extract annotations, constructability, links                          | elements.py below 3,000 LOC.                               |
 | SLC-2026-08   | P1       | Open    | `packages/web/src/workspace/inspector/InspectorContent.tsx`  | Extract another inspector cluster                                     | InspectorContent below 3,000 LOC.                          |
-| SLC-2026-09   | P2       | Open    | `scripts/audit-ui-mcp-parity.mjs`                            | Extract another audit module                                          | Audit script below 3,000 LOC.                              |
+| SLC-2026-09   | P2       | Done    | `scripts/audit-ui-mcp-parity.mjs`                            | Extract M3/M4 workstream builders                                     | Audit script below 3,000 LOC.                              |
 | SLC-2026-10   | P1       | Done    | `packages/web/src/cmdPalette/defaultCommands.ts`             | Split Display/extras palette commands                                 | defaultCommands below 3,000 LOC.                           |
 | SLC-2026-11   | P1       | Done    | `packages/web/src/tools/toolGrammar.ts`                      | Extract annotation reducer cluster                                    | toolGrammar below 3,000 LOC.                               |
 | SLC-2026-12   | P1       | Done    | `packages/web/src/workspace/commandCapabilities.ts`          | Split NAVIGATION + SYSTEM capability arrays                           | commandCapabilities below 3,000 LOC.                       |
@@ -193,6 +193,16 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-09` Done. `scripts/audit-ui-mcp-parity.mjs` cut from
+  3,622 to 2,306 LOC by extracting the entire M3/M4 workstream-builder
+  cluster (`buildM3Wave2`, `buildM3Wave3`, `buildM4Wave1`, plus the
+  ~30 supporting workstream/gate helpers) into a new sibling
+  `audit-ui-mcp-parity.workstreams.mjs`. The new module follows the
+  existing config/evidence/readiness/reports split convention. Small
+  shared utilities (`read`, `normalizedId`, `countBy`) are inlined to
+  keep the new module self-contained. End-to-end smoke check confirms
+  the produced audit JSON is byte-identical (modulo `generatedAt`
+  timestamp) to the pre-refactor output.
 - 2026-05-22: `SLC-2026-05` Done. `packages/web/src/viewport/meshBuilders.ts`
   cut from 3,776 to 2,854 LOC by extracting the entire roof-geometry
   builder cluster (`_buildGableGeometry`, `_buildAsymmetricGableGeometry`,
