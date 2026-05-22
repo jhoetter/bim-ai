@@ -75,19 +75,22 @@ class RouteError(Exception):
         self.extra = dict(extra) if extra else None
 
     def to_envelope(self) -> dict[str, Any]:
-        body: dict[str, Any] = {
+        # Returned envelope shape is polymorphic — `extra` can carry
+        # error-code-specific context. dict[str, Any] is intentional
+        # here; whitelisted via spec/typed-contracts-baseline.json.
+        error: dict[str, Any] = {
             "code": self.code,
             "message": self.message,
             "status": self.status,
         }
         if self.fields:
-            body["fields"] = self.fields
+            error["fields"] = self.fields
         if self.extra:
             for key, value in self.extra.items():
-                if key in body:
+                if key in error:
                     continue
-                body[key] = value
-        return {"ok": False, "error": body}
+                error[key] = value
+        return {"ok": False, "error": error}
 
 
 def register_route_error_handler(app: FastAPI) -> None:

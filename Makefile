@@ -206,6 +206,12 @@ test-env-policy:
 typed-contracts:
 	node scripts/check-typed-contracts.mjs
 
+# BRT-14: prevent the next round of copy-paste helpers.
+# Refresh after a legitimate consolidation:
+#   node scripts/check-duplicate-helpers.mjs --update
+duplicate-helpers:
+	node scripts/check-duplicate-helpers.mjs
+
 code-quality-report:
 	node scripts/code-quality-report.mjs
 
@@ -215,7 +221,7 @@ typecheck:
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint-py typecheck-py typed-contracts quality-waivers maintainability-budgets js-lint-budget security-hygiene test-env-policy architecture typecheck test build lockfile-check
+verify: format-check python-format-check lint-py typecheck-py typed-contracts duplicate-helpers quality-waivers maintainability-budgets js-lint-budget security-hygiene test-env-policy architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 verify-refinement-reliability:

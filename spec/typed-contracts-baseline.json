@@ -1,12 +1,13 @@
 {
   "note": "BRT-42 baseline. Counts allowed `-> dict[str, Any]` and `body: dict[str, Any]` per file. Each PR may only DECREASE these. Refresh with `node scripts/check-typed-contracts.mjs --update` after a legitimate fix.",
-  "generatedAt": "2026-05-22T21:19:45.837Z",
+  "generatedAt": "2026-05-22T21:49:45.834Z",
   "totals": {
-    "dictReturn": 799,
+    "dictReturn": 800,
     "dictBody": 9
   },
   "files": {
     "dictReturn": {
+      "app/bim_ai/_errors.py": 1,
       "app/bim_ai/_io/json_io.py": 1,
       "app/bim_ai/advisor_policy_registry.py": 6,
       "app/bim_ai/advisor_profiling.py": 3,
