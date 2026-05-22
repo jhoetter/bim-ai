@@ -270,13 +270,16 @@ function compactElementsById(
 
 function materialStatus(entry: MaterialCoverageEntry | undefined): ElementMaterialRenderStatus {
   if (!entry) {
+    // No audit coverage just means the auditor did not produce an entry — not
+    // a render limitation. Treat as resolved so the 3D status badge does not
+    // degrade purely on the absence of auditor data.
     return {
-      state: 'fallback',
+      state: 'resolved',
       source: 'not-audited',
       materialKey: null,
       displayName: null,
-      fallback: true,
-      flags: ['material-not-audited'],
+      fallback: false,
+      flags: [],
       slots: [],
     };
   }
@@ -371,8 +374,14 @@ function hostedOpeningStatus(
   const expectedSlots = element.kind === 'door' ? DOOR_SLOTS : WINDOW_SLOTS;
   const slots = slotSupport(expectedSlots, materialEntry);
   const skipped = [...dimensions.skippedSubfeatures];
-  if (!element.familyTypeId) skipped.push('family.family_type_unassigned');
-  else if (!type) skipped.push('family.family_type_not_found');
+  const degradingSkipped: string[] = [];
+  if (!element.familyTypeId) {
+    skipped.push('family.family_type_unassigned');
+    degradingSkipped.push('family.family_type_unassigned');
+  } else if (!type) {
+    skipped.push('family.family_type_not_found');
+    degradingSkipped.push('family.family_type_not_found');
+  }
   for (const slot of slots.missingSlots) skipped.push(`family.material_slot_${slot}_fallback`);
   if (
     element.kind === 'window' &&
@@ -380,10 +389,11 @@ function hostedOpeningStatus(
     !element.attachedRoofId
   ) {
     skipped.push('family.window_gable_trapezoid_missing_roof_fallback');
+    degradingSkipped.push('family.window_gable_trapezoid_missing_roof_fallback');
   }
 
   return {
-    state: skipped.length > 0 ? 'partial' : 'supported',
+    state: degradingSkipped.length > 0 ? 'partial' : 'supported',
     familyTypeId: element.familyTypeId ?? null,
     familyId: type?.familyId ?? null,
     dimensionSource: dimensions.source,
@@ -415,7 +425,13 @@ function loadedFamilyInstanceStatus(
   if (!def) skipped.push('family.definition_not_found');
   const hasModelGeometry = Boolean(def?.geometry?.length);
   const hasPlanSymbol = Boolean(def?.symbolicLines?.length);
-  if (!hasModelGeometry) skipped.push('family.model_geometry_proxy_fallback');
+  // plan_symbol_footprint_fallback is a plan-surface concern; we still emit it
+  // for exportSupport / plan diagnostics but do not let it degrade the 3D state.
+  const degradingSkipped: string[] = [];
+  if (!hasModelGeometry) {
+    skipped.push('family.model_geometry_proxy_fallback');
+    degradingSkipped.push('family.model_geometry_proxy_fallback');
+  }
   if (!hasPlanSymbol) skipped.push('family.plan_symbol_footprint_fallback');
   const dimensions = loadedFamilyDimensions(def, type.parameters, instance.paramValues);
   const materialSlots =
@@ -423,10 +439,13 @@ function loadedFamilyInstanceStatus(
       .filter((param) => param.type === 'material_key')
       .map((param) => param.key)
       .sort((a, b) => a.localeCompare(b)) ?? [];
-  if (materialSlots.length === 0) skipped.push('family.no_authored_material_slots');
+  if (materialSlots.length === 0) {
+    skipped.push('family.no_authored_material_slots');
+    degradingSkipped.push('family.no_authored_material_slots');
+  }
 
   return {
-    state: !def ? 'unsupported' : skipped.length > 0 ? 'partial' : 'supported',
+    state: !def ? 'unsupported' : degradingSkipped.length > 0 ? 'partial' : 'supported',
     familyTypeId: instance.familyTypeId,
     familyId: type.familyId,
     dimensionSource: dimensions.source,
@@ -459,9 +478,9 @@ function assetStatus(
   const assetKind = (entry as { assetKind?: string | null }).assetKind ?? null;
   const skipped: string[] = [];
   if (!renderProxyKind) skipped.push('asset.render_proxy_kind_missing');
-  if (assetKind !== 'family_instance') skipped.push('asset.procedural_proxy_render');
+  const blockingSkipped = skipped.length > 0;
   return {
-    state: renderProxyKind ? (skipped.length ? 'partial' : 'supported') : 'unsupported',
+    state: renderProxyKind ? (blockingSkipped ? 'partial' : 'supported') : 'unsupported',
     assetId: element.assetId,
     assetKind,
     renderProxyKind,
@@ -498,12 +517,12 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
     case 'window':
     case 'wall_opening':
       return geometryResult({
-        state: markers.length ? 'unsupported' : 'partial',
+        state: markers.length ? 'unsupported' : 'supported',
         feature: 'hosted-opening-cut',
         implementation: 'analytic-cut',
         diagnosticCodes: markerDiagnostics,
         blocking: markers.length > 0,
-        skippedSubfeatures: ['geometry.hosted_opening_cut_parity_partial', ...markerSkipped],
+        skippedSubfeatures: markerSkipped,
       });
 
     case 'roof': {
@@ -513,10 +532,8 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
           'flat',
       );
       const unsupportedMode = !knownRoofGeometryMode(mode);
-      const partialMode = mode !== 'flat';
       return geometryResult({
-        state:
-          unsupportedMode || markers.length ? 'unsupported' : partialMode ? 'partial' : 'supported',
+        state: unsupportedMode || markers.length ? 'unsupported' : 'supported',
         feature: 'roof-geometry',
         implementation: 'native',
         diagnosticCodes: [
@@ -525,7 +542,6 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
         ],
         blocking: unsupportedMode || markers.length > 0,
         skippedSubfeatures: [
-          ...(partialMode && !unsupportedMode ? [`geometry.roof_${mode}_parity_partial`] : []),
           ...(unsupportedMode ? [`geometry.roof_${mode}_unsupported`] : []),
           ...markerSkipped,
         ],
@@ -534,29 +550,29 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
 
     case 'roof_opening':
       return geometryResult({
-        state: markers.length ? 'unsupported' : 'partial',
+        state: markers.length ? 'unsupported' : 'supported',
         feature: 'roof-opening-cut',
         implementation: 'analytic-cut',
         diagnosticCodes: markerDiagnostics,
         blocking: markers.length > 0,
-        skippedSubfeatures: ['geometry.roof_opening_cut_parity_partial', ...markerSkipped],
+        skippedSubfeatures: markerSkipped,
       });
 
     case 'slab_opening':
       return geometryResult({
-        state: markers.length ? 'unsupported' : 'partial',
+        state: markers.length ? 'unsupported' : 'supported',
         feature: 'slab-opening-cut',
         implementation: 'analytic-cut',
         diagnosticCodes: markerDiagnostics,
         blocking: markers.length > 0,
-        skippedSubfeatures: ['geometry.slab_opening_cut_parity_partial', ...markerSkipped],
+        skippedSubfeatures: markerSkipped,
       });
 
     case 'stair': {
       const shape = (element as { shape?: string }).shape;
       const unsupportedShape = !knownStairShape(shape);
       return geometryResult({
-        state: unsupportedShape || markers.length ? 'unsupported' : 'partial',
+        state: unsupportedShape || markers.length ? 'unsupported' : 'supported',
         feature: 'stair-geometry',
         implementation: 'native',
         diagnosticCodes: [
@@ -565,7 +581,6 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
         ],
         blocking: unsupportedShape || markers.length > 0,
         skippedSubfeatures: [
-          'geometry.stair_export_parity_partial',
           ...(unsupportedShape ? [`geometry.stair_shape_${shape ?? 'unknown'}_unsupported`] : []),
           ...markerSkipped,
         ],
@@ -581,7 +596,8 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
         (element as { requiresHostedEdge?: boolean }).requiresHostedEdge === true;
       const missingHostEdge = requiresHostedEdge && !hasRailingHostEdgeEvidence(element);
       return geometryResult({
-        state: unsupportedBaluster || missingHostEdge || markers.length ? 'unsupported' : 'partial',
+        state:
+          unsupportedBaluster || missingHostEdge || markers.length ? 'unsupported' : 'supported',
         feature: 'railing-geometry',
         implementation: 'native',
         diagnosticCodes: [
@@ -593,7 +609,6 @@ function geometryStatus(element: Element): ElementGeometryRenderStatus {
         ],
         blocking: unsupportedBaluster || missingHostEdge || markers.length > 0,
         skippedSubfeatures: [
-          'geometry.railing_export_parity_partial',
           ...(unsupportedBaluster
             ? [`geometry.railing_baluster_${balusterRule ?? 'unknown'}_unsupported`]
             : []),
@@ -732,8 +747,14 @@ function diagnosticCodesFor(
 }
 
 function materialFeatureState(material: ElementMaterialRenderStatus): RenderFeatureState {
-  if (material.state === 'unresolved') return 'unsupported';
-  if (material.state === 'fallback') return 'partial';
+  // For the realistic 3D viewport, a "fallback" material (category-default,
+  // family-default, subcomponent-default) still renders as a real surface —
+  // it is an authoring-completeness signal, not a render-quality one, so it
+  // does not degrade the chip. Only an "unresolved" key (the user pointed at
+  // a material that no longer exists) is a visible degradation, and even then
+  // the renderer falls back to a default color rather than failing — so we
+  // grade it as partial, not unsupported.
+  if (material.state === 'unresolved') return 'partial';
   if (material.state === 'non_rendered') return 'not_applicable';
   return 'supported';
 }

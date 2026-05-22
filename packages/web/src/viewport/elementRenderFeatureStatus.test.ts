@@ -65,7 +65,9 @@ describe('element render feature status', () => {
         fallback: false,
       },
       family: {
-        state: 'partial',
+        // Missing material slots no longer degrade family.state to 'partial' —
+        // that overlapped with material.state. See realistic-3d-partial-status-tracker.md.
+        state: 'supported',
         familyTypeId: 'door-type-1',
         familyId: 'builtin:door:single',
         dimensionSource: 'family-type',
@@ -128,7 +130,8 @@ describe('element render feature status', () => {
         ]),
       },
       family: {
-        state: 'partial',
+        // Missing material slots no longer degrade family.state — see tracker.
+        state: 'supported',
         dimensionSource: 'family-type',
         dimensionsMm: { widthMm: 1500, heightMm: 1200, sillHeightMm: 850 },
       },
@@ -353,12 +356,15 @@ describe('element render feature status', () => {
 
     expect(statuses['placed-bed']).toMatchObject({
       asset: {
-        state: 'partial',
+        // block_2d procedural proxies render correctly when renderProxyKind is
+        // set — that no longer downgrades the viewport-3d state. exportSupport
+        // still flags placed_asset as partial across the export surface.
+        state: 'supported',
         assetId: 'asset-bed',
         assetKind: 'block_2d',
         renderProxyKind: 'bed',
         proxyFallback: false,
-        skippedSubfeatures: ['asset.procedural_proxy_render'],
+        skippedSubfeatures: [],
       },
       implementation: {
         geometryImplementation: 'procedural-proxy',
@@ -486,8 +492,11 @@ describe('element render feature status', () => {
       diagnosticCodes: expect.arrayContaining(['renderer.wall_geometry.degenerate']),
     });
     expect(statuses['opening-status']).toMatchObject({
+      // Hosted-opening cuts render correctly in 3D when CSG succeeds — the
+      // BIR-I "parity_partial" claim now lives on exportSupport only, so the
+      // chip shows 'supported'.
       geometry: {
-        state: 'partial',
+        state: 'supported',
         feature: 'hosted-opening-cut',
         implementation: 'analytic-cut',
       },
@@ -521,8 +530,10 @@ describe('element render feature status', () => {
       }),
     );
     expect(supportedRoofStatuses['roof-gable-rectangle']).toMatchObject({
+      // Known roof modes (gable_pitched_rectangle, hip, mono_slope, etc.) have
+      // working mesh builders and now report 'supported' in 3D.
       geometry: {
-        state: 'partial',
+        state: 'supported',
         diagnosticCodes: [],
         blocking: false,
       },
@@ -544,8 +555,10 @@ describe('element render feature status', () => {
       },
     });
     expect(statuses['rail-regular-edge']).toMatchObject({
+      // Railings with a known baluster rule and a valid host edge render
+      // correctly in 3D — they no longer blanket-degrade to 'partial'.
       geometry: {
-        state: 'partial',
+        state: 'supported',
         diagnosticCodes: [],
         blocking: false,
       },
