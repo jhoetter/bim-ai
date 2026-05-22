@@ -1,8 +1,9 @@
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
-import type { ProxyOptions } from 'vite';
+import type { Plugin, ProxyOptions } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,8 +69,23 @@ export default defineConfig(({ mode }) => {
       };
   const ciWorkerLimits = process.env.CI ? { maxWorkers: 2, minWorkers: 1 } : {};
 
+  // PERF-J06: enable bundle-composition report on demand. Set ANALYZE=1 on
+  // `pnpm build` to emit dist/bundle-analysis.html (treemap of module
+  // contributions per chunk) so the workspace lazy chunk's top offenders
+  // are visible without guessing.
+  const analyzePlugin: Plugin[] = process.env.ANALYZE
+    ? [
+        visualizer({
+          filename: 'dist/bundle-analysis.html',
+          template: 'treemap',
+          gzipSize: true,
+          brotliSize: true,
+        }) as Plugin,
+      ]
+    : [];
+
   return {
-    plugins: [react()],
+    plugins: [react(), ...analyzePlugin],
     resolve: {
       alias: {
         '@bim-ai-design-system.css': cssPath,
