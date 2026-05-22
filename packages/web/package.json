@@ -15,7 +15,8 @@
     "test:e2e:real-backend": "playwright test --config playwright.real-backend.config.ts",
     "test:e2e:install": "playwright install chromium",
     "evidence:target-house-live": "node scripts/target-house-live-responsiveness.mjs",
-    "reverse-bim:capture": "node scripts/reverse-bim-view-capture-runner.mjs"
+    "reverse-bim:capture": "node scripts/reverse-bim-view-capture-runner.mjs",
+    "performance:plan-pointermove": "node scripts/plan-pointermove-perf.mjs"
   },
   "dependencies": {
     "@bim-ai/core": "workspace:*",
