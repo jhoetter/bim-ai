@@ -193,6 +193,16 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: late session re-shrink. Two files crept back over 3,000 LOC
+  after parallel-agent landings of the TH-X-F006 source-view-evidence
+  feature. Re-extracted to put them back under the bar:
+  - `packages/core/src/index.ts`: 3,030 → 2,982 LOC. New
+    `SourceViewEvidenceElement` (plus three pre-existing inline
+    opening variants) moved to `elements/sourceViewEvidence.ts` and
+    `elements/openings.ts`.
+  - `app/bim_ai/commands.py`: 3,029 → 2,995 LOC. New
+    `UpsertSourceViewEvidenceCmd` moved to `commands_late.py` and
+    re-imported / re-exported by `commands.py`.
 - 2026-05-22: `SLC-2026-13` Done. `packages/web/src/workspace/project/ProjectBrowser.tsx`
   cut from 3,811 to 2,496 LOC by extracting the `ProjectBrowserV3`
   component (and its private `CtxMenu` / `disciplineLabel` /
