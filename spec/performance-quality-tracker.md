@@ -643,7 +643,7 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-I01` | P0 | `Done` | Remove React state updates from every orbit movement. | Camera orientation UI state is deferred/throttled during orbit and flushed immediately on explicit camera/view changes and orbit end. |
-| `PERF-I02` | P0 | `Partial` | Convert 3D render loop to demand-driven idle rendering. | No `setAnimationLoop(null)` / `invalidate` / `needsRender` gating found in `Viewport.tsx` after re-audit; renderer appears continuous. Re-verify or implement idle gating. |
+| `PERF-I02` | P0 | `Done` | Convert 3D render loop to demand-driven idle rendering. | `Viewport.tsx` implements demand-driven rendering via a custom `scheduleViewportRender()`/`tick()` pair (`Viewport.tsx:843-2596`): `shouldAnimateViewport()` returns true only during walk/drag/inertia; `tick()` re-arms `scheduleViewportRender` only while animating, so the loop self-terminates at idle. External requests use `requestViewportRenderRef.current?.()`. Verified by `viewport/Viewport.authoringSource.test.ts`. |
 | `PERF-I03` | P1 | `Not started` | Add viewport frame-time instrumentation. | Dev overlay/log can report FPS, frame time, draw calls, geometries, textures, and rebuild counts. |
 | `PERF-I04` | P1 | `Not started` | Add geometry rebuild timing. | Mesh rebuild effect reports added/changed/removed ids, dirty ids, rebuild time, and disposal count. |
 | `PERF-I05` | P1 | `Not started` | Add spatial/raycast acceleration for picking if needed. | Raycast cost remains bounded on medium/large fixtures. |
@@ -777,8 +777,12 @@ The following statuses were corrected based on the 2026-05-22 audit:
 - `PERF-H01` Done -> Partial (instrumentation wired, but
   `pnpm performance:plan-pointermove` script absent from
   `packages/web/package.json`).
-- `PERF-I02` Done -> Partial (no idle render gating visible in
-  `Viewport.tsx` re-audit).
+- `PERF-I02` stays Done — re-audit confirmed the custom
+  `scheduleViewportRender()`/`shouldAnimateViewport()`/`tick()` pair in
+  `Viewport.tsx:843-2596` is the demand-driven idle mechanism (covered
+  by `viewport/Viewport.authoringSource.test.ts`). The initial audit
+  pass mistakenly looked only for `setAnimationLoop(null)` /
+  `invalidate` / `needsRender` and missed the custom orchestrator.
 - `PERF-K01/K02/K03` Not started -> Partial (LOC-only) (SLC-2026 sweep
   split the three monoliths by LOC budget; render-ownership boundaries
   still pending).
