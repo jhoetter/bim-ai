@@ -390,7 +390,17 @@ export function useWorkspaceSnapshot(): {
     reconnectAttemptsRef.current = 0;
     const isEmpty = Object.keys(elementsById).length === 0;
     if (!isEmpty) return;
-    void insertSeedHouse();
+    // Honor ?modelId=<uuid> in the URL so deep-links land on a specific
+    // model instead of always falling back to the first seed-library entry.
+    const requestedModelId =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('modelId')
+        : null;
+    if (requestedModelId) {
+      void loadSeedModel(requestedModelId);
+    } else {
+      void insertSeedHouse();
+    }
     return () => {
       mountedRef.current = false;
       reconnectAttemptsRef.current = Infinity;
