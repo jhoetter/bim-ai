@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.agent_loop import (
+from bim_ai.services.agent_loop import (
     AGENT_BACKEND_ENV_VAR,
     AgentIterateRequest,
     AgentIterateResponse,
@@ -151,7 +151,7 @@ def test_progress_score_rewards_keyword_overlap_and_penalises_blocking() -> None
 
 def _build_endpoint_app() -> FastAPI:
     """Endpoint test that bypasses the DB by mounting the route on a stub app."""
-    from bim_ai.agent_loop import generate_patch as gp
+    from bim_ai.services.agent_loop import generate_patch as gp
 
     app = FastAPI()
 

@@ -6,7 +6,7 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
-from bim_ai.source_agent_loop import normalize_ai_visual_trace_reader_response
+from bim_ai.services.source_agent_loop import normalize_ai_visual_trace_reader_response
 
 CRITICAL_FACT_KINDS = {
     "building_scope",

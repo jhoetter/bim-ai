@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from bim_ai.semantic_authoring import (
+from bim_ai.services.semantic_authoring import (
     UNSUPPORTED_M2_OPERATIONS,
     SemanticAuthoringError,
     UnsupportedSemanticOperationError,

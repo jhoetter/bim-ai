@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bim_ai.source_ingestion import (
+from bim_ai.services.source_ingestion import (
     build_ai_visual_trace_packet,
     build_ai_visual_trace_work_order,
 )

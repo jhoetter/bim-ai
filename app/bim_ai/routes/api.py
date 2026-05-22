@@ -145,7 +145,7 @@ from bim_ai.engine import (
     ensure_sun_settings,
     try_commit_bundle,
 )
-from bim_ai.agent_loop import (
+from bim_ai.services.agent_loop import (
     AgentIterateRequest,
     AgentIterateResponse,
     generate_patch,
@@ -187,7 +187,7 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
-from bim_ai.hybrid_reverse_bim import (
+from bim_ai.services.hybrid_reverse_bim import (
     build_hybrid_reverse_bim_run_report,
     build_hybrid_reverse_bim_slice_report,
     build_source_spec_revision_report,
@@ -225,7 +225,7 @@ from bim_ai.models.api_requests import (
     ReverseBimHybridSliceExecuteRequest,
     SemanticAuthoringRequest,
 )
-from bim_ai.semantic_authoring import (
+from bim_ai.services.semantic_authoring import (
     UnsupportedSemanticOperationError,
     build_semantic_authoring_bundle,
 )

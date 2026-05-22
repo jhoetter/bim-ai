@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.hybrid_reverse_bim import (
+from bim_ai.services.hybrid_reverse_bim import (
     build_hybrid_reverse_bim_run_report,
     build_hybrid_reverse_bim_slice_report,
     build_source_spec_revision_report,

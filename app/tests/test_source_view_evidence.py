@@ -31,7 +31,7 @@ from bim_ai.elements_links import (
 )
 from bim_ai.engine import apply_inplace
 from bim_ai.routes.reverse_bim import reverse_bim_router
-from bim_ai.semantic_authoring import (
+from bim_ai.services.semantic_authoring import (
     ReverseBimExteriorViewPayload,
     ReverseBimSectionViewPayload,
     ReverseBimSourceViewEvidencePayload,

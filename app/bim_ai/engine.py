@@ -618,7 +618,7 @@ from bim_ai.engine_helpers import (  # noqa: E402,F401
 from bim_ai.engine_dispatch import apply_inplace as apply_inplace  # noqa: E402,F401
 
 
-from bim_ai.engine_commit import (  # noqa: E402,F401
+from bim_ai.services.engine_commit import (  # noqa: E402,F401
     _assert_tkn_round_trip,
     _evaluate_edt_constraint_violations,
     blocking_violation_element_ids_at_prefix,

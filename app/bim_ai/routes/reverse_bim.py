@@ -30,13 +30,6 @@ from bim_ai.evidence.reverse_bim_acceptance_evidence import (
     build_source_overlay_evidence_report,
     build_ui_evidence_report,
 )
-from bim_ai.final_acceptance import build_final_acceptance_report
-from bim_ai.folder_output import build_reverse_bim_folder_output
-from bim_ai.hybrid_reverse_bim import (
-    build_hybrid_reverse_bim_run_report,
-    build_hybrid_reverse_bim_slice_report,
-    build_source_spec_revision_report,
-)
 from bim_ai.models.reverse_bim_requests import (
     ReverseBimCoordinateFrameAlignmentRequest,
     ReverseBimCoordinateFrameWorklistRequest,
@@ -131,23 +124,25 @@ from bim_ai.reverse_bim.visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
 )
-from bim_ai.semantic_authoring import (
+from bim_ai.services.final_acceptance import build_final_acceptance_report
+from bim_ai.services.folder_output import build_reverse_bim_folder_output
+from bim_ai.services.hybrid_reverse_bim import (
+    build_hybrid_reverse_bim_run_report,
+    build_hybrid_reverse_bim_slice_report,
+    build_source_spec_revision_report,
+)
+from bim_ai.services.semantic_authoring import (
     UnsupportedSemanticOperationError,
     build_semantic_authoring_bundle,
 )
-from bim_ai.source_agent_loop import (
+from bim_ai.services.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_responses,
     prepare_ai_visual_trace_run_from_folder,
     run_ai_visual_trace_agent_loop,
 )
-from bim_ai.source_building_scope import build_source_building_scope_report
-from bim_ai.source_coordinate_frames import (
-    apply_coordinate_frame_alignments,
-    build_coordinate_frame_alignment_worklist,
-)
-from bim_ai.source_ingestion import (
+from bim_ai.services.source_ingestion import (
     build_ai_reading_packet,
     build_ai_visual_trace_packet,
     build_ai_visual_trace_work_order,
@@ -160,6 +155,11 @@ from bim_ai.source_ingestion import (
     rerender_for_legibility,
     validate_ai_source_facts,
     validate_ai_visual_trace_completeness,
+)
+from bim_ai.source_building_scope import build_source_building_scope_report
+from bim_ai.source_coordinate_frames import (
+    apply_coordinate_frame_alignments,
+    build_coordinate_frame_alignment_worklist,
 )
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.final_acceptance import build_final_acceptance_report
+from bim_ai.services.final_acceptance import build_final_acceptance_report
 
 
 def _clean_inputs() -> dict:

@@ -28,7 +28,7 @@ APP_DIR = REPO_ROOT / "app"
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
-from bim_ai.folder_output import build_reverse_bim_folder_output  # noqa: E402
+from bim_ai.services.folder_output import build_reverse_bim_folder_output  # noqa: E402
 
 
 SCOPE_DECISIONS_BY_HOUSE: dict[str, list[dict[str, Any]]] = {

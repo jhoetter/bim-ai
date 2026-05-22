@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bim_ai.api.registry import get_descriptor
-from bim_ai.folder_output import build_reverse_bim_folder_output
+from bim_ai.services.folder_output import build_reverse_bim_folder_output
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -22,14 +22,14 @@ from bim_ai.reverse_bim.reader_dispatch import (
     build_reverse_bim_reader_dispatch_plan,
     execute_reverse_bim_reader_dispatch,
 )
-from bim_ai.source_agent_loop import (
+from bim_ai.services.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_responses,
     prepare_ai_visual_trace_run_from_folder,
     run_ai_visual_trace_agent_loop,
 )
-from bim_ai.source_ingestion import (
+from bim_ai.services.source_ingestion import (
     _classification_roles_from_text,
     build_ai_reading_packet,
     build_ai_visual_trace_packet,
@@ -397,7 +397,7 @@ def test_rerender_for_legibility_writes_updated_rendered_pages_index(tmp_path: P
     cannot be re-rendered (no Poppler / not found), the helper still reports
     the attempt and emits diagnostics instead of crashing."""
 
-    from bim_ai.source_ingestion import rerender_for_legibility
+    from bim_ai.services.source_ingestion import rerender_for_legibility
 
     source_dir = tmp_path / "source"
     source_dir.mkdir()
@@ -455,7 +455,7 @@ def test_rerender_for_legibility_writes_updated_rendered_pages_index(tmp_path: P
 
 
 def test_rerender_for_legibility_emits_diagnostics_for_unknown_document(tmp_path: Path) -> None:
-    from bim_ai.source_ingestion import rerender_for_legibility
+    from bim_ai.services.source_ingestion import rerender_for_legibility
 
     output_dir = tmp_path / "out"
     (output_dir / "source").mkdir(parents=True)
@@ -1624,7 +1624,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1640,7 +1640,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",
@@ -1758,7 +1758,7 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1774,7 +1774,7 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",
@@ -1827,7 +1827,7 @@ def test_reverse_bim_reader_dispatch_writes_assignment_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1843,7 +1843,7 @@ def test_reverse_bim_reader_dispatch_writes_assignment_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",

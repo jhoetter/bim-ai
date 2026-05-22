@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bim_ai.folder_output import (
+from bim_ai.services.folder_output import (
     _build_reader_response_index,
     _load_reader_response_files,
     _reader_response_payload,

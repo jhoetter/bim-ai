@@ -19,12 +19,22 @@ from bim_ai.reverse_bim import (
     validate_existing_building_ir,
 )
 from bim_ai.reverse_bim.evidence_requirements import build_reverse_bim_evidence_requirements
-from bim_ai.source_agent_loop import (
+from bim_ai.services.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,
     normalize_ai_visual_trace_reader_response,
     normalize_ai_visual_trace_reader_responses,
     run_ai_visual_trace_agent_loop,
+)
+from bim_ai.services.source_ingestion import (
+    AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE,
+    build_ai_visual_trace_packet,
+    build_ai_visual_trace_work_order,
+    build_folder_manifest,
+    classify_documents,
+    detect_scale_from_text,
+    extract_pdf_text,
+    render_pdf_pages,
 )
 from bim_ai.source_area_consistency import build_source_area_consistency_report
 from bim_ai.source_building_scope import build_source_building_scope_report
@@ -35,16 +45,6 @@ from bim_ai.source_conflicts import (
 from bim_ai.source_coordinate_frames import (
     apply_coordinate_frame_alignments,
     build_coordinate_frame_alignment_worklist,
-)
-from bim_ai.source_ingestion import (
-    AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE,
-    build_ai_visual_trace_packet,
-    build_ai_visual_trace_work_order,
-    build_folder_manifest,
-    classify_documents,
-    detect_scale_from_text,
-    extract_pdf_text,
-    render_pdf_pages,
 )
 from bim_ai.source_level_completeness import build_source_level_completeness_report
 from bim_ai.source_material_assemblies import build_source_material_assembly_report
@@ -62,7 +62,7 @@ from bim_ai.source_site_terrain import (
     build_source_site_terrain_report,
 )
 
-_logger = get_logger("bim_ai.folder_output")
+_logger = get_logger("bim_ai.services.folder_output")
 
 PHASE_BY_FACT_KIND = {
     "building_scope": "P0-source-inventory",

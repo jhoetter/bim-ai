@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from bim_ai.source_ingestion import (
+from bim_ai.services.source_ingestion import (
     AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE,
     AI_VISUAL_FACT_VALUE_REQUIREMENTS,
     build_ai_visual_trace_packet,
