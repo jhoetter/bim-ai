@@ -2845,9 +2845,7 @@ export function Workspace(): JSX.Element {
             for (const t of tags) void onSemanticCommand({ type: 'createElement', element: t });
           },
           rotateToTrueNorth: () => {
-            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings') as
-              | Extract<Element, { kind: 'project_settings' }>
-              | undefined;
+            const ps = useBimStore.getState().modelIndices.projectSettings;
             const angleDeg = ps?.angleToTrueNorthDeg ?? 0;
             const activeView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
             if (!activeView) return;
@@ -2863,7 +2861,7 @@ export function Workspace(): JSX.Element {
               prompt('Angle from project north to true north (degrees clockwise):') ?? '0',
             );
             if (isNaN(angleDeg)) return;
-            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
+            const ps = useBimStore.getState().modelIndices.projectSettings;
             if (!ps) return;
             void onSemanticCommand({
               type: 'updateElementProperty',
@@ -2875,7 +2873,7 @@ export function Workspace(): JSX.Element {
           setProjectElevation: () => {
             const elevMm = parseFloat(prompt('Project real-world elevation (mm):') ?? '0');
             if (isNaN(elevMm)) return;
-            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
+            const ps = useBimStore.getState().modelIndices.projectSettings;
             if (!ps) return;
             void onSemanticCommand({
               type: 'updateElementProperty',
