@@ -1474,6 +1474,29 @@ export function Workspace(): JSX.Element {
     [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
   );
 
+  // Iter-11 capture toolchain hook (see spec/testhouse-visual-fidelity-tracker.md
+  // methodology learning #11). Honors `?activeElevationView=<id>`,
+  // `?activePlanView=<id>`, and `?activeViewpoint=<id>` so headless capture
+  // scripts can deep-link straight into a specific view without driving the UI.
+  // openElementById covers tab + mode; for elevation_view we also have to call
+  // the store's activateElevationView (it sets viewerMode=plan_canvas) since
+  // openElementById's elevation branch only calls setMode + select.
+  const urlViewActivatedRef = useRef(false);
+  useEffect(() => {
+    if (urlViewActivatedRef.current) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const elevationId = params.get('activeElevationView');
+    const planId = params.get('activePlanView');
+    const viewpointId = params.get('activeViewpoint');
+    const targetId = elevationId ?? planId ?? viewpointId;
+    if (!targetId) return;
+    if (!elementsById[targetId]) return;
+    urlViewActivatedRef.current = true;
+    openElementById(targetId);
+    if (elevationId) useBimStore.getState().activateElevationView(elevationId);
+  }, [elementsById, openElementById]);
+
   const openProjectSettings = useCallback(() => {
     setProjectSetupOpen(true);
   }, []);
