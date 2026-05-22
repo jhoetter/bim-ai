@@ -2,13 +2,51 @@
 
 Last updated: 2026-05-23
 
-Status: **Spec resolved; Wave 1 implementation starting.** Prerequisite
-for [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
+Status: **Waves 1–3 shipped; Wave 4 (inspector integration) in flight;
+Wave 5 deferred.** Prerequisite for
+[`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
 Defines git-like time travel for BIM models — commits with agent context,
 snapshots at logical boundaries, checkout/diff/log API, and retroactive
 coverage of past iterations by replaying the existing undo stack. All 11
 open questions resolved 2026-05-23 (see
-[Resolved Decisions](#resolved-decisions)); Wave 1 schema work begins.
+[Resolved Decisions](#resolved-decisions)).
+
+### What landed (2026-05-23)
+
+- **Wave 1 — schema** (`app/bim_ai/tables.py`, `app/bim_ai/db.py`):
+  `bim_model_commits` + `bim_model_snapshots`; nullable `commit_id` on
+  `bim_undo_stack` with FK + idempotent ALTER in `init_db_schema`;
+  partial unique index `bim_model_commits_one_open_per_model`.
+- **Wave 1 — versioning** (`app/bim_ai/versioning.py`): ULID generator,
+  `current_commit_id()` ContextVar, canonical-JSON document hashing
+  (reusing `transaction_metadata.canonical_transaction_digest` codec),
+  `open_commit` / `close_commit` (snapshots by default) /
+  `abort_commit` (no snapshot per resolved decision #6) /
+  `commit_context` async CM.
+- **Wave 1 — write-path wiring**: six `UndoStackRecord(...)` sites
+  (`routes_commands` ×3, `routes_api`, `routes_exports`,
+  `routes_sketch`) attach `current_commit_id()`. MCP slice executor
+  (`reverse_bim.hybrid_slice_execute`) wraps its commit-mode call in
+  `commit_context()` with a slice-shaped agent context.
+- **Wave 2 — retroactive backfill** (`scripts/backfill_model_commits.py`):
+  forward-replay through `try_commit_bundle` grouped by user_id +
+  inactivity gap; idempotent; head-parity check + per-model report.
+- **Wave 3 — read API** (`app/bim_ai/routes_time_travel.py`):
+  `commits` (paged log), `commits/{id}` (detail with tool-call count),
+  `state` (head or `?at=` / `?at-revision=`), `commit-diff` (cheap +
+  deep), `elements/{id}/history` (with commit join).
+- **Tests**: 23 unit tests across schema, versioning, diff, backfill
+  helpers — all passing.
+
+### Still to ship
+
+- **Wave 4 — inspector integration**: per-model commit timeline page
+  consuming the read API; "checkout commit C" route that renders past
+  state via the existing viewer with `?at=:commitId`. Tracked in
+  [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
+- **Wave 5 — operational hardening**: orphaned-open-commit sweeper,
+  snapshot storage monitoring, optional sparse-snapshot toggle.
+  Revisit when material.
 
 ## Purpose
 

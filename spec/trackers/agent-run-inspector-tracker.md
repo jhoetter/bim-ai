@@ -1,23 +1,66 @@
 # Agent Run Inspector Tracker
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 
-Status: **New developer-facing observability tracker.** Defines the `/agents`
-UI surface that lets the developer inspect how an AI agent applied the hybrid
-reverse-BIM methodology to a source folder: which files were processed, what
-the agent and its sub-agents thought, which artifacts were written, how those
-artifacts were later interpreted for MCP tool calling, and what landed in the
-live model. Read-only viewer over data and artifacts that already exist on
-disk; not a production telemetry pipeline and not a methodology change.
+Status: **Wave 1 shipped; Wave 2 first slice (iteration capture viewer +
+per-house dashboard) shipped; Wave 2 remaining slices (lineage trace,
+commit time-slider, schema-driven registries) in progress.** Defines the
+`/agents` UI surface that lets the developer inspect how an AI agent
+applied the hybrid reverse-BIM methodology to a source folder: which
+files were processed, what the agent and its sub-agents thought, which
+artifacts were written, how those artifacts were later interpreted for
+MCP tool calling, and what landed in the live model. Read-only viewer
+over data and artifacts that already exist on disk; not a production
+telemetry pipeline and not a methodology change.
 
-**Build order dependency.** The "watch the rendering of each iteration" and
-"diff iter-9 vs iter-10" capabilities require git-like model time travel.
-That foundation is specified in
-[`spec/model-time-travel-tracker.md`](./model-time-travel-tracker.md) and
-must ship before this tracker's Wave 2 begins. Wave 1 of this tracker (the
-flat session viewer) is independent and can ship in parallel with
-time-travel Wave 1; the per-model dashboard, artifact lineage, and
-iteration replay land after time-travel Wave 3 (read API) is available.
+### What landed (2026-05-23)
+
+- **Wave 1 — parser** (`app/bim_ai/agent_run_parser.py`): streaming
+  Claude Code JSONL reader; `SessionSummary` with timestamps, message
+  counts, tool-call histogram, sub-agent dispatches, inferred
+  house/iteration/modelId; `TimelineEvent` canonical kinds.
+  House regex restricted to `{alpha,beta,gamma}` after observing
+  false positives.
+- **Wave 1 — API** (`app/bim_ai/routes_agent_runs.py`):
+  `GET /api/agent-runs/sessions` (list with house/iteration/modelId
+  filters) and `/sessions/{id}` (timeline with `?includeRaw=` +
+  `?limitEvents=`).
+- **Wave 1 — web** (`packages/web/src/agents/`): `/agents` index table
+  + `/agents/sessions/:id` timeline page with in-page filter and
+  include-raw toggle.
+- **Wave 2 — house API**: `GET /agent-runs/houses`,
+  `/houses/{house}/iterations`,
+  `/houses/{house}/iterations/{iter}/captures/{file}` (path-traversal-
+  rejecting image serve), `/houses/{house}/iterations/{iter}/scoring`
+  (markdown), `/houses/{house}/dashboard` (fact-ledger stats +
+  validation reports + rendered-page-groups + reader-pass count +
+  iteration enumeration).
+- **Wave 2 — web**: `/agents/houses/:house` dashboard with three-card
+  header, iteration strip (★ marks ones with a scoring report), view
+  selector (3d / 4 elevations) × variant selector (full / crop), and
+  scoring-report panel below the capture.
+- **Tests**: 21 unit + route tests across parser inference,
+  path-traversal rejection, iteration ordering, capture MIME, fact
+  stats, scoring 404 vs 200.
+
+### Still to ship from Wave 2
+
+- **Commit time-slider on the per-house dashboard.** Consumes
+  `/api/models/{id}/commits` + `?at=:commitId` from
+  [`spec/model-time-travel-tracker.md`](./model-time-travel-tracker.md)
+  to render the live BIM viewer at a past commit alongside the
+  iteration capture for the same iter.
+- **Lineage trace** (`/agents/houses/{house}/trace/{factId}`):
+  backward from a fact id through reader response → page image →
+  source PDF; forward to MCP call → element → captured screenshot.
+- **Artifact browser** (`/agents/houses/{house}/artifacts/...`):
+  type-aware viewers for `understanding/*.json`, `mcp-handoff/*.json`,
+  `validation/*.json`, `ai-reading/{assignments,responses}/...`,
+  per the artifact-kind registry in
+  [Adapting to Methodology Changes](#adapting-to-methodology-changes).
+- **Sub-agent transcript linkage**: deep-link the sub-agent
+  dispatches in the session timeline to their own JSONLs when those
+  exist under `<sessionId>/`.
 
 ## Purpose
 
