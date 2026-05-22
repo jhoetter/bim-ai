@@ -214,6 +214,7 @@ def drive_view_capture_plan(house_state: dict[str, Any]) -> None:
         return
     plan_body = {
         "modelId": house_state["modelId"],
+        "baseUrl": "http://127.0.0.1:22000",
         "outputDir": str(
             REPO_ROOT
             / "tmp"
@@ -225,7 +226,7 @@ def drive_view_capture_plan(house_state: dict[str, Any]) -> None:
             {"viewId": view_id, "name": view_id}
             for view_id in _view_ids_for(house_state["house"])
         ],
-        "requiredOverlayViews": [],
+        "requiredOverlayViews": _overlay_views_for(house_state["house"]),
     }
     plan = http_json("POST", "/api/v3/reverse-bim/view-capture-plan", plan_body)
     out_path = (
@@ -298,7 +299,6 @@ def run_playwright_capture(house_state: dict[str, Any]) -> None:
             "--filter",
             "@bim-ai/web",
             "reverse-bim:capture",
-            "--",
             "--plan",
             str(plan_path),
             "--out",
@@ -327,23 +327,52 @@ def run_playwright_capture(house_state: dict[str, Any]) -> None:
 def drive_evidence_reports(house_state: dict[str, Any]) -> None:
     if house_state["phase"] != "iter3_screenshots_captured":
         return
-    plan_path = (
+    manifest_path = (
         REPO_ROOT
         / "tmp"
         / "reverse-bim"
         / house_state["house"]
-        / "iter-3-view-capture-plan.json"
+        / "iter-3-view-captures"
+        / "reverse-bim-view-capture-manifest.json"
     )
-    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    if not manifest_path.exists():
+        house_state["errors"].append(
+            {
+                "at": _now(),
+                "phase": "evidence_reports",
+                "code": "capture_manifest_missing",
+            }
+        )
+        return
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ui_rows = manifest.get("uiEvidenceRows") or []
+    overlay_rows = manifest.get("overlayEvidenceRows") or []
+    required_views = [
+        {"viewId": view_id, "kind": "ui"}
+        for view_id in _view_ids_for(house_state["house"])
+    ]
     overlay = http_json(
         "POST",
         "/api/v3/reverse-bim/source-overlay-evidence",
-        {"modelId": house_state["modelId"], "captures": plan.get("captures") or []},
+        {
+            "requiredViews": overlay_rows if overlay_rows else [],
+            "overlayResults": overlay_rows,
+        },
     )
     ui = http_json(
         "POST",
         "/api/v3/reverse-bim/ui-evidence",
-        {"modelId": house_state["modelId"], "captures": plan.get("captures") or []},
+        {
+            "requiredViews": required_views,
+            "screenshots": ui_rows,
+            "requireVisualChecklist": False,
+        },
+    )
+    # Also run qa.area_reconciliation against the live model.
+    qa_area = http_json(
+        "POST",
+        f"/api/models/{house_state['modelId']}/qa/area-reconciliation",
+        {},
     )
     out_root = (
         REPO_ROOT / "tmp" / "reverse-bim" / house_state["house"] / "iter-3-live-gates"
@@ -354,6 +383,9 @@ def drive_evidence_reports(house_state: dict[str, Any]) -> None:
     )
     (out_root / "ui-evidence.json").write_text(
         json.dumps(ui, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    (out_root / "qa-area-reconciliation.json").write_text(
+        json.dumps(qa_area, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     overlay_summary = overlay.get("summary") or {}
     ui_summary = ui.get("summary") or {}
@@ -386,10 +418,25 @@ def drive_final_acceptance(house_state: dict[str, Any]) -> None:
         "iter3_final_acceptance_run",
     }:
         return
+    # Re-read whichever evidence reports we have on disk so final_acceptance
+    # sees the latest source-overlay + ui-evidence outputs.
+    gates_root = (
+        REPO_ROOT / "tmp" / "reverse-bim" / house_state["house"] / "iter-3-live-gates"
+    )
+    source_overlay_path = gates_root / "source-overlay-evidence.json"
+    ui_evidence_path = gates_root / "ui-evidence.json"
+    qa_area_path = gates_root / "qa-area-reconciliation.json"
+    body: dict[str, Any] = {"modelId": house_state["modelId"]}
+    if source_overlay_path.exists():
+        body["sourceOverlay"] = json.loads(source_overlay_path.read_text(encoding="utf-8"))
+    if ui_evidence_path.exists():
+        body["uiEvidence"] = json.loads(ui_evidence_path.read_text(encoding="utf-8"))
+    if qa_area_path.exists():
+        body["areaReconciliation"] = json.loads(qa_area_path.read_text(encoding="utf-8"))
     final = http_json(
         "POST",
         "/api/v3/reverse-bim/final-acceptance",
-        {"modelId": house_state["modelId"]},
+        body,
     )
     summary = final.get("summary") or {}
     house_state["lastFinalAcceptance"] = {
@@ -503,6 +550,27 @@ def _empty_levels_for(house_state: dict[str, Any]) -> list[str]:
         if row.get("status") in {"empty_or_incomplete", "missing_model_level"}
         and row.get("name")
     ]
+
+
+def _overlay_views_for(house: str) -> list[dict[str, Any]]:
+    """Each row pairs one model view with its source page so the
+    view-capture runner can produce overlay deviation metrics."""
+
+    return {
+        "house-alpha": [
+            {"viewId": "sc-haus", "sourceDocumentId": "srcdoc-97d5b8f956ed", "sourcePage": 1},
+            {"viewId": "ev-berg", "sourceDocumentId": "srcdoc-ee9dfd8186b6", "sourcePage": 1},
+        ],
+        "house-beta": [
+            {"viewId": "sc-haus", "sourceDocumentId": "srcdoc-e73f05ce8e83", "sourcePage": 4},
+            {"viewId": "ev-osten", "sourceDocumentId": "srcdoc-e73f05ce8e83", "sourcePage": 5},
+            {"viewId": "ev-sueden", "sourceDocumentId": "srcdoc-e73f05ce8e83", "sourcePage": 6},
+        ],
+        "house-gamma": [
+            {"viewId": "sc-aa", "sourceDocumentId": "srcdoc-0a178ed8c402", "sourcePage": 9},
+            {"viewId": "ev-strasse", "sourceDocumentId": "srcdoc-0a178ed8c402", "sourcePage": 6},
+        ],
+    }[house]
 
 
 def _view_ids_for(house: str) -> list[str]:
