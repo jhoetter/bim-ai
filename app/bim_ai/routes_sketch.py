@@ -10,7 +10,7 @@ they do for any other authoring command.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -221,7 +221,7 @@ _SUPPORTED_ELEMENT_KINDS = set(SUBMODES.keys())
 @sketch_router.post("/sketch-sessions")
 async def open_sketch_session(
     body: OpenSketchSessionRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     if body.element_kind not in _SUPPORTED_ELEMENT_KINDS:
         raise HTTPException(
@@ -257,7 +257,7 @@ async def open_sketch_session(
 @sketch_router.get("/sketch-sessions/{session_id}")
 async def get_sketch_session(
     session_id: str,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     sk = get_sketch_registry().get(session_id)
     if sk is None:
@@ -269,7 +269,7 @@ async def get_sketch_session(
 async def add_sketch_line(
     session_id: str,
     body: AddSketchLineRequest,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
@@ -289,7 +289,7 @@ async def add_sketch_line(
 async def remove_sketch_line(
     session_id: str,
     body: RemoveSketchLineRequest,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
@@ -314,7 +314,7 @@ async def remove_sketch_line(
 async def move_sketch_vertex(
     session_id: str,
     body: MoveSketchVertexRequest,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
@@ -345,7 +345,7 @@ async def move_sketch_vertex(
 async def pick_wall(
     session_id: str,
     body: PickWallRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
@@ -389,7 +389,7 @@ async def pick_wall(
 async def set_pick_walls_offset_mode(
     session_id: str,
     body: SetPickWallsOffsetModeRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
@@ -478,8 +478,8 @@ _KIND_TO_NEW_ID_FIELD: dict[str, tuple[str, str]] = {
 async def finish_sketch_session(
     session_id: str,
     body: FinishSketchSessionRequest,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -26,7 +26,6 @@ from bim_ai.tables import UndoStackRecord
 from bim_ai.transaction_safety import build_dry_run_evidence
 
 integrity_router = APIRouter()
-_SESSION_DEPENDENCY = Depends(get_session)
 
 
 @integrity_router.post("/v3/invariants/smoke")
@@ -37,8 +36,8 @@ async def invariant_smoke_route(body: InvariantSmokeRequest) -> dict[str, Any]:
 @integrity_router.get("/models/{model_id}/qa/integrity-preflight")
 async def integrity_preflight_route(
     model_id: UUID,
-    changed_element_ids: str | None = Query(None, alias="changedElementIds"),
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    changed_element_ids: Annotated[str | None, Query(alias="changedElementIds")] = None,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -57,9 +56,9 @@ async def integrity_preflight_route(
 @integrity_router.get("/models/{model_id}/qa/profile-comparison")
 async def profile_comparison_route(
     model_id: UUID,
-    profiles: str | None = Query(None),
-    changed_element_ids: str | None = Query(None, alias="changedElementIds"),
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    profiles: Annotated[str | None, Query()] = None,
+    changed_element_ids: Annotated[str | None, Query(alias="changedElementIds")] = None,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -80,7 +79,7 @@ async def profile_comparison_route(
 async def integrity_remediation_route(
     model_id: UUID,
     body: IntegrityRemediationRequest,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query
@@ -58,8 +58,8 @@ async def create_markup(model_id: UUID, body: MarkupCreateBody) -> dict[str, Any
 @markups_router.get("/models/{model_id}/markups")
 async def list_markups(
     model_id: UUID,
-    view_id: str | None = Query(default=None, alias="viewId"),
-    resolved: str | None = Query(default=None, alias="resolved"),
+    view_id: Annotated[str | None, Query(alias="viewId")] = None,
+    resolved: Annotated[str | None, Query(alias="resolved")] = None,
 ) -> dict[str, Any]:
     markups = list(_get_markups(str(model_id)))
     if view_id is not None:

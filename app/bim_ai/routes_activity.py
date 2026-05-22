@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -57,7 +57,7 @@ def _wire_comment(row: CommentRecord) -> dict[str, Any]:
 
 @activity_router.get("/models/{model_id}/activity")
 async def model_activity(
-    model_id: UUID, session: AsyncSession = Depends(get_session)
+    model_id: UUID, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -95,7 +95,7 @@ async def model_activity(
 
 @activity_router.get("/models/{model_id}/comments")
 async def list_comments(
-    model_id: UUID, session: AsyncSession = Depends(get_session)
+    model_id: UUID, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -117,8 +117,8 @@ async def list_comments(
 async def create_comment(
     model_id: UUID,
     body: CommentCreateBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
 
@@ -179,8 +179,8 @@ async def patch_comment(
     model_id: UUID,
     comment_id: UUID,
     body: CommentResolveBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
 
     row_c = await session.get(CommentRecord, comment_id)

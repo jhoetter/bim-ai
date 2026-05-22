@@ -8,8 +8,7 @@ sub-3000 LOC reduction tracker.
 
 from __future__ import annotations
 
-# ruff: noqa: B008
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -104,8 +103,8 @@ async def v3_inspect_tool(name: str) -> dict[str, Any]:
 
 @v3_meta_router.get("/v3/advisor-rules")
 async def v3_advisor_rules(
-    profile: str | None = Query(default=None),
-    surface: str | None = Query(default=None),
+    profile: Annotated[str | None, Query()] = None,
+    surface: Annotated[str | None, Query()] = None,
 ) -> dict[str, object]:
     return advisor_rule_catalog_payload(profile=profile, surface=surface)
 

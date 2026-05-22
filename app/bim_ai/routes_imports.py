@@ -7,8 +7,7 @@ and ``/api/material-assets/validate-upload``.
 
 from __future__ import annotations
 
-# ruff: noqa: B008
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
@@ -62,8 +61,8 @@ class ImportIfcBody(BaseModel):
 async def import_ifc_to_shadow_link(
     host_id: UUID,
     body: ImportIfcBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     """FED-04: import an IFC file as a brand-new shadow bim-ai model + auto-
     create a ``link_model`` row in the host pointing at it.
@@ -244,8 +243,8 @@ class ImportDxfBody(BaseModel):
 async def import_dxf(
     host_id: UUID,
     body: ImportDxfBody,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     """FED-04: parse a DXF file and materialise a ``link_dxf`` element.
 
@@ -369,16 +368,16 @@ async def import_dxf(
 async def upload_dxf_file(
     host_id: UUID,
     file: UploadFile,
-    levelId: str = Form(...),
-    name: str = Form(default=""),
-    originAlignmentMode: str = Form(default="origin_to_origin"),
-    unitOverride: str | None = Form(default=None),
-    colorMode: str = Form(default="black_white"),
-    customColor: str | None = Form(default=None),
-    overlayOpacity: float = Form(default=0.5),
-    hiddenLayerNames: str = Form(default=""),
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    levelId: Annotated[str, Form()],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
+    name: Annotated[str, Form()] = "",
+    originAlignmentMode: Annotated[str, Form()] = "origin_to_origin",
+    unitOverride: Annotated[str | None, Form()] = None,
+    colorMode: Annotated[str, Form()] = "black_white",
+    customColor: Annotated[str | None, Form()] = None,
+    overlayOpacity: Annotated[float, Form()] = 0.5,
+    hiddenLayerNames: Annotated[str, Form()] = "",
 ) -> dict[str, Any]:
     """FED-04b: upload a DXF file directly from the browser and materialise it as link_dxf.
 
@@ -507,10 +506,10 @@ async def upload_dxf_file(
 @imports_router.post("/material-assets/validate-upload")
 async def validate_material_asset_upload(
     file: UploadFile,
-    mapUsageHint: str = Form(default="albedo"),
-    source: str | None = Form(default=None),
-    license: str | None = Form(default=None),
-    provenance: str | None = Form(default=None),
+    mapUsageHint: Annotated[str, Form()] = "albedo",
+    source: Annotated[str | None, Form()] = None,
+    license: Annotated[str | None, Form()] = None,
+    provenance: Annotated[str | None, Form()] = None,
 ) -> dict[str, Any]:
     """MAT-11: validate an uploaded texture map and return image_asset metadata."""
 

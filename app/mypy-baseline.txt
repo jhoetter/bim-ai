@@ -51,7 +51,6 @@ bim_ai/source_material_assemblies.py:0: error: Item "None" of "Any | dict[Any, A
 bim_ai/source_material_assemblies.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/source_material_assemblies.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/source_level_completeness.py:0: error: List comprehension has incompatible type List[dict[str, list[str] | dict[Any | None, int] | int | Any | list[Any] | str | None]]; expected List[str]  [misc]
-bim_ai/source_level_completeness.py:0: error: Need type annotation for "rows" (hint: "rows: list[<type>] = ...")  [var-annotated]
 bim_ai/source_level_completeness.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/source_level_completeness.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/source_level_completeness.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
@@ -4087,11 +4086,15 @@ bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "option_id" for
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "line_indices" for "SketchValidationIssue"; did you mean "lineIndices"?  [call-arg]
+bim_ai/routes_sketch.py:0: note: "SketchValidationIssue" defined in "bim_ai.sketch_session"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "from_mm" for "SketchLine"; did you mean "fromMm"?  [call-arg]
+bim_ai/routes_sketch.py:0: note: "SketchLine" defined in "bim_ai.sketch_session"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "to_mm" for "SketchLine"  [call-arg]
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "from_mm" for "SketchLine"; did you mean "fromMm"?  [call-arg]
+bim_ai/routes_sketch.py:0: note: "SketchLine" defined in "bim_ai.sketch_session"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "to_mm" for "SketchLine"  [call-arg]
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "wall_id" for "PickedWall"; did you mean "wallId"?  [call-arg]
+bim_ai/routes_sketch.py:0: note: "PickedWall" defined in "bim_ai.sketch_session"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "line_index" for "PickedWall"; did you mean "lineIndex"?  [call-arg]
 bim_ai/routes_sketch.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/routes_sketch.py:0: error: Argument 1 to "publish" of "Hub" has incompatible type "UUID"; expected "str"  [arg-type]

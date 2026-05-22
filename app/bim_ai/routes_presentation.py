@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import secrets
 import time
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -18,8 +18,6 @@ from bim_ai.routes_deps import get_hub, load_model_row
 from bim_ai.tables import PublicLinkRecord
 
 presentation_router = APIRouter()
-_SESSION_DEPENDENCY = Depends(get_session)
-_HUB_DEPENDENCY = Depends(get_hub)
 
 # OUT-V3-01 — Live presentation URL
 # ---------------------------------------------------------------------------
@@ -38,8 +36,8 @@ class CreatePresentationBody(BaseModel):
 async def create_presentation(
     model_id: UUID,
     body: CreatePresentationBody,
-    session: AsyncSession = _SESSION_DEPENDENCY,
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """OUT-V3-01: create a live presentation link for a model."""
     from bim_ai.public_links import generate_link_token
@@ -88,7 +86,7 @@ async def create_presentation(
 @presentation_router.get("/models/{model_id}/presentations")
 async def list_presentations(
     model_id: UUID,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """OUT-V3-01: list presentation links for a model, including inactive links."""
     res = await session.execute(
@@ -124,7 +122,7 @@ async def list_presentations(
 async def revoke_presentation(
     model_id: UUID,
     link_id: str,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """OUT-V3-01: revoke a presentation link and notify active WS sessions."""
     res = await session.execute(
@@ -159,7 +157,7 @@ async def revoke_presentation(
 async def activate_presentation(
     model_id: UUID,
     link_id: str,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """OUT-V3-01: reactivate a presentation link without rotating its token."""
     res = await session.execute(
@@ -183,7 +181,7 @@ async def activate_presentation(
 @presentation_router.get("/p/{token}")
 async def resolve_presentation_token(
     token: str,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """OUT-V3-01: public viewer route — resolves a presentation token."""
     from sqlalchemy import update as sa_update
@@ -241,8 +239,8 @@ async def resolve_presentation_token(
 async def presentation_ws(
     websocket: WebSocket,
     token: str,
-    hub: Hub = _HUB_DEPENDENCY,
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    hub: Annotated[Hub, Depends(get_hub)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     """OUT-V3-01: WebSocket for live presentation updates."""
     res = await session.execute(
@@ -289,8 +287,8 @@ async def presentation_ws(
 async def export_presentation_canvas(
     model_id: UUID,
     canvas_id: str,
-    format: str = Query(default="pptx-bundle"),
-    session: AsyncSession = _SESSION_DEPENDENCY,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    format: Annotated[str, Query()] = "pptx-bundle",
 ) -> Any:
     """OUT-V3-02 — Export a presentation canvas as a structured PPTX bundle JSON.
 

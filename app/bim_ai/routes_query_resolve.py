@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-# ruff: noqa: B008
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -103,7 +102,7 @@ async def _load_query_resolve_doc(
 @query_resolve_router.get("/models/{model_id}/query/summary")
 async def query_model_summary_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -116,7 +115,7 @@ async def query_model_summary_route(
 async def query_elements_route(
     model_id: UUID,
     body: QueryElementsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -132,7 +131,7 @@ async def query_elements_route(
 async def query_levels_route(
     model_id: UUID,
     body: QueryLevelsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -145,7 +144,7 @@ async def query_levels_route(
 async def query_types_route(
     model_id: UUID,
     body: QueryTypesRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -159,7 +158,7 @@ async def query_types_route(
 async def query_views_route(
     model_id: UUID,
     body: QueryViewsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -173,7 +172,7 @@ async def query_views_route(
 async def query_hosts_route(
     model_id: UUID,
     body: QueryHostsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -186,7 +185,7 @@ async def query_hosts_route(
 async def query_nearest_wall_route(
     model_id: UUID,
     body: QueryNearestWallRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -199,7 +198,7 @@ async def query_nearest_wall_route(
 async def query_room_access_graph_route(
     model_id: UUID,
     body: QueryRoomAccessGraphRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -214,7 +213,7 @@ async def query_room_access_graph_route(
 async def query_enclosed_loops_route(
     model_id: UUID,
     body: QueryEnclosedLoopsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -227,7 +226,7 @@ async def query_enclosed_loops_route(
 async def resolve_active_or_default_level_route(
     model_id: UUID,
     body: ResolveActiveOrDefaultLevelRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -242,7 +241,7 @@ async def resolve_active_or_default_level_route(
 async def resolve_default_plan_view_route(
     model_id: UUID,
     body: ResolveDefaultPlanViewRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -257,7 +256,7 @@ async def resolve_default_plan_view_route(
 async def resolve_wall_by_line_route(
     model_id: UUID,
     body: ResolveWallByLineRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -270,7 +269,7 @@ async def resolve_wall_by_line_route(
 async def resolve_floor_supports_route(
     model_id: UUID,
     body: ResolveFloorSupportsRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -283,7 +282,7 @@ async def resolve_floor_supports_route(
 async def resolve_opening_source_match_route(
     model_id: UUID,
     body: ResolveOpeningSourceMatchRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -298,7 +297,7 @@ async def resolve_opening_source_match_route(
 async def resolve_wall_opening_host_route(
     model_id: UUID,
     body: ResolveWallOpeningHostRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -313,7 +312,7 @@ async def resolve_wall_opening_host_route(
 async def resolve_dormer_opening_host_route(
     model_id: UUID,
     body: ResolveDormerOpeningHostRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -328,7 +327,7 @@ async def resolve_dormer_opening_host_route(
 async def resolve_roof_position_from_source_point_route(
     model_id: UUID,
     body: ResolveRoofPositionFromSourcePointRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -343,7 +342,7 @@ async def resolve_roof_position_from_source_point_route(
 async def resolve_room_boundary_edges_route(
     model_id: UUID,
     body: ResolveRoomBoundaryEdgesRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -358,7 +357,7 @@ async def resolve_room_boundary_edges_route(
 async def resolve_host_face_route(
     model_id: UUID,
     body: ResolveHostFaceRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -371,7 +370,7 @@ async def resolve_host_face_route(
 async def resolve_family_type_route(
     model_id: UUID,
     body: ResolveFamilyTypeRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -384,7 +383,7 @@ async def resolve_family_type_route(
 async def resolve_room_boundary_route(
     model_id: UUID,
     body: ResolveRoomBoundaryRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -397,7 +396,7 @@ async def resolve_room_boundary_route(
 async def resolve_loop_for_boundary_route(
     model_id: UUID,
     body: ResolveLoopForBoundaryRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -412,7 +411,7 @@ async def resolve_loop_for_boundary_route(
 async def validate_roof_dormer_source_alignment_route(
     model_id: UUID,
     body: ValidateRoofDormerSourceAlignmentRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -427,7 +426,7 @@ async def validate_roof_dormer_source_alignment_route(
 async def qa_advisor_route(
     model_id: UUID,
     body: QaAdvisorRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -439,7 +438,7 @@ async def qa_advisor_route(
 @query_resolve_router.get("/models/{model_id}/qa/bim-requirement-validation")
 async def qa_bim_requirement_validation_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
@@ -452,7 +451,7 @@ async def qa_bim_requirement_validation_route(
 async def qa_area_reconciliation_route(
     model_id: UUID,
     body: QaAreaReconciliationRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):

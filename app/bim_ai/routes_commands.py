@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -494,8 +494,8 @@ def _preflight_or_409(
 @commands_router.get("/models/{model_id}/command-log")
 async def command_log_full(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     limit: int = 120,
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -529,8 +529,8 @@ async def command_log_full(
 async def apply_command(
     model_id: UUID,
     body: CommandEnvelope,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -669,7 +669,7 @@ async def apply_command(
 async def dry_run_command(
     model_id: UUID,
     body: CommandEnvelope,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -740,8 +740,8 @@ async def dry_run_command(
 async def apply_command_bundle(
     model_id: UUID,
     body: BundleEnvelope,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -903,7 +903,7 @@ async def apply_command_bundle(
 async def dry_run_command_bundle(
     model_id: UUID,
     body: BundleEnvelope,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1024,8 +1024,8 @@ async def dry_run_command_bundle(
 async def undo_model(
     model_id: UUID,
     body: UndoRedoEnvelope,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1138,8 +1138,8 @@ async def undo_model(
 async def redo_model(
     model_id: UUID,
     body: UndoRedoEnvelope,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:

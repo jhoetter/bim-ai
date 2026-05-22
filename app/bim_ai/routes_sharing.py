@@ -7,10 +7,9 @@ and ``/api/shared/{token}`` plus ``/api/shared/{token}/verify-password``.
 
 from __future__ import annotations
 
-# ruff: noqa: B008
 import secrets
 import time
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -50,7 +49,7 @@ class CreatePublicLinkBody(BaseModel):
 @sharing_router.get("/models/{model_id}/roles")
 async def list_roles(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """COL-V3-02: list all role assignments for a model."""
     res = await session.execute(
@@ -78,8 +77,8 @@ async def list_roles(
 async def grant_role(
     model_id: UUID,
     body: GrantRoleBody,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """COL-V3-02: grant a role to a subject. Admin only."""
     caller_role = await resolve_caller_role(session, model_id, user_id)
@@ -115,8 +114,8 @@ async def grant_role(
 async def revoke_role(
     model_id: UUID,
     assignment_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """COL-V3-02: revoke a role assignment. Admin only."""
     caller_role = await resolve_caller_role(session, model_id, user_id)
@@ -140,8 +139,8 @@ async def revoke_role(
 async def create_public_link(
     model_id: UUID,
     body: CreatePublicLinkBody,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """COL-V3-02: create a public-link token for viewer access. Admin only."""
     caller_role = await resolve_caller_role(session, model_id, user_id)
@@ -186,8 +185,8 @@ class VerifyPasswordBody(BaseModel):
 async def create_public_link_v3(
     model_id: UUID,
     body: CreatePublicLinkBodyV3,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """COL-V3-03: create a public link with optional expiry and password. Admin only."""
     from bim_ai.public_links import generate_link_token, hash_link_password
@@ -245,7 +244,7 @@ async def create_public_link_v3(
 @sharing_router.get("/models/{model_id}/public-links")
 async def list_public_links(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """COL-V3-03: list non-revoked public links for a model."""
     res = await session.execute(
@@ -277,8 +276,8 @@ async def list_public_links(
 async def revoke_public_link(
     model_id: UUID,
     link_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """COL-V3-03: revoke a public link and delete its RoleAssignment. Admin only."""
     caller_role = await resolve_caller_role(session, model_id, user_id)
@@ -315,7 +314,7 @@ async def revoke_public_link(
 @sharing_router.get("/shared/{token}")
 async def resolve_shared_token(
     token: str,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """COL-V3-03: resolve a public link token and return the model document."""
     now_ms = int(time.time() * 1000)
@@ -366,7 +365,7 @@ async def resolve_shared_token(
 async def verify_public_link_password(
     token: str,
     body: VerifyPasswordBody,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """COL-V3-03: verify the password for a public link."""
     res = await session.execute(select(PublicLinkRecord).where(PublicLinkRecord.token == token))

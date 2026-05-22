@@ -309,7 +309,7 @@ async def building_presets() -> dict[str, Any]:
 @api_router.post("/jobs", status_code=201)
 async def create_job(
     body: CreateJobRequest,
-    queue: JobQueue = Depends(_get_job_queue),
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
 ) -> dict[str, Any]:
     job = Job(
         model_id=body.model_id,
@@ -323,8 +323,8 @@ async def create_job(
 
 @api_router.get("/jobs")
 async def list_jobs(
-    model_id: str = Query(alias="modelId"),
-    queue: JobQueue = Depends(_get_job_queue),
+    model_id: Annotated[str, Query(alias="modelId")],
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
 ) -> list[dict[str, Any]]:
     return [job.model_dump(by_alias=True) for job in queue.list_for_model(model_id)]
 
@@ -332,7 +332,7 @@ async def list_jobs(
 @api_router.get("/jobs/{job_id}")
 async def get_job(
     job_id: str,
-    queue: JobQueue = Depends(_get_job_queue),
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
 ) -> dict[str, Any]:
     job = queue.get(job_id)
     if job is None:
@@ -343,7 +343,7 @@ async def get_job(
 @api_router.post("/jobs/{job_id}/cancel")
 async def cancel_job(
     job_id: str,
-    queue: JobQueue = Depends(_get_job_queue),
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
 ) -> dict[str, Any]:
     job = queue.get(job_id)
     if job is None:
@@ -357,7 +357,7 @@ async def cancel_job(
 @api_router.post("/jobs/{job_id}/retry")
 async def retry_job(
     job_id: str,
-    queue: JobQueue = Depends(_get_job_queue),
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
 ) -> dict[str, Any]:
     parent = queue.get(job_id)
     if parent is None:
@@ -391,7 +391,7 @@ async def external_ai_audit_log_csv() -> PlainTextResponse:
 
 
 @api_router.get("/bootstrap")
-async def bootstrap(session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
+async def bootstrap(session: Annotated[AsyncSession, Depends(get_session)]) -> dict[str, Any]:
     proj_res = await session.execute(select(ProjectRecord).order_by(ProjectRecord.slug))
     projects_out: list[dict[str, Any]] = []
     for p in proj_res.scalars().all():
@@ -431,7 +431,7 @@ class CreateEmptyModelBody(BaseModel):
 async def create_empty_model(
     project_id: UUID,
     body: CreateEmptyModelBody,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     proj = await session.get(ProjectRecord, project_id)
     if proj is None:
@@ -506,8 +506,8 @@ async def list_template_catalog() -> dict[str, Any]:
 @api_router.get("/models/{model_id}/snapshot")
 async def snapshot(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     expandLinks: bool = False,  # noqa: N803 — wire-format alias
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -541,11 +541,11 @@ async def snapshot(
 @api_router.get("/models/{model_id}/assets/search")
 async def search_model_assets(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     query: str = "",
     category: str | None = None,
-    disciplineTag: str | None = Query(default=None),  # noqa: N803 — wire-format alias
-    limit: int = Query(default=20, ge=1, le=100),
-    session: AsyncSession = Depends(get_session),
+    disciplineTag: Annotated[str | None, Query()] = None,  # noqa: N803 — wire-format alias
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -683,9 +683,9 @@ async def _document_at_revision(
 @api_router.get("/models/{model_id}/diff")
 async def model_diff(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     fromRev: Annotated[int | None, Query(ge=1)] = None,  # noqa: N803 — wire-format alias
     toRev: Annotated[int | None, Query(ge=1)] = None,  # noqa: N803
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -722,7 +722,7 @@ async def model_diff(
 @api_router.get("/models/{model_id}/summary")
 async def model_summary(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -738,7 +738,7 @@ async def model_summary(
 @api_router.get("/models/{model_id}/validate")
 async def validate_model_snapshot(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -782,10 +782,10 @@ def _parse_option_locks(raw: str | None) -> dict[str, str]:
 @api_router.get("/models/{model_id}/constructability-report")
 async def constructability_report(
     model_id: UUID,
-    profile: str = Query("authoring_default"),
-    phase_filter: str = Query("all", alias="phaseFilter"),
-    option_locks: str | None = Query(None, alias="optionLocks"),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    profile: Annotated[str, Query()] = "authoring_default",
+    phase_filter: Annotated[str, Query(alias="phaseFilter")] = "all",
+    option_locks: Annotated[str | None, Query(alias="optionLocks")] = None,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -807,7 +807,7 @@ async def constructability_report(
 @api_router.get("/models/{model_id}/fire-safety-lens")
 async def fire_safety_lens_status(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -819,7 +819,7 @@ async def fire_safety_lens_status(
 @api_router.get("/models/{model_id}/cost-quantity-lens")
 async def cost_quantity_lens_status(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -831,8 +831,8 @@ async def cost_quantity_lens_status(
 @api_router.get("/models/{model_id}/constructability-bcf")
 async def constructability_bcf_export(
     model_id: UUID,
-    profile: str = Query("authoring_default"),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    profile: Annotated[str, Query()] = "authoring_default",
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -847,9 +847,9 @@ async def constructability_bcf_export(
 @api_router.get("/models/{model_id}/coordination-lens")
 async def coordination_lens_snapshot(
     model_id: UUID,
-    from_revision: int | None = Query(None, alias="fromRevision"),
-    to_revision: int | None = Query(None, alias="toRevision"),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    from_revision: Annotated[int | None, Query(alias="fromRevision")] = None,
+    to_revision: Annotated[int | None, Query(alias="toRevision")] = None,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -883,7 +883,7 @@ async def coordination_lens_snapshot(
 @api_router.get("/models/{model_id}/construction-lens")
 async def construction_lens_report(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -899,7 +899,7 @@ async def construction_lens_report(
 @api_router.get("/models/{model_id}/mep")
 async def mep_lens_projection(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -911,7 +911,7 @@ async def mep_lens_projection(
 @api_router.get("/models/{model_id}/sustainability")
 async def sustainability_lens_projection(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -927,7 +927,7 @@ async def sustainability_lens_projection(
 @api_router.get("/models/{model_id}/evidence-package")
 async def evidence_package(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1204,7 +1204,7 @@ def build_evidence_package_payload(
 async def persist_renderer_diagnostics(
     model_id: UUID,
     body: RendererDiagnosticPacketPersistBody,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1242,7 +1242,7 @@ async def persist_renderer_diagnostics(
 @api_router.get("/models/{model_id}/room-derivation-candidates")
 async def room_derivation_candidates(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1254,7 +1254,7 @@ async def room_derivation_candidates(
 @api_router.get("/models/{model_id}/registry/type-material")
 async def type_material_registry(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1271,7 +1271,7 @@ async def type_material_registry(
 @api_router.get("/models/{model_id}/projection/plan")
 async def projection_plan_wire_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
     plan_view_id: Annotated[str | None, Query(alias="planViewId")] = None,
     fallback_level_id: Annotated[str | None, Query(alias="fallbackLevelId")] = None,
     global_plan_presentation: Annotated[str, Query(alias="globalPresentation")] = "default",
@@ -1304,7 +1304,7 @@ async def projection_plan_wire_route(
 async def projection_section_wire_route(
     model_id: UUID,
     section_cut_id: str,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1321,7 +1321,7 @@ async def projection_section_wire_route(
 @api_router.get("/models/{model_id}/architecture/query")
 async def architecture_lens_query(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1408,9 +1408,9 @@ async def semantic_authoring_route(
 async def reverse_bim_hybrid_slice_execute_route(
     model_id: UUID,
     body: ReverseBimHybridSliceExecuteRequest,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-    token: str | None = Query(default=None),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
+    token: Annotated[str | None, Query()] = None,
 ) -> dict[str, Any]:
     """Run one hybrid reverse-BIM authoring slice through the live bundle route."""
 
@@ -1690,9 +1690,9 @@ async def reverse_bim_hybrid_slice_execute_route(
 async def reverse_bim_hybrid_run_execute_route(
     model_id: UUID,
     body: ReverseBimHybridRunExecuteRequest,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-    token: str | None = Query(default=None),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
+    token: Annotated[str | None, Query()] = None,
 ) -> dict[str, Any]:
     """Execute an ordered list of reverse-BIM slices and stop on blockers."""
 
@@ -1896,7 +1896,7 @@ def _hybrid_changed_ids(result: dict[str, Any] | None) -> list[str]:
 @api_router.get("/models/{model_id}/structure/analysis-export")
 async def structure_analysis_export_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1917,7 +1917,7 @@ async def structure_analysis_export_route(
 async def schedule_derived_table(
     model_id: UUID,
     schedule_id: str,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
     fmt: Annotated[str, Query(alias="format")] = "json",
     columns: Annotated[str | None, Query(alias="columns")] = None,
     include_schedule_totals_csv: Annotated[bool, Query(alias="includeScheduleTotalsCsv")] = False,
@@ -1957,7 +1957,7 @@ async def schedule_derived_table(
 @api_router.get("/models/{model_id}/energy/handoff")
 async def energy_handoff_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
     scenario_id: Annotated[str | None, Query(alias="scenarioId")] = None,
 ) -> dict[str, Any]:
     from bim_ai.energy_lens import build_energy_handoff_payload
@@ -1978,7 +1978,7 @@ async def energy_handoff_route(
 async def schedule_view_rows(
     model_id: UUID,
     schedule_id: str,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
     filter_expr: Annotated[str | None, Query(alias="filterExpr")] = None,
     sort_key: Annotated[str | None, Query(alias="sortKey")] = None,
     sort_dir: Annotated[str | None, Query(alias="sortDir")] = None,
@@ -2065,7 +2065,7 @@ async def schedule_view_rows(
 async def agent_iterate(
     model_id: UUID,
     body: AgentIterateRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """Generate one patch toward ``goal`` given the current snapshot + advisories.
 
@@ -2101,9 +2101,9 @@ class CommandBundleRequest(BaseModel):
 async def apply_bundle_route(
     model_id: UUID,
     body: CommandBundleRequest,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
-    token: str | None = Query(default=None),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
+    token: Annotated[str | None, Query()] = None,
 ) -> dict[str, Any]:
     """CMD-V3-01: submit a CommandBundle; returns BundleResult.
 
@@ -2331,11 +2331,11 @@ async def apply_bundle_route(
 @api_router.get("/models/{model_id}/activity")
 async def list_activity(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     limit: int = 50,
     before: int | None = None,
     kind: str | None = None,
     author_id: Annotated[str | None, Query(alias="authorId")] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     from sqlalchemy import desc, select
 
@@ -2383,8 +2383,8 @@ async def list_activity(
 async def restore_activity_row(
     model_id: UUID,
     row_id: str,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     from bim_ai.activity import emit_activity_row
     from bim_ai.engine import compute_delta_wire
@@ -2545,9 +2545,9 @@ async def websocket_loop(
 async def collab_ws(
     websocket: WebSocket,
     model_id: UUID,
-    subspace: str = Query(default="kernel"),
-    token: str | None = Query(default=None),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    subspace: Annotated[str, Query()] = "kernel",
+    token: Annotated[str | None, Query()] = None,
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> None:
     """COL-V3-01/COL-V3-02: yjs Y-WebSocket endpoint for real-time collab on a model.
 
@@ -2593,7 +2593,7 @@ async def collab_ws(
 @api_router.get("/models/{model_id}/tokens/encode")
 async def tokens_encode(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """Encode the current kernel state into a TokenSequence."""
     from bim_ai.tkn import encode
@@ -2615,7 +2615,7 @@ class TknDecodeRequest(BaseModel):
 async def tokens_decode(
     model_id: UUID,
     body: TknDecodeRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """Decode a TokenSequence into commands relative to the current kernel state."""
     from bim_ai.tkn import decode
@@ -2645,7 +2645,7 @@ class TknDiffRequest(BaseModel):
 async def create_milestone(
     model_id: UUID,
     body: CreateMilestoneBody,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """VER-V3-02: create a named milestone pinned to a snapshot id."""
     import time as _time
@@ -2694,7 +2694,7 @@ async def create_milestone(
 @api_router.get("/models/{model_id}/milestones")
 async def list_milestones(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """VER-V3-02: list all milestones for a model, descending createdAt."""
     row = await load_model_row(session, model_id)
@@ -2729,7 +2729,7 @@ async def list_milestones(
 async def delete_milestone(
     model_id: UUID,
     milestone_id: str,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """VER-V3-02: delete a milestone by id."""
     res = await session.execute(
@@ -2750,7 +2750,7 @@ async def delete_milestone(
 async def tokens_diff(
     model_id: UUID,
     body: TknDiffRequest,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     """Return the structural diff between two TokenSequences."""
     from bim_ai.tkn import diff
@@ -2774,8 +2774,8 @@ async def tokens_diff(
 async def get_sheet_pixel_map(
     model_id: UUID,
     sheet_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """MRK-V3-03: return pixel→source-view/element mapping for a sheet.
 
@@ -2837,8 +2837,8 @@ async def get_sheet_pixel_map(
 async def import_neighborhood(
     model_id: UUID,
     body: dict,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:
     """OSM-V3-01: fetch OSM buildings within radius_m of lat/lon and upsert into the model."""
     lat = float(body.get("lat", 0.0))
@@ -2882,8 +2882,8 @@ async def import_neighborhood(
 @api_router.get("/v3/models/{model_id}/concept-seeds")
 async def list_concept_seeds(
     model_id: UUID,
-    status: str | None = Query(default=None),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    status: Annotated[str | None, Query()] = None,
 ) -> list[dict[str, Any]]:
     """CON-V3-02: return concept seeds for a model, optionally filtered by status."""
     row = await load_model_row(session, model_id)
@@ -2915,9 +2915,9 @@ _VALID_EXPORT_FORMATS = {"gltf", "gltf-pbr", "ifc-bundle", "metadata-only"}
 @api_router.get("/v3/models/{model_id}/export", tags=["exp-v3-01"])
 async def render_export(
     model_id: UUID,
-    format: str = Query(default="metadata-only"),
-    viewId: str | None = Query(default=None),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    format: Annotated[str, Query()] = "metadata-only",
+    viewId: Annotated[str | None, Query()] = None,
 ) -> dict[str, Any]:
     """EXP-V3-01 — Export model as glTF, IFC, or metadata bundle for external renderers."""
     from bim_ai.exp.render_export import build_export_bundle

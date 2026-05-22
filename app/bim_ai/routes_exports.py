@@ -82,7 +82,7 @@ def _stl_options_from_query(
 @exports_router.get("/models/{model_id}/exports/gltf-manifest")
 async def export_gltf_manifest(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -94,7 +94,7 @@ async def export_gltf_manifest(
 @exports_router.get("/models/{model_id}/exports/model.gltf")
 async def export_model_gltf_json(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> JSONResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -111,7 +111,7 @@ async def export_model_gltf_json(
 @exports_router.get("/models/{model_id}/exports/model.glb")
 async def export_model_glb_bundle(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -131,11 +131,11 @@ async def export_model_glb_bundle(
 @exports_router.get("/models/{model_id}/exports/stl-manifest")
 async def export_stl_manifest(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
     include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
     exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
     min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -153,11 +153,11 @@ async def export_stl_manifest(
 @exports_router.get("/models/{model_id}/exports/model.stl")
 async def export_model_stl_bundle(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
     include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
     exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
     min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -183,11 +183,11 @@ async def export_model_stl_bundle(
 @exports_router.get("/models/{model_id}/exports/3mf-manifest")
 async def export_3mf_manifest(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
     include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
     exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
     min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -205,11 +205,11 @@ async def export_3mf_manifest(
 @exports_router.get("/models/{model_id}/exports/model.3mf")
 async def export_model_3mf_bundle(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
     include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
     exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
     min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -235,8 +235,8 @@ async def export_model_3mf_bundle(
 @exports_router.get("/models/{model_id}/exports/sheet-preview.svg")
 async def sheet_preview_svg_export(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> PlainTextResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -256,8 +256,8 @@ async def sheet_preview_svg_export(
 @exports_router.get("/models/{model_id}/exports/sheet-preview.pdf")
 async def sheet_preview_pdf_export(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -286,8 +286,8 @@ async def sheet_preview_pdf_export(
 @exports_router.get("/models/{model_id}/exports/sheet-print-raster.png")
 async def sheet_print_raster_png_export(
     model_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
     sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
-    session: AsyncSession = Depends(get_session),
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -320,7 +320,7 @@ async def sheet_print_raster_png_export(
 @exports_router.get("/models/{model_id}/exports/ifc-manifest")
 async def export_ifc_manifest_route(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -332,7 +332,7 @@ async def export_ifc_manifest_route(
 @exports_router.get("/models/{model_id}/exports/sustainability-lca.json")
 async def export_sustainability_lca_json(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> JSONResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -348,7 +348,7 @@ async def export_sustainability_lca_json(
 @exports_router.get("/models/{model_id}/exports/ifc-empty-skeleton.ifc")
 async def export_ifc_skeleton(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> PlainTextResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -365,7 +365,7 @@ async def export_ifc_skeleton(
 @exports_router.get("/models/{model_id}/exports/model.ifc")
 async def export_model_ifc_bundle(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> PlainTextResponse:
     """Canonical IFC artifact; kernel geometries emit IfcWall/IfcSlab when ifcopenshell is installed."""
 
@@ -384,7 +384,7 @@ async def export_model_ifc_bundle(
 @exports_router.get("/models/{model_id}/exports/bcf-topics-json")
 async def export_bcf_topics(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -410,8 +410,8 @@ class BcfTopicsImportEnvelope(BaseModel):
 async def import_bcf_topics_json(
     model_id: UUID,
     body: BcfTopicsImportEnvelope,
-    session: AsyncSession = Depends(get_session),
-    hub: Hub = Depends(get_hub),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -530,7 +530,7 @@ async def import_bcf_topics_json(
 @exports_router.get("/models/{model_id}/export/json")
 async def export_model_json(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -569,7 +569,7 @@ async def export_model_stl_redirect(model_id: UUID) -> RedirectResponse:
 @exports_router.get("/models/{model_id}/export/bcf")
 async def export_model_bcf(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -586,8 +586,8 @@ async def export_model_bcf(
 @exports_router.get("/v3/models/{model_id}/export/pdf")
 async def export_branded_pdf(
     model_id: UUID,
-    brand_template_id: str | None = Query(default=None, alias="brandTemplateId"),
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    brand_template_id: Annotated[str | None, Query(alias="brandTemplateId")] = None,
 ) -> dict[str, Any]:
     """OUT-V3-03: return a BrandedExportBundle JSON for PDF export.
 
@@ -636,7 +636,7 @@ async def export_branded_pdf(
 @exports_router.get("/models/{model_id}/export/ids")
 async def export_model_ids_report(
     model_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:

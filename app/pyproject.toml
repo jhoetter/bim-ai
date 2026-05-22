@@ -58,11 +58,12 @@ select = ["E", "F", "I", "B", "UP", "W"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
+# BRT-50 deferred to BRT-24: E402/I001/F401 still needed because
+# routes_api.py has imports inside function bodies (e.g. site/osm_import).
+# Cleared once BRT-24 splits the file. B008 stays until that split — the
+# Annotated[T, Depends(...)] migration ran in BRT-51 but the carve-out lives
+# alongside the other routes_api-only suppressions.
 "bim_ai/routes_api.py" = ["B008", "E402", "I001", "F401"]
-"bim_ai/routes_exports.py" = ["B008"]
-"bim_ai/routes_commands.py" = ["B008"]
-"bim_ai/routes_activity.py" = ["B008"]
-"bim_ai/routes_sketch.py" = ["B008"]
 "tests/api/test_jobs_routes.py" = ["B008"]
 "bim_ai/vg/compare.py" = ["B905"]
 
