@@ -170,6 +170,15 @@ lint-js:
 lint-py:
 	cd $(APP_DIR) && $(UV) run ruff check bim_ai tests scripts
 
+# BRT-40 / BRT-41: Python static type checking with a baseline.
+# `mypy bim_ai | mypy-baseline filter` fails when NEW errors appear that
+# aren't in app/mypy-baseline.txt. Existing errors in the baseline are
+# tolerated; the baseline shrinks under BRT-43 as modules get cleaned up.
+# To refresh the baseline after legitimate fixes:
+#   cd app && uv run mypy bim_ai 2>&1 | uv run mypy-baseline sync
+typecheck-py:
+	cd $(APP_DIR) && $(UV) run mypy bim_ai 2>&1 | $(UV) run mypy-baseline filter
+
 architecture:
 	node scripts/check-architecture.mjs
 
@@ -191,6 +200,12 @@ security-hygiene:
 test-env-policy:
 	node scripts/check-frontend-test-environments.mjs
 
+# BRT-42: forbid new `-> dict[str, Any]` and `body: dict[str, Any]`. Each
+# PR may only reduce per-file counts; new files contribute zero allowance.
+# Refresh after a legitimate fix:  node scripts/check-typed-contracts.mjs --update
+typed-contracts:
+	node scripts/check-typed-contracts.mjs
+
 code-quality-report:
 	node scripts/code-quality-report.mjs
 
@@ -200,7 +215,7 @@ typecheck:
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint-py quality-waivers maintainability-budgets js-lint-budget security-hygiene test-env-policy architecture typecheck test build lockfile-check
+verify: format-check python-format-check lint-py typecheck-py typed-contracts quality-waivers maintainability-budgets js-lint-budget security-hygiene test-env-policy architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 verify-refinement-reliability:
