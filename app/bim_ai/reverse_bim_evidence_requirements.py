@@ -86,7 +86,9 @@ def _page_overlay_classifications(page: dict[str, Any]) -> list[str]:
     return labels
 
 
-def _ui_views(source_facts: list[dict[str, Any]], phase_authoring_spec: dict[str, Any]) -> list[dict[str, Any]]:
+def _ui_views(
+    source_facts: list[dict[str, Any]], phase_authoring_spec: dict[str, Any]
+) -> list[dict[str, Any]]:
     levels = _level_ids(source_facts)
     rows = [
         {
@@ -167,10 +169,16 @@ def _ui_views(source_facts: list[dict[str, Any]], phase_authoring_spec: dict[str
 def _level_ids(source_facts: list[dict[str, Any]]) -> list[str]:
     out = []
     for fact in source_facts:
-        if not isinstance(fact, dict) or str(fact.get("kind") or "") not in {"level", "storey", "basement"}:
+        if not isinstance(fact, dict) or str(fact.get("kind") or "") not in {
+            "level",
+            "storey",
+            "basement",
+        }:
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-        level_id = str(value.get("levelId") or value.get("name") or fact.get("factId") or "").strip()
+        level_id = str(
+            value.get("levelId") or value.get("name") or fact.get("factId") or ""
+        ).strip()
         if level_id and level_id not in out:
             out.append(level_id)
     return out

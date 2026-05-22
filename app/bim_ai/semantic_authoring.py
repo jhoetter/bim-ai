@@ -21,7 +21,6 @@ from pydantic import (
 )
 
 from bim_ai.cmd.types import AssumptionEntry, CommandBundle
-from bim_ai.element_primitives import Vec2Mm
 from bim_ai.commands import (
     Command,
     CreateBeamCmd,
@@ -62,6 +61,7 @@ from bim_ai.commands import (
     UpsertSheetViewportsCmd,
     UpsertSourceViewEvidenceCmd,
 )
+from bim_ai.element_primitives import Vec2Mm
 
 SemanticOperation = Literal[
     "level",
@@ -970,9 +970,9 @@ class ReverseBimExteriorViewPayload(BaseModel):
     )
     source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
     source_page: int | None = Field(default=None, alias="sourcePage")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
+    comparison_type: Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None = (
+        Field(default=None, alias="comparisonType")
+    )
     evidence_id: str | None = Field(default=None, alias="evidenceId")
 
 
@@ -988,9 +988,9 @@ class ReverseBimDetailViewPayload(BaseModel):
     scale: float | None = None
     source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
     source_page: int | None = Field(default=None, alias="sourcePage")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
+    comparison_type: Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None = (
+        Field(default=None, alias="comparisonType")
+    )
     evidence_id: str | None = Field(default=None, alias="evidenceId")
 
 
@@ -1006,9 +1006,9 @@ class ReverseBimSectionViewPayload(BaseModel):
     crop_depth_mm: float = Field(alias="cropDepthMm", default=8500)
     source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
     source_page: int | None = Field(default=None, alias="sourcePage")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
+    comparison_type: Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None = (
+        Field(default=None, alias="comparisonType")
+    )
     evidence_id: str | None = Field(default=None, alias="evidenceId")
 
 
@@ -1031,9 +1031,9 @@ class ReverseBimSourceViewEvidencePayload(BaseModel):
     source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
     source_page: int | None = Field(default=None, alias="sourcePage")
     source_region: list[Vec2Mm] | None = Field(default=None, alias="sourceRegion")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
+    comparison_type: Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None = (
+        Field(default=None, alias="comparisonType")
+    )
     screenshot_path: str | None = Field(default=None, alias="screenshotPath")
     overlay_path: str | None = Field(default=None, alias="overlayPath")
     finding_ids: list[str] | None = Field(default=None, alias="findingIds")
@@ -1189,17 +1189,11 @@ def build_semantic_authoring_bundle(
     if operation == "mep_opening_request":
         return mep_opening_request_bundle(MepOpeningRequestPayload.model_validate(data))
     if operation == "reverse_bim_exterior_view":
-        return reverse_bim_exterior_view_bundle(
-            ReverseBimExteriorViewPayload.model_validate(data)
-        )
+        return reverse_bim_exterior_view_bundle(ReverseBimExteriorViewPayload.model_validate(data))
     if operation == "reverse_bim_detail_view":
-        return reverse_bim_detail_view_bundle(
-            ReverseBimDetailViewPayload.model_validate(data)
-        )
+        return reverse_bim_detail_view_bundle(ReverseBimDetailViewPayload.model_validate(data))
     if operation == "reverse_bim_section_view":
-        return reverse_bim_section_view_bundle(
-            ReverseBimSectionViewPayload.model_validate(data)
-        )
+        return reverse_bim_section_view_bundle(ReverseBimSectionViewPayload.model_validate(data))
     if operation == "reverse_bim_source_view_evidence":
         return reverse_bim_source_view_evidence_bundle(
             ReverseBimSourceViewEvidencePayload.model_validate(data)
@@ -1307,7 +1301,9 @@ def floor_supports_bundle(payload: FloorSupportsPayload) -> SemanticBundle:
         ("structuralReviewed", payload.structural_reviewed),
     ):
         if value is not None:
-            commands.append(UpdateElementPropertyCmd(elementId=payload.floor_id, key=key, value=value))
+            commands.append(
+                UpdateElementPropertyCmd(elementId=payload.floor_id, key=key, value=value)
+            )
     return _bundle("floor_supports", commands)
 
 
@@ -1846,9 +1842,7 @@ def _source_view_evidence_command(
     view_id: str,
     category: Literal["exterior", "detail", "section"],
     payload: (
-        ReverseBimExteriorViewPayload
-        | ReverseBimDetailViewPayload
-        | ReverseBimSectionViewPayload
+        ReverseBimExteriorViewPayload | ReverseBimDetailViewPayload | ReverseBimSectionViewPayload
     ),
 ) -> UpsertSourceViewEvidenceCmd:
     return UpsertSourceViewEvidenceCmd(

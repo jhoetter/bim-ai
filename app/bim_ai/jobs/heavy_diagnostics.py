@@ -30,7 +30,9 @@ HEAVY_DIAGNOSTIC_CACHE_SCOPE = "heavy-diagnostic-evidence-v1"
 
 
 def canonical_json(value: Any) -> str:
-    return json.dumps(_canonicalize(value), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return json.dumps(
+        _canonicalize(value), sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    )
 
 
 def stable_digest(value: Any) -> str:
@@ -178,7 +180,10 @@ def _canonicalize(value: Any) -> Any:
     if isinstance(value, BaseModel):
         return _canonicalize(value.model_dump(by_alias=True, exclude_none=True))
     if isinstance(value, Mapping):
-        return {str(k): _canonicalize(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
+        return {
+            str(k): _canonicalize(v)
+            for k, v in sorted(value.items(), key=lambda item: str(item[0]))
+        }
     if isinstance(value, str | int | float | bool) or value is None:
         return value
     if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):

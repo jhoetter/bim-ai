@@ -788,7 +788,9 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         props["existingConditionTolerance"] = value
                     els[cmd.element_id] = el.model_copy(update={"props": props or None})
                 else:
-                    raise ValueError("stair updates: key=materialSlots | existingConditionTolerance")
+                    raise ValueError(
+                        "stair updates: key=materialSlots | existingConditionTolerance"
+                    )
             elif isinstance(el, RailingElem):
                 if cmd.key == "materialSlots":
                     els[cmd.element_id] = el.model_copy(

@@ -4,7 +4,7 @@
 
 Source last updated: 2026-05-20
 Source digest: `1ecf0442a87f1c49`
-Source: `spec/bim-integrity-rendering-sketch-methodology-tracker.md`
+Source: `spec/archive/bim-integrity-rendering-sketch-methodology-tracker.md`
 
 ## Overall
 

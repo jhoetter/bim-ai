@@ -112,7 +112,9 @@ def _check_envelope_zones(elements: Mapping[str, Any]) -> list[Finding]:
                     "Declare exterior walls plus a roof or floor boundary for the level zone.",
                 )
             )
-        findings.extend(_check_derived_envelope_zone_geometry(zone_id, zone, elements, required_ids))
+        findings.extend(
+            _check_derived_envelope_zone_geometry(zone_id, zone, elements, required_ids)
+        )
 
     for element_id, opening in elements.items():
         if _kind(opening) not in _OPENING_KINDS or not _is_envelope_role(opening, "opening"):
@@ -682,7 +684,11 @@ def _check_derived_roof_wall_attachment_geometry(
     proof_required = _derived_geometry_required(roof, "roofWallAttachment")
     if not any(segment for _, segment in wall_segments) and not proof_required:
         return []
-    if len(polygon) < 3 or not wall_segments or any(segment is None for _, segment in wall_segments):
+    if (
+        len(polygon) < 3
+        or not wall_segments
+        or any(segment is None for _, segment in wall_segments)
+    ):
         return [
             _finding(
                 "bir_f06_derived_roof_attachment_geometry_incomplete",
@@ -702,7 +708,9 @@ def _check_derived_roof_wall_attachment_geometry(
         start, end = segment
         midpoint = ((start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
         proof_points = (start, midpoint, end)
-        endpoints_inside = all(_point_in_polygon_or_on_edge(point, polygon) for point in proof_points)
+        endpoints_inside = all(
+            _point_in_polygon_or_on_edge(point, polygon) for point in proof_points
+        )
         near_eave = all(
             _distance_point_to_polygon_edges(point, polygon) <= allowed_edge_offset
             for point in proof_points
@@ -815,9 +823,18 @@ def _check_derived_loggia_proof(
         label
         for label, value in [
             ("sideReturnsClosed", _proof_bool(proof, "sideReturnsClosed", "side_returns_closed")),
-            ("floorBoundaryClosed", _proof_bool(proof, "floorBoundaryClosed", "floor_boundary_closed")),
-            ("ceilingReturnClosed", _proof_bool(proof, "ceilingReturnClosed", "ceiling_return_closed")),
-            ("facadeAdjacencyClosed", _proof_bool(proof, "facadeAdjacencyClosed", "facade_adjacency_closed")),
+            (
+                "floorBoundaryClosed",
+                _proof_bool(proof, "floorBoundaryClosed", "floor_boundary_closed"),
+            ),
+            (
+                "ceilingReturnClosed",
+                _proof_bool(proof, "ceilingReturnClosed", "ceiling_return_closed"),
+            ),
+            (
+                "facadeAdjacencyClosed",
+                _proof_bool(proof, "facadeAdjacencyClosed", "facade_adjacency_closed"),
+            ),
         ]
         if value is False
     ]
@@ -872,8 +889,14 @@ def _check_derived_roof_attachment_proof(
                 "wallIntersectionsClosed",
                 _proof_bool(proof, "wallIntersectionsClosed", "wall_intersections_closed"),
             ),
-            ("eaveOffsetsVerified", _proof_bool(proof, "eaveOffsetsVerified", "eave_offsets_verified")),
-            ("ridgeAttachmentClosed", _proof_bool(proof, "ridgeAttachmentClosed", "ridge_attachment_closed")),
+            (
+                "eaveOffsetsVerified",
+                _proof_bool(proof, "eaveOffsetsVerified", "eave_offsets_verified"),
+            ),
+            (
+                "ridgeAttachmentClosed",
+                _proof_bool(proof, "ridgeAttachmentClosed", "ridge_attachment_closed"),
+            ),
         ]
         if value is False
     ]
@@ -901,7 +924,10 @@ def _check_performance_metadata(elements: Mapping[str, Any], *, profile: str) ->
         kind = _kind(element)
         if kind not in {"wall", "roof", "floor", "slab", "door", "window", "wall_opening"}:
             continue
-        if not any(_is_envelope_role(element, role) for role in ("exterior_wall", "roof", "floor", "opening")):
+        if not any(
+            _is_envelope_role(element, role)
+            for role in ("exterior_wall", "roof", "floor", "opening")
+        ):
             continue
         requirements = [
             name
@@ -1022,9 +1048,7 @@ def _is_occupied_roof_void(element: Any) -> bool:
     props = _props(element)
     if _pick(props, "occupiedRoofVoid", "occupiedTerrace", "isOccupiedRoofVoid"):
         return True
-    space_type = str(
-        _pick(props, "spaceType", "exteriorSpaceType", "featureKind") or ""
-    ).lower()
+    space_type = str(_pick(props, "spaceType", "exteriorSpaceType", "featureKind") or "").lower()
     return space_type in {"terrace", "roof_terrace", "roof_court", "loggia", "occupied_void"}
 
 
@@ -1293,7 +1317,9 @@ def _has_performance_metadata(element: Any, name: str) -> bool:
     props = _props(element)
     if name == "layers":
         return bool(
-            _value(element, "typeLayerIds", "type_layer_ids", "materialLayerIds", "material_layer_ids")
+            _value(
+                element, "typeLayerIds", "type_layer_ids", "materialLayerIds", "material_layer_ids"
+            )
             or _value(element, "constructionAssemblyId", "construction_assembly_id")
             or _pick(
                 props,

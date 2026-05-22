@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 from typing import Any
+
+from bim_ai._io.digest import digest as _digest
 
 
 def build_reverse_bim_view_capture_plan(
@@ -82,7 +82,9 @@ def build_reverse_bim_view_capture_plan(
         "summary": {
             "captureCount": len(captures),
             "uiCaptureCount": sum(1 for row in captures if row.get("evidenceKind") == "ui"),
-            "overlayCaptureCount": sum(1 for row in captures if row.get("evidenceKind") == "overlay"),
+            "overlayCaptureCount": sum(
+                1 for row in captures if row.get("evidenceKind") == "overlay"
+            ),
             "blockerCount": len(blockers),
         },
         "modelId": model_id,
@@ -181,7 +183,12 @@ def _playwright_steps(view: dict[str, Any], *, evidence_kind: str) -> list[dict[
     else:
         steps.append({"action": "activate_3d_view", "viewId": view.get("viewId")})
     if evidence_kind == "overlay":
-        steps.append({"action": "enable_source_underlay_or_overlay", "sourcePageId": view.get("sourcePageId")})
+        steps.append(
+            {
+                "action": "enable_source_underlay_or_overlay",
+                "sourcePageId": view.get("sourcePageId"),
+            }
+        )
     steps.append({"action": "screenshot", "selector": "[data-evidence-capture-root], body"})
     return steps
 
@@ -217,8 +224,3 @@ def _evidence_row_template(
 def _slug(value: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", value).strip("-").lower()
     return slug or "capture"
-
-
-def _digest(payload: dict[str, Any]) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

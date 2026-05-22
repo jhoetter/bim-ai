@@ -36,9 +36,9 @@ class UpsertSourceViewEvidenceCmd(BaseModel):
     source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
     source_page: int | None = Field(default=None, alias="sourcePage")
     source_region: list[Vec2Mm] | None = Field(default=None, alias="sourceRegion")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
+    comparison_type: Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None = (
+        Field(default=None, alias="comparisonType")
+    )
     screenshot_path: str | None = Field(default=None, alias="screenshotPath")
     overlay_path: str | None = Field(default=None, alias="overlayPath")
     finding_ids: list[str] | None = Field(default=None, alias="findingIds")
@@ -267,4 +267,3 @@ class ConsumeConceptSeedCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["consume_concept_seed"] = "consume_concept_seed"
     id: str
-

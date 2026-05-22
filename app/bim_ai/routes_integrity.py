@@ -131,7 +131,7 @@ async def integrity_remediation_route(
                             "assumptions": [],
                         },
                     },
-                }
+                },
             }
         )
     return {

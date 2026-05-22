@@ -370,4 +370,3 @@ class ColorFillLegendElem(BaseModel):
     position_mm: Vec2Mm = Field(alias="positionMm")
     scheme_parameter: str = Field(default="Name", alias="schemeParameter")
     title: str = Field(default="Color Fill Legend")
-

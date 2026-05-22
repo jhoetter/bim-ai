@@ -604,7 +604,9 @@ def _door_rooms_for_room(room_id: str, door_rooms: dict[str, list[str]]) -> list
 
 def _room_separation_open_adjacency(elements: dict[str, Element]) -> dict[str, set[str]]:
     rooms = [element for element in elements.values() if isinstance(element, RoomElem)]
-    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = defaultdict(list)
+    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = (
+        defaultdict(list)
+    )
     for element in elements.values():
         if not isinstance(element, RoomSeparationElem):
             continue
@@ -648,7 +650,8 @@ def _rooms_share_open_separator(
                 (overlap[0][1] + overlap[1][1]) / 2.0,
             )
             if any(
-                _point_segment_distance_mm(midpoint, sep_start, sep_end) <= _ROOM_ACCESS_TOLERANCE_MM
+                _point_segment_distance_mm(midpoint, sep_start, sep_end)
+                <= _ROOM_ACCESS_TOLERANCE_MM
                 for sep_start, sep_end in separations
             ):
                 return True

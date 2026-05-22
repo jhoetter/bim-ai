@@ -42,9 +42,7 @@ AI_VISUAL_CRITICAL_CONSENSUS_FACT_KINDS = {
     "parcel_boundary",
 }
 TOP_LEVEL_VALUE_KEYS = {
-    field
-    for fields in AI_VISUAL_FACT_VALUE_REQUIREMENTS.values()
-    for field in fields
+    field for fields in AI_VISUAL_FACT_VALUE_REQUIREMENTS.values() for field in fields
 } | {
     "areaM2",
     "accessRefs",
@@ -134,7 +132,12 @@ def normalize_ai_visual_trace_reader_response(response: dict[str, Any]) -> dict[
         return {
             "ok": False,
             "format": "sourceAiVisualTraceReaderResponseNormalization_v1",
-            "summary": {"factCount": 0, "normalizedFactCount": 0, "errorCount": 1, "warningCount": 0},
+            "summary": {
+                "factCount": 0,
+                "normalizedFactCount": 0,
+                "errorCount": 1,
+                "warningCount": 0,
+            },
             "findings": [
                 {
                     "code": "ai_visual_reader_response_not_object",
@@ -204,7 +207,9 @@ def normalize_ai_visual_trace_reader_responses(
         "format": "sourceAiVisualTraceReaderResponsesNormalization_v1",
         "summary": {
             "responseCount": len(rows),
-            "factCount": sum(int((row.get("summary") or {}).get("factCount") or 0) for row in normalized),
+            "factCount": sum(
+                int((row.get("summary") or {}).get("factCount") or 0) for row in normalized
+            ),
             "normalizedFactCount": sum(
                 int((row.get("summary") or {}).get("normalizedFactCount") or 0)
                 for row in normalized
@@ -326,11 +331,7 @@ def build_ai_visual_trace_reader_pass_manifest(
     before reverse-BIM modeling may start.
     """
 
-    request_rows = [
-        row
-        for row in agent_requests.get("requests") or []
-        if isinstance(row, dict)
-    ]
+    request_rows = [row for row in agent_requests.get("requests") or [] if isinstance(row, dict)]
     work_packages = {str(row.get("id") or ""): row for row in _work_packages(work_order)}
     response_rows = _reader_response_rows(responses)
     response_keys = _response_keys(response_rows)
@@ -590,7 +591,11 @@ def run_ai_visual_trace_agent_loop(
                 reader_responses_used.append(response)
 
         normalization = normalize_ai_visual_trace_reader_response(response)
-        normalized_response = normalization.get("response") if isinstance(normalization.get("response"), dict) else response
+        normalized_response = (
+            normalization.get("response")
+            if isinstance(normalization.get("response"), dict)
+            else response
+        )
         facts = normalized_response.get("facts") if isinstance(normalized_response, dict) else []
         if not isinstance(facts, list):
             facts = []
@@ -612,9 +617,7 @@ def run_ai_visual_trace_agent_loop(
         package_facts = validation.get("facts") if isinstance(validation.get("facts"), list) else []
         all_facts.extend(package_facts)
         status = (
-            "accepted"
-            if validation.get("ok") and normalization.get("ok")
-            else "needs_revision"
+            "accepted" if validation.get("ok") and normalization.get("ok") else "needs_revision"
         )
         result = {
             "workPackageId": package_id,
@@ -624,8 +627,12 @@ def run_ai_visual_trace_agent_loop(
             "factCount": len(package_facts),
             "summary": {
                 **(validation.get("summary") or {}),
-                "normalizationErrorCount": int((normalization.get("summary") or {}).get("errorCount") or 0),
-                "normalizationWarningCount": int((normalization.get("summary") or {}).get("warningCount") or 0),
+                "normalizationErrorCount": int(
+                    (normalization.get("summary") or {}).get("errorCount") or 0
+                ),
+                "normalizationWarningCount": int(
+                    (normalization.get("summary") or {}).get("warningCount") or 0
+                ),
                 "errorCount": combined_severity_counts.get("error", 0),
                 "warningCount": combined_severity_counts.get("warning", 0),
             },
@@ -774,7 +781,9 @@ def prepare_ai_visual_trace_run_from_folder(
         "initialAgentLoop": initial_loop,
     }
     for key, path in artifacts.items():
-        path.write_text(json.dumps(payloads[key], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        path.write_text(
+            json.dumps(payloads[key], indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
 
     return {
         "ok": True,
@@ -787,7 +796,8 @@ def prepare_ai_visual_trace_run_from_folder(
             "documentCount": classifications.get("documentCount", 0),
             "renderedPdfCount": len(rendered_pages),
             "renderedPageCount": sum(len(row.get("pages") or []) for row in rendered_pages),
-            "workPackageCount": work_order.get("documentCount") and len(work_order.get("workPackages") or []),
+            "workPackageCount": work_order.get("documentCount")
+            and len(work_order.get("workPackages") or []),
             "readerRequestCount": len(requests.get("requests") or []),
             "initialLoopStatus": initial_loop.get("status"),
         },
@@ -802,7 +812,10 @@ def _normalize_ai_visual_trace_fact(
     package_id: str,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     findings: list[dict[str, Any]] = []
-    fact_id = str(fact.get("factId") or f"ai-srcfact-{hashlib.sha1(json.dumps(fact, sort_keys=True, default=str).encode()).hexdigest()[:10]}")
+    fact_id = str(
+        fact.get("factId")
+        or f"ai-srcfact-{hashlib.sha1(json.dumps(fact, sort_keys=True, default=str).encode()).hexdigest()[:10]}"
+    )
     kind = str(fact.get("kind") or "").strip()
     raw_value = fact.get("value")
     value: dict[str, Any]
@@ -869,9 +882,7 @@ def _normalize_ai_visual_trace_fact(
         )
 
     normalized = {
-        key: fact[key]
-        for key in BASE_FACT_KEYS
-        if key in fact and key not in {"kind", "value"}
+        key: fact[key] for key in BASE_FACT_KEYS if key in fact and key not in {"kind", "value"}
     }
     normalized.setdefault("factId", fact_id)
     normalized["kind"] = kind
@@ -921,10 +932,14 @@ def _demote_observation_only_current_condition_fact(
         return kind, value, False
     required = AI_VISUAL_FACT_VALUE_REQUIREMENTS.get(kind, [])
     present_required = [field for field in required if _path_present(value, field)]
-    has_text = any(str(value.get(key) or "").strip() for key in ("observation", "description", "note"))
+    has_text = any(
+        str(value.get(key) or "").strip() for key in ("observation", "description", "note")
+    )
     if present_required or not has_text:
         return kind, value, False
-    observation = str(value.get("observation") or value.get("description") or value.get("note") or "").strip()
+    observation = str(
+        value.get("observation") or value.get("description") or value.get("note") or ""
+    ).strip()
     return (
         "photo_observation",
         {
@@ -976,7 +991,11 @@ def _apply_value_aliases(
         if isinstance(position, dict) and "alongT" in position and "alongT" not in out:
             out["alongT"] = position["alongT"]
             notes.append({"from": "position.alongT", "to": "alongT"})
-        elif isinstance(position, list | tuple) and len(position) >= 2 and "sourcePositionMm" not in out:
+        elif (
+            isinstance(position, list | tuple)
+            and len(position) >= 2
+            and "sourcePositionMm" not in out
+        ):
             out["sourcePositionMm"] = {"xMm": position[0], "yMm": position[1]}
             notes.append({"from": "position[0:2]", "to": "sourcePositionMm"})
     if kind == "wall_line":
@@ -1015,7 +1034,9 @@ def _apply_value_aliases(
             notes.append({"from": "event", "to": "year"})
     if kind == "conflict":
         if "topic" not in out:
-            out["topic"] = out.get("issue") or out.get("description") or "unspecified source conflict"
+            out["topic"] = (
+                out.get("issue") or out.get("description") or "unspecified source conflict"
+            )
             notes.append({"from": "issue/description", "to": "topic"})
         if "candidates" not in out:
             candidates = out.get("affectedFacts") or out.get("options") or out.get("description")
@@ -1026,7 +1047,10 @@ def _apply_value_aliases(
             notes.append({"from": "disposition/default", "to": "recommendedDisposition"})
     if kind == "terrain":
         out.setdefault("method", "source_document_read")
-        out.setdefault("confidenceNote", out.get("note") or out.get("description") or "No numeric terrain evidence supplied.")
+        out.setdefault(
+            "confidenceNote",
+            out.get("note") or out.get("description") or "No numeric terrain evidence supplied.",
+        )
     return out, notes
 
 
@@ -1075,7 +1099,10 @@ def _reader_response_with_defaults(row: dict[str, Any], *, package_id: str) -> d
     return {
         **row,
         "format": row.get("format") or "sourceAiVisualTraceReaderResponse_v1",
-        "workPackageId": row.get("workPackageId") or row.get("workPackage") or row.get("id") or package_id,
+        "workPackageId": row.get("workPackageId")
+        or row.get("workPackage")
+        or row.get("id")
+        or package_id,
     }
 
 
@@ -1192,15 +1219,12 @@ def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[st
             "factCount": len(facts),
         }
         part_has_metadata = any(
-            part.get(key) is not None for key in ("requestId", "requestPartIndex", "requestPartCount")
+            part.get(key) is not None
+            for key in ("requestId", "requestPartIndex", "requestPartCount")
         )
         for index, target_id in enumerate(targets):
             existing = out.get(target_id)
-            target_part = (
-                part
-                if index == 0
-                else {**part, "fanoutFromWorkPackageId": primary_id}
-            )
+            target_part = part if index == 0 else {**part, "fanoutFromWorkPackageId": primary_id}
             if existing is None:
                 merged = {
                     **row,
@@ -1222,9 +1246,10 @@ def _merge_reader_response_rows(rows: list[dict[str, Any]]) -> dict[str, dict[st
                 ]
             if target_id != primary_id and primary_id:
                 fanouts = set(existing.get("fanoutFromWorkPackageIds") or [])
-                if existing.get("fanoutFromWorkPackageId") and existing.get(
-                    "fanoutFromWorkPackageId"
-                ) != primary_id:
+                if (
+                    existing.get("fanoutFromWorkPackageId")
+                    and existing.get("fanoutFromWorkPackageId") != primary_id
+                ):
                     fanouts.add(str(existing["fanoutFromWorkPackageId"]))
                 fanouts.add(primary_id)
                 existing["fanoutFromWorkPackageIds"] = sorted(fanouts)
@@ -1307,7 +1332,9 @@ def _reader_prompt(work_package: dict[str, Any], required_kinds: list[str]) -> s
         "Do not invent hidden facts. Mark uncertainty and conflicts explicitly.",
         f"Blocking required fact kinds: {', '.join(required_kinds) if required_kinds else '(none)'}",
         "Required value fields by kind:",
-        json.dumps(work_package.get("requiredValueFieldsByKind") or {}, indent=2, ensure_ascii=False),
+        json.dumps(
+            work_package.get("requiredValueFieldsByKind") or {}, indent=2, ensure_ascii=False
+        ),
         "Checklist:",
     ]
     for item in work_package.get("extractionChecklist") or []:
@@ -1352,11 +1379,7 @@ def _repair_request(
     previous_response: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     package_id = str(work_package.get("id") or "unknown-work-package")
-    finding_codes = [
-        str(row.get("code") or "finding")
-        for row in findings
-        if isinstance(row, dict)
-    ]
+    finding_codes = [str(row.get("code") or "finding") for row in findings if isinstance(row, dict)]
     primary_code = finding_codes[0] if finding_codes else "source_reader_repair"
     return {
         "repairRequestId": f"reader-package-{package_id}-{_safe_response_file_stem(primary_code)}",

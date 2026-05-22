@@ -159,7 +159,9 @@ def _load_path_findings(indexed: _IndexedElements) -> list[StructureMepLiteFindi
         if _has_transfer_assumption(element):
             continue
         support_ids = _ids_from_fields(element, "supportedByIds", "supportIds", "stackedSupportIds")
-        missing_support_ids = [support_id for support_id in support_ids if support_id not in indexed.elements]
+        missing_support_ids = [
+            support_id for support_id in support_ids if support_id not in indexed.elements
+        ]
         if missing_support_ids:
             findings.append(
                 _finding(
@@ -226,7 +228,9 @@ def _large_opening_findings(indexed: _IndexedElements) -> list[StructureMepLiteF
             continue
         if _coordinated_opening(element):
             continue
-        host_ids = _ids_from_fields(element, "hostElementId", "hostWallId", "hostFloorId", "hostRoofId")
+        host_ids = _ids_from_fields(
+            element, "hostElementId", "hostWallId", "hostFloorId", "hostRoofId"
+        )
         findings.append(
             _finding(
                 "structure_lite_large_opening_uncoordinated",
@@ -246,7 +250,13 @@ def _large_opening_findings(indexed: _IndexedElements) -> list[StructureMepLiteF
 def _mep_penetration_findings(indexed: _IndexedElements) -> list[StructureMepLiteFinding]:
     findings: list[StructureMepLiteFinding] = []
     for element_id, element in indexed.sorted_elements:
-        if _kind(element) not in {"pipe", "duct", "cable_tray", "mep_route", "mep_route_placeholder"}:
+        if _kind(element) not in {
+            "pipe",
+            "duct",
+            "cable_tray",
+            "mep_route",
+            "mep_route_placeholder",
+        }:
             continue
         crossed_ids = _ids_from_fields(
             element,
@@ -258,7 +268,8 @@ def _mep_penetration_findings(indexed: _IndexedElements) -> list[StructureMepLit
         crossed_hosts = [
             crossed_id
             for crossed_id in crossed_ids
-            if _kind(indexed.elements.get(crossed_id)) in {"wall", "floor", "slab", "ceiling", "roof"}
+            if _kind(indexed.elements.get(crossed_id))
+            in {"wall", "floor", "slab", "ceiling", "roof"}
         ]
         if not crossed_hosts:
             continue
@@ -307,7 +318,9 @@ def _mep_opening_metadata_findings(indexed: _IndexedElements) -> list[StructureM
         } and not _is_mep_opening(element):
             continue
         host_ids = _host_ids(element)
-        route_ids = _ids_from_fields(element, "routeId", "routeIds", "mepRouteId", "servedElementIds")
+        route_ids = _ids_from_fields(
+            element, "routeId", "routeIds", "mepRouteId", "servedElementIds"
+        )
         missing = []
         if not any(host_id in indexed.elements for host_id in host_ids):
             missing.append("host element")
@@ -343,7 +356,9 @@ def _wet_room_service_stack_findings(indexed: _IndexedElements) -> list[Structur
             wet_by_stack.setdefault(stack_id, []).append((element_id, element))
 
     for element_id, element in wet_rooms:
-        if not _ids_from_fields(element, "servedByRiserId", "servedByRiserIds", "serviceZoneId", "shaftId"):
+        if not _ids_from_fields(
+            element, "servedByRiserId", "servedByRiserIds", "serviceZoneId", "shaftId"
+        ):
             findings.append(
                 _finding(
                     "mep_lite_wet_room_unserved",
@@ -377,7 +392,9 @@ def _wet_room_service_stack_findings(indexed: _IndexedElements) -> list[Structur
     return findings
 
 
-def _riser_shaft_equipment_access_findings(indexed: _IndexedElements) -> list[StructureMepLiteFinding]:
+def _riser_shaft_equipment_access_findings(
+    indexed: _IndexedElements,
+) -> list[StructureMepLiteFinding]:
     findings: list[StructureMepLiteFinding] = []
     for element_id, element in indexed.sorted_elements:
         kind = _kind(element)
@@ -447,7 +464,10 @@ class _IndexedElements:
 def _index(elements: Mapping[str, Any]) -> _IndexedElements:
     sorted_elements = tuple(
         sorted(
-            ((str(_read(element, "id", default=map_id)), element) for map_id, element in elements.items()),
+            (
+                (str(_read(element, "id", default=map_id)), element)
+                for map_id, element in elements.items()
+            ),
             key=lambda item: item[0],
         )
     )
@@ -459,7 +479,10 @@ def _index(elements: Mapping[str, Any]) -> _IndexedElements:
         for element_id, element in sorted_elements
         if _kind(element) == "level"
     ]
-    level_order = {level_id: idx for idx, (level_id, _) in enumerate(sorted(levels, key=lambda item: (item[1], item[0])))}
+    level_order = {
+        level_id: idx
+        for idx, (level_id, _) in enumerate(sorted(levels, key=lambda item: (item[1], item[0])))
+    }
     return _IndexedElements(
         elements={element_id: element for element_id, element in sorted_elements},
         sorted_elements=sorted_elements,
@@ -512,7 +535,13 @@ def _is_load_bearing(element: Any) -> bool:
     explicit = _load_bearing_value(element)
     if explicit is not None:
         return explicit
-    return _structural_role(element) in {"load_bearing", "primary", "secondary", "gravity", "lateral"}
+    return _structural_role(element) in {
+        "load_bearing",
+        "primary",
+        "secondary",
+        "gravity",
+        "lateral",
+    }
 
 
 def _load_bearing_value(element: Any) -> bool | None:
@@ -579,11 +608,13 @@ def _is_large_opening(element: Any) -> bool:
     height = _number_field(element, "heightMm", "height")
     diameter = _number_field(element, "diameterMm", "diameter")
     area = _number_field(element, "areaMm2", "area")
-    max_dimension = max(v for v in (width, height, diameter) if v is not None) if any(v is not None for v in (width, height, diameter)) else 0
+    max_dimension = (
+        max(v for v in (width, height, diameter) if v is not None)
+        if any(v is not None for v in (width, height, diameter))
+        else 0
+    )
     if _kind(element) == "wall_opening":
-        return (width or diameter or 0) >= 1200 or (
-            (width or 0) >= 1000 and (height or 0) >= 2400
-        )
+        return (width or diameter or 0) >= 1200 or ((width or 0) >= 1000 and (height or 0) >= 2400)
     return max_dimension >= 1000 or (area or 0) >= 1_000_000
 
 
@@ -602,7 +633,9 @@ def _coordinated_opening(element: Any) -> bool:
 
 
 def _has_penetration_coordination(element: Any) -> bool:
-    if _ids_from_fields(element, "openingRequestId", "openingRequestIds", "openingId", "openingIds"):
+    if _ids_from_fields(
+        element, "openingRequestId", "openingRequestIds", "openingId", "openingIds"
+    ):
         return True
     status = _string_field(element, "penetrationStatus", "coordinationStatus")
     return status in {"coordinated", "approved", "reviewed"}
@@ -654,7 +687,9 @@ def _host_ids(element: Any) -> list[str]:
 
 def _is_mep_opening(element: Any) -> bool:
     return bool(
-        _read_deep(element, "mepSystemId", "serviceType", "routeId", "mepRouteId", "openingRequestId")
+        _read_deep(
+            element, "mepSystemId", "serviceType", "routeId", "mepRouteId", "openingRequestId"
+        )
     ) or _string_field(element, "openingPurpose", "purpose") in {"mep", "pipe", "duct", "service"}
 
 
@@ -664,7 +699,16 @@ def _is_wet_room(element: Any) -> bool:
     if _read_deep(element, "wetRoom", "isWetRoom") is True:
         return True
     category = _string_field(element, "category", "roomType", "spaceType", "program")
-    return category in {"bathroom", "wc", "toilet", "kitchen", "laundry", "wet_room", "wetroom", "plant"}
+    return category in {
+        "bathroom",
+        "wc",
+        "toilet",
+        "kitchen",
+        "laundry",
+        "wet_room",
+        "wetroom",
+        "plant",
+    }
 
 
 def _is_lowest_level(element: Any, indexed: _IndexedElements) -> bool:
@@ -679,7 +723,9 @@ def _has_lower_wet_room_in_stack(
 ) -> bool:
     stack_id = _string_field(element, "serviceStackId", "wetStackId", "stackId")
     if not stack_id:
-        return bool(_read_deep(element, "offsetServiceRouteAssumptionId", "serviceRouteAssumptionId"))
+        return bool(
+            _read_deep(element, "offsetServiceRouteAssumptionId", "serviceRouteAssumptionId")
+        )
     order = indexed.level_order.get(_level_id(element) or "")
     if order is None:
         return True
@@ -691,14 +737,18 @@ def _has_lower_wet_room_in_stack(
 
 
 def _has_service_access(element: Any) -> bool:
-    if _ids_from_fields(element, "accessPanelId", "accessPanelIds", "accessDoorId", "accessDoorIds"):
+    if _ids_from_fields(
+        element, "accessPanelId", "accessPanelIds", "accessDoorId", "accessDoorIds"
+    ):
         return True
     if _number_field(element, "accessClearanceMm", "maintenanceClearanceMm", default=0.0) > 0:
         return True
     return bool(_read_deep(element, "maintenanceAccess", "accessSide", "serviceAccess"))
 
 
-def _with_existing_refs(base: Iterable[str], refs: Iterable[str], indexed: _IndexedElements) -> tuple[str, ...]:
+def _with_existing_refs(
+    base: Iterable[str], refs: Iterable[str], indexed: _IndexedElements
+) -> tuple[str, ...]:
     return tuple([*base, *(ref for ref in sorted(set(refs)) if ref in indexed.elements)])
 
 
@@ -718,7 +768,11 @@ def _ids_from_fields(element: Any, *fields: str) -> list[str]:
 
 
 def _level_id(element: Any) -> str | None:
-    value = _read(element, "levelId") or _read(element, "baseLevelId") or _read(element, "referenceLevelId")
+    value = (
+        _read(element, "levelId")
+        or _read(element, "baseLevelId")
+        or _read(element, "referenceLevelId")
+    )
     return str(value) if value not in (None, "") else None
 
 

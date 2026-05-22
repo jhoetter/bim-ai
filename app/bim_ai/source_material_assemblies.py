@@ -38,7 +38,9 @@ def build_source_material_assembly_report(facts: list[dict[str, Any]]) -> dict[s
             row = _scope_row(scopes, key, label, _element_kind(kind, value))
             row["modelableFactIds"].append(str(fact.get("factId") or ""))
             row["sourceFactIds"].append(str(fact.get("factId") or ""))
-            row["levelIds"].update(_string_values(value.get("levelId") or value.get("referenceLevelId")))
+            row["levelIds"].update(
+                _string_values(value.get("levelId") or value.get("referenceLevelId"))
+            )
             if kind == "wall_thickness" or value.get("thicknessMm") is not None:
                 row["thicknessEvidence"].append(_thickness_evidence(fact, value))
             row["provenance"].append(fact.get("provenance"))
@@ -115,7 +117,10 @@ def _scope_row(
             "disposition": None,
         }
         scopes[key] = row
-    elif row.get("elementKind") in {"unknown", "general"} and element_kind not in {"unknown", "general"}:
+    elif row.get("elementKind") in {"unknown", "general"} and element_kind not in {
+        "unknown",
+        "general",
+    }:
         row["elementKind"] = element_kind
     return row
 
@@ -145,7 +150,10 @@ def _finalize_scope_row(row: dict[str, Any]) -> dict[str, Any]:
                     "code": "source_wall_thickness_missing",
                     "severity": "error",
                     "message": "Wall scope needs source-backed thickness before wall type authoring.",
-                    "requiredSourceFields": ["wall_thickness.thicknessMm", "wall_thickness.appliesTo"],
+                    "requiredSourceFields": [
+                        "wall_thickness.thicknessMm",
+                        "wall_thickness.appliesTo",
+                    ],
                 }
             )
         if not layers and not explicit_limited:
@@ -187,7 +195,9 @@ def _finalize_scope_row(row: dict[str, Any]) -> dict[str, Any]:
         "disposition": row.get("disposition"),
         "status": status,
         "requiredBeforeMcp": required,
-        "mcpAuthoringHints": _mcp_authoring_hints(row, material, thickness, layers, explicit_limited),
+        "mcpAuthoringHints": _mcp_authoring_hints(
+            row, material, thickness, layers, explicit_limited
+        ),
         "provenance": [prov for prov in row.get("provenance") or [] if isinstance(prov, dict)],
     }
 

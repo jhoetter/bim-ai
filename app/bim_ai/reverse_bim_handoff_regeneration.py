@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections import Counter
 from typing import Any
 
+from bim_ai._io.digest import digest as _digest
 from bim_ai.reverse_bim import build_mcp_authoring_readiness, plan_mcp_authoring_actions
-
 
 SOURCE_REPAIR_CLASSIFICATIONS = {
     "source_fact_misread",
@@ -49,11 +47,15 @@ def build_reverse_bim_handoff_regeneration_plan(
         tool_gaps = sorted(set(phase_fact_ids) & tool_gap_fact_ids)
         regenerable = sorted((set(phase_fact_ids) & regenerate_fact_ids) - source_repair_fact_ids)
         authoring_plan = plan_mcp_authoring_actions(
-            facts=[fact for fact in phase_facts if str(fact.get("factId") or "") not in blocked_source],
+            facts=[
+                fact for fact in phase_facts if str(fact.get("factId") or "") not in blocked_source
+            ],
             target_phase=str(phase.get("phaseId") or phase.get("id") or "unknown"),
         )
         readiness = build_mcp_authoring_readiness(
-            facts=[fact for fact in phase_facts if str(fact.get("factId") or "") not in blocked_source],
+            facts=[
+                fact for fact in phase_facts if str(fact.get("factId") or "") not in blocked_source
+            ],
             target_phase=str(phase.get("phaseId") or phase.get("id") or "unknown"),
         )
         status = _phase_status(
@@ -152,16 +154,21 @@ def _affected_phases(
     phases = [
         phase
         for phase in phase_authoring_spec.get("phases") or []
-        if isinstance(phase, dict) and str(phase.get("phaseId") or phase.get("id") or "") in phase_ids
+        if isinstance(phase, dict)
+        and str(phase.get("phaseId") or phase.get("id") or "") in phase_ids
     ]
     if phases:
         return phases
-    return [
-        {
-            "phaseId": "repair-affected-facts",
-            "sourceFactIds": sorted(fact_index),
-        }
-    ] if fact_index else []
+    return (
+        [
+            {
+                "phaseId": "repair-affected-facts",
+                "sourceFactIds": sorted(fact_index),
+            }
+        ]
+        if fact_index
+        else []
+    )
 
 
 def _phase_fact_ids(phase: dict[str, Any]) -> list[str]:
@@ -227,8 +234,3 @@ def _reader_repair_requests(
                 }
             )
     return rows
-
-
-def _digest(payload: Any) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

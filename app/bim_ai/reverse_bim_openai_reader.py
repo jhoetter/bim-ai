@@ -137,9 +137,15 @@ def _reader_prompt_text(assignment_request: dict[str, Any]) -> str:
                 ensure_ascii=False,
             ),
             "Output contract:",
-            json.dumps(output_contract if isinstance(output_contract, dict) else {}, indent=2, ensure_ascii=False),
+            json.dumps(
+                output_contract if isinstance(output_contract, dict) else {},
+                indent=2,
+                ensure_ascii=False,
+            ),
             "Input image metadata:",
-            json.dumps(input_images if isinstance(input_images, list) else [], indent=2, ensure_ascii=False),
+            json.dumps(
+                input_images if isinstance(input_images, list) else [], indent=2, ensure_ascii=False
+            ),
             "Return one JSON object with format=sourceAiVisualTraceReaderResponse_v1, the same assignment/request/workPackage/pass ids, independent reader identity metadata, and a facts array. If a required fact is not visible, return a conflict or source-unavailable disposition with provenance instead of guessing.",
         ]
     )

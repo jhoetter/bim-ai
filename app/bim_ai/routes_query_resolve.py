@@ -421,4 +421,3 @@ async def qa_area_reconciliation_route(
         )
     tolerance = float(body.get("toleranceM2") or 0.5)
     return build_area_reconciliation_report(mid, doc, facts, tolerance_m2=tolerance)
-

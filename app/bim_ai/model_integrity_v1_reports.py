@@ -147,7 +147,9 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
     }
 
 
-def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = False) -> dict[str, Any]:
+def model_integrity_smoke_v1(
+    subject: Any, *, require_explicit_roles: bool = False
+) -> dict[str, Any]:
     elements = _elements_mapping(subject) or {}
     findings = check_model_integrity_invariants(
         subject, require_explicit_roles=require_explicit_roles

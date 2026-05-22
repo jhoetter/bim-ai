@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
+from bim_ai._io.digest import sha256_bytes, sha256_json
 from bim_ai.document import Document
 from bim_ai.elements import (
     AngularDimensionElem,
@@ -57,15 +58,6 @@ from bim_ai.sheet_preview_svg import (
 DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1 = "documentationExportProductionEvidence_v1"
 DOCUMENTATION_EXPORT_PARITY_V1 = "documentationExportParity_v1"
 DOCUMENTATION_EXPORT_UNSUPPORTED_SKIPPED_V1 = "documentationExportUnsupportedSkipped_v1"
-
-
-def _sha256_bytes(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def _sha256_json(data: Any) -> str:
-    blob = json.dumps(data, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    return _sha256_bytes(blob)
 
 
 def _artifact_status(
@@ -119,7 +111,7 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
         pdf_bytes = sheet_elem_to_pdf_bytes(doc, sh)
         png_bytes = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_text)
         listing_lines = sheet_viewport_export_listing_lines(doc, sh)
-        listing_digest = _sha256_bytes("\n".join(listing_lines).encode("utf-8"))
+        listing_digest = sha256_bytes("\n".join(listing_lines).encode("utf-8"))
         artifacts = [
             {
                 "artifactId": f"sheet:{sh.id}:svg",
@@ -137,7 +129,7 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
                 "mimeType": SHEET_EXPORT_PDF_MIME_TYPE,
                 "href": _export_href(model_id, "sheet-preview.pdf", sheet_id=sh.id),
                 "byteLength": len(pdf_bytes),
-                "digestSha256": _sha256_bytes(pdf_bytes),
+                "digestSha256": sha256_bytes(pdf_bytes),
             },
             {
                 "artifactId": f"sheet:{sh.id}:png",
@@ -146,7 +138,7 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
                 "mimeType": SHEET_EXPORT_PNG_MIME_TYPE,
                 "href": _export_href(model_id, "sheet-print-raster.png", sheet_id=sh.id),
                 "byteLength": len(png_bytes),
-                "digestSha256": _sha256_bytes(png_bytes),
+                "digestSha256": sha256_bytes(png_bytes),
                 "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
                 "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
             },
@@ -297,7 +289,7 @@ def _documentation_export_unsupported_skipped_manifest_v1(
             ),
             "affectedElementCount": sum(int(row.get("count") or 0) for row in rows),
         },
-        "digestSha256": _sha256_json(rows),
+        "digestSha256": sha256_json(rows),
     }
 
 
@@ -404,7 +396,7 @@ def _documentation_export_parity_v1(
         },
         "status": "fail" if fail_count else "warn" if warn_count else "clean",
         "pass": fail_count == 0,
-        "digestSha256": _sha256_json(parity_rows),
+        "digestSha256": sha256_json(parity_rows),
     }
 
 
@@ -424,7 +416,7 @@ def _schedule_rows(doc: Document) -> list[dict[str, Any]]:
                 "rowCount": len(data_rows),
                 "columnCount": len(columns),
                 "schedulePlacement": payload.get("schedulePlacement"),
-                "payloadDigestSha256": _sha256_json(payload),
+                "payloadDigestSha256": sha256_json(payload),
             }
         )
     return rows
@@ -501,9 +493,9 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
     glb_bytes = document_to_glb_bytes(doc)
     gltf_manifest = build_visual_export_manifest(doc)
 
-    ifc_digest = _sha256_bytes(ifc_step.encode("utf-8"))
-    gltf_digest = _sha256_bytes(gltf_bytes)
-    glb_digest = _sha256_bytes(glb_bytes)
+    ifc_digest = sha256_bytes(ifc_step.encode("utf-8"))
+    gltf_digest = sha256_bytes(gltf_bytes)
+    glb_digest = sha256_bytes(glb_bytes)
     ifc_optional_backend = not IFC_AVAILABLE and not ifc_has_physical_geometry
 
     ifc_status = _artifact_status(
@@ -550,7 +542,7 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
             "href": _export_href(model_id, "model.gltf"),
             "byteLength": len(gltf_bytes),
             "digestSha256": gltf_digest,
-            "manifestDigestSha256": _sha256_json(gltf_manifest),
+            "manifestDigestSha256": sha256_json(gltf_manifest),
             "manifestExtension": gltf_manifest["extensions"]["BIM_AI_exportManifest_v0"],
             **_artifact_status(byte_length=len(gltf_bytes), digest_sha256=gltf_digest),
         },
@@ -589,7 +581,7 @@ def _presentation_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
                 "canvasName": canvas.name,
                 "frameCount": len(canvas_frames),
                 "slideCount": len(bundle.get("slides", [])),
-                "bundleDigestSha256": _sha256_json(bundle),
+                "bundleDigestSha256": sha256_json(bundle),
                 "href": (
                     f"/api/v3/models/{model_id}/presentation-canvases/{quote(canvas.id, safe='')}/export"
                     if model_id is not None
@@ -645,7 +637,7 @@ def _branded_export_rows(doc: Document, model_id: UUID | str | None) -> list[dic
                 "sheetCount": len(sheets),
                 "format": "pdf",
                 "invariantCheck": "layer-c-only",
-                "bundleDigestSha256": _sha256_json(bundle),
+                "bundleDigestSha256": sha256_json(bundle),
                 "href": (
                     f"/api/v3/models/{model_id}/export/pdf?brandTemplateId={quote(template.id, safe='')}"
                     if model_id is not None
@@ -704,7 +696,7 @@ def _render_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict
                 "primaryAsset": bundle_dict.get("primaryAsset"),
                 "cameraCount": len(bundle_dict.get("metadata", {}).get("cameras", [])),
                 "materialCount": len(bundle_dict.get("metadata", {}).get("materials", [])),
-                "bundleDigestSha256": _sha256_json(bundle_dict),
+                "bundleDigestSha256": sha256_json(bundle_dict),
                 "href": (
                     f"/api/v3/models/{model_id}/export?format={quote(fmt, safe='')}"
                     if model_id is not None
@@ -896,12 +888,12 @@ def build_documentation_export_production_evidence_v1(
             else "artifact-closure-incomplete",
             "pass": clean_or_explicit,
             "rows": artifact_closure_rows,
-            "digestSha256": _sha256_json(artifact_closure_rows),
+            "digestSha256": sha256_json(artifact_closure_rows),
         },
         "externalExportMarkers_v1": {
             "format": "externalExportMarkers_v1",
             "markers": marker_rows,
         },
     }
-    body["evidenceDigestSha256"] = _sha256_json(body)
+    body["evidenceDigestSha256"] = sha256_json(body)
     return body

@@ -170,7 +170,9 @@ def hosted_opening_integrity_violations(
     source of mutation, including bulk agent bundles that can bypass UI host picking.
     """
 
-    elements = doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    elements = (
+        doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    )
     violations: list[Violation] = []
 
     walls = {eid: elem for eid, elem in elements.items() if isinstance(elem, WallElem)}
@@ -353,7 +355,9 @@ def physical_support_context_violations(
 ) -> list[Violation]:
     """Return deterministic support-context findings for non-wall physical elements."""
 
-    elements = doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    elements = (
+        doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    )
     violations: list[Violation] = []
     floors = sorted(
         (elem for elem in elements.values() if isinstance(elem, FloorElem)),
@@ -402,7 +406,9 @@ def hosted_opening_conflict_graph(
 ) -> dict[str, Any]:
     """Return a deterministic graph of hosted opening nodes and wall-span conflicts."""
 
-    elements = doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    elements = (
+        doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    )
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     by_host: dict[str, list[dict[str, Any]]] = {}
@@ -651,7 +657,11 @@ def _placed_asset_support_context_violations(
                 quick_fix_command={
                     "type": "resolveAssetPlacementSupport",
                     "elementId": asset.id,
-                    "safeFixes": ["move_inside_floor", "set_hostElementId", "mark_intentional_detached"],
+                    "safeFixes": [
+                        "move_inside_floor",
+                        "set_hostElementId",
+                        "mark_intentional_detached",
+                    ],
                 },
             )
         )
@@ -711,14 +721,20 @@ def _floor_support_context_violations(
                         "type": "resolveFloorSupportContext",
                         "elementId": floor.id,
                         "missingSupportIds": missing,
-                        "safeFixes": ["set_supportedByIds", "create_supports", "mark_allowDetached"],
+                        "safeFixes": [
+                            "set_supportedByIds",
+                            "create_supports",
+                            "mark_allowDetached",
+                        ],
                     },
                 )
             ]
         return []
 
     elevated = _level_elevation_mm(levels.get(floor.level_id)) > 1.0
-    detached_fragment = _is_smaller_same_level_slab_fragment(floor, floors) and not _floor_touches_context(
+    detached_fragment = _is_smaller_same_level_slab_fragment(
+        floor, floors
+    ) and not _floor_touches_context(
         floor,
         floors,
         elements,
@@ -784,7 +800,11 @@ def _stair_support_context_violations(
                 "type": "resolveStairLandingSupport",
                 "elementId": stair.id,
                 "missingLandings": missing_landings,
-                "safeFixes": ["move_run_endpoint_to_floor", "create_landing_slab", "mark_allowDetached"],
+                "safeFixes": [
+                    "move_run_endpoint_to_floor",
+                    "create_landing_slab",
+                    "mark_allowDetached",
+                ],
             },
         )
     ]
@@ -831,7 +851,11 @@ def _railing_support_context_violations(
                     "type": "resolveRailingSupportContext",
                     "elementId": railing.id,
                     "invalidHostIds": invalid,
-                    "safeFixes": ["set_valid_host", "delete_detached_railing", "mark_allowDetached"],
+                    "safeFixes": [
+                        "set_valid_host",
+                        "delete_detached_railing",
+                        "mark_allowDetached",
+                    ],
                 },
             )
         ]
@@ -901,7 +925,9 @@ def _violation(
     )
 
 
-def _hosted_openings(elements: Mapping[str, Element]) -> list[DoorElem | WindowElem | WallOpeningElem]:
+def _hosted_openings(
+    elements: Mapping[str, Element],
+) -> list[DoorElem | WindowElem | WallOpeningElem]:
     hosted = [
         elem
         for elem in elements.values()
@@ -916,7 +942,9 @@ def _recommendation_for_rule(rule_id: str) -> str:
     if rule_id.startswith("hosted_opening_"):
         return "Resolve the hosted opening relationship, wall-span interval, or host geometry before commit."
     if rule_id.startswith("physical_") or rule_id.startswith("model_integrity_"):
-        return "Resolve the physical support context or record explicit detached/nonphysical intent."
+        return (
+            "Resolve the physical support context or record explicit detached/nonphysical intent."
+        )
     return "Inspect the affected BIM elements and resolve the deterministic integrity finding."
 
 
@@ -966,7 +994,9 @@ def _safe_fix_hints_for_rule(
         "hosted_opening_host_outside_floor_envelope",
     }:
         hints.append({"kind": "move_into_floor_envelope", "safety": "needs_user_intent"})
-        hints.append({"kind": "create_missing_support_or_mark_detached", "safety": "review_required"})
+        hints.append(
+            {"kind": "create_missing_support_or_mark_detached", "safety": "review_required"}
+        )
     elif rule_id == "physical_access_proxy_leakage":
         hints.append({"kind": "convert_to_analysis_or_delete_helper", "safety": "review_required"})
     elif rule_id in {
@@ -1257,7 +1287,11 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
                         "type": "rehostHostedFamily",
                         "elementId": elem.id,
                         "hostElementId": host_id,
-                        "safeFixes": ["move_to_host_face", "set_hostAlongT", "choose_compatible_host"],
+                        "safeFixes": [
+                            "move_to_host_face",
+                            "set_hostAlongT",
+                            "choose_compatible_host",
+                        ],
                     },
                 )
             )
@@ -1489,7 +1523,9 @@ def _point_supported_by_level_floor(
     ]
     if not floors:
         return False
-    return any(_point_in_or_near_polygon(point, _floor_polygon(floor), tolerance_mm) for floor in floors)
+    return any(
+        _point_in_or_near_polygon(point, _floor_polygon(floor), tolerance_mm) for floor in floors
+    )
 
 
 def _circulation_overlap_at_point(
@@ -1511,7 +1547,10 @@ def _circulation_overlap_at_point(
 
 
 def _asset_allows_circulation_overlap(asset: PlacedAssetElem) -> bool:
-    values = [asset.param_values.get("allowCirculationOverlap"), asset.param_values.get("allowStairOverlap")]
+    values = [
+        asset.param_values.get("allowCirculationOverlap"),
+        asset.param_values.get("allowStairOverlap"),
+    ]
     return any(_truthy(value) for value in values)
 
 
@@ -1577,9 +1616,13 @@ def _floor_touches_context(
         if isinstance(elem, BeamElem) and getattr(elem, "level_id", None) == floor.level_id:
             start = getattr(elem, "start_mm", None)
             end = getattr(elem, "end_mm", None)
-            if start is not None and _point_in_or_near_polygon((start.x_mm, start.y_mm), polygon, tolerance_mm):
+            if start is not None and _point_in_or_near_polygon(
+                (start.x_mm, start.y_mm), polygon, tolerance_mm
+            ):
                 return True
-            if end is not None and _point_in_or_near_polygon((end.x_mm, end.y_mm), polygon, tolerance_mm):
+            if end is not None and _point_in_or_near_polygon(
+                (end.x_mm, end.y_mm), polygon, tolerance_mm
+            ):
                 return True
     return False
 
@@ -1654,7 +1697,12 @@ def _stair_polygon(stair: StairElem) -> list[Point2]:
     length = math.hypot(dx, dy)
     if length <= 1e-9:
         half = max(250.0, stair.width_mm / 2.0)
-        return [(sx - half, sy - half), (sx + half, sy - half), (sx + half, sy + half), (sx - half, sy + half)]
+        return [
+            (sx - half, sy - half),
+            (sx + half, sy - half),
+            (sx + half, sy + half),
+            (sx - half, sy + half),
+        ]
     nx = -dy / length
     ny = dx / length
     half = stair.width_mm / 2.0
@@ -1803,15 +1851,19 @@ def _has_detached_intent(elem: Any) -> bool:
         or _truthy(getattr(elem, "allow_detached", False))
     ):
         return True
-    intent = str(
-        props.get("authoringIntent")
-        or props.get("authoring_intent")
-        or props.get("intent")
-        or param_values.get("authoringIntent")
-        or param_values.get("authoring_intent")
-        or getattr(elem, "authoring_intent", "")
-        or "",
-    ).strip().lower()
+    intent = (
+        str(
+            props.get("authoringIntent")
+            or props.get("authoring_intent")
+            or props.get("intent")
+            or param_values.get("authoringIntent")
+            or param_values.get("authoring_intent")
+            or getattr(elem, "authoring_intent", "")
+            or "",
+        )
+        .strip()
+        .lower()
+    )
     return intent in {"detached", "intentional_detached", "detached_study", "exterior_detached"}
 
 
@@ -1877,13 +1929,25 @@ def _has_physical_render_or_export_marker(elem: Any, elements: Mapping[str, Elem
         family_type = elements.get(elem.family_type_id)
         return any(
             bool(getattr(family_type, attr, None))
-            for attr in ("render_support", "export_support", "visual_geometry", "gltf_mapping", "ifc_mapping")
+            for attr in (
+                "render_support",
+                "export_support",
+                "visual_geometry",
+                "gltf_mapping",
+                "ifc_mapping",
+            )
         )
     if isinstance(elem, PlacedAssetElem):
         asset = elements.get(elem.asset_id)
         return any(
             bool(getattr(asset, attr, None))
-            for attr in ("render_proxy_kind", "render_support", "export_metadata", "gltf_mapping", "ifc_mapping")
+            for attr in (
+                "render_proxy_kind",
+                "render_support",
+                "export_metadata",
+                "gltf_mapping",
+                "ifc_mapping",
+            )
         )
     return False
 
@@ -1904,9 +1968,7 @@ def _point_in_or_near_polygon(point: Point2, polygon: list[Point2], tolerance_mm
     j = len(polygon) - 1
     for i, (xi, yi) in enumerate(polygon):
         xj, yj = polygon[j]
-        if ((yi > y) != (yj > y)) and (
-            x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi
-        ):
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi):
             inside = not inside
         j = i
     return inside

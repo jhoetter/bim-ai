@@ -347,4 +347,3 @@ class SourceViewEvidenceElem(BaseModel):
 
 PlanTagTarget = Literal["opening", "room"]
 PlanTagBadgeStyle = Literal["none", "rounded", "flag"]
-

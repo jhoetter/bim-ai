@@ -1483,7 +1483,10 @@ register(
         sideEffects="none",
         agentSafetyNotes="Read-only source reconciliation; use output as a disposition worklist before creating duplicate openings.",
         requiredPermissions=["model:read"],
-        schemaRefs=["input:ResolveOpeningSourceMatchInput", "output:ResolveOpeningSourceMatchResult"],
+        schemaRefs=[
+            "input:ResolveOpeningSourceMatchInput",
+            "output:ResolveOpeningSourceMatchResult",
+        ],
         exampleRefs=["route:resolve-opening-source-match"],
         resourceGroups=["resolve", "openings", "source", "reverse-bim", "mcp-resource"],
     )
@@ -1645,7 +1648,10 @@ register(
         sideEffects="none",
         agentSafetyNotes="Read-only approximate roof-local projection; source overlay validation must confirm final placement.",
         requiredPermissions=["model:read"],
-        schemaRefs=["input:ResolveRoofPositionFromSourcePointInput", "output:ResolveRoofPositionFromSourcePointResult"],
+        schemaRefs=[
+            "input:ResolveRoofPositionFromSourcePointInput",
+            "output:ResolveRoofPositionFromSourcePointResult",
+        ],
         exampleRefs=["route:resolve-roof-position-from-source-point"],
         resourceGroups=["resolve", "roofs", "dormers", "openings", "reverse-bim", "mcp-resource"],
     )

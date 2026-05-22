@@ -8,14 +8,21 @@ from typing import Any
 def build_source_opening_reconciliation(facts: list[dict[str, Any]]) -> dict[str, Any]:
     """Find duplicate/source-host issues for door/window facts before authoring."""
 
-    openings = [_opening_row(fact) for fact in facts if isinstance(fact, dict) and fact.get("kind") in {"opening", "door", "window"}]
+    openings = [
+        _opening_row(fact)
+        for fact in facts
+        if isinstance(fact, dict) and fact.get("kind") in {"opening", "door", "window"}
+    ]
     actions = []
     for opening in openings:
         host_kind = opening["hostKind"]
         if host_kind == "wall":
             required_resolvers = ["resolve.wall_by_line", "query.nearest_wall"]
         elif host_kind == "roof":
-            required_resolvers = ["resolve.roof_host_region", "resolve.roof_position_from_source_point"]
+            required_resolvers = [
+                "resolve.roof_host_region",
+                "resolve.roof_position_from_source_point",
+            ]
         elif host_kind == "dormer":
             required_resolvers = ["resolve.dormer_opening_host"]
         else:
@@ -72,7 +79,9 @@ def build_source_opening_reconciliation(facts: list[dict[str, Any]]) -> dict[str
 
 def _opening_row(fact: dict[str, Any]) -> dict[str, Any]:
     value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-    opening_kind = str(value.get("openingKind") or value.get("openingType") or fact.get("kind") or "opening").lower()
+    opening_kind = str(
+        value.get("openingKind") or value.get("openingType") or fact.get("kind") or "opening"
+    ).lower()
     return {
         "factId": str(fact.get("factId") or ""),
         "levelId": value.get("levelId"),
@@ -105,8 +114,7 @@ def _host_kind(value: dict[str, Any]) -> str:
     if explicit:
         return explicit
     text = " ".join(
-        str(value.get(key) or "").lower()
-        for key in ("openingType", "openingKind", "hostWallRef")
+        str(value.get(key) or "").lower() for key in ("openingType", "openingKind", "hostWallRef")
     )
     if "roof" in text or "skylight" in text:
         return "roof"
@@ -124,9 +132,17 @@ def _duplicate_candidate(left: dict[str, Any], right: dict[str, Any]) -> bool:
         return False
     if left.get("openingKind") != right.get("openingKind"):
         return False
-    if left.get("widthMm") and right.get("widthMm") and abs(left["widthMm"] - right["widthMm"]) > 200:
+    if (
+        left.get("widthMm")
+        and right.get("widthMm")
+        and abs(left["widthMm"] - right["widthMm"]) > 200
+    ):
         return False
-    if left.get("heightMm") and right.get("heightMm") and abs(left["heightMm"] - right["heightMm"]) > 250:
+    if (
+        left.get("heightMm")
+        and right.get("heightMm")
+        and abs(left["heightMm"] - right["heightMm"]) > 250
+    ):
         return False
     return _different_source_region(left, right)
 

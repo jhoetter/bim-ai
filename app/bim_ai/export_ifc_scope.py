@@ -332,7 +332,9 @@ def ifc_semantic_mapping_scope_v1(model: Any | None = None) -> dict[str, Any]:
         if model is not None
         else {}
     )
-    unsupported_declared = {row["ifcProductClass"]: row for row in _IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS}
+    unsupported_declared = {
+        row["ifcProductClass"]: row for row in _IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS
+    }
     unsupported_rows: list[dict[str, Any]] = []
     for spec in _IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS:
         ifc_class = spec["ifcProductClass"]

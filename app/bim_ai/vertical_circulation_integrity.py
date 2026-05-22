@@ -403,9 +403,7 @@ def _stair_comfort_headroom_findings(
     for stair in stairs:
         if (
             stair.riser_mm > DEFAULT_MAX_RISER_MM or stair.tread_mm < DEFAULT_MIN_TREAD_MM
-        ) and not _stair_existing_condition_tolerates(
-            stair, "stair_riser_tread_comfort_failure"
-        ):
+        ) and not _stair_existing_condition_tolerates(stair, "stair_riser_tread_comfort_failure"):
             findings.append(
                 _finding(
                     "BIR-E04",
@@ -909,7 +907,9 @@ def _stair_existing_condition_tolerates(stair: StairElem, code: str) -> bool:
     if code not in codes and "*" not in codes:
         return False
     source_refs = tolerance.get("sourceFactIds") or tolerance.get("sourceRefs") or []
-    has_source = bool(source_refs) if isinstance(source_refs, list | tuple | set) else bool(source_refs)
+    has_source = (
+        bool(source_refs) if isinstance(source_refs, list | tuple | set) else bool(source_refs)
+    )
     return bool(str(tolerance.get("reason") or "").strip()) and has_source
 
 
@@ -1212,10 +1212,7 @@ def _polygon_area_abs(polygon: list[tuple[float, float]]) -> float:
 def _polyline_length(points: list[Vec2Mm]) -> float:
     if len(points) < 2:
         return 0.0
-    return sum(
-        _point_distance(start, end)
-        for start, end in zip(points, points[1:], strict=False)
-    )
+    return sum(_point_distance(start, end) for start, end in zip(points, points[1:], strict=False))
 
 
 def _point_distance(start: Vec2Mm, end: Vec2Mm) -> float:

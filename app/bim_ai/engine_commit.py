@@ -231,7 +231,9 @@ def _agent_authoring_preflight_violations(cmds_raw: list[dict[str, Any]]) -> lis
             continue
         missing = [field for field in required if not _has_explicit_value(command, field)]
         alternative_fields = _AGENT_TYPE_ALTERNATIVES.get(command_type, ())
-        if alternative_fields and not any(_has_explicit_value(command, field) for field in alternative_fields):
+        if alternative_fields and not any(
+            _has_explicit_value(command, field) for field in alternative_fields
+        ):
             missing.append("/".join(alternative_fields))
         role = _explicit_model_role(command)
         if role is not None and role not in _VALID_AGENT_ROLES:

@@ -182,9 +182,7 @@ def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
         if isinstance(e, RoofElem) and len(getattr(e, "footprint_mm", ()) or ()) >= 3
     )
     door_ids = sorted(
-        eid
-        for eid, e in doc.elements.items()
-        if isinstance(e, DoorElem) and e.wall_id in wall_ids
+        eid for eid, e in doc.elements.items() if isinstance(e, DoorElem) and e.wall_id in wall_ids
     )
     window_ids = sorted(
         eid
@@ -225,9 +223,7 @@ def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
     ceiling_ids = sorted(
         eid
         for eid, e in doc.elements.items()
-        if isinstance(e, CeilingElem)
-        and e.level_id in level_ids
-        and len(e.boundary_mm) >= 3
+        if isinstance(e, CeilingElem) and e.level_id in level_ids and len(e.boundary_mm) >= 3
     )
     placed_asset_ids = sorted(
         eid
@@ -320,14 +316,14 @@ def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
                 1 for e in doc.elements.values() if isinstance(e, MaterialElem)
             ),
             "classificationElementIds": sorted(classification_ids),
-            "qtoExpectedKinds": sorted(
-                k for k, ids in kind_ids.items() if ids and k != "railing"
-            ),
+            "qtoExpectedKinds": sorted(k for k, ids in kind_ids.items() if ids and k != "railing"),
         },
     }
 
 
-def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | None) -> dict[str, Any]:
+def build_kernel_ifc_geometry_readback_summary_v0(
+    model: Any, doc: Document | None
+) -> dict[str, Any]:
     """Compare supported IFC product read-back against source kernel topology."""
 
     if doc is None:
@@ -438,7 +434,9 @@ def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | No
         },
         "materials": {
             "IfcMaterial": len(_ifc_products_by_type(model, "IfcMaterial")),
-            "IfcRelAssociatesMaterial": len(_ifc_products_by_type(model, "IfcRelAssociatesMaterial")),
+            "IfcRelAssociatesMaterial": len(
+                _ifc_products_by_type(model, "IfcRelAssociatesMaterial")
+            ),
         },
         "classifications": {
             "IfcClassification": len(_ifc_products_by_type(model, "IfcClassification")),
@@ -535,7 +533,10 @@ def _ifc_readback_drift_findings_v0(
                     "trackerItems": ["BIR-K02"],
                 }
             )
-        if row.get("productsWithQto") is not None and int(row.get("productsWithQto") or 0) < expected:
+        if (
+            row.get("productsWithQto") is not None
+            and int(row.get("productsWithQto") or 0) < expected
+        ):
             findings.append(
                 {
                     "code": "ifc_readback_qto_gap",
@@ -658,7 +659,9 @@ def build_ifc_importer_readback_parity_v1(
                 if ifc_elem_util is not None
                 else "bim-ai-deterministic-ifc-product-graph-importer"
             ),
-            "mode": "external_ifcopenshell" if ifc_elem_util is not None else "deterministic_surrogate",
+            "mode": "external_ifcopenshell"
+            if ifc_elem_util is not None
+            else "deterministic_surrogate",
             "externalToolAvailable": ifc_elem_util is not None,
         },
         "readbackStatus": "aligned" if not findings else "drift",

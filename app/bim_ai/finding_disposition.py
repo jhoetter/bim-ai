@@ -162,13 +162,17 @@ def build_finding_disposition_ledger(
     }
 
 
-def _apply_disposition(row: dict[str, Any], dispositions: list[Mapping[str, Any]]) -> dict[str, Any]:
+def _apply_disposition(
+    row: dict[str, Any], dispositions: list[Mapping[str, Any]]
+) -> dict[str, Any]:
     decision = next((item for item in dispositions if _matches_disposition(row, item)), None)
     if not decision:
         return row
     disposition = str(decision.get("disposition") or decision.get("decision") or "")
     reason = decision.get("reason")
-    accepted_by = decision.get("acceptedBy") or decision.get("decidedBy") or decision.get("reviewer")
+    accepted_by = (
+        decision.get("acceptedBy") or decision.get("decidedBy") or decision.get("reviewer")
+    )
     if not disposition or disposition in {"unresolved", "blocked"} or not reason or not accepted_by:
         return {
             **row,

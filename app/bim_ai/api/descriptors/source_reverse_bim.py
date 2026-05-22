@@ -313,7 +313,7 @@ for _source_tool in (
             },
             "dpi": {"type": "integer", "default": 300},
         },
-        "cli": "bim-ai source rerender-for-legibility --output-dir tmp/reverse-bim/run --targets '[{\"sourceDocumentId\":\"srcdoc-eg\",\"pages\":[1]}]' --dpi 300",
+        "cli": 'bim-ai source rerender-for-legibility --output-dir tmp/reverse-bim/run --targets \'[{"sourceDocumentId":"srcdoc-eg","pages":[1]}]\' --dpi 300',
         "notes": "Re-renders specific (sourceDocumentId, page) pairs at a higher DPI when readers flag dimension_legibility conflicts. Overwrites the existing PNGs in source/rendered-pages/<docId>/ and updates source/rendered-pages.json in place. Default DPI is 300; use 360+ for very faint dimension strings.",
     },
     {

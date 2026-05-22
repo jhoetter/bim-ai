@@ -300,9 +300,7 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
                     if vcount <= 0:
                         zero_vertex_meshes.append(str(mesh.get("name") or f"mesh[{mesh_ix}]"))
                 else:
-                    invalid_accessor_refs.append(
-                        f"{mesh.get('name') or mesh_ix}:POSITION:{pos_ix}"
-                    )
+                    invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:POSITION:{pos_ix}")
             else:
                 invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:POSITION")
 
@@ -486,7 +484,9 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
         "meshCount": len(meshes),
         "geometryNodeCount": len(geometry_nodes),
         "levelMetadataNodeCount": sum(
-            1 for n in nodes if isinstance(n, dict) and str(n.get("name") or "").startswith("level:")
+            1
+            for n in nodes
+            if isinstance(n, dict) and str(n.get("name") or "").startswith("level:")
         ),
         "geometryNodeCountsByKind": dict(sorted(node_counts.items())),
         "geometryNodeElementIdsByKind": {k: node_ids[k] for k in sorted(node_ids)},
@@ -894,9 +894,7 @@ def build_glb_binary_readback_fidelity_v1(blob: bytes) -> dict[str, Any]:
                         )
                         if buffers and isinstance(buffers[0], dict):
                             try:
-                                declared_buffer_byte_length = int(
-                                    buffers[0].get("byteLength") or 0
-                                )
+                                declared_buffer_byte_length = int(buffers[0].get("byteLength") or 0)
                             except (TypeError, ValueError):
                                 declared_buffer_byte_length = None
                         if declared_buffer_byte_length is not None:
@@ -971,9 +969,9 @@ def build_glb_binary_readback_fidelity_v1(blob: bytes) -> dict[str, Any]:
         "declaredBufferByteLength": declared_buffer_byte_length,
         "binChunkByteLength": bin_chunk_length,
         "binPaddingByteLength": bin_padding_byte_length,
-        "embeddedJsonDigest": (
-            embedded_json_readback or {}
-        ).get("gltfJsonReadbackFidelityDigestSha256"),
+        "embeddedJsonDigest": (embedded_json_readback or {}).get(
+            "gltfJsonReadbackFidelityDigestSha256"
+        ),
         "findingCodes": [f["code"] for f in findings],
     }
     return {
@@ -998,11 +996,15 @@ def _decode_first_glb_json_chunk(blob: bytes) -> tuple[dict[str, Any] | None, li
     try:
         magic, version, declared_len = struct.unpack_from("<III", blob, 0)
     except struct.error as exc:
-        return None, [{"code": "glb_header_decode_failed", "severity": "error", "message": str(exc)}]
+        return None, [
+            {"code": "glb_header_decode_failed", "severity": "error", "message": str(exc)}
+        ]
     if magic != _GLTF_MAGIC:
         findings.append({"code": "glb_invalid_magic", "severity": "error", "magic": magic})
     if version != 2:
-        findings.append({"code": "glb_unsupported_version", "severity": "error", "version": version})
+        findings.append(
+            {"code": "glb_unsupported_version", "severity": "error", "version": version}
+        )
     if declared_len != len(blob):
         findings.append(
             {
@@ -1068,8 +1070,18 @@ def build_glb_importer_readback_parity_v1(
                 "meshPrimitiveTolerance": "one_position_primitive_per_geometry_node",
                 "unsupportedSkipTolerance": "explicit_manifest_rows_required",
             },
-            "sourceGraph": {"nodeCount": None, "nodeCountsByKind": {}, "elementIdsByKind": {}, "nodes": []},
-            "importerGraph": {"nodeCount": 0, "nodeCountsByKind": {}, "elementIdsByKind": {}, "nodes": []},
+            "sourceGraph": {
+                "nodeCount": None,
+                "nodeCountsByKind": {},
+                "elementIdsByKind": {},
+                "nodes": [],
+            },
+            "importerGraph": {
+                "nodeCount": 0,
+                "nodeCountsByKind": {},
+                "elementIdsByKind": {},
+                "nodes": [],
+            },
             "parityRows": [],
             "unsupportedSkips": {"source": "unavailable", "rows": [], "countsByKind": {}},
             "findings": [

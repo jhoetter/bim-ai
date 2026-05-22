@@ -277,6 +277,7 @@ async def presentation_ws(
         if token in _presentation_ws_sessions:
             _presentation_ws_sessions[token].discard(websocket)
 
+
 # OUT-V3-02 — Presentation canvas PPTX bundle export
 # ---------------------------------------------------------------------------
 

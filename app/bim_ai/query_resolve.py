@@ -688,7 +688,10 @@ def _host_candidate(
         if require_opening_fit and not (fits or (adjust_opening_to_fit and authoring_position)):
             return None
         if source_shift_mm:
-            score *= max(0.1, 1.0 - source_shift_mm / max(max_adjustment_mm or max(opening_width_mm, 1.0), 1.0))
+            score *= max(
+                0.1,
+                1.0 - source_shift_mm / max(max_adjustment_mm or max(opening_width_mm, 1.0), 1.0),
+            )
     return {
         "elementId": wall.id,
         "kind": "wall",
@@ -784,7 +787,9 @@ def query_nearest_wall(model_id: str, doc: Document, request: dict[str, Any]) ->
     )
 
 
-def resolve_wall_opening_host(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def resolve_wall_opening_host(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     """Resolve an opening source point to a wall-hosted authoring placement that fits."""
 
     point = request.get("nearPointMm") or request.get("pointMm") or request.get("sourcePointMm")
@@ -792,9 +797,13 @@ def resolve_wall_opening_host(model_id: str, doc: Document, request: dict[str, A
         point = [point.get("xMm"), point.get("yMm"), point.get("zMm", 0)]
     width = _optional_float(request.get("widthMm") or request.get("openingWidthMm"))
     if not isinstance(point, list) or len(point) < 2:
-        return error_envelope("invalid_request", "pointMm/nearPointMm/sourcePointMm is required.", status=400)
+        return error_envelope(
+            "invalid_request", "pointMm/nearPointMm/sourcePointMm is required.", status=400
+        )
     if width is None or width <= 0:
-        return error_envelope("invalid_request", "widthMm/openingWidthMm must be a positive number.", status=400)
+        return error_envelope(
+            "invalid_request", "widthMm/openingWidthMm must be a positive number.", status=400
+        )
     resolver_request = dict(request)
     resolver_request["nearPointMm"] = point
     resolver_request["openingWidthMm"] = width
@@ -841,7 +850,9 @@ def resolve_wall_opening_host(model_id: str, doc: Document, request: dict[str, A
     )
 
 
-def query_room_access_graph(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def query_room_access_graph(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     room_ids = request.get("roomIds") or request.get("roomId")
     if isinstance(room_ids, str):
         room_ids = [room_ids]
@@ -857,10 +868,16 @@ def query_room_access_graph(model_id: str, doc: Document, request: dict[str, Any
     return success_envelope(model_id, doc, {"graph": graph})
 
 
-def resolve_opening_source_match(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def resolve_opening_source_match(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     """Classify source opening rows as likely same/distinct before authoring."""
 
-    openings = [row for row in request.get("openings") or request.get("sourceOpenings") or [] if isinstance(row, dict)]
+    openings = [
+        row
+        for row in request.get("openings") or request.get("sourceOpenings") or []
+        if isinstance(row, dict)
+    ]
     if len(openings) < 2:
         return error_envelope(
             "invalid_request",
@@ -874,7 +891,9 @@ def resolve_opening_source_match(model_id: str, doc: Document, request: dict[str
             if score >= float(request.get("minScore") or 0.6):
                 matches.append(
                     {
-                        "status": "candidate_same_element" if score >= 0.8 else "candidate_needs_review",
+                        "status": "candidate_same_element"
+                        if score >= 0.8
+                        else "candidate_needs_review",
                         "score": round(score, 4),
                         "sourceFactIds": [
                             left.get("factId") or left.get("sourceFactId"),
@@ -897,14 +916,18 @@ def resolve_opening_source_match(model_id: str, doc: Document, request: dict[str
     )
 
 
-def resolve_dormer_opening_host(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def resolve_dormer_opening_host(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     """Resolve a dormer-hosted opening to the best existing dormer element."""
 
     dormer_id = request.get("dormerId") or request.get("hostDormerId")
     host_roof_id = request.get("hostRoofId") or request.get("roofId")
     position = request.get("positionOnRoof") or request.get("sourcePositionOnRoof")
     candidates = []
-    for dormer in sorted((e for e in doc.elements.values() if isinstance(e, DormerElem)), key=lambda d: d.id):
+    for dormer in sorted(
+        (e for e in doc.elements.values() if isinstance(e, DormerElem)), key=lambda d: d.id
+    ):
         if dormer_id and dormer.id != dormer_id:
             continue
         if host_roof_id and dormer.host_roof_id != host_roof_id:
@@ -953,23 +976,44 @@ def resolve_dormer_opening_host(model_id: str, doc: Document, request: dict[str,
     )
 
 
-def resolve_roof_position_from_source_point(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def resolve_roof_position_from_source_point(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     """Project a source point into a simple roof-local coordinate candidate."""
 
     roof_id = request.get("roofId") or request.get("hostRoofId")
     roof = doc.elements.get(str(roof_id or ""))
     if not isinstance(roof, RoofElem):
-        return error_envelope("not_found", "hostRoofId/roofId must reference an existing roof.", status=404)
-    point = _request_point(request, "sourcePointMm") or _request_point(request, "sourcePositionMm") or _request_point(request, "pointMm")
+        return error_envelope(
+            "not_found", "hostRoofId/roofId must reference an existing roof.", status=404
+        )
+    point = (
+        _request_point(request, "sourcePointMm")
+        or _request_point(request, "sourcePositionMm")
+        or _request_point(request, "pointMm")
+    )
     if point is None:
-        return error_envelope("invalid_request", "sourcePointMm, sourcePositionMm, or pointMm is required.", status=400)
+        return error_envelope(
+            "invalid_request",
+            "sourcePointMm, sourcePositionMm, or pointMm is required.",
+            status=400,
+        )
     footprint = [_pt2(pt) for pt in roof.footprint_mm]
     bbox = _bbox_from_points(footprint)
     center_x = (bbox[0] + bbox[3]) / 2.0
     center_y = (bbox[1] + bbox[4]) / 2.0
     inside = bbox[0] <= point[0] <= bbox[3] and bbox[1] <= point[1] <= bbox[4]
     confidence = 0.7 if inside else 0.35
-    warnings = [] if inside else [{"code": "source_point_outside_roof_bbox", "message": "Projected point lies outside the roof footprint bbox."}]
+    warnings = (
+        []
+        if inside
+        else [
+            {
+                "code": "source_point_outside_roof_bbox",
+                "message": "Projected point lies outside the roof footprint bbox.",
+            }
+        ]
+    )
     return success_envelope(
         model_id,
         doc,
@@ -991,10 +1035,16 @@ def resolve_roof_position_from_source_point(model_id: str, doc: Document, reques
     )
 
 
-def validate_roof_dormer_source_alignment(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+def validate_roof_dormer_source_alignment(
+    model_id: str, doc: Document, request: dict[str, Any]
+) -> dict[str, Any]:
     """Validate modeled roof/dormer/opening elements against source roof facts."""
 
-    facts = [fact for fact in request.get("facts") or request.get("sourceFacts") or [] if isinstance(fact, dict)]
+    facts = [
+        fact
+        for fact in request.get("facts") or request.get("sourceFacts") or []
+        if isinstance(fact, dict)
+    ]
     findings = []
     for fact in facts:
         kind = str(fact.get("kind") or "")
@@ -1003,17 +1053,41 @@ def validate_roof_dormer_source_alignment(model_id: str, doc: Document, request:
         if kind == "dormer":
             host_roof_id = value.get("hostRoofId") or value.get("hostRoofRef")
             if host_roof_id and not isinstance(doc.elements.get(str(host_roof_id)), RoofElem):
-                findings.append(_roof_alignment_finding("missing_dormer_host_roof", fact_id, "Dormer source host roof is not modeled."))
+                findings.append(
+                    _roof_alignment_finding(
+                        "missing_dormer_host_roof",
+                        fact_id,
+                        "Dormer source host roof is not modeled.",
+                    )
+                )
             if value.get("depthMm") in (None, ""):
-                findings.append(_roof_alignment_finding("source_dormer_depth_missing", fact_id, "Dormer source fact lacks depthMm."))
+                findings.append(
+                    _roof_alignment_finding(
+                        "source_dormer_depth_missing", fact_id, "Dormer source fact lacks depthMm."
+                    )
+                )
         elif kind in {"opening", "roof_opening"}:
-            opening_text = " ".join(str(value.get(key) or "").lower() for key in ("openingType", "openingKind"))
+            opening_text = " ".join(
+                str(value.get(key) or "").lower() for key in ("openingType", "openingKind")
+            )
             if "roof" in opening_text or "skylight" in opening_text:
                 host_roof_id = value.get("hostRoofId") or value.get("hostRoofRef")
                 if host_roof_id and not isinstance(doc.elements.get(str(host_roof_id)), RoofElem):
-                    findings.append(_roof_alignment_finding("missing_roof_opening_host_roof", fact_id, "Roof opening source host roof is not modeled."))
+                    findings.append(
+                        _roof_alignment_finding(
+                            "missing_roof_opening_host_roof",
+                            fact_id,
+                            "Roof opening source host roof is not modeled.",
+                        )
+                    )
                 if not host_roof_id:
-                    findings.append(_roof_alignment_finding("source_roof_opening_host_missing", fact_id, "Roof opening source fact lacks host roof reference."))
+                    findings.append(
+                        _roof_alignment_finding(
+                            "source_roof_opening_host_missing",
+                            fact_id,
+                            "Roof opening source fact lacks host roof reference.",
+                        )
+                    )
     modeled_dormers = [e for e in doc.elements.values() if isinstance(e, DormerElem)]
     modeled_roof_openings = [e for e in doc.elements.values() if isinstance(e, RoofOpeningElem)]
     return success_envelope(
@@ -1043,7 +1117,9 @@ def _optional_float(value: Any) -> float | None:
         return None
 
 
-def _source_opening_match_score(left: dict[str, Any], right: dict[str, Any]) -> tuple[float, list[str]]:
+def _source_opening_match_score(
+    left: dict[str, Any], right: dict[str, Any]
+) -> tuple[float, list[str]]:
     left_value = left.get("value") if isinstance(left.get("value"), dict) else left
     right_value = right.get("value") if isinstance(right.get("value"), dict) else right
     score = 0.0
@@ -1070,10 +1146,7 @@ def _source_opening_match_score(left: dict[str, Any], right: dict[str, Any]) -> 
 
 def _source_opening_kind(fact: dict[str, Any], value: dict[str, Any]) -> str:
     raw = str(
-        value.get("openingKind")
-        or value.get("openingType")
-        or fact.get("kind")
-        or ""
+        value.get("openingKind") or value.get("openingType") or fact.get("kind") or ""
     ).lower()
     if "door" in raw or "tuer" in raw or "tur" in raw:
         return "door"
@@ -1094,12 +1167,11 @@ def _different_source_ref(left: dict[str, Any], right: dict[str, Any]) -> bool:
     )
 
 
-def _unmatched_opening_ids(openings: list[dict[str, Any]], matches: list[dict[str, Any]]) -> list[Any]:
+def _unmatched_opening_ids(
+    openings: list[dict[str, Any]], matches: list[dict[str, Any]]
+) -> list[Any]:
     matched = {
-        fact_id
-        for match in matches
-        for fact_id in match.get("sourceFactIds") or []
-        if fact_id
+        fact_id for match in matches for fact_id in match.get("sourceFactIds") or [] if fact_id
     }
     return [
         opening.get("factId") or opening.get("sourceFactId")
@@ -1114,9 +1186,17 @@ def _request_point(request: dict[str, Any], key: str) -> list[float] | None:
         return [float(value[0]), float(value[1]), float(value[2]) if len(value) > 2 else 0.0]
     if isinstance(value, dict):
         if "xMm" in value and "yMm" in value:
-            return [float(value.get("xMm") or 0), float(value.get("yMm") or 0), float(value.get("zMm") or 0)]
+            return [
+                float(value.get("xMm") or 0),
+                float(value.get("yMm") or 0),
+                float(value.get("zMm") or 0),
+            ]
         if "x" in value and "y" in value:
-            return [float(value.get("x") or 0), float(value.get("y") or 0), float(value.get("z") or 0)]
+            return [
+                float(value.get("x") or 0),
+                float(value.get("y") or 0),
+                float(value.get("z") or 0),
+            ]
     return None
 
 
@@ -1350,7 +1430,9 @@ def resolve_floor_supports(model_id: str, doc: Document, request: dict[str, Any]
     lower_level_id = request.get("lowerLevelId") or request.get("supportLevelId")
     floor_bbox = element_bbox_mm(doc, floor)
     if floor_bbox is None:
-        return error_envelope("invalid_request", "Floor boundary could not be evaluated.", status=400)
+        return error_envelope(
+            "invalid_request", "Floor boundary could not be evaluated.", status=400
+        )
     search_bbox = _expand_bbox_xy(tolerance)(floor_bbox)
     floor_z = _level_elevation(doc, floor.level_id)
 
@@ -1428,7 +1510,9 @@ def resolve_room_boundary_edges(
         room_ids = [room_ids]
     if room_ids is not None and not isinstance(room_ids, list):
         return error_envelope("invalid_request", "roomIds must be a list of strings.", status=400)
-    report = room_boundary_edges_report_v1(doc, room_ids=[str(room_id) for room_id in room_ids or []])
+    report = room_boundary_edges_report_v1(
+        doc, room_ids=[str(room_id) for room_id in room_ids or []]
+    )
     if not report.get("ok"):
         return error_envelope(
             str(report.get("error", {}).get("code") or "invalid_request"),

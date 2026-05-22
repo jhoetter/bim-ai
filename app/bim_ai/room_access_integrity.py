@@ -206,7 +206,8 @@ def room_access_graph_v1(
         {
             element_id
             for finding in findings
-            if finding.get("ruleId") in {"room_access_inaccessible_room", "room_without_door_access"}
+            if finding.get("ruleId")
+            in {"room_access_inaccessible_room", "room_without_door_access"}
             for element_id in finding.get("elementIds", [])
             if element_id in graph
         }
@@ -353,7 +354,10 @@ def _door_room_evidence(
                     "Host access on a real physical wall/opening boundary, or keep this element analytical and add a separate physical door.",
                     tracker_items=("BIR-D01", "BIR-D02"),
                     actionability="fixable_by_rehost_or_physical_door",
-                    evidence={"hostPhysicalRole": _physical_role(wall), "doorPhysicalRole": _physical_role(door)},
+                    evidence={
+                        "hostPhysicalRole": _physical_role(wall),
+                        "doorPhysicalRole": _physical_role(door),
+                    },
                 )
             )
             continue
@@ -436,7 +440,9 @@ def _room_boundary_openness_findings(
                     "Use room separations only as analytical boundary evidence; model access with real hosted doors/openings on physical walls.",
                     tracker_items=("BIR-D01", "BIR-D02"),
                     actionability="fixable_by_real_door_or_analytical_flag",
-                    evidence={"props": dict(sorted((str(key), value) for key, value in props.items()))},
+                    evidence={
+                        "props": dict(sorted((str(key), value) for key, value in props.items()))
+                    },
                 )
             )
     return findings
@@ -1177,7 +1183,10 @@ def _rooms_share_wall_edge(
             overlap = _axis_aligned_overlap_segment(edge, peer_edge)
             if overlap is None:
                 continue
-            if math.hypot(overlap[1][0] - overlap[0][0], overlap[1][1] - overlap[0][1]) >= ACCESS_TOLERANCE_MM:
+            if (
+                math.hypot(overlap[1][0] - overlap[0][0], overlap[1][1] - overlap[0][1])
+                >= ACCESS_TOLERANCE_MM
+            ):
                 return True
     return False
 

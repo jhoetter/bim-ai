@@ -47,7 +47,15 @@ COMPARISON_FIELDS_BY_KIND = {
     "wall_thickness": ["appliesTo", "thicknessMm"],
     "room": ["levelId", "name", "areaM2"],
     "area": ["scope", "levelId", "name", "areaM2"],
-    "opening": ["levelId", "openingKind", "openingType", "widthMm", "heightMm", "sillHeightMm", "hostWallRef"],
+    "opening": [
+        "levelId",
+        "openingKind",
+        "openingType",
+        "widthMm",
+        "heightMm",
+        "sillHeightMm",
+        "hostWallRef",
+    ],
     "door": ["levelId", "widthMm", "heightMm", "hostWallRef"],
     "window": ["levelId", "widthMm", "heightMm", "sillHeightMm", "hostWallRef"],
     "stair": ["fromLevelId", "toLevelId", "stepCount"],
@@ -79,11 +87,18 @@ def build_source_reader_consensus_report(
     critical_kinds_by_package: dict[str, set[str]] = defaultdict(set)
 
     for idx, response in enumerate(rows):
-        package_id = str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "unknown")
+        package_id = str(
+            response.get("workPackageId")
+            or response.get("workPackage")
+            or response.get("id")
+            or "unknown"
+        )
         reader_key = _reader_key(response, idx)
         reader_keys_by_package[package_id].add(reader_key)
         normalization = normalize_ai_visual_trace_reader_response(response)
-        normalized_response = normalization.get("response") if isinstance(normalization.get("response"), dict) else {}
+        normalized_response = (
+            normalization.get("response") if isinstance(normalization.get("response"), dict) else {}
+        )
         normalized_facts = [
             fact
             for fact in normalized_response.get("facts") or []
@@ -247,7 +262,9 @@ def _response_rows(responses: list[dict[str, Any]] | dict[str, Any] | None) -> l
     return []
 
 
-def _disposition_rows(dispositions: list[dict[str, Any]] | dict[str, Any] | None) -> list[dict[str, Any]]:
+def _disposition_rows(
+    dispositions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     if dispositions is None:
         return []
     if isinstance(dispositions, dict) and isinstance(dispositions.get("dispositions"), list):
@@ -265,7 +282,8 @@ def _disposition_rows(dispositions: list[dict[str, Any]] | dict[str, Any] | None
         out.append(
             {
                 **row,
-                "dispositionId": row.get("dispositionId") or f"reader-consensus-disposition-{index + 1:03d}",
+                "dispositionId": row.get("dispositionId")
+                or f"reader-consensus-disposition-{index + 1:03d}",
                 "status": "accepted_for_consensus_resolution",
             }
         )
@@ -300,7 +318,11 @@ def _matching_disposition(
     for row in dispositions:
         if row.get("code") and str(row.get("code")) != code:
             continue
-        if work_package_id and row.get("workPackageId") and str(row.get("workPackageId")) != work_package_id:
+        if (
+            work_package_id
+            and row.get("workPackageId")
+            and str(row.get("workPackageId")) != work_package_id
+        ):
             continue
         if match_key and row.get("matchKey") and str(row.get("matchKey")) != match_key:
             continue
@@ -372,7 +394,9 @@ def _compare_group(kind: str, group: list[dict[str, Any]]) -> list[dict[str, Any
             values.append({"readerKey": row.get("readerKey"), "value": raw})
         if len(values) < 2:
             continue
-        status = "accepted" if _values_agree(field, [row["value"] for row in values]) else "conflict"
+        status = (
+            "accepted" if _values_agree(field, [row["value"] for row in values]) else "conflict"
+        )
         comparisons.append({"field": field, "status": status, "values": values})
     return comparisons
 

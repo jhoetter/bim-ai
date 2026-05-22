@@ -99,7 +99,9 @@ def build_advisor_four_surface_parity(
     }
 
 
-def _constructability_body(payload: Mapping[str, Any] | Iterable[Mapping[str, Any]]) -> Mapping[str, Any]:
+def _constructability_body(
+    payload: Mapping[str, Any] | Iterable[Mapping[str, Any]],
+) -> Mapping[str, Any]:
     if not isinstance(payload, Mapping):
         return {"findings": list(payload)}
     body = payload.get("body")

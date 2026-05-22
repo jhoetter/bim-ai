@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections import Counter
 from typing import Any
 
+from bim_ai._io.digest import digest as _digest
 
 ACCEPTED_READBACK_STATUSES = {"accepted", "matched", "passed", "ok"}
 
@@ -122,10 +121,14 @@ def _row_from_elements(
             },
         )
     blocking_reasons = [*count_reasons, *field_reasons]
-    status = "matched" if not blocking_reasons else ("mismatched" if field_reasons else count_status)
+    status = (
+        "matched" if not blocking_reasons else ("mismatched" if field_reasons else count_status)
+    )
     code = None
     if blocking_reasons:
-        code = "readback_expected_element_missing" if not candidates else "readback_geometry_mismatch"
+        code = (
+            "readback_expected_element_missing" if not candidates else "readback_geometry_mismatch"
+        )
     return {
         "expectationId": _expectation_id(expectation),
         "sourceFactId": source_fact_id,
@@ -155,12 +158,19 @@ def _candidate_elements(
             candidates.append(element)
             continue
         source_ids = _element_source_fact_ids(element)
-        if source_fact_id and isinstance(source_ids, list) and source_fact_id in {str(item) for item in source_ids}:
+        if (
+            source_fact_id
+            and isinstance(source_ids, list)
+            and source_fact_id in {str(item) for item in source_ids}
+        ):
             candidates.append(element)
             continue
         if source_fact_id:
             continue
-        if expected_kind and str(element.get("kind") or element.get("category") or "") == expected_kind:
+        if (
+            expected_kind
+            and str(element.get("kind") or element.get("category") or "") == expected_kind
+        ):
             candidates.append(element)
     return candidates
 
@@ -172,7 +182,9 @@ def _element_source_fact_ids(element: dict[str, Any]) -> list[str]:
     agent_trace = (
         element.get("agentTrace")
         if isinstance(element.get("agentTrace"), dict)
-        else raw.get("agentTrace") if isinstance(raw.get("agentTrace"), dict) else {}
+        else raw.get("agentTrace")
+        if isinstance(raw.get("agentTrace"), dict)
+        else {}
     )
     for key in agent_trace.get("assumptionKeys") or []:
         text = str(key)
@@ -215,7 +227,9 @@ def _field_mismatch_reasons(
     if expected_level and actual_level and str(expected_level) != str(actual_level):
         reasons.append(f"expected level {expected_level!r}, found {actual_level!r}")
     for group_key in ("geometry", "parameters", "hostIds"):
-        expected_group = expected.get(group_key) if isinstance(expected.get(group_key), dict) else {}
+        expected_group = (
+            expected.get(group_key) if isinstance(expected.get(group_key), dict) else {}
+        )
         for key, expected_value in expected_group.items():
             actual_value = _deep_get(actual, key)
             if actual_value is None:
@@ -237,11 +251,16 @@ def _values_match(expected: Any, actual: Any, tolerances: dict[str, float]) -> b
     if isinstance(expected, str) or isinstance(actual, str):
         return str(expected) == str(actual)
     if isinstance(expected, dict) and isinstance(actual, dict):
-        return all(_values_match(value, actual.get(key), tolerances) for key, value in expected.items())
+        return all(
+            _values_match(value, actual.get(key), tolerances) for key, value in expected.items()
+        )
     if isinstance(expected, list) and isinstance(actual, list):
         if len(expected) != len(actual):
             return False
-        return all(_values_match(left, right, tolerances) for left, right in zip(expected, actual, strict=False))
+        return all(
+            _values_match(left, right, tolerances)
+            for left, right in zip(expected, actual, strict=False)
+        )
     return expected == actual
 
 
@@ -296,7 +315,9 @@ def _element_rows(value: list[dict[str, Any]] | dict[str, Any] | None) -> list[d
     return rows
 
 
-def _match_explicit_row(expectation: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+def _match_explicit_row(
+    expectation: dict[str, Any], rows: list[dict[str, Any]]
+) -> dict[str, Any] | None:
     expectation_id = _expectation_id(expectation)
     source_fact_id = _source_fact_id(expectation)
     for row in rows:
@@ -323,8 +344,3 @@ def _expectation_tolerances(expectation: dict[str, Any]) -> dict[str, float]:
     if not isinstance(raw, dict):
         return {}
     return {str(key): float(value) for key, value in raw.items() if isinstance(value, int | float)}
-
-
-def _digest(payload: dict[str, Any]) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

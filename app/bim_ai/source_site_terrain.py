@@ -57,12 +57,20 @@ def build_source_site_terrain_report(facts: list[dict[str, Any]]) -> dict[str, A
             "terrainCount": len(terrains),
             "siteContextCount": len(contexts),
             "exactToposolidCandidateCount": sum(
-                1 for terrain in terrains if terrain.get("terrainDecision") == "exact_toposolid_possible"
+                1
+                for terrain in terrains
+                if terrain.get("terrainDecision") == "exact_toposolid_possible"
             ),
             "contextOnlyTerrainCount": sum(
-                1 for terrain in terrains if terrain.get("terrainDecision") == "context_only_or_tolerance_required"
+                1
+                for terrain in terrains
+                if terrain.get("terrainDecision") == "context_only_or_tolerance_required"
             ),
-            "buildingPlacementKnownCount": sum(1 for context in contexts if context.get("buildingPlacementStatus") == "source_backed"),
+            "buildingPlacementKnownCount": sum(
+                1
+                for context in contexts
+                if context.get("buildingPlacementStatus") == "source_backed"
+            ),
             "actionCount": len(actions),
             "blockedActionCount": sum(
                 1 for action in actions if str(action.get("status") or "").startswith("blocked")
@@ -132,7 +140,9 @@ def apply_source_site_terrain_decisions(
         "blockedActionCount": sum(
             1 for action in actions if str(action.get("status") or "").startswith("blocked")
         ),
-        "resolvedActionCount": sum(1 for action in actions if action.get("status") == "resolved_with_decision"),
+        "resolvedActionCount": sum(
+            1 for action in actions if action.get("status") == "resolved_with_decision"
+        ),
         "kindCounts": _kind_counts(actions),
     }
     return {
@@ -166,7 +176,9 @@ def _parcel_row(fact: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
 
 
 def _terrain_row(fact: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
-    has_elevations = bool(value.get("elevationPoints") or value.get("contours") or value.get("mesh"))
+    has_elevations = bool(
+        value.get("elevationPoints") or value.get("contours") or value.get("mesh")
+    )
     return {
         "factId": fact.get("factId"),
         "siteRef": value.get("siteRef"),
@@ -174,7 +186,9 @@ def _terrain_row(fact: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
         "hasElevationPoints": bool(value.get("elevationPoints")),
         "hasContours": bool(value.get("contours")),
         "hasMesh": bool(value.get("mesh")),
-        "terrainDecision": "exact_toposolid_possible" if has_elevations else "context_only_or_tolerance_required",
+        "terrainDecision": "exact_toposolid_possible"
+        if has_elevations
+        else "context_only_or_tolerance_required",
         "sourcePrecision": _source_precision(fact),
         "status": fact.get("status"),
         "confidence": fact.get("confidence"),
@@ -184,7 +198,11 @@ def _terrain_row(fact: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
 
 
 def _site_context_row(fact: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
-    placement = value.get("buildingPlacement") or value.get("buildingPlacementMm") or value.get("footprintPlacement")
+    placement = (
+        value.get("buildingPlacement")
+        or value.get("buildingPlacementMm")
+        or value.get("footprintPlacement")
+    )
     return {
         "factId": fact.get("factId"),
         "locationDescription": value.get("locationDescription"),
@@ -239,7 +257,10 @@ def _parcel_actions(parcel: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _terrain_actions(terrain: dict[str, Any]) -> list[dict[str, Any]]:
-    if terrain.get("terrainDecision") == "exact_toposolid_possible" and terrain.get("sourcePrecision") == "source_measured":
+    if (
+        terrain.get("terrainDecision") == "exact_toposolid_possible"
+        and terrain.get("sourcePrecision") == "source_measured"
+    ):
         return []
     return [
         {
@@ -264,7 +285,9 @@ def _terrain_actions(terrain: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _site_context_actions(context: dict[str, Any]) -> list[dict[str, Any]]:
-    if context.get("buildingPlacementStatus") == "source_backed" and context.get("roadRelationship"):
+    if context.get("buildingPlacementStatus") == "source_backed" and context.get(
+        "roadRelationship"
+    ):
         return []
     missing = []
     if context.get("buildingPlacementStatus") != "source_backed":
@@ -302,13 +325,21 @@ def _closed_boundary(boundary: list[Any]) -> bool:
 
 
 def _point_xy(point: dict[str, Any]) -> tuple[float, float]:
-    return (float(point.get("xMm") or point.get("x") or 0), float(point.get("yMm") or point.get("y") or 0))
+    return (
+        float(point.get("xMm") or point.get("x") or 0),
+        float(point.get("yMm") or point.get("y") or 0),
+    )
 
 
 def _source_precision(fact: dict[str, Any]) -> str:
     status = str(fact.get("status") or "").lower()
     confidence = fact.get("confidence")
-    if "uncertain" in status or "limitation" in status or "estimate" in status or "inferred" in status:
+    if (
+        "uncertain" in status
+        or "limitation" in status
+        or "estimate" in status
+        or "inferred" in status
+    ):
         return "estimated_or_limited"
     if isinstance(confidence, int | float) and confidence < 0.75:
         return "estimated_or_limited"
@@ -344,7 +375,10 @@ def _validate_decision(action: dict[str, Any], decision: dict[str, Any]) -> list
             errors.append(f"missing required field: {field}")
     allowed = {
         "parcel_precision_repair": {"accept_context_only", "accept_measured_parcel"},
-        "terrain_source_repair_or_tolerance": {"accept_context_only_no_toposolid", "accept_measured_toposolid"},
+        "terrain_source_repair_or_tolerance": {
+            "accept_context_only_no_toposolid",
+            "accept_measured_toposolid",
+        },
         "building_placement_alignment_required": {"accept_building_placement"},
         "site_context_setup_required": {"defer_site_out_of_scope", "accept_site_source_package"},
     }.get(str(action.get("kind") or ""), set())
@@ -355,7 +389,10 @@ def _validate_decision(action: dict[str, Any], decision: dict[str, Any]) -> list
             errors.append("missing required field: buildingPlacement")
         if not decision.get("roadRelationship"):
             errors.append("missing required field: roadRelationship")
-    if action.get("kind") == "terrain_source_repair_or_tolerance" and decision.get("decision") == "accept_context_only_no_toposolid":
+    if (
+        action.get("kind") == "terrain_source_repair_or_tolerance"
+        and decision.get("decision") == "accept_context_only_no_toposolid"
+    ):
         tolerance = decision.get("tolerance") if isinstance(decision.get("tolerance"), dict) else {}
         if not tolerance.get("findingCodes"):
             errors.append("missing required field: tolerance.findingCodes")

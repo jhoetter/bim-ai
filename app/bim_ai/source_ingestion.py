@@ -92,17 +92,53 @@ AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE: dict[str, list[str]] = {
 }
 
 CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
-    ("floor_plan", r"\bgrundriss\b|\bgrundrisse\b|\bfloor\s*plan\b|\beg\b|\bog\b|\bug\b|\bdg\b", 0.86),
-    ("section", r"\bschnitt\b|\bsection\b|\blaengsschnitt\b|\blangsschnitt\b|\bquerschnitt\b", 0.84),
-    ("elevation", r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b", 0.84),
-    ("site_plan", r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b", 0.86),
-    ("area_calculation", r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b", 0.82),
-    ("energy_doc", r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b", 0.92),
-    ("drainage_doc", r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b", 0.82),
+    (
+        "floor_plan",
+        r"\bgrundriss\b|\bgrundrisse\b|\bfloor\s*plan\b|\beg\b|\bog\b|\bug\b|\bdg\b",
+        0.86,
+    ),
+    (
+        "section",
+        r"\bschnitt\b|\bsection\b|\blaengsschnitt\b|\blangsschnitt\b|\bquerschnitt\b",
+        0.84,
+    ),
+    (
+        "elevation",
+        r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b",
+        0.84,
+    ),
+    (
+        "site_plan",
+        r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b",
+        0.86,
+    ),
+    (
+        "area_calculation",
+        r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b",
+        0.82,
+    ),
+    (
+        "energy_doc",
+        r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b",
+        0.92,
+    ),
+    (
+        "drainage_doc",
+        r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b",
+        0.82,
+    ),
     ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b|\bexpose\b", 0.9),
     ("legal_admin", r"\bbaulast\b|\baltlast", 0.9),
-    ("legal_admin", r"\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b", 0.78),
-    ("construction_description", r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b", 0.78),
+    (
+        "legal_admin",
+        r"\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b",
+        0.78,
+    ),
+    (
+        "construction_description",
+        r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b",
+        0.78,
+    ),
 )
 
 PAGE_CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
@@ -111,15 +147,47 @@ PAGE_CLASSIFICATION_KEYWORDS: tuple[tuple[str, str, float], ...] = (
         r"\bgrundriss\b|\bgrundrisse\b|\bfloor\s*plan\b|\berdgeschoss\b|\bdachgeschoss\b|\bkellergeschoss\b|\buntergeschoss\b|\bobergeschoss\b|\bkg\s*[-\u2013]?\s*plan\b|\beg\s*[-\u2013]?\s*plan\b|\bdg\s*[-\u2013]?\s*plan\b",
         0.86,
     ),
-    ("section", r"\bschnitt\b|\bsection\b|\blaengsschnitt\b|\blangsschnitt\b|\bquerschnitt\b", 0.84),
-    ("elevation", r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b", 0.84),
-    ("site_plan", r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b", 0.86),
-    ("area_calculation", r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b", 0.82),
-    ("energy_doc", r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b", 0.92),
-    ("drainage_doc", r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b", 0.82),
+    (
+        "section",
+        r"\bschnitt\b|\bsection\b|\blaengsschnitt\b|\blangsschnitt\b|\bquerschnitt\b",
+        0.84,
+    ),
+    (
+        "elevation",
+        r"\bansicht\b|\bansichten\b|\belevation\b|\bnordansicht\b|\bsuedansicht\b|\bsudansicht\b|\bwestansicht\b|\bostansicht\b",
+        0.84,
+    ),
+    (
+        "site_plan",
+        r"\blageplan\b|\bsite\s*plan\b|\bflurkarte\b|\bkataster\b|\bparcel\b|\bgrundstueck|\bgrundstuck|\bflurstueck|\bflurstuck|\btimonline\b",
+        0.86,
+    ),
+    (
+        "area_calculation",
+        r"\bwohnflaeche|\bwohnflache|\bnutzflaeche|\bnutzflache|\bflaechenberechnung|\bflachenberechnung|\bumbauter\s+raum\b|\barea\b|\bm2\b|\bm²\b",
+        0.82,
+    ),
+    (
+        "energy_doc",
+        r"\benergieausweis\b|\benergie\b|\benev\b|\bgebaeudeenergiegesetz\b|\bgebaudeenergiegesetz\b|\bu-wert\b|\bebb\b",
+        0.92,
+    ),
+    (
+        "drainage_doc",
+        r"\bentwaesserung|\bentwasserung|\bdrainage\b|\babwasser\b|\bkanal\b|\bregenwasser\b",
+        0.82,
+    ),
     ("photo", r"\bfoto\b|\bphoto\b|\bbild\b|\bimg\b|\bdsc\b|\bexpose\b", 0.9),
-    ("legal_admin", r"\bbaulast\b|\baltlast|\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b", 0.78),
-    ("construction_description", r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b", 0.78),
+    (
+        "legal_admin",
+        r"\bbaulast\b|\baltlast|\bbaugenehmigung\b|\bgrundbuch\b|\bvertrag\b|\bbescheid\b|\bantrag\b|\bgb\b|\bnebenkosten\b|\bgrundsteuer\b",
+        0.78,
+    ),
+    (
+        "construction_description",
+        r"\bbaubeschreibung\b|\bkonstruktion\b|\bmaterial\b|\bsanierung\b|\bbaujahr\b",
+        0.78,
+    ),
 )
 
 SCALE_RE = re.compile(
@@ -137,7 +205,9 @@ def build_folder_manifest(root_path: str | Path) -> dict[str, Any]:
 
     files: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
-    for path in sorted((p for p in root.rglob("*") if p.is_file()), key=lambda p: str(p.relative_to(root))):
+    for path in sorted(
+        (p for p in root.rglob("*") if p.is_file()), key=lambda p: str(p.relative_to(root))
+    ):
         try:
             files.append(_file_manifest_row(root, path))
         except Exception as exc:  # pragma: no cover - defensive around unreadable local files.
@@ -174,7 +244,9 @@ def classify_documents(
     files = _files_from_manifest(manifest_or_files)
     text_by_source = _text_extraction_index(text_extractions)
     rows = [
-        _classify_file(row, supplemental_text=text_by_source.get(str(row.get("absolutePath") or "")))
+        _classify_file(
+            row, supplemental_text=text_by_source.get(str(row.get("absolutePath") or ""))
+        )
         for row in files
     ]
     counts = Counter(str(row["classification"]) for row in rows)
@@ -396,9 +468,7 @@ def rerender_for_legibility(
         else []
     )
     rendered_by_source: dict[str, dict[str, Any]] = {
-        str(row.get("sourcePath") or ""): row
-        for row in rendered_pages
-        if isinstance(row, dict)
+        str(row.get("sourcePath") or ""): row for row in rendered_pages if isinstance(row, dict)
     }
 
     re_renders: list[dict[str, Any]] = []
@@ -408,9 +478,7 @@ def rerender_for_legibility(
             continue
         doc_id = str(target.get("sourceDocumentId") or "")
         if not doc_id:
-            diagnostics.append(
-                {"code": "rerender_target_missing_document_id", "target": target}
-            )
+            diagnostics.append({"code": "rerender_target_missing_document_id", "target": target})
             continue
         manifest_row = files_by_doc_id.get(doc_id)
         if manifest_row is None or manifest_row.get("kind") != "pdf":
@@ -438,13 +506,9 @@ def rerender_for_legibility(
             existing = rendered_by_source.get(source_path)
             if existing is not None:
                 pages = [p.get("page") for p in existing.get("pages") or [] if isinstance(p, dict)]
-        page_numbers = sorted(
-            {int(p) for p in (pages or []) if isinstance(p, int) and p > 0}
-        )
+        page_numbers = sorted({int(p) for p in (pages or []) if isinstance(p, int) and p > 0})
         if not page_numbers:
-            diagnostics.append(
-                {"code": "rerender_target_no_pages", "sourceDocumentId": doc_id}
-            )
+            diagnostics.append({"code": "rerender_target_no_pages", "sourceDocumentId": doc_id})
             continue
         render_target_dir = out_dir / "source" / "rendered-pages" / doc_id
         first = page_numbers[0]
@@ -693,9 +757,7 @@ def build_ai_visual_trace_work_order(
     """Create reusable AI visual-reading work packages from a source packet."""
 
     documents = [
-        doc
-        for doc in ai_visual_trace_packet.get("documents", [])
-        if isinstance(doc, dict)
+        doc for doc in ai_visual_trace_packet.get("documents", []) if isinstance(doc, dict)
     ]
 
     def doc_roles(doc: dict[str, Any]) -> set[str]:
@@ -718,7 +780,13 @@ def build_ai_visual_trace_work_order(
         else:
             roles |= doc_roles(doc)
         if primary in {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}:
-            roles |= doc_roles(doc) & {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}
+            roles |= doc_roles(doc) & {
+                "floor_plan",
+                "section",
+                "elevation",
+                "site_plan",
+                "drainage_doc",
+            }
         return roles
 
     def docs_for(*classes: str) -> list[dict[str, Any]]:
@@ -737,7 +805,9 @@ def build_ai_visual_trace_work_order(
             and doc.get("renderedPages")
         ]
 
-    def inputs_for(rows: list[dict[str, Any]], *, wanted_classes: tuple[str, ...]) -> list[dict[str, Any]]:
+    def inputs_for(
+        rows: list[dict[str, Any]], *, wanted_classes: tuple[str, ...]
+    ) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         wanted = set(wanted_classes)
         for doc in rows:
@@ -876,8 +946,7 @@ def build_ai_visual_trace_work_order(
     return {
         "ok": True,
         "format": "reverseBimAiVisualTraceWorkOrder_v1",
-        "projectGoal": project_goal
-        or "Produce validated source facts before any BIM authoring.",
+        "projectGoal": project_goal or "Produce validated source facts before any BIM authoring.",
         "sourcePacketFormat": ai_visual_trace_packet.get("format"),
         "documentCount": len(documents),
         "workPackages": work_packages,
@@ -897,7 +966,9 @@ def build_ai_visual_trace_work_order(
     }
 
 
-def _required_value_fields_for_package(package_id: str, fact_kinds: list[str]) -> dict[str, list[str]]:
+def _required_value_fields_for_package(
+    package_id: str, fact_kinds: list[str]
+) -> dict[str, list[str]]:
     requirements = {
         kind: AI_VISUAL_FACT_VALUE_REQUIREMENTS[kind]
         for kind in fact_kinds
@@ -931,11 +1002,7 @@ def validate_ai_visual_trace_completeness(
         if not isinstance(diagnostic, dict):
             continue
         code = str(diagnostic.get("code") or "")
-        severity = (
-            "error"
-            if code.endswith(("missing", "invalid", "duplicate_id"))
-            else "warning"
-        )
+        severity = "error" if code.endswith(("missing", "invalid", "duplicate_id")) else "warning"
         findings.append({**diagnostic, "severity": diagnostic.get("severity") or severity})
     counts = Counter()
 
@@ -947,7 +1014,8 @@ def validate_ai_visual_trace_completeness(
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
         required = (
             required_value_fields_by_kind.get(kind)
-            if isinstance(required_value_fields_by_kind, dict) and kind in required_value_fields_by_kind
+            if isinstance(required_value_fields_by_kind, dict)
+            and kind in required_value_fields_by_kind
             else AI_VISUAL_FACT_VALUE_REQUIREMENTS.get(kind, [])
         )
         missing = [field for field in required if not _value_path_present(value, field)]
@@ -1121,7 +1189,9 @@ def _validate_ai_visual_fact_value_schema(
         points = value.get("points") or value.get("spotHeights")
         if "points" in value or "spotHeights" in value:
             if not _terrain_point_list(points):
-                error("points", "Terrain points/spotHeights must include numeric x/y/z coordinates.")
+                error(
+                    "points", "Terrain points/spotHeights must include numeric x/y/z coordinates."
+                )
         contours = value.get("contours")
         if contours is not None and not isinstance(contours, list):
             error("contours", "Terrain contours must be a list when present.")
@@ -1172,9 +1242,9 @@ def _source_unavailable_status_disposition(
     fact: dict[str, Any],
     value: dict[str, Any],
 ) -> dict[str, Any] | None:
-    status = _source_unavailable_decision_from_text(fact.get("status")) or _source_unavailable_decision_from_text(
-        value.get("status")
-    )
+    status = _source_unavailable_decision_from_text(
+        fact.get("status")
+    ) or _source_unavailable_decision_from_text(value.get("status"))
     if not status:
         return None
     reason = (
@@ -1189,7 +1259,10 @@ def _source_unavailable_status_disposition(
     return {
         "decision": status,
         "reason": reason,
-        "affectedScope": value.get("affectedScope") or value.get("scope") or fact.get("factId") or kind,
+        "affectedScope": value.get("affectedScope")
+        or value.get("scope")
+        or fact.get("factId")
+        or kind,
         "sourceEvidenceSummary": value.get("sourceEvidenceSummary") or reason,
     }
 
@@ -1236,15 +1309,12 @@ def _point_list(value: Any, *, min_count: int) -> bool:
 
 
 def _terrain_point_list(value: Any) -> bool:
-    return (
-        isinstance(value, list)
-        and all(
-            isinstance(row, dict)
-            and _number(row.get("xMm", row.get("x")))
-            and _number(row.get("yMm", row.get("y")))
-            and _number(row.get("zMm", row.get("z")))
-            for row in value
-        )
+    return isinstance(value, list) and all(
+        isinstance(row, dict)
+        and _number(row.get("xMm", row.get("x")))
+        and _number(row.get("yMm", row.get("y")))
+        and _number(row.get("zMm", row.get("z")))
+        for row in value
     )
 
 
@@ -1332,11 +1402,16 @@ def validate_ai_source_facts(facts: list[dict[str, Any]]) -> dict[str, Any]:
                 "factId": fact_id,
                 "confidence": float(confidence),
                 "status": fact.get("status") or "candidate",
-                "provenance": {**(provenance if isinstance(provenance, dict) else {}), "method": "ai_document_read"},
+                "provenance": {
+                    **(provenance if isinstance(provenance, dict) else {}),
+                    "method": "ai_document_read",
+                },
             }
         )
     return {
-        "ok": not any(row["code"].endswith(("missing", "invalid", "duplicate_id")) for row in diagnostics),
+        "ok": not any(
+            row["code"].endswith(("missing", "invalid", "duplicate_id")) for row in diagnostics
+        ),
         "format": "sourceAiFactValidation_v1",
         "factCount": len(normalized),
         "facts": normalized,
@@ -1352,7 +1427,9 @@ def extract_source_facts(
     text_by_path: dict[str, str] = {}
     for extraction in text_extractions or []:
         source = str(extraction.get("sourcePath") or "")
-        text_by_path[source] = "\n".join(str(page.get("text") or "") for page in extraction.get("pages", []))
+        text_by_path[source] = "\n".join(
+            str(page.get("text") or "") for page in extraction.get("pages", [])
+        )
 
     facts: list[dict[str, Any]] = []
     for doc in classifications.get("documents", []):
@@ -1559,14 +1636,16 @@ def _pdf_metadata(path: Path) -> dict[str, Any]:
 
 
 def _classify_file(row: dict[str, Any], *, supplemental_text: str | None = None) -> dict[str, Any]:
-    haystack = _normalize_search_text(" ".join(
-        [
-            str(row.get("relativePath") or ""),
-            str(row.get("name") or ""),
-            str(row.get("mimeType") or ""),
-            (supplemental_text or "")[:4000],
-        ]
-    ))
+    haystack = _normalize_search_text(
+        " ".join(
+            [
+                str(row.get("relativePath") or ""),
+                str(row.get("name") or ""),
+                str(row.get("mimeType") or ""),
+                (supplemental_text or "")[:4000],
+            ]
+        )
+    )
     role_scores: dict[str, float] = {}
     if row.get("kind") == "image":
         role_scores["photo"] = 0.45
@@ -1614,7 +1693,11 @@ def _classification_roles_from_text(value: str) -> list[dict[str, Any]]:
                 continue
             role_scores[label] = max(role_scores.get(label, 0.0), confidence)
     return [
-        {"classification": label, "confidence": confidence, "method": "native_page_text_routing_hint"}
+        {
+            "classification": label,
+            "confidence": confidence,
+            "method": "native_page_text_routing_hint",
+        }
         for label, confidence in sorted(role_scores.items(), key=lambda item: (-item[1], item[0]))
     ]
 
@@ -1674,15 +1757,13 @@ def _normalize_search_text(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     asciiish = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return (
-        asciiish.replace("ß", "ss")
-        .replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-        .lower()
+        asciiish.replace("ß", "ss").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").lower()
     )
 
 
-def _files_from_manifest(manifest_or_files: dict[str, Any] | list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _files_from_manifest(
+    manifest_or_files: dict[str, Any] | list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     if isinstance(manifest_or_files, list):
         return manifest_or_files
     files = manifest_or_files.get("files", [])

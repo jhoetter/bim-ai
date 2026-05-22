@@ -460,14 +460,14 @@ def _profile_from(profile: str | Mapping[str, Any] | None) -> CodeProfile:
             accessibility=token in {"accessibility", "accessible", "permit", "full"},
             regional=token in {"regional", "regional_code", "permit", "full"},
             enforced=token in {"fire", "accessibility", "regional", "permit", "full"},
-            basis="enforced" if token in {"fire", "accessibility", "regional", "permit", "full"} else "advisory",
+            basis="enforced"
+            if token in {"fire", "accessibility", "regional", "permit", "full"}
+            else "advisory",
         )
 
     profile_id = str(profile.get("id") or profile.get("profileId") or "custom")
     raw_basis = (
-        profile.get("basis")
-        if "basis" in profile
-        else profile.get("enforcementBasis", "advisory")
+        profile.get("basis") if "basis" in profile else profile.get("enforcementBasis", "advisory")
     )
     basis = _normalized_text(raw_basis)
     basis_was_explicit = "basis" in profile or "enforcementBasis" in profile
@@ -482,7 +482,9 @@ def _profile_from(profile: str | Mapping[str, Any] | None) -> CodeProfile:
         accessibility=bool(profile.get("accessibility"))
         or "accessibility" in domains
         or "accessible" in domains,
-        regional=bool(profile.get("regional")) or "regional" in domains or "regional_code" in domains,
+        regional=bool(profile.get("regional"))
+        or "regional" in domains
+        or "regional_code" in domains,
         enforced=enforced,
         locale=_optional_text(profile.get("locale") or profile.get("jurisdiction")),
         source=_optional_text(profile.get("source") or profile.get("codeSource")),

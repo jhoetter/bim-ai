@@ -59,14 +59,24 @@ def _has_room_boundary(fact: dict[str, Any]) -> bool:
         for key in ("boundaryMm", "boundaryPointsMm", "outlineMm")
     ):
         return True
-    return bool(value.get("boundaryRef")) and isinstance(value.get("boundaryEdges"), list) and bool(value.get("boundaryEdges"))
+    return (
+        bool(value.get("boundaryRef"))
+        and isinstance(value.get("boundaryEdges"), list)
+        and bool(value.get("boundaryEdges"))
+    )
 
 
 def _has_explicit_disposition(fact: dict[str, Any]) -> bool:
     value = _value(fact)
-    disposition = value.get("disposition") or value.get("areaDisposition") or value.get("areaReconciliationDisposition")
+    disposition = (
+        value.get("disposition")
+        or value.get("areaDisposition")
+        or value.get("areaReconciliationDisposition")
+    )
     if isinstance(disposition, dict):
-        return bool(disposition.get("acceptedBy") or disposition.get("reason") or disposition.get("status"))
+        return bool(
+            disposition.get("acceptedBy") or disposition.get("reason") or disposition.get("status")
+        )
     return bool(disposition)
 
 
@@ -140,15 +150,21 @@ def build_source_area_consistency_report(
         role="level_total",
         tolerance_m2=tolerance_m2,
     )
-    deduped_room_rows, duplicate_checks = _dedupe_modelable_room_rows(room_rows, tolerance_m2=tolerance_m2)
+    deduped_room_rows, duplicate_checks = _dedupe_modelable_room_rows(
+        room_rows, tolerance_m2=tolerance_m2
+    )
 
     room_key_to_rows: dict[tuple[str | None, str], list[dict[str, Any]]] = defaultdict(list)
     for row in deduped_room_rows:
         room_key_to_rows[(row.get("levelId"), _room_name_key(row.get("name")))].append(row)
 
-    checks: list[dict[str, Any]] = list(duplicate_checks) + duplicate_area_checks + duplicate_total_checks
+    checks: list[dict[str, Any]] = (
+        list(duplicate_checks) + duplicate_area_checks + duplicate_total_checks
+    )
     for area_row in area_only_room_rows:
-        matches = room_key_to_rows.get((area_row.get("levelId"), _room_name_key(area_row.get("name"))), [])
+        matches = room_key_to_rows.get(
+            (area_row.get("levelId"), _room_name_key(area_row.get("name"))), []
+        )
         if not matches:
             checks.append(
                 {
@@ -165,7 +181,9 @@ def build_source_area_consistency_report(
         for match in matches:
             delta = round(float(match["areaM2"]) - float(area_row["areaM2"]), 4)
             status = "accepted" if abs(delta) <= tolerance_m2 else "blocked"
-            if status == "blocked" and (area_row.get("hasExplicitDisposition") or match.get("hasExplicitDisposition")):
+            if status == "blocked" and (
+                area_row.get("hasExplicitDisposition") or match.get("hasExplicitDisposition")
+            ):
                 status = "tolerated"
             checks.append(
                 {
@@ -203,7 +221,9 @@ def build_source_area_consistency_report(
                 "sourceTotalAreaM2": source_total,
                 "sumOfModelableRoomFactsM2": round(room_sum, 4),
                 "deltaM2": delta,
-                "roomFactIds": sorted(str(row.get("factId")) for row in comparable_rows if row.get("factId")),
+                "roomFactIds": sorted(
+                    str(row.get("factId")) for row in comparable_rows if row.get("factId")
+                ),
                 "scopeMatch": _row_scope_key(total),
             }
         )
@@ -241,7 +261,9 @@ def _dedupe_modelable_room_rows(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     groups: dict[tuple[str | None, str, str | None], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        groups[(row.get("levelId"), _room_name_key(row.get("name")), _row_scope_key(row))].append(row)
+        groups[(row.get("levelId"), _room_name_key(row.get("name")), _row_scope_key(row))].append(
+            row
+        )
 
     deduped: list[dict[str, Any]] = []
     checks: list[dict[str, Any]] = []
@@ -284,8 +306,14 @@ def _dedupe_reference_rows(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     groups: dict[tuple[str | None, str, str | None], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        name_key = _room_name_key(row.get("name")) if role == "room_area_row" else _norm_text(row.get("name"))
-        groups[(row.get("levelId"), name_key, _row_scope_key(row) or _norm_text(row.get("scope")))].append(row)
+        name_key = (
+            _room_name_key(row.get("name"))
+            if role == "room_area_row"
+            else _norm_text(row.get("name"))
+        )
+        groups[
+            (row.get("levelId"), name_key, _row_scope_key(row) or _norm_text(row.get("scope")))
+        ].append(row)
 
     deduped: list[dict[str, Any]] = []
     checks: list[dict[str, Any]] = []
@@ -345,7 +373,10 @@ def _row_scope_key(row: dict[str, Any]) -> str | None:
         return "right"
     if re.search(r"\b(both|whole|gesamt|insgesamt|two|double|doppelhaus)\b", text):
         return "whole"
-    if re.search(r"\b(one|single|marketed|target|dwelling|unit|half|haelfte|halfte|bauhaelfte|bauhalfte)\b", text):
+    if re.search(
+        r"\b(one|single|marketed|target|dwelling|unit|half|haelfte|halfte|bauhaelfte|bauhalfte)\b",
+        text,
+    ):
         return "one_half"
     return None
 
@@ -401,9 +432,4 @@ def _normalize_level_text(value: str) -> str:
 def _strip_diacritics(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     asciiish = "".join(ch for ch in normalized if not unicodedata.combining(ch))
-    return (
-        asciiish.replace("ß", "ss")
-        .replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-    )
+    return asciiish.replace("ß", "ss").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")

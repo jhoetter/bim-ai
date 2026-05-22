@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from bim_ai._io.digest import digest as _digest
 
 
 def persist_reverse_bim_source_revision_ledger(
@@ -60,7 +61,9 @@ def _merge_ledgers(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[s
     entries = sorted(entries_by_id.values(), key=lambda row: str(row.get("ledgerEntryId") or ""))
     summary = dict(incoming.get("summary") or existing.get("summary") or {})
     summary["entryCount"] = len(entries)
-    summary["openEntryCount"] = sum(1 for row in entries if row.get("status") in {"open", "blocked"})
+    summary["openEntryCount"] = sum(
+        1 for row in entries if row.get("status") in {"open", "blocked"}
+    )
     summary["blockingEntryCount"] = sum(
         1 for row in entries if row.get("status") in {"open", "blocked"} and row.get("blocking")
     )
@@ -81,8 +84,3 @@ def _load_json(path: Path) -> dict[str, Any]:
     except Exception:
         return {}
     return data if isinstance(data, dict) else {}
-
-
-def _digest(payload: Any) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

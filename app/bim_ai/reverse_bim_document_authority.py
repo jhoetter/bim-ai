@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 import unicodedata
 from collections import Counter, defaultdict
 from typing import Any
 
+from bim_ai._io.digest import digest as _digest
 
 CRITICAL_DOCUMENT_ROLES = {
     "floor_plan",
@@ -124,7 +123,9 @@ def build_reverse_bim_document_authority_report(
             "roleCounts": dict(sorted(role_counts.items())),
             "authoritativeByRole": _authoritative_by_role(groups),
         },
-        "documents": sorted(rows, key=lambda row: (str(row.get("groupKey")), -float(row.get("authorityScore") or 0))),
+        "documents": sorted(
+            rows, key=lambda row: (str(row.get("groupKey")), -float(row.get("authorityScore") or 0))
+        ),
         "groups": groups,
         "findings": findings,
         "nextStep": (
@@ -295,7 +296,8 @@ def _group_unresolved(
     active = [
         row
         for row in rows
-        if str(row.get("explicitStatus") or "") not in {"context", "supplemental", "superseded", "deprecated", "void"}
+        if str(row.get("explicitStatus") or "")
+        not in {"context", "supplemental", "superseded", "deprecated", "void"}
     ]
     if len(active) <= 1:
         return False
@@ -336,7 +338,13 @@ def _authoritative_by_role(groups: list[dict[str, Any]]) -> dict[str, list[str]]
 
 def _first_non_suppressed(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
     for row in rows:
-        if str(row.get("explicitStatus") or "") not in {"context", "supplemental", "superseded", "deprecated", "void"}:
+        if str(row.get("explicitStatus") or "") not in {
+            "context",
+            "supplemental",
+            "superseded",
+            "deprecated",
+            "void",
+        }:
             return row
     return rows[0] if rows else None
 
@@ -425,11 +433,19 @@ def _authority_reasons(
 def _scope_tokens(role: str, normalized_path: str) -> list[str]:
     tokens = []
     if role in {"floor_plan", "area_calculation"}:
-        tokens.extend(token for token in LEVEL_SCOPE_TOKENS if re.search(rf"\b{token}\b", normalized_path))
+        tokens.extend(
+            token for token in LEVEL_SCOPE_TOKENS if re.search(rf"\b{token}\b", normalized_path)
+        )
     if role in {"elevation", "section"}:
-        tokens.extend(token for token in ELEVATION_SCOPE_TOKENS if re.search(rf"\b{token}\b", normalized_path))
+        tokens.extend(
+            token for token in ELEVATION_SCOPE_TOKENS if re.search(rf"\b{token}\b", normalized_path)
+        )
     if role == "site_plan":
-        tokens.extend(token for token in ("lageplan", "site", "parcel", "flurkarte", "kataster") if token in normalized_path)
+        tokens.extend(
+            token
+            for token in ("lageplan", "site", "parcel", "flurkarte", "kataster")
+            if token in normalized_path
+        )
     return sorted(set(tokens))
 
 
@@ -440,7 +456,9 @@ def _revision_number(normalized_path: str, hint: dict[str, Any] | None) -> int |
     if isinstance(raw, str) and raw.isdigit():
         return int(raw)
     candidates = []
-    for match in re.finditer(r"\b(?:rev|revision|index|stand|version|v)\s*[-_ ]?(\d{1,3})\b", normalized_path):
+    for match in re.finditer(
+        r"\b(?:rev|revision|index|stand|version|v)\s*[-_ ]?(\d{1,3})\b", normalized_path
+    ):
         candidates.append(int(match.group(1)))
     for match in re.finditer(r"\b(\d{4})[-_. ]?(\d{2})[-_. ]?(\d{2})\b", normalized_path):
         year = int(match.group(1))
@@ -505,7 +523,9 @@ def _classification_rows(
     ]
 
 
-def _authority_hint_index(value: list[dict[str, Any]] | dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+def _authority_hint_index(
+    value: list[dict[str, Any]] | dict[str, Any] | None,
+) -> dict[str, dict[str, Any]]:
     hints = []
     if isinstance(value, list):
         hints = [row for row in value if isinstance(row, dict)]
@@ -546,14 +566,5 @@ def _normalize_search_text(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     asciiish = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return (
-        asciiish.replace("ß", "ss")
-        .replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-        .lower()
+        asciiish.replace("ß", "ss").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").lower()
     )
-
-
-def _digest(payload: dict[str, Any]) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

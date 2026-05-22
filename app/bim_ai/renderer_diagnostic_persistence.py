@@ -62,17 +62,27 @@ def normalize_renderer_diagnostic_packet(
     ]
     normalized_diagnostics: list[dict[str, Any]] = []
     for index, diagnostic in enumerate(diagnostics):
-        code = str(diagnostic.get("code") or diagnostic.get("ruleId") or f"renderer.diagnostic.{index}")
-        evidence = diagnostic.get("evidence") if isinstance(diagnostic.get("evidence"), Mapping) else {}
+        code = str(
+            diagnostic.get("code") or diagnostic.get("ruleId") or f"renderer.diagnostic.{index}"
+        )
+        evidence = (
+            diagnostic.get("evidence") if isinstance(diagnostic.get("evidence"), Mapping) else {}
+        )
         normalized_diagnostics.append(
             {
                 **dict(diagnostic),
                 "format": "rendererDiagnostic_v1",
-                "diagnosticId": str(diagnostic.get("diagnosticId") or diagnostic.get("id") or f"{code}#{index}"),
+                "diagnosticId": str(
+                    diagnostic.get("diagnosticId") or diagnostic.get("id") or f"{code}#{index}"
+                ),
                 "code": code,
                 "ruleId": str(diagnostic.get("ruleId") or code),
                 "severity": str(diagnostic.get("severity") or "info"),
-                "issueClass": str(diagnostic.get("issueClass") or diagnostic.get("classification") or "renderer-diagnostic"),
+                "issueClass": str(
+                    diagnostic.get("issueClass")
+                    or diagnostic.get("classification")
+                    or "renderer-diagnostic"
+                ),
                 "elementIds": _unique_sorted_strings(
                     diagnostic.get("elementIds"),
                     diagnostic.get("elementId"),
@@ -147,7 +157,11 @@ def renderer_diagnostic_packet_embedding(
     *,
     model_revision: int,
 ) -> dict[str, Any]:
-    packets = [dict(p) for p in _as_list(document_wire.get("rendererDiagnosticPackets")) if isinstance(p, Mapping)]
+    packets = [
+        dict(p)
+        for p in _as_list(document_wire.get("rendererDiagnosticPackets"))
+        if isinstance(p, Mapping)
+    ]
     packets.sort(key=_packet_generated_at, reverse=True)
     latest = packets[0] if packets else None
     same_revision = next(
@@ -178,12 +192,15 @@ def latest_renderer_diagnostic_packet_for_evidence(
     *,
     model_revision: int,
 ) -> dict[str, Any] | None:
-    packets = [dict(p) for p in _as_list(document_wire.get("rendererDiagnosticPackets")) if isinstance(p, Mapping)]
+    packets = [
+        dict(p)
+        for p in _as_list(document_wire.get("rendererDiagnosticPackets"))
+        if isinstance(p, Mapping)
+    ]
     packets.sort(key=_packet_generated_at, reverse=True)
     for packet in packets:
-        if (
-            str(packet.get("format")) == RENDERER_DIAGNOSTIC_PACKET_FORMAT
-            and str(packet.get("modelRevision")) == str(model_revision)
-        ):
+        if str(packet.get("format")) == RENDERER_DIAGNOSTIC_PACKET_FORMAT and str(
+            packet.get("modelRevision")
+        ) == str(model_revision):
             return packet
     return None

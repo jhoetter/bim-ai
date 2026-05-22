@@ -380,4 +380,3 @@ async def verify_public_link_password(
     from bim_ai.public_links import verify_link_password
 
     return {"ok": verify_link_password(body.password, link_record.password_hash)}
-

@@ -532,4 +532,3 @@ async def validate_material_asset_upload(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return asset.model_dump(by_alias=True)
-

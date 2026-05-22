@@ -375,7 +375,9 @@ LEARNING_CORPUS_CONTRACT = {
             "classification": "true_positive",
             "profileId": "construction_readiness",
             "elementKinds": ["placed_asset", "wall"],
-            "evidenceRefs": ["app/tests/test_constructability_report.py::test_constructability_report_filters_and_reconciles_findings"],
+            "evidenceRefs": [
+                "app/tests/test_constructability_report.py::test_constructability_report_filters_and_reconciles_findings"
+            ],
             "reviewOutcome": "confirmed_model_defect",
         },
         {
@@ -384,7 +386,9 @@ LEARNING_CORPUS_CONTRACT = {
             "classification": "profile_mismatch",
             "profileId": "architecture",
             "elementKinds": ["wall"],
-            "evidenceRefs": ["app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"],
+            "evidenceRefs": [
+                "app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"
+            ],
             "reviewOutcome": "confirmed_profile_scope",
         },
         {
@@ -393,7 +397,9 @@ LEARNING_CORPUS_CONTRACT = {
             "classification": "false_positive",
             "profileId": "architecture",
             "elementKinds": ["placed_asset", "wall"],
-            "evidenceRefs": ["app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"],
+            "evidenceRefs": [
+                "app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"
+            ],
             "reviewOutcome": "confirmed_rule_tuning_case",
         },
     ],

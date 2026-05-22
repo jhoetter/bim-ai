@@ -56,7 +56,9 @@ def build_reverse_bim_phase_run_report(
                 }
             )
         if packet is not None:
-            missing_source_fact_ids = sorted(set(source_fact_ids) - set(packet.get("sourceFactIds") or []))
+            missing_source_fact_ids = sorted(
+                set(source_fact_ids) - set(packet.get("sourceFactIds") or [])
+            )
             if missing_source_fact_ids:
                 blockers.append(
                     {
@@ -84,7 +86,8 @@ def build_reverse_bim_phase_run_report(
                 failed_readback_rows = [
                     row
                     for row in readback_rows
-                    if str(row.get("status") or row.get("readbackStatus") or "") not in _ACCEPTED_READBACK_STATUSES
+                    if str(row.get("status") or row.get("readbackStatus") or "")
+                    not in _ACCEPTED_READBACK_STATUSES
                 ]
                 if failed_readback_rows:
                     blockers.append(
@@ -95,7 +98,9 @@ def build_reverse_bim_phase_run_report(
                             "message": "One or more query/readback evidence rows are not accepted.",
                         }
                     )
-        status = "accepted" if has_modeling_work and not blockers and packet is not None else "empty"
+        status = (
+            "accepted" if has_modeling_work and not blockers and packet is not None else "empty"
+        )
         if blockers:
             status = "blocked"
         elif has_modeling_work and packet is None:
@@ -164,7 +169,9 @@ def _packet_readback_rows(packet: dict[str, Any]) -> list[dict[str, Any]]:
         packet.get("readbackComparison"),
         packet.get("modelReadbackComparison"),
     ]
-    evidence = packet.get("evidencePackage") if isinstance(packet.get("evidencePackage"), dict) else {}
+    evidence = (
+        packet.get("evidencePackage") if isinstance(packet.get("evidencePackage"), dict) else {}
+    )
     candidates.extend(
         [
             evidence.get("readback"),
@@ -207,7 +214,9 @@ def _phase_rows(phase_authoring_spec: dict[str, Any]) -> list[dict[str, Any]]:
     return [phase for phase in phases or [] if isinstance(phase, dict)]
 
 
-def _packets_by_phase(phase_packets: list[dict[str, Any]] | dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+def _packets_by_phase(
+    phase_packets: list[dict[str, Any]] | dict[str, Any] | None,
+) -> dict[str, dict[str, Any]]:
     if phase_packets is None:
         return {}
     rows: list[dict[str, Any]]

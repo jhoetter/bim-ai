@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from bim_ai._io.digest import sha256_json
 
 OPEN_PROGRESS_STATUSES = {
     "waiting_for_reader",
@@ -127,7 +127,9 @@ def build_reverse_bim_reader_dispatch_plan(
             "assignmentCount": len(rows),
             "diagnosticCount": len(diagnostics),
             "responseExistsCount": sum(1 for row in rows if row.get("responseExists")),
-            "criticalAssignmentCount": sum(1 for row in rows if row.get("criticalConsensusPackage")),
+            "criticalAssignmentCount": sum(
+                1 for row in rows if row.get("criticalConsensusPackage")
+            ),
             "independentReaderAssignmentCount": sum(
                 1 for row in rows if row.get("independentReaderRequired")
             ),
@@ -201,7 +203,7 @@ def execute_reverse_bim_reader_dispatch(
                 "assignmentId": assignment.get("assignmentId"),
                 "status": "written",
                 "responsePath": str(response_path),
-                "responseDigestSha256": _sha256_json(response_payload),
+                "responseDigestSha256": sha256_json(response_payload, ensure_ascii=False),
                 "factCount": len(
                     [fact for fact in response_payload.get("facts") or [] if isinstance(fact, dict)]
                 ),
@@ -251,7 +253,9 @@ def _dispatch_request_payload(
     }
 
 
-def _response_with_assignment_defaults(response: dict[str, Any], assignment: dict[str, Any]) -> dict[str, Any]:
+def _response_with_assignment_defaults(
+    response: dict[str, Any], assignment: dict[str, Any]
+) -> dict[str, Any]:
     payload = {
         **response,
         "format": response.get("format") or "sourceAiVisualTraceReaderResponse_v1",
@@ -326,11 +330,6 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _diagnostic(code: str, message: str, **extra: Any) -> dict[str, Any]:
     return {"code": code, "severity": "error", "message": message, **extra}
-
-
-def _sha256_json(payload: Any) -> str:
-    canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _safe_stem(value: str) -> str:

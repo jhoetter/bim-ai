@@ -42,7 +42,9 @@ def build_reverse_bim_visual_review_requests(
         "summary": {
             "requestCount": len(requests),
             "uiRequestCount": sum(1 for row in requests if row.get("reviewKind") == "ui_checklist"),
-            "overlayRequestCount": sum(1 for row in requests if row.get("reviewKind") == "source_overlay_metric"),
+            "overlayRequestCount": sum(
+                1 for row in requests if row.get("reviewKind") == "source_overlay_metric"
+            ),
             "blockerCount": len(blockers),
         },
         "requests": requests,
@@ -72,9 +74,7 @@ def normalize_reverse_bim_visual_review_responses(
 
     capture_run = capture_run or {}
     request_rows = [
-        row
-        for row in (visual_review_requests or {}).get("requests") or []
-        if isinstance(row, dict)
+        row for row in (visual_review_requests or {}).get("requests") or [] if isinstance(row, dict)
     ]
     captures_by_id = {
         str(row.get("captureId")): row
@@ -94,14 +94,26 @@ def normalize_reverse_bim_visual_review_responses(
             or responses_by_key.get(str(request.get("viewId") or ""))
         )
         if not capture:
-            findings.append(_finding("visual_review_capture_missing", request, "Captured screenshot row is missing."))
+            findings.append(
+                _finding(
+                    "visual_review_capture_missing", request, "Captured screenshot row is missing."
+                )
+            )
             continue
         if not response:
-            findings.append(_finding("visual_review_response_missing", request, "AI visual review response is missing."))
+            findings.append(
+                _finding(
+                    "visual_review_response_missing",
+                    request,
+                    "AI visual review response is missing.",
+                )
+            )
             if request.get("reviewKind") == "ui_checklist":
                 ui_rows.append(_ui_row(capture, request, {}, status="captured"))
             elif request.get("reviewKind") == "source_overlay_metric":
-                overlay_rows.append(_overlay_row(capture, request, {}, default_tolerance_mm, status="captured"))
+                overlay_rows.append(
+                    _overlay_row(capture, request, {}, default_tolerance_mm, status="captured")
+                )
             continue
         if request.get("reviewKind") == "ui_checklist":
             row, row_findings = _normalize_ui_response(capture, request, response)
@@ -199,16 +211,30 @@ def _normalize_ui_response(
     response: dict[str, Any],
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     checklist = _checklist_from_response(response)
-    missing = [item for item in request.get("requiredChecklistItems") or [] if item not in checklist]
+    missing = [
+        item for item in request.get("requiredChecklistItems") or [] if item not in checklist
+    ]
     failed = [item for item, value in checklist.items() if value is False]
     findings = []
     for item in missing:
-        findings.append(_finding("visual_review_checklist_item_missing", request, f"Missing checklist item: {item}"))
+        findings.append(
+            _finding(
+                "visual_review_checklist_item_missing", request, f"Missing checklist item: {item}"
+            )
+        )
     for item in failed:
-        findings.append(_finding("visual_review_checklist_item_failed", request, f"Failed checklist item: {item}"))
+        findings.append(
+            _finding(
+                "visual_review_checklist_item_failed", request, f"Failed checklist item: {item}"
+            )
+        )
     status = "passed" if not missing and not failed and _verdict_ok(response) else "blocked"
     if not _verdict_ok(response):
-        findings.append(_finding("visual_review_verdict_failed", request, "AI visual review verdict is not passing."))
+        findings.append(
+            _finding(
+                "visual_review_verdict_failed", request, "AI visual review verdict is not passing."
+            )
+        )
     return _ui_row(capture, request, checklist, status=status), findings
 
 
@@ -218,11 +244,15 @@ def _normalize_overlay_response(
     response: dict[str, Any],
     default_tolerance_mm: float,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    tolerance = float(response.get("toleranceMm") or request.get("toleranceMm") or default_tolerance_mm)
+    tolerance = float(
+        response.get("toleranceMm") or request.get("toleranceMm") or default_tolerance_mm
+    )
     max_deviation = response.get("maxDeviationMm")
     findings = []
     if not isinstance(max_deviation, int | float):
-        findings.append(_finding("visual_review_overlay_metric_missing", request, "maxDeviationMm is required."))
+        findings.append(
+            _finding("visual_review_overlay_metric_missing", request, "maxDeviationMm is required.")
+        )
         status = "blocked"
     elif float(max_deviation) > tolerance:
         findings.append(
@@ -236,7 +266,11 @@ def _normalize_overlay_response(
     elif _verdict_ok(response):
         status = "passed"
     else:
-        findings.append(_finding("visual_review_verdict_failed", request, "AI visual review verdict is not passing."))
+        findings.append(
+            _finding(
+                "visual_review_verdict_failed", request, "AI visual review verdict is not passing."
+            )
+        )
         status = "blocked"
     return _overlay_row(capture, request, response, default_tolerance_mm, status=status), findings
 

@@ -215,5 +215,3 @@ class ValidationRuleElem(BaseModel):
 
 
 SiteContextType = Literal["tree", "shrub", "neighbor_proxy", "entourage"]
-
-

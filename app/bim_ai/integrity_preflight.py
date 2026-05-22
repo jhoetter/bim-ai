@@ -296,9 +296,7 @@ def build_multi_profile_comparison(
         "summary": {
             "profileCount": len(rows),
             "profilesWithErrors": [
-                row["profile"]
-                for row in rows
-                if int(row["severityCounts"].get("error") or 0) > 0
+                row["profile"] for row in rows if int(row["severityCounts"].get("error") or 0) > 0
             ],
         },
     }

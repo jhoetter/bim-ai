@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any
+
+from bim_ai._io.digest import digest
 
 FORMAT = "agentReviewReadoutConsistencyClosure_v1"
 SCHEMA_VERSION = 1
@@ -197,11 +197,6 @@ def _advisory_findings(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return findings
 
 
-def _digest_rows(rows: list[dict[str, Any]]) -> str:
-    canonical = json.dumps(rows, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode()).hexdigest()
-
-
 def agent_review_readout_consistency_closure_v1(
     *,
     readout_brief_acceptance: dict[str, Any] | None,
@@ -268,5 +263,5 @@ def agent_review_readout_consistency_closure_v1(
         "readoutFieldRefs": readout_field_refs,
         "rows": rows,
         "advisoryFindings": advisory_findings,
-        "agentReviewReadoutConsistencyClosureDigestSha256": _digest_rows(rows),
+        "agentReviewReadoutConsistencyClosureDigestSha256": digest(rows),
     }

@@ -71,6 +71,7 @@ class TolerancePolicy:
         data["requiresEvidence"] = data.pop("requires_evidence")
         return data
 
+
 ALLOWED_SEVERITIES: frozenset[str] = frozenset({"error", "warning", "info"})
 ALLOWED_LAYER_OWNERS: frozenset[str] = frozenset(
     {
@@ -864,12 +865,17 @@ def validate_advisor_rule_registry(rules: tuple[AdvisorRule, ...] = ADVISOR_RULE
             errors.append(f"{prefix}: missing test_refs")
         if not rule.tracker_items:
             errors.append(f"{prefix}: missing tracker_items")
-        if rule.priority == "P0" and rule.layer_owner in {
-            "authoring_validation",
-            "model_integrity",
-            "renderer_diagnostics",
-            "sketch_acceptance",
-        } and rule.severity != "error":
+        if (
+            rule.priority == "P0"
+            and rule.layer_owner
+            in {
+                "authoring_validation",
+                "model_integrity",
+                "renderer_diagnostics",
+                "sketch_acceptance",
+            }
+            and rule.severity != "error"
+        ):
             errors.append(f"{prefix}: P0 {rule.layer_owner} rule must be error severity")
         if rule.layer_owner == "sketch_acceptance" and rule.severity == "info":
             errors.append(f"{prefix}: sketch acceptance blocker cannot be info severity")
@@ -879,9 +885,7 @@ def validate_advisor_rule_registry(rules: tuple[AdvisorRule, ...] = ADVISOR_RULE
         if rule.suppressibility == "tolerable_with_evidence" and not (
             policy.requires_owner and policy.requires_expiry and policy.requires_evidence
         ):
-            errors.append(
-                f"{prefix}: tolerable_with_evidence requires owner, expiry, and evidence"
-            )
+            errors.append(f"{prefix}: tolerable_with_evidence requires owner, expiry, and evidence")
         if rule.suppressibility == "not_suppressible" and (
             policy.requires_owner or policy.requires_expiry or policy.requires_evidence
         ):
@@ -929,12 +933,17 @@ def validate_canonical_rule_taxonomy(
             errors.append(f"{prefix}: missing fix_command_hints")
         if not family.tracker_items:
             errors.append(f"{prefix}: missing tracker_items")
-        if family.priority == "P0" and family.layer_owner in {
-            "authoring_validation",
-            "model_integrity",
-            "renderer_diagnostics",
-            "sketch_acceptance",
-        } and family.severity != "error":
+        if (
+            family.priority == "P0"
+            and family.layer_owner
+            in {
+                "authoring_validation",
+                "model_integrity",
+                "renderer_diagnostics",
+                "sketch_acceptance",
+            }
+            and family.severity != "error"
+        ):
             errors.append(f"{prefix}: P0 {family.layer_owner} family must be error severity")
         if family.severity_policy.startswith("p0_") and family.severity != "error":
             errors.append(f"{prefix}: {family.severity_policy} must be error severity")

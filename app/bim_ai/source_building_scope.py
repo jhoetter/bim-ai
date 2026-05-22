@@ -50,16 +50,24 @@ def build_source_building_scope_report(
 
     decision_rows = _scope_decision_rows(scope_decisions)
     accepted_decision = _accepted_scope_decision(decision_rows)
-    decision_source_fact_ids = set(accepted_decision.get("sourceFactIds") or []) if accepted_decision else set()
-    decision_context_fact_ids = set(accepted_decision.get("contextScopeFactIds") or []) if accepted_decision else set()
-    decision_scope_type = str(accepted_decision.get("normalizedTargetScopeType") or "") if accepted_decision else ""
+    decision_source_fact_ids = (
+        set(accepted_decision.get("sourceFactIds") or []) if accepted_decision else set()
+    )
+    decision_context_fact_ids = (
+        set(accepted_decision.get("contextScopeFactIds") or []) if accepted_decision else set()
+    )
+    decision_scope_type = (
+        str(accepted_decision.get("normalizedTargetScopeType") or "") if accepted_decision else ""
+    )
     decision_mask_ref = _scope_decision_mask_ref(accepted_decision) if accepted_decision else None
 
     blockers: list[dict[str, Any]] = []
     if not scopes:
         if accepted_decision:
             if not accepted_decision.get("evidenceSummary"):
-                blockers.append(_decision_blocker("building_scope_decision_evidence_missing", accepted_decision))
+                blockers.append(
+                    _decision_blocker("building_scope_decision_evidence_missing", accepted_decision)
+                )
         else:
             blockers.append(
                 {
@@ -129,14 +137,18 @@ def build_source_building_scope_report(
             }
         )
 
-    target_type_counts = Counter(str(scope.get("normalizedScopeType") or "") for scope in target_scopes)
+    target_type_counts = Counter(
+        str(scope.get("normalizedScopeType") or "") for scope in target_scopes
+    )
     target_types = sorted(scope_type for scope_type in target_type_counts if scope_type)
     if len(target_types) > 1 and not accepted_decision:
         blockers.append(
             {
                 "code": "building_scope_target_type_conflict",
                 "severity": "error",
-                "sourceFactIds": [scope.get("factId") for scope in target_scopes if scope.get("factId")],
+                "sourceFactIds": [
+                    scope.get("factId") for scope in target_scopes if scope.get("factId")
+                ],
                 "targetScopeTypes": target_types,
                 "message": "Source facts disagree about whether the modeled target is a whole building, Doppelhaus, half, or unit.",
             }
@@ -171,9 +183,13 @@ def build_source_building_scope_report(
 
     if accepted_decision:
         if decision_scope_type not in TARGET_SCOPE_TYPES:
-            blockers.append(_decision_blocker("building_scope_decision_target_type_invalid", accepted_decision))
+            blockers.append(
+                _decision_blocker("building_scope_decision_target_type_invalid", accepted_decision)
+            )
         if not accepted_decision.get("evidenceSummary"):
-            blockers.append(_decision_blocker("building_scope_decision_evidence_missing", accepted_decision))
+            blockers.append(
+                _decision_blocker("building_scope_decision_evidence_missing", accepted_decision)
+            )
         if decision_scope_type in SCOPE_MASK_TARGET_TYPES and not decision_mask_ref:
             blockers.append(
                 {
@@ -199,14 +215,22 @@ def build_source_building_scope_report(
         "summary": {
             "scopeFactCount": len(scopes),
             "targetScopeFactCount": len(target_scopes),
-            "contextScopeFactCount": sum(1 for scope in scopes if scope.get("scopeRole") == "context"),
-            "unresolvedScopeFactCount": sum(1 for scope in scopes if scope.get("scopeRole") == "unresolved"),
+            "contextScopeFactCount": sum(
+                1 for scope in scopes if scope.get("scopeRole") == "context"
+            ),
+            "unresolvedScopeFactCount": sum(
+                1 for scope in scopes if scope.get("scopeRole") == "unresolved"
+            ),
             "scopeDecisionCount": len(decision_rows),
             "acceptedScopeDecisionCount": 1 if accepted_decision else 0,
             "blockingCount": len(blockers),
             "resolvedTargetScopeType": resolved_target_scope_type,
-            "targetHalfDirection": target_half_directions[0] if len(target_half_directions) == 1 else None,
-            "targetScopeTypes": [resolved_target_scope_type] if accepted_decision and resolved_target_scope_type else target_types,
+            "targetHalfDirection": target_half_directions[0]
+            if len(target_half_directions) == 1
+            else None,
+            "targetScopeTypes": [resolved_target_scope_type]
+            if accepted_decision and resolved_target_scope_type
+            else target_types,
             "decisionResolved": bool(accepted_decision and resolved_target_scope_type),
         },
         "scopes": scopes,
@@ -284,7 +308,9 @@ def _scope_decision_rows(
         raw_rows: list[dict[str, Any]] = []
     elif isinstance(scope_decisions, dict) and isinstance(scope_decisions.get("decisions"), list):
         raw_rows = [row for row in scope_decisions["decisions"] if isinstance(row, dict)]
-    elif isinstance(scope_decisions, dict) and isinstance(scope_decisions.get("scopeDecisions"), list):
+    elif isinstance(scope_decisions, dict) and isinstance(
+        scope_decisions.get("scopeDecisions"), list
+    ):
         raw_rows = [row for row in scope_decisions["scopeDecisions"] if isinstance(row, dict)]
     elif isinstance(scope_decisions, dict):
         raw_rows = [scope_decisions]
@@ -298,21 +324,28 @@ def _scope_decision_rows(
         target_scope_type = str(row.get("targetScopeType") or row.get("scopeType") or "").strip()
         modeled_extent = str(row.get("modeledExtent") or row.get("targetExtent") or "").strip()
         evidence_summary = str(row.get("evidenceSummary") or row.get("reason") or "").strip()
-        normalized_target_scope_type = _normalize_scope_type(target_scope_type, modeled_extent, evidence_summary)
-        target_half_direction = (
-            str(row.get("targetHalfDirection") or row.get("extentDirection") or "").strip()
-            or _extent_direction(" ".join([modeled_extent, evidence_summary]))
+        normalized_target_scope_type = _normalize_scope_type(
+            target_scope_type, modeled_extent, evidence_summary
         )
+        target_half_direction = str(
+            row.get("targetHalfDirection") or row.get("extentDirection") or ""
+        ).strip() or _extent_direction(" ".join([modeled_extent, evidence_summary]))
         rows.append(
             {
-                "decisionId": row.get("decisionId") or row.get("id") or f"building-scope-decision-{index:03d}",
+                "decisionId": row.get("decisionId")
+                or row.get("id")
+                or f"building-scope-decision-{index:03d}",
                 "status": str(row.get("status") or row.get("decisionStatus") or "accepted"),
                 "targetScopeType": target_scope_type,
                 "normalizedTargetScopeType": normalized_target_scope_type,
                 "modeledExtent": modeled_extent,
                 "evidenceSummary": evidence_summary,
-                "sourceFactIds": _string_list(row.get("sourceFactIds") or row.get("appliesToFactIds")),
-                "contextScopeFactIds": _string_list(row.get("contextScopeFactIds") or row.get("contextFactIds")),
+                "sourceFactIds": _string_list(
+                    row.get("sourceFactIds") or row.get("appliesToFactIds")
+                ),
+                "contextScopeFactIds": _string_list(
+                    row.get("contextScopeFactIds") or row.get("contextFactIds")
+                ),
                 "targetScopeId": row.get("targetScopeId"),
                 "scopeMaskRef": _scope_decision_mask_ref(row),
                 "targetHalfDirection": target_half_direction,
@@ -324,7 +357,13 @@ def _scope_decision_rows(
 
 
 def _accepted_scope_decision(decision_rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-    accepted_statuses = {"accepted", "resolved", "source_backed", "source-backed", "tolerated_existing_condition"}
+    accepted_statuses = {
+        "accepted",
+        "resolved",
+        "source_backed",
+        "source-backed",
+        "tolerated_existing_condition",
+    }
     for row in decision_rows:
         if str(row.get("status") or "").casefold() in accepted_statuses:
             return row
@@ -343,7 +382,9 @@ def _scope_resolved_by_decision(
     return fact_id in decision_source_fact_ids or fact_id in decision_context_fact_ids
 
 
-def _scope_referenced_by_decision(scope: dict[str, Any], decision_source_fact_ids: set[str]) -> bool:
+def _scope_referenced_by_decision(
+    scope: dict[str, Any], decision_source_fact_ids: set[str]
+) -> bool:
     fact_id = str(scope.get("factId") or "")
     return not decision_source_fact_ids or fact_id in decision_source_fact_ids
 
@@ -458,5 +499,7 @@ def _extent_direction(text: str) -> str | None:
 
 
 def _norm(value: str) -> str:
-    lowered = value.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    lowered = (
+        value.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    )
     return re.sub(r"[^a-z0-9]+", " ", lowered).strip()

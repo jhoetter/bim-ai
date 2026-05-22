@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping
 from typing import Any
 from xml.etree import ElementTree
 
+from bim_ai._io.digest import digest
 from bim_ai.document import Document
 from bim_ai.elements import (
     FloorTypeElem,
@@ -62,18 +61,26 @@ def import_building_smart_ids_xml(source: Any) -> dict[str, Any] | None:
     for index, spec_node in enumerate(_xml_children(specs_node, "specification")):
         applicability = [
             facet
-            for facet in (_parse_ids_facet(child) for child in _xml_children(_xml_child(spec_node, "applicability")))
+            for facet in (
+                _parse_ids_facet(child)
+                for child in _xml_children(_xml_child(spec_node, "applicability"))
+            )
             if facet
         ]
         requirements = [
             facet
-            for facet in (_parse_ids_facet(child) for child in _xml_children(_xml_child(spec_node, "requirements")))
+            for facet in (
+                _parse_ids_facet(child)
+                for child in _xml_children(_xml_child(spec_node, "requirements"))
+            )
             if facet
         ]
         spec_name = str(spec_node.attrib.get("name") or f"Specification {index + 1}").strip()
         specs.append(
             {
-                "id": str(spec_node.attrib.get("identifier") or _slug(spec_name) or f"spec-{index + 1}"),
+                "id": str(
+                    spec_node.attrib.get("identifier") or _slug(spec_name) or f"spec-{index + 1}"
+                ),
                 "name": spec_name,
                 "ifcVersion": _string_list(spec_node.attrib.get("ifcVersion")),
                 "minOccurs": _parse_cardinality(spec_node.attrib.get("minOccurs"), 0),
@@ -118,20 +125,24 @@ def compile_bim_requirement_validation_pack(
     ]
     checks.sort(key=lambda row: str(row["id"]))
     delivery_targets = [
-        _output_key(output) for output in _string_list(requirements.get("exportRequirements", {}).get("outputs"))
+        _output_key(output)
+        for output in _string_list(requirements.get("exportRequirements", {}).get("outputs"))
     ]
     if ids_import and not delivery_targets:
         delivery_targets = ["ifc"]
     source_map = source if isinstance(source, Mapping) else {}
     resolved_pack_id = pack_id or str(
-        source_map.get("id") or source_map.get("packId") or (ids_import or {}).get("title") or "bir-pack"
+        source_map.get("id")
+        or source_map.get("packId")
+        or (ids_import or {}).get("title")
+        or "bir-pack"
     )
     compiled = {
         "schemaVersion": BIM_REQUIREMENT_VALIDATION_PACK_SCHEMA_VERSION,
         "packId": resolved_pack_id,
         "qualityTarget": source_map.get("qualityTarget") or requirements.get("qualityTarget"),
         "deliveryTargets": delivery_targets,
-        "sourceDigestSha256": _digest(ids_import or requirements),
+        "sourceDigestSha256": digest(ids_import or requirements, prefix=True),
         "summary": {
             "checkCount": len(checks),
             "evidenceBlockerCount": sum(1 for check in checks if check["evidenceBlocker"]),
@@ -286,7 +297,12 @@ def _evaluate_predicate(
             "message": f"Material layer-set evidence is required for {predicate.get('id')}.",
         }
     if pred_type == "object_present":
-        return {"passed": True, "actual": 1, "expected": 1, "message": "Requirement object compiled."}
+        return {
+            "passed": True,
+            "actual": 1,
+            "expected": 1,
+            "message": "Requirement object compiled.",
+        }
     if pred_type == "data_quality_evidence_present":
         passed = _data_quality_evidence_present(str(predicate.get("checkId") or ""), evidence)
         return {
@@ -395,7 +411,11 @@ def _compile_room_checks(requirements: Mapping[str, Any]) -> list[dict[str, Any]
         _compile_check(
             "bir_rooms_required_fields",
             "Required room fields are present in schedule/evidence rows",
-            {"type": "required_row_fields", "rowSet": "rooms", "fields": list(REQUIRED_ROOM_FIELDS)},
+            {
+                "type": "required_row_fields",
+                "rowSet": "rooms",
+                "fields": list(REQUIRED_ROOM_FIELDS),
+            },
             source_path="informationRequirements.rooms",
             requirement_refs=["BIR-K07", "BIR-D06"],
         ),
@@ -516,7 +536,9 @@ def _compile_data_quality_checks(requirements: Mapping[str, Any]) -> list[dict[s
     ]
 
 
-def _ids_facet_check_title(spec: Mapping[str, Any], facet: Mapping[str, Any], cardinality: str) -> str:
+def _ids_facet_check_title(
+    spec: Mapping[str, Any], facet: Mapping[str, Any], cardinality: str
+) -> str:
     requirement = "prohibits" if cardinality == "prohibited" else "requires"
     if facet.get("type") == "property":
         return (
@@ -524,14 +546,18 @@ def _ids_facet_check_title(spec: Mapping[str, Any], facet: Mapping[str, Any], ca
             f"{_value_spec_label(facet.get('propertySet'))}.{_value_spec_label(facet.get('baseName'))}"
         )
     if facet.get("type") == "attribute":
-        return f"IDS {spec.get('name')} {requirement} attribute {_value_spec_label(facet.get('name'))}"
+        return (
+            f"IDS {spec.get('name')} {requirement} attribute {_value_spec_label(facet.get('name'))}"
+        )
     if facet.get("type") == "classification":
         return (
             f"IDS {spec.get('name')} {requirement} classification "
             f"{_value_spec_label(facet.get('system'))}:{_value_spec_label(facet.get('value'))}"
         )
     if facet.get("type") == "material":
-        return f"IDS {spec.get('name')} {requirement} material {_value_spec_label(facet.get('value'))}"
+        return (
+            f"IDS {spec.get('name')} {requirement} material {_value_spec_label(facet.get('value'))}"
+        )
     if facet.get("type") == "partOf":
         return f"IDS {spec.get('name')} {requirement} partOf relationship"
     return f"IDS {spec.get('name')} {requirement} entity {_value_spec_label(facet.get('name'))}"
@@ -669,7 +695,9 @@ def _ids_rows_from_document(doc: Document) -> list[dict[str, Any]]:
         ifc_entity = entity_by_kind.get(kind)
         if not ifc_entity:
             continue
-        props = getattr(elem, "props", None) if isinstance(getattr(elem, "props", None), dict) else {}
+        props = (
+            getattr(elem, "props", None) if isinstance(getattr(elem, "props", None), dict) else {}
+        )
         attributes = {"Name": getattr(elem, "name", None), "GlobalId": getattr(elem, "id", None)}
         classifications = props.get("classifications", [])
         if getattr(elem, "ifc_classification_code", None):
@@ -701,7 +729,9 @@ def _ids_rows_from_document(doc: Document) -> list[dict[str, Any]]:
             {
                 "id": getattr(elem, "id", ""),
                 "ifcEntity": ifc_entity,
-                "attributes": {key: value for key, value in attributes.items() if value is not None},
+                "attributes": {
+                    key: value for key, value in attributes.items() if value is not None
+                },
                 "properties": properties,
                 "classifications": classifications,
                 "materials": materials,
@@ -876,10 +906,18 @@ def _ids_evidence_rows(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
             {
                 **dict(row),
                 "ifcEntity": str(
-                    row.get("ifcEntity") or row.get("entity") or row.get("ifcKind") or row.get("type") or ""
+                    row.get("ifcEntity")
+                    or row.get("entity")
+                    or row.get("ifcKind")
+                    or row.get("type")
+                    or ""
                 ).strip(),
-                "attributes": row.get("attributes") if isinstance(row.get("attributes"), Mapping) else {},
-                "properties": row.get("properties") if isinstance(row.get("properties"), Mapping) else {},
+                "attributes": row.get("attributes")
+                if isinstance(row.get("attributes"), Mapping)
+                else {},
+                "properties": row.get("properties")
+                if isinstance(row.get("properties"), Mapping)
+                else {},
                 "classifications": row.get("classifications")
                 if isinstance(row.get("classifications"), list)
                 else [],
@@ -946,7 +984,9 @@ def _property_value(row: Mapping[str, Any], property_set_spec: Any, base_name_sp
     pset_name = str(
         property_set_spec.get("simple") if isinstance(property_set_spec, Mapping) else ""
     ).strip()
-    base_name = str(base_name_spec.get("simple") if isinstance(base_name_spec, Mapping) else "").strip()
+    base_name = str(
+        base_name_spec.get("simple") if isinstance(base_name_spec, Mapping) else ""
+    ).strip()
     if not base_name:
         return None
     props = row.get("properties") if isinstance(row.get("properties"), Mapping) else {}
@@ -970,7 +1010,9 @@ def _row_matches_ids_facet(row: Mapping[str, Any], facet: Any) -> bool:
     if facet_type == "entity":
         if facet.get("name") and not _value_matches_spec(row.get("ifcEntity"), facet.get("name")):
             return False
-        predefined = _attribute_value(row, {"simple": "PredefinedType"}) or row.get("predefinedType")
+        predefined = _attribute_value(row, {"simple": "PredefinedType"}) or row.get(
+            "predefinedType"
+        )
         if facet.get("predefinedType") and not _value_matches_spec(
             predefined, facet.get("predefinedType")
         ):
@@ -1009,7 +1051,10 @@ def _row_matches_ids_facet(row: Mapping[str, Any], facet: Any) -> bool:
             return True
         return False
     if facet_type == "material":
-        return any(_value_matches_spec(material, facet.get("value")) for material in row.get("materials") or [])
+        return any(
+            _value_matches_spec(material, facet.get("value"))
+            for material in row.get("materials") or []
+        )
     if facet_type == "partOf":
         for part in row.get("partOf") or []:
             if not isinstance(part, Mapping):
@@ -1039,8 +1084,12 @@ def _row_matches_ids_facet(row: Mapping[str, Any], facet: Any) -> bool:
     return False
 
 
-def _applicable_ids_rows(predicate: Mapping[str, Any], evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
-    applicability = predicate.get("applicability") if isinstance(predicate.get("applicability"), list) else []
+def _applicable_ids_rows(
+    predicate: Mapping[str, Any], evidence: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    applicability = (
+        predicate.get("applicability") if isinstance(predicate.get("applicability"), list) else []
+    )
     return [
         row
         for row in _ids_evidence_rows(evidence)
@@ -1093,11 +1142,6 @@ def _evaluate_ids_requirement_facet(
     }
 
 
-def _digest(value: Any) -> str:
-    blob = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
-    return "sha256:" + hashlib.sha256(blob.encode("utf8")).hexdigest()
-
-
 def _string_list(value: Any) -> list[str]:
     raw = value if isinstance(value, list) else ([] if value is None else [value])
     return sorted({str(item).strip() for item in raw if str(item).strip()})
@@ -1133,13 +1177,13 @@ def _xml_local(tag: str) -> str:
     return str(tag).split("}", 1)[-1].split(":")[-1]
 
 
-def _xml_children(node: ElementTree.Element | None, local_name: str | None = None) -> list[ElementTree.Element]:
+def _xml_children(
+    node: ElementTree.Element | None, local_name: str | None = None
+) -> list[ElementTree.Element]:
     if node is None:
         return []
     return [
-        child
-        for child in list(node)
-        if local_name is None or _xml_local(child.tag) == local_name
+        child for child in list(node) if local_name is None or _xml_local(child.tag) == local_name
     ]
 
 

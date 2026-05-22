@@ -1433,8 +1433,6 @@ class SunSettingsElem(BaseModel):
     )
 
 
-
-
 class PlanTagStyleElem(BaseModel):
     """Replayable catalog entry for plan opening tags / room labels (view-template slice)."""
 
@@ -1655,8 +1653,6 @@ class CalloutElem(BaseModel):
     name: str = "Callout"
     parent_sheet_id: str = Field(alias="parentSheetId")
     outline_mm: list[Vec2Mm] = Field(alias="outlineMm")
-
-
 
 
 class SiteContextObjectRow(BaseModel):

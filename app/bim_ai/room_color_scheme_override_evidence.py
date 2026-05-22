@@ -8,6 +8,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
+from bim_ai._io.digest import digest
 from bim_ai.document import Document
 from bim_ai.elements import RoomColorSchemeElem, RoomColorSchemeRow, RoomElem
 
@@ -51,7 +52,7 @@ def build_room_color_scheme_override_evidence_v1(
             "schemeIdentity": None,
             "overrideRowCount": 0,
             "rows": [],
-            "rowDigestSha256": _digest([]),
+            "rowDigestSha256": digest([]),
             "advisoryFindings": [
                 {
                     "code": "room_color_scheme_identity_missing",
@@ -137,7 +138,7 @@ def build_room_color_scheme_override_evidence_v1(
         "schemeIdentity": scheme_id,
         "overrideRowCount": len(canonical),
         "rows": canonical,
-        "rowDigestSha256": _digest(canonical),
+        "rowDigestSha256": digest(canonical),
         "advisoryFindings": findings,
     }
 
@@ -146,11 +147,6 @@ def _override_key_from_dict(row: dict[str, Any]) -> tuple[str, str]:
     prog = str(row.get("programmeCode") or "").lower()
     dept = str(row.get("department") or "").lower()
     return (prog, dept)
-
-
-def _digest(rows: list[dict[str, Any]]) -> str:
-    blob = json.dumps(rows, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
 def _finding_message(code: str, row: RoomColorSchemeRow, idx: int) -> str:

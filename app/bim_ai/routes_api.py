@@ -49,11 +49,14 @@ def _get_plan_projection_cache(key: tuple[str, int, str, str, str]) -> dict[str,
     return deepcopy(cached)
 
 
-def _set_plan_projection_cache(key: tuple[str, int, str, str, str], payload: dict[str, Any]) -> None:
+def _set_plan_projection_cache(
+    key: tuple[str, int, str, str, str], payload: dict[str, Any]
+) -> None:
     _PLAN_PROJECTION_CACHE[key] = deepcopy(payload)
     _PLAN_PROJECTION_CACHE.move_to_end(key)
     while len(_PLAN_PROJECTION_CACHE) > _PLAN_PROJECTION_CACHE_MAX:
         _PLAN_PROJECTION_CACHE.popitem(last=False)
+
 
 from fastapi import (
     APIRouter,
@@ -163,7 +166,9 @@ from bim_ai.reverse_bim import (
 from bim_ai.reverse_bim_evidence_requirements import build_reverse_bim_evidence_requirements
 from bim_ai.reverse_bim_handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim_readback import build_reverse_bim_readback_comparison
-from bim_ai.reverse_bim_source_revision_persistence import persist_reverse_bim_source_revision_ledger
+from bim_ai.reverse_bim_source_revision_persistence import (
+    persist_reverse_bim_source_revision_ledger,
+)
 from bim_ai.reverse_bim_source_revision_ledger import build_reverse_bim_source_revision_ledger
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
 from bim_ai.renderer_diagnostic_persistence import (
@@ -1394,7 +1399,6 @@ async def semantic_authoring_route(
 # ---------------------------------------------------------------------------
 
 
-
 @api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-slice-execute")
 async def reverse_bim_hybrid_slice_execute_route(
     model_id: UUID,
@@ -1460,10 +1464,16 @@ async def reverse_bim_hybrid_slice_execute_route(
         hub=hub,
         token=token,
     )
-    dry_run_evidence = dry_run_result.get("dryRunEvidence") if isinstance(dry_run_result, dict) else None
+    dry_run_evidence = (
+        dry_run_result.get("dryRunEvidence") if isinstance(dry_run_result, dict) else None
+    )
     commit_requested = bool(body.get("commit") or body.get("mode") == "commit")
     commit_result: dict[str, Any] | None = None
-    if commit_requested and isinstance(dry_run_evidence, dict) and dry_run_evidence.get("ok") is True:
+    if (
+        commit_requested
+        and isinstance(dry_run_evidence, dict)
+        and dry_run_evidence.get("ok") is True
+    ):
         commit_request = _hybrid_bundle_request(
             bundle_payload=bundle_payload,
             mode="commit",
@@ -1496,7 +1506,7 @@ async def reverse_bim_hybrid_slice_execute_route(
         query_request,
         include=["geometrySummary", "hostRefs", "raw"],
     )
-    queried_elements = ((query_result.get("data") or {}).get("elements") or [])
+    queried_elements = (query_result.get("data") or {}).get("elements") or []
     readback_comparison = build_reverse_bim_readback_comparison(
         expected_readback=expected_readback,
         model_readback=body.get("modelReadback") or body.get("readback"),
@@ -1556,7 +1566,9 @@ async def reverse_bim_hybrid_slice_execute_route(
     }
     phase_packet = build_reverse_bim_phase_packet(
         phase_id=phase_id,
-        start_revision=(bundle_payload.get("parentRevision") if isinstance(bundle_payload, dict) else None),
+        start_revision=(
+            bundle_payload.get("parentRevision") if isinstance(bundle_payload, dict) else None
+        ),
         end_revision=doc.revision if commit_result else None,
         source_fact_ids=source_fact_ids,
         transactions=[
@@ -1617,7 +1629,9 @@ async def reverse_bim_hybrid_slice_execute_route(
         source_spec_revision=source_spec_revision,
         source_overlay=source_overlay,
         ui_evidence=ui_evidence,
-        evidence_requirements=evidence_requirements if isinstance(evidence_requirements, dict) else None,
+        evidence_requirements=evidence_requirements
+        if isinstance(evidence_requirements, dict)
+        else None,
         view_capture_plan=view_capture_plan if isinstance(view_capture_plan, dict) else None,
     )
     execution_state = (
@@ -1719,14 +1733,10 @@ async def reverse_bim_hybrid_run_execute_route(
             break
 
     phase_packets = [
-        row.get("phasePacket")
-        for row in results
-        if isinstance(row.get("phasePacket"), dict)
+        row.get("phasePacket") for row in results if isinstance(row.get("phasePacket"), dict)
     ]
     slice_reports = [
-        row.get("sliceReport")
-        for row in results
-        if isinstance(row.get("sliceReport"), dict)
+        row.get("sliceReport") for row in results if isinstance(row.get("sliceReport"), dict)
     ]
     run_report = build_hybrid_reverse_bim_run_report(
         phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or {},
@@ -1851,7 +1861,6 @@ def _hybrid_changed_ids(result: dict[str, Any] | None) -> list[str]:
         if isinstance(candidate, list):
             ids.extend(str(item) for item in candidate if item)
     return sorted(set(ids))
-
 
 
 # ---------------------------------------------------------------------------
@@ -2020,7 +2029,6 @@ async def schedule_view_rows(
         )
 
     return rows
-
 
 
 # ---------------------------------------------------------------------------
@@ -2290,7 +2298,6 @@ async def apply_bundle_route(
     return result_wire
 
 
-
 # ---------------------------------------------------------------------------
 # VER-V3-01 — Activity stream routes
 # ---------------------------------------------------------------------------
@@ -2551,7 +2558,6 @@ async def collab_ws(
         room.leave(websocket)
         orchestrator.remove_empty_rooms()
         logger.info("collab ws disconnect model=%s", model_id)
-
 
 
 # ---------------------------------------------------------------------------

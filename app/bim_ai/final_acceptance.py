@@ -63,7 +63,9 @@ def _checker_summary(payload: dict[str, Any], *, nested_data: bool = False) -> d
     }
 
 
-def _gate(gate_id: str, passed: bool, summary: dict[str, Any], blocking: list[str]) -> dict[str, Any]:
+def _gate(
+    gate_id: str, passed: bool, summary: dict[str, Any], blocking: list[str]
+) -> dict[str, Any]:
     return {
         "id": gate_id,
         "passed": passed,
@@ -171,8 +173,7 @@ def _blocking_warning_count(
     warning_rows = [
         row
         for row in _rows(finding_disposition)
-        if row.get("source") == source
-        and str(row.get("severity") or "").lower() == "warning"
+        if row.get("source") == source and str(row.get("severity") or "").lower() == "warning"
     ]
     if not warning_rows:
         return warning_count
@@ -202,7 +203,9 @@ def _source_blocker_fact_ids(coverage: dict[str, Any]) -> list[str]:
     return [fact_id for fact_id in blocked if fact_id]
 
 
-def _accepted_report_summary(report: dict[str, Any] | None) -> tuple[bool, dict[str, Any], list[str]]:
+def _accepted_report_summary(
+    report: dict[str, Any] | None,
+) -> tuple[bool, dict[str, Any], list[str]]:
     if not isinstance(report, dict) or not report:
         return False, {"accepted": False, "missing": True}, ["required report is missing"]
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -288,18 +291,14 @@ def build_final_acceptance_report(
         source="constructability",
         warning_count=constructability_warnings,
     )
-    unresolved_source_blocker_rows = _unresolved_rows(
-        finding_disposition, source="source_coverage"
-    )
+    unresolved_source_blocker_rows = _unresolved_rows(finding_disposition, source="source_coverage")
     source_coverage_rows = [
         row
         for row in finding_disposition.get("rows", [])
         if isinstance(row, dict) and row.get("source") == "source_coverage"
     ]
     if unmodeled_fact_ids and not source_coverage_rows:
-        unresolved_source_blocker_rows = [
-            {"factId": fact_id} for fact_id in unmodeled_fact_ids
-        ]
+        unresolved_source_blocker_rows = [{"factId": fact_id} for fact_id in unmodeled_fact_ids]
     level_complete, level_summary, level_blocking = _accepted_report_summary(level_completeness)
     physical_topology_complete, physical_topology_summary, physical_topology_blocking = (
         _accepted_report_summary(physical_topology)
@@ -337,8 +336,7 @@ def build_final_acceptance_report(
         ),
         _gate(
             "constructability_clean",
-            constructability_errors == 0
-            and blocking_constructability_warning_count == 0,
+            constructability_errors == 0 and blocking_constructability_warning_count == 0,
             {
                 **constructability_summary,
                 "blockingConstructabilityWarningCount": blocking_constructability_warning_count,
@@ -380,7 +378,11 @@ def build_final_acceptance_report(
         ),
         _gate(
             "area_reconciled",
-            bool(area_summary.get("accepted") or area_reconciliation.get("accepted") or area_reconciliation.get("ok")),
+            bool(
+                area_summary.get("accepted")
+                or area_reconciliation.get("accepted")
+                or area_reconciliation.get("ok")
+            ),
             area_summary,
             [f"{area_blockers} area reconciliation blockers remain"] if area_blockers else [],
         ),
@@ -405,10 +407,16 @@ def build_final_acceptance_report(
             [
                 reason
                 for reason, active in (
-                    (f"{len(inaccessible_room_ids)} inaccessible rooms remain", bool(inaccessible_room_ids)),
+                    (
+                        f"{len(inaccessible_room_ids)} inaccessible rooms remain",
+                        bool(inaccessible_room_ids),
+                    ),
                     (f"{unbacked_edges} unbacked room boundary edges remain", unbacked_edges > 0),
                     (f"{partial_edges} partial room boundary edges remain", partial_edges > 0),
-                    (f"{topology_blocked} topology/access actions are blocked", topology_blocked > 0),
+                    (
+                        f"{topology_blocked} topology/access actions are blocked",
+                        topology_blocked > 0,
+                    ),
                 )
                 if active
             ],

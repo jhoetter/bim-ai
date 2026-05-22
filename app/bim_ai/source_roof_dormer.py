@@ -39,13 +39,17 @@ def build_source_roof_dormer_report(facts: list[dict[str, Any]]) -> dict[str, An
             source_precision = _source_precision(fact)
             roof_rows.append(_row(fact, missing, source_precision))
             if missing or source_precision != "source_measured":
-                actions.append(_repair_action(fact, "roof_precision_repair", missing, source_precision))
+                actions.append(
+                    _repair_action(fact, "roof_precision_repair", missing, source_precision)
+                )
         elif kind == "dormer":
             missing = _missing_fields(value, DORMER_REQUIRED_FIELDS)
             source_precision = _source_precision(fact)
             dormer_rows.append(_row(fact, missing, source_precision))
             if missing or source_precision != "source_measured":
-                actions.append(_repair_action(fact, "dormer_precision_repair", missing, source_precision))
+                actions.append(
+                    _repair_action(fact, "dormer_precision_repair", missing, source_precision)
+                )
         elif kind in {"opening", "roof_opening"} and _is_roof_opening(value):
             missing = [
                 field
@@ -55,7 +59,9 @@ def build_source_roof_dormer_report(facts: list[dict[str, Any]]) -> dict[str, An
             source_precision = _source_precision(fact)
             opening_rows.append(_row(fact, missing, source_precision))
             if missing or source_precision != "source_measured":
-                actions.append(_repair_action(fact, "roof_opening_precision_repair", missing, source_precision))
+                actions.append(
+                    _repair_action(fact, "roof_opening_precision_repair", missing, source_precision)
+                )
 
     counts: dict[str, int] = {}
     for action in actions:
@@ -129,7 +135,12 @@ def _required_source_fields(kind: str) -> list[str]:
             "width/depth/height",
             "dormer roof type and source section/elevation refs",
         ]
-    return ["host roof ref", "roof-local position", "width/height", "sill/head or roof-plane relation"]
+    return [
+        "host roof ref",
+        "roof-local position",
+        "width/height",
+        "sill/head or roof-plane relation",
+    ]
 
 
 def _missing_fields(value: dict[str, Any], fields: list[str]) -> list[str]:
@@ -147,5 +158,7 @@ def _source_precision(fact: dict[str, Any]) -> str:
 
 
 def _is_roof_opening(value: dict[str, Any]) -> bool:
-    text = " ".join(str(value.get(key) or "").lower() for key in ("openingKind", "openingType", "hostWallRef"))
+    text = " ".join(
+        str(value.get(key) or "").lower() for key in ("openingKind", "openingType", "hostWallRef")
+    )
     return "roof" in text or "skylight" in text

@@ -122,9 +122,7 @@ def apply_source_conflict_dispositions(
             **conflict,
             "status": "resolved",
             "disposition": {
-                key: value
-                for key, value in decision.items()
-                if key not in {"conflictId", "status"}
+                key: value for key, value in decision.items() if key not in {"conflictId", "status"}
             },
         }
         conflicts.append(resolved_conflict)
@@ -149,10 +147,14 @@ def apply_source_conflict_dispositions(
         "accepted": open_count == 0 and invalid_count == 0,
         "summary": {
             "conflictCount": len(conflicts),
-            "resolvedConflictCount": sum(1 for row in disposition_rows if row.get("status") == "resolved"),
+            "resolvedConflictCount": sum(
+                1 for row in disposition_rows if row.get("status") == "resolved"
+            ),
             "openConflictCount": open_count,
             "invalidDecisionCount": invalid_count,
-            "missingDecisionCount": sum(1 for row in disposition_rows if row.get("missingDecision")),
+            "missingDecisionCount": sum(
+                1 for row in disposition_rows if row.get("missingDecision")
+            ),
         },
         "conflictLedger": updated_ledger,
         "dispositions": disposition_rows,

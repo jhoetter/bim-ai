@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections import Counter
 from typing import Any
 
+from bim_ai._io.digest import digest as _digest
 
 SOURCE_REOPEN_CLASSIFICATIONS = {
     "source_fact_misread",
@@ -25,9 +24,7 @@ def build_reverse_bim_source_revision_ledger(
     """Create a deterministic worklist for source/model repair actions."""
 
     actions = [
-        row
-        for row in (source_spec_revision or {}).get("actions", [])
-        if isinstance(row, dict)
+        row for row in (source_spec_revision or {}).get("actions", []) if isinstance(row, dict)
     ]
     prior_entries = _prior_entries(existing_ledger)
     entries = [*prior_entries]
@@ -78,7 +75,9 @@ def build_reverse_bim_source_revision_ledger(
     return payload
 
 
-def _ledger_entry(action: dict[str, Any], *, phase_authoring_spec: dict[str, Any]) -> dict[str, Any]:
+def _ledger_entry(
+    action: dict[str, Any], *, phase_authoring_spec: dict[str, Any]
+) -> dict[str, Any]:
     classification = str(action.get("classification") or "model_authoring_error")
     source_fact_ids = _string_list(action.get("sourceFactIds"))
     affected_phase_ids = _affected_phase_ids(source_fact_ids, phase_authoring_spec)
@@ -106,7 +105,9 @@ def _ledger_entry(action: dict[str, Any], *, phase_authoring_spec: dict[str, Any
     }
 
 
-def _fact_updates(facts: list[dict[str, Any]], entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _fact_updates(
+    facts: list[dict[str, Any]], entries: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     reopen_by_fact: dict[str, list[dict[str, Any]]] = {}
     for entry in entries:
         if entry.get("classification") not in SOURCE_REOPEN_CLASSIFICATIONS:
@@ -135,7 +136,9 @@ def _fact_updates(facts: list[dict[str, Any]], entries: list[dict[str, Any]]) ->
     return updates
 
 
-def _affected_phase_ids(source_fact_ids: list[str], phase_authoring_spec: dict[str, Any]) -> list[str]:
+def _affected_phase_ids(
+    source_fact_ids: list[str], phase_authoring_spec: dict[str, Any]
+) -> list[str]:
     wanted = set(source_fact_ids)
     out = []
     for phase in phase_authoring_spec.get("phases") or []:
@@ -197,8 +200,3 @@ def _string_list(value: Any) -> list[str]:
     if value:
         return [str(value)]
     return []
-
-
-def _digest(payload: Any) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

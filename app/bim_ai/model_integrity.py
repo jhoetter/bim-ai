@@ -493,8 +493,12 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("levelId", frozenset({"level"})),
     ReferenceSpec("underlayLevelId", frozenset({"level"})),
     ReferenceSpec("referenceLevelId", frozenset({"level"})),
-    ReferenceSpec("baseLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})),
-    ReferenceSpec("topLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})),
+    ReferenceSpec(
+        "baseLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})
+    ),
+    ReferenceSpec(
+        "topLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})
+    ),
     ReferenceSpec("upperLimitLevelId", frozenset({"level"})),
     ReferenceSpec("parentLevelId", frozenset({"level"})),
     ReferenceSpec("baseConstraintLevelId", frozenset({"level"})),
@@ -529,39 +533,73 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("planOverlaySourcePlanViewId", frozenset({"plan_view"})),
     ReferenceSpec("sectionCutId", frozenset({"section_cut"})),
     ReferenceSpec("sheetId", frozenset({"sheet"})),
-    ReferenceSpec("parentSheetId", frozenset({"sheet"}), required=True, source_kinds=frozenset({"callout"})),
+    ReferenceSpec(
+        "parentSheetId", frozenset({"sheet"}), required=True, source_kinds=frozenset({"callout"})
+    ),
     ReferenceSpec("scheduleId", frozenset({"schedule"})),
     ReferenceSpec("tagDefinitionId", frozenset({"tag_definition"})),
     ReferenceSpec("planOpeningTagStyleId", frozenset({"plan_tag_style"})),
     ReferenceSpec("planRoomTagStyleId", frozenset({"plan_tag_style"})),
     ReferenceSpec("viewTemplateId", frozenset({"view_template"})),
     ReferenceSpec("templateId", frozenset({"view_template"})),
-    ReferenceSpec("titleblockTypeId", frozenset({"titleblock_type"}), validate_only_if_target_kind_exists="titleblock_type"),
-    ReferenceSpec("brandTemplateId", frozenset({"brand_template"}), validate_only_if_target_kind_exists="brand_template"),
+    ReferenceSpec(
+        "titleblockTypeId",
+        frozenset({"titleblock_type"}),
+        validate_only_if_target_kind_exists="titleblock_type",
+    ),
+    ReferenceSpec(
+        "brandTemplateId",
+        frozenset({"brand_template"}),
+        validate_only_if_target_kind_exists="brand_template",
+    ),
     ReferenceSpec("familyTypeId", frozenset({"family_type"})),
     ReferenceSpec("wallTypeId", frozenset({"wall_type"})),
     ReferenceSpec("floorTypeId", frozenset({"floor_type"})),
     ReferenceSpec("roofTypeId", frozenset({"roof_type"})),
     ReferenceSpec("assetId", frozenset({"asset_library_entry"}), required=True),
-    ReferenceSpec("materialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("defaultMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("structuralMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("wallMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("roofMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("materialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec("countertopMaterialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec(
+        "materialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"
+    ),
+    ReferenceSpec(
+        "defaultMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec(
+        "structuralMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec(
+        "wallMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"
+    ),
+    ReferenceSpec(
+        "roofMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"
+    ),
+    ReferenceSpec(
+        "materialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"
+    ),
+    ReferenceSpec(
+        "countertopMaterialId",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
     ReferenceSpec("phaseId", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
-    ReferenceSpec("phaseCreated", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
-    ReferenceSpec("phaseDemolished", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
+    ReferenceSpec(
+        "phaseCreated", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"
+    ),
+    ReferenceSpec(
+        "phaseDemolished", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"
+    ),
     ReferenceSpec("optionSetId"),
     ReferenceSpec("optionId"),
     ReferenceSpec("linkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"),
-    ReferenceSpec("_linkedFromLinkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"),
+    ReferenceSpec(
+        "_linkedFromLinkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"
+    ),
 )
 
 NESTED_REFERENCE_FIELDS: frozenset[str] = frozenset(spec.field for spec in REFERENCE_SPECS)
-
-
 
 
 def check_model_integrity_invariants(
@@ -651,8 +689,6 @@ def check_model_integrity_invariants(
     return findings
 
 
-
-
 def _family_content_findings(
     element: Any, elements: Mapping[str, Any]
 ) -> list[ModelIntegrityFinding]:
@@ -704,8 +740,7 @@ def _family_type_schema_findings(element: Any, element_id: str) -> list[ModelInt
                 rule_id="model_integrity_family_type_host_support_invalid",
                 severity="error" if _strict_family_schema(element) else "warning",
                 message=(
-                    f"Family type '{element_id}' declares unsupported hostSupport "
-                    f"'{host_support}'."
+                    f"Family type '{element_id}' declares unsupported hostSupport '{host_support}'."
                 ),
                 element_ids=(element_id,),
                 field="hostSupport",
@@ -765,7 +800,9 @@ def _family_type_render_export_parity_findings(
     element: Any, element_id: str
 ) -> list[ModelIntegrityFinding]:
     missing = [
-        field for field, aliases in FAMILY_PARITY_FIELDS if not _has_any_field_value(element, aliases)
+        field
+        for field, aliases in FAMILY_PARITY_FIELDS
+        if not _has_any_field_value(element, aliases)
     ]
     findings: list[ModelIntegrityFinding] = []
     if missing:
@@ -890,7 +927,9 @@ def _family_instance_override_findings(
                 )
             )
 
-    findings.extend(_family_instance_material_override_findings(element, type_element, element_id, str(type_id)))
+    findings.extend(
+        _family_instance_material_override_findings(element, type_element, element_id, str(type_id))
+    )
     findings.extend(_host_geometry_constraint_findings(element, type_element, elements, element_id))
     return findings
 
@@ -930,7 +969,9 @@ def _family_instance_material_override_findings(
 def _asset_catalog_metadata_findings(element: Any, element_id: str) -> list[ModelIntegrityFinding]:
     findings: list[ModelIntegrityFinding] = []
     missing = [
-        field for field, aliases in ASSET_CATALOG_FIELDS if not _has_any_field_value(element, aliases)
+        field
+        for field, aliases in ASSET_CATALOG_FIELDS
+        if not _has_any_field_value(element, aliases)
     ]
     if missing:
         findings.append(
@@ -938,8 +979,7 @@ def _asset_catalog_metadata_findings(element: Any, element_id: str) -> list[Mode
                 rule_id="model_integrity_asset_catalog_metadata_incomplete",
                 severity="warning",
                 message=(
-                    f"Asset catalog entry '{element_id}' is missing metadata: "
-                    f"{', '.join(missing)}."
+                    f"Asset catalog entry '{element_id}' is missing metadata: {', '.join(missing)}."
                 ),
                 element_ids=(element_id,),
                 field="assetCatalogMetadata",
@@ -1164,11 +1204,7 @@ def _host_geometry_constraint_findings(
                     actual=f"{width:g}",
                 )
             )
-        if (
-            height is not None
-            and _is_finite_number(wall_height)
-            and height > float(wall_height)
-        ):
+        if height is not None and _is_finite_number(wall_height) and height > float(wall_height):
             findings.append(
                 ModelIntegrityFinding(
                     rule_id="model_integrity_family_instance_host_constraint_violation",
@@ -1236,12 +1272,16 @@ def _hosted_position_attachment_problem(element: Any, support: str, host: Any) -
         if along_t < -1e-6 or along_t > 1.0 + 1e-6:
             return f"projected hostAlongT {along_t:.3f} is outside wall span"
         thickness = _read(host, "thicknessMm")
-        tolerance_mm = max(25.0, (float(thickness) / 2.0 if _is_finite_number(thickness) else 100.0) + 25.0)
+        tolerance_mm = max(
+            25.0, (float(thickness) / 2.0 if _is_finite_number(thickness) else 100.0) + 25.0
+        )
         if distance_mm > tolerance_mm:
             return f"position is {distance_mm:.1f} mm from wall '{host_id}' face band"
         declared_along_t = _read(element, "hostAlongT")
         if _is_finite_number(declared_along_t) and abs(float(declared_along_t) - along_t) > 0.05:
-            return f"hostAlongT {float(declared_along_t):.3f} does not match projected {along_t:.3f}"
+            return (
+                f"hostAlongT {float(declared_along_t):.3f} does not match projected {along_t:.3f}"
+            )
         return None
 
     if host_kind in {"floor", "ceiling"}:
@@ -1604,7 +1644,9 @@ def _reference_value_findings(
     return findings
 
 
-def _option_lock_findings(element: Any, design_option_sets: list[Any]) -> list[ModelIntegrityFinding]:
+def _option_lock_findings(
+    element: Any, design_option_sets: list[Any]
+) -> list[ModelIntegrityFinding]:
     if not design_option_sets:
         return []
     option_locks = _read(element, "optionLocks", default={}) or {}
@@ -1736,7 +1778,9 @@ def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
 
     for field in POINT_COORDINATE_FIELDS:
         if _field_present(element, field):
-            findings.extend(_coordinate_point_findings(element, element_id, field, _read(element, field)))
+            findings.extend(
+                _coordinate_point_findings(element, element_id, field, _read(element, field))
+            )
 
     for field in POINT_LIST_COORDINATE_FIELDS:
         if not _field_present(element, field):
@@ -1882,8 +1926,10 @@ def _recursive_unit_coordinate_findings(
             for key, child in value.items():
                 key_str = str(key)
                 child_path = key_str if not path else f"{path}.{key_str}"
-                if _is_mm_field(key_str) and child is not None and not isinstance(
-                    child, Mapping | list | tuple
+                if (
+                    _is_mm_field(key_str)
+                    and child is not None
+                    and not isinstance(child, Mapping | list | tuple)
                 ):
                     if not _is_finite_number(child):
                         findings.append(
@@ -2007,7 +2053,9 @@ def _type_material_consistency_findings(
         material_key = _read(element, field)
         if material_key in (None, ""):
             continue
-        if str(material_key) in type_materials or _truthy(_read_any(element, ("allowMaterialOverride",))):
+        if str(material_key) in type_materials or _truthy(
+            _read_any(element, ("allowMaterialOverride",))
+        ):
             continue
         findings.append(
             ModelIntegrityFinding(
@@ -2051,9 +2099,7 @@ def _type_layer_findings(element: Any, element_id: str) -> list[ModelIntegrityFi
                 ModelIntegrityFinding(
                     rule_id="model_integrity_type_layer_thickness_invalid",
                     severity="error",
-                    message=(
-                        f"Type element '{element_id}' layer {index} has invalid thicknessMm."
-                    ),
+                    message=(f"Type element '{element_id}' layer {index} has invalid thicknessMm."),
                     element_ids=(element_id,),
                     field=f"layers[{index}].thicknessMm",
                     expected="positive finite millimeter value",
@@ -2616,7 +2662,9 @@ def _position_supported_by_floor(element: Any, elements: Mapping[str, Any]) -> b
     ]
     if not floors:
         return True
-    return any(_point_in_polygon(point, _polygon_xy(_read(floor, "boundaryMm"))) for floor in floors)
+    return any(
+        _point_in_polygon(point, _polygon_xy(_read(floor, "boundaryMm"))) for floor in floors
+    )
 
 
 def _embedded_wall_at_position(element: Any, elements: Mapping[str, Any]) -> str | None:
@@ -2838,9 +2886,7 @@ def _option_ids_for_set(design_option_sets: list[Any], option_set_id: str) -> se
             continue
         options = _read(option_set, "options", default=[]) or []
         return {
-            str(_read(option, "id"))
-            for option in options
-            if _read(option, "id") not in (None, "")
+            str(_read(option, "id")) for option in options if _read(option, "id") not in (None, "")
         }
     return set()
 

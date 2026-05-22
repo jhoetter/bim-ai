@@ -313,8 +313,6 @@ class MoveGridLineEndpointsCmd(BaseModel):
     force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
-
-
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -958,7 +956,6 @@ class CreateSectionCutCmd(BaseModel):
     line_start_mm: Vec2Mm = Field(alias="lineStartMm")
     line_end_mm: Vec2Mm = Field(alias="lineEndMm")
     crop_depth_mm: float = Field(alias="cropDepthMm", default=8500)
-
 
 
 class UpsertViewTemplateCmd(BaseModel):
@@ -2720,8 +2717,6 @@ class UpdateMaterialPbrCmd(BaseModel):
     uv_scale_mm: dict | None = Field(default=None, alias="uvScaleMm")
     uv_rotation_deg: float | None = Field(default=None, alias="uvRotationDeg")
     hatch_pattern_id: str | None = Field(default=None, alias="hatchPatternId")
-
-
 
 
 Command = Annotated[

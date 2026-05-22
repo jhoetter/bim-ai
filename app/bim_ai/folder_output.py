@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 import shutil
@@ -9,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from bim_ai._io.digest import sha256_json
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -44,14 +44,14 @@ from bim_ai.source_ingestion import (
     extract_pdf_text,
     render_pdf_pages,
 )
+from bim_ai.source_level_completeness import build_source_level_completeness_report
+from bim_ai.source_material_assemblies import build_source_material_assembly_report
+from bim_ai.source_openings import build_source_opening_reconciliation
 from bim_ai.source_page_classification import (
     apply_page_classifications,
     build_page_classification_dispatch_plan,
     load_page_classification_responses,
 )
-from bim_ai.source_level_completeness import build_source_level_completeness_report
-from bim_ai.source_material_assemblies import build_source_material_assembly_report
-from bim_ai.source_openings import build_source_opening_reconciliation
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 from bim_ai.source_roof_dormer import build_source_roof_dormer_report
 from bim_ai.source_room_topology import build_source_room_topology_report
@@ -215,14 +215,20 @@ def build_reverse_bim_folder_output(
         else _load_reader_response_files(out_dir)
     )
     discovered_reader_responses = discovered_reader_response_payload.get("responses") or []
-    discovered_reader_response_diagnostics = discovered_reader_response_payload.get("diagnostics") or []
+    discovered_reader_response_diagnostics = (
+        discovered_reader_response_payload.get("diagnostics") or []
+    )
     raw_responses = _reader_response_payload(
         reader_responses if reader_responses is not None else discovered_reader_responses
     )
     raw_response_source = "provided" if reader_responses is not None else "response_files"
     raw_response_file_count = int(discovered_reader_response_payload.get("responseFileCount") or 0)
-    scanned_response_file_count = int(discovered_reader_response_payload.get("scannedResponseFileCount") or 0)
-    raw_response_file_error_count = int(discovered_reader_response_payload.get("responseFileErrorCount") or 0)
+    scanned_response_file_count = int(
+        discovered_reader_response_payload.get("scannedResponseFileCount") or 0
+    )
+    raw_response_file_error_count = int(
+        discovered_reader_response_payload.get("responseFileErrorCount") or 0
+    )
     raw_responses["source"] = raw_response_source
     raw_responses["responseFileCount"] = raw_response_file_count
     raw_responses["scannedResponseFileCount"] = scanned_response_file_count
@@ -241,7 +247,9 @@ def build_reverse_bim_folder_output(
         loop_response_count=len(loop.get("readerResponses") or []),
         reader_command_used=bool(reader_command),
     )
-    raw_responses = _reader_response_payload(loop.get("readerResponses") or raw_responses.get("responses") or [])
+    raw_responses = _reader_response_payload(
+        loop.get("readerResponses") or raw_responses.get("responses") or []
+    )
     raw_responses["source"] = raw_response_source
     raw_responses["responseFileCount"] = raw_response_file_count
     raw_responses["scannedResponseFileCount"] = scanned_response_file_count
@@ -373,12 +381,14 @@ def build_reverse_bim_folder_output(
         agent_requests=requests,
         reader_pass_manifest=reader_pass_manifest,
     )
-    run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get("promptCount", 0)
-    run_summary["summary"]["pageClassificationAssignmentCount"] = (
-        page_classification_dispatch.get("assignmentCount", 0)
+    run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get(
+        "promptCount", 0
     )
-    run_summary["summary"]["pageClassificationResponseCount"] = (
-        page_classification_responses.get("responseCount", 0)
+    run_summary["summary"]["pageClassificationAssignmentCount"] = page_classification_dispatch.get(
+        "assignmentCount", 0
+    )
+    run_summary["summary"]["pageClassificationResponseCount"] = page_classification_responses.get(
+        "responseCount", 0
     )
     run_summary["summary"]["pageClassificationAppliedPageCount"] = (
         page_classification_application.get("appliedPageCount", 0)
@@ -411,9 +421,18 @@ def build_reverse_bim_folder_output(
         "documentRegistry": out_dir / "source" / "document-registry.json",
         "documentClassification": out_dir / "source" / "document-classification.json",
         "renderedPages": out_dir / "source" / "rendered-pages.json",
-        "pageClassificationDispatch": out_dir / "ai-reading" / "page-classifications" / "dispatch-plan.json",
-        "pageClassificationResponses": out_dir / "ai-reading" / "page-classifications" / "responses-normalized.json",
-        "pageClassificationApplication": out_dir / "ai-reading" / "page-classifications" / "application-report.json",
+        "pageClassificationDispatch": out_dir
+        / "ai-reading"
+        / "page-classifications"
+        / "dispatch-plan.json",
+        "pageClassificationResponses": out_dir
+        / "ai-reading"
+        / "page-classifications"
+        / "responses-normalized.json",
+        "pageClassificationApplication": out_dir
+        / "ai-reading"
+        / "page-classifications"
+        / "application-report.json",
         "nativeTextExtractions": out_dir / "source" / "native-text-extractions.json",
         "sourcePageIndex": out_dir / "source" / "source-page-index.json",
         "aiVisualTracePacket": out_dir / "ai-reading" / "ai-visual-trace-packet.json",
@@ -428,7 +447,9 @@ def build_reverse_bim_folder_output(
         "readerConsensus": out_dir / "ai-reading" / "reader-consensus.json",
         "readerResponsesNormalized": out_dir / "ai-reading" / "reader-responses.normalized.json",
         "agentLoopAccepted": out_dir / "ai-reading" / "agent-loop.accepted.json",
-        "readerConsensusDispositions": out_dir / "ai-reading" / "reader-consensus-dispositions.json",
+        "readerConsensusDispositions": out_dir
+        / "ai-reading"
+        / "reader-consensus-dispositions.json",
         "buildingScopeDecisions": out_dir / "understanding" / "building-scope-decisions.json",
         "repairRequestsOpen": out_dir / "ai-reading" / "repair-requests.open.json",
         "sourceRepairPlan": out_dir / "ai-reading" / "source-repair-plan.json",
@@ -444,12 +465,18 @@ def build_reverse_bim_folder_output(
         "openingReconciliation": out_dir / "understanding" / "opening-reconciliation.json",
         "roofDormer": out_dir / "understanding" / "roof-dormer.json",
         "siteTerrain": out_dir / "understanding" / "site-terrain.json",
-        "siteTerrainDecisionReport": out_dir / "understanding" / "site-terrain-decision-report.json",
+        "siteTerrainDecisionReport": out_dir
+        / "understanding"
+        / "site-terrain-decision-report.json",
         "conflictLedger": out_dir / "understanding" / "conflict-ledger.json",
         "conflictDispositionReport": out_dir / "understanding" / "conflict-disposition-report.json",
-        "conflictDispositionWorklist": out_dir / "understanding" / "conflict-disposition-worklist.json",
+        "conflictDispositionWorklist": out_dir
+        / "understanding"
+        / "conflict-disposition-worklist.json",
         "existingBuildingIr": out_dir / "understanding" / "existing-building-ir.json",
-        "existingBuildingIrValidation": out_dir / "understanding" / "existing-building-ir.validation.json",
+        "existingBuildingIrValidation": out_dir
+        / "understanding"
+        / "existing-building-ir.validation.json",
         "sourceCoverageInitial": out_dir / "understanding" / "source-coverage.initial.json",
         "mcpReadiness": out_dir / "mcp-handoff" / "mcp-readiness.json",
         "authoringPlan": out_dir / "mcp-handoff" / "authoring-plan.json",
@@ -623,7 +650,7 @@ def _reader_response_payload(
     return {
         "format": "sourceAiVisualTraceReaderResponsesRaw_v1",
         "responseCount": len(rows),
-        "responsesDigestSha256": _sha256_json(rows),
+        "responsesDigestSha256": sha256_json(rows, ensure_ascii=False),
         "responses": rows,
     }
 
@@ -706,11 +733,7 @@ def _load_reader_response_files(out_dir: Path) -> dict[str, Any]:
     scanned_file_count = 0
     response_file_count = 0
     response_files = sorted(
-        [
-            path
-            for pattern in ("*.json", "*.md")
-            for path in response_root.rglob(pattern)
-        ]
+        [path for pattern in ("*.json", "*.md") for path in response_root.rglob(pattern)]
     )
     for path in response_files:
         scanned_file_count += 1
@@ -832,7 +855,9 @@ def _parse_reader_response_file_payload(text: str, *, path: Path) -> Any:
 
 
 def _json_payload_from_markdown(text: str) -> Any:
-    fence_pattern = re.compile(r"```(?:json|source-facts|sourcefacts)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
+    fence_pattern = re.compile(
+        r"```(?:json|source-facts|sourcefacts)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE
+    )
     for match in fence_pattern.finditer(text):
         candidate = match.group(1).strip()
         if not candidate:
@@ -888,15 +913,9 @@ def _build_reader_assignment_progress(
     raw_responses: dict[str, Any],
 ) -> dict[str, Any]:
     assignments = [
-        row
-        for row in reader_pass_manifest.get("assignments") or []
-        if isinstance(row, dict)
+        row for row in reader_pass_manifest.get("assignments") or [] if isinstance(row, dict)
     ]
-    responses = [
-        row
-        for row in raw_responses.get("responses") or []
-        if isinstance(row, dict)
-    ]
+    responses = [row for row in raw_responses.get("responses") or [] if isinstance(row, dict)]
     assignment_group_counts = Counter(
         (
             str(row.get("workPackageId") or ""),
@@ -946,7 +965,9 @@ def _build_reader_assignment_progress(
             )
             continue
         normalization = normalize_ai_visual_trace_reader_response(response)
-        norm_summary = normalization.get("summary") if isinstance(normalization.get("summary"), dict) else {}
+        norm_summary = (
+            normalization.get("summary") if isinstance(normalization.get("summary"), dict) else {}
+        )
         normalized_count = int(norm_summary.get("normalizedFactCount") or 0)
         error_count = int(norm_summary.get("errorCount") or 0)
         if error_count:
@@ -1002,21 +1023,38 @@ def _response_for_assignment(
     for response in responses:
         if (
             str(response.get("requestId") or "") == request_id
-            and str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "") == package_id
+            and str(
+                response.get("workPackageId")
+                or response.get("workPackage")
+                or response.get("id")
+                or ""
+            )
+            == package_id
             and str(response.get("readerPassId") or reader_pass_id) == reader_pass_id
         ):
             return response
     for response in responses:
         if (
             str(response.get("requestId") or "") == request_id
-            and str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "") == package_id
+            and str(
+                response.get("workPackageId")
+                or response.get("workPackage")
+                or response.get("id")
+                or ""
+            )
+            == package_id
             and not response.get("readerPassId")
             and reader_pass_id == "reader-pass-01"
         ):
             return response
     if assignment_group_counts[(package_id, reader_pass_id)] == 1:
         for response in responses:
-            response_package = str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "")
+            response_package = str(
+                response.get("workPackageId")
+                or response.get("workPackage")
+                or response.get("id")
+                or ""
+            )
             response_pass = str(response.get("readerPassId") or reader_pass_id)
             if response_package == package_id and response_pass == reader_pass_id:
                 return response
@@ -1036,7 +1074,9 @@ def _build_reader_response_index(
     for idx, response in enumerate(raw_responses.get("responses") or []):
         if not isinstance(response, dict):
             continue
-        package_id = str(response.get("workPackageId") or response.get("workPackage") or response.get("id") or "")
+        package_id = str(
+            response.get("workPackageId") or response.get("workPackage") or response.get("id") or ""
+        )
         facts = [fact for fact in response.get("facts") or [] if isinstance(fact, dict)]
         package_result = package_results.get(package_id, {})
         rows.append(
@@ -1054,9 +1094,11 @@ def _build_reader_response_index(
                 "capturedAt": response.get("capturedAt") or response.get("createdAt"),
                 "responsePath": response.get("responsePath"),
                 "responsePathHint": response.get("responsePathHint"),
-                "responseDigestSha256": _sha256_json(response),
+                "responseDigestSha256": sha256_json(response, ensure_ascii=False),
                 "factCount": len(facts),
-                "factCountsByKind": dict(sorted(Counter(str(fact.get("kind") or "") for fact in facts).items())),
+                "factCountsByKind": dict(
+                    sorted(Counter(str(fact.get("kind") or "") for fact in facts).items())
+                ),
                 "status": package_result.get("status") or "unmatched",
                 "normalizationErrorCount": (
                     (package_result.get("normalization") or {}).get("summary") or {}
@@ -1067,7 +1109,9 @@ def _build_reader_response_index(
                 "findingCount": len(package_result.get("findings") or []),
             }
         )
-    status_counts = dict(sorted(Counter(str(row.get("status") or "unknown") for row in rows).items()))
+    status_counts = dict(
+        sorted(Counter(str(row.get("status") or "unknown") for row in rows).items())
+    )
     return {
         "format": "sourceAiVisualTraceReaderResponseIndex_v1",
         "rawResponsesDigestSha256": raw_responses.get("responsesDigestSha256"),
@@ -1075,11 +1119,6 @@ def _build_reader_response_index(
         "statusCounts": status_counts,
         "rows": rows,
     }
-
-
-def _sha256_json(payload: Any) -> str:
-    canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _facts_for_handoff(*, loop: dict[str, Any], normalized: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1115,13 +1154,19 @@ def _build_document_registry(
                 "absolutePath": row.get("absolutePath"),
                 "sha256": row.get("sha256"),
                 "kind": row.get("kind"),
-                "pageCount": ((row.get("pdf") or {}).get("pageCount") if isinstance(row.get("pdf"), dict) else None),
+                "pageCount": (
+                    (row.get("pdf") or {}).get("pageCount")
+                    if isinstance(row.get("pdf"), dict)
+                    else None
+                ),
                 "classification": classification,
                 "classificationConfidence": cls.get("confidence", 0),
                 "classificationRoles": cls.get("classificationRoles") or [],
                 "secondaryClassifications": cls.get("secondaryClassifications") or [],
                 "roleInModeling": _role_for_classification(classification),
-                "status": "unknown_needs_review" if classification == "unknown" else "accepted_for_modeling",
+                "status": "unknown_needs_review"
+                if classification == "unknown"
+                else "accepted_for_modeling",
                 "method": cls.get("method"),
             }
         )
@@ -1150,7 +1195,9 @@ def _build_source_page_index(
             continue
         for page in extraction.get("pages") or []:
             if isinstance(page, dict):
-                text_by_path_page[(str(extraction.get("sourcePath")), int(page.get("page") or 0))] = page
+                text_by_path_page[
+                    (str(extraction.get("sourcePath")), int(page.get("page") or 0))
+                ] = page
     frame_by_page = {
         str(frame.get("sourcePageId")): frame.get("coordinateFrameId")
         for frame in coordinate_frames.get("coordinateFrames") or []
@@ -1188,7 +1235,9 @@ def _build_source_page_index(
                     "sha256": page.get("sha256"),
                     "nativeTextAvailable": bool(str(text_page.get("text") or "").strip()),
                     "coordinateFrameId": frame_by_page.get(source_page_id),
-                    "modelingUse": _modeling_use_for_classification(str(cls.get("classification") or "unknown")),
+                    "modelingUse": _modeling_use_for_classification(
+                        str(cls.get("classification") or "unknown")
+                    ),
                     "modelingUses": sorted(
                         {
                             _modeling_use_for_classification(label)
@@ -1222,7 +1271,13 @@ def _build_coordinate_frames(
         source_path = str(render.get("sourcePath") or "")
         cls = class_by_path.get(source_path, {})
         primary_classification = str(cls.get("classification") or "unknown")
-        frame_classification_set = {"floor_plan", "section", "elevation", "site_plan", "drainage_doc"}
+        frame_classification_set = {
+            "floor_plan",
+            "section",
+            "elevation",
+            "site_plan",
+            "drainage_doc",
+        }
         frame_classifications = (
             sorted(_classification_labels(cls) & frame_classification_set)
             if primary_classification in frame_classification_set
@@ -1247,12 +1302,20 @@ def _build_coordinate_frames(
                         "classification": classification,
                         "classificationRoles": cls.get("classificationRoles") or [],
                         "status": "candidate_needs_alignment",
-                        "scale": scale.get("scale") or ("1:100" if classification in {"floor_plan", "section", "elevation", "drainage_doc"} else None),
+                        "scale": scale.get("scale")
+                        or (
+                            "1:100"
+                            if classification
+                            in {"floor_plan", "section", "elevation", "drainage_doc"}
+                            else None
+                        ),
                         "mmPerPaperUnit": scale.get("mmPerPaperUnit"),
                         "originPx": None,
                         "rotationDeg": 0,
                         "modelOriginMm": None,
-                        "levelOrSiteAssociation": _level_or_site_association(classification, source_path),
+                        "levelOrSiteAssociation": _level_or_site_association(
+                            classification, source_path
+                        ),
                         "confidence": 0.5 if scale else 0.35,
                         "notes": [
                             "Generated as a candidate frame. A modeling-ready run must align origin/rotation and confirm scale before geometry authoring."
@@ -1266,7 +1329,9 @@ def _build_coordinate_frames(
     }
 
 
-def _scale_candidates_by_path(text_extractions: list[dict[str, Any]]) -> dict[tuple[str, int], dict[str, Any]]:
+def _scale_candidates_by_path(
+    text_extractions: list[dict[str, Any]],
+) -> dict[tuple[str, int], dict[str, Any]]:
     out: dict[tuple[str, int], dict[str, Any]] = {}
     for extraction in text_extractions:
         if not isinstance(extraction, dict):
@@ -1276,7 +1341,9 @@ def _scale_candidates_by_path(text_extractions: list[dict[str, Any]]) -> dict[tu
             if not isinstance(page, dict):
                 continue
             detection = detect_scale_from_text(str(page.get("text") or ""))
-            candidates = detection.get("candidates") if isinstance(detection.get("candidates"), list) else []
+            candidates = (
+                detection.get("candidates") if isinstance(detection.get("candidates"), list) else []
+            )
             if candidates:
                 out[(source_path, int(page.get("page") or 0))] = candidates[0]
     return out
@@ -1292,14 +1359,17 @@ def _build_source_fact_ledger(facts: list[dict[str, Any]]) -> dict[str, Any]:
                 "status": _canonical_fact_status(str(fact.get("status") or "candidate")),
                 "scope": fact.get("scope") or "source_package",
                 "modelingPhase": PHASE_BY_FACT_KIND.get(kind, "P0-source-inventory"),
-                "conflictIds": fact.get("conflictIds") or ([] if kind != "conflict" else [str(fact.get("factId") or "")]),
+                "conflictIds": fact.get("conflictIds")
+                or ([] if kind != "conflict" else [str(fact.get("factId") or "")]),
                 "notes": fact.get("notes") or [],
             }
         )
     return {
         "format": "reverseBimSourceFactLedger_v1",
         "factCount": len(rows),
-        "factCountsByKind": dict(sorted(Counter(str(row.get("kind") or "") for row in rows).items())),
+        "factCountsByKind": dict(
+            sorted(Counter(str(row.get("kind") or "") for row in rows).items())
+        ),
         "facts": rows,
     }
 
@@ -1312,7 +1382,9 @@ def _apply_conflict_dispositions_to_facts(
     for conflict in conflicts.get("conflicts") or []:
         if not isinstance(conflict, dict) or conflict.get("status") != "resolved":
             continue
-        disposition = conflict.get("disposition") if isinstance(conflict.get("disposition"), dict) else {}
+        disposition = (
+            conflict.get("disposition") if isinstance(conflict.get("disposition"), dict) else {}
+        )
         for fact_id in conflict.get("sourceFactIds") or []:
             if fact_id:
                 dispositions_by_fact_id[str(fact_id)] = {
@@ -1352,7 +1424,9 @@ def _apply_site_terrain_decisions_to_facts(
         if not isinstance(action, dict) or action.get("status") != "resolved_with_decision":
             continue
         fact_id = action.get("factId")
-        disposition = action.get("disposition") if isinstance(action.get("disposition"), dict) else {}
+        disposition = (
+            action.get("disposition") if isinstance(action.get("disposition"), dict) else {}
+        )
         if fact_id and disposition:
             dispositions_by_fact_id[str(fact_id)] = {
                 "actionId": action.get("id"),
@@ -1447,7 +1521,9 @@ def _build_resolver_worklist(readiness: dict[str, Any]) -> dict[str, Any]:
                         "sourceFactId": row.get("factId"),
                         "mcpInputDraft": row.get("mcpInputDraft") or {},
                     },
-                    "expectedOutput": _expected_resolver_output(str(requirement.get("resolver") or "")),
+                    "expectedOutput": _expected_resolver_output(
+                        str(requirement.get("resolver") or "")
+                    ),
                     "onAmbiguous": "block_and_add_conflict",
                 }
             )
@@ -1468,9 +1544,9 @@ def _build_phase_authoring_spec(
 ) -> dict[str, Any]:
     phase_fact_ids: dict[str, list[str]] = defaultdict(list)
     for fact in facts:
-        phase_fact_ids[PHASE_BY_FACT_KIND.get(str(fact.get("kind") or ""), "P0-source-inventory")].append(
-            str(fact.get("factId") or "")
-        )
+        phase_fact_ids[
+            PHASE_BY_FACT_KIND.get(str(fact.get("kind") or ""), "P0-source-inventory")
+        ].append(str(fact.get("factId") or ""))
     actions_by_phase: dict[str, list[dict[str, Any]]] = defaultdict(list)
     readback_by_phase: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for action in authoring_plan.get("actions") or []:
@@ -1499,9 +1575,16 @@ def _build_phase_authoring_spec(
     for phase_id in PHASE_ORDER:
         fact_ids = phase_fact_ids.get(phase_id, [])
         phase_rows = [readiness_by_fact[fid] for fid in fact_ids if fid in readiness_by_fact]
-        blocker_rows = [row for row in phase_rows if row.get("status") not in {"ready_for_mcp_authoring", "metadata_for_authoring", "reference_only"}]
+        blocker_rows = [
+            row
+            for row in phase_rows
+            if row.get("status")
+            not in {"ready_for_mcp_authoring", "metadata_for_authoring", "reference_only"}
+        ]
         status = "ready" if fact_ids and not blocker_rows else "partial" if fact_ids else "blocked"
-        if phase_id in {"P14-validation", "P15-final-acceptance"} and conflicts.get("openConflictCount"):
+        if phase_id in {"P14-validation", "P15-final-acceptance"} and conflicts.get(
+            "openConflictCount"
+        ):
             status = "blocked"
         expected_readback = readback_by_phase.get(phase_id, [])
         phases.append(
@@ -1547,8 +1630,15 @@ def _build_source_completeness_report(
             continue
         package_id = str(wp.get("id") or "")
         result = results_by_package.get(package_id, {})
-        required = list(wp.get("blockingRequiredFactKinds") or AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE.get(package_id, []))
-        counts = result.get("factCountsByKind") if isinstance(result.get("factCountsByKind"), dict) else {}
+        required = list(
+            wp.get("blockingRequiredFactKinds")
+            or AI_VISUAL_BLOCKING_FACT_KINDS_BY_PACKAGE.get(package_id, [])
+        )
+        counts = (
+            result.get("factCountsByKind")
+            if isinstance(result.get("factCountsByKind"), dict)
+            else {}
+        )
         missing = [kind for kind in required if int(counts.get(kind) or 0) == 0]
         rows.append(
             {
@@ -1561,7 +1651,9 @@ def _build_source_completeness_report(
                 "findings": result.get("findings") or [],
             }
         )
-    blockers = [row for row in rows if row["status"] != "accepted" or row["missingRequiredFactKinds"]]
+    blockers = [
+        row for row in rows if row["status"] != "accepted" or row["missingRequiredFactKinds"]
+    ]
     return {
         "ok": not blockers,
         "format": "reverseBimSourceCompletenessReport_v1",
@@ -1590,7 +1682,9 @@ def _build_open_repair_requests(
     requests = [row for row in loop.get("repairRequests") or [] if isinstance(row, dict)]
     source_building_scope = source_building_scope or {}
     for action in source_building_scope.get("actions") or []:
-        if not isinstance(action, dict) or not str(action.get("status") or "").startswith("blocked"):
+        if not isinstance(action, dict) or not str(action.get("status") or "").startswith(
+            "blocked"
+        ):
             continue
         requests.append(
             {
@@ -1686,7 +1780,9 @@ def _build_open_repair_requests(
         )
     site_terrain = site_terrain or {}
     for action in site_terrain.get("actions") or []:
-        if not isinstance(action, dict) or not str(action.get("status") or "").startswith("blocked"):
+        if not isinstance(action, dict) or not str(action.get("status") or "").startswith(
+            "blocked"
+        ):
             continue
         requests.append(
             {
@@ -1709,7 +1805,9 @@ def _build_open_repair_requests(
         )
     roof_dormer = roof_dormer or {}
     for action in roof_dormer.get("actions") or []:
-        if not isinstance(action, dict) or not str(action.get("status") or "").startswith("blocked"):
+        if not isinstance(action, dict) or not str(action.get("status") or "").startswith(
+            "blocked"
+        ):
             continue
         requests.append(
             {
@@ -1732,7 +1830,10 @@ def _build_open_repair_requests(
         )
     source_material_assemblies = source_material_assemblies or {}
     for scope in source_material_assemblies.get("assemblyScopes") or []:
-        if not isinstance(scope, dict) or scope.get("status") != "blocked_needs_source_or_disposition":
+        if (
+            not isinstance(scope, dict)
+            or scope.get("status") != "blocked_needs_source_or_disposition"
+        ):
             continue
         requests.append(
             {
@@ -1804,14 +1905,10 @@ def _build_source_repair_plan(
         acceptance.get("summary") if isinstance(acceptance.get("summary"), dict) else {}
     )
     progress_rows = [
-        row
-        for row in reader_assignment_progress.get("rows") or []
-        if isinstance(row, dict)
+        row for row in reader_assignment_progress.get("rows") or [] if isinstance(row, dict)
     ]
     repair_requests = [
-        row
-        for row in repair_requests_open.get("requests") or []
-        if isinstance(row, dict)
+        row for row in repair_requests_open.get("requests") or [] if isinstance(row, dict)
     ]
     request_counts_by_kind = Counter(
         str(row.get("kind") or row.get("workPackageId") or "source_package_repair")
@@ -1880,7 +1977,12 @@ def _build_source_repair_plan(
         "SRP-002-reader-consensus",
         title="Resolve critical reader consensus conflicts",
         blocker_count=int(acceptance_summary.get("readerConsensusBlockerCount") or 0),
-        work_package_ids=["wp-dimensional-floorplans", "wp-sections-elevations-roof", "wp-site-parcel-terrain", "wp-area-volume-schedules"],
+        work_package_ids=[
+            "wp-dimensional-floorplans",
+            "wp-sections-elevations-roof",
+            "wp-site-parcel-terrain",
+            "wp-area-volume-schedules",
+        ],
         artifacts=["ai-reading/reader-consensus.json", "ai-reading/repair-requests.open.json"],
         instructions=[
             "Compare conflicting critical fact groups across independent reader passes.",
@@ -1892,13 +1994,20 @@ def _build_source_repair_plan(
         "SRP-003-coordinate-frames",
         title="Align source pages into model coordinates",
         blocker_count=int(acceptance_summary.get("coordinateFrameAlignmentBlockerCount") or 0),
-        artifacts=["understanding/coordinate-frame-worklist.json", "understanding/coordinate-frames.json"],
+        artifacts=[
+            "understanding/coordinate-frame-worklist.json",
+            "understanding/coordinate-frames.json",
+        ],
         instructions=[
             "For each plan/section/elevation/site frame, identify source control points and model coordinates.",
             "Do not author wall or site geometry from a page until its frame is aligned or explicitly source-limited.",
         ],
         done_criteria=["validation/coordinate-frame-report.json has no blocking alignments"],
-        details={"classificationCounts": (coordinate_frame_worklist.get("summary") or {}).get("classificationCounts")},
+        details={
+            "classificationCounts": (coordinate_frame_worklist.get("summary") or {}).get(
+                "classificationCounts"
+            )
+        },
     )
     add_step(
         "SRP-004-level-and-floorplan-physics",
@@ -1929,7 +2038,10 @@ def _build_source_repair_plan(
         title="Reconcile room/area schedule facts with plan topology",
         blocker_count=int(acceptance_summary.get("sourceAreaConsistencyBlockerCount") or 0),
         work_package_ids=["wp-area-volume-schedules", "wp-dimensional-floorplans"],
-        artifacts=["understanding/source-area-consistency.json", "ai-reading/repair-requests.open.json"],
+        artifacts=[
+            "understanding/source-area-consistency.json",
+            "ai-reading/repair-requests.open.json",
+        ],
         instructions=[
             "Bind each area schedule row to a room/source boundary or mark it context/reference-only.",
             "Record area basis and source-limited dispositions; do not invent missing room geometry.",
@@ -2030,7 +2142,9 @@ def _source_repair_plan_markdown(plan: dict[str, Any]) -> str:
             lines.append("Artifacts:")
             lines.extend(f"- `{artifact}`" for artifact in artifacts)
             lines.append("")
-        instructions = step.get("instructions") if isinstance(step.get("instructions"), list) else []
+        instructions = (
+            step.get("instructions") if isinstance(step.get("instructions"), list) else []
+        )
         if instructions:
             lines.append("Instructions:")
             lines.extend(f"- {item}" for item in instructions)
@@ -2115,7 +2229,9 @@ def _build_package_acceptance_report(
         if isinstance(source_building_scope.get("summary"), dict)
         else {}
     )
-    source_building_scope_blocker_count = int(source_building_scope_summary.get("blockingCount") or 0)
+    source_building_scope_blocker_count = int(
+        source_building_scope_summary.get("blockingCount") or 0
+    )
     if source_building_scope_blocker_count:
         findings.append(
             {
@@ -2146,12 +2262,19 @@ def _build_package_acceptance_report(
                 ),
             }
         )
-    room_topology_summary = room_topology.get("summary") if isinstance(room_topology.get("summary"), dict) else {}
+    room_topology_summary = (
+        room_topology.get("summary") if isinstance(room_topology.get("summary"), dict) else {}
+    )
     rooms_needing_backing = int(room_topology_summary.get("roomsNeedingBackingCount") or 0)
     rooms_needing_access = int(room_topology_summary.get("roomsNeedingAccessCount") or 0)
     missing_access_ref_count = int(room_topology_summary.get("missingAccessRefCount") or 0)
     missing_adjacent_ref_count = int(room_topology_summary.get("missingAdjacentRoomRefCount") or 0)
-    if rooms_needing_backing or rooms_needing_access or missing_access_ref_count or missing_adjacent_ref_count:
+    if (
+        rooms_needing_backing
+        or rooms_needing_access
+        or missing_access_ref_count
+        or missing_adjacent_ref_count
+    ):
         findings.append(
             {
                 "code": "folder_output_room_topology_incomplete",
@@ -2199,7 +2322,9 @@ def _build_package_acceptance_report(
             }
         )
     site_terrain = site_terrain or {}
-    site_terrain_summary = site_terrain.get("summary") if isinstance(site_terrain.get("summary"), dict) else {}
+    site_terrain_summary = (
+        site_terrain.get("summary") if isinstance(site_terrain.get("summary"), dict) else {}
+    )
     site_terrain_blocker_count = int(site_terrain_summary.get("blockedActionCount") or 0)
     if site_terrain_blocker_count:
         findings.append(
@@ -2249,9 +2374,7 @@ def _build_package_acceptance_report(
         )
     reader_consensus = reader_consensus or {}
     reader_consensus_summary = (
-        reader_consensus.get("summary")
-        if isinstance(reader_consensus.get("summary"), dict)
-        else {}
+        reader_consensus.get("summary") if isinstance(reader_consensus.get("summary"), dict) else {}
     )
     reader_consensus_blocker_count = int(reader_consensus_summary.get("blockingCount") or 0)
     if reader_consensus_blocker_count:
@@ -2269,7 +2392,9 @@ def _build_package_acceptance_report(
     return {
         "ok": error_count == 0,
         "format": "reverseBimFolderOutputAcceptanceReport_v1",
-        "packageState": _package_state(raw_responses=raw_responses, loop=loop, readiness=readiness, findings=findings),
+        "packageState": _package_state(
+            raw_responses=raw_responses, loop=loop, readiness=readiness, findings=findings
+        ),
         "summary": {
             "errorCount": error_count,
             "warningCount": len(findings) - error_count,
@@ -2320,7 +2445,8 @@ def _build_run_summary(
     package_state = str(acceptance.get("packageState") or "source_understanding_blocked")
     reader_assignment_summary = (
         reader_pass_manifest.get("summary")
-        if isinstance(reader_pass_manifest, dict) and isinstance(reader_pass_manifest.get("summary"), dict)
+        if isinstance(reader_pass_manifest, dict)
+        and isinstance(reader_pass_manifest.get("summary"), dict)
         else {}
     )
     reader_progress_summary = (
@@ -2338,7 +2464,9 @@ def _build_run_summary(
         "sourceManifestDigestSha256": manifest.get("manifestDigestSha256"),
         "summary": {
             "sourceDocumentCount": manifest.get("fileCount", 0),
-            "renderedPageCount": sum(len(row.get("pages") or []) for row in rendered_pages if isinstance(row, dict)),
+            "renderedPageCount": sum(
+                len(row.get("pages") or []) for row in rendered_pages if isinstance(row, dict)
+            ),
             "workPackageCount": len(work_order.get("workPackages") or []),
             "readerRequestCount": (
                 (agent_requests or {}).get("readerRequestCount")
@@ -2349,18 +2477,32 @@ def _build_run_summary(
                 "waitingAssignmentCount",
                 reader_assignment_summary.get("waitingAssignmentCount", 0),
             ),
-            "invalidReaderAssignmentCount": reader_progress_summary.get("invalidResponseAssignmentCount", 0),
-            "noFactReaderAssignmentCount": reader_progress_summary.get("noFactResponseAssignmentCount", 0),
-            "readerAssignmentWithFactsCount": reader_progress_summary.get("assignmentWithFactsCount", 0),
+            "invalidReaderAssignmentCount": reader_progress_summary.get(
+                "invalidResponseAssignmentCount", 0
+            ),
+            "noFactReaderAssignmentCount": reader_progress_summary.get(
+                "noFactResponseAssignmentCount", 0
+            ),
+            "readerAssignmentWithFactsCount": reader_progress_summary.get(
+                "assignmentWithFactsCount", 0
+            ),
             "readerResponseCount": (raw_responses or {}).get("responseCount", 0),
             "readerResponseFileCount": (raw_responses or {}).get("responseFileCount", 0),
-            "readerResponseFileScannedCount": (raw_responses or {}).get("scannedResponseFileCount", 0),
+            "readerResponseFileScannedCount": (raw_responses or {}).get(
+                "scannedResponseFileCount", 0
+            ),
             "readerResponseFileErrorCount": (raw_responses or {}).get("responseFileErrorCount", 0),
             "acceptedWorkPackageCount": (loop.get("summary") or {}).get("acceptedPackageCount", 0),
             "normalizedFactCount": (normalized.get("summary") or {}).get("normalizedFactCount", 0),
-            "mcpReadyFactCount": (readiness.get("summary") or {}).get("readyForMcpAuthoringCount", 0),
-            "resolverNeededFactCount": (readiness.get("summary") or {}).get("needsResolverCount", 0),
-            "sourceRefinementNeededFactCount": (readiness.get("summary") or {}).get("needsSourceRefinementCount", 0),
+            "mcpReadyFactCount": (readiness.get("summary") or {}).get(
+                "readyForMcpAuthoringCount", 0
+            ),
+            "resolverNeededFactCount": (readiness.get("summary") or {}).get(
+                "needsResolverCount", 0
+            ),
+            "sourceRefinementNeededFactCount": (readiness.get("summary") or {}).get(
+                "needsSourceRefinementCount", 0
+            ),
             "openConflictCount": conflicts.get("openConflictCount", 0),
             "openBlockerCount": len(acceptance.get("findings") or []),
         },
@@ -2461,7 +2603,15 @@ def _canonical_fact_status(status: str) -> str:
         return "candidate"
     if status in {"open_uncertainty", "conflict"}:
         return "conflicting"
-    if status in {"accepted", "candidate", "conflicting", "deferred", "rejected", "superseded", "modeled"}:
+    if status in {
+        "accepted",
+        "candidate",
+        "conflicting",
+        "deferred",
+        "rejected",
+        "superseded",
+        "modeled",
+    }:
         return status
     return "candidate"
 
@@ -2488,7 +2638,11 @@ def _required_queries_after_for_phase(expected_readback: list[dict[str, Any]]) -
 
 
 def _acceptance_checks_for_phase(phase_id: str) -> list[str]:
-    checks = ["advisor_findings_disposed", "constructability_findings_disposed", "integrity_findings_disposed"]
+    checks = [
+        "advisor_findings_disposed",
+        "constructability_findings_disposed",
+        "integrity_findings_disposed",
+    ]
     if "room" in phase_id:
         checks.append("room_areas_reconcile_to_source")
     if "opening" in phase_id:
@@ -2627,7 +2781,9 @@ def _reader_assignment_prompt_markdown(
     assignment: dict[str, Any],
     request: dict[str, Any],
 ) -> str:
-    output_contract = request.get("outputContract") if isinstance(request.get("outputContract"), dict) else {}
+    output_contract = (
+        request.get("outputContract") if isinstance(request.get("outputContract"), dict) else {}
+    )
     required_fields = output_contract.get("requiredValueFieldsByKind") or {}
     blocking_kinds = output_contract.get("blockingRequiredFactKinds") or []
     lines = [
@@ -2654,7 +2810,10 @@ def _reader_assignment_prompt_markdown(
         "",
         "## Reader Task",
         "",
-        str(request.get("readerPrompt") or "Read the source pages and return structured source facts."),
+        str(
+            request.get("readerPrompt")
+            or "Read the source pages and return structured source facts."
+        ),
         "",
         "## Required Fact Kinds",
         "",
@@ -2681,7 +2840,9 @@ def _reader_assignment_prompt_markdown(
     for image in request.get("inputImages") or []:
         if not isinstance(image, dict):
             continue
-        matched = ", ".join(str(value) for value in image.get("matchedClassifications") or []) or "-"
+        matched = (
+            ", ".join(str(value) for value in image.get("matchedClassifications") or []) or "-"
+        )
         lines.append(
             "| "
             f"`{image.get('relativePath')}` | "
@@ -2751,13 +2912,9 @@ def _reader_dispatch_markdown(
     )
     policy = reader_pass_manifest.get("readerPassPolicy") or {}
     assignments = [
-        row
-        for row in reader_pass_manifest.get("assignments") or []
-        if isinstance(row, dict)
+        row for row in reader_pass_manifest.get("assignments") or [] if isinstance(row, dict)
     ]
-    open_assignments = [
-        row for row in assignments if row.get("status") != "response_received"
-    ]
+    open_assignments = [row for row in assignments if row.get("status") != "response_received"]
     lines = [
         "# Reverse-BIM Reader Dispatch",
         "",

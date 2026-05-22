@@ -8,10 +8,9 @@ can run it against stale evidence packets without mutating or regenerating them.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any
 
+from bim_ai._io.digest import sha256_json as _sha256_json
 from bim_ai.cost_quantity import MODEL_TAKEOFF_KINDS
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -72,11 +71,6 @@ REQUIRED_RENDER_BUNDLE_FORMATS: tuple[str, ...] = (
     "gltf-pbr",
     "ifc-bundle",
 )
-
-
-def _sha256_json(value: Any) -> str:
-    body = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
 def _finding(
@@ -396,12 +390,12 @@ def _check_schedules(
                 "documentationEvidenceDigestSha256": evidence_digest or None,
                 "documentationEvidenceStatus": evidence_status,
                 "filterScoped": bool(
-                    ((payload.get("scheduleEngine") or {}) if isinstance(payload, dict) else {}).get(
-                        "filterEquals"
-                    )
-                    or ((payload.get("scheduleEngine") or {}) if isinstance(payload, dict) else {}).get(
-                        "filterRules"
-                    )
+                    (
+                        (payload.get("scheduleEngine") or {}) if isinstance(payload, dict) else {}
+                    ).get("filterEquals")
+                    or (
+                        (payload.get("scheduleEngine") or {}) if isinstance(payload, dict) else {}
+                    ).get("filterRules")
                 ),
             }
         )
@@ -593,7 +587,9 @@ def _check_sheets(
                 }
             )
 
-        missing_hint_ids = sorted(expected_hint_ids.difference(evidence_hint_ids)) if evidence else []
+        missing_hint_ids = (
+            sorted(expected_hint_ids.difference(evidence_hint_ids)) if evidence else []
+        )
         checks.append(
             {
                 "sheetId": sh.id,
@@ -676,7 +672,9 @@ def _check_render_bundles(
             {
                 **summary,
                 "status": status,
-                "evidenceBundleDigestSha256": evidence.get("bundleDigestSha256") if evidence else None,
+                "evidenceBundleDigestSha256": evidence.get("bundleDigestSha256")
+                if evidence
+                else None,
             }
         )
     return checks
@@ -754,12 +752,12 @@ def _manifest_coverage_summary(
     documentation_export_parity_check: dict[str, Any],
 ) -> dict[str, Any]:
     unsupported_schedules = [
-        row
-        for row in schedule_checks
-        if row.get("status") == "unsupported_schedule_category"
+        row for row in schedule_checks if row.get("status") == "unsupported_schedule_category"
     ]
     missing_schedules = [row for row in schedule_checks if row.get("status") == "missing_schedule"]
-    schedule_row_mismatches = [row for row in schedule_checks if row.get("status") == "row_mismatch"]
+    schedule_row_mismatches = [
+        row for row in schedule_checks if row.get("status") == "row_mismatch"
+    ]
     stale_schedule_digests = [
         row
         for row in schedule_checks
@@ -811,11 +809,7 @@ def _manifest_coverage_summary(
             documentation_export_parity_check.get("warningScopeIds") or []
         ),
         "unsupportedScheduleCategories": sorted(
-            {
-                str(row.get("category") or "")
-                for row in unsupported_schedules
-                if row.get("category")
-            }
+            {str(row.get("category") or "") for row in unsupported_schedules if row.get("category")}
         ),
         "missingRequiredScheduleCategories": sorted(
             {str(row.get("category") or "") for row in missing_schedules if row.get("category")}

@@ -18,8 +18,8 @@ from bim_ai.elements import LevelElem, ProjectSettingsElem, RoomElem, RoomSepara
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 BOUNDARY_SEGMENT_VERSION_V1 = "boundary_segment_v1"
-_ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[dict[tuple[int, int], dict[str, Any]] | None] = (
-    ContextVar("room_boundary_request_cache", default=None)
+_ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[dict[tuple[int, int], dict[str, Any]] | None] = ContextVar(
+    "room_boundary_request_cache", default=None
 )
 
 # Shared with preview (orthogonal snap / closure tests)
@@ -596,9 +596,7 @@ def _compute_room_boundary_derivation_uncached(doc: Document) -> dict[str, Any]:
                         "min": {"x": x_lo, "y": y_lo},
                         "max": {"x": x_hi, "y": y_hi},
                     }
-                    area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(
-                        0.0, (y_hi - y_lo) / 1000.0
-                    )
+                    area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
                     qs["approxAreaM2"] = round(area_m2, 4)
                     qs["roomAreaComputationBasis"] = _area_basis
                     qs["roomAreaInsetMm"] = round(inset_mm, 4)

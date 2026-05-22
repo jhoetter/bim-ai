@@ -96,7 +96,9 @@ def build_source_room_topology_report(facts: list[dict[str, Any]]) -> dict[str, 
         if not isinstance(fact, dict) or fact.get("kind") != "room":
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-        if not isinstance(value.get("boundaryMm"), list) and not isinstance(value.get("boundaryEdges"), list):
+        if not isinstance(value.get("boundaryMm"), list) and not isinstance(
+            value.get("boundaryEdges"), list
+        ):
             continue
         edges = _room_boundary_edges(fact)
         unbacked_edges = [edge for edge in edges if edge.get("status") != "source_backed"]
@@ -141,7 +143,9 @@ def build_source_room_topology_report(facts: list[dict[str, Any]]) -> dict[str, 
             "unbackedBoundaryEdgeCount": sum(
                 int(room.get("unbackedBoundaryEdgeCount") or 0) for room in rooms
             ),
-            "missingAccessRefCount": sum(len(room.get("missingAccessRefs") or []) for room in rooms),
+            "missingAccessRefCount": sum(
+                len(room.get("missingAccessRefs") or []) for room in rooms
+            ),
             "missingAdjacentRoomRefCount": sum(
                 len(room.get("missingAdjacentRoomRefs") or []) for room in rooms
             ),

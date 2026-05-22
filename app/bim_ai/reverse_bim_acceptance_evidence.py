@@ -39,7 +39,9 @@ def _source_level_rows(
         if kind not in {"level", "storey", "basement"}:
             continue
         value = _fact_value(fact)
-        level_id = value.get("levelId") or fact.get("levelId") or value.get("name") or fact.get("factId")
+        level_id = (
+            value.get("levelId") or fact.get("levelId") or value.get("name") or fact.get("factId")
+        )
         rows.append(
             {
                 "sourceFactId": fact.get("factId"),
@@ -63,8 +65,12 @@ def _model_level_index(
         if key:
             rows[key] = row
     summary = model_summary or {}
-    walls_by_level = summary.get("wallsByLevelId") if isinstance(summary.get("wallsByLevelId"), dict) else {}
-    rooms_by_level = summary.get("roomsByLevelId") if isinstance(summary.get("roomsByLevelId"), dict) else {}
+    walls_by_level = (
+        summary.get("wallsByLevelId") if isinstance(summary.get("wallsByLevelId"), dict) else {}
+    )
+    rooms_by_level = (
+        summary.get("roomsByLevelId") if isinstance(summary.get("roomsByLevelId"), dict) else {}
+    )
     for level in _as_rows(summary.get("levels")):
         keys = {str(level.get("id") or ""), str(level.get("name") or "")}
         physical_count = int(walls_by_level.get(str(level.get("id") or ""), 0) or 0) + int(
@@ -95,7 +101,11 @@ def build_level_completeness_report(
 ) -> dict[str, Any]:
     """Check that every source-required level has real model content."""
 
-    source_levels = [row for row in _source_level_rows(source_facts=source_facts, required_levels=required_levels) if row.get("required") is not False]
+    source_levels = [
+        row
+        for row in _source_level_rows(source_facts=source_facts, required_levels=required_levels)
+        if row.get("required") is not False
+    ]
     model_levels = _model_level_index(
         model_summary=model_summary,
         model_level_summaries=model_level_summaries,
@@ -103,7 +113,9 @@ def build_level_completeness_report(
     rows = []
     for source_level in source_levels:
         level_key = _level_key(source_level)
-        model_level = model_levels.get(level_key) or model_levels.get(str(source_level.get("name") or ""))
+        model_level = model_levels.get(level_key) or model_levels.get(
+            str(source_level.get("name") or "")
+        )
         modeled_count = int((model_level or {}).get("modeledPhysicalElementCount") or 0)
         status = "complete"
         blockers = []
@@ -140,8 +152,12 @@ def build_level_completeness_report(
             "accepted": not blockers,
             "requiredLevelCount": len(source_levels),
             "blockingCount": len(blockers),
-            "emptyRequiredLevelCount": sum(1 for row in rows if row.get("status") == "empty_or_incomplete"),
-            "missingRequiredLevelCount": sum(1 for row in rows if row.get("status") == "missing_model_level"),
+            "emptyRequiredLevelCount": sum(
+                1 for row in rows if row.get("status") == "empty_or_incomplete"
+            ),
+            "missingRequiredLevelCount": sum(
+                1 for row in rows if row.get("status") == "missing_model_level"
+            ),
             "emptyRequiredLevelIds": [
                 row.get("levelId")
                 for row in rows
@@ -153,7 +169,11 @@ def build_level_completeness_report(
 
 
 def _advisor_stair_clash_count(advisor: dict[str, Any] | None) -> int:
-    data = advisor.get("data") if isinstance(advisor, dict) and isinstance(advisor.get("data"), dict) else advisor or {}
+    data = (
+        advisor.get("data")
+        if isinstance(advisor, dict) and isinstance(advisor.get("data"), dict)
+        else advisor or {}
+    )
     findings = data.get("findings") if isinstance(data, dict) else []
     count = 0
     for finding in _as_rows(findings):
@@ -173,9 +193,9 @@ def build_physical_topology_report(
 ) -> dict[str, Any]:
     """Check physical topology, not just analytical room graph reachability."""
 
-    edge_summary = (
-        ((room_boundary_edges or {}).get("data") or {}).get("boundaryEdges") or {}
-    ).get("summary") or {}
+    edge_summary = (((room_boundary_edges or {}).get("data") or {}).get("boundaryEdges") or {}).get(
+        "summary"
+    ) or {}
     room_graph = ((room_access_graph or {}).get("data") or {}).get("graph") or {}
     inaccessible_rooms = room_graph.get("inaccessibleRoomIds") or []
     unbacked_edges = int(edge_summary.get("unbackedEdgeCount") or 0)
@@ -234,10 +254,17 @@ def build_source_overlay_evidence_report(
     }
     rows = []
     for required_view in required:
-        key = str(required_view.get("viewId") or required_view.get("sourcePageId") or required_view.get("kind") or "")
+        key = str(
+            required_view.get("viewId")
+            or required_view.get("sourcePageId")
+            or required_view.get("kind")
+            or ""
+        )
         overlay = overlays_by_key.get(key, {})
         max_deviation = overlay.get("maxDeviationMm")
-        tolerance = float(required_view.get("toleranceMm") or overlay.get("toleranceMm") or default_tolerance_mm)
+        tolerance = float(
+            required_view.get("toleranceMm") or overlay.get("toleranceMm") or default_tolerance_mm
+        )
         blockers = []
         if not overlay:
             blockers.append("required source overlay is missing")
@@ -298,7 +325,12 @@ def build_ui_evidence_report(
     }
     rows = []
     for required_view in required:
-        key = str(required_view.get("viewId") or required_view.get("kind") or required_view.get("name") or "")
+        key = str(
+            required_view.get("viewId")
+            or required_view.get("kind")
+            or required_view.get("name")
+            or ""
+        )
         screenshot = screenshots_by_key.get(key, {})
         blockers = []
         if not screenshot:
@@ -313,9 +345,7 @@ def build_ui_evidence_report(
             require_visual_checklist=require_visual_checklist,
         )
         checklist_blockers = [
-            row
-            for row in checklist_rows
-            if row.get("status") in {"missing", "failed", "blocked"}
+            row for row in checklist_rows if row.get("status") in {"missing", "failed", "blocked"}
         ]
         if checklist_blockers:
             blockers.append("UI visual checklist has missing or failed items")

@@ -61,7 +61,10 @@ def build_coordinate_frame_alignment_worklist(
             continue
         if classification not in GEOMETRY_FRAME_CLASSES:
             continue
-        if required_frame_ids is not None and str(frame.get("coordinateFrameId") or "") not in required_frame_ids:
+        if (
+            required_frame_ids is not None
+            and str(frame.get("coordinateFrameId") or "") not in required_frame_ids
+        ):
             continue
         actions.append(
             {
@@ -172,7 +175,10 @@ def apply_coordinate_frame_alignments(
         row
         for row in rows
         if row.get("status") in {"missing_alignment", "invalid_alignment"}
-        and (required_frame_ids is None or str(row.get("coordinateFrameId") or "") in required_frame_ids)
+        and (
+            required_frame_ids is None
+            or str(row.get("coordinateFrameId") or "") in required_frame_ids
+        )
         and _frame_classification(row.get("coordinateFrameId"), frames) in GEOMETRY_FRAME_CLASSES
     ]
     updated = {
@@ -187,15 +193,21 @@ def apply_coordinate_frame_alignments(
             "coordinateFrameCount": len(frames),
             "acceptedFrameCount": sum(1 for frame in frames if frame.get("status") == "accepted"),
             "blockingAlignmentCount": len(blocking_rows),
-            "invalidAlignmentCount": sum(1 for row in rows if row.get("status") == "invalid_alignment"),
-            "missingAlignmentCount": sum(1 for row in rows if row.get("status") == "missing_alignment"),
+            "invalidAlignmentCount": sum(
+                1 for row in rows if row.get("status") == "invalid_alignment"
+            ),
+            "missingAlignmentCount": sum(
+                1 for row in rows if row.get("status") == "missing_alignment"
+            ),
         },
         "coordinateFrames": updated,
         "rows": rows,
     }
 
 
-def _alignment_rows(alignments: list[dict[str, Any]] | dict[str, Any] | None) -> list[dict[str, Any]]:
+def _alignment_rows(
+    alignments: list[dict[str, Any]] | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     if alignments is None:
         return []
     if isinstance(alignments, dict) and isinstance(alignments.get("alignments"), list):

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
-from typing import Any
 import re
 import unicodedata
+from collections import Counter, defaultdict
+from typing import Any
 
 PHYSICAL_LEVEL_FACT_KINDS = {
     "wall_line",
@@ -33,7 +33,9 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
         physical = physical_by_level.get(level_key, [])
         blockers = []
         if not physical:
-            blockers.append("source-required level has no physical wall/room/floor/opening/stair facts")
+            blockers.append(
+                "source-required level has no physical wall/room/floor/opening/stair facts"
+            )
         rows.append(
             {
                 "levelId": level_id,
@@ -43,8 +45,12 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
                 "sourceFactId": level.get("sourceFactId"),
                 "status": "complete" if not blockers else "blocked_no_physical_source_content",
                 "physicalFactCount": len(physical),
-                "physicalFactCountsByKind": dict(sorted(Counter(row.get("kind") for row in physical).items())),
-                "physicalFactIds": sorted(str(row.get("factId")) for row in physical if row.get("factId")),
+                "physicalFactCountsByKind": dict(
+                    sorted(Counter(row.get("kind") for row in physical).items())
+                ),
+                "physicalFactIds": sorted(
+                    str(row.get("factId")) for row in physical if row.get("factId")
+                ),
                 "blockingReasons": blockers,
                 "provenance": level.get("provenance"),
             }
@@ -67,7 +73,9 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
             "emptySourceLevelCount": sum(
                 1 for row in rows if row.get("status") == "blocked_no_physical_source_content"
             ),
-            "missingSourceLevelFacts": 1 if rows and rows[0].get("status") == "blocked_missing_source_levels" else 0,
+            "missingSourceLevelFacts": 1
+            if rows and rows[0].get("status") == "blocked_missing_source_levels"
+            else 0,
         },
         "levels": rows,
         "blockers": blockers,
@@ -81,7 +89,9 @@ def _level_rows(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not isinstance(fact, dict) or str(fact.get("kind") or "") not in {"level", "storey"}:
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
-        raw_level_id = str(value.get("levelId") or value.get("name") or fact.get("factId") or "").strip()
+        raw_level_id = str(
+            value.get("levelId") or value.get("name") or fact.get("factId") or ""
+        ).strip()
         level_key = _canonical_level_key(raw_level_id)
         if not level_key and _is_generic_level_fact(raw_level_id):
             continue
@@ -108,7 +118,10 @@ def _level_rows(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _physical_facts_by_level(facts: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for fact in facts:
-        if not isinstance(fact, dict) or str(fact.get("kind") or "") not in PHYSICAL_LEVEL_FACT_KINDS:
+        if (
+            not isinstance(fact, dict)
+            or str(fact.get("kind") or "") not in PHYSICAL_LEVEL_FACT_KINDS
+        ):
             continue
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
         for level_id in _fact_level_ids(value):
@@ -170,9 +183,5 @@ def _normalize_level_text(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     asciiish = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return (
-        asciiish.replace("ß", "ss")
-        .replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-        .lower()
+        asciiish.replace("ß", "ss").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").lower()
     )

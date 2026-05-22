@@ -43,7 +43,11 @@ def _source_area_facts(source_facts: list[dict[str, Any]]) -> list[dict[str, Any
         except (TypeError, ValueError):
             continue
         scope = value.get("scope")
-        row_kind = "room" if fact_kind == "area" and scope in {"room", "room_area", "area_schedule_row"} else fact_kind
+        row_kind = (
+            "room"
+            if fact_kind == "area" and scope in {"room", "room_area", "area_schedule_row"}
+            else fact_kind
+        )
         rows.append(
             {
                 "factId": fact.get("factId") or fact.get("id"),

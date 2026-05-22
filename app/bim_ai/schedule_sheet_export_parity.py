@@ -23,12 +23,11 @@ consistency.
 from __future__ import annotations
 
 import csv
-import hashlib
 import io
-import json
 import re
 from typing import Any
 
+from bim_ai._io.digest import digest
 from bim_ai.document import Document
 from bim_ai.elements import ScheduleElem, SheetElem
 from bim_ai.schedule_csv import schedule_payload_to_csv
@@ -110,12 +109,7 @@ def _classify_parity(
 
 def _schedule_needs_room_boundary_derivation(sch: ScheduleElem) -> bool:
     filt = dict(sch.filters or {})
-    cat = str(
-        filt.get("category")
-        or filt.get("Category")
-        or sch.category
-        or ""
-    ).lower()
+    cat = str(filt.get("category") or filt.get("Category") or sch.category or "").lower()
     if not cat:
         name = str(sch.name or "").lower()
         if "finish" in name:
@@ -202,11 +196,6 @@ def build_schedule_sheet_export_parity_row(
     return row
 
 
-def _digest_for_rows(rows: list[dict[str, Any]]) -> str:
-    canon = json.dumps(rows, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
-
-
 def build_schedule_sheet_export_parity_evidence_v1_for_schedule(
     doc: Document,
     sch: ScheduleElem,
@@ -231,7 +220,7 @@ def build_schedule_sheet_export_parity_evidence_v1_for_schedule(
         "format": FORMAT_V1,
         "scheduleId": sch.id,
         "rows": rows,
-        "scheduleSheetExportParityDigestSha256": _digest_for_rows(rows),
+        "scheduleSheetExportParityDigestSha256": digest(rows),
     }
 
 
@@ -299,7 +288,7 @@ def build_schedule_sheet_export_parity_evidence_v1_for_sheet(
         "format": FORMAT_V1,
         "sheetId": sh.id,
         "rows": rows,
-        "scheduleSheetExportParityDigestSha256": _digest_for_rows(rows),
+        "scheduleSheetExportParityDigestSha256": digest(rows),
     }
 
 

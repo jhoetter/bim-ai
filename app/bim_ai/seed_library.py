@@ -47,8 +47,10 @@ def is_disposable_local_project(slug: str | None, title: str | None) -> bool:
         return False
     if _LOCAL_WAVE_SLUG_RE.match(slug_text):
         return True
-    if title_text and "disposable" in title_text and (
-        "evidence" in title_text or "local" in title_text
+    if (
+        title_text
+        and "disposable" in title_text
+        and ("evidence" in title_text or "local" in title_text)
     ):
         return True
     if _DISPOSABLE_SLUG_RE.search(slug_text) and (

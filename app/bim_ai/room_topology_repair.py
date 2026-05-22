@@ -63,7 +63,9 @@ def build_room_topology_repair_worklist(
             )
 
     for room_id in graph.get("inaccessibleRoomIds") or []:
-        room = next((item for item in graph.get("rooms") or [] if item.get("roomId") == room_id), {})
+        room = next(
+            (item for item in graph.get("rooms") or [] if item.get("roomId") == room_id), {}
+        )
         actions.append(
             {
                 "id": f"room-access:{room_id}",
@@ -99,7 +101,9 @@ def build_room_topology_repair_worklist(
         "summary": {
             "actionCount": len(actions),
             "kindCounts": counts,
-            "candidateActionCount": sum(1 for action in actions if action.get("status") == "candidate"),
+            "candidateActionCount": sum(
+                1 for action in actions if action.get("status") == "candidate"
+            ),
             "blockedActionCount": sum(
                 1 for action in actions if str(action.get("status") or "").startswith("blocked")
             ),

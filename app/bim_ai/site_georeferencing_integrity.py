@@ -569,7 +569,9 @@ def site_relationship_summary_v1(subject: Any) -> dict[str, Any]:
         "schemaVersion": 1,
         "siteIds": [_id(e) for e in sites],
         "toposolidIds": [_id(e) for e in topos],
-        "buildingFootprintIds": [_id(e) for e in floors if len(_polygon(e, "boundary_mm", "boundaryMm")) >= 3],
+        "buildingFootprintIds": [
+            _id(e) for e in floors if len(_polygon(e, "boundary_mm", "boundaryMm")) >= 3
+        ],
         "propertyLineIds": [_id(e) for e in property_lines],
         "setbackLineIds": [
             _id(e) for e in property_lines if _num(_get(e, "setback_mm", "setbackMm")) is not None
@@ -644,7 +646,9 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
         if len(boundary) < 3:
             continue
         centroid = _centroid(boundary)
-        if topo_polys and not any(_point_in_polygon(centroid, poly) for _, poly in topo_polys if poly):
+        if topo_polys and not any(
+            _point_in_polygon(centroid, poly) for _, poly in topo_polys if poly
+        ):
             findings.append(
                 SiteGeoreferencingFinding(
                     rule_id="site_relationship_building_outside_toposolid",
@@ -700,7 +704,9 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                 )
             )
         topo_centroid = _centroid(topo_poly)
-        if site_polys and not any(_point_in_polygon(topo_centroid, poly) for _, poly in site_polys if poly):
+        if site_polys and not any(
+            _point_in_polygon(topo_centroid, poly) for _, poly in site_polys if poly
+        ):
             findings.append(
                 SiteGeoreferencingFinding(
                     rule_id="site_relationship_toposolid_outside_site",
@@ -726,11 +732,15 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
             )
 
     for floor in floors:
-        topo_host_id = _get(floor, "site_host_id", "siteHostId", "toposolid_id", "toposolidId", "hostToposolidId")
+        topo_host_id = _get(
+            floor, "site_host_id", "siteHostId", "toposolid_id", "toposolidId", "hostToposolidId"
+        )
         if not topo_host_id:
             continue
         floor_id = _id(floor)
-        host_poly = next((poly for topo, poly in topo_polys if _id(topo) == str(topo_host_id)), None)
+        host_poly = next(
+            (poly for topo, poly in topo_polys if _id(topo) == str(topo_host_id)), None
+        )
         if host_poly is None:
             findings.append(
                 SiteGeoreferencingFinding(
@@ -826,12 +836,16 @@ def multi_building_shared_coordinate_summary_v1(subject: Any) -> dict[str, Any]:
     }
 
 
-def multi_building_shared_coordinate_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFinding]:
+def multi_building_shared_coordinate_diagnostics_v1(
+    subject: Any,
+) -> list[SiteGeoreferencingFinding]:
     elements = _elements(subject)
     summary = multi_building_shared_coordinate_summary_v1(elements)
     findings: list[SiteGeoreferencingFinding] = []
     if summary["buildingCount"] > 1 and summary["surveyPointCount"] == 0:
-        all_ids = tuple(eid for building in summary["buildings"] for eid in building["elementIds"][:3])
+        all_ids = tuple(
+            eid for building in summary["buildings"] for eid in building["elementIds"][:3]
+        )
         findings.append(
             SiteGeoreferencingFinding(
                 rule_id="site_multi_building_missing_shared_coordinates",
@@ -961,9 +975,7 @@ def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, flo
     j = len(polygon) - 1
     for i, (xi, yi) in enumerate(polygon):
         xj, yj = polygon[j]
-        if ((yi > y) != (yj > y)) and (
-            x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-9) + xi
-        ):
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-9) + xi):
             inside = not inside
         j = i
     return inside
@@ -1086,7 +1098,14 @@ def _link_is_stale(link: Any) -> bool:
     if _get(link, "stale", "isStale") is True:
         return True
     status = str(_get(link, "reload_status", "reloadStatus") or "")
-    return status in {"source_missing", "parse_error", "unloaded", "stale", "out_of_date", "needs_reload"}
+    return status in {
+        "source_missing",
+        "parse_error",
+        "unloaded",
+        "stale",
+        "out_of_date",
+        "needs_reload",
+    }
 
 
 def _link_transform_drift_findings(link: Any) -> list[SiteGeoreferencingFinding]:
@@ -1123,7 +1142,11 @@ def _link_transform_drift_findings(link: Any) -> list[SiteGeoreferencingFinding]
             )
     exp_rot = _num(expected.get("rotationDeg"))
     act_rot = _num(actual.get("rotationDeg"))
-    if exp_rot is not None and act_rot is not None and abs(act_rot - exp_rot) > LINK_ROTATION_TOLERANCE_DEG:
+    if (
+        exp_rot is not None
+        and act_rot is not None
+        and abs(act_rot - exp_rot) > LINK_ROTATION_TOLERANCE_DEG
+    ):
         findings.append(
             SiteGeoreferencingFinding(
                 rule_id="site_link_transform_drift",
@@ -1189,7 +1212,9 @@ def _element_fingerprint(elem: Any) -> dict[str, Any]:
         ),
         None,
     )
-    material = _get(elem, "material_key", "materialKey", "default_material_key", "defaultMaterialKey")
+    material = _get(
+        elem, "material_key", "materialKey", "default_material_key", "defaultMaterialKey"
+    )
     return {
         "kind": kind,
         "points": points,
@@ -1229,7 +1254,11 @@ def _kind_count_drift_rows(
 
 
 def _roundtrip_row(eid: str, status: str, field: str, **extra: Any) -> dict[str, Any]:
-    severity = "error" if status in {"missing_in_readback", "category_drift", "placement_drift"} else "warning"
+    severity = (
+        "error"
+        if status in {"missing_in_readback", "category_drift", "placement_drift"}
+        else "warning"
+    )
     return {
         "schemaVersion": 1,
         "id": eid,

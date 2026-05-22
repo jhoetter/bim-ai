@@ -232,7 +232,9 @@ def _normalize_finding(
     if "code" not in data:
         data["code"] = str(data.get("ruleId") or "domain_integrity_finding")
     if "recommendation" not in data:
-        data["recommendation"] = "Inspect the affected elements and resolve the domain integrity condition."
+        data["recommendation"] = (
+            "Inspect the affected elements and resolve the domain integrity condition."
+        )
     data["priority"] = _priority(data.get("priority"))
     data["severity"] = str(data.get("severity") or "warning")
     data["source"] = source
@@ -240,7 +242,9 @@ def _normalize_finding(
     data["blocking"] = data["severity"] == "error"
     data["blockingClass"] = "domain_integrity"
     data["trackerItems"] = _tracker_items_for(data)
-    data["elementIds"] = sorted(dict.fromkeys(str(eid) for eid in data.get("elementIds") or [] if eid))
+    data["elementIds"] = sorted(
+        dict.fromkeys(str(eid) for eid in data.get("elementIds") or [] if eid)
+    )
     return {
         key: value
         for key, value in data.items()
@@ -259,10 +263,7 @@ def _tracker_items_for(data: Mapping[str, Any]) -> list[str]:
         normalized_value = value.lower().replace("_", "-")
         for token in DOMAIN_INTEGRITY_TRACKER_ITEMS:
             normalized_token = token.lower()
-            if (
-                (token in value or normalized_token in normalized_value)
-                and token not in found
-            ):
+            if (token in value or normalized_token in normalized_value) and token not in found:
                 found.append(token)
     return found
 

@@ -286,9 +286,7 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 candidate = els.get(ev_id)
                 if candidate is not None:
                     if not isinstance(candidate, SourceViewEvidenceElem):
-                        raise ValueError(
-                            f"element '{ev_id}' is not a source_view_evidence"
-                        )
+                        raise ValueError(f"element '{ev_id}' is not a source_view_evidence")
                     existing = candidate
             if existing is None:
                 ev_id = ev_id or new_id()
@@ -320,9 +318,7 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                             else existing.source_document_id
                         ),
                         "source_page": (
-                            cmd.source_page
-                            if cmd.source_page is not None
-                            else existing.source_page
+                            cmd.source_page if cmd.source_page is not None else existing.source_page
                         ),
                         "source_region": (
                             cmd.source_region
@@ -345,17 +341,11 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                             else existing.overlay_path
                         ),
                         "finding_ids": (
-                            cmd.finding_ids
-                            if cmd.finding_ids is not None
-                            else existing.finding_ids
+                            cmd.finding_ids if cmd.finding_ids is not None else existing.finding_ids
                         ),
-                        "notes": (
-                            cmd.notes if cmd.notes is not None else existing.notes
-                        ),
+                        "notes": (cmd.notes if cmd.notes is not None else existing.notes),
                         "updated_at": (
-                            cmd.updated_at
-                            if cmd.updated_at is not None
-                            else existing.updated_at
+                            cmd.updated_at if cmd.updated_at is not None else existing.updated_at
                         ),
                     }
                 )

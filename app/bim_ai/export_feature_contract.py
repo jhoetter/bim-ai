@@ -279,7 +279,9 @@ def _export_skipped_rows(doc: Document, export_format: ExportFormat) -> list[dic
             bad_host = elem.host_floor_id not in floor_ids
             bad_outline = len(getattr(elem, "boundary_mm", ()) or ()) < 3
             if bad_host or bad_outline:
-                reason = "slab_opening_missing_host_floor" if bad_host else "slab_opening_bad_outline"
+                reason = (
+                    "slab_opening_missing_host_floor" if bad_host else "slab_opening_bad_outline"
+                )
                 _add_grouped_row(
                     grouped,
                     element_kind="slab_opening",
@@ -299,7 +301,9 @@ def _export_skipped_rows(doc: Document, export_format: ExportFormat) -> list[dic
             bad_host = elem.host_roof_id not in roof_ids
             bad_outline = len(getattr(elem, "boundary_mm", ()) or ()) < 3
             if bad_host or bad_outline:
-                reason = "roof_opening_missing_host_roof" if bad_host else "roof_opening_bad_outline"
+                reason = (
+                    "roof_opening_missing_host_roof" if bad_host else "roof_opening_bad_outline"
+                )
                 _add_grouped_row(
                     grouped,
                     element_kind="roof_opening",
@@ -477,9 +481,7 @@ def build_export_manifest_feature_diagnostics_v1(
             "driftRows": drift_rows,
             "summary": {
                 "driftRowCount": len(drift_rows),
-                "affectedElementCount": sum(
-                    int(row["affectedElementCount"]) for row in drift_rows
-                ),
+                "affectedElementCount": sum(int(row["affectedElementCount"]) for row in drift_rows),
             },
         },
     }

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from collections import Counter
 from typing import Any
+
+from bim_ai._io.digest import digest as _digest
 
 REQUIRED_IR_KEYS = {
     "sourceManifest",
@@ -292,7 +292,8 @@ def build_source_coverage_matrix(
     uncovered = [
         row
         for row in rows
-        if row["coverageStatus"] in {"candidate", "accepted", "conflicting"} and not row["elementIds"]
+        if row["coverageStatus"] in {"candidate", "accepted", "conflicting"}
+        and not row["elementIds"]
     ]
     payload = {
         "format": "reverseBimSourceCoverageMatrix_v1",
@@ -615,9 +616,7 @@ def build_reverse_bim_phase_packet(
     source_backed_existing_nonconformance_count = sum(
         source_backed_existing_nonconformance_counts.values()
     )
-    blocking_warning_count = (
-        raw_warning_count - source_backed_existing_nonconformance_count
-    )
+    blocking_warning_count = raw_warning_count - source_backed_existing_nonconformance_count
     payload = {
         "format": "reverseBimPhasePacket_v1",
         "phaseId": phase_id,
@@ -752,7 +751,11 @@ def _is_metadata_fact(kind: str, value: dict[str, Any]) -> bool:
 
 
 def _source_limited_decision(value: dict[str, Any] | None) -> str:
-    disposition = value.get("disposition") if isinstance(value, dict) and isinstance(value.get("disposition"), dict) else {}
+    disposition = (
+        value.get("disposition")
+        if isinstance(value, dict) and isinstance(value.get("disposition"), dict)
+        else {}
+    )
     return str(disposition.get("decision") or "")
 
 
@@ -792,30 +795,49 @@ def _tool_for_fact(kind: str, value: dict[str, Any]) -> str | None:
 
 def _requirements_for_tool(tool: str, value: dict[str, Any]) -> list[dict[str, Any]]:
     requirements: list[dict[str, Any]] = []
-    if tool in {"author.wall", "author.wall_chain", "author.floor_from_boundary", "author.room_outline"}:
+    if tool in {
+        "author.wall",
+        "author.wall_chain",
+        "author.floor_from_boundary",
+        "author.room_outline",
+    }:
         if not (value.get("levelId") or value.get("levelName")):
-            requirements.append({"resolver": "resolve.active_or_default_level", "reason": "level required"})
+            requirements.append(
+                {"resolver": "resolve.active_or_default_level", "reason": "level required"}
+            )
     if tool == "author.wall":
         if not (value.get("start") and value.get("end")):
             requirements.append({"source": "ai_document_read", "reason": "wall start/end required"})
     if tool == "author.wall_chain":
         if not value.get("points"):
-            requirements.append({"source": "ai_document_read", "reason": "wall chain points required"})
+            requirements.append(
+                {"source": "ai_document_read", "reason": "wall chain points required"}
+            )
         if value.get("thicknessMm") is None:
             requirements.append({"source": "ai_document_read", "reason": "wall thickness required"})
     if tool in {"author.floor_from_boundary", "author.room_outline", "author.roof_from_boundary"}:
         if not (value.get("boundaryMm") or value.get("boundary")):
-            requirements.append({"source": "ai_document_read", "reason": "closed boundary required"})
+            requirements.append(
+                {"source": "ai_document_read", "reason": "closed boundary required"}
+            )
     if tool in {"opening.door_on_wall", "opening.window_on_wall"}:
         if not value.get("wallId"):
-            requirements.append({"resolver": "resolve.wall_by_line", "reason": "host wall required"})
+            requirements.append(
+                {"resolver": "resolve.wall_by_line", "reason": "host wall required"}
+            )
         if value.get("alongT") is None:
-            requirements.append({"resolver": "query.nearest_wall", "reason": "normalized host position required"})
+            requirements.append(
+                {"resolver": "query.nearest_wall", "reason": "normalized host position required"}
+            )
     if tool == "opening.roof_opening" and not value.get("hostRoofId"):
-        requirements.append({"resolver": "resolve.roof_host_region", "reason": "host roof required"})
+        requirements.append(
+            {"resolver": "resolve.roof_host_region", "reason": "host roof required"}
+        )
     if tool == "author.dormer_on_roof":
         if not value.get("hostRoofId"):
-            requirements.append({"resolver": "resolve.roof_host_region", "reason": "host roof required"})
+            requirements.append(
+                {"resolver": "resolve.roof_host_region", "reason": "host roof required"}
+            )
         if not value.get("positionOnRoof"):
             requirements.append(
                 {
@@ -833,7 +855,9 @@ def _requirements_for_tool(tool: str, value: dict[str, Any]) -> list[dict[str, A
             if key not in value:
                 requirements.append({"source": "ai_document_read", "reason": f"{key} required"})
     if tool == "site.property-line-create" and not value.get("boundary"):
-        requirements.append({"source": "ai_document_read", "reason": "property boundary points required"})
+        requirements.append(
+            {"source": "ai_document_read", "reason": "property boundary points required"}
+        )
     if tool == "toposolid-create":
         if not (value.get("elevationPoints") or value.get("contours") or value.get("mesh")):
             requirements.append(
@@ -983,7 +1007,10 @@ def _expected_geometry_fields(tool: str, payload: dict[str, Any]) -> dict[str, A
         "mesh",
     ]
     out = {field: payload[field] for field in fields if payload.get(field) is not None}
-    if tool in {"opening.door_on_wall", "opening.window_on_wall"} and payload.get("alongT") is not None:
+    if (
+        tool in {"opening.door_on_wall", "opening.window_on_wall"}
+        and payload.get("alongT") is not None
+    ):
         out["alongT"] = payload.get("alongT")
     return out
 
@@ -1021,7 +1048,12 @@ def _query_surfaces_for_tool(tool: str) -> list[str]:
     if tool.startswith("opening."):
         return ["model.summary", "query.elements", "query.hosted_openings", "qa.physical_topology"]
     if tool in {"author.stair_between_levels", "opening.slab_opening"}:
-        return ["model.summary", "query.elements", "query.vertical_circulation", "qa.physical_topology"]
+        return [
+            "model.summary",
+            "query.elements",
+            "query.vertical_circulation",
+            "qa.physical_topology",
+        ]
     if tool in {"author.room_outline"}:
         return ["model.summary", "query.rooms", "qa.physical_topology"]
     if tool in {"site.property-line-create", "toposolid-create"}:
@@ -1049,7 +1081,11 @@ def _non_authoring_status(kind: str, value: dict[str, Any] | None = None) -> str
         return "metadata_for_authoring"
     if _is_source_limited_reference_fact(kind, value):
         return "reference_only"
-    disposition = value.get("disposition") if isinstance(value, dict) and isinstance(value.get("disposition"), dict) else {}
+    disposition = (
+        value.get("disposition")
+        if isinstance(value, dict) and isinstance(value.get("disposition"), dict)
+        else {}
+    )
     if kind == "terrain" and disposition.get("decision") == "accept_context_only_no_toposolid":
         return "reference_only"
     if kind == "parcel_boundary" and disposition.get("decision") == "accept_context_only":
@@ -1100,12 +1136,20 @@ def _mcp_action_status(requirements: list[dict[str, Any]]) -> str:
 def _mcp_action_recommendation(status: str, requirements: list[dict[str, Any]]) -> str:
     if status == "ready_for_mcp_authoring":
         return "Call the listed MCP tool in a dry-run transaction, then query and QA before commit."
-    resolvers = [str(req.get("resolver")) for req in requirements if isinstance(req, dict) and req.get("resolver")]
+    resolvers = [
+        str(req.get("resolver"))
+        for req in requirements
+        if isinstance(req, dict) and req.get("resolver")
+    ]
     if status == "needs_mcp_resolver":
         return f"Run resolver/query tools first: {', '.join(resolvers)}."
     if status == "needs_mcp_resolver_and_source_refinement":
-        return f"Run resolver/query tools and request missing source geometry: {', '.join(resolvers)}."
-    return "Send a focused repair request to the AI document reader for the missing modelable fields."
+        return (
+            f"Run resolver/query tools and request missing source geometry: {', '.join(resolvers)}."
+        )
+    return (
+        "Send a focused repair request to the AI document reader for the missing modelable fields."
+    )
 
 
 def _result(
@@ -1133,7 +1177,11 @@ def _severity_counts_from_payload(payload: dict[str, Any]) -> dict[str, int]:
             return {str(k): int(v) for k, v in counts.items() if isinstance(v, int)}
     findings = payload.get("findings")
     if isinstance(findings, list):
-        return dict(Counter(str(row.get("severity") or "warning") for row in findings if isinstance(row, dict)))
+        return dict(
+            Counter(
+                str(row.get("severity") or "warning") for row in findings if isinstance(row, dict)
+            )
+        )
     return {}
 
 
@@ -1144,8 +1192,3 @@ def _has_report_payload(payload: dict[str, Any] | None) -> bool:
         return True
     data = payload.get("data")
     return isinstance(data, dict) and bool(data.get("summary") or data.get("findings"))
-
-
-def _digest(payload: dict[str, Any]) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

@@ -61,13 +61,13 @@ from bim_ai.reverse_bim_source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
-from bim_ai.semantic_authoring import (
-    UnsupportedSemanticOperationError,
-    build_semantic_authoring_bundle,
-)
 from bim_ai.reverse_bim_visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
+)
+from bim_ai.semantic_authoring import (
+    UnsupportedSemanticOperationError,
+    build_semantic_authoring_bundle,
 )
 from bim_ai.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
@@ -95,13 +95,13 @@ from bim_ai.source_ingestion import (
     validate_ai_source_facts,
     validate_ai_visual_trace_completeness,
 )
+from bim_ai.source_level_completeness import build_source_level_completeness_report
+from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_page_classification import (
     apply_page_classifications,
     build_page_classification_dispatch_plan,
     load_page_classification_responses,
 )
-from bim_ai.source_level_completeness import build_source_level_completeness_report
-from bim_ai.source_material_assemblies import build_source_material_assembly_report
 from bim_ai.source_reader_consensus import build_source_reader_consensus_report
 
 reverse_bim_router = APIRouter()
@@ -249,9 +249,7 @@ async def source_pdf_text_route(body: dict[str, Any] = Body(default_factory=dict
     source_path = body.get("sourcePath") or body.get("path")
     if not source_path:
         raise HTTPException(status_code=422, detail="sourcePath is required")
-    return _source_response(
-        extract_pdf_text(str(source_path), max_pages=body.get("maxPages"))
-    )
+    return _source_response(extract_pdf_text(str(source_path), max_pages=body.get("maxPages")))
 
 
 @reverse_bim_router.post("/v3/source/render-pdf")
@@ -523,10 +521,7 @@ async def reverse_bim_coordinate_frame_worklist_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
     coordinate_frames = (
-        body.get("coordinateFrames")
-        or body.get("coordinate_frames")
-        or body.get("frames")
-        or {}
+        body.get("coordinateFrames") or body.get("coordinate_frames") or body.get("frames") or {}
     )
     return build_coordinate_frame_alignment_worklist(
         coordinate_frames,
@@ -539,10 +534,7 @@ async def reverse_bim_coordinate_frame_alignment_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
     coordinate_frames = (
-        body.get("coordinateFrames")
-        or body.get("coordinate_frames")
-        or body.get("frames")
-        or {}
+        body.get("coordinateFrames") or body.get("coordinate_frames") or body.get("frames") or {}
     )
     return apply_coordinate_frame_alignments(
         coordinate_frames,
@@ -587,7 +579,8 @@ async def reverse_bim_folder_output_route(
         conflict_decisions=body.get("conflictDecisions") or body.get("sourceConflictDecisions"),
         coordinate_frame_alignments=body.get("coordinateFrameAlignments")
         or body.get("coordinateFrameDecisions"),
-        site_terrain_decisions=body.get("siteTerrainDecisions") or body.get("siteTopologyDecisions"),
+        site_terrain_decisions=body.get("siteTerrainDecisions")
+        or body.get("siteTopologyDecisions"),
         run_id=body.get("runId"),
         dpi=int(body.get("dpi") or 240),
         max_pages_per_pdf=body.get("maxPagesPerPdf"),
@@ -708,9 +701,7 @@ async def reverse_bim_source_revision_ledger_persist_route(
 ) -> dict[str, Any]:
     output_dir = body.get("outputDir") or body.get("output_dir")
     source_revision_ledger = (
-        body.get("sourceRevisionLedger")
-        or body.get("source_revision_ledger")
-        or body.get("ledger")
+        body.get("sourceRevisionLedger") or body.get("source_revision_ledger") or body.get("ledger")
     )
     if not output_dir:
         raise HTTPException(status_code=422, detail="outputDir is required")
@@ -782,9 +773,7 @@ async def reverse_bim_view_capture_plan_route(
     body: dict[str, Any] = Body(default_factory=dict),
 ) -> dict[str, Any]:
     evidence_requirements = (
-        body.get("evidenceRequirements")
-        or body.get("evidence_requirements")
-        or {}
+        body.get("evidenceRequirements") or body.get("evidence_requirements") or {}
     )
     return build_reverse_bim_view_capture_plan(
         model_id=body.get("modelId") or body.get("model_id"),
@@ -912,8 +901,7 @@ async def reverse_bim_level_completeness_route(
         source_facts=body.get("sourceFacts") or body.get("facts"),
         model_summary=body.get("modelSummary") or body.get("model_summary"),
         required_levels=body.get("requiredLevels") or body.get("required_levels"),
-        model_level_summaries=body.get("modelLevelSummaries")
-        or body.get("model_level_summaries"),
+        model_level_summaries=body.get("modelLevelSummaries") or body.get("model_level_summaries"),
         min_physical_elements_per_required_level=int(
             body.get("minPhysicalElementsPerRequiredLevel")
             or body.get("min_physical_elements_per_required_level")

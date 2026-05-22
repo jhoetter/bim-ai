@@ -8,13 +8,11 @@ needs repair, and when modeling evidence must reopen the source specification.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections import Counter
 from typing import Any
 
+from bim_ai._io.digest import digest as _digest
 from bim_ai.reverse_bim_phase_runner import build_reverse_bim_phase_run_report
-
 
 SOURCE_REVISION_CLASSIFICATIONS = {
     "source_fact_misread",
@@ -231,9 +229,13 @@ def build_hybrid_reverse_bim_slice_report(
         "summary": {
             "blockerCount": len(blockers),
             "hasPhasePacket": bool(phase_packet),
-            "phaseAccepted": bool(phase_packet and phase_packet.get("acceptedForNextPhase") is True),
+            "phaseAccepted": bool(
+                phase_packet and phase_packet.get("acceptedForNextPhase") is True
+            ),
             "mcpReadinessBlockerCount": int(readiness_summary.get("blockerCount") or 0),
-            "sourceRevisionActionCount": int(revision_summary.get("sourceRevisionActionCount") or 0),
+            "sourceRevisionActionCount": int(
+                revision_summary.get("sourceRevisionActionCount") or 0
+            ),
             "readbackBlockedCount": int(readback_summary.get("blockedCount") or 0),
             "requiredOverlayViewCount": required_overlay_count,
             "requiredUiViewCount": required_ui_count,
@@ -273,7 +275,9 @@ def build_hybrid_reverse_bim_run_report(
     }
     blocking_slice_count = sum(1 for row in slices if row.get("ok") is not True)
     payload = {
-        "ok": phase_run.get("ok") is True and not blocking_slice_count and not package_blocks_modeling,
+        "ok": phase_run.get("ok") is True
+        and not blocking_slice_count
+        and not package_blocks_modeling,
         "format": "hybridReverseBimRunReport_v1",
         "summary": {
             "packageState": package_state,
@@ -296,7 +300,9 @@ def build_hybrid_reverse_bim_run_report(
     return payload
 
 
-def _revision_action(row: dict[str, Any], *, fact_index: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def _revision_action(
+    row: dict[str, Any], *, fact_index: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
     classification = _classify_finding(row)
     source_fact_ids = _source_fact_ids(row)
     source_facts = [fact_index[fact_id] for fact_id in source_fact_ids if fact_id in fact_index]
@@ -495,8 +501,3 @@ def _run_next_step(
     if blocking_slice_count:
         return "Repair blocked slice reports before final acceptance."
     return "Hybrid run evidence is accepted; proceed to final acceptance/export gates."
-
-
-def _digest(payload: dict[str, Any]) -> str:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode()).hexdigest()

@@ -103,12 +103,8 @@ def build_page_classification_dispatch_plan(
     """
 
     out_dir = Path(output_dir).expanduser().resolve()
-    assignments_dir = (
-        out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _ASSIGNMENT_SUBDIR
-    )
-    responses_dir = (
-        out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _RESPONSE_SUBDIR
-    )
+    assignments_dir = out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _ASSIGNMENT_SUBDIR
+    responses_dir = out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _RESPONSE_SUBDIR
 
     documents = visual_packet.get("documents") or []
 
@@ -122,11 +118,7 @@ def build_page_classification_dispatch_plan(
         doc_id = str(doc.get("sourceDocumentId") or "")
         if not doc_id:
             continue
-        pages = [
-            page
-            for page in (doc.get("renderedPages") or [])
-            if isinstance(page, dict)
-        ]
+        pages = [page for page in (doc.get("renderedPages") or []) if isinstance(page, dict)]
         if not pages:
             skipped_rows.append(
                 {
@@ -155,12 +147,8 @@ def build_page_classification_dispatch_plan(
                 "pageCount": len(pages),
             }
         )
-        assignment_path = (
-            assignments_dir / f"{_safe_id(doc_id)}.md"
-        )
-        response_path = (
-            responses_dir / f"{_safe_id(doc_id)}.json"
-        )
+        assignment_path = assignments_dir / f"{_safe_id(doc_id)}.md"
+        response_path = responses_dir / f"{_safe_id(doc_id)}.json"
         if write_assignments:
             assignments_dir.mkdir(parents=True, exist_ok=True)
             assignment_path.write_text(
@@ -219,9 +207,7 @@ def load_page_classification_responses(
     """
 
     out_dir = Path(output_dir).expanduser().resolve()
-    responses_dir = (
-        out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _RESPONSE_SUBDIR
-    )
+    responses_dir = out_dir / "ai-reading" / _PAGE_CLASSIFICATION_DIR / _RESPONSE_SUBDIR
     responses: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
 
@@ -386,9 +372,7 @@ def _render_assignment_markdown(
     rows: list[str] = []
     rows.append(f"# Page Classification Assignment — {document.get('relativePath')}")
     rows.append("")
-    rows.append(
-        "Read each rendered page image visually and assign a per-page role."
-    )
+    rows.append("Read each rendered page image visually and assign a per-page role.")
     rows.append(
         "This is a routing-only task: the goal is to direct each page to the "
         "right reverse-BIM work package (floor plans vs sections vs "
@@ -399,9 +383,7 @@ def _render_assignment_markdown(
     rows.append("")
     rows.append(f"- sourceDocumentId: `{document.get('sourceDocumentId')}`")
     rows.append(f"- relativePath: `{document.get('relativePath')}`")
-    rows.append(
-        f"- documentClassification: `{document.get('classification') or 'unknown'}`"
-    )
+    rows.append(f"- documentClassification: `{document.get('classification') or 'unknown'}`")
     rows.append(f"- pageCount: {len(pages)}")
     rows.append("")
     rows.append("## Pages")
@@ -418,9 +400,7 @@ def _render_assignment_markdown(
     rows.append("")
     rows.append("## Role Vocabulary")
     rows.append("")
-    rows.append(
-        "Use exactly these strings: " + ", ".join(f"`{r}`" for r in KNOWN_PAGE_ROLES)
-    )
+    rows.append("Use exactly these strings: " + ", ".join(f"`{r}`" for r in KNOWN_PAGE_ROLES))
     rows.append("")
     rows.append("- floor_plan — orthographic plan view of a storey/level")
     rows.append("- section — vertical cut through the building")
