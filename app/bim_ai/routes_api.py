@@ -960,15 +960,32 @@ async def sustainability_lens_projection(
 async def evidence_package(
     model_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
+    mode: Annotated[str, Query()] = "default",
 ) -> dict[str, Any]:
+    """PERF-D06: mode=summary|default|full.
+
+    - `summary` skips the deterministic*Evidence + evidenceClosureReview
+      chain and the downstream agentReview*/agentBrief*/QA-checklist
+      readouts. Use it for UI panels that just need
+      validate/scheduleIds/summary/elementCount.
+    - `default` is the historical full payload (back-compat).
+    - `full` is currently identical to `default`; kept as a forward seat
+      for verbose debug/profiling additions.
+    """
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
+    normalised = mode.strip().lower()
+    if normalised not in {"summary", "default", "full"}:
+        raise HTTPException(
+            status_code=400, detail="mode must be one of summary|default|full"
+        )
     doc = Document.model_validate(row.document)
     return build_evidence_package_payload(
         model_id=model_id,
         doc=doc,
         source_document=row.document,
+        mode=normalised,
     )
 
 
@@ -977,6 +994,7 @@ def build_evidence_package_payload(
     model_id: UUID,
     doc: Document,
     source_document: dict[str, Any] | None = None,
+    mode: str = "default",
 ) -> dict[str, Any]:
     source_document_wire = source_document or doc.model_dump(by_alias=True)
     viols = violations_wire(doc.elements)
@@ -1086,6 +1104,13 @@ def build_evidence_package_payload(
     }
     payload["recommendedPngEvidenceBackend"] = "playwright_ci"
     payload["svgRasterBackendAvailable"] = True
+    payload["_packageMode"] = mode
+    if mode == "summary":
+        # PERF-D06: short-circuit before the deterministic*Evidence +
+        # evidenceClosureReview + agentReview*/agentBrief*/QA chain. The
+        # caller asked for the lightweight summary surface (validate +
+        # planViews + scheduleIds + summary + digest).
+        return payload
     payload["deterministicSheetEvidence"] = deterministic_sheet_evidence_manifest(
         model_id=model_id,
         doc=doc,
