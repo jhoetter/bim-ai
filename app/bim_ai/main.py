@@ -21,6 +21,7 @@ from bim_ai.jobs.types import Job
 from bim_ai.plan_projection_wire import plan_projection_wire_request_cache
 from bim_ai.room_derivation import room_boundary_derivation_request_cache
 from bim_ai.routes_api import api_router, websocket_loop
+from bim_ai.routes_time_travel import time_travel_router
 from bim_ai.schedule_derivation import schedule_table_derivation_request_cache
 
 
@@ -58,6 +59,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(time_travel_router, prefix="/api")
 
 
 @app.middleware("http")
