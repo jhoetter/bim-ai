@@ -185,6 +185,11 @@ from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
 )
+from bim_ai.models.api_requests import (
+    ReverseBimHybridRunExecuteRequest,
+    ReverseBimHybridSliceExecuteRequest,
+    SemanticAuthoringRequest,
+)
 from bim_ai.semantic_authoring import (
     UnsupportedSemanticOperationError,
     build_semantic_authoring_bundle,
@@ -1372,11 +1377,11 @@ _SEMANTIC_SURFACE_ALIASES = {
 @api_router.post("/semantic-authoring/{surface_id}")
 async def semantic_authoring_route(
     surface_id: str,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: SemanticAuthoringRequest,
 ) -> Any:
     operation = _SEMANTIC_SURFACE_ALIASES.get(surface_id, surface_id)
     try:
-        bundle = build_semantic_authoring_bundle(operation, body)
+        bundle = build_semantic_authoring_bundle(operation, body.model_dump(by_alias=True))
     except UnsupportedSemanticOperationError as exc:
         raise HTTPException(
             status_code=422,
@@ -1402,17 +1407,23 @@ async def semantic_authoring_route(
 @api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-slice-execute")
 async def reverse_bim_hybrid_slice_execute_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ReverseBimHybridSliceExecuteRequest,
     session: AsyncSession = Depends(get_session),
     hub: Hub = Depends(get_hub),
     token: str | None = Query(default=None),
 ) -> dict[str, Any]:
     """Run one hybrid reverse-BIM authoring slice through the live bundle route."""
 
-    phase = body.get("phase") if isinstance(body.get("phase"), dict) else {}
-    phase_id = str(phase.get("phaseId") or phase.get("id") or body.get("phaseId") or "unknown")
-    source_facts = body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts") or []
-    mcp_readiness = body.get("mcpReadiness") or body.get("mcp_readiness")
+    body_dict: dict[str, Any] = body.model_dump(by_alias=True)
+    phase = body_dict.get("phase") if isinstance(body_dict.get("phase"), dict) else {}
+    phase_id = str(phase.get("phaseId") or phase.get("id") or body_dict.get("phaseId") or "unknown")
+    source_facts = (
+        body_dict.get("facts")
+        or body_dict.get("sourceFacts")
+        or body_dict.get("extractedFacts")
+        or []
+    )
+    mcp_readiness = body_dict.get("mcpReadiness") or body_dict.get("mcp_readiness")
     if not isinstance(mcp_readiness, dict) and isinstance(source_facts, list):
         mcp_readiness = build_mcp_authoring_readiness(
             facts=source_facts,
@@ -1421,9 +1432,9 @@ async def reverse_bim_hybrid_slice_execute_route(
     if not isinstance(mcp_readiness, dict):
         mcp_readiness = {"ok": True, "summary": {"blockerCount": 0}, "rows": []}
 
-    expected_readback = _hybrid_expected_readback(body, phase)
-    source_fact_ids = _hybrid_source_fact_ids(body, phase, expected_readback)
-    if int((mcp_readiness.get("summary") or {}).get("blockerCount") or 0) and not body.get(
+    expected_readback = _hybrid_expected_readback(body_dict, phase)
+    source_fact_ids = _hybrid_source_fact_ids(body_dict, phase, expected_readback)
+    if int((mcp_readiness.get("summary") or {}).get("blockerCount") or 0) and not body_dict.get(
         "forceDryRunWithBlockers"
     ):
         slice_report = build_hybrid_reverse_bim_slice_report(
@@ -1441,14 +1452,14 @@ async def reverse_bim_hybrid_slice_execute_route(
             "nextStep": slice_report.get("nextStep"),
         }
 
-    bundle_payload = body.get("bundle") or body.get("commandBundle")
+    bundle_payload = body_dict.get("bundle") or body_dict.get("commandBundle")
     if not isinstance(bundle_payload, dict):
         raise HTTPException(status_code=422, detail="bundle or commandBundle is required")
 
-    user_id = str(body.get("userId") or body.get("user_id") or "local-dev")
-    submitter = str(body.get("submitter") or "agent")
-    actor_kind = body.get("actorKind") or body.get("actor_kind") or "agent"
-    client_op_id = body.get("clientOpId") or body.get("client_op_id")
+    user_id = str(body_dict.get("userId") or body_dict.get("user_id") or "local-dev")
+    submitter = str(body_dict.get("submitter") or "agent")
+    actor_kind = body_dict.get("actorKind") or body_dict.get("actor_kind") or "agent"
+    client_op_id = body_dict.get("clientOpId") or body_dict.get("client_op_id")
     dry_run_request = _hybrid_bundle_request(
         bundle_payload=bundle_payload,
         mode="dry_run",
@@ -1467,7 +1478,7 @@ async def reverse_bim_hybrid_slice_execute_route(
     dry_run_evidence = (
         dry_run_result.get("dryRunEvidence") if isinstance(dry_run_result, dict) else None
     )
-    commit_requested = bool(body.get("commit") or body.get("mode") == "commit")
+    commit_requested = bool(body_dict.get("commit") or body_dict.get("mode") == "commit")
     commit_result: dict[str, Any] | None = None
     if (
         commit_requested
@@ -1509,21 +1520,22 @@ async def reverse_bim_hybrid_slice_execute_route(
     queried_elements = (query_result.get("data") or {}).get("elements") or []
     readback_comparison = build_reverse_bim_readback_comparison(
         expected_readback=expected_readback,
-        model_readback=body.get("modelReadback") or body.get("readback"),
+        model_readback=body_dict.get("modelReadback") or body_dict.get("readback"),
         elements=queried_elements,
-        tolerance_defaults=body.get("toleranceDefaults") or body.get("tolerance_defaults"),
+        tolerance_defaults=body_dict.get("toleranceDefaults")
+        or body_dict.get("tolerance_defaults"),
     )
     advisor = qa_advisor(
         str(model_id),
         doc,
-        {"profile": body.get("advisorProfile") or "authoring_default", "limit": 500},
+        {"profile": body_dict.get("advisorProfile") or "authoring_default", "limit": 500},
     )
     constructability = {
         "modelId": str(model_id),
         **build_constructability_report(
             doc.elements,
             revision=doc.revision,
-            profile=str(body.get("constructabilityProfile") or "authoring_default"),
+            profile=str(body_dict.get("constructabilityProfile") or "authoring_default"),
             changed_element_ids=changed_ids,
             design_option_sets=doc.design_option_sets,
         ),
@@ -1536,7 +1548,7 @@ async def reverse_bim_hybrid_slice_execute_route(
     )
     source_spec_revision = build_source_spec_revision_report(
         readback_comparison=readback_comparison,
-        source_overlay=body.get("sourceOverlay") or body.get("source_overlay"),
+        source_overlay=body_dict.get("sourceOverlay") or body_dict.get("source_overlay"),
         advisor=advisor,
         constructability=constructability,
         integrity=integrity,
@@ -1545,16 +1557,17 @@ async def reverse_bim_hybrid_slice_execute_route(
     source_revision_ledger = build_reverse_bim_source_revision_ledger(
         facts=source_facts if isinstance(source_facts, list) else [],
         source_spec_revision=source_spec_revision,
-        existing_ledger=body.get("sourceRevisionLedger") or body.get("source_revision_ledger"),
-        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+        existing_ledger=body_dict.get("sourceRevisionLedger")
+        or body_dict.get("source_revision_ledger"),
+        phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
     )
     source_revision_ledger_persistence = None
-    output_dir = body.get("outputDir") or body.get("output_dir")
+    output_dir = body_dict.get("outputDir") or body_dict.get("output_dir")
     if output_dir:
         source_revision_ledger_persistence = persist_reverse_bim_source_revision_ledger(
             output_dir=output_dir,
             source_revision_ledger=source_revision_ledger,
-            run_id=body.get("runId") or body.get("run_id") or phase_id,
+            run_id=body_dict.get("runId") or body_dict.get("run_id") or phase_id,
         )
     evidence_package = {
         "modelSummary": compute_model_summary(doc),
@@ -1579,30 +1592,33 @@ async def reverse_bim_hybrid_slice_execute_route(
         constructability=constructability,
         integrity_preflight=integrity,
         evidence_package=evidence_package,
-        finding_dispositions=body.get("findingDispositions") or [],
+        finding_dispositions=body_dict.get("findingDispositions") or [],
     )
-    evidence_requirements = body.get("evidenceRequirements") or body.get("evidence_requirements")
+    evidence_requirements = body_dict.get("evidenceRequirements") or body_dict.get(
+        "evidence_requirements"
+    )
     if not isinstance(evidence_requirements, dict) and (
-        body.get("sourcePageIndex")
-        or body.get("source_page_index")
-        or body.get("requireVisualEvidence")
-        or body.get("require_visual_evidence")
+        body_dict.get("sourcePageIndex")
+        or body_dict.get("source_page_index")
+        or body_dict.get("requireVisualEvidence")
+        or body_dict.get("require_visual_evidence")
     ):
         evidence_requirements = build_reverse_bim_evidence_requirements(
-            source_page_index=body.get("sourcePageIndex") or body.get("source_page_index"),
+            source_page_index=body_dict.get("sourcePageIndex")
+            or body_dict.get("source_page_index"),
             source_facts=source_facts if isinstance(source_facts, list) else [],
-            phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+            phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
         )
-    view_capture_plan = body.get("viewCapturePlan") or body.get("view_capture_plan")
+    view_capture_plan = body_dict.get("viewCapturePlan") or body_dict.get("view_capture_plan")
     if not isinstance(view_capture_plan, dict) and isinstance(evidence_requirements, dict):
         required_evidence_count = int(
             (evidence_requirements.get("summary") or {}).get("requiredEvidenceCount") or 0
         )
         capture_output_dir = (
-            body.get("viewCaptureOutputDir")
-            or body.get("view_capture_output_dir")
-            or body.get("outputDir")
-            or body.get("output_dir")
+            body_dict.get("viewCaptureOutputDir")
+            or body_dict.get("view_capture_output_dir")
+            or body_dict.get("outputDir")
+            or body_dict.get("output_dir")
         )
         if required_evidence_count and capture_output_dir:
             view_capture_plan = build_reverse_bim_view_capture_plan(
@@ -1612,15 +1628,15 @@ async def reverse_bim_hybrid_slice_execute_route(
                 required_overlay_views=evidence_requirements.get("requiredOverlayViews")
                 or evidence_requirements.get("required_overlay_views"),
                 output_dir=str(capture_output_dir),
-                base_url=body.get("viewCaptureBaseUrl")
-                or body.get("view_capture_base_url")
-                or body.get("baseUrl")
-                or body.get("base_url"),
-                run_id=body.get("runId") or body.get("run_id") or phase_id,
-                viewport=body.get("captureViewport") or body.get("viewport"),
+                base_url=body_dict.get("viewCaptureBaseUrl")
+                or body_dict.get("view_capture_base_url")
+                or body_dict.get("baseUrl")
+                or body_dict.get("base_url"),
+                run_id=body_dict.get("runId") or body_dict.get("run_id") or phase_id,
+                viewport=body_dict.get("captureViewport") or body_dict.get("viewport"),
             )
-    source_overlay = body.get("sourceOverlay") or body.get("source_overlay")
-    ui_evidence = body.get("uiEvidence") or body.get("ui_evidence")
+    source_overlay = body_dict.get("sourceOverlay") or body_dict.get("source_overlay")
+    ui_evidence = body_dict.get("uiEvidence") or body_dict.get("ui_evidence")
     slice_report = build_hybrid_reverse_bim_slice_report(
         phase={"phaseId": phase_id},
         mcp_readiness=mcp_readiness,
@@ -1673,17 +1689,20 @@ async def reverse_bim_hybrid_slice_execute_route(
 @api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-run-execute")
 async def reverse_bim_hybrid_run_execute_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ReverseBimHybridRunExecuteRequest,
     session: AsyncSession = Depends(get_session),
     hub: Hub = Depends(get_hub),
     token: str | None = Query(default=None),
 ) -> dict[str, Any]:
     """Execute an ordered list of reverse-BIM slices and stop on blockers."""
 
-    slices = [row for row in body.get("slices") or [] if isinstance(row, dict)]
+    body_dict: dict[str, Any] = body.model_dump(by_alias=True)
+    slices = [row for row in body_dict.get("slices") or [] if isinstance(row, dict)]
     if not slices:
         raise HTTPException(status_code=422, detail="slices must contain at least one slice body")
-    continue_on_blockers = bool(body.get("continueOnBlockers") or body.get("continue_on_blockers"))
+    continue_on_blockers = bool(
+        body_dict.get("continueOnBlockers") or body_dict.get("continue_on_blockers")
+    )
     common_keys = {
         "facts",
         "sourceFacts",
@@ -1715,14 +1734,14 @@ async def reverse_bim_hybrid_run_execute_route(
         "runId",
         "run_id",
     }
-    common = {key: body[key] for key in common_keys if key in body}
+    common = {key: body_dict[key] for key in common_keys if key in body_dict}
     results = []
     stopped = False
     for slice_body in slices:
         merged_body = {**common, **slice_body}
         result = await reverse_bim_hybrid_slice_execute_route(
             model_id,
-            merged_body,
+            ReverseBimHybridSliceExecuteRequest.model_validate(merged_body),
             session=session,
             hub=hub,
             token=token,
@@ -1739,10 +1758,12 @@ async def reverse_bim_hybrid_run_execute_route(
         row.get("sliceReport") for row in results if isinstance(row.get("sliceReport"), dict)
     ]
     run_report = build_hybrid_reverse_bim_run_report(
-        phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec") or {},
+        phase_authoring_spec=body_dict.get("phaseAuthoringSpec")
+        or body_dict.get("phaseSpec")
+        or {},
         phase_packets=phase_packets,
         slice_reports=slice_reports,
-        package_acceptance=body.get("packageAcceptance") or body.get("folderOutput"),
+        package_acceptance=body_dict.get("packageAcceptance") or body_dict.get("folderOutput"),
     )
     latest_source_revision_ledger = None
     for row in reversed(results):
@@ -1752,9 +1773,11 @@ async def reverse_bim_hybrid_run_execute_route(
     handoff_regeneration = None
     if latest_source_revision_ledger:
         handoff_regeneration = build_reverse_bim_handoff_regeneration_plan(
-            facts=body.get("facts") or body.get("sourceFacts") or body.get("extractedFacts"),
+            facts=body_dict.get("facts")
+            or body_dict.get("sourceFacts")
+            or body_dict.get("extractedFacts"),
             source_revision_ledger=latest_source_revision_ledger,
-            phase_authoring_spec=body.get("phaseAuthoringSpec") or body.get("phaseSpec"),
+            phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
         )
     return {
         "ok": bool(run_report.get("ok")) and not stopped,
@@ -1804,10 +1827,12 @@ def _hybrid_bundle_request(
         raise HTTPException(status_code=422, detail=exc.errors()) from exc
 
 
-def _hybrid_expected_readback(body: dict[str, Any], phase: dict[str, Any]) -> list[dict[str, Any]]:
+def _hybrid_expected_readback(
+    body_dict: dict[str, Any], phase: dict[str, Any]
+) -> list[dict[str, Any]]:
     direct = (
-        body.get("expectedReadback")
-        or body.get("expected_readback")
+        body_dict.get("expectedReadback")
+        or body_dict.get("expected_readback")
         or phase.get("expectedReadback")
         or phase.get("expected_readback")
     )
@@ -1826,14 +1851,14 @@ def _hybrid_expected_readback(body: dict[str, Any], phase: dict[str, Any]) -> li
 
 
 def _hybrid_source_fact_ids(
-    body: dict[str, Any],
+    body_dict: dict[str, Any],
     phase: dict[str, Any],
     expected_readback: list[dict[str, Any]],
 ) -> list[str]:
     ids = []
     for value in (
-        body.get("sourceFactIds"),
-        body.get("source_fact_ids"),
+        body_dict.get("sourceFactIds"),
+        body_dict.get("source_fact_ids"),
         phase.get("sourceFactIds"),
         phase.get("source_fact_ids"),
     ):

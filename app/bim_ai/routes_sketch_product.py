@@ -7,6 +7,13 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
+from bim_ai.models.sketch_product_requests import (
+    SketchIrValidateRequest,
+    SketchPhaseAcceptRequest,
+    SketchPhaseApplyRequest,
+    SketchSeedCompileRequest,
+)
+
 sketch_product_router = APIRouter(prefix="/v3/sketch")
 
 _QUALITY_TARGETS = {
@@ -18,15 +25,15 @@ _QUALITY_TARGETS = {
 _PRIORITIES = {"critical", "high", "medium", "low"}
 
 
-def _object_body(body: dict[str, Any], key: str) -> dict[str, Any]:
-    value = body.get(key)
+def _object_body(payload: dict[str, Any], key: str) -> dict[str, Any]:
+    value = payload.get(key)
     if not isinstance(value, dict):
         raise HTTPException(status_code=422, detail=f"{key} must be an object")
     return value
 
 
-def _string_body(body: dict[str, Any], key: str) -> str:
-    value = body.get(key)
+def _string_body(payload: dict[str, Any], key: str) -> str:
+    value = payload.get(key)
     if not isinstance(value, str) or not value.strip():
         raise HTTPException(status_code=422, detail=f"{key} must be a non-empty string")
     return value
@@ -116,9 +123,10 @@ def _validate_ir(ir: dict[str, Any]) -> list[dict[str, str]]:
 
 
 @sketch_product_router.post("/ir/validate")
-async def sketch_ir_validate(body: dict[str, Any]) -> dict[str, Any]:
-    issues = _validate_ir(_object_body(body, "ir"))
-    matrix = body.get("capabilityMatrix")
+async def sketch_ir_validate(body: SketchIrValidateRequest) -> dict[str, Any]:
+    payload = body.model_dump(by_alias=True)
+    issues = _validate_ir(_object_body(payload, "ir"))
+    matrix = payload.get("capabilityMatrix")
     if matrix is not None and matrix.get("schemaVersion") != "sketch-to-bim-capability-matrix.v0":
         issues.append(
             _issue(
@@ -141,8 +149,9 @@ async def sketch_ir_validate(body: dict[str, Any]) -> dict[str, Any]:
 
 
 @sketch_product_router.post("/seed/compile")
-async def sketch_seed_compile(body: dict[str, Any]) -> dict[str, Any]:
-    recipe = _object_body(body, "recipe")
+async def sketch_seed_compile(body: SketchSeedCompileRequest) -> dict[str, Any]:
+    payload = body.model_dump(by_alias=True)
+    recipe = _object_body(payload, "recipe")
     if recipe.get("schemaVersion") != "seed-dsl.v0":
         raise HTTPException(status_code=422, detail="recipe.schemaVersion must be seed-dsl.v0")
     raise HTTPException(
@@ -160,11 +169,13 @@ async def sketch_seed_compile(body: dict[str, Any]) -> dict[str, Any]:
 
 
 @sketch_product_router.post("/phase/apply")
-async def sketch_phase_apply(body: dict[str, Any]) -> dict[str, Any]:
-    model_id = _string_body(body, "modelId")
-    phase_id = _string_body(body, "phaseId")
-    bundle = _object_body(body, "bundle")
-    mode = body.get("mode", "dry_run")
+async def sketch_phase_apply(body: SketchPhaseApplyRequest) -> dict[str, Any]:
+    payload = body.model_dump(by_alias=True)
+    model_id = _string_body(payload, "modelId")
+    phase_id = _string_body(payload, "phaseId")
+    bundle = _object_body(payload, "bundle")
+    mode_raw = payload.get("mode")
+    mode = mode_raw if mode_raw is not None else "dry_run"
     if mode not in {"dry_run", "commit"}:
         raise HTTPException(status_code=422, detail="mode must be dry_run or commit")
     if bundle.get("schemaVersion") not in {None, "cmd-v3.0"}:
@@ -180,10 +191,10 @@ async def sketch_phase_apply(body: dict[str, Any]) -> dict[str, Any]:
             "bundleRequest": {
                 "modelId": model_id,
                 "phaseId": phase_id,
-                "featureIds": body.get("featureIds", []),
+                "featureIds": payload.get("featureIds", []),
                 "mode": mode,
-                "userId": body.get("userId"),
-                "bundle": {**bundle, "parentRevision": body.get("parentRevision")},
+                "userId": payload.get("userId"),
+                "bundle": {**bundle, "parentRevision": payload.get("parentRevision")},
             },
             "cliEquivalent": "bim-ai sketch phase apply --model MODEL --bundle phase.json --base REV --dry-run",
         },
@@ -191,10 +202,12 @@ async def sketch_phase_apply(body: dict[str, Any]) -> dict[str, Any]:
 
 
 @sketch_product_router.post("/phase/accept")
-async def sketch_phase_accept(body: dict[str, Any]) -> dict[str, Any]:
-    phase_id = _string_body(body, "phaseId")
-    packet = _object_body(body, "packet")
-    require_current_head = body.get("requireCurrentHead", True)
+async def sketch_phase_accept(body: SketchPhaseAcceptRequest) -> dict[str, Any]:
+    payload = body.model_dump(by_alias=True)
+    phase_id = _string_body(payload, "phaseId")
+    packet = _object_body(payload, "packet")
+    require_current_head_raw = payload.get("requireCurrentHead")
+    require_current_head = True if require_current_head_raw is None else require_current_head_raw
     blockers: list[dict[str, Any]] = []
     coverage = packet.get("coverage") or packet.get("capabilityCoverage")
     acceptance = packet.get("acceptanceGates") or packet.get("acceptance")

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,18 +17,21 @@ from bim_ai.integrity_preflight import (
     build_source_command_index_from_transactions,
 )
 from bim_ai.model_integrity import model_integrity_smoke_command_evidence_v1
+from bim_ai.models.integrity_requests import (
+    IntegrityRemediationRequest,
+    InvariantSmokeRequest,
+)
 from bim_ai.routes_deps import load_model_row
 from bim_ai.tables import UndoStackRecord
 from bim_ai.transaction_safety import build_dry_run_evidence
 
 integrity_router = APIRouter()
 _SESSION_DEPENDENCY = Depends(get_session)
-_EMPTY_BODY = Body(default_factory=dict)
 
 
 @integrity_router.post("/v3/invariants/smoke")
-async def invariant_smoke_route(body: dict[str, Any] = _EMPTY_BODY) -> dict[str, Any]:
-    return model_integrity_smoke_command_evidence_v1(body)
+async def invariant_smoke_route(body: InvariantSmokeRequest) -> dict[str, Any]:
+    return model_integrity_smoke_command_evidence_v1(body.model_dump(by_alias=True))
 
 
 @integrity_router.get("/models/{model_id}/qa/integrity-preflight")
@@ -76,20 +79,20 @@ async def profile_comparison_route(
 @integrity_router.post("/models/{model_id}/qa/integrity-remediation")
 async def integrity_remediation_route(
     model_id: UUID,
-    body: dict[str, Any] = _EMPTY_BODY,
+    body: IntegrityRemediationRequest,
     session: AsyncSession = _SESSION_DEPENDENCY,
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    mode = str(body.get("mode") or "dry_run")
+    mode = str(body.mode or "dry_run")
     if mode != "dry_run":
         raise HTTPException(
             status_code=400,
             detail="Use /commands/bundle to commit accepted fixes after a matching dry-run.",
         )
-    accepted_ids = {str(value) for value in body.get("proposalIds") or [] if value}
+    accepted_ids = {str(value) for value in body.proposal_ids or [] if value}
     report = build_integrity_preflight_report(doc, revision=doc.revision, model_id=str(model_id))
     proposals = [
         proposal

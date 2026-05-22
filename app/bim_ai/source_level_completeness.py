@@ -83,7 +83,6 @@ def build_source_level_completeness_report(facts: list[dict[str, Any]]) -> dict[
 
 
 def _level_rows(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    rows = []
     by_key: dict[str, dict[str, Any]] = {}
     for fact in facts:
         if not isinstance(fact, dict) or str(fact.get("kind") or "") not in {"level", "storey"}:

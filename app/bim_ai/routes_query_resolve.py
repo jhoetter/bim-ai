@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,32 @@ from bim_ai.bim_requirement_validation_pack import (
 )
 from bim_ai.db import get_session
 from bim_ai.document import Document
+from bim_ai.models.query_resolve_requests import (
+    QaAdvisorRequest,
+    QaAreaReconciliationRequest,
+    QueryElementsRequest,
+    QueryEnclosedLoopsRequest,
+    QueryHostsRequest,
+    QueryLevelsRequest,
+    QueryNearestWallRequest,
+    QueryRoomAccessGraphRequest,
+    QueryTypesRequest,
+    QueryViewsRequest,
+    ResolveActiveOrDefaultLevelRequest,
+    ResolveDefaultPlanViewRequest,
+    ResolveDormerOpeningHostRequest,
+    ResolveFamilyTypeRequest,
+    ResolveFloorSupportsRequest,
+    ResolveHostFaceRequest,
+    ResolveLoopForBoundaryRequest,
+    ResolveOpeningSourceMatchRequest,
+    ResolveRoofPositionFromSourcePointRequest,
+    ResolveRoomBoundaryEdgesRequest,
+    ResolveRoomBoundaryRequest,
+    ResolveWallByLineRequest,
+    ResolveWallOpeningHostRequest,
+    ValidateRoofDormerSourceAlignmentRequest,
+)
 from bim_ai.query_resolve import (
     model_summary_resource,
     qa_advisor,
@@ -89,300 +115,325 @@ async def query_model_summary_route(
 @query_resolve_router.post("/models/{model_id}/query/elements")
 async def query_elements_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryElementsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_elements(mid, doc, body, include=body.get("include")))
+    payload = body.model_dump(by_alias=True)
+    return _query_resolve_response(
+        query_elements(mid, doc, payload, include=payload.get("include"))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/query/levels")
 async def query_levels_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryLevelsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_levels(mid, doc, include=body.get("include")))
+    return _query_resolve_response(query_levels(mid, doc, include=body.include))
 
 
 @query_resolve_router.post("/models/{model_id}/query/types")
 async def query_types_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryTypesRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_types(mid, doc, body, include=body.get("include")))
+    payload = body.model_dump(by_alias=True)
+    return _query_resolve_response(query_types(mid, doc, payload, include=payload.get("include")))
 
 
 @query_resolve_router.post("/models/{model_id}/query/views")
 async def query_views_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryViewsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_views(mid, doc, body, include=body.get("include")))
+    payload = body.model_dump(by_alias=True)
+    return _query_resolve_response(query_views(mid, doc, payload, include=payload.get("include")))
 
 
 @query_resolve_router.post("/models/{model_id}/query/hosts")
 async def query_hosts_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryHostsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_hosts(mid, doc, body))
+    return _query_resolve_response(query_hosts(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/query/nearest-wall")
 async def query_nearest_wall_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryNearestWallRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_nearest_wall(mid, doc, body))
+    return _query_resolve_response(query_nearest_wall(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/query/room-access-graph")
 async def query_room_access_graph_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryRoomAccessGraphRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_room_access_graph(mid, doc, body))
+    return _query_resolve_response(
+        query_room_access_graph(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/query/enclosed-loops")
 async def query_enclosed_loops_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QueryEnclosedLoopsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(query_enclosed_loops(mid, doc, body))
+    return _query_resolve_response(query_enclosed_loops(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/active-or-default-level")
 async def resolve_active_or_default_level_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveActiveOrDefaultLevelRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_active_or_default_level(mid, doc, body))
+    return _query_resolve_response(
+        resolve_active_or_default_level(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/default-plan-view")
 async def resolve_default_plan_view_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveDefaultPlanViewRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_default_plan_view(mid, doc, body))
+    return _query_resolve_response(
+        resolve_default_plan_view(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/wall-by-line")
 async def resolve_wall_by_line_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveWallByLineRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_wall_by_line(mid, doc, body))
+    return _query_resolve_response(resolve_wall_by_line(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/floor-supports")
 async def resolve_floor_supports_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveFloorSupportsRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_floor_supports(mid, doc, body))
+    return _query_resolve_response(resolve_floor_supports(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/opening-source-match")
 async def resolve_opening_source_match_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveOpeningSourceMatchRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_opening_source_match(mid, doc, body))
+    return _query_resolve_response(
+        resolve_opening_source_match(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/wall-opening-host")
 async def resolve_wall_opening_host_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveWallOpeningHostRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_wall_opening_host(mid, doc, body))
+    return _query_resolve_response(
+        resolve_wall_opening_host(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/dormer-opening-host")
 async def resolve_dormer_opening_host_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveDormerOpeningHostRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_dormer_opening_host(mid, doc, body))
+    return _query_resolve_response(
+        resolve_dormer_opening_host(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/roof-position-from-source-point")
 async def resolve_roof_position_from_source_point_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveRoofPositionFromSourcePointRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_roof_position_from_source_point(mid, doc, body))
+    return _query_resolve_response(
+        resolve_roof_position_from_source_point(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/room-boundary-edges")
 async def resolve_room_boundary_edges_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveRoomBoundaryEdgesRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_room_boundary_edges(mid, doc, body))
+    return _query_resolve_response(
+        resolve_room_boundary_edges(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/host-face")
 async def resolve_host_face_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveHostFaceRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_host_face(mid, doc, body))
+    return _query_resolve_response(resolve_host_face(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/family-type")
 async def resolve_family_type_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveFamilyTypeRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_family_type(mid, doc, body))
+    return _query_resolve_response(resolve_family_type(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/room-boundary")
 async def resolve_room_boundary_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveRoomBoundaryRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_room_boundary(mid, doc, body))
+    return _query_resolve_response(resolve_room_boundary(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.post("/models/{model_id}/resolve/loop-for-boundary")
 async def resolve_loop_for_boundary_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ResolveLoopForBoundaryRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(resolve_loop_for_boundary(mid, doc, body))
+    return _query_resolve_response(
+        resolve_loop_for_boundary(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/validate/roof-dormer-source-alignment")
 async def validate_roof_dormer_source_alignment_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: ValidateRoofDormerSourceAlignmentRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(validate_roof_dormer_source_alignment(mid, doc, body))
+    return _query_resolve_response(
+        validate_roof_dormer_source_alignment(mid, doc, body.model_dump(by_alias=True))
+    )
 
 
 @query_resolve_router.post("/models/{model_id}/qa/advisor")
 async def qa_advisor_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QaAdvisorRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    return _query_resolve_response(qa_advisor(mid, doc, body))
+    return _query_resolve_response(qa_advisor(mid, doc, body.model_dump(by_alias=True)))
 
 
 @query_resolve_router.get("/models/{model_id}/qa/bim-requirement-validation")
@@ -400,14 +451,14 @@ async def qa_bim_requirement_validation_route(
 @query_resolve_router.post("/models/{model_id}/qa/area-reconciliation")
 async def qa_area_reconciliation_route(
     model_id: UUID,
-    body: dict[str, Any] = Body(default_factory=dict),
+    body: QaAreaReconciliationRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     loaded = await _load_query_resolve_doc(model_id, session)
     if isinstance(loaded, JSONResponse):
         return loaded
     mid, doc = loaded
-    facts = body.get("sourceFacts") or body.get("facts") or []
+    facts = body.source_facts or body.facts or []
     if not isinstance(facts, list):
         return JSONResponse(
             status_code=400,
@@ -419,5 +470,5 @@ async def qa_area_reconciliation_route(
                 },
             },
         )
-    tolerance = float(body.get("toleranceM2") or 0.5)
+    tolerance = float(body.tolerance_m2 or 0.5)
     return build_area_reconciliation_report(mid, doc, facts, tolerance_m2=tolerance)
