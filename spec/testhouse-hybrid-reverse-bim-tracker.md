@@ -590,3 +590,59 @@ The reusable scripts are checked in at `scripts/testhouse_iter2_finalize.py`
 `scripts/testhouse_iter2_acceptance.py` (authored Document → final-
 acceptance gate). Future iterations should drive these rather than
 authoring by hand.
+
+### Live dev-server load + view-capture plans (2026-05-22)
+
+After the offline authoring above, all three iter-2 Documents were
+loaded into a running dev server (`make dev-forwarded`, API 28500 / Web
+22000). `scripts/testhouse_iter2_load_to_dev.py` translates each
+serialized element back into the matching kernel command and applies it
+through ``POST /api/models/{model_id}/bundles?mode=commit``, honouring
+``newRevision`` after each commit. Per-house manifests live at
+``tmp/reverse-bim/house-<name>/iter-2-dev-model.json``:
+
+| House | Live model UUID | Elements loaded | Failures |
+| --- | --- | --- | --- |
+| Alpha | `5099e6cf-aa89-4c94-8852-bb600df1368d` | 21 / 21 | 0 |
+| Beta  | `3da52fe0-3353-4aff-b505-65f23487d052` | 27 / 27 | 0 |
+| Gamma | `eeca577f-f3ae-437c-8133-88ff70adb613` | 15 / 15 | 0 |
+
+`scripts/testhouse_iter2_drive_gates.py` then drove the live-app gate
+chain (`view_capture_plan` → `source_overlay_evidence` → `ui_evidence`
+→ `qa.area_reconciliation` → `final_acceptance`) against each live
+model and persisted the gate reports under
+``tmp/reverse-bim/house-<name>/iter-2-live-gates/``:
+
+| House | view_capture_plan captureCount / blockers | live final_acceptance passed / total | Remaining blocking gates |
+| --- | --- | --- | --- |
+| Alpha | 10 / 0 | 6 / 11 | `level_completeness`, `physical_topology`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` |
+| Beta  | 12 / 0 | 6 / 11 | `level_completeness`, `physical_topology`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` |
+| Gamma | 10 / 0 | 6 / 11 | `level_completeness`, `physical_topology`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` |
+
+`view_capture_plan` returns deterministic capture rows (Playwright steps
++ URLs + expected screenshot paths) with **zero blockers** — proving
+the live model carries enough metadata to plan source-equivalent view
+captures. The five remaining final-acceptance gates split into two
+classes:
+
+- **`source_overlay_evidence` / `ui_evidence`** — the live report
+  builders correctly refuse to accept without real captured screenshots.
+  Closing these requires running the Playwright pipeline
+  (`pnpm --filter @bim-ai/web reverse-bim:capture -- --plan <plan.json>
+  --out <evidence-dir> --json`) against the now-loaded model UUIDs and
+  feeding the resulting capture manifest back into the report builders.
+  Per SKILL.md this is the visual-geometry gate and cannot be faked.
+- **`level_completeness` / `physical_topology` / `findings_disposed`** —
+  the live model has walls but no rooms / room separations / openings
+  beyond walls, so physical_topology has nothing to check and
+  level_completeness counts walls but not occupants. These close once
+  iter-3 adds rooms/openings/stairs/floors on top of the authored
+  walls. Findings disposition opens once visual_review_normalize has
+  responses to disposition against.
+
+This is the genuine ceiling: a working iter-2 model is loaded in the
+live dev server, view-capture plans are deterministic and complete, and
+the final-acceptance gate is honest about what's missing. Iteration 3
+must run the Playwright capture pipeline and extend MCP authoring to
+rooms/openings/floors/roofs before the four remaining live-app gates
+will accept.
