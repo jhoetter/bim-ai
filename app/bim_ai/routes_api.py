@@ -775,21 +775,43 @@ async def model_summary(
 async def validate_model_snapshot(
     model_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
+    debug: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
+    """PERF-A05: when `debug=true`, response includes `_perfDebug` with
+    docValidateMs, violationsMs, summaryMs, totalMs phase timings.
+    """
+    import time as _time
+
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
+    total_start = _time.perf_counter()
+    t0 = _time.perf_counter()
     doc = Document.model_validate(row.document)
+    validate_ms = (_time.perf_counter() - t0) * 1000.0
+    t0 = _time.perf_counter()
     viols = violations_wire(doc.elements)
+    violations_ms = (_time.perf_counter() - t0) * 1000.0
+    t0 = _time.perf_counter()
+    summary = compute_model_summary(doc)
+    summary_ms = (_time.perf_counter() - t0) * 1000.0
     err_ct = sum(1 for x in viols if x.get("severity") == "error")
     block_ct = sum(1 for x in viols if x.get("blocking") is True)
-    return {
+    payload: dict[str, Any] = {
         "modelId": str(model_id),
         "revision": doc.revision,
         "violations": viols,
-        "summary": compute_model_summary(doc),
+        "summary": summary,
         "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
     }
+    if debug:
+        payload["_perfDebug"] = {
+            "totalMs": round((_time.perf_counter() - total_start) * 1000.0, 3),
+            "docValidateMs": round(validate_ms, 3),
+            "violationsMs": round(violations_ms, 3),
+            "summaryMs": round(summary_ms, 3),
+        }
+    return payload
 
 
 def _parse_option_locks(raw: str | None) -> dict[str, str]:
