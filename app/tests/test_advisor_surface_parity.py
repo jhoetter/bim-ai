@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.advisor_surface_parity import (
+from bim_ai.evidence.advisor_surface_parity import (
     build_advisor_four_surface_parity,
     normalize_advisor_findings_for_surface,
 )

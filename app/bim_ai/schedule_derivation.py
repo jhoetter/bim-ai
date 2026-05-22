@@ -60,6 +60,12 @@ from bim_ai.energy_lens import (
     type_u_value_summary_rows,
     u_value_for_layers,
 )
+from bim_ai.evidence.schedule_pagination_placement_evidence import (
+    build_schedule_pagination_placement_evidence_v0,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    build_schedule_sheet_export_parity_evidence_v1_for_schedule,
+)
 from bim_ai.fire_safety_lens import (
     FIRE_SAFETY_SCHEDULE_CATEGORIES,
     derive_fire_safety_schedule_rows,
@@ -88,12 +94,6 @@ from bim_ai.room_finish_schedule import (
     room_finish_schedule_row_extensions,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
-from bim_ai.schedule_pagination_placement_evidence import (
-    build_schedule_pagination_placement_evidence_v0,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    build_schedule_sheet_export_parity_evidence_v1_for_schedule,
-)
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 from bim_ai.structure_lens import structural_schedule_rows
 from bim_ai.sustainability_lca import sustainability_rows_for_category

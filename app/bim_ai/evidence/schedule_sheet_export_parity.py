@@ -30,11 +30,11 @@ from typing import Any
 from bim_ai._io.digest import digest
 from bim_ai.document import Document
 from bim_ai.elements import ScheduleElem, SheetElem
-from bim_ai.schedule_csv import schedule_payload_to_csv
-from bim_ai.schedule_pagination_placement_evidence import (
+from bim_ai.evidence.schedule_pagination_placement_evidence import (
     build_schedule_pagination_placement_evidence_v0,
     flatten_leaf_rows_from_schedule_table_payload,
 )
+from bim_ai.schedule_csv import schedule_payload_to_csv
 
 FORMAT_V1 = "scheduleSheetExportParityEvidence_v1"
 

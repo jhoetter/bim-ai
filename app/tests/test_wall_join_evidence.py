@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, WallElem
-from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
+from bim_ai.evidence.wall_join_evidence import collect_wall_corner_join_evidence_v0
 
 
 def test_collect_corner_join_for_axis_aligned_l_shape() -> None:

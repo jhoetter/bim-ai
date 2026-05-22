@@ -14,7 +14,7 @@ from bim_ai.elements import (
     Vec2Mm,
     WallElem,
 )
-from bim_ai.room_color_scheme_override_evidence import roomColourSchemeLegendEvidence_v1
+from bim_ai.evidence.room_color_scheme_override_evidence import roomColourSchemeLegendEvidence_v1
 from bim_ai.room_derivation import detect_unbounded_rooms_v1
 from bim_ai.schedule_derivation import derive_schedule_table
 

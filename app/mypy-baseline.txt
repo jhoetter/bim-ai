@@ -88,19 +88,6 @@ bim_ai/reverse_bim_phase_runner.py:0: error: Item "None" of "Any | dict[Any, Any
 bim_ai/reverse_bim_phase_runner.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/reverse_bim_phase_runner.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/reverse_bim_evidence_requirements.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[str] | str | int | Any | None]]; expected List[str]  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[str] | float | Any | str | None]]; expected List[str]  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Unsupported right operand type for in ("list[str] | float | Any | str | list[str | Any]")  [operator]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[dict[str, Any]] | list[str] | Any | str | None]]; expected List[str]  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "str" of "dict[str, Any] | str | Any" has no attribute "get"  [union-attr]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
-bim_ai/reverse_bim_acceptance_evidence.py:0: error: Item "str" of "dict[str, Any] | str | Any" has no attribute "get"  [union-attr]
 bim_ai/final_acceptance.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/final_acceptance.py:0: error: Item "None" of "Any | list[Any] | None" has no attribute "__iter__" (not iterable)  [union-attr]
 bim_ai/final_acceptance.py:0: error: Item "None" of "Any | list[Any] | None" has no attribute "__iter__" (not iterable)  [union-attr]
@@ -116,7 +103,6 @@ bim_ai/code_profile_integrity.py:0: error: Returning Any from function declared 
 bim_ai/code_profile_integrity.py:0: error: Returning Any from function declared to return "Mapping[str, Any]"  [no-any-return]
 bim_ai/agent_generated_bundle_qa_checklist.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/agent_generated_bundle_qa_checklist.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/advisor_surface_parity.py:0: error: Argument 1 to "_cli_group_rows" has incompatible type "Mapping[str, Any] | Iterable[Mapping[str, Any]]"; expected "Mapping[str, Any]"  [arg-type]
 bim_ai/skb/wall_graph.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/skb/wall_graph.py:0: error: Incompatible types in assignment (expression has type "list[float]", target has type "str")  [assignment]
 bim_ai/skb/wall_graph.py:0: error: Returning Any from function declared to return "bool"  [no-any-return]
@@ -134,6 +120,20 @@ bim_ai/exp/render_export.py:0: error: Missing type arguments for generic type "d
 bim_ai/exp/pptx_export.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/exp/pptx_export.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/exp/pptx_export.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[str] | str | int | Any | None]]; expected List[str]  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[str] | float | Any | str | None]]; expected List[str]  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Unsupported right operand type for in ("list[str] | float | Any | str | list[str | Any]")  [operator]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: List comprehension has incompatible type List[dict[str, list[dict[str, Any]] | list[str] | Any | str | None]]; expected List[str]  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "str" of "dict[str, Any] | str | Any" has no attribute "get"  [union-attr]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Generator has incompatible item type "int"; expected "bool"  [misc]
+bim_ai/evidence/reverse_bim_acceptance_evidence.py:0: error: Item "str" of "dict[str, Any] | str | Any" has no attribute "get"  [union-attr]
+bim_ai/evidence/advisor_surface_parity.py:0: error: Argument 1 to "_cli_group_rows" has incompatible type "Mapping[str, Any] | Iterable[Mapping[str, Any]]"; expected "Mapping[str, Any]"  [arg-type]
 bim_ai/catalog/query.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/catalog/query.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/catalog/query.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
@@ -1907,9 +1907,6 @@ bim_ai/sheets.py:0: error: Missing type arguments for generic type "dict"  [type
 bim_ai/sheets.py:0: error: Missing type arguments for generic type "list"  [type-arg]
 bim_ai/sheets.py:0: error: Argument "key" to "sort" of "list" has incompatible type "Callable[[dict[str, str | Any | int | None]], str | Any | int | None]"; expected "Callable[[dict[str, str | Any | int | None]], SupportsDunderLT[Any] | SupportsDunderGT[Any]]"  [arg-type]
 bim_ai/sheets.py:0: error: Incompatible return value type (got "str | Any | int | None", expected "SupportsDunderLT[Any] | SupportsDunderGT[Any]")  [return-value]
-bim_ai/schedule_pagination_placement_evidence.py:0: error: Argument 1 to "float" has incompatible type "Any | float | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
-bim_ai/schedule_pagination_placement_evidence.py:0: error: Item "None" of "str | None" has no attribute "strip"  [union-attr]
-bim_ai/schedule_pagination_placement_evidence.py:0: error: Argument 1 to "float" has incompatible type "float | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
 bim_ai/room_derivation.py:0: error: Missing type arguments for generic type "tuple"  [type-arg]
 bim_ai/room_derivation.py:0: error: Argument 1 to "_bbox_nums_mm" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/room_derivation.py:0: error: Argument 1 to "_bbox_nums_mm" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
@@ -1918,8 +1915,6 @@ bim_ai/room_derivation.py:0: error: Missing type arguments for generic type "tup
 bim_ai/room_derivation.py:0: error: Argument "bbox" to "separation_ids_splitting_candidate_bbox" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/room_derivation.py:0: error: Argument 2 to "authored_room_overlaps_candidate_bbox" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/room_derivation.py:0: error: Argument 2 to "_stable_diag_id_ambiguous" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
-bim_ai/room_color_scheme_override_evidence.py:0: error: Incompatible types in assignment (expression has type "dict[str, Any]", variable has type "RoomColorSchemeRow")  [assignment]
-bim_ai/room_color_scheme_override_evidence.py:0: error: Unsupported target for indexed assignment ("RoomColorSchemeRow")  [index]
 bim_ai/plan_category_graphics.py:0: error: Incompatible return value type (got "tuple[dict[Literal['wall', 'floor', 'roof', 'room', 'door', 'window', 'stair', 'grid_line', 'room_separation', 'dimension'], PlanCategoryGraphicRow], dict[Literal['wall', 'floor', 'roof', 'room', 'door', 'window', 'stair', 'grid_line', 'room_separation', 'dimension'], PlanCategoryGraphicRow]]", expected "tuple[dict[str, PlanCategoryGraphicRow], dict[str, PlanCategoryGraphicRow]]")  [return-value]
 bim_ai/plan_category_graphics.py:0: error: Redundant cast to "Literal['solid', 'dash_short', 'dash_long', 'dot']"  [redundant-cast]
 bim_ai/plan_category_graphics.py:0: error: Redundant cast to "Literal['solid', 'dash_short', 'dash_long', 'dot']"  [redundant-cast]
@@ -2202,6 +2197,11 @@ bim_ai/bim_requirement_validation_pack.py:0: error: Item "None" of "Any | dict[A
 bim_ai/bim_requirement_validation_pack.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/area_reconciliation.py:0: error: Incompatible types in assignment (expression has type "RoomElem | None", variable has type "RoomElem")  [assignment]
 bim_ai/architecture_lens_query.py:0: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+bim_ai/evidence/schedule_pagination_placement_evidence.py:0: error: Argument 1 to "float" has incompatible type "Any | float | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
+bim_ai/evidence/schedule_pagination_placement_evidence.py:0: error: Item "None" of "str | None" has no attribute "strip"  [union-attr]
+bim_ai/evidence/schedule_pagination_placement_evidence.py:0: error: Argument 1 to "float" has incompatible type "float | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
+bim_ai/evidence/room_color_scheme_override_evidence.py:0: error: Incompatible types in assignment (expression has type "dict[str, Any]", variable has type "RoomColorSchemeRow")  [assignment]
+bim_ai/evidence/room_color_scheme_override_evidence.py:0: error: Unsupported target for indexed assignment ("RoomColorSchemeRow")  [index]
 bim_ai/model_integrity_hosting.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
 bim_ai/model_integrity_hosting.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/model_integrity_hosting.py:0: error: Unexpected keyword argument "quick_fix_command" for "Violation"; did you mean "quickFixCommand"?  [call-arg]
@@ -2481,6 +2481,7 @@ bim_ai/tables.py:0: error: Missing type arguments for generic type "dict"  [type
 bim_ai/section_projection_primitives.py:0: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
 bim_ai/section_projection_primitives.py:0: error: Invalid index type "int" for "dict[str, ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>]"; expected type "str"  [index]
 bim_ai/section_projection_primitives.py:0: error: Unexpected keyword argument "line_start_mm" for "SectionCutElem"  [call-arg]
+bim_ai/section_projection_primitives.py:0: note: "SectionCutElem" defined in "bim_ai.elements_links"
 bim_ai/section_projection_primitives.py:0: error: Unexpected keyword argument "line_end_mm" for "SectionCutElem"  [call-arg]
 bim_ai/section_projection_primitives.py:0: error: Unexpected keyword argument "crop_depth_mm" for "SectionCutElem"  [call-arg]
 bim_ai/export_gltf.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
@@ -2539,9 +2540,11 @@ bim_ai/skb/phase_gate.py:0: error: Missing type arguments for generic type "dict
 bim_ai/activity.py:0: error: Argument "kind" to "ActivityRow" has incompatible type "str"; expected "Literal['commit', 'comment_created', 'comment_resolved', 'markup_created', 'markup_resolved', 'milestone_created', 'option_set_lifecycle', 'collab_join', 'collab_leave', 'tool_pref_changed', 'sheet_comment_chip']"  [arg-type]
 bim_ai/export_stl.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "wall_id" for "InsertDoorOnWallCmd"; did you mean "wallId"?  [call-arg]
+bim_ai/kernel_ifc_opening_replay_v0.py:0: note: "InsertDoorOnWallCmd" defined in "bim_ai.commands"
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "along_t" for "InsertDoorOnWallCmd"; did you mean "alongT"?  [call-arg]
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "width_mm" for "InsertDoorOnWallCmd"; did you mean "widthMm"?  [call-arg]
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "wall_id" for "InsertWindowOnWallCmd"; did you mean "wallId"?  [call-arg]
+bim_ai/kernel_ifc_opening_replay_v0.py:0: note: "InsertWindowOnWallCmd" defined in "bim_ai.commands"
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "along_t" for "InsertWindowOnWallCmd"; did you mean "alongT"?  [call-arg]
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "width_mm" for "InsertWindowOnWallCmd"; did you mean "widthMm"?  [call-arg]
 bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "sill_height_mm" for "InsertWindowOnWallCmd"; did you mean "sillHeightMm"?  [call-arg]
@@ -2549,13 +2552,17 @@ bim_ai/kernel_ifc_opening_replay_v0.py:0: error: Unexpected keyword argument "he
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unused "type: ignore[misc, assignment]" comment  [unused-ignore]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unused "type: ignore[misc, assignment]" comment  [unused-ignore]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "elevation_mm" for "CreateLevelCmd"; did you mean "elevationMm"?  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateLevelCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "level_id" for "CreateFloorCmd"; did you mean "levelId"?  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateFloorCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "boundary_mm" for "CreateFloorCmd"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "thickness_mm" for "CreateFloorCmd"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "floor_type_id" for "CreateFloorCmd"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "level_id" for "CreateWallCmd"; did you mean "levelId"?  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateWallCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "thickness_mm" for "CreateWallCmd"; did you mean "thicknessMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "height_mm" for "CreateWallCmd"; did you mean "heightMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "load_bearing" for "CreateWallCmd"; did you mean "loadBearing"?  [call-arg]
@@ -2566,6 +2573,7 @@ bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument 
 bim_ai/export_ifc_authoritative_replay.py:0: error: Argument "start" to "CreateWallCmd" has incompatible type "dict[str, float]"; expected "Vec2Mm"  [arg-type]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Argument "end" to "CreateWallCmd" has incompatible type "dict[str, float]"; expected "Vec2Mm"  [arg-type]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "reference_level_id" for "CreateRoofCmd"; did you mean "referenceLevelId"?  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateRoofCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "footprint_mm" for "CreateRoofCmd"; did you mean "footprintMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "overhang_mm" for "CreateRoofCmd"; did you mean "overhangMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "slope_deg" for "CreateRoofCmd"; did you mean "slopeDeg"?  [call-arg]
@@ -2575,29 +2583,39 @@ bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument 
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "eave_height_right_mm" for "CreateRoofCmd"; did you mean "eaveHeightRightMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "roof_type_id" for "CreateRoofCmd"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "base_level_id" for "CreateStairCmd"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateStairCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "top_level_id" for "CreateStairCmd"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "run_start_mm" for "CreateStairCmd"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "run_end_mm" for "CreateStairCmd"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "width_mm" for "CreateStairCmd"; did you mean "widthMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "allow_detached" for "CreateStairCmd"; did you mean "allowDetached"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "host_roof_id" for "CreateRoofOpeningCmd"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateRoofOpeningCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "boundary_mm" for "CreateRoofOpeningCmd"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "host_floor_id" for "CreateSlabOpeningCmd"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateSlabOpeningCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "boundary_mm" for "CreateSlabOpeningCmd"; did you mean "boundaryMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "level_id" for "CreateRoomOutlineCmd"; did you mean "levelId"?  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "CreateRoomOutlineCmd" defined in "bim_ai.commands"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "outline_mm" for "CreateRoomOutlineCmd"; did you mean "outlineMm"?  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "x_mm" for "Vec2Mm"  [call-arg]
+bim_ai/export_ifc_authoritative_replay.py:0: note: "Vec2Mm" defined in "bim_ai.element_primitives"
 bim_ai/export_ifc_authoritative_replay.py:0: error: Unexpected keyword argument "y_mm" for "Vec2Mm"  [call-arg]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/export_ifc_authoritative_replay.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
@@ -2651,73 +2669,106 @@ bim_ai/schedule_derivation.py:0: error: Missing type arguments for generic type 
 bim_ai/schedule_derivation.py:0: error: Missing type arguments for generic type "tuple"  [type-arg]
 bim_ai/sheet_preview_svg.py:0: error: Argument 1 to "int" has incompatible type "Any | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
-bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unused "type: ignore" comment  [unused-ignore]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
+bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Incompatible types in assignment (expression has type "ViewTemplateElem | None", variable has type "ViewTemplateElem")  [assignment]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constraints_advisories.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constraints_advisories.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/routes_v3_meta.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 bim_ai/routes_v3_meta.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
@@ -2787,15 +2838,15 @@ bim_ai/folder_output.py:0: error: Item "None" of "Any | dict[Any, Any] | None" h
 bim_ai/folder_output.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/folder_output.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/folder_output.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/schedule_sheet_exchange_evidence.py:0: error: Argument 1 to "int" has incompatible type "Any | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
-bim_ai/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
-bim_ai/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/schedule_sheet_exchange_evidence.py:0: error: Argument 1 to "int" has incompatible type "Any | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+bim_ai/evidence/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+bim_ai/evidence/schedule_sheet_exchange_evidence.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/routes_reverse_bim.py:0: error: Incompatible return value type (got "dict[str, Any] | JSONResponse", expected "dict[str, Any]")  [return-value]
-bim_ai/export_documentation_evidence.py:0: error: Argument 1 to "int" has incompatible type "int | str | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
-bim_ai/export_documentation_evidence.py:0: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
-bim_ai/export_documentation_evidence.py:0: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
-bim_ai/export_documentation_evidence.py:0: error: Unused "type: ignore" comment  [unused-ignore]
+bim_ai/evidence/export_documentation_evidence.py:0: error: Argument 1 to "int" has incompatible type "int | str | None"; expected "str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+bim_ai/evidence/export_documentation_evidence.py:0: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+bim_ai/evidence/export_documentation_evidence.py:0: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+bim_ai/evidence/export_documentation_evidence.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/evidence_manifest.py:0: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
 bim_ai/evidence_manifest.py:0: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
 bim_ai/evidence_manifest.py:0: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
@@ -4155,6 +4206,7 @@ bim_ai/coordination_lens.py:0: error: Item "RadialDimensionElem" of "ProjectSett
 bim_ai/coordination_lens.py:0: error: Item "DiameterDimensionElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reload_status"  [union-attr]
 bim_ai/coordination_lens.py:0: error: Item "ArcLengthDimensionElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reload_status"  [union-attr]
 bim_ai/constructability_report.py:0: error: Unexpected keyword argument "rule_id" for "Violation"; did you mean "ruleId"?  [call-arg]
+bim_ai/constructability_report.py:0: note: "Violation" defined in "bim_ai.constraints_core"
 bim_ai/constructability_report.py:0: error: Unexpected keyword argument "element_ids" for "Violation"; did you mean "elementIds"?  [call-arg]
 bim_ai/constructability_report.py:0: error: Unexpected keyword argument "blocking_class" for "Violation"; did you mean "blockingClass"?  [call-arg]
 bim_ai/constructability_report.py:0: error: Item "ProjectSettingsElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reason"  [union-attr]
@@ -4286,19 +4338,27 @@ bim_ai/constructability_report.py:0: error: Item "RadialDimensionElem" of "Proje
 bim_ai/constructability_report.py:0: error: Item "DiameterDimensionElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reason"  [union-attr]
 bim_ai/constructability_report.py:0: error: Item "ArcLengthDimensionElem" of "ProjectSettingsElem | RoomColorSchemeElem | WallTypeElem | FloorTypeElem | RoofTypeElem | <124 more items>" has no attribute "reason"  [union-attr]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "bundle_id" for "AgentTrace"; did you mean "bundleId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "AgentTrace" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "assumption_keys" for "AgentTrace"; did you mean "assumptionKeys"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "applied_at" for "AgentTrace"; did you mean "appliedAt"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "bundle_id" for "DesignOptionProvenance"; did you mean "bundleId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "DesignOptionProvenance" defined in "bim_ai.document"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "created_at" for "DesignOptionProvenance"; did you mean "createdAt"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "new_revision" for "BundleResult"; did you mean "newRevision"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "changed_ids" for "BundleResult"; did you mean "changedIds"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "option_id" for "BundleResult"; did you mean "optionId"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
 bim_ai/cmd/apply_bundle.py:0: error: Unexpected keyword argument "checkpoint_snapshot_id" for "BundleResult"; did you mean "checkpointSnapshotId"?  [call-arg]
+bim_ai/cmd/apply_bundle.py:0: note: "BundleResult" defined in "bim_ai.cmd.types"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "line_indices" for "SketchValidationIssue"; did you mean "lineIndices"?  [call-arg]
 bim_ai/routes_sketch.py:0: note: "SketchValidationIssue" defined in "bim_ai.sketch_session"
 bim_ai/routes_sketch.py:0: error: Unexpected keyword argument "from_mm" for "SketchLine"; did you mean "fromMm"?  [call-arg]
@@ -4555,6 +4615,7 @@ bim_ai/routes_api.py:0: error: Unused "type: ignore" comment  [unused-ignore]
 bim_ai/routes_api.py:0: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
 bim_ai/routes_api.py:0: error: Argument 2 to "_hybrid_expected_readback" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/routes_api.py:0: error: Argument 2 to "_hybrid_source_fact_ids" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
+bim_ai/routes_api.py:0: error: Argument "phase" to "_hybrid_slice_commit_context" has incompatible type "Any | dict[Any, Any] | None"; expected "dict[str, Any]"  [arg-type]
 bim_ai/routes_api.py:0: error: Argument "phase_packets" to "build_hybrid_reverse_bim_run_report" has incompatible type "list[Any | None]"; expected "list[dict[str, Any]] | dict[str, Any] | None"  [arg-type]
 bim_ai/routes_api.py:0: error: Argument "slice_reports" to "build_hybrid_reverse_bim_run_report" has incompatible type "list[Any | None]"; expected "list[dict[str, Any]] | None"  [arg-type]
 bim_ai/routes_api.py:0: error: Need type annotation for "ids" (hint: "ids: list[<type>] = ...")  [var-annotated]

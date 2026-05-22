@@ -10,7 +10,7 @@ from bim_ai.plan_projection_wire import (
     resolve_plan_projection_wire,
 )
 from bim_ai.sheet_preview_svg import format_plan_projection_export_segment
-from bim_ai.wall_join_evidence import collect_wall_corner_join_summary_v1
+from bim_ai.evidence.wall_join_evidence import collect_wall_corner_join_summary_v1
 
 
 def test_summary_l_corner_butt_join_ids_and_token() -> None:

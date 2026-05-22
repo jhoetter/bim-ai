@@ -20,7 +20,7 @@ from bim_ai.elements import (
     Vec2Mm,
 )
 from bim_ai.engine import apply_inplace
-from bim_ai.room_color_scheme_override_evidence import (
+from bim_ai.evidence.room_color_scheme_override_evidence import (
     build_room_color_scheme_override_evidence_v1,
     legend_rows_from_scheme_overrides,
 )

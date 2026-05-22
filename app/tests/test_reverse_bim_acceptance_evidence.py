@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.reverse_bim_acceptance_evidence import (
+from bim_ai.evidence.reverse_bim_acceptance_evidence import (
     build_level_completeness_report,
     build_physical_topology_report,
     build_source_overlay_evidence_report,

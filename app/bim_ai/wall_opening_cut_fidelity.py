@@ -11,15 +11,15 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, WallElem, WindowElem
+from bim_ai.evidence.wall_join_evidence import (
+    CORNER_JOIN_BAND_CLEARANCE_MM,
+    collect_wall_corner_join_evidence_v0,
+)
 from bim_ai.opening_cut_primitives import (
     hosted_opening_half_span_mm,
     hosted_opening_t_span_normalized,
     hosted_opening_u_projection_scale,
     wall_plan_axis_aligned_xy,
-)
-from bim_ai.wall_join_evidence import (
-    CORNER_JOIN_BAND_CLEARANCE_MM,
-    collect_wall_corner_join_evidence_v0,
 )
 
 _EPS = 1e-6

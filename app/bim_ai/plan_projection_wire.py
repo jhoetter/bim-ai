@@ -33,6 +33,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.evidence.wall_join_evidence import collect_wall_corner_join_summary_v1
 from bim_ai.material_assembly_resolve import roof_surface_material_readout_v0
 from bim_ai.opening_cut_primitives import (
     hosted_opening_t_span_normalized,
@@ -79,7 +80,6 @@ from bim_ai.stair_plan_proxy import (
     stair_schedule_row_extensions_v1,
     stair_tread_count_straight_plan_proxy,
 )
-from bim_ai.wall_join_evidence import collect_wall_corner_join_summary_v1
 from bim_ai.wall_opening_cut_fidelity import (
     build_wall_opening_cut_fidelity_row,
     corner_join_rows_for_document,

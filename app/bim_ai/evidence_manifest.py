@@ -21,7 +21,7 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
-from bim_ai.schedule_sheet_export_parity import (
+from bim_ai.evidence.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_sheet,
 )
 from bim_ai.section_on_sheet_integration_evidence_v1 import (

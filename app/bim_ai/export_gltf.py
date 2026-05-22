@@ -28,6 +28,10 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.evidence.wall_join_evidence import (
+    collect_wall_corner_join_evidence_v0,
+    collect_wall_corner_join_summary_v1,
+)
 from bim_ai.export_feature_contract import build_export_manifest_feature_diagnostics_v1
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
@@ -61,10 +65,6 @@ from bim_ai.stair_plan_proxy import (
     stair_run_bearing_deg_ccw_from_plan_x,
     stair_schedule_row_extensions_v1,
     stair_tread_count_straight_plan_proxy,
-)
-from bim_ai.wall_join_evidence import (
-    collect_wall_corner_join_evidence_v0,
-    collect_wall_corner_join_summary_v1,
 )
 from bim_ai.wall_opening_cut_fidelity import collect_wall_opening_cut_fidelity_evidence_v1
 

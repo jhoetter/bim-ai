@@ -24,7 +24,7 @@ if str(APP_DIR) not in sys.path:
 
 from bim_ai.document import Document  # noqa: E402
 from bim_ai.final_acceptance import build_final_acceptance_report  # noqa: E402
-from bim_ai.reverse_bim_acceptance_evidence import (  # noqa: E402
+from bim_ai.evidence.reverse_bim_acceptance_evidence import (  # noqa: E402
     build_level_completeness_report,
     build_physical_topology_report,
 )

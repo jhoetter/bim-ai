@@ -1,5 +1,5 @@
 {
-  "digest": "c233e9e3a9651882189fcdeb6a0a38a508792b75f7c3448e9f4a1668d965aa37",
+  "digest": "2d9c9dcc7f6c33cc25c9456c2c9d9f21987c441762f8c3d188fe28b78aa059d7",
   "shape": {
     "paths": {
       "/api/bootstrap": {
@@ -149,6 +149,21 @@
           "requestModel": "CommentResolveBody"
         }
       },
+      "/api/models/{model_id}/commit-diff": {
+        "get": {
+          "operationId": "diff_commits_api_models__model_id__commit_diff_get"
+        }
+      },
+      "/api/models/{model_id}/commits": {
+        "get": {
+          "operationId": "list_commits_api_models__model_id__commits_get"
+        }
+      },
+      "/api/models/{model_id}/commits/{commit_id}": {
+        "get": {
+          "operationId": "get_commit_api_models__model_id__commits__commit_id__get"
+        }
+      },
       "/api/models/{model_id}/constructability-bcf": {
         "get": {
           "operationId": "constructability_bcf_export_api_models__model_id__constructability_bcf_get"
@@ -177,6 +192,11 @@
       "/api/models/{model_id}/diff": {
         "get": {
           "operationId": "model_diff_api_models__model_id__diff_get"
+        }
+      },
+      "/api/models/{model_id}/elements/{element_id}/history": {
+        "get": {
+          "operationId": "element_history_api_models__model_id__elements__element_id__history_get"
         }
       },
       "/api/models/{model_id}/energy/handoff": {
@@ -610,6 +630,11 @@
       "/api/models/{model_id}/snapshot": {
         "get": {
           "operationId": "snapshot_api_models__model_id__snapshot_get"
+        }
+      },
+      "/api/models/{model_id}/state": {
+        "get": {
+          "operationId": "get_state_at_commit_api_models__model_id__state_get"
         }
       },
       "/api/models/{model_id}/structure/analysis-export": {

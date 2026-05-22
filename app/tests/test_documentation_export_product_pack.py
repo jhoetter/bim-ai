@@ -11,7 +11,7 @@ from bim_ai.elements import (
     WallElem,
 )
 from bim_ai.engine import try_commit_bundle
-from bim_ai.export_documentation_evidence import (
+from bim_ai.evidence.export_documentation_evidence import (
     DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1,
     build_documentation_export_production_evidence_v1,
 )
@@ -417,9 +417,9 @@ def test_documentation_export_ifc_optional_backend_manifest_is_stable(monkeypatc
         },
     )
 
-    monkeypatch.setattr("bim_ai.export_documentation_evidence.IFC_AVAILABLE", False)
+    monkeypatch.setattr("bim_ai.evidence.export_documentation_evidence.IFC_AVAILABLE", False)
     monkeypatch.setattr(
-        "bim_ai.export_documentation_evidence.serialize_ifc_artifact",
+        "bim_ai.evidence.export_documentation_evidence.serialize_ifc_artifact",
         lambda _doc: (
             "ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n",
             "empty_ifc_skeleton_v0",

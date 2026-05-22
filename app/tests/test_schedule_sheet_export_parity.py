@@ -9,7 +9,7 @@ from bim_ai.document import Document
 from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, SheetElem
 from bim_ai.evidence_manifest import deterministic_sheet_evidence_manifest
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.schedule_sheet_export_parity import (
+from bim_ai.evidence.schedule_sheet_export_parity import (
     FORMAT_V1,
     PARITY_ALIGNED,
     PARITY_PLACEMENT_MISSING,
@@ -262,7 +262,7 @@ def test_advisor_fires_listing_diverges_when_listing_row_count_mismatched(
     monkeypatch,
 ) -> None:
     """Forcing a divergence by patching the per-payload listing formatter."""
-    import bim_ai.schedule_sheet_export_parity as parity_mod
+    import bim_ai.evidence.schedule_sheet_export_parity as parity_mod
 
     real_classify = parity_mod._classify_parity
 

@@ -3,7 +3,7 @@
  * (Wave-3 Prompt-3 re-run — schedule sheet placement / export listing
  * cross-format parity).
  *
- * Pairs with the backend module `bim_ai.schedule_sheet_export_parity` and
+ * Pairs with the backend module `bim_ai.evidence.schedule_sheet_export_parity` and
  * is rendered in `SchedulePanel` with
  * `data-testid="schedule-sheet-export-parity-readout"`.
  */

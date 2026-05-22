@@ -22,17 +22,19 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
+from bim_ai.evidence.room_color_scheme_override_evidence import (
+    build_room_color_scheme_override_evidence_v1,
+)
+from bim_ai.evidence.schedule_pagination_placement_evidence import (
+    build_schedule_pagination_placement_evidence_v0,
+    flatten_leaf_rows_from_schedule_table_payload,
+)
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
-from bim_ai.room_color_scheme_override_evidence import build_room_color_scheme_override_evidence_v1
 from bim_ai.room_finish_schedule import (
     peer_finish_set_by_level,
     room_finish_legend_correlation_v1_for_wire,
 )
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.schedule_pagination_placement_evidence import (
-    build_schedule_pagination_placement_evidence_v0,
-    flatten_leaf_rows_from_schedule_table_payload,
-)
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
     format_sheet_rev_iss_export_listing_segment_v1,
