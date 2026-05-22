@@ -15,6 +15,12 @@ const FamilyEditorWorkbench = lazy(() =>
 const PresentationViewer = lazy(() =>
   import('./viewer/PresentationViewer').then((m) => ({ default: m.PresentationViewer })),
 );
+const AgentsIndex = lazy(() =>
+  import('./agents/AgentsIndex').then((m) => ({ default: m.AgentsIndex })),
+);
+const AgentSessionDetail = lazy(() =>
+  import('./agents/AgentSessionDetail').then((m) => ({ default: m.AgentSessionDetail })),
+);
 
 export function App() {
   return (
@@ -25,6 +31,8 @@ export function App() {
           <Route path="/p/:token" element={<PublicPresentationRoute />} />
           <Route path="/icons" element={<IconGallery />} />
           <Route path="/family-editor" element={<FamilyEditorWorkbench />} />
+          <Route path="/agents" element={<AgentsIndex />} />
+          <Route path="/agents/sessions/:sessionId" element={<AgentSessionDetail />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
