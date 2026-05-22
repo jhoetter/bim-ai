@@ -1,6 +1,6 @@
 # BIM AI Performance Quality Tracker
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22 (audit pass)
 
 Purpose: track the application-wide performance work needed to make BIM AI feel
 responsive during ordinary authoring, remain predictable on larger projects, and
@@ -576,7 +576,7 @@ Relevant files:
 | `PERF-C05` | P1 | `Not started` | Add document-revision scoped room-boundary cache. | Repeated requests for unchanged model revision reuse safe immutable derivation results. |
 | `PERF-C06` | P1 | `Not started` | Build level-local invalidation for room derivation. | Changes outside a level do not invalidate room derivation for unrelated levels. |
 | `PERF-C07` | P1 | `Not started` | Pre-index axis segments by coordinate and extent. | Rectangle detection avoids repeated snapping and repeated full candidate checks. |
-| `PERF-C08` | P2 | `Not started` | Add stress fixture for walls + room separations. | CI covers runtime scaling with high segment counts below and above the enumeration cap. |
+| `PERF-C08` | P2 | `Done` | Add stress fixture for walls + room separations. | `build_room_stress_fixture` (24x14 grid w/ row+col `RoomSeparationElem`s) in `app/scripts/performance_budget.py:254-266`; CI budget `room_stress.room_derivation=1500ms`. |
 | `PERF-C09` | P2 | `Not started` | Split blocking constraints from documentation advisories. | Interactive commands can run blocking/error checks first and defer expensive info-only documentation advisors where appropriate. |
 
 ### D. Evidence Package And Reporting
@@ -614,13 +614,13 @@ Relevant files:
 | `PERF-F04` | P1 | `Not started` | Add server-side schedule table cache by revision and schedule id. | Repeated `/schedules/{id}/table` requests for unchanged revision reuse cached derivation. |
 | `PERF-F05` | P1 | `Not started` | Add client schedule table cache. | SchedulePanel and ModeShells share a cache instead of independently refetching the same table. |
 | `PERF-F06` | P1 | `Not started` | Avoid full room closure payload in schedule table when caller does not need it. | Schedule endpoint supports a mode that omits expensive room programme closure/evidence for lightweight grid display. |
-| `PERF-F07` | P2 | `Not started` | Add projection/schedule CI budgets. | Stable plan and schedule fixtures have timing thresholds. |
+| `PERF-F07` | P2 | `Done` | Add projection/schedule CI budgets. | `small.plan_projection=250ms`, `schedule_heavy.{room,door,window}_schedule`, `documentation_heavy.plan_projection=500ms` already enforced (`app/scripts/performance_budget.py:37-44`). |
 
 ### G. Frontend State, Selectors, And Derived Indices
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-G01` | P0 | `Done` | Inventory direct `elementsById` subscriptions. | Generated report lists components subscribing to full model state and their derived scans. |
+| `PERF-G01` | P0 | `Not started` | Inventory direct `elementsById` subscriptions. | Generated report lists components subscribing to full model state and their derived scans. No artifact exists today; `useBimStore` has ~1,358 call sites repo-wide. |
 | `PERF-G02` | P0 | `Done` | Add derived model indices to store/selectors. | Store exposes levels, walls by level, openings by wall, schedules, sheets, project settings, rooms by level, and selectable ids. |
 | `PERF-G03` | P1 | `Not started` | Migrate `Workspace` off broad full-model scans for common derived values. | Workspace uses narrow selectors for levels, sheets, schedules, project settings, saved views, and counts. |
 | `PERF-G04` | P1 | `Not started` | Migrate `PlanCanvas` interaction paths to indices. | Snapping, picking, hover, tags, dimensions, walls, and floors use precomputed indices where possible. |
@@ -632,7 +632,7 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-H01` | P0 | `Done` | Add pointermove budget measurement for PlanCanvas. | Dev instrumentation records pointermove handler samples by scenario, and `pnpm performance:plan-pointermove` writes a current summary report from a running app. |
+| `PERF-H01` | P0 | `Partial` | Add pointermove budget measurement for PlanCanvas. | Dev instrumentation `packages/web/src/plan/planPointerMovePerformance.ts` wired into `PlanCanvas.tsx`; `pnpm performance:plan-pointermove` script not present in `packages/web/package.json` yet. |
 | `PERF-H02` | P1 | `Not started` | Add spatial index for plan picking and snapping. | Candidate lookup is sublinear for walls/openings/rooms/tags/dimensions on scale fixtures. |
 | `PERF-H03` | P1 | `Not started` | Avoid `Object.values(elementsById)` inside high-frequency handlers. | Pointermove paths use precomputed arrays/indices updated on revision, not per event. |
 | `PERF-H04` | P1 | `Not started` | Coalesce visual hover/snap state updates. | Pointermove UI state is updated at animation-frame cadence and only when semantic hover/snap target changes. |
@@ -643,7 +643,7 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-I01` | P0 | `Done` | Remove React state updates from every orbit movement. | Camera orientation UI state is deferred/throttled during orbit and flushed immediately on explicit camera/view changes and orbit end. |
-| `PERF-I02` | P0 | `Done` | Convert 3D render loop to demand-driven idle rendering. | Renderer runs continuously during orbit/walk/animation/resize/hover when needed, but sleeps at idle. |
+| `PERF-I02` | P0 | `Partial` | Convert 3D render loop to demand-driven idle rendering. | No `setAnimationLoop(null)` / `invalidate` / `needsRender` gating found in `Viewport.tsx` after re-audit; renderer appears continuous. Re-verify or implement idle gating. |
 | `PERF-I03` | P1 | `Not started` | Add viewport frame-time instrumentation. | Dev overlay/log can report FPS, frame time, draw calls, geometries, textures, and rebuild counts. |
 | `PERF-I04` | P1 | `Not started` | Add geometry rebuild timing. | Mesh rebuild effect reports added/changed/removed ids, dirty ids, rebuild time, and disposal count. |
 | `PERF-I05` | P1 | `Not started` | Add spatial/raycast acceleration for picking if needed. | Raycast cost remains bounded on medium/large fixtures. |
@@ -665,9 +665,9 @@ Relevant files:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `PERF-K01` | P1 | `Not started` | Split `PlanCanvas` into interaction, rendering, projection, and overlays modules. | High-frequency interaction code is isolated from broad UI rendering. |
-| `PERF-K02` | P1 | `Not started` | Split `Viewport` into renderer runtime, controls, mesh sync, overlays, and tools modules. | Camera/orbit changes no longer risk re-rendering unrelated UI/tool code. |
-| `PERF-K03` | P1 | `Not started` | Split `Workspace` shell from domain panels and command handlers. | Top-level workspace rerenders are reduced and easier to profile. |
+| `PERF-K01` | P1 | `Partial` | Split `PlanCanvas` into interaction, rendering, projection, and overlays modules. | LOC-only split landed (`PlanCanvas.tsx` 9334→1897 via SLC-2026 sweep with `planCanvasClickHandler.ts`, `planCanvasHoverHandlers.ts`, `planCanvasRenderPasses.ts`, etc.); parent still threads `elementsById` into siblings, so render-ownership boundary not met yet. |
+| `PERF-K02` | P1 | `Partial` | Split `Viewport` into renderer runtime, controls, mesh sync, overlays, and tools modules. | LOC-only split landed (`Viewport.tsx` 6192→2902 with `useViewport*` hooks + `ViewportOverlays.tsx`); camera/orbit, mesh sync, tools still co-located. |
+| `PERF-K03` | P1 | `Partial` | Split `Workspace` shell from domain panels and command handlers. | LOC-only split landed (`Workspace.tsx` 6851→2996 with `WorkspaceLeftRail`, `WorkspaceRightRail`, `useWorkspace*` hooks); top-level still subscribes to `elementsById` (line 199). |
 | `PERF-K04` | P2 | `Not started` | Add render ownership docs. | Each large pane documents which state it owns, which selectors it consumes, and its expected render frequency. |
 
 ### L. Performance UX And Perceived Responsiveness
@@ -717,6 +717,71 @@ once medium and large fixtures exist.
 4. Add Playwright interaction traces for orbit, pan, hosted opening placement,
    wall drawing, and plan hover.
 5. Add benchmark trend artifacts for comparing budget results over time.
+
+## Audit Findings (2026-05-22)
+
+Full code-path audit run on 2026-05-22 surfaced ten new bottlenecks not
+covered by existing tracker items. Items are ordered by leverage.
+
+1. **`evaluate()` defeats its own room-boundary cache.** `constraints_evaluation.py:782`
+   and `:1620` build a fresh `Document(elements=dict(elements))` before
+   calling `compute_room_boundary_derivation`. The C04 request-scoped cache
+   keys on `id(doc)` / `id(doc.elements)`, so each `evaluate()` call inside a
+   request misses the cache. Highest-impact silent regression. Fix is to
+   key the cache on revision/elements-hash, or stop the defensive re-wrap.
+2. **Cache keys are object-identity, not revision.** Same pattern in
+   `room_derivation.py:522`, `schedule_derivation.py:742`,
+   `plan_projection_wire.py:1978`. Safe within one request, vulnerable
+   to in-place mutation. Worth resolving as part of `PERF-C05`.
+3. **`deepcopy(bundle)` on every C04 cache hit** (`room_derivation.py:525,527`).
+   On the `room_stress` fixture the deepcopy may consume a meaningful share of
+   the cited 190-230 ms baseline. Return a frozen view instead.
+4. **`planCanvasClickHandler.ts` is now the dominant full-scan offender.**
+   10+ `Object.values(elementsById)` calls (lines 899, 1472, 1484, 1510, 1561,
+   1807, 1880, 2321). The post-split hot path moved out of `PlanCanvas.tsx`;
+   acceptance for `PERF-G04` / `PERF-H03` should cover this file explicitly.
+5. **`Workspace.tsx:199` subscribes to entire `elementsById`.** A single
+   element change rerenders the whole workspace shell. Highest-leverage
+   `PERF-G03` / `PERF-G06` fix.
+6. **`modelIndices` are built but unused.** `buildModelIndices` recomputes
+   on every snapshot/load/delta (`storeModelRuntimeSlice.ts:73, 115, 168`)
+   yet has zero consumers outside tests. Pure overhead today; becomes
+   immediate win as soon as `PERF-G03..G05` land.
+7. **`Workspace.tsx:2848, 2866, 2878`** do
+   `Object.values(elementsById).find(...'project_settings')` three times in
+   adjacent blocks. Trivial migration to `modelIndices.projectSettings`.
+8. **`viewport/dormerRoofCut.ts:22,26` and `levelDatums3d.ts:29`** do full
+   scans inside the viewport rebuild path. Candidates for `PERF-G05`.
+9. **`build_evidence_package_payload`** (`routes_api.py:1011-1119`) now
+   unconditionally derives 10+ heavy artifacts
+   (`constructabilitySummary_v1`, `deterministicSheetEvidence`,
+   `3dViewEvidence`, `planViewEvidence`, `sectionCutEvidence`,
+   `evidenceClosureReview_v1`, `evidenceDiffIngestFixLoop_v1`,
+   `bcfTopicsIndex_v1`, `agentReviewActions_v1`, ...). `PERF-D06` summary
+   mode should drop the `deterministic*Evidence` + `evidenceClosureReview`
+   chain.
+10. **`Hub.broadcast_json:118-145`** still iterates clients sequentially
+    under `await`. Backpressure (threshold 8) closes slow sockets but no
+    per-socket task. One slow client + a large evidence broadcast stalls
+    every other connected client.
+
+### Status drift since 2026-05-21
+
+The following statuses were corrected based on the 2026-05-22 audit:
+
+- `PERF-C08` Not started -> Done (`build_room_stress_fixture` already in CI).
+- `PERF-F07` Not started -> Done (projection + schedule budgets already
+  enforced by `app/scripts/performance_budget.py`).
+- `PERF-G01` Done -> Not started (no inventory artifact exists; ~1,358
+  `useBimStore` call sites today).
+- `PERF-H01` Done -> Partial (instrumentation wired, but
+  `pnpm performance:plan-pointermove` script absent from
+  `packages/web/package.json`).
+- `PERF-I02` Done -> Partial (no idle render gating visible in
+  `Viewport.tsx` re-audit).
+- `PERF-K01/K02/K03` Not started -> Partial (LOC-only) (SLC-2026 sweep
+  split the three monoliths by LOC budget; render-ownership boundaries
+  still pending).
 
 ## Commands Used For Initial Measurements
 
