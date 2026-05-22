@@ -59,6 +59,36 @@ def _set_plan_projection_cache(
         _PLAN_PROJECTION_CACHE.popitem(last=False)
 
 
+# PERF-F04: cross-request schedule table cache keyed by
+# (model_id, revision, schedule_id). Same LRU shape as
+# _PLAN_PROJECTION_CACHE — repeated /schedules/{id}/table requests for
+# unchanged revisions skip the derive_schedule_table call, which is the
+# dominant ~230 ms cost on room schedules (tracker baseline).
+_SCHEDULE_TABLE_CACHE_MAX = 128
+_SCHEDULE_TABLE_CACHE: OrderedDict[tuple[str, int, str], dict[str, Any]] = OrderedDict()
+
+
+def _schedule_table_cache_key(
+    *, model_id: UUID, revision: int, schedule_id: str
+) -> tuple[str, int, str]:
+    return (str(model_id), revision, schedule_id)
+
+
+def _get_schedule_table_cache(key: tuple[str, int, str]) -> dict[str, Any] | None:
+    cached = _SCHEDULE_TABLE_CACHE.get(key)
+    if cached is None:
+        return None
+    _SCHEDULE_TABLE_CACHE.move_to_end(key)
+    return deepcopy(cached)
+
+
+def _set_schedule_table_cache(key: tuple[str, int, str], payload: dict[str, Any]) -> None:
+    _SCHEDULE_TABLE_CACHE[key] = deepcopy(payload)
+    _SCHEDULE_TABLE_CACHE.move_to_end(key)
+    while len(_SCHEDULE_TABLE_CACHE) > _SCHEDULE_TABLE_CACHE_MAX:
+        _SCHEDULE_TABLE_CACHE.popitem(last=False)
+
+
 from fastapi import (
     APIRouter,
     Body,
@@ -2051,11 +2081,19 @@ async def schedule_derived_table(
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    try:
-        payload = derive_schedule_table(doc, schedule_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    # PERF-F04: cross-request cache keyed by (model_id, revision, schedule_id).
+    # columns/format/totals only affect post-processing, not the derivation.
+    cache_key = _schedule_table_cache_key(
+        model_id=model_id, revision=_row_revision(row), schedule_id=schedule_id
+    )
+    payload = _get_schedule_table_cache(cache_key)
+    if payload is None:
+        doc = Document.model_validate(row.document)
+        try:
+            payload = derive_schedule_table(doc, schedule_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        _set_schedule_table_cache(cache_key, payload)
     if fmt.strip().lower() == "csv":
         export_payload = payload
         if columns and columns.strip():
