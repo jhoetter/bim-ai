@@ -99,11 +99,11 @@ def _compute_metric(a: list, b: list, metric: str) -> float:
     n = len(flat_a) * 3
     if metric == "pixel-diff":
         diffs = sum(
-            1 for pa, pb in zip(flat_a, flat_b) if any(abs(ca - cb) > 13 for ca, cb in zip(pa, pb))
+            1 for pa, pb in zip(flat_a, flat_b, strict=False) if any(abs(ca - cb) > 13 for ca, cb in zip(pa, pb, strict=False))
         )
         return 1.0 - diffs / len(flat_a)
     elif metric == "mse":
-        mse = sum((ca - cb) ** 2 for pa, pb in zip(flat_a, flat_b) for ca, cb in zip(pa, pb)) / n
+        mse = sum((ca - cb) ** 2 for pa, pb in zip(flat_a, flat_b, strict=False) for ca, cb in zip(pa, pb, strict=False)) / n
         return mse
     else:  # ssim simplified
         mu_a = sum(c for px in flat_a for c in px) / n
@@ -113,8 +113,8 @@ def _compute_metric(a: list, b: list, metric: str) -> float:
         cov = (
             sum(
                 (ca - mu_a) * (cb - mu_b)
-                for pa, pb in zip(flat_a, flat_b)
-                for ca, cb in zip(pa, pb)
+                for pa, pb in zip(flat_a, flat_b, strict=False)
+                for ca, cb in zip(pa, pb, strict=False)
             )
             / n
         )
@@ -128,8 +128,8 @@ def _compute_metric(a: list, b: list, metric: str) -> float:
 
 def _diff_image(a: list, b: list) -> list:
     return [
-        [tuple(min(255, abs(ca - cb) * 4) for ca, cb in zip(pa, pb)) for pa, pb in zip(ra, rb)]
-        for ra, rb in zip(a, b)
+        [tuple(min(255, abs(ca - cb) * 4) for ca, cb in zip(pa, pb, strict=False)) for pa, pb in zip(ra, rb, strict=False)]
+        for ra, rb in zip(a, b, strict=False)
     ]
 
 

@@ -64,8 +64,11 @@ ignore = ["E501"]
 # Annotated[T, Depends(...)] migration ran in BRT-51 but the carve-out lives
 # alongside the other routes_api-only suppressions.
 "bim_ai/routes_api.py" = ["B008", "E402", "I001", "F401"]
+# tests/api/test_jobs_routes.py: B008 stays — that file uses `Body(...)`
+# directly to test ingress validation (BRT-52 reviewed and kept).
 "tests/api/test_jobs_routes.py" = ["B008"]
-"bim_ai/vg/compare.py" = ["B905"]
+# bim_ai/vg/compare.py: B905 carve-out cleared by BRT-52
+# (all `zip(...)` calls now pass explicit `strict=False`).
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
