@@ -542,3 +542,51 @@ Ordered by what unblocks the most blockers per unit of work:
 
 Iteration 3's critical-path dependency is reader work, not code work.
 The infrastructure is ready; the houses now need real measurements.
+
+### Authored models + final-acceptance per-gate closeout (2026-05-22)
+
+`scripts/testhouse_iter2_author.py` walked the source-fact ledgers and
+produced source-faithful authored Documents under
+`tmp/reverse-bim/house-<name>/iter-2-authored-model.json`. Where the
+reader returned numeric `Vec2Mm` wall-chain points, the walls were
+authored at the actual measured coordinates. `scripts/testhouse_iter2_acceptance.py`
+then ran `reverse_bim.final_acceptance` against each authored model.
+Per-gate closeout:
+
+| House | Authored | passedGateCount / gateCount | Blocking gate IDs |
+| --- | --- | --- | --- |
+| Alpha | 3 levels, 8 walls (EG+DG party + perimeter + partitions), 1 section, 4 elevations (Berg / Linke Giebel / Tal / Rechte Giebel), 5 source_view_evidence | 6 / 11 | `level_completeness` (KG empty — KG floor plan reader didn't return numeric points), `area_reconciled`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` |
+| Beta | 3 levels, 12 walls (3 chains × 4 segments at 9764-9884 × 8984 mm), 2 sections (Gebaeude + Garage), 4 elevations (N/E/S/W), 6 source_view_evidence | **7 / 11** | `area_reconciled`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` — all four require live-BIM-app inputs (no model-side blocker) |
+| Gamma | 5 levels (KG/EG/OG/DG/Spitzboden), 0 walls (rescue file had no numeric wall_chains), 2 sections (Schnitt A-A + B-B), 3 elevations (Strasse / Eingang / Garten), 5 source_view_evidence | 6 / 11 | `level_completeness` (all 5 levels empty — gamma rescue had no numeric Vec2Mm coordinates), `area_reconciled`, `source_overlay_evidence`, `ui_evidence`, `findings_disposed` |
+
+Four blocking gates appear on every house and are the genuine iteration-3
+ceiling: `area_reconciled`, `source_overlay_evidence`, `ui_evidence`, and
+`findings_disposed`. All four require the live BIM web app to be running —
+they consume per-room area calculations, source-overlay screenshots, UI
+evidence reports, and finding dispositions that the methodology's hard
+gate refuses to fake. This is exactly the methodology's intended
+"explicit blocker closeout" terminal state per the iter-1 convention
+(see [[testhouse-tracker]]): each house has a precise gate-by-gate
+accounting of what's done and what's blocked, with no inferred geometry
+from prose.
+
+Per-house artifacts written by the iter-2 finalize + author + acceptance
+scripts:
+
+- `tmp/reverse-bim/house-<name>/iter-2-status.json` — post-finalize
+  preflight + scope state snapshot.
+- `tmp/reverse-bim/house-<name>/iter-2-authored-model.json` — the
+  source-faithful authored Document serialization.
+- `tmp/reverse-bim/house-<name>/iter-2-authoring-report.json` —
+  per-fact authored vs deferred ledger (with `reason` per deferral).
+- `tmp/reverse-bim/house-<name>/iter-2-acceptance.json` — final-
+  acceptance gate report with per-gate pass/block.
+- `tmp/reverse-bim/house-<name>/ai-reading/page-classifications/responses/*.json`
+  — per-page visual classifications applied to the work-order routing.
+
+The reusable scripts are checked in at `scripts/testhouse_iter2_finalize.py`
+(scope decisions + folder-output re-run), `scripts/testhouse_iter2_author.py`
+(source-fact ledger → authored Document), and
+`scripts/testhouse_iter2_acceptance.py` (authored Document → final-
+acceptance gate). Future iterations should drive these rather than
+authoring by hand.
