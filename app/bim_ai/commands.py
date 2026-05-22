@@ -47,6 +47,7 @@ from bim_ai.commands_late import (
     SetElementPropCmd,
     UpdateDetailRegionCmd,
     UpdateKitComponentCmd,
+    UpsertSourceViewEvidenceCmd,
 )
 from bim_ai.commands_mep import (
     CreateCableTrayCmd,
@@ -958,41 +959,6 @@ class CreateSectionCutCmd(BaseModel):
     line_end_mm: Vec2Mm = Field(alias="lineEndMm")
     crop_depth_mm: float = Field(alias="cropDepthMm", default=8500)
 
-
-class UpsertSourceViewEvidenceCmd(BaseModel):
-    """TH-X-F006 — upsert a ``source_view_evidence`` record attached to a
-    ``section_cut`` / ``elevation_view`` / detail (callout ``plan_view``).
-
-    Upsert semantics: when ``id`` references an existing
-    ``source_view_evidence`` element, fields are merged (``None`` means "do
-    not change" rather than "clear"); when ``id`` is absent, a new element is
-    created. ``view_element_id`` and ``category`` are always required.
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["upsertSourceViewEvidence"] = "upsertSourceViewEvidence"
-    id: str | None = None
-    view_element_id: str = Field(alias="viewElementId")
-    category: Literal["exterior", "detail", "section"]
-    status: Literal[
-        "missing_source_link",
-        "source_linked",
-        "screenshot_captured",
-        "overlay_compared",
-        "findings_open",
-        "accepted",
-    ] = "missing_source_link"
-    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
-    source_page: int | None = Field(default=None, alias="sourcePage")
-    source_region: list[Vec2Mm] | None = Field(default=None, alias="sourceRegion")
-    comparison_type: (
-        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
-    ) = Field(default=None, alias="comparisonType")
-    screenshot_path: str | None = Field(default=None, alias="screenshotPath")
-    overlay_path: str | None = Field(default=None, alias="overlayPath")
-    finding_ids: list[str] | None = Field(default=None, alias="findingIds")
-    notes: str | None = None
-    updated_at: str | None = Field(default=None, alias="updatedAt")
 
 
 class UpsertViewTemplateCmd(BaseModel):
