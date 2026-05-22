@@ -1471,6 +1471,9 @@ PlanViewSubtypePlan = Literal[
     "lighting_plan",
     "power_plan",
     "coordination_plan",
+    "callout",
+    "ceiling_plan",
+    "drafting",
 ]
 AreaScheme = Literal["gross_building", "net", "rentable"]
 

@@ -16,6 +16,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from bim_ai.final_acceptance import build_final_acceptance_report
 from bim_ai.folder_output import build_reverse_bim_folder_output
@@ -60,6 +61,10 @@ from bim_ai.reverse_bim_source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
 from bim_ai.reverse_bim_visual_capture import build_reverse_bim_view_capture_plan
+from bim_ai.semantic_authoring import (
+    UnsupportedSemanticOperationError,
+    build_semantic_authoring_bundle,
+)
 from bim_ai.reverse_bim_visual_review import (
     build_reverse_bim_visual_review_requests,
     normalize_reverse_bim_visual_review_responses,
@@ -126,6 +131,54 @@ async def source_classify_documents_route(
 ) -> dict[str, Any]:
     manifest = body.get("manifest") or body.get("files") or body
     return classify_documents(manifest)
+
+
+def _reverse_bim_view_bundle(operation: str, body: dict[str, Any]) -> dict[str, Any]:
+    try:
+        bundle = build_semantic_authoring_bundle(operation, body)
+    except UnsupportedSemanticOperationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unsupported_semantic_operation",
+                "operation": exc.operation,
+                "message": exc.reason,
+            },
+        ) from exc
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_semantic_payload", "message": str(exc)},
+        ) from exc
+    return bundle.model_dump(by_alias=True)
+
+
+@reverse_bim_router.post("/v3/reverse-bim/exterior-view-create")
+async def reverse_bim_exterior_view_create_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return _reverse_bim_view_bundle("reverse_bim_exterior_view", body)
+
+
+@reverse_bim_router.post("/v3/reverse-bim/detail-view-create")
+async def reverse_bim_detail_view_create_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return _reverse_bim_view_bundle("reverse_bim_detail_view", body)
+
+
+@reverse_bim_router.post("/v3/reverse-bim/section-view-create")
+async def reverse_bim_section_view_create_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return _reverse_bim_view_bundle("reverse_bim_section_view", body)
+
+
+@reverse_bim_router.post("/v3/reverse-bim/source-view-evidence-upsert")
+async def reverse_bim_source_view_evidence_upsert_route(
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> dict[str, Any]:
+    return _reverse_bim_view_bundle("reverse_bim_source_view_evidence", body)
 
 
 @reverse_bim_router.post("/v3/source/classify-pages/dispatch-plan")

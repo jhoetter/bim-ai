@@ -21,6 +21,7 @@ from pydantic import (
 )
 
 from bim_ai.cmd.types import AssumptionEntry, CommandBundle
+from bim_ai.element_primitives import Vec2Mm
 from bim_ai.commands import (
     Command,
     CreateBeamCmd,
@@ -31,6 +32,7 @@ from bim_ai.commands import (
     CreateConstructionPackageCmd,
     CreateDormerCmd,
     CreateDuctCmd,
+    CreateElevationViewCmd,
     CreateFixtureCmd,
     CreateFloorCmd,
     CreateLevelCmd,
@@ -44,6 +46,7 @@ from bim_ai.commands import (
     CreateRoomOutlineCmd,
     CreateRoomSeparationCmd,
     CreateSavedViewCmd,
+    CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
     CreateWallChainCmd,
@@ -57,6 +60,7 @@ from bim_ai.commands import (
     UpsertPlanViewCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
+    UpsertSourceViewEvidenceCmd,
 )
 
 SemanticOperation = Literal[
@@ -98,6 +102,10 @@ SemanticOperation = Literal[
     "mep_fixture",
     "mep_terminal",
     "mep_opening_request",
+    "reverse_bim_exterior_view",
+    "reverse_bim_detail_view",
+    "reverse_bim_section_view",
+    "reverse_bim_source_view_evidence",
 ]
 
 SUPPORTED_OPERATIONS: tuple[str, ...] = (
@@ -139,6 +147,10 @@ SUPPORTED_OPERATIONS: tuple[str, ...] = (
     "mep_fixture",
     "mep_terminal",
     "mep_opening_request",
+    "reverse_bim_exterior_view",
+    "reverse_bim_detail_view",
+    "reverse_bim_section_view",
+    "reverse_bim_source_view_evidence",
 )
 
 UNSUPPORTED_M2_OPERATIONS: dict[str, str] = {
@@ -943,6 +955,92 @@ class PlanViewPayload(BaseModel):
     plan_view_subtype: str | None = Field(default=None, alias="planViewSubtype")
 
 
+class ReverseBimExteriorViewPayload(BaseModel):
+    """TH-UI-001/005 payload for a source-derived exterior view (elevation_view)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Exterior view"
+    direction: Literal["north", "south", "east", "west", "custom"] = "north"
+    custom_angle_deg: float | None = Field(default=None, alias="customAngleDeg")
+    scale: float = 100.0
+    plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="planDetailLevel"
+    )
+    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    comparison_type: (
+        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
+    ) = Field(default=None, alias="comparisonType")
+    evidence_id: str | None = Field(default=None, alias="evidenceId")
+
+
+class ReverseBimDetailViewPayload(BaseModel):
+    """TH-UI-002/005 payload for a source-derived detail view (callout plan_view)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Detail view"
+    level_id: str = Field(alias="levelId", min_length=1)
+    discipline: str = "architecture"
+    scale: float | None = None
+    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    comparison_type: (
+        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
+    ) = Field(default=None, alias="comparisonType")
+    evidence_id: str | None = Field(default=None, alias="evidenceId")
+
+
+class ReverseBimSectionViewPayload(BaseModel):
+    """TH-UI-003/005 payload for a source-derived section view (section_cut)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Section"
+    line_start_mm: Vec2Mm = Field(alias="lineStartMm")
+    line_end_mm: Vec2Mm = Field(alias="lineEndMm")
+    crop_depth_mm: float = Field(alias="cropDepthMm", default=8500)
+    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    comparison_type: (
+        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
+    ) = Field(default=None, alias="comparisonType")
+    evidence_id: str | None = Field(default=None, alias="evidenceId")
+
+
+class ReverseBimSourceViewEvidencePayload(BaseModel):
+    """TH-UI-004/005 payload to upsert a source_view_evidence record."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    view_element_id: str = Field(alias="viewElementId", min_length=1)
+    category: Literal["exterior", "detail", "section"]
+    status: Literal[
+        "missing_source_link",
+        "source_linked",
+        "screenshot_captured",
+        "overlay_compared",
+        "findings_open",
+        "accepted",
+    ] = "missing_source_link"
+    source_document_id: str | None = Field(default=None, alias="sourceDocumentId")
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    source_region: list[Vec2Mm] | None = Field(default=None, alias="sourceRegion")
+    comparison_type: (
+        Literal["overlay", "screenshot", "side_by_side", "not_applicable"] | None
+    ) = Field(default=None, alias="comparisonType")
+    screenshot_path: str | None = Field(default=None, alias="screenshotPath")
+    overlay_path: str | None = Field(default=None, alias="overlayPath")
+    finding_ids: list[str] | None = Field(default=None, alias="findingIds")
+    notes: str | None = None
+    updated_at: str | None = Field(default=None, alias="updatedAt")
+
+
 class Save3dViewPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -1090,6 +1188,22 @@ def build_semantic_authoring_bundle(
         return mep_terminal_bundle(MepTerminalPayload.model_validate(data))
     if operation == "mep_opening_request":
         return mep_opening_request_bundle(MepOpeningRequestPayload.model_validate(data))
+    if operation == "reverse_bim_exterior_view":
+        return reverse_bim_exterior_view_bundle(
+            ReverseBimExteriorViewPayload.model_validate(data)
+        )
+    if operation == "reverse_bim_detail_view":
+        return reverse_bim_detail_view_bundle(
+            ReverseBimDetailViewPayload.model_validate(data)
+        )
+    if operation == "reverse_bim_section_view":
+        return reverse_bim_section_view_bundle(
+            ReverseBimSectionViewPayload.model_validate(data)
+        )
+    if operation == "reverse_bim_source_view_evidence":
+        return reverse_bim_source_view_evidence_bundle(
+            ReverseBimSourceViewEvidencePayload.model_validate(data)
+        )
     raise UnsupportedSemanticOperationError(str(operation))
 
 
@@ -1619,6 +1733,144 @@ def mep_opening_request_bundle(payload: MepOpeningRequestPayload) -> SemanticBun
         systemName=payload.system_name,
     )
     return _bundle("mep_opening_request", [command])
+
+
+def reverse_bim_exterior_view_bundle(
+    payload: ReverseBimExteriorViewPayload,
+) -> SemanticBundle:
+    """TH-UI-001/005 — typed createElevationView for a source-derived exterior view.
+
+    Optional source provenance produces a paired UpsertSourceViewEvidenceCmd so
+    the project-browser evidence pill lights up immediately on bundle apply.
+    """
+
+    view_id = payload.id or f"ev-{_short_uid()}"
+    commands: list[BaseModel] = [
+        CreateElevationViewCmd(
+            id=view_id,
+            name=payload.name,
+            direction=payload.direction,
+            customAngleDeg=payload.custom_angle_deg,
+            scale=payload.scale,
+            planDetailLevel=payload.plan_detail_level,
+        )
+    ]
+    if payload.source_document_id is not None:
+        commands.append(
+            _source_view_evidence_command(
+                view_id=view_id,
+                category="exterior",
+                payload=payload,
+            )
+        )
+    return _bundle("reverse_bim_exterior_view", commands)
+
+
+def reverse_bim_detail_view_bundle(
+    payload: ReverseBimDetailViewPayload,
+) -> SemanticBundle:
+    """TH-UI-002/005 — typed UpsertPlanViewCmd with planViewSubtype='callout'."""
+
+    view_id = payload.id or f"pv-{_short_uid()}"
+    commands: list[BaseModel] = [
+        UpsertPlanViewCmd(
+            id=view_id,
+            name=payload.name,
+            levelId=payload.level_id,
+            discipline=payload.discipline,
+            planViewSubtype="callout",
+        )
+    ]
+    if payload.source_document_id is not None:
+        commands.append(
+            _source_view_evidence_command(
+                view_id=view_id,
+                category="detail",
+                payload=payload,
+            )
+        )
+    return _bundle("reverse_bim_detail_view", commands)
+
+
+def reverse_bim_section_view_bundle(
+    payload: ReverseBimSectionViewPayload,
+) -> SemanticBundle:
+    """TH-UI-003/005 — typed createSectionCut for a source-derived section."""
+
+    view_id = payload.id or f"sc-{_short_uid()}"
+    commands: list[BaseModel] = [
+        CreateSectionCutCmd(
+            id=view_id,
+            name=payload.name,
+            lineStartMm=payload.line_start_mm,
+            lineEndMm=payload.line_end_mm,
+            cropDepthMm=payload.crop_depth_mm,
+        )
+    ]
+    if payload.source_document_id is not None:
+        commands.append(
+            _source_view_evidence_command(
+                view_id=view_id,
+                category="section",
+                payload=payload,
+            )
+        )
+    return _bundle("reverse_bim_section_view", commands)
+
+
+def reverse_bim_source_view_evidence_bundle(
+    payload: ReverseBimSourceViewEvidencePayload,
+) -> SemanticBundle:
+    """TH-UI-004/005 — direct upsert of source_view_evidence (no view creation)."""
+
+    command = UpsertSourceViewEvidenceCmd(
+        id=payload.id,
+        viewElementId=payload.view_element_id,
+        category=payload.category,
+        status=payload.status,
+        sourceDocumentId=payload.source_document_id,
+        sourcePage=payload.source_page,
+        sourceRegion=payload.source_region,
+        comparisonType=payload.comparison_type,
+        screenshotPath=payload.screenshot_path,
+        overlayPath=payload.overlay_path,
+        findingIds=payload.finding_ids,
+        notes=payload.notes,
+        updatedAt=payload.updated_at,
+    )
+    return _bundle("reverse_bim_source_view_evidence", [command])
+
+
+def _source_view_evidence_command(
+    *,
+    view_id: str,
+    category: Literal["exterior", "detail", "section"],
+    payload: (
+        ReverseBimExteriorViewPayload
+        | ReverseBimDetailViewPayload
+        | ReverseBimSectionViewPayload
+    ),
+) -> UpsertSourceViewEvidenceCmd:
+    return UpsertSourceViewEvidenceCmd(
+        id=payload.evidence_id,
+        viewElementId=view_id,
+        category=category,
+        status="source_linked",
+        sourceDocumentId=payload.source_document_id,
+        sourcePage=payload.source_page,
+        comparisonType=payload.comparison_type,
+    )
+
+
+def _short_uid() -> str:
+    """Stable short id for bundle-generated ids. Mirrors the bundle-id style
+    used elsewhere; the engine assigns a real id when commands hit the
+    dispatcher with id=None, but reverse-BIM bundles pair view-create with an
+    evidence-upsert that needs the view id up front."""
+
+    from uuid import uuid4
+
+    return uuid4().hex[:12]
 
 
 def plan_view_bundle(payload: PlanViewPayload) -> SemanticBundle:

@@ -81,11 +81,39 @@ const SOURCE_EVIDENCE_STATE_TITLE: Record<SourceEvidenceState, string> = {
   accepted: 'Evidence accepted for this view.',
 };
 
+/**
+ * Build a lookup table from viewElementId to its joined source_view_evidence
+ * element. TH-X-F006 — the project-browser pill prefers this real backing over
+ * the legacy name heuristic. Returns undefined for views that do not have an
+ * evidence record yet so the caller can fall back.
+ */
+function buildSourceEvidenceByViewId(
+  elementsById: Record<string, Element>,
+): Map<string, Element & { kind: 'source_view_evidence' }> {
+  const map = new Map<string, Element & { kind: 'source_view_evidence' }>();
+  for (const el of Object.values(elementsById)) {
+    if (el.kind === 'source_view_evidence') {
+      map.set(el.viewElementId, el as Element & { kind: 'source_view_evidence' });
+    }
+  }
+  return map;
+}
+
 function deriveSourceEvidenceState(args: {
   name: string;
+  viewId?: string;
+  evidenceByViewId?: Map<string, Element & { kind: 'source_view_evidence' }>;
   markerGroupId?: string | null;
   parentViewId?: string | null;
 }): SourceEvidenceState {
+  // Real-backing preferred (TH-X-F006): if a joined source_view_evidence
+  // element exists for this view, use its status directly.
+  if (args.viewId && args.evidenceByViewId) {
+    const evidence = args.evidenceByViewId.get(args.viewId);
+    if (evidence) return evidence.status;
+  }
+  // Legacy fallback while no evidence record exists yet — heuristic on the
+  // view name + markerGroupId.
   const haystack = (args.name ?? '').toLowerCase();
   if (haystack.includes('[accepted]')) return 'accepted';
   if (haystack.includes('[findings]')) return 'findings_open';
@@ -405,6 +433,12 @@ export function ProjectBrowser(props: {
       Object.values(props.elementsById)
         .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
         .sort((a, b) => a.elevationMm - b.elevationMm || a.name.localeCompare(b.name)),
+    [props.elementsById],
+  );
+
+  /** TH-X-F006 — lookup table from viewElementId to the joined evidence row. */
+  const sourceEvidenceByViewId = useMemo(
+    () => buildSourceEvidenceByViewId(props.elementsById),
     [props.elementsById],
   );
 
@@ -1659,7 +1693,11 @@ export function ProjectBrowser(props: {
                     >
                       <span className="text-muted">section_cut ·</span> {sc.name}
                       <SourceEvidencePill
-                        state={deriveSourceEvidenceState({ name: sc.name })}
+                        state={deriveSourceEvidenceState({
+                          name: sc.name,
+                          viewId: sc.id,
+                          evidenceByViewId: sourceEvidenceByViewId,
+                        })}
                         category="section"
                         viewId={sc.id}
                       />
@@ -1844,6 +1882,8 @@ export function ProjectBrowser(props: {
                       <SourceEvidencePill
                         state={deriveSourceEvidenceState({
                           name: ev.name,
+                          viewId: ev.id,
+                          evidenceByViewId: sourceEvidenceByViewId,
                           markerGroupId: ev.markerGroupId,
                         })}
                         category="exterior"
@@ -1980,6 +2020,8 @@ export function ProjectBrowser(props: {
                   <SourceEvidencePill
                     state={deriveSourceEvidenceState({
                       name: dv.name,
+                      viewId: dv.id,
+                      evidenceByViewId: sourceEvidenceByViewId,
                       parentViewId: dv.parentViewId,
                     })}
                     category="detail"
