@@ -75,6 +75,26 @@ export default defineConfig(({ mode }) => {
         '@bim-ai-design-system.css': cssPath,
       },
     },
+    build: {
+      // PERF-J05: split stable heavy vendor modules into their own chunks so
+      // they cache independently of app code. The workspace lazy chunk is
+      // still the dominant cost (PERF-J04); these splits at least prevent
+      // each app build from re-downloading three.js / leaflet / jspdf when
+      // only product code changed.
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('/three/')) return 'vendor-three';
+            if (id.includes('/leaflet')) return 'vendor-leaflet';
+            if (id.includes('/jspdf') || id.includes('/html2canvas')) return 'vendor-pdf';
+            if (id.includes('/i18next') || id.includes('/react-i18next')) return 'vendor-i18n';
+            if (id.includes('/cmdk') || id.includes('/fuzzysort')) return 'vendor-command-palette';
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       host: '127.0.0.1',
       port: Number(env.WEB_PORT ?? process.env.WEB_PORT ?? 2000),
