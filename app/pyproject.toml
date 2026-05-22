@@ -125,7 +125,11 @@ ignore_missing_imports = true
 plugins = []
 
 [[tool.mypy.overrides]]
-module = "bim_ai._io.*"
+# BRT-43: subpackages held to strict typing. Add modules here as their
+# baseline entries are driven to zero. Run `cd app && uv run mypy
+# bim_ai/<module>` — if it returns "Success: no issues found", the
+# module is ready to graduate to this list.
+module = ["bim_ai._io.*", "bim_ai._errors", "bim_ai.models.*"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_return_any = true
