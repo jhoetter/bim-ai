@@ -5,6 +5,40 @@ BIM models actually look like the source PDFs" effort. Picks up
 where `spec/testhouse-hybrid-reverse-bim-tracker.md` left off after
 iter-2 acceptance gates passed.
 
+## Session resume / handoff (2026-05-23 — post iter-17)
+
+If you are picking this up after a context reset or a PC reboot, read
+this section first.
+
+**Current state of the work.** The methodology pivot from outside-in to
+inside-out is complete and landing. Iter-14 closed the elevation-capture
+wireframe bug and pushed exterior scores to alpha 7 / beta 7 / gamma 8.
+Iter-15 added terracotta roof material + steeper beta pitch + viewport
+refit + 8 alpha + 4 gamma dormers. **Iter-16** authored 36 alpha rooms
+(from fact ledger), 17 beta rooms + 32 gamma rooms (via floor-plan-reader
+subagents) — but the FIRST iter-16 plan captures were ~empty because
+(a) `planShowRoomLabels` defaulted false and (b) `createRoomOutline`
+doesn't emit partition walls. **Iter-16d** flipped planShowRoomLabels=true
+on all 11 plan_views; iter-16b + iter-16c derived 31 alpha + 29 beta + 64
+gamma interior partition walls algorithmically from the room polygons.
+**Iter-17** added the first authored stair (alpha EG → DG east half, 14
+steps). Plan-view captures now show the room program with labels +
+visible partitions.
+
+**Known carryover for iter-18+:**
+
+- Alpha west-half stair rejected `physical_stair_without_floor_landings`
+  because the floor only spans 0..9935 (east half). Need to extend the
+  floor across the full doppelhaus footprint OR drop the west-half stair.
+- Beta + gamma have rooms + partitions but NO interior doors yet. Alpha
+  has 7 doors in the fact ledger (`accessRefs` per room) but they were
+  never authored.
+- The 3D view shows windows + dormers + roof material correctly, but
+  doesn't show interior partition walls (3D opacity hides them — section
+  views would help, not yet scripted).
+- Gamma carport's flat roof reads as ground-level patio rather than
+  raised slab (iter-12 visibility bug carried forward through iter-15).
+
 ## METHODOLOGY PIVOT (2026-05-22 — between iter-15 and iter-16)
 
 User feedback after reviewing post-iter-15 captures: the houses **look
