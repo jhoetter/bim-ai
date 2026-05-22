@@ -5,20 +5,71 @@ BIM models actually look like the source PDFs" effort. Picks up
 where `spec/testhouse-hybrid-reverse-bim-tracker.md` left off after
 iter-2 acceptance gates passed.
 
-## Session resume / handoff (2026-05-22 — post iter-11)
+## METHODOLOGY PIVOT (2026-05-22 — between iter-15 and iter-16)
+
+User feedback after reviewing post-iter-15 captures: the houses **look
+right from the outside** (within reason — visual scores at alpha 7/10,
+beta 7/10, gamma 8/10) **but are completely empty / wrong from the inside**.
+The outside-in methodology used through iter-15 (massing → roof → site →
+exterior fenestration → cosmetic polish) has exhausted its lift; it
+cannot recover interior correctness because it never consumed the source
+floor plans as a primary input.
+
+**Pivot:** **inside-out per level**, starting iter-16.
+
+For each house, for each level, in this order:
+
+  1. Read the source floor plan for that level FIRST.
+  2. Author rooms (`createRoomRectangle` / `createRoomPoly` /
+     `createRoomOutline`) — each room outline becomes the source-of-truth
+     for which interior walls go where.
+  3. Add interior partitions between rooms (`createWall` with appropriate
+     `physicalRole` / `authoringIntent`).
+  4. Add internal doors at room connections (`insertDoorOnWall`).
+  5. Tie windows to specific rooms based on source — not a blanket
+     per-facade rhythm.
+
+Exterior envelopes are now implied by the union of outermost room
+outlines; perimeter wall + roof iterations from iter-5..15 are kept as
+the scaffold but interior is the new methodology center of gravity.
+
+This pivot is recorded in the user's auto-memory as
+`feedback-inside-out-methodology.md` and is binding for all subsequent
+testhouse iterations (iter-16+).
+
+The remainder of this tracker below documents the prior outside-in
+iterations 1–15. Iter-16's plan is at the end of the "Next-iteration
+plan" section.
+
+## Session resume / handoff (2026-05-22 — post iter-13)
 
 If you are picking this up after a context reset or a PC reboot, read
 this section first. The full per-iteration history is below, but the
 operational facts you need to resume work without breaking state are
 here.
 
-**Current state of the work.** Iter-10 (pre-flight pipeline) and iter-11
-(subagent-graded visual scoring) have both landed. Iter-11 surfaced four
-new methodology learnings (#12–#15) and re-ranked the visual-fidelity
-gap inventory: the single biggest unblocked lift is **iter-12 typology
-rewrites**, because alpha and gamma have been modeled as the wrong
-building shape for every iteration so far. Next-iteration plan in this
-file is up-to-date; honest scores are alpha 3/10, beta 3/10, gamma 5/10.
+**Current state of the work.** Iter-13 (iter-12 carryover cleanup) has
+landed: alpha got its 4 Schleppgauben back (deleted in iter-12 when the
+roof was replaced); beta got a garage door on the east face (closing
+the iter-12-introduced "sealed concrete box" regression); gamma had
+its carport moved from west to east, its party-wall stub moved from
+east gable to north long facade, and its Praxis wing upsized from 4×3m
+token to 8×3m; all three default 3D viewpoints were refit to the
+post-iter-12 bounding box. Visual-diff subagent scores: **alpha 5→6,
+beta 4→4 (held), gamma 6→7** — net +2 lift, in line with iter-13 being
+deliberately a carryover-cleanup iter rather than a new-feature one.
+
+**The unanimously top-priority blocker for iter-14**: all three iter-13
+subagents independently named the elevation-capture wireframe-stub bug
+(methodology #13) as P0. Three consecutive scoring rounds (iter-11, 12,
+13) reported it identically without fix. Iter-14 should be **two
+deliverables in order**: (1) fix the elevation capture pipeline (drive
+the viewer to true N/E/S/W orthographic 3D cameras, OR fix the
+elevation view-template renderer to fill with shading); (2) then run
+the per-facade window-rhythm push (3 houses × ~4 facades each ≈ 12
+subagent dispatches). Doing fenestration before the capture fix burns
+methodology budget — the windows would land but the scoring rubric
+can't see them.
 
 **Current live model IDs (iter-10 state in postgres, persists across docker restart):**
 
@@ -93,59 +144,100 @@ gnome-keyring over SSH on this remote Linux box. Commits since
 regression — pre-existing infrastructure issue documented in the user's
 auto-memory.
 
-**iter-11 artifacts on disk (not git-tracked because `tmp/` is gitignored):**
+**iter-11 + iter-12 + iter-13 artifacts on disk (not git-tracked because `tmp/` is gitignored):**
 
-- `tmp/reverse-bim/iter-11-captures/` — 30 PNGs (3 houses × 5 views × 2 framings) + capture-summary.json
-- `tmp/reverse-bim/iter-11-scoring/{alpha,beta,gamma}-subagent-report.md` — full visual-diff reports
+- `tmp/reverse-bim/iter-11-captures/` — overwritten by every subsequent re-capture (.mjs writes to the same path); current contents reflect post-iter-13 DB state.
+- `tmp/reverse-bim/iter-12-captures/` — preserved post-iter-12 snapshot (30 PNGs).
+- `tmp/reverse-bim/iter-13-captures/` — preserved post-iter-13 snapshot (30 PNGs).
+- `tmp/reverse-bim/iter-11-scoring/{alpha,beta,gamma}-subagent-report.md` — baseline reports (3/3/5).
+- `tmp/reverse-bim/iter-12-scoring/{alpha,beta,gamma}-subagent-report.md` — iter-12 reports (5/4/6).
+- `tmp/reverse-bim/iter-13-scoring/{alpha,beta,gamma}-subagent-report.md` — iter-13 reports (6/4/7).
+- `tmp/reverse-bim/iter-12-{alpha,beta,gamma}-apply.json` — iter-12 per-command apply logs.
+- `tmp/reverse-bim/iter-13-{alpha-dormers,beta-garage-door,gamma-reposition}-apply.json` + `iter-13-viewport-refit-apply.json` — iter-13 apply logs.
+- `tmp/reverse-bim/house-{alpha,beta,gamma}/building-class.json` — title-block parser outputs.
 
-If the disk is lost, these can be regenerated: capture script is deterministic given iter-10 DB state; subagent dispatches are repeatable.
+If the disk is lost, these can be regenerated: capture script is deterministic given current DB state; subagent dispatches are repeatable.
 
-**Concrete iter-12 entry points (in execution order):**
+**Concrete iter-14 entry points (in execution order):**
 
-1. **Title-block parser** — new script `scripts/testhouse_iter12_titleblock_parse.py`
-   that reads each house's `source-classifications.json` and runs OCR (or just
-   reads the existing rendered first page) to extract the title block text.
-   Emit `tmp/reverse-bim/house-{name}/building-class.json` with shape
-   `{building_class, auxiliary_volumes, raw_title_block_text, source_page}`.
-   Expected outputs: alpha = `zweifamilien_doppelhaus`, beta = `einfamilienhaus`,
-   gamma = `doppelhaushälfte` with `auxiliary_volumes: ["carport", "praxis_wing"]`.
+Iter-13 closed the iter-12 carryover. The unanimously top-priority
+blocker now is the elevation-capture wireframe bug — three consecutive
+scoring rounds have been bottlenecked on it. Iter-14 is two
+deliverables in this exact order:
 
-2. **alpha Doppelhaus expansion** — new script `scripts/testhouse_iter12_alpha_doppelhaus.py`
-   that loads the current alpha model state from the API, mirrors the east-half
-   perimeter walls + roof across a central party-wall axis at x≈9500 mm (verify
-   exact value by reading the source EG plan first), and emits one createWallChain
-   + one createRoof bundle. Apply through `testhouse_iter10_apply.py`'s pipeline
-   helpers. Target footprint ~19000×6700 mm.
+1. **Fix the elevation-capture pipeline (P0 toolchain blocker).** Two
+   viable paths:
+   - **Path A** — drive the viewer to true N/E/S/W orthographic 3D
+     cameras instead of opening the elevation-view UI. Patch
+     `scripts/testhouse_iter11_capture.mjs` to load 4 additional URLs
+     per house (e.g. `?modelId=...&camera=ortho-east`), each with a
+     dedicated camera set via the existing `saveViewpoint` mechanism.
+   - **Path B** — fix the elevation view-template renderer in the web
+     workspace so the elevation-view canvas fills with shaded geometry
+     instead of black wireframe stubs.
+   Path A is cheaper (no web changes); Path B is the durable fix.
+   Acceptance criterion: each elevation crop must have ≥ 15% non-background
+   pixel content AND visibly show wall surfaces with the same shading
+   the 3D view uses. Methodology gap #13 has the rationale.
 
-3. **gamma cross-gable + carport + party wall** — `scripts/testhouse_iter12_gamma_typology.py`.
-   Three sub-bundles: (a) Praxis cross-wing as `createMassBox` + perpendicular
-   `createRoof`; (b) carport as `createMassBox` with flat roof, open sides; (c)
-   party-wall stub on the opposite gable as `createWall` with `allowDetached: true`.
-   See gamma subagent report for the source page references.
+2. **Per-facade window-rhythm push.** Once elevation captures shade
+   properly, dispatch a `window_rhythm_reader` subagent per facade:
+   3 houses × ~4 facades each ≈ 12 dispatches. Each prompt should
+   include the relevant source elevation page + the cropped iter-14
+   elevation capture + the iter-13 fact ledger window-rhythm entries.
+   Emit `insertWindowOnWall` commands with correct count, spacing, and
+   size per source. Apply through the iter-10 pipeline.
 
-4. **beta garage rewrite** — `scripts/testhouse_iter12_beta_garage.py`. Rewrite the
-   iter-9 garage createWallChain as a 3-segment chain sharing the house east wall
-   (skip `garage-wall-w`, start from `garage-wall-n` at the house east wall
-   end-point), add `allowDetached: true` on the bundle's wall items per the
-   quick-fix command in the iter-10 violations log, set heights to 2700 mm,
-   add `createFloor` for the flat slab roof at +2700 mm. The iter-10
-   `tmp/reverse-bim/iter-10-beta-apply.json` perCommand[4] has the full violation
-   detail to work from.
+3. **(Bonus, only if 1+2 finish quickly) cosmetic-debt batch.**
+   Gamma subagent flagged 6 cosmetic items now ranked priority-1 for
+   two consecutive iters: 24 long-facade windows (subsumed by #2);
+   gable arched window; roof material (clay tile dark); chimney;
+   balcony Geländer; 5 interior partitions for Praxis. Iter-14b can
+   pick these up if there's time.
 
-5. **Re-capture + re-score** — run iter-11 capture script, dispatch the same 3
-   subagents (prompts in `tmp/reverse-bim/iter-11-scoring/` style — keep them
-   stable so scores are comparable), update tracker.
+**Carry-forward fixes that should land alongside #2** (cheap, source-
+re-grounding items the iter-13 reports surfaced):
 
-**Methodology guardrails the subagents asked for in iter-11 (open work):**
+- **alpha — emit 4 more Schleppgauben on the Tal slope.** iter-13 emitted
+  2 per slope (4 total), but source `Ansichten.pdf` shows 4 per slope (8
+  total). Re-read source elevation and double the dormer count.
+- **gamma Praxis — move to western half.** iter-13 upsized but kept
+  x=8000..16000 (slightly east of center). Source page 2 places Praxis
+  on the WESTERN half (x≈0..9000). Delete iter-13 walls + roof, re-emit
+  at x=0..8000, y=-3000..0 (or wider per source extent).
+- **gamma Praxis — deepen to ≥5 m.** 8×3 m envelope is too shallow for
+  5 clinical rooms + TERRASSE per source. Bump y to -5000..0 or wider.
+- **gamma carport — verify renders as a flat roof in 3D**, not just a
+  slab on the ground. Iter-12 visibility bug carried forward — iter-13
+  reposition fixed location but not visibility (methodology #23).
 
-- Methodology #12 needs the title-block parser (iter-12 step 1 above).
-- Methodology #13 needs a capture content-readiness gate — add to
-  `testhouse_iter11_capture.mjs`: count non-background pixels in the
-  cropped canvas, fail if < 15%.
+**Methodology guardrails (status after iter-12):**
+
+- Methodology #12 ✓ closed — title-block parser landed in iter-12 step 1.
+- Methodology #13 **still open** — both iter-11 + iter-12 subagent rounds
+  reported the elevation captures render as wireframe stubs. Now P0
+  because per-facade fenestration scoring depends on it.
 - Methodology #14 needs a post-apply visible_rate check — query the
   snapshot for bundle outputs, assert they fall within the capture frustum.
-- Methodology #15 needs a one-shot `srcdoc-page-index.json` builder; can
-  bolt onto the iter-12 title-block parser since both read the source pages.
+- Methodology #15 needs a one-shot `srcdoc-page-index.json` builder.
+- **Methodology #16 (new, iter-12):** corrector patches must re-ground
+  against source PDFs each iteration, not just consume the previous
+  iteration's written recommendation. iter-12's gamma carport + party-wall
+  ended up on the wrong sides because the script followed iter-11's
+  literal recommendation text instead of re-reading the source.
+- **Methodology #17 (new, iter-12):** scheduled-regression accounting —
+  iter-12 deliberately deleted alpha's Schleppgauben (the old roof was
+  going away). Need a per-iteration "deferred items" manifest the
+  scoring subagent can read so it doesn't double-penalise the regression.
+- **Methodology #18 (new, iter-12):** post-mutation viewport re-fit —
+  default 3D camera should auto-update when the model bounding box grows
+  by >X%; currently alpha + gamma 3d-crops cut off iter-12 additions.
+- **Methodology #19 (new, iter-12):** `createWallChain` doesn't propagate
+  `allowDetached` to the resulting WallElem (see `engine_dispatch_core.py:263`).
+  For free-standing or out-of-envelope walls, individual `createWall`
+  commands are the only path. The dispatch prompt should warn against
+  using createWallChain for detached structures, OR the kernel should
+  add allow_detached to WallChainSegment.
 
 **Open methodology questions** (still — not yet answered):
 the "Open methodology questions" section at the very bottom of this file
@@ -187,6 +279,8 @@ files under `tmp/reverse-bim/`.
 | 10 | **Normalizer + rewriter + remapper pipeline** | `testhouse_command_normalize.py` + `testhouse_iter10_apply.py` | Replays saved iter-9 corrector JSONs through pre-flight normalization: **alpha 7/7, beta 9/10, gamma 10/10** commands applied (26/27 vs iter-9 baseline 19/27). Surfaced the kernel's two-casing convention + multiple hallucinated commands (`createMassBox`, `createWindow`) as systemic methodology gaps. Beta's last failure is a real garage/house wall-overlap (deferred to iter-11). |
 | 10b | Bundle-level dormer-position recenter + capture-canvas fix | `_recenter_bundle_dormer_positions` + `testhouse_iter10_capture.mjs` largest-canvas selector | After cmdline says 10/10 applied, first visual capture showed plain gabled boxes — exposed two bugs: (1) per-value recenter missed values that didn't overflow but were still world-coords (fix: detect frame per-axis from population); (2) capture clipped the navigation-cube widget not the 3D viewport (fix: largest-canvas selector). After both: gamma visibly has 4 dormers + balcony + sloped site; alpha shows 1 Schleppgaube; beta shows attached garage volume. |
 | 11 | **Per-view capture + subagent visual scoring** | `testhouse_iter11_capture.mjs` + `Workspace.tsx` URL-param view activation + 3 visual-diff subagents | Re-added `?activeElevationView=<id>` URL handling (had been dropped since iter-3), captured 3D + 4 elevations per house, dispatched 3 visual-diff subagents with source PDFs attached. Subagent scores **confirmed iter-10's by-hand judgment** (alpha 3/10, beta 3/10, gamma 5/10) — and independently surfaced a **major upstream gap**: alpha is "Zweifamilien-Doppelwohnhaus" and gamma is "Wohn- und Praxisgebäude mit Carport als Doppelhaushälfte" per their German source title blocks — both modeled as freestanding solos. Iter-1's fact ledger missed both typology declarations. |
+| 12 | **Typology rewrites — close the iter-11 root-cause gap** | `testhouse_iter12_titleblock_parse.py` + `testhouse_iter12_alpha_doppelhaus.py` + `testhouse_iter12_beta_garage.py` + `testhouse_iter12_gamma_typology.py` | Title-block parser reads the iter-1 fact-ledger and emits per-house `building-class.json` (alpha=`zweifamilien_doppelhaus`, beta=`einfamilienhaus`, gamma=`doppelhaushälfte` + `[carport, praxis_wing]`). Alpha expanded from east-half-only to full Doppelhaus by mirroring the perimeter across x=0 + replacing the roof (9 walls + 1 roof applied, dormers deleted to be re-emitted in iter-13). Beta garage promoted from "low parapet" to walled volume via 3 createWall with `allowDetached: true` (sharing house east wall as party wall). Gamma got 3 sub-bundles: Praxis cross-wing (3 walls + perpendicular gable roof), carport (2 walls + flat roof slab), party-wall stub. **Iter-12 subagent scores: alpha 3→5 (+2), beta 3→4 (+1), gamma 5→6 (+1)** — fidelity lift earned by closing the typology gap, but iter-13 needs to re-emit dormers + window grids that iter-12 deliberately left out. Surfaced **CreateWallChain doesn't propagate `allowDetached`** as a kernel methodology gap — individual `createWall` is the only path for detached walls. |
+| 13 | **iter-12 carryover — dormers, garage door, gamma reposition, viewport refit** | `testhouse_iter13_alpha_dormers.py` + `testhouse_iter13_beta_garage_door.py` + `testhouse_iter13_gamma_reposition.py` + `testhouse_iter13_viewport_refit.py` | Alpha 4 Schleppgauben re-emitted on the iter-12 doppelhaus roof (kind=shed, 2 per slope at alongRidgeMm ±7200/±2400 × acrossRidgeMm ±2200). Beta garage door punched on iter12-beta-garage-wall-e at alongT=0.5, w=2400. Gamma reposition: carport moved from west to east end (x=18000..22000) per source EG p2 CARPORT label; party-wall stub deleted from east gable and re-emitted on the north long facade at y=8500 per "GEPLANTE NACHBARLICHE BEBAUUNG" annotation; Praxis wing upsized from 4×3m token to 8×3m (still y=-3000..0). All 3 default 3D viewpoints refit via deleteElement + saveViewpoint with bbox-derived camera (sidestepping the kernel's "duplicate element id" on saveViewpoint-with-existing-id). **Iter-13 subagent scores: alpha 5→6 (+1), beta 4→4 (0), gamma 6→7 (+1)**. Beta held at 4 because both changes (door + viewport) were narrow vs the dominant fenestration/material/topo carryover gaps. Surfaced **methodology gap #20**: gamma Praxis still on wrong half (placed x=8000..16000, source places on western half = x=0..9000) — re-grounding step needed but only ran on the MOVED elements, not the carryover positions. |
 
 ## Honest fidelity scoring (after iter-10, measured by hand)
 
@@ -242,6 +336,105 @@ Cross-cutting subagent findings (independently named by ≥ 2 of the 3):
 - **Elevation view-template renders as schematic wireframe stubs**,
   not as filled shaded elevations. Scoring elevations off this output
   understates fidelity — see methodology learning #13 below.
+
+## Iter-13 subagent-graded fidelity scoring
+
+Same 3-subagent dispatch, same rubric. Per-house full reports in
+`tmp/reverse-bim/iter-13-scoring/{alpha,beta,gamma}-subagent-report.md`.
+
+| House | iter-12 score | iter-13 score | Δ | Largest single lift |
+|-------|-------------:|-------------:|---:|---|
+| alpha | 5/10 | **6/10** | +1 | 2 Schleppgauben visible on the Berg slope from the SE camera (only 4 emitted, 2 are on the back-side Tal slope and not visible from the default 3D camera). Viewport refit frames the full 19.87 m doppelhaus footprint. |
+| beta  | 4/10 | **4/10** | 0 | Garage door successfully punched on east face — iter-12-introduced "sealed concrete box" regression closed. Viewport refit frames house + garage. Score held flat because both deliverables were within-bucket vs the dominant fenestration/material/topo carryover gaps. |
+| gamma | 6/10 | **7/10** | +1 | Carport, party-wall, and Praxis wing all moved to source-correct positions per the iter-12 subagent findings. Composition reads as a four-volume articulated complex (main + Praxis south + carport east + party-wall north). |
+
+**Net iter-13 lift: +2 across the three houses**, modest because iter-13
+was deliberately a carryover-cleanup iter (not a new-feature iter). All
+three subagents converged on the same priority for iter-14: **stop adding
+geometry, fix the elevation-capture pipeline first (methodology #13 has
+now blocked three consecutive scoring rounds), then run the per-facade
+window-rhythm push** which all three subagent reports rank as the single
+biggest unblocked lift.
+
+Cross-cutting iter-13 subagent findings:
+
+- **Methodology #13 (wireframe-stub elevations) → P0 toolchain blocker.**
+  Three consecutive scoring rounds (iter-11, iter-12, iter-13) all named
+  it the same way. Either drive the viewer to true N/E/S/W orthographic
+  3D cameras OR fix the elevation view-template renderer to fill with
+  shading. Per the alpha subagent: "should leave the per-iter 'new gaps'
+  list and become a P0 toolchain deliverable."
+- **Methodology #20 (new, iter-13): re-grounding only runs on MOVED
+  elements, not on carry-forward positions.** Gamma Praxis is still on
+  the eastern half (x=8000..16000) — iter-13 upsized but didn't re-read
+  the source page that places Praxis on the WESTERN half. Same pattern
+  could be lurking on alpha + beta carry-forwards.
+- **Methodology #21 (new, iter-13): single-camera 3D capture undersamples
+  bilateral roof articulation.** Alpha's default-3D SE-only view can't
+  verify the Tal-slope (south) dormers; the scoring subagent had to
+  take the count on trust. Capture set should be a function of model
+  topology (e.g., if a roof has dormers on both slopes, capture from
+  both sides).
+- **Methodology #22 (new, iter-13): iter brief ambiguity around entity
+  counts.** Alpha's "2 per slope at {-7200, -2400, +2400, +7200}" was
+  interpretable as 4 total OR 8 total. The script emitted 4. Iter briefs
+  should explicitly state per-entity counts to avoid this kind of
+  silent under-emission.
+- **Methodology #23 (new, iter-13): repositioning fixes location but
+  not visibility.** Gamma's carport was moved east successfully, but
+  its flat-slab roof still doesn't render as a roof in 3D (iter-12
+  visibility bug carried forward unchanged). Post-reposition checks
+  need to assert visible_rate at the NEW location, not just confirm
+  the move applied.
+
+## Iter-12 subagent-graded fidelity scoring
+
+Same 3-subagent dispatch as iter-11, same rubric, comparing the post-iter-12
+captures (`tmp/reverse-bim/iter-12-captures/`) against the same source PDFs.
+Per-house full reports in `tmp/reverse-bim/iter-12-scoring/{alpha,beta,gamma}-subagent-report.md`.
+
+| House | iter-11 score | iter-12 score | Δ | Largest single lift |
+|-------|-------------:|-------------:|---:|---|
+| alpha | 3/10 | **5/10** | +2 | Building-shape error fixed — iter-12 reads as a Doppelhaus (~2.3:1 footprint, single continuous gable spanning the full ridge with visible eaves overhang). |
+| beta  | 3/10 | **4/10** | +1 | Garage now reads as a properly-enclosed flat-roofed volume at ~2.5–3 m height (no longer a low parapet). Iter-10 wall_overlap deferral closed. |
+| gamma | 5/10 | **6/10** | +1 | Composition now reads as multi-volume (main + Praxis wing + carport pad + party-wall tag) — genuine typology shift from freestanding solo prism, though placement of carport and party-wall stub are on the wrong sides per source. |
+
+**Net iter-12 lift: +4 across the three houses** — modest but earned, all
+three subagents independently confirmed the iter-12 changes were visible.
+Score ceilings held below 7 by carryover gaps that iter-13 must address:
+fenestration density on long facades, re-emit deleted Schleppgauben on
+alpha, punch garage door on beta east face, re-ground gamma carport +
+party-wall positions against the actual source pages (iter-12 followed
+iter-11's literal recommendation rather than re-reading the source).
+
+Cross-cutting iter-12 subagent findings:
+
+- **Default 3D viewport drift after footprint expansion** — the iter-5
+  default camera was authored on the smaller footprint, so the alpha
+  3d-crop truncates the new west half and the gamma 3d-crop truncates
+  the Praxis wing. Need a post-mutation hook to re-author the default
+  viewpoint when the bounding box grows by > X%.
+- **Scheduled-regression accounting** — iter-12 deliberately deleted
+  alpha's iter-9 Schleppgauben (they had to come off the old roof; the
+  new roof needs new positions to be authored in iter-13). The scoring
+  subagent has no way to know this is on purpose and double-penalises
+  the regression. Need a per-iteration "deferred items" manifest the
+  scoring subagent can read.
+- **Recommendation-blind authoring** — the gamma subagent followed iter-11's
+  literal recommendation ("party-wall stub on the opposite gable") rather
+  than re-grounding against source PDFs that show the party wall on the
+  north long facade. Corrector patches need a source-re-read step, not
+  just a recommendation-consume step.
+- **Token-volume anti-pattern** — gamma's Praxis cross-wing was authored
+  at 4 × 3 m as a programmatic placeholder, but the source shows the
+  Praxis as ~half of the EG with five clinical rooms. Reads as a stub,
+  not as a wing. Iter-13 should size new volumes to match source-extent
+  data, not to a default "token bay" size.
+- **Capture-pipeline limitation #13 confirmed unfixed across two
+  consecutive scoring iterations** — all three iter-12 subagents
+  reported the elevation captures still render as wireframe stubs.
+  This now blocks per-facade window-rhythm scoring; should be P0
+  before iter-13 fenestration work begins.
 
 ## Remaining gap inventory (priority-sorted)
 
@@ -369,57 +562,82 @@ Re-added URL-driven view activation in `Workspace.tsx`, added
 iter-10 baseline (alpha 3, beta 3, gamma 5). The methodology yield —
 not score lift — is what made iter-11 worth running.
 
-**iter-12** (typology rewrites — the single biggest remaining lift):
+**iter-12** ✓ landed: typology rewrites closed the iter-11 root-cause
+gaps. Title-block parser emitted `building-class.json` per house; alpha
+expanded to full Doppelhaus (9 walls + 1 roof, dormers deleted for
+re-emission); beta garage walled up (3 walls); gamma got Praxis cross-wing,
+carport, and party-wall stub (9 commands). Subagent scores **alpha 3→5,
+beta 3→4, gamma 5→6** — modest but earned lift confirmed across all 3.
+See `tmp/reverse-bim/iter-12-{house}-apply.json` for per-house apply
+detail and `tmp/reverse-bim/iter-12-scoring/` for the full visual-diff
+reports.
 
-Both alpha and gamma are mis-typed at the canonical-rebuild layer.
-Source title blocks declare:
+**iter-13** ✓ landed: iter-12 carryover cleanup. 4 scripts —
+`testhouse_iter13_alpha_dormers.py` (re-emitted 4 Schleppgauben on the
+doppelhaus roof), `testhouse_iter13_beta_garage_door.py` (insertDoorOnWall
+on the east garage face), `testhouse_iter13_gamma_reposition.py` (deleted
+9 iter-12 elements + re-emitted Praxis upsized to 8×3m, carport on east
+end, party-wall on north long facade), `testhouse_iter13_viewport_refit.py`
+(saveViewpoint per house with bbox-derived camera). Subagent scores
+**alpha 5→6, beta 4→4, gamma 6→7** — net +2 lift, in line with
+iter-13 being a deliberate carryover-cleanup iter rather than a new-feature
+one. See `tmp/reverse-bim/iter-13-*-apply.json` for per-command apply
+detail and `tmp/reverse-bim/iter-13-scoring/` for the full visual-diff
+reports.
 
-- alpha: "Zweifamilien-Doppelwohnhaus" (two-family semi-detached pair).
-  Currently modeled as the east half only.
-- gamma: "Wohn- und Praxisgebäude mit Carport als Doppelhaushälfte"
-  (residence + medical practice with carport, as a semi-detached half).
-  Currently modeled as a freestanding solo, no carport, no Praxis wing.
+**iter-14** (elevation capture fix + per-facade window rhythm —
+unanimously top-priority per all three iter-13 subagent reports):
+
+iter-13's three scoring subagents independently named the elevation-
+capture wireframe-stub bug (methodology #13) as P0. Three consecutive
+scoring rounds have now been bottlenecked on it. The window-rhythm push
+landing without fixing the captures first means the per-facade scoring
+rubric can't see the new windows — methodology budget burned.
 
 Plan:
 
-1. **Title-block parser** — extract building-class from source manifests
-   for all three houses; persist in `building-class.json` per house.
-   Confirms beta is "Einfamilienhaus" (which it already is).
-2. **alpha Doppelhaus expansion** — mirror the east-half perimeter
-   across x≈9500 mm to produce the full ~19000×6700 mm footprint,
-   re-emit `createRoof` along the new long axis, add a central party
-   wall (or party-wall stub at the mirror line). One bundle.
-3. **gamma cross-gable + carport + party wall** — `createMassBox` +
-   `createRoof` for the Praxis cross-wing at the east end;
-   `createMassBox` for the carport (flat roof, open sides) abutting
-   one gable end; a `createWall` party-wall stub on the opposite
-   gable.
-4. **beta garage rewrite (was iter-10 follow-up)** — rewrite garage
-   as 3-segment chain sharing the house east wall + add the
-   `allowDetached: true` intent flag from the quick-fix command.
-   Set garage parapet height to ~2700 mm + flat slab roof element.
-5. Apply through the iter-10 pipeline; re-capture; re-score with the
-   same subagent dispatch. Target ≥ 5/10 per house, ≥ 6 for gamma.
+1. **Fix elevation capture pipeline (P0 toolchain).** Two viable paths:
+   - **Path A** (cheaper): patch `scripts/testhouse_iter11_capture.mjs`
+     to drive 4 orthographic 3D cameras (north, east, south, west) via
+     URL parameters instead of opening the elevation-view UI. Use
+     `saveViewpoint` to seed 4 viewpoint elements per house with
+     hard-coded `up` + `target` along the cardinal directions.
+   - **Path B** (durable): fix the elevation view-template renderer in
+     the web workspace so the elevation canvas fills with the same
+     shaded geometry the 3D view uses, not the schematic black-line
+     stubs.
+   Acceptance: each elevation crop must have ≥ 15% non-background pixel
+   content AND visible wall shading.
 
-**iter-13** (per-facade window rhythm):
+2. **Per-facade window rhythm push.** With shaded elevations in hand,
+   dispatch a `window_rhythm_reader` subagent per facade (3 houses ×
+   ~4 facades each = ~12 dispatches). Each prompt includes the source
+   elevation page + the iter-14 shaded elevation crop + the iter-13
+   fact-ledger window-rhythm entries. Emit `insertWindowOnWall` commands.
+   Apply through the iter-10 pipeline.
 
-1. Dispatch per-facade `window_rhythm_reader` subagents (3 houses ×
-   ~4 facades each ≈ 12 dispatches). Use the dispatch-prompt template
-   defined in "Iter-10 methodology learnings" so subagents emit
-   schema-correct commands first-shot. Include the per-house
-   `srcdoc-page-index.json` so subagents don't have to re-classify
-   pages (methodology #15 below).
-2. Add eaves overhang (`overhangMm: 500`) and steepen roof pitch where
-   sections disagree with current model.
-3. Apply through the iter-10 pipeline, re-capture, re-score.
-4. Target ≥ 7/10 per house.
+3. **Iter-13 carry-forward fixes** (small, alongside #2):
+   - alpha: 4 more Schleppgauben on the Tal slope (source shows 8 total,
+     not the 4 iter-13 emitted).
+   - gamma Praxis: move x to 0..8000 (western half per source p2) and
+     deepen y to -5000..0.
+   - gamma carport: verify visible_rate in 3D after move (iter-13
+     carried forward iter-12's visibility bug).
 
-**iter-14**:
+4. Add eaves overhang (`overhangMm: 500`) where source shows it but
+   current model is flush.
+
+5. Apply through the iter-10 pipeline, re-capture, re-score. Target
+   ≥ 7/10 per house (alpha + beta both still below).
+
+**iter-15** (cosmetic-debt batch — once fenestration lands):
 
 1. Roof material (clay tile / dark) + chimneys + wood-clad gable peaks.
 2. Terrain refinement (two-zone heightSamples) + balcony railings.
-3. Stairs (kernel-supported subset).
-4. Material differentiation per-room.
+3. Gable arched window (gamma).
+4. Stairs (kernel-supported subset).
+5. Gamma Praxis interior — 5 clinical-room partitions.
+6. Material differentiation per-room.
 
 Stop criterion: visual-diff subagent gives ≥ 7/10 per house with
 specific items named (not generic "looks like a house").
