@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
-const BUDGET_CONFIG_PATH = 'spec/code-quality-budgets.json';
+const BUDGET_CONFIG_PATH = 'spec/governance/code-quality-budgets.json';
 
 function parseArgs(argv) {
   const args = { json: false };

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
-const BOUNDARIES_PATH = join(REPO_ROOT, 'spec', 'architecture-boundaries.json');
+const BOUNDARIES_PATH = join(REPO_ROOT, 'spec', 'governance', 'architecture-boundaries.json');
 
 const ALLOWED = {
   '@bim-ai/design-tokens': new Set(),

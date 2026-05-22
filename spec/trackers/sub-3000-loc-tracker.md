@@ -85,7 +85,7 @@ A-territory bar after the sweep:
 - no hand-written source file above **3,000 LOC** (any kind).
 - watch-zone files do not grow above 3,000 LOC.
 - after the sweep, tighten `sourceGrowthBudget.maxLargestSourceLines` in
-  `spec/code-quality-budgets.json` to `2,950`.
+  `spec/governance/code-quality-budgets.json` to `2,950`.
 
 ## Work Packages
 
@@ -111,7 +111,7 @@ A-territory bar after the sweep:
 | SLC-2026-18   | P1       | Done    | `app/bim_ai/api/registry.py`                                 | Extract OUT-V3-02/03 + EXP-V3-01 descriptor group                     | registry.py below 3,000 LOC.                               |
 | SLC-2026-19   | P1       | Done    | `app/bim_ai/model_integrity.py`                              | Extract v1 contract/evidence emitters                                 | model_integrity below 3,000 LOC.                           |
 | SLC-2026-20   | P2       | Done    | `packages/web/src/workspace/WorkspaceRightRail.tsx`          | Extract wall command helpers                                          | WorkspaceRightRail below 3,000 LOC.                        |
-| SLC-2026-21   | P3       | Done    | `spec/code-quality-budgets.json`                             | Tighten `maxLargestSourceLines` from 3,950 to 3,000                   | Budget config enforces the new sub-3000 bar (2,950 deferred — would block commands.py at 2,996). |
+| SLC-2026-21   | P3       | Done    | `spec/governance/code-quality-budgets.json`                             | Tighten `maxLargestSourceLines` from 3,950 to 3,000                   | Budget config enforces the new sub-3000 bar (2,950 deferred — would block commands.py at 2,996). |
 
 ## Progress Log
 
@@ -301,7 +301,7 @@ A-territory bar after the sweep:
     `PlanCanvas.toolDestubs.test.ts` to also search the new module.
   - Now-unused imports trimmed from `PlanCanvas.tsx`.
   - `SLC-2026-21`: tightened `maxLargestSourceLines` in
-    `spec/code-quality-budgets.json` from `3,950` to `3,000`. The
+    `spec/governance/code-quality-budgets.json` from `3,950` to `3,000`. The
     final hop to `2,950` is deferred — `app/bim_ai/commands.py` at
     `2,996` and three other watch-zone files would block at that
     cap. They need a follow-up shrink.

@@ -15,7 +15,7 @@
  * shared impl would change wire output for evidence packs.
  *
  * So this script catalogues, doesn't migrate. The baseline at
- * spec/duplicate-helpers-baseline.json pins per-name occurrence
+ * spec/governance/duplicate-helpers-baseline.json pins per-name occurrence
  * counts. PRs may only DECREASE counts (consolidating duplicates) or
  * leave them unchanged. New duplicates are rejected.
  *
@@ -30,7 +30,7 @@ import {fileURLToPath} from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const BACKEND_ROOT = join(REPO_ROOT, 'app', 'bim_ai');
-const BASELINE_PATH = join(REPO_ROOT, 'spec', 'duplicate-helpers-baseline.json');
+const BASELINE_PATH = join(REPO_ROOT, 'spec', 'governance', 'duplicate-helpers-baseline.json');
 const THRESHOLD = 3; // count names appearing in ≥3 modules
 
 // Identifiers that are intentionally shared infrastructure and

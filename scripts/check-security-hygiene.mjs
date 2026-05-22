@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const TODAY = process.env.SECURITY_HYGIENE_TODAY ?? new Date().toISOString().slice(0, 10);
-const WAIVERS_PATH = 'spec/security-waivers.json';
+const WAIVERS_PATH = 'spec/governance/security-waivers.json';
 
 const TEXT_EXTENSIONS = new Set([
   '.cjs',
@@ -299,7 +299,7 @@ function scanHistory() {
   const findings = [];
   const excludePaths = [
     ':(exclude)scripts/check-security-hygiene.mjs',
-    ':(exclude)spec/security-waivers.json',
+    ':(exclude)spec/governance/security-waivers.json',
     ':(exclude)spec/methodology/security-dependency-policy.md',
   ];
   const result = spawnSync(

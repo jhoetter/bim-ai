@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const API_DESCRIPTOR_ROOT = join(REPO_ROOT, 'app', 'bim_ai', 'api');
 const CLI_ROOT = join(REPO_ROOT, 'packages', 'cli');
-const BASELINE_PATH = join(REPO_ROOT, 'spec', 'contract-parity-baseline.json');
+const BASELINE_PATH = join(REPO_ROOT, 'spec', 'governance', 'contract-parity-baseline.json');
 
 function readText(path) {
   return readFileSync(path, 'utf8');

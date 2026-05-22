@@ -21,9 +21,9 @@ const DEFAULT_FILE_BUDGETS = {
   mjs: { advisory: 1_500, blocking: 2_000, label: 'JavaScript module' },
   py: { advisory: 1_000, blocking: 1_500, label: 'Python module' },
 };
-const BUDGET_CONFIG_PATH = 'spec/code-quality-budgets.json';
-const SECURITY_WAIVERS_PATH = 'spec/security-waivers.json';
-const UI_QUALITY_BUDGETS_PATH = 'spec/ui-quality-budgets.json';
+const BUDGET_CONFIG_PATH = 'spec/governance/code-quality-budgets.json';
+const SECURITY_WAIVERS_PATH = 'spec/governance/security-waivers.json';
+const UI_QUALITY_BUDGETS_PATH = 'spec/governance/ui-quality-budgets.json';
 const TREND_BASELINE_PATH = 'spec/generated/code-quality-baseline.json';
 
 const GRADE_FLOORS = {
@@ -180,7 +180,7 @@ function globToRegExp(glob) {
 }
 
 function loadWaivers() {
-  const path = 'spec/quality-waivers.json';
+  const path = 'spec/governance/quality-waivers.json';
   if (!existsSync(join(REPO_ROOT, path))) {
     return { path, waivers: [], active: [], expired: [], soon: [], missing: true };
   }
@@ -624,7 +624,7 @@ function uiQualityBudgetSummary(scripts) {
 }
 
 function trackerRows() {
-  const tracker = readText('spec/code-quality-tracker.md');
+  const tracker = readText('spec/archive/code-quality-tracker.md');
   const rowRe =
     /^\| (CQ-\d{4}-\d{2}) \| (P\d)\s+\| (Open|Partial|Done|Blocked)\s+\| ([^|]+?)\s+\| ([^|]+?)\s+\|$/gm;
   const rows = [];

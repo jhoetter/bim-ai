@@ -9,7 +9,7 @@
  * file's count grows. New files contribute zero allowance, so any
  * `-> dict[str, Any]` in a new module is rejected.
  *
- * Baseline lives at spec/typed-contracts-baseline.json. Refresh it
+ * Baseline lives at spec/governance/typed-contracts-baseline.json. Refresh it
  * after a legitimate reduction with:
  *   node scripts/check-typed-contracts.mjs --update
  *
@@ -26,7 +26,7 @@ import {fileURLToPath} from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const BACKEND_ROOT = join(REPO_ROOT, 'app', 'bim_ai');
-const BASELINE_PATH = join(REPO_ROOT, 'spec', 'typed-contracts-baseline.json');
+const BASELINE_PATH = join(REPO_ROOT, 'spec', 'governance', 'typed-contracts-baseline.json');
 
 const RX_DICT_RETURN = /-> dict\[str, Any\]/g;
 const RX_DICT_BODY = /body: dict\[str, Any\]/g;

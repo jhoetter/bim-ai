@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
-const WAIVER_FILE = join(REPO_ROOT, 'spec', 'quality-waivers.json');
+const WAIVER_FILE = join(REPO_ROOT, 'spec', 'governance', 'quality-waivers.json');
 const TODAY = new Date(process.env.QUALITY_WAIVER_TODAY ?? new Date().toISOString().slice(0, 10));
 const REQUIRED_FIELDS = [
   'id',

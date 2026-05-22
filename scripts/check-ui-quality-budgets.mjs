@@ -5,7 +5,7 @@ import { dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CONFIG_PATH = 'spec/ui-quality-budgets.json';
+const CONFIG_PATH = 'spec/governance/ui-quality-budgets.json';
 
 function parseArgs(argv) {
   return {

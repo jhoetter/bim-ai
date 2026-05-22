@@ -14,7 +14,7 @@ is acceptable only when the decision is recorded as machine-readable repo state.
 
 ## Exception Policy
 
-Security exceptions live in `spec/security-waivers.json`. Each waiver must
+Security exceptions live in `spec/governance/security-waivers.json`. Each waiver must
 include an owner, reason, expiry date, tracker ID, severity, affected check,
 affected path, and replacement plan. Expired waivers or unwaived findings fail
 `pnpm security:hygiene`.
