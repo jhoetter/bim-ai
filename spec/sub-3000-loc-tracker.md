@@ -107,7 +107,7 @@ A-territory bar after the sweep:
 | SLC-2026-14   | P1       | Done    | `app/bim_ai/commands.py`                                     | Extract annotation + late command schemas                             | commands.py below 3,000 LOC.                               |
 | SLC-2026-15   | P2       | Done    | `packages/core/src/index.ts`                                 | Extract MEP / structural / annotation element variants                | core/index below 3,000 LOC.                                |
 | SLC-2026-16   | P1       | Open    | `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`    | Extract another panel cluster                                         | Workbench below 3,000 LOC.                                 |
-| SLC-2026-17   | P1       | Open    | `packages/web/src/workspace/Workspace.tsx`                   | Extract another workspace hook cluster                                | Workspace below 3,000 LOC.                                 |
+| SLC-2026-17   | P1       | Done    | `packages/web/src/workspace/Workspace.tsx`                   | Extract hotkeys / default-tab / undo-redo / array-formula helpers     | Workspace below 3,000 LOC.                                 |
 | SLC-2026-18   | P1       | Done    | `app/bim_ai/api/registry.py`                                 | Extract OUT-V3-02/03 + EXP-V3-01 descriptor group                     | registry.py below 3,000 LOC.                               |
 | SLC-2026-19   | P1       | Done    | `app/bim_ai/model_integrity.py`                              | Extract v1 contract/evidence emitters                                 | model_integrity below 3,000 LOC.                           |
 | SLC-2026-20   | P2       | Done    | `packages/web/src/workspace/WorkspaceRightRail.tsx`          | Extract wall command helpers                                          | WorkspaceRightRail below 3,000 LOC.                        |
@@ -193,6 +193,22 @@ A-territory bar after the sweep:
   the only file flagged in `blockersToNextGrade` (over the 3,950 growth
   cap). It is now at 2,909 LOC, so `pnpm quality:report` no longer
   reports a growth-cap blocker.
+- 2026-05-22: `SLC-2026-17` Done. `packages/web/src/workspace/Workspace.tsx`
+  cut from 3,292 to 2,973 LOC by extracting four cohesive helpers out of
+  the monolithic component into sibling files:
+  - `useWorkspaceHotkeys` — the global keyboard hotkey wiring (1–7 modes,
+    V/W/D, ?, Cmd/Ctrl+K, Alt+2, Cmd/Ctrl+H/W/Z plus the 400 ms
+    tool-hotkey + two-char chord palette). The `pendingChordRef` /
+    `pendingChordTimerRef` refs moved inside the hook.
+  - `useWorkspaceDefaultTab` — the after-hydrate prune + sensible-default
+    tab effect, keyed by model id.
+  - `updateArrayFormula` helper — the SCH-V3-01 catalog-array formula
+    update path; only a thin `useCallback` wrapper remains in
+    `Workspace.tsx`.
+  - `runUndoRedo` helper — the active-model undo/redo apply + activity
+    refresh + 409-conflict surface.
+  Now-unused `modeForHotkey` and `cycleActive` imports are dropped.
+  `pnpm typecheck` is clean across all packages.
 - 2026-05-22: `SLC-2026-09` Done. `scripts/audit-ui-mcp-parity.mjs` cut from
   3,622 to 2,306 LOC by extracting the entire M3/M4 workstream-builder
   cluster (`buildM3Wave2`, `buildM3Wave3`, `buildM4Wave1`, plus the

@@ -44,7 +44,6 @@ import {
   type SnapSettings,
   type ToggleableSnapKind,
 } from '../plan/snapSettings';
-import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import { AppShell, RibbonBar, ViewContextStatusPanel, type WorkspaceMode } from './shell';
 import { LensDropdown } from './shell/LensDropdown';
@@ -56,7 +55,6 @@ import {
   activateTab,
   closeInactiveTabs,
   closeTab,
-  cycleActive,
   openTab,
   snapshotViewport,
   TAB_KIND_LABEL,
@@ -175,6 +173,10 @@ import {
   generateRoofFromMass,
   generateCurtainWallsFromMass,
 } from '../tools/massGenerateBim';
+import { runUndoRedo } from './runUndoRedo';
+import { updateArrayFormula } from './updateArrayFormula';
+import { useWorkspaceDefaultTab } from './useWorkspaceDefaultTab';
+import { useWorkspaceHotkeys } from './useWorkspaceHotkeys';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -489,8 +491,6 @@ export function Workspace(): JSX.Element {
   const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
   const previousSelectedIdRef = useRef<string | undefined>(selectedId);
   const budgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingChordRef = useRef<string | null>(null);
-  const pendingChordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [compositionState, setCompositionState] = useState<WorkspaceCompositionState>(() =>
     readPersistedCompositions(
       readPersistedTabs() ?? EMPTY_TABS,
@@ -989,50 +989,18 @@ export function Workspace(): JSX.Element {
 
   /* ── Undo / Redo ────────────────────────────────────────────────────── */
   const handleUndoRedo = useCallback(
-    async (isUndo: boolean): Promise<void> => {
-      const mid = useBimStore.getState().modelId;
-      const uid = useBimStore.getState().userId;
-      if (!mid) return;
-      setPendingCommandCount((count) => count + 1);
-      try {
-        const r = isUndo ? await undoModel(mid, uid) : await redoModel(mid, uid);
-        if (r.revision !== undefined) {
-          hydrateFromSnapshot({
-            modelId: mid,
-            revision: r.revision,
-            elements: r.elements ?? {},
-            violations: (r.violations ?? []) as Violation[],
-          });
-          syncLastLevelElevationPropagationFromApplyResponse(
-            r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
-          );
-          setUndoDepth((d) => Math.max(0, d + (isUndo ? -1 : 1)));
-          setRedoDepth((d) => Math.max(0, d + (isUndo ? 1 : -1)));
-        }
-        // Refresh activity after undo/redo
-        fetchActivity(mid)
-          .then((a) => {
-            const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
-              id: Number(ev.id),
-              userId: String(ev.userId ?? ev.user_id ?? ''),
-              revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
-              createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
-              commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
-            }));
-            setActivity(evs);
-          })
-          .catch((err) => log.error('loadSnapshot', 'fetchActivity failed', err));
-        setCollaborationConflictQueue(null);
-      } catch (err) {
-        if (err instanceof ApiHttpError && err.status === 409) {
-          setCollaborationConflictQueue(buildCollaborationConflictQueueV1(err.detail));
-        } else {
-          setCollaborationConflictQueue(null);
-        }
-      } finally {
-        setPendingCommandCount((count) => Math.max(0, count - 1));
-      }
-    },
+    (isUndo: boolean) =>
+      runUndoRedo(
+        {
+          hydrateFromSnapshot,
+          setPendingCommandCount,
+          setUndoDepth,
+          setRedoDepth,
+          setActivity,
+          setCollaborationConflictQueue,
+        },
+        isUndo,
+      ),
     [hydrateFromSnapshot, setActivity],
   );
 
@@ -1046,86 +1014,17 @@ export function Workspace(): JSX.Element {
     [onSemanticCommand],
   );
 
-  // After a model has hydrated, prune any restored tabs whose targets
-  // no longer exist (e.g. a sheet deleted between sessions). If the
-  // pruned set is empty, open a sensible default view for this model.
-  // This is keyed by model id, not by app lifetime, because local seed
-  // workflows often switch between disposable evidence models and the
-  // final seed model in one browser session.
-  const defaultOpenedModelIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!modelId || modelId === 'empty') {
-      defaultOpenedModelIdRef.current = null;
-      return;
-    }
-    if (defaultOpenedModelIdRef.current === modelId) return;
-    const elements = Object.values(elementsById) as Element[];
-    if (elements.length === 0) return;
-    defaultOpenedModelIdRef.current = modelId;
-    const preferredViewpoint =
-      elements.find((e): e is Extract<Element, { kind: 'viewpoint' }> => {
-        if (e.kind !== 'viewpoint') return false;
-        const id = e.id.toLowerCase();
-        const name = String(e.name ?? '').toLowerCase();
-        return id === 'main_front_left' || name.includes('main front') || name.includes('front');
-      }) ??
-      elements.find((e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint');
-    const preferredPlanView = elements.find(
-      (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
-    );
-    const levels = elements
-      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
-      .sort((a, b) => a.elevationMm - b.elevationMm);
-    const targetLevel =
-      levels.find((level) => level.id === activeLevelId) ?? levels[0] ?? undefined;
-    const defaultTab: Omit<ViewTab, 'id'> | null = preferredViewpoint
-      ? { kind: '3d', targetId: preferredViewpoint.id, label: `3D · ${preferredViewpoint.name}` }
-      : preferredPlanView
-        ? {
-            kind: 'plan',
-            targetId: preferredPlanView.id,
-            label: `Plan view · ${preferredPlanView.name}`,
-          }
-        : targetLevel
-          ? { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }
-          : null;
-    if (!defaultTab) return;
-    setTabsState((s) => {
-      const pruned = pruneTabsAgainstElements(s, elementsById);
-      if (pruned.tabs.length > 0) return pruned;
-      return openTab(pruned, defaultTab);
-    });
-    if (defaultTab.kind === '3d') {
-      setMode('3d');
-      setViewerMode('orbit_3d');
-      if (preferredViewpoint?.mode === 'orbit_3d' && preferredViewpoint.camera) {
-        setOrbitCameraFromViewpointMm({
-          position: preferredViewpoint.camera.position,
-          target: preferredViewpoint.camera.target,
-          up: preferredViewpoint.camera.up,
-        });
-        useBimStore.getState().setActiveViewpointId(preferredViewpoint.id);
-      }
-    } else if (defaultTab.kind === 'plan') {
-      setMode('plan');
-      setViewerMode('plan_canvas');
-      if (preferredPlanView) {
-        activatePlanView(preferredPlanView.id);
-      } else if (targetLevel) {
-        activatePlanView(undefined);
-        setActiveLevelId(targetLevel.id);
-      }
-    }
-  }, [
-    activatePlanView,
-    activeLevelId,
-    elementsById,
+  useWorkspaceDefaultTab({
     modelId,
-    setActiveLevelId,
+    elementsById,
+    activeLevelId,
+    setTabsState,
     setMode,
-    setOrbitCameraFromViewpointMm,
     setViewerMode,
-  ]);
+    activatePlanView,
+    setActiveLevelId,
+    setOrbitCameraFromViewpointMm,
+  });
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
@@ -1178,179 +1077,21 @@ export function Workspace(): JSX.Element {
   }, [effectiveMode, open3dViewControls, openVVDialog]);
 
   /* ── Global hotkeys: 1–7 modes, ?, V/W/D/M/S/etc tools ─────────────── */
-  useEffect(() => {
-    const onKey = (event: globalThis.KeyboardEvent): void => {
-      const target = event.target;
-      if (target instanceof globalThis.HTMLElement) {
-        const tag = target.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-        if (target.isContentEditable) return;
-        if (target.closest('[role="dialog"]')) return;
-      }
-      if (
-        (event.key === 'Delete' || event.key === 'Backspace') &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey &&
-        effectiveMode !== 'plan'
-      ) {
-        if (deleteSelectedElements()) event.preventDefault();
-        return;
-      }
-      if (
-        event.key === 'Escape' &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey &&
-        !event.shiftKey
-      ) {
-        // UX: Escape always returns authoring to the default Select cursor.
-        setFocusedPanePlanTool('select');
-      }
-      const fromMode = modeForHotkey(event.key);
-      if (fromMode) {
-        event.preventDefault();
-        handleModeChange(fromMode as WorkspaceMode);
-        return;
-      }
-      if (event.key === '?') {
-        event.preventDefault();
-        setCheatsheetOpen((v) => !v);
-        return;
-      }
-      if ((event.key === 'k' || event.key === 'K') && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setPaletteOpen((v) => !v);
-        return;
-      }
-      // Alt+2 — asset library overlay (AST-V3-01, Rayon shortcut).
-      if (event.key === '2' && event.altKey && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        setLibraryOpen((v) => !v);
-        return;
-      }
-      // Cmd+H — activity-stream drawer (CHR-V3-05).
-      if ((event.key === 'h' || event.key === 'H') && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        toggleActivityDrawer();
-        return;
-      }
-      // Tab cycling — Ctrl/⌘+Tab forward, Ctrl/⌘+Shift+Tab back.
-      if (event.key === 'Tab' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setTabsState((s) => cycleActive(s, event.shiftKey ? 'backward' : 'forward'));
-        return;
-      }
-      // Close active tab — Ctrl/⌘+W.
-      if ((event.key === 'w' || event.key === 'W') && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setTabsState((s) => (s.activeId ? closeTab(s, s.activeId) : s));
-        return;
-      }
-      // Undo/Redo — Ctrl/⌘+Z / Ctrl/⌘+Shift+Z.
-      if ((event.key === 'z' || event.key === 'Z') && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleUndoRedo(event.shiftKey ? false : true);
-        return;
-      }
-      // V opens active-view visibility controls: plan VV/VG or 3D View Controls.
-      if (event.key === 'v' || event.key === 'V') {
-        if (!event.metaKey && !event.ctrlKey && !event.altKey) {
-          event.preventDefault();
-          openActiveVisibilityControls();
-          return;
-        }
-      }
-      if (event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-      // Ortho snap hold on Shift
-      if (event.shiftKey) setOrthoSnapHold(true);
-      // Tool activation — hotkeys + two-char shortcut chords (400 ms window).
-      const upper = event.key.length === 1 ? event.key.toUpperCase() : event.key;
-      const hotkeyLabel = event.shiftKey ? `Shift+${upper}` : upper;
-      const tools = Object.values(toolRegistry) as ToolDefinition[];
-
-      // Complete a pending chord if one is in flight
-      if (pendingChordRef.current !== null && !event.shiftKey) {
-        const chord = pendingChordRef.current + upper;
-        clearTimeout(pendingChordTimerRef.current ?? undefined);
-        pendingChordRef.current = null;
-        pendingChordTimerRef.current = null;
-        const chordTool = tools.find((t) => t.shortcut === chord);
-        if (chordTool) {
-          const tool = canonicalPlanToolForMode(chordTool.id, effectiveMode);
-          if (tool) {
-            event.preventDefault();
-            setFocusedPanePlanTool(tool);
-          }
-        }
-        return;
-      }
-
-      const hotkeyTool = tools.find((t) => t.hotkey === hotkeyLabel);
-      // Whether pressing this key could start a two-char shortcut chord
-      const isChordStart =
-        !event.shiftKey && tools.some((t) => t.shortcut?.length === 2 && t.shortcut[0] === upper);
-
-      if (hotkeyTool && isChordStart) {
-        // Key matches a hotkey AND starts a chord — defer 400 ms to see if chord completes
-        event.preventDefault();
-        pendingChordRef.current = upper;
-        pendingChordTimerRef.current = setTimeout(() => {
-          pendingChordRef.current = null;
-          pendingChordTimerRef.current = null;
-          const tool = canonicalPlanToolForMode(hotkeyTool.id, effectiveMode);
-          if (tool) setFocusedPanePlanTool(tool);
-        }, 400);
-        return;
-      }
-
-      if (hotkeyTool) {
-        const tool = canonicalPlanToolForMode(hotkeyTool.id, effectiveMode);
-        if (tool) {
-          event.preventDefault();
-          setFocusedPanePlanTool(tool);
-        }
-        return;
-      }
-
-      // No hotkey match — key may still be the start of a chord-only shortcut
-      if (isChordStart) {
-        event.preventDefault();
-        pendingChordRef.current = upper;
-        pendingChordTimerRef.current = setTimeout(() => {
-          pendingChordRef.current = null;
-          pendingChordTimerRef.current = null;
-        }, 400);
-      }
-    };
-    const onKeyUp = (event: globalThis.KeyboardEvent): void => {
-      if (!event.shiftKey) setOrthoSnapHold(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('keyup', onKeyUp);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('keyup', onKeyUp);
-      if (pendingChordTimerRef.current !== null) {
-        clearTimeout(pendingChordTimerRef.current);
-        pendingChordRef.current = null;
-        pendingChordTimerRef.current = null;
-      }
-    };
-  }, [
+  useWorkspaceHotkeys({
+    effectiveMode,
+    toolRegistry,
+    deleteSelectedElements,
+    setFocusedPanePlanTool,
     handleModeChange,
     handleUndoRedo,
-    setFocusedPanePlanTool,
-    deleteSelectedElements,
-    setOrthoSnapHold,
-    effectiveMode,
     openActiveVisibilityControls,
-    toolRegistry,
     toggleActivityDrawer,
+    setOrthoSnapHold,
+    setCheatsheetOpen,
+    setPaletteOpen,
     setLibraryOpen,
-  ]);
+    setTabsState,
+  });
 
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
 
@@ -2075,79 +1816,19 @@ export function Workspace(): JSX.Element {
   );
 
   const handleUpdateArrayFormula = useCallback(
-    async (update: FamilyLibraryArrayFormulaUpdate) => {
-      if (!modelId) return;
-      if (update.target.kind === 'asset') {
-        const asset = elementsById[update.target.assetId];
-        if (asset?.kind !== 'asset_library_entry') return;
-        const paramSchema = (asset.paramSchema ?? []).map((param) =>
-          param.key === update.paramKey
-            ? {
-                ...param,
-                constraints: {
-                  ...((param.constraints && typeof param.constraints === 'object'
-                    ? param.constraints
-                    : {}) as Record<string, unknown>),
-                  formula: update.formula,
-                },
-              }
-            : param,
-        );
-        await onSemanticCommand({
-          type: 'updateElementProperty',
-          elementId: asset.id,
-          key: 'paramSchema',
-          value: paramSchema,
-        });
-        return;
-      }
-
-      const placement = update.target.placement;
-      const updatedPlacement: ExternalCatalogPlacement = {
-        ...placement,
-        family: {
-          ...placement.family,
-          params: (placement.family.params ?? []).map((param) =>
-            param.key === update.paramKey ? { ...param, formula: update.formula } : param,
-          ),
+    (update: FamilyLibraryArrayFormulaUpdate) =>
+      updateArrayFormula(
+        {
+          modelId,
+          elementsById,
+          onSemanticCommand,
+          hydrateFromSnapshot,
+          setUndoDepth,
+          setRedoDepth,
+          setSeedError,
         },
-      };
-      const loaded = findLoadedCatalogFamilyType(elementsById, placement);
-      const plan = planCatalogFamilyLoad(updatedPlacement, elementsById, {
-        overwriteOption: loaded ? 'keep-existing-values' : 'overwrite-parameter-values',
-      });
-      const catalogArrayFormulaParams = {
-        ...((loaded?.parameters.catalogArrayFormulaParams &&
-        typeof loaded.parameters.catalogArrayFormulaParams === 'object'
-          ? loaded.parameters.catalogArrayFormulaParams
-          : {}) as Record<string, unknown>),
-        [update.paramKey]: update.formula,
-      };
-      const command = {
-        ...plan.command,
-        parameters: {
-          ...plan.command.parameters,
-          [`${update.paramKey}Formula`]: update.formula,
-          catalogArrayFormulaParams,
-        },
-      };
-      try {
-        const r = await applyCommandBundle(modelId, [command], { userId: 'component-tool' });
-        if (r.revision !== undefined) {
-          hydrateFromSnapshot({
-            modelId,
-            revision: r.revision,
-            elements: r.elements ?? {},
-            violations: (r.violations ?? []) as Violation[],
-          });
-          setUndoDepth((d) => d + 1);
-          setRedoDepth(0);
-        }
-      } catch (err) {
-        log.error('component-tool', 'array formula update failed', err);
-        setSeedError(err instanceof Error ? err.message : 'Array formula update failed');
-      }
-    },
+        update,
+      ),
     [elementsById, hydrateFromSnapshot, modelId, onSemanticCommand, setSeedError],
   );
 
