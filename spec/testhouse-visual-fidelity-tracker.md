@@ -5,6 +5,152 @@ BIM models actually look like the source PDFs" effort. Picks up
 where `spec/testhouse-hybrid-reverse-bim-tracker.md` left off after
 iter-2 acceptance gates passed.
 
+## Session resume / handoff (2026-05-22 — post iter-11)
+
+If you are picking this up after a context reset or a PC reboot, read
+this section first. The full per-iteration history is below, but the
+operational facts you need to resume work without breaking state are
+here.
+
+**Current state of the work.** Iter-10 (pre-flight pipeline) and iter-11
+(subagent-graded visual scoring) have both landed. Iter-11 surfaced four
+new methodology learnings (#12–#15) and re-ranked the visual-fidelity
+gap inventory: the single biggest unblocked lift is **iter-12 typology
+rewrites**, because alpha and gamma have been modeled as the wrong
+building shape for every iteration so far. Next-iteration plan in this
+file is up-to-date; honest scores are alpha 3/10, beta 3/10, gamma 5/10.
+
+**Current live model IDs (iter-10 state in postgres, persists across docker restart):**
+
+- alpha — `2378f078-6ee2-4c45-956c-d60a9973b3bb`
+- beta  — `f2094774-4fbd-4954-937d-ef35c8fe7d76`
+- gamma — `99fa79aa-a31b-4c9e-89a8-b55ae25b7552`
+
+These are also persisted in `tmp/reverse-bim/house-{alpha,beta,gamma}/iter-5-canonical-model.json`.
+View URLs: `http://127.0.0.1:22000/?modelId=<id>` (default 3D) or
+`http://127.0.0.1:22000/?modelId=<id>&activeElevationView=elevation-{east,north,south,west}`
+(orthographic elevations). The `activeElevationView` URL param was
+re-added in iter-11 — see `packages/web/src/workspace/Workspace.tsx`.
+
+**How to bring the dev stack back up after a reboot.**
+
+```sh
+# 1. Start docker services (volumes persist across reboot)
+docker start bimai-postgres bimai-redis bimai-minio
+
+# 2. DO NOT RUN `make dev` OR `make dev-forwarded` — they call seed.py
+# which deletes everything under SEED_PROJECT_ID (892ee9f7-…), including
+# all three testhouse models. The iter-10 state would be wiped.
+# Instead, run the API + web targets directly:
+nohup make dev-api WEB_PORT=22000 API_PORT=28500 BROWSER_API_PORT=28500 > /tmp/bimai-api.log 2>&1 &
+nohup make dev-web WEB_PORT=22000 API_PORT=28500 BROWSER_API_PORT=28500 > /tmp/bimai-web.log 2>&1 &
+
+# 3. Verify ports are bound
+ss -tlnp | grep -E ':22000 |:28500 '
+
+# 4. Sanity-check a model is alive
+curl -s -o /dev/null -w "%{http_code}\n" "http://127.0.0.1:28500/api/models/2378f078-6ee2-4c45-956c-d60a9973b3bb/diff"
+# expect: 200
+```
+
+**If `make dev` was already run by mistake and the testhouses are gone,**
+rebuild from clean DB:
+
+```sh
+python3 scripts/testhouse_iter5_canonical_rebuild.py \
+  && python3 scripts/testhouse_iter7_roof_upgrade.py \
+  && python3 scripts/testhouse_iter8_site.py \
+  && python3 scripts/testhouse_iter8b_assign_types.py \
+  && python3 scripts/testhouse_iter10_apply.py
+```
+
+Model IDs will change. Update the manifests in
+`tmp/reverse-bim/house-*/iter-5-canonical-model.json` and capture the
+new IDs at the top of this section.
+
+**Re-running the iter-11 capture pipeline.**
+
+```sh
+node scripts/testhouse_iter11_capture.mjs
+# outputs: tmp/reverse-bim/iter-11-captures/{house}-{view}-{crop,full}.png
+# plus capture-summary.json
+```
+
+The script needs ports 22000 + 28500 bound (the dev stack must be up)
+and reads model IDs from the iter-5-canonical-model.json manifests.
+
+**Local dirty state to know about.** `.githooks/{commit-msg,post-commit,
+post-rewrite,pre-push,prepare-commit-msg}` are modified locally but NOT
+committed — they remove the `BIM_AI_ENABLE_ENTIRE_POST_COMMIT=1` env-var
+gate from the post-commit hook. Per the auto-memory note, that gate is
+intentionally opt-in (commit `f9e37eac` "Make checkpoint git hooks opt-in").
+Don't commit these modifications without re-checking the design intent
+with the user.
+
+**Known-broken: Entire checkpoint trailers.** `entire` CLI can't unlock
+gnome-keyring over SSH on this remote Linux box. Commits since
+2026-05-22 on this machine have no `Entire-Checkpoint:` trailer. Not a
+regression — pre-existing infrastructure issue documented in the user's
+auto-memory.
+
+**iter-11 artifacts on disk (not git-tracked because `tmp/` is gitignored):**
+
+- `tmp/reverse-bim/iter-11-captures/` — 30 PNGs (3 houses × 5 views × 2 framings) + capture-summary.json
+- `tmp/reverse-bim/iter-11-scoring/{alpha,beta,gamma}-subagent-report.md` — full visual-diff reports
+
+If the disk is lost, these can be regenerated: capture script is deterministic given iter-10 DB state; subagent dispatches are repeatable.
+
+**Concrete iter-12 entry points (in execution order):**
+
+1. **Title-block parser** — new script `scripts/testhouse_iter12_titleblock_parse.py`
+   that reads each house's `source-classifications.json` and runs OCR (or just
+   reads the existing rendered first page) to extract the title block text.
+   Emit `tmp/reverse-bim/house-{name}/building-class.json` with shape
+   `{building_class, auxiliary_volumes, raw_title_block_text, source_page}`.
+   Expected outputs: alpha = `zweifamilien_doppelhaus`, beta = `einfamilienhaus`,
+   gamma = `doppelhaushälfte` with `auxiliary_volumes: ["carport", "praxis_wing"]`.
+
+2. **alpha Doppelhaus expansion** — new script `scripts/testhouse_iter12_alpha_doppelhaus.py`
+   that loads the current alpha model state from the API, mirrors the east-half
+   perimeter walls + roof across a central party-wall axis at x≈9500 mm (verify
+   exact value by reading the source EG plan first), and emits one createWallChain
+   + one createRoof bundle. Apply through `testhouse_iter10_apply.py`'s pipeline
+   helpers. Target footprint ~19000×6700 mm.
+
+3. **gamma cross-gable + carport + party wall** — `scripts/testhouse_iter12_gamma_typology.py`.
+   Three sub-bundles: (a) Praxis cross-wing as `createMassBox` + perpendicular
+   `createRoof`; (b) carport as `createMassBox` with flat roof, open sides; (c)
+   party-wall stub on the opposite gable as `createWall` with `allowDetached: true`.
+   See gamma subagent report for the source page references.
+
+4. **beta garage rewrite** — `scripts/testhouse_iter12_beta_garage.py`. Rewrite the
+   iter-9 garage createWallChain as a 3-segment chain sharing the house east wall
+   (skip `garage-wall-w`, start from `garage-wall-n` at the house east wall
+   end-point), add `allowDetached: true` on the bundle's wall items per the
+   quick-fix command in the iter-10 violations log, set heights to 2700 mm,
+   add `createFloor` for the flat slab roof at +2700 mm. The iter-10
+   `tmp/reverse-bim/iter-10-beta-apply.json` perCommand[4] has the full violation
+   detail to work from.
+
+5. **Re-capture + re-score** — run iter-11 capture script, dispatch the same 3
+   subagents (prompts in `tmp/reverse-bim/iter-11-scoring/` style — keep them
+   stable so scores are comparable), update tracker.
+
+**Methodology guardrails the subagents asked for in iter-11 (open work):**
+
+- Methodology #12 needs the title-block parser (iter-12 step 1 above).
+- Methodology #13 needs a capture content-readiness gate — add to
+  `testhouse_iter11_capture.mjs`: count non-background pixels in the
+  cropped canvas, fail if < 15%.
+- Methodology #14 needs a post-apply visible_rate check — query the
+  snapshot for bundle outputs, assert they fall within the capture frustum.
+- Methodology #15 needs a one-shot `srcdoc-page-index.json` builder; can
+  bolt onto the iter-12 title-block parser since both read the source pages.
+
+**Open methodology questions** (still — not yet answered):
+the "Open methodology questions" section at the very bottom of this file
+lists what's still up in the air. Read it before designing iter-12.
+
 ## Methodology recap
 
 The orchestrating LLM agent owns one persistent loop:
