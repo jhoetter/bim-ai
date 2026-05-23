@@ -9,6 +9,11 @@ from typing import Any
 from fastapi import WebSocket
 
 BACKPRESSURE_THRESHOLD = 8
+# PERF-E06: per-send age cap. If a single ws.send_json await stays in flight
+# longer than this, the socket is treated as stuck (TCP backed up, client
+# wedged, etc.) and force-closed on the next broadcast attempt. Depth-based
+# detection alone misses the case where exactly one send hangs forever.
+SEND_AGE_LIMIT_SECONDS = 5.0
 
 
 class Hub:
@@ -25,6 +30,9 @@ class Hub:
         self._buffer: dict[str, deque[tuple[int, float, dict[str, Any]]]] = {}
         # Per-socket in-flight send depth (keyed on id(websocket))
         self._send_queue_depth: dict[int, int] = {}
+        # PERF-E06: timestamp when the oldest still-in-flight send started.
+        # Cleared when depth returns to 0. Used to detect wedged sockets.
+        self._send_oldest_started_at: dict[int, float] = {}
 
     @staticmethod
     def _model_key(model_id: Any) -> str:
@@ -40,6 +48,7 @@ class Hub:
     def unregister(self, websocket: WebSocket) -> None:
         wsid = id(websocket)
         self._send_queue_depth.pop(wsid, None)
+        self._send_oldest_started_at.pop(wsid, None)
         tup = self._socket_meta.pop(wsid, None)
         if not tup:
             return
@@ -121,6 +130,9 @@ class Hub:
         # slow socket cannot stall the others. Depth-based backpressure still
         # gates each socket synchronously before the send awaits — the
         # check + increment is atomic within a single _send_one frame.
+        # PERF-E06: each socket also has an age cap (SEND_AGE_LIMIT_SECONDS)
+        # — a single hung send no longer pins depth at 1 forever and silently
+        # blocks all subsequent broadcasts for that socket.
         model_id = self._model_key(model_id)
         room = self._rooms.get(model_id)
         if not room:
@@ -141,6 +153,18 @@ class Hub:
                 except Exception:
                     pass
                 return ws
+            oldest_started = self._send_oldest_started_at.get(wsid)
+            now = time.monotonic()
+            if oldest_started is not None and now - oldest_started > SEND_AGE_LIMIT_SECONDS:
+                # Some prior send has been awaiting for too long; treat the
+                # socket as wedged and disconnect it.
+                try:
+                    await ws.close(code=1011)
+                except Exception:
+                    pass
+                return ws
+            if depth == 0:
+                self._send_oldest_started_at[wsid] = now
             self._send_queue_depth[wsid] = depth + 1
             try:
                 await ws.send_json(payload)
@@ -148,7 +172,10 @@ class Hub:
             except Exception:
                 return ws
             finally:
-                self._send_queue_depth[wsid] = max(0, self._send_queue_depth.get(wsid, 1) - 1)
+                new_depth = max(0, self._send_queue_depth.get(wsid, 1) - 1)
+                self._send_queue_depth[wsid] = new_depth
+                if new_depth == 0:
+                    self._send_oldest_started_at.pop(wsid, None)
 
         results = await asyncio.gather(*(_send_one(ws) for ws in sockets))
 

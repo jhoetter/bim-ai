@@ -245,6 +245,51 @@ async def test_backpressure_disconnect() -> None:
         hub_module.BACKPRESSURE_THRESHOLD = original_threshold
 
 
+async def test_age_based_backpressure_closes_wedged_socket() -> None:
+    """PERF-E06: if a single send awaits longer than SEND_AGE_LIMIT_SECONDS,
+    the next broadcast attempt for that socket force-closes it. Depth-based
+    detection alone would miss this — depth stays at 1 forever."""
+    import bim_ai.hub as hub_module
+
+    original_limit = hub_module.SEND_AGE_LIMIT_SECONDS
+    hub_module.SEND_AGE_LIMIT_SECONDS = 0.02
+    try:
+        hub = Hub()
+        model_id = "model-age-backpressure"
+
+        # Wedged socket: send_json never returns until the test ends.
+        block = asyncio.Event()
+
+        class _HungWS(_MockWS):
+            async def send_json(self, data: dict[str, Any]) -> None:
+                await block.wait()
+                self.sent.append(data)
+
+        hung_ws: Any = _HungWS()
+        hub.subscribe(model_id, hung_ws)
+
+        # Kick off a broadcast that will get stuck — don't await yet.
+        first = asyncio.create_task(
+            hub.broadcast_json(model_id, {"type": "delta", "n": 1}),
+        )
+        # Let the send start (depth → 1, oldest_started recorded).
+        await asyncio.sleep(0.05)
+
+        # Now the age check should disconnect the wedged socket on the next
+        # broadcast attempt.
+        await hub.broadcast_json(model_id, {"type": "delta", "n": 2})
+        assert hung_ws.close_code == 1011
+        assert str(model_id) not in hub._rooms or hung_ws not in hub._rooms.get(
+            str(model_id), set()
+        )
+
+        # Let the hung send unblock so the first broadcast can finish cleanly.
+        block.set()
+        await first
+    finally:
+        hub_module.SEND_AGE_LIMIT_SECONDS = original_limit
+
+
 async def test_broadcast_json_fans_out_concurrently() -> None:
     """PERF audit #10: broadcast_json must send to clients concurrently so a
     slow client does not stall fast ones. Three slow sockets (50 ms each) +
