@@ -1,0 +1,1767 @@
+{
+  "format": "bimAiThreeAllocationsInventory_v1",
+  "scannedRoots": ["packages/web/src/viewport", "packages/web/src/Viewport.tsx"],
+  "countsByPattern": {
+    "material_alloc": 92,
+    "geometry_alloc": 116,
+    "texture_alloc": 9
+  },
+  "countsByKind": {
+    "BufferGeometry": 41,
+    "LineBasicMaterial": 18,
+    "MeshBasicMaterial": 23,
+    "BoxGeometry": 57,
+    "MeshStandardMaterial": 42,
+    "SphereGeometry": 3,
+    "SpriteMaterial": 6,
+    "PlaneGeometry": 9,
+    "CanvasTexture": 5,
+    "LineDashedMaterial": 2,
+    "PointsMaterial": 1,
+    "CylinderGeometry": 3,
+    "Texture": 3,
+    "RingGeometry": 1,
+    "CircleGeometry": 1,
+    "ConeGeometry": 1,
+    "DataTexture": 1
+  },
+  "totalCount": 217,
+  "matches": [
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/Viewport.tsx",
+      "line": 747,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/Viewport.tsx",
+      "line": 1294,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/Viewport.tsx",
+      "line": 1308,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/beamProfileMesh.ts",
+      "line": 151,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/beamProfileMesh.ts",
+      "line": 162,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/buildFloorEdgeProfile.ts",
+      "line": 27,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/csgWallBaseGeometry.ts",
+      "line": 16,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/csgWallBaseGeometry.ts",
+      "line": 36,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/csgWorker.ts",
+      "line": 98,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/csgWorker.ts",
+      "line": 128,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/csgWorker.ts",
+      "line": 143,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 128,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 137,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 154,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 165,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 187,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 198,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 248,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 274,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 282,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 300,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 309,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 317,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 330,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 339,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 347,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 394,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 442,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/dormerRoofCut.ts",
+      "line": 38,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/dormerRoofCut.ts",
+      "line": 99,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "SphereGeometry",
+      "file": "packages/web/src/viewport/grip3dRenderer.ts",
+      "line": 70,
+      "snippet": "new THREE.SphereGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/grip3dRenderer.ts",
+      "line": 75,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/grip3dRenderer.ts",
+      "line": 98,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/grip3dRenderer.ts",
+      "line": 150,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/grip3dRenderer.ts",
+      "line": 156,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 105,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 111,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 124,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 130,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 159,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 160,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 181,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "CanvasTexture",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 222,
+      "snippet": "new THREE.CanvasTexture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 224,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.balcony.ts",
+      "line": 40,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.balcony.ts",
+      "line": 45,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.balcony.ts",
+      "line": 52,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.balcony.ts",
+      "line": 65,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.beamSystem.ts",
+      "line": 93,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.brace.ts",
+      "line": 27,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.coneRoof.ts",
+      "line": 15,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.coneRoof.ts",
+      "line": 33,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.coneRoof.ts",
+      "line": 52,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyBlend.ts",
+      "line": 18,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyBlend.ts",
+      "line": 19,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyBlend.ts",
+      "line": 129,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyBlend.ts",
+      "line": 133,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 78,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 135,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 135,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 149,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 161,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 168,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 169,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 184,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 197,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 198,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 219,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "CanvasTexture",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 245,
+      "snippet": "new THREE.CanvasTexture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineDashedMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 272,
+      "snippet": "new THREE.LineDashedMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 274,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familyDetail.ts",
+      "line": 277,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familySweep.ts",
+      "line": 14,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familySweep.ts",
+      "line": 15,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familySweep.ts",
+      "line": 45,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.familySweptBlend.ts",
+      "line": 52,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.familySweptBlend.ts",
+      "line": 57,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.gradedRegion.ts",
+      "line": 22,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.layeredWall.ts",
+      "line": 51,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.layeredWall.ts",
+      "line": 59,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.layeredWall.ts",
+      "line": 233,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.mass.ts",
+      "line": 65,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.massBox.ts",
+      "line": 13,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.multiRunStair.ts",
+      "line": 160,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.multiRunStair.ts",
+      "line": 437,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 55,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 109,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 139,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 168,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "PointsMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 173,
+      "snippet": "new THREE.PointsMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 221,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.osmContext.ts",
+      "line": 261,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 89,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 107,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 113,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 125,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 181,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ramp.ts",
+      "line": 186,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 21,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 99,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 106,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 109,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 112,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 118,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "CylinderGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.structural.ts",
+      "line": 143,
+      "snippet": "new THREE.CylinderGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.terrainPad.ts",
+      "line": 17,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 676,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 803,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 824,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 982,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 983,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1117,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1136,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1179,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1187,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1250,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1263,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1381,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1384,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1514,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1655,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1861,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1888,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1893,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 1923,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2031,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2052,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2062,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2110,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2131,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2240,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2243,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2302,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2319,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2341,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2352,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2363,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2426,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2558,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2602,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2641,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "Texture",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2661,
+      "snippet": "new THREE.Texture"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2719,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "Texture",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2723,
+      "snippet": "new THREE.Texture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2724,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2732,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2846,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.wallProfile.ts",
+      "line": 34,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/meshBuilders.windowFrame.ts",
+      "line": 39,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/meshBuilders.windowFrame.ts",
+      "line": 54,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 23,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 24,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "SphereGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 39,
+      "snippet": "new THREE.SphereGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 40,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "RingGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 55,
+      "snippet": "new THREE.RingGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 57,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 66,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 72,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 79,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 109,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/originMarkers.ts",
+      "line": 110,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 225,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 234,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 254,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "CircleGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 274,
+      "snippet": "new THREE.CircleGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 293,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 850,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 856,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 872,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "CylinderGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 891,
+      "snippet": "new THREE.CylinderGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "ConeGeometry",
+      "file": "packages/web/src/viewport/placedAssetRendering.ts",
+      "line": 909,
+      "snippet": "new THREE.ConeGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 175,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 181,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 202,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineDashedMaterial",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 206,
+      "snippet": "new THREE.LineDashedMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 230,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "CanvasTexture",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 294,
+      "snippet": "new THREE.CanvasTexture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 297,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "DataTexture",
+      "file": "packages/web/src/viewport/proceduralMaterials.ts",
+      "line": 71,
+      "snippet": "new THREE.DataTexture"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/referencePlaneMarker.ts",
+      "line": 60,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/referencePlaneMarker.ts",
+      "line": 61,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/referencePlaneMarker.ts",
+      "line": 87,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 211,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 407,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 643,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 704,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 833,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/roofGeometry.ts",
+      "line": 961,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/sceneHelpers.ts",
+      "line": 81,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/sceneUtils.ts",
+      "line": 148,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/sceneUtils.ts",
+      "line": 149,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/sweepMesh.ts",
+      "line": 310,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/text3dGeometry.ts",
+      "line": 81,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "Texture",
+      "file": "packages/web/src/viewport/threeMaterialFactory.ts",
+      "line": 157,
+      "snippet": "new THREE.Texture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshStandardMaterial",
+      "file": "packages/web/src/viewport/threeMaterialFactory.ts",
+      "line": 299,
+      "snippet": "new THREE.MeshStandardMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1492,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1510,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BufferGeometry",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1794,
+      "snippet": "new THREE.BufferGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1795,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1814,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1830,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "CanvasTexture",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1984,
+      "snippet": "new THREE.CanvasTexture"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "SpriteMaterial",
+      "file": "packages/web/src/viewport/useViewportSceneEffects.ts",
+      "line": 1989,
+      "snippet": "new THREE.SpriteMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "PlaneGeometry",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 591,
+      "snippet": "new THREE.PlaneGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 595,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 605,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 622,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 638,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "LineBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 644,
+      "snippet": "new THREE.LineBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 648,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 653,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 671,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "material_alloc",
+      "severity": "high",
+      "kind": "MeshBasicMaterial",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 676,
+      "snippet": "new THREE.MeshBasicMaterial"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "SphereGeometry",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 683,
+      "snippet": "new THREE.SphereGeometry"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "BoxGeometry",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 693,
+      "snippet": "new THREE.BoxGeometry"
+    },
+    {
+      "patternId": "texture_alloc",
+      "severity": "medium",
+      "kind": "CanvasTexture",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 767,
+      "snippet": "new THREE.CanvasTexture"
+    },
+    {
+      "patternId": "geometry_alloc",
+      "severity": "high",
+      "kind": "CylinderGeometry",
+      "file": "packages/web/src/viewport/ViewCube.tsx",
+      "line": 787,
+      "snippet": "new THREE.CylinderGeometry"
+    }
+  ]
+}
