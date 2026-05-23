@@ -303,6 +303,10 @@ Each row = one /loop iteration. The loop appends here.
 | 1 | 2026-05-23 21:53Z | alpha | Phase 1 fresh author chain (TOPOLOGY→ROOF + capture); 30 walls, 20 rooms, 4 doors, 6 windows, 2 dormers, 1 stair, 1 toposolid all landed; all 4 captures > 260KB; grader spawned | **4.33/10** | topGap: perFacade (window+door+dormer fidelity). Next: P1a DG-window mirror |
 | 1 | 2026-05-23 22:00Z | beta | Phase 1 fresh author chain; 30 walls, 20 rooms, 10 doors, 14 windows, 1 dormer, 1 stair, 2 roofs (gable + Flachdach); all 4 captures > 280KB; grader spawned | pending | wait for grader |
 | 1 | 2026-05-23 22:05Z | gamma | Phase 1 fresh author chain spawned in background | pending | wait |
+| 1.g | 2026-05-23 22:11Z | beta | grader return: **6.05/10** topGap=noMajorDefect (5 defect categories: slab/wall disconnect, topo pierce, stair model_integrity err, DG room overlap, all rooms unenclosed); camera-not-sweeping flagged | 6.05 | re-grade after camera fix |
+| 1.g | 2026-05-23 22:13Z | gamma | grader return: **4.7/10** topGap=4.1-facades; camera-not-sweeping confirmed (capture plan targets ortho-N/E/S/W but model has level-prefixed -kg-/-eg-/-dg-/-roof- only) | 4.7 | re-grade after camera fix |
+| 2 | 2026-05-24 00:30Z | (all) | NS-2 — camera-sweep fix shipped (commit 94e61d251); runner now executes activate_3d_view step; _cmd_capture_ortho_views authors untagged final viewpoints; MF-12 engine half landed (slabExtrudeDirection field; web viewer integration deferred) | n/a | re-capture all 3 + re-grade |
+| 2.c | 2026-05-24 00:36Z | (all) | re-captured all 3; SHAs distinct, file sizes 315–345 KB (vs 270 KB pre-fix); visual: alpha south shows long facade, east shows gable peak — cameras genuinely sweeping now | n/a | grader subagents spawned in parallel |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
