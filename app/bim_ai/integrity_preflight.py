@@ -16,6 +16,7 @@ from bim_ai.model_integrity_hosting import (
     hosted_opening_integrity_violations,
     physical_support_context_violations,
 )
+from bim_ai.models.reverse_bim_responses import IntegrityPreflightResponse
 from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
@@ -40,7 +41,7 @@ def build_integrity_preflight_report(
     changed_element_ids: Iterable[str] = (),
     actor_id: str = "agent",
     source_command_index: Mapping[str, list[Mapping[str, Any]]] | None = None,
-) -> dict[str, Any]:
+) -> IntegrityPreflightResponse:
     elements = _elements(doc_or_elements)
     changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
     _logger.info(
@@ -156,7 +157,7 @@ def build_integrity_preflight_report(
         "diagnostics": profiler.payload(),
     }
     payload["digestSha256"] = canonical_payload_digest(payload)
-    return payload
+    return IntegrityPreflightResponse.model_validate(payload)
 
 
 def build_integrity_remediation_loop(

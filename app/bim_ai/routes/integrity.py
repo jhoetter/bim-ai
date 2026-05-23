@@ -50,7 +50,7 @@ async def integrity_preflight_route(
         model_id=str(model_id),
         changed_element_ids=_csv(changed_element_ids),
         source_command_index=source_command_index,
-    )
+    ).model_dump(by_alias=True)
 
 
 @integrity_router.get("/models/{model_id}/qa/profile-comparison")

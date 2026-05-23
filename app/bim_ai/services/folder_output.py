@@ -11,6 +11,7 @@ from typing import Any
 from bim_ai._io.digest import sha256_json
 from bim_ai._io.json_io import write_json as _write_json_shared
 from bim_ai._io.log import get_logger
+from bim_ai.models.reverse_bim_responses import FolderOutputResponse
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -130,7 +131,7 @@ def build_reverse_bim_folder_output(
     dpi: int = 240,
     max_pages_per_pdf: int | None = None,
     reset_output: bool = False,
-) -> dict[str, Any]:
+) -> FolderOutputResponse:
     """Create the folder-output handoff package for reverse-BIM.
 
     The output is intentionally useful even when no reader responses exist: it
@@ -191,12 +192,12 @@ def build_reverse_bim_folder_output(
         _write_json_shared(
             out_dir / "validation" / "package-acceptance-report.json", result["acceptance"]
         )
-        return result
+        return FolderOutputResponse.model_validate(result)
 
     manifest = build_folder_manifest(source_root)
     if manifest.get("ok") is False:
         _write_json_shared(out_dir / "run-summary.json", manifest)
-        return manifest
+        return FolderOutputResponse.model_validate(manifest)
 
     rendered_pages, text_extractions = _render_and_extract(
         manifest=manifest,
@@ -583,17 +584,19 @@ def build_reverse_bim_folder_output(
     )
     artifacts["readme"].write_text(_readme(run_summary, artifacts), encoding="utf-8")
 
-    return {
-        "ok": acceptance.get("ok") is True,
-        "format": "reverseBimFolderOutputPackage_v1",
-        "packageState": run_summary["packageState"],
-        "sourceFolder": str(source_root),
-        "outputDir": str(out_dir),
-        "summary": run_summary["summary"],
-        "artifacts": {key: str(path) for key, path in artifacts.items()},
-        "acceptance": acceptance,
-        "nextStep": run_summary["nextAgentInstruction"],
-    }
+    return FolderOutputResponse.model_validate(
+        {
+            "ok": acceptance.get("ok") is True,
+            "format": "reverseBimFolderOutputPackage_v1",
+            "packageState": run_summary["packageState"],
+            "sourceFolder": str(source_root),
+            "outputDir": str(out_dir),
+            "summary": run_summary["summary"],
+            "artifacts": {key: str(path) for key, path in artifacts.items()},
+            "acceptance": acceptance,
+            "nextStep": run_summary["nextAgentInstruction"],
+        }
+    )
 
 
 def _ensure_tree(out_dir: Path) -> None:

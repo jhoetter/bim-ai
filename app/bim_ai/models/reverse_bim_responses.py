@@ -33,6 +33,28 @@ class _Base(BaseModel):
         protected_namespaces=(),
     )
 
+    # BRT-05 transition bridge: many call sites (tests + internal services)
+    # still use dict-style subscript access on these payloads. Delegating
+    # __getitem__ to `model_dump(by_alias=True)` keeps those call sites
+    # working while the function signatures advertise the Pydantic type.
+    # Removed once BRT-21 finishes migrating callers to attribute access.
+    def __getitem__(self, key: str) -> Any:
+        dumped = self.model_dump(by_alias=True)
+        if key in dumped:
+            return dumped[key]
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        return key in self.model_dump(by_alias=True)
+
 
 class OperationResponse(_Base):
     """Common shell returned by ~all reverse-BIM and source endpoints."""
@@ -98,3 +120,35 @@ class ReverseBimViewBundleResponse(_Base):
     commands: list[dict[str, Any]] | None = None
     assumptions: list[dict[str, Any]] | None = None
     summary: dict[str, Any] | None = None
+
+
+class IntegrityPreflightResponse(_Base):
+    """Response of `bim_ai.integrity_preflight.build_integrity_preflight_report` (BRT-05).
+
+    The integrity preflight report does not carry an `ok` field — it has a
+    `summary.blockingFindingCount` instead. Only `format` is declared so
+    Pydantic validates the version-suffixed format identifier; the rest of
+    the payload flows through `extra="allow"` so the byte shape of the dict
+    is preserved.
+    """
+
+    format: str
+    summary: dict[str, Any] | None = None
+    findings: list[dict[str, Any]] | None = None
+
+
+class ReverseBimReaderDispatchPlanResponse(_Base):
+    """Response of `build_reverse_bim_reader_dispatch_plan` (BRT-05)."""
+
+    format: str
+    summary: dict[str, Any] | None = None
+    assignments: list[dict[str, Any]] | None = None
+
+
+class ReverseBimReaderDispatchExecuteResponse(_Base):
+    """Response of `execute_reverse_bim_reader_dispatch` (BRT-05)."""
+
+    ok: bool | None = None
+    format: str
+    summary: dict[str, Any] | None = None
+    rows: list[dict[str, Any]] | None = None

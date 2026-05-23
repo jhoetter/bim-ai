@@ -13,6 +13,10 @@ from typing import Any
 
 from bim_ai._io.digest import digest as _digest
 from bim_ai._io.log import get_logger
+from bim_ai.models.reverse_bim_responses import (
+    HybridRunExecuteResponse,
+    HybridSliceExecuteResponse,
+)
 from bim_ai.reverse_bim.phase_runner import build_reverse_bim_phase_run_report
 
 _logger = get_logger("bim_ai.services.hybrid_reverse_bim")
@@ -113,7 +117,7 @@ def build_hybrid_reverse_bim_slice_report(
     ui_evidence: dict[str, Any] | None = None,
     evidence_requirements: dict[str, Any] | None = None,
     view_capture_plan: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> HybridSliceExecuteResponse:
     """Return the current hybrid state for one modeling slice."""
 
     phase = phase or {}
@@ -258,7 +262,7 @@ def build_hybrid_reverse_bim_slice_report(
         "nextStep": _slice_next_step(state),
     }
     payload["digestSha256"] = _digest(payload)
-    return payload
+    return HybridSliceExecuteResponse.model_validate(payload)
 
 
 def build_hybrid_reverse_bim_run_report(
@@ -267,7 +271,7 @@ def build_hybrid_reverse_bim_run_report(
     phase_packets: list[dict[str, Any]] | dict[str, Any] | None = None,
     slice_reports: list[dict[str, Any]] | None = None,
     package_acceptance: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> HybridRunExecuteResponse:
     """Aggregate source package, phase-run, and slice state for the runtime agent."""
 
     _logger.info(
@@ -318,7 +322,7 @@ def build_hybrid_reverse_bim_run_report(
         ),
     }
     payload["digestSha256"] = _digest(payload)
-    return payload
+    return HybridRunExecuteResponse.model_validate(payload)
 
 
 def _revision_action(

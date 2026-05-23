@@ -680,7 +680,7 @@ async def reverse_bim_reader_dispatch_plan_route(
         output_dir=str(output_dir),
         include_completed=bool(body.include_completed or False),
         limit=body.limit,
-    )
+    ).model_dump(by_alias=True)
 
 
 @reverse_bim_router.post("/v3/reverse-bim/reader-dispatch-execute")
@@ -700,7 +700,7 @@ async def reverse_bim_reader_dispatch_execute_route(
         force=bool(body.force or False),
         limit=body.limit,
         timeout_seconds=int(body.reader_timeout_seconds or 300),
-    )
+    ).model_dump(by_alias=True)
 
 
 @reverse_bim_router.post("/v3/reverse-bim/phase-packet")
@@ -814,7 +814,7 @@ async def reverse_bim_hybrid_slice_route(
         ui_evidence=body.ui_evidence,
         evidence_requirements=body.evidence_requirements,
         view_capture_plan=body.view_capture_plan,
-    )
+    ).model_dump(by_alias=True)
 
 
 @reverse_bim_router.post("/v3/reverse-bim/hybrid-run")
@@ -828,7 +828,7 @@ async def reverse_bim_hybrid_run_route(
         phase_packets=body.phase_packets or body.packets,
         slice_reports=body.slice_reports,
         package_acceptance=body.package_acceptance or body.folder_output,
-    )
+    ).model_dump(by_alias=True)
 
 
 @reverse_bim_router.post("/v3/reverse-bim/evidence-requirements")

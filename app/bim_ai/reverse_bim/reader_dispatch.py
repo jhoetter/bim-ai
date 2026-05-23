@@ -11,6 +11,10 @@ from typing import Any
 from bim_ai._io.digest import sha256_json
 from bim_ai._io.json_io import read_json_dict
 from bim_ai._io.log import get_logger
+from bim_ai.models.reverse_bim_responses import (
+    ReverseBimReaderDispatchExecuteResponse,
+    ReverseBimReaderDispatchPlanResponse,
+)
 
 _logger = get_logger("bim_ai.reverse_bim.reader_dispatch")
 
@@ -26,7 +30,7 @@ def build_reverse_bim_reader_dispatch_plan(
     output_dir: str | Path,
     include_completed: bool = False,
     limit: int | None = None,
-) -> dict[str, Any]:
+) -> ReverseBimReaderDispatchPlanResponse:
     """Build a deterministic plan for dispatching open reader assignments.
 
     This consumes an existing reverse-BIM folder-output package. It does not
@@ -131,25 +135,27 @@ def build_reverse_bim_reader_dispatch_plan(
         if limit is not None and limit > 0 and len(rows) >= limit:
             break
 
-    return {
-        "ok": not diagnostics,
-        "format": "reverseBimReaderDispatchPlan_v1",
-        "outputDir": str(out_dir),
-        "createdAt": datetime.now(UTC).isoformat(),
-        "summary": {
-            "assignmentCount": len(rows),
-            "diagnosticCount": len(diagnostics),
-            "responseExistsCount": sum(1 for row in rows if row.get("responseExists")),
-            "criticalAssignmentCount": sum(
-                1 for row in rows if row.get("criticalConsensusPackage")
-            ),
-            "independentReaderAssignmentCount": sum(
-                1 for row in rows if row.get("independentReaderRequired")
-            ),
-        },
-        "assignments": rows,
-        "diagnostics": diagnostics,
-    }
+    return ReverseBimReaderDispatchPlanResponse.model_validate(
+        {
+            "ok": not diagnostics,
+            "format": "reverseBimReaderDispatchPlan_v1",
+            "outputDir": str(out_dir),
+            "createdAt": datetime.now(UTC).isoformat(),
+            "summary": {
+                "assignmentCount": len(rows),
+                "diagnosticCount": len(diagnostics),
+                "responseExistsCount": sum(1 for row in rows if row.get("responseExists")),
+                "criticalAssignmentCount": sum(
+                    1 for row in rows if row.get("criticalConsensusPackage")
+                ),
+                "independentReaderAssignmentCount": sum(
+                    1 for row in rows if row.get("independentReaderRequired")
+                ),
+            },
+            "assignments": rows,
+            "diagnostics": diagnostics,
+        }
+    )
 
 
 def execute_reverse_bim_reader_dispatch(
@@ -160,7 +166,7 @@ def execute_reverse_bim_reader_dispatch(
     force: bool = False,
     limit: int | None = None,
     timeout_seconds: int = 300,
-) -> dict[str, Any]:
+) -> ReverseBimReaderDispatchExecuteResponse:
     """Execute open reader assignments and write response JSON files."""
 
     _logger.info(
@@ -238,28 +244,30 @@ def execute_reverse_bim_reader_dispatch(
     for row in rows:
         status = str(row.get("status") or "unknown")
         status_counts[status] = status_counts.get(status, 0) + 1
-    return {
-        "ok": not diagnostics,
-        "format": "reverseBimReaderDispatchRun_v1",
-        "outputDir": plan.get("outputDir"),
-        "createdAt": datetime.now(UTC).isoformat(),
-        "planSummary": plan.get("summary"),
-        "summary": {
-            "assignmentCount": len(rows),
-            "writtenResponseCount": status_counts.get("written", 0),
-            "skippedExistingResponseCount": status_counts.get("skipped_existing_response", 0),
-            "failedAssignmentCount": status_counts.get("failed", 0),
-            "diagnosticCount": len(diagnostics),
-            "statusCounts": dict(sorted(status_counts.items())),
-        },
-        "rows": rows,
-        "diagnostics": diagnostics,
-        "nextStep": (
-            "Rerun reverse_bim.folder_output with reset_output=false to load reader responses."
-            if not diagnostics
-            else "Fix reader dispatch diagnostics before rerunning folder-output."
-        ),
-    }
+    return ReverseBimReaderDispatchExecuteResponse.model_validate(
+        {
+            "ok": not diagnostics,
+            "format": "reverseBimReaderDispatchRun_v1",
+            "outputDir": plan.get("outputDir"),
+            "createdAt": datetime.now(UTC).isoformat(),
+            "planSummary": plan.get("summary"),
+            "summary": {
+                "assignmentCount": len(rows),
+                "writtenResponseCount": status_counts.get("written", 0),
+                "skippedExistingResponseCount": status_counts.get("skipped_existing_response", 0),
+                "failedAssignmentCount": status_counts.get("failed", 0),
+                "diagnosticCount": len(diagnostics),
+                "statusCounts": dict(sorted(status_counts.items())),
+            },
+            "rows": rows,
+            "diagnostics": diagnostics,
+            "nextStep": (
+                "Rerun reverse_bim.folder_output with reset_output=false to load reader responses."
+                if not diagnostics
+                else "Fix reader dispatch diagnostics before rerunning folder-output."
+            ),
+        }
+    )
 
 
 def _dispatch_request_payload(
