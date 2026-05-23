@@ -200,6 +200,15 @@ export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
+  // PERF-G03 step: subscribe to narrow modelIndices fields. The shell-level
+  // `elementsById` subscription above is still wide (audit #5) — moving off it
+  // is blocked on the viewport-filter storage refactor, since storeViewportRuntimeSlice
+  // mutates elementsById without rebuilding modelIndices, and Workspace passes
+  // elementsById to PaneRenderer + WorkspaceOverlays which need filter-fresh data.
+  // Until then, these narrow selectors let downstream useMemos cache-hit through
+  // filter writes (modelIndices is unchanged on those).
+  const modelSheets = useBimStore((s) => s.modelIndices.sheets);
+  const modelLevels = useBimStore((s) => s.modelIndices.levels);
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
   const viewerMode = useBimStore((s) => s.viewerMode);
   const setViewerMode = useBimStore((s) => s.setViewerMode);
@@ -335,10 +344,11 @@ export function Workspace(): JSX.Element {
 
   const sheetPages = useMemo(
     () =>
-      (Object.values(elementsById) as Element[])
-        .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
-        .map((s) => ({ id: s.id, name: (s as unknown as { name?: string }).name ?? 'Sheet' })),
-    [elementsById],
+      modelSheets.map((s) => ({
+        id: s.id,
+        name: (s as unknown as { name?: string }).name ?? 'Sheet',
+      })),
+    [modelSheets],
   );
 
   const projectNorthAngleDeg = useMemo(() => {
@@ -1136,12 +1146,11 @@ export function Workspace(): JSX.Element {
   }, [selectedId, elementsById]);
 
   /* ── Status bar wiring ────────────────────────────────────────────── */
-  const levels = useMemo(() => {
-    return (Object.values(elementsById) as Element[])
-      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
-      .sort((a, b) => a.elevationMm - b.elevationMm)
-      .map((l) => ({ id: l.id, label: l.name, elevationMm: l.elevationMm }));
-  }, [elementsById]);
+  const levels = useMemo(
+    () =>
+      modelLevels.map((l) => ({ id: l.id, label: l.name, elevationMm: l.elevationMm })),
+    [modelLevels],
+  );
   const activeLevel = levels.find((l) => l.id === activeLevelId) ??
     levels[0] ?? { id: '', label: '—' };
   const cursorMm = planHudMm ? { xMm: planHudMm.xMm, yMm: planHudMm.yMm } : null;
