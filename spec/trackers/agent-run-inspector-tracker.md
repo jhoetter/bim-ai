@@ -4,7 +4,8 @@ Last updated: 2026-05-23
 
 Status: **Wave 1 shipped; Wave 2 first slice (iteration capture viewer +
 per-house dashboard) shipped; Wave 2 remaining slices (lineage trace,
-commit time-slider, schema-driven registries) in progress.** Defines the
+commit time-slider, schema-driven registries) deferred to follow-up
+sessions — no work in progress.** Defines the
 `/agents` UI surface that lets the developer inspect how an AI agent
 applied the hybrid reverse-BIM methodology to a source folder: which
 files were processed, what the agent and its sub-agents thought, which

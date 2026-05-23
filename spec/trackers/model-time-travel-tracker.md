@@ -2,8 +2,9 @@
 
 Last updated: 2026-05-23
 
-Status: **Waves 1–3 shipped; Wave 4 (inspector integration) in flight;
-Wave 5 deferred.** Prerequisite for
+Status: **Waves 1–3 shipped; Wave 4 (inspector integration) and Wave 5
+(operational hardening) deferred to follow-up sessions — no work in
+progress.** Prerequisite for
 [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
 Defines git-like time travel for BIM models — commits with agent context,
 snapshots at logical boundaries, checkout/diff/log API, and retroactive
