@@ -160,7 +160,7 @@ async def reverse_bim_hybrid_slice_execute_route(
             model_id=model_id,
             summary=slice_summary,
             context=slice_ctx,
-        ):
+        ) as commit_row:
             commit_result = await apply_bundle_route(
                 model_id,
                 commit_request,
@@ -168,6 +168,20 @@ async def reverse_bim_hybrid_slice_execute_route(
                 hub=hub,
                 token=token,
             )
+            # Backfill producedElementIds inside the commit context so
+            # the inspector iter-picker can render the "doc → fact →
+            # element" trail without a separate join. JSONB needs
+            # reassignment for SQLAlchemy to detect the mutation.
+            changed_for_ctx = _hybrid_changed_ids(commit_result)
+            ctx_in_row = commit_row.context if isinstance(commit_row.context, dict) else {}
+            existing_th = ctx_in_row.get("testhouse_iter")
+            if changed_for_ctx and isinstance(existing_th, dict):
+                new_ctx = dict(ctx_in_row)
+                new_ctx["testhouse_iter"] = {
+                    **existing_th,
+                    "producedElementIds": list(changed_for_ctx),
+                }
+                commit_row.context = new_ctx
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -623,10 +637,23 @@ def _hybrid_slice_commit_context(
     # house X" → commit_id without ambiguity.
     testhouse_iter = body_dict.get("testhouseIter") or body_dict.get("testhouse_iter")
     if isinstance(testhouse_iter, dict):
+        consumed_fact_ids = testhouse_iter.get("consumedFactIds") or testhouse_iter.get(
+            "consumed_fact_ids"
+        )
+        source_evidence = testhouse_iter.get("sourceEvidence") or testhouse_iter.get(
+            "source_evidence"
+        )
         ctx["testhouse_iter"] = {
             "house": str(testhouse_iter.get("house")) if testhouse_iter.get("house") else None,
             "iter": int(testhouse_iter["iter"]) if testhouse_iter.get("iter") is not None else None,
             "phase": str(testhouse_iter.get("phase")) if testhouse_iter.get("phase") else None,
+            "consumedFactIds": list(consumed_fact_ids)
+            if isinstance(consumed_fact_ids, list)
+            else [],
+            "sourceEvidence": list(source_evidence) if isinstance(source_evidence, list) else [],
+            # producedElementIds populated post-commit from the bundle's
+            # changedIds — see _attach_produced_element_ids().
+            "producedElementIds": [],
         }
     tool = body_dict.get("tool")
     if isinstance(tool, str) and tool:

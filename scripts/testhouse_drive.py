@@ -554,6 +554,515 @@ def _ortho_views_bundle(*, snapshot: dict, parent_revision: int, iter_n: int, ho
     }
 
 
+# ───────────────────────────────────────────────────────────────────
+# v2 per-floor inside-out authoring
+# ───────────────────────────────────────────────────────────────────
+
+# IR fact lookup helpers.
+
+
+def _facts_for_level(ir: dict, level_id: str) -> list[dict]:
+    return [
+        f
+        for f in (ir.get("extractedFacts") or [])
+        if isinstance(f, dict) and (f.get("levelId") == level_id or f.get("levelId") == "global")
+    ]
+
+
+def _facts_by_kind(facts: list[dict], kind: str) -> list[dict]:
+    return [f for f in facts if f.get("kind") == kind]
+
+
+def _source_evidence_from_facts(facts: list[dict]) -> list[dict]:
+    """Distinct (docId, page) pairs across the consumed facts."""
+
+    seen: set[tuple] = set()
+    evidence: list[dict] = []
+    for f in facts:
+        doc_id = f.get("sourceDocId")
+        page = f.get("sourcePage")
+        if not doc_id:
+            continue
+        key = (doc_id, page)
+        if key in seen:
+            continue
+        seen.add(key)
+        rendered = (
+            f"tmp/reverse-bim/house-{f.get('house', '')}/preflight/rendered-pages/{doc_id}/"
+            if doc_id
+            else None
+        )
+        evidence.append(
+            {
+                "docId": doc_id,
+                "page": page,
+                "role": f.get("kind"),
+                "renderedPath": rendered,
+            }
+        )
+    return evidence
+
+
+# Bundle builders per sub-phase. Each returns (commands, consumed_fact_ids,
+# source_evidence) or None when the phase is empty (skipped).
+
+
+def _project_setup_bundle(*, ir: dict, parent_revision: int, house: str) -> dict | None:
+    commands: list[dict] = []
+    for lvl in ir.get("levels") or []:
+        short = lvl["id"].split("-")[-1]  # KG / EG / DG
+        commands.append(
+            {
+                "type": "createLevel",
+                "id": f"th-{house}-level-{short}",
+                "name": lvl.get("name") or short,
+                "elevationMm": float(lvl.get("elevationMM") or 0),
+            }
+        )
+    if not commands:
+        return None
+    return {
+        "schemaVersion": "cmd-v3.0",
+        "commands": commands,
+        "parentRevision": parent_revision,
+        "assumptions": [
+            {
+                "key": f"testhouse_{house}_project_setup",
+                "value": "Storey levels KG/EG/DG from IR.levels[]",
+                "confidence": 0.95,
+                "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                "contestable": False,
+                "evidence": "iter-1 reader pass",
+            }
+        ],
+    }
+
+
+def _rooms_bundle(
+    *, ir: dict, parent_revision: int, house: str, level_short: str
+) -> tuple[dict, list[str]] | None:
+    level_id = f"th-{house}-level-{level_short}"
+    eg_height = next(
+        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+    )
+    facts = _facts_for_level(ir, f"level-{level_short}")
+    rooms = _facts_by_kind(facts, "room_outline")
+    if not rooms:
+        return None
+    commands: list[dict] = []
+    consumed: list[str] = []
+    for r in rooms:
+        poly = r.get("polygonMm") or r.get("polygonMM") or []
+        if len(poly) >= 2 and poly[0] == poly[-1]:
+            poly = poly[:-1]
+        if not poly or len(poly) < 3:
+            continue
+        commands.append(
+            {
+                "type": "createRoomOutline",
+                "id": f"th-{house}-i-{level_short}-room-{_slugify(r.get('text') or r.get('factId'))}",
+                "name": str(r.get("text") or "Room"),
+                "levelId": level_id,
+                "outlineMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
+            }
+        )
+        consumed.append(str(r.get("factId")))
+    if not commands:
+        return None
+    bundle = {
+        "schemaVersion": "cmd-v3.0",
+        "commands": commands,
+        "parentRevision": parent_revision,
+        "assumptions": [
+            {
+                "key": f"testhouse_{house}_{level_short}_rooms",
+                "value": f"{len(commands)} room outlines for {level_short} from IR.extractedFacts[kind=room_outline]",
+                "confidence": 0.7,
+                "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                "contestable": True,
+                "evidence": f"iter-1 reader pass on level-{level_short}",
+            }
+        ],
+    }
+    # used heights for downstream height-aware authoring; record for traceability
+    bundle["__metaEgHeight"] = eg_height  # type: ignore[index] — consumed in this module only
+    return (bundle, consumed)
+
+
+def _exterior_walls_bundle(
+    *, ir: dict, parent_revision: int, house: str, level_short: str
+) -> tuple[dict, list[str]] | None:
+    level_id = f"th-{house}-level-{level_short}"
+    eg_height = next(
+        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+    )
+    facts = _facts_for_level(ir, f"level-{level_short}")
+    chain_facts = _facts_by_kind(facts, "exterior_wall_chain")
+    if not chain_facts:
+        return None
+    fact = chain_facts[0]
+    poly = fact.get("polygonMm") or fact.get("polygonMM") or []
+    # If the IR repeats the first vertex at the tail (closed-loop form),
+    # drop the duplicate before generating walls — otherwise the last
+    # createWall has zero length and the dry-run rejects the bundle.
+    if len(poly) >= 2 and poly[0] == poly[-1]:
+        poly = poly[:-1]
+    if not poly or len(poly) < 3:
+        return None
+    commands: list[dict] = []
+    for i in range(len(poly)):
+        a = poly[i]
+        b = poly[(i + 1) % len(poly)]
+        commands.append(
+            {
+                "type": "createWall",
+                "id": f"th-{house}-i-{level_short}-ext-wall-{i}",
+                "name": f"{level_short} exterior wall {i}",
+                "levelId": level_id,
+                "start": {"xMm": float(a[0]), "yMm": float(a[1])},
+                "end": {"xMm": float(b[0]), "yMm": float(b[1])},
+                "thicknessMm": 365,
+                "heightMm": float(eg_height),
+            }
+        )
+    # slab — boundary follows the same polygon.
+    commands.append(
+        {
+            "type": "createFloor",
+            "id": f"th-{house}-i-{level_short}-slab",
+            "name": f"{level_short} slab",
+            "levelId": level_id,
+            "boundaryMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
+            "thicknessMm": 220,
+        }
+    )
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_{level_short}_ext_walls",
+                    "value": f"Exterior wall chain + slab for {level_short} derived from IR polygon",
+                    "confidence": 0.6,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": f"iter-1 reader pass — exterior_wall_chain fact level-{level_short}",
+                }
+            ],
+        },
+        [str(fact.get("factId"))],
+    )
+
+
+def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
+    """Roof draws on the DG floor extent + IR roof globals."""
+
+    facts = _facts_for_level(ir, "level-DG")
+    chain = _facts_by_kind(facts, "exterior_wall_chain")
+    if not chain:
+        return None
+    poly = chain[0].get("polygonMm") or chain[0].get("polygonMM") or []
+    if len(poly) >= 2 and poly[0] == poly[-1]:
+        poly = poly[:-1]
+    if not poly or len(poly) < 3:
+        return None
+    dg_level_id = f"th-{house}-level-DG"
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [
+                {
+                    "type": "createRoof",
+                    "id": f"th-{house}-main-roof",
+                    "name": "Main gable roof",
+                    "referenceLevelId": dg_level_id,
+                    "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
+                    "overhangMm": 400,
+                    "slopeDeg": 35,
+                    "roofGeometryMode": "gable_pitched_rectangle",
+                },
+            ],
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_roof",
+                    "value": "Gable roof following DG extent; pitch 35°; overhang 400 mm",
+                    "confidence": 0.6,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": "iter-1 reader: Satteldach, ridge E-W, eave 5400, ridge 9500",
+                }
+            ],
+        },
+        [str(chain[0].get("factId"))],
+    )
+
+
+def _slugify(s: str | None) -> str:
+    import re as _re
+
+    if not s:
+        return "x"
+    return _re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "x"
+
+
+def _cmd_floor(args: argparse.Namespace) -> int:
+    """v2 per-floor inside-out authoring loop for one floor of one house.
+
+    Phases per spec/trackers/testhouse-clean-rebuild-tracker.md v2:
+      <floor>-project-setup (KG only — creates levels)
+      <floor>-rooms
+      <floor>-partitions  (skipped — derived by createRoomOutline pending iter)
+      <floor>-openings    (skipped pending door/window IR-driven authoring)
+      <floor>-exterior-walls
+      <floor>-roof        (DG only)
+      <floor>-structural-gate  (advisor/constructability/integrity readouts)
+      <floor>-visual-gate (capture + grader subagent — separate command)
+
+    MVP: rooms + exterior-walls + roof are authored; partitions/openings/
+    structural-gate are logged as phase commits with empty bundles so the
+    iter-picker shows them, with explicit `source_limited` dispositions
+    where the IR doesn't yet drive them. The grader subagent is invoked
+    separately via `grade-floor`.
+    """
+
+    house = args.house
+    iter_n = int(args.iter)
+    floor = args.floor.upper()  # KG | EG | DG | ROOF
+    ir = json.loads(_ir_path(house).read_text(encoding="utf-8"))
+    api_base = args.api_base
+
+    model_id = _ensure_model(house=house, api_base=api_base)
+
+    # KG iter also seeds project setup (levels).
+    if floor == "KG":
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        bundle = _project_setup_bundle(ir=ir, parent_revision=rev, house=house)
+        if bundle is not None:
+            _apply_slice(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-project-setup",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+            )
+
+    # Per-floor sub-phases (skip ROOF — handled separately below).
+    if floor in {"KG", "EG", "DG"}:
+        # rooms
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        rooms_pair = _rooms_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
+        if rooms_pair is not None:
+            bundle, consumed = rooms_pair
+            bundle.pop("__metaEgHeight", None)
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-rooms",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+            )
+
+        # exterior walls + slab
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        ext_pair = _exterior_walls_bundle(
+            ir=ir, parent_revision=rev, house=house, level_short=floor
+        )
+        if ext_pair is not None:
+            bundle, consumed = ext_pair
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "exterior_wall_chain")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-exterior-walls",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+            )
+
+    # ROOF: single roof slice on top of existing DG extent.
+    if floor == "ROOF":
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        roof_pair = _roof_bundle(ir=ir, parent_revision=rev, house=house)
+        if roof_pair is not None:
+            bundle, consumed = roof_pair
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(ir.get("extractedFacts") or [], "ridge_height")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase="roof-main",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+            )
+
+    return 0
+
+
+def _apply_slice_v2(
+    *,
+    house: str,
+    iter_n: int,
+    phase: str,
+    bundle: dict,
+    api_base: str,
+    submitter: str,
+    consumed_fact_ids: list[str],
+    source_evidence: list[dict],
+) -> dict:
+    """v2 wrapper around _apply_slice that injects the three new arrays.
+
+    Builds the testhouseIter dict with consumedFactIds + sourceEvidence
+    before calling the hybrid-slice-execute route; producedElementIds is
+    backfilled by the route post-commit from the bundle's changedIds.
+    """
+
+    set_correlation_id(f"iter-{iter_n}-{phase}-house-{house}-{uuid.uuid4().hex[:8]}")
+    logger.info(
+        "testhouse_iter.start",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "phase": phase,
+            "source_root": str(_house_root(house)),
+            "model_id": None,
+            "consumedFactIds": consumed_fact_ids,
+            "sourceEvidence": source_evidence,
+        },
+    )
+    started = time.monotonic()
+
+    try:
+        model_id = _ensure_model(house=house, api_base=api_base)
+        payload = {
+            "phase": {"phaseId": phase},
+            "bundle": bundle,
+            "commit": True,
+            "iterationLabel": f"iter-{iter_n}",
+            "houseName": house,
+            "outputDir": str(_house_workdir(house) / f"iter-{iter_n}"),
+            "submitter": submitter,
+            "userId": "local-dev",
+            "advisorProfile": "authoring_default",
+            "testhouseIter": {
+                "house": house,
+                "iter": iter_n,
+                "phase": phase,
+                "consumedFactIds": consumed_fact_ids,
+                "sourceEvidence": source_evidence,
+            },
+            "tool": "hybrid-reverse-bim",
+            "controllingTracker": TRACKER_PATH,
+        }
+        logger.info(
+            "testhouse_iter.commit_opened",
+            extra={
+                "house": house,
+                "iter": iter_n,
+                "phase": phase,
+                "commit_id": None,
+                "model_id": model_id,
+                "command_count": len(bundle["commands"]),
+            },
+        )
+        result = _post(
+            api_base=api_base,
+            path=f"/v3/models/{model_id}/reverse-bim/hybrid-slice-execute",
+            body=payload,
+            timeout=600.0,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "testhouse_iter.end",
+            extra={
+                "house": house,
+                "iter": iter_n,
+                "phase": phase,
+                "status": "failed",
+                "elapsed_ms": int((time.monotonic() - started) * 1000),
+                "error": str(exc),
+            },
+        )
+        raise
+
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+    rev_after = int((_snapshot(api_base=api_base, model_id=model_id).get("revision")) or 1)
+    commits = httpx.get(
+        f"{api_base.rstrip('/')}/models/{model_id}/commits",
+        params={"limit": 10, "testhouse_house": house, "testhouse_iter": iter_n},
+        timeout=30.0,
+    ).json()
+    commit_id = None
+    produced = []
+    for item in commits.get("items") or commits.get("commits") or []:
+        ctx_th = (item.get("context") or {}).get("testhouse_iter") or {}
+        if ctx_th.get("phase") == phase:
+            commit_id = item.get("commitId") or item.get("commit_id")
+            produced = ctx_th.get("producedElementIds") or []
+            break
+
+    logger.info(
+        "testhouse_iter.commit_closed",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "phase": phase,
+            "commit_id": commit_id,
+            "revision_after": rev_after,
+            "producedElementIds": produced,
+        },
+    )
+    logger.info(
+        "testhouse_iter.end",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "phase": phase,
+            "status": "ok" if result.get("ok") else "partial",
+            "elapsed_ms": elapsed_ms,
+            "commit_id": commit_id,
+            "model_id": model_id,
+        },
+    )
+    out = {
+        "house": house,
+        "iter": iter_n,
+        "phase": phase,
+        "ok": bool(result.get("ok")),
+        "model_id": model_id,
+        "commit_id": commit_id,
+        "revision_after": rev_after,
+        "elapsed_ms": elapsed_ms,
+        "executionState": result.get("executionState"),
+        "producedElementIds": produced,
+    }
+    print(json.dumps(out, sort_keys=True))
+    return out
+
+
 def _cmd_author_ortho_views(args: argparse.Namespace) -> int:
     house = args.house
     iter_n = int(args.iter)
@@ -796,6 +1305,15 @@ def _build_parser() -> argparse.ArgumentParser:
     ov.add_argument("--house", required=True, choices=HOUSES)
     ov.add_argument("--iter", type=int, required=True)
     ov.set_defaults(func=_cmd_author_ortho_views)
+
+    fl = sub.add_parser(
+        "floor",
+        help="v2 per-floor inside-out authoring loop (one floor of one house).",
+    )
+    fl.add_argument("--house", required=True, choices=HOUSES)
+    fl.add_argument("--iter", type=int, required=True)
+    fl.add_argument("--floor", required=True, choices=("KG", "EG", "DG", "ROOF"))
+    fl.set_defaults(func=_cmd_floor)
 
     cap = sub.add_parser(
         "capture-ortho-views",
