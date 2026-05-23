@@ -832,3 +832,82 @@ The tracker is complete when:
 - [`spec/reverse-bim-folder-output-methodology-tracker.md`](./reverse-bim-folder-output-methodology-tracker.md) — emits `run-meta.json` whose fields populate commit context.
 - [`spec/testhouse-visual-fidelity-tracker.md`](./testhouse-visual-fidelity-tracker.md) — iteration captures live alongside commits and are linked from the inspector's dashboard.
 - [`spec/testhouse-hybrid-reverse-bim-tracker.md`](./testhouse-hybrid-reverse-bim-tracker.md) — per-house execution log; commits are the structured form of what this tracker records in prose today.
+- [`spec/trackers/testhouse-clean-rebuild-tracker.md`](./testhouse-clean-rebuild-tracker.md) — the rebuild that is the integration test for Wave 4 below.
+
+## Wave 4 — detailed scope (added 2026-05-23)
+
+**Goal in one sentence:** while looking at iter-5 of `house-alpha` in the
+browser, the developer can click an "iter-3" marker and the live
+Workspace viewer re-renders showing iter-3's BIM model state — not a
+screenshot, the actual model, navigable in 3D + plan + sheets.
+
+The backend half is already shipped. `GET /api/models/{id}/state?at=<commit_id>`
+in `app/bim_ai/routes/time_travel.py:191` returns the full document at
+that commit. Wave 4 is the frontend half + the per-iter mapping that
+makes the iter-picker selector meaningful.
+
+### Required pieces
+
+1. **Workspace viewer honors `?at=<commit_id>`.**
+   - Add URL param reading at the Workspace route entry
+     (`packages/web/src/workspace/Workspace.tsx`).
+   - When `?at=` is present: instead of the normal bootstrap
+     (REST snapshot + websocket hydrate), call
+     `/api/models/{id}/state?at=<commit_id>` and feed the response
+     through `useBimStore.hydrateFromSnapshot(...)` directly.
+   - Disable the websocket entirely in historical mode (no `ws://` open,
+     no command authoring, no presence). The viewer is read-only.
+
+2. **Read-only banner + command lockout.**
+   - Render a persistent non-dismissible banner: "Viewing historical
+     state — commit `<short_id>` (iter N of house X if attributable).
+     Commands are disabled."
+   - All command buttons (insert wall, insert opening, etc.) become
+     disabled with tooltip "Read-only — historical view".
+   - The undo/redo stack is hidden.
+
+3. **Per-iter mapping endpoint.**
+   - Add `GET /api/models/{id}/commits?testhouse_house=alpha&testhouse_iter=3`
+     filter to the existing commits-list endpoint. Returns the commit(s)
+     matching `agent_context.testhouse_iter.house == X AND .iter == N`.
+   - The mapping is many-to-one in the worst case (one iter = multiple
+     MCP slices). The iter-picker uses the **last** commit of an iter as
+     the canonical "show iter-N state" target.
+
+4. **Iter-picker UI** in
+   `packages/web/src/agents/AgentHouseDashboard.tsx`.
+   - A horizontal strip (similar to the existing iteration strip)
+     showing commits grouped by iter, with iter labels.
+   - Click on iter-N → open a new tab at
+     `/workspace/<modelId>?at=<last_commit_of_iter_N>`.
+   - Optional: in-page iframe preview of the historical viewer
+     alongside the dashboard. New tab is mandatory; iframe is nice-to-have.
+
+5. **Historical-mode tests.**
+   - `tests/web/workspace/historicalMode.test.tsx` (or similar) — asserts
+     the websocket does NOT open when `?at=` is present, and command
+     buttons are disabled.
+   - `tests/test_routes_time_travel.py` — round-trip test that
+     `GET /state?at=<commit_id>` is byte-equivalent to a snapshot taken
+     at the time of that commit on a small fixture.
+
+### Acceptance demonstration
+
+On a fresh testhouse rebuild (per
+[`testhouse-clean-rebuild-tracker.md`](./testhouse-clean-rebuild-tracker.md)):
+
+1. Author iter-3 of `house-alpha` — backend records a commit with
+   `agent_context.testhouse_iter = {house: "alpha", iter: 3, phase: ...}`.
+2. Continue authoring through iter-5.
+3. From iter-5's inspector dashboard, click the iter-3 marker.
+4. New tab opens at `/workspace/<alpha_model_id>?at=<commit_id>` and
+   the viewer renders iter-3's exterior walls + floors + main roof in
+   3D + plan, with the read-only banner.
+5. Close tab, return to iter-5 dashboard — current iter-5 state still
+   intact in the original tab.
+
+### Out of Wave 4 (push to Wave 5+)
+- Branch-style commits (the time-travel system is linear today).
+- Comparing two commits visually (overlay or diff view).
+- Editing from a historical state ("rewind and apply" workflow).
+- Sparse-snapshot toggle (operational hardening, separate item).

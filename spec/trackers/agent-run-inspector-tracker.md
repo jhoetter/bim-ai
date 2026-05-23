@@ -46,11 +46,17 @@ telemetry pipeline and not a methodology change.
 
 ### Still to ship from Wave 2
 
-- **Commit time-slider on the per-house dashboard.** Consumes
-  `/api/models/{id}/commits` + `?at=:commitId` from
-  [`spec/model-time-travel-tracker.md`](./model-time-travel-tracker.md)
-  to render the live BIM viewer at a past commit alongside the
-  iteration capture for the same iter.
+- **Iter-picker + commit time-slider on the per-house dashboard.**
+  Promoted to top priority on 2026-05-23. Consumes
+  `/api/models/{id}/commits` filtered by
+  `agent_context.testhouse_iter.{house,iter}` + the new
+  `?at=:commitId` viewer mode specified in
+  [`spec/trackers/model-time-travel-tracker.md`](./model-time-travel-tracker.md) Wave 4.
+  Behaviour: a horizontal iter strip showing every iter for which a
+  commit exists; clicking iter-N opens a new tab at
+  `/workspace/<modelId>?at=<last_commit_of_iter_N>` rendering the
+  actual BIM model state, not a screenshot. This is the primary
+  acceptance test for the `testhouse-clean-rebuild-tracker.md` rebuild.
 - **Lineage trace** (`/agents/houses/{house}/trace/{factId}`):
   backward from a fact id through reader response → page image →
   source PDF; forward to MCP call → element → captured screenshot.
