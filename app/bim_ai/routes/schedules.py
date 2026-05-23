@@ -89,13 +89,22 @@ async def schedule_derived_table(
     columns: Annotated[str | None, Query(alias="columns")] = None,
     include_schedule_totals_csv: Annotated[bool, Query(alias="includeScheduleTotalsCsv")] = False,
     lightweight: Annotated[bool, Query()] = False,
+    debug: Annotated[bool, Query()] = False,
 ) -> dict[str, Any] | PlainTextResponse:
     """PERF-F06: `?lightweight=true` skips the expensive room programme
     closure pass (peer_finish_set_by_level +
     room_finish_schedule_row_extensions) for room/finish schedules. Other
     category types are unaffected. Use for lightweight grid display
     surfaces that don't need the finish-set closure.
+
+    PERF-A05: when `debug=true`, response (json only) includes a
+    `_perfDebug` block with cacheHit, docValidateMs, deriveMs, totalMs.
+    Debug requests bypass the cross-request cache so timings reflect
+    actual recomputation.
     """
+    import time as _sched_time
+
+    total_start = _sched_time.perf_counter()
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -108,14 +117,24 @@ async def schedule_derived_table(
         schedule_id=schedule_id,
         lightweight=lightweight,
     )
-    payload = _get_schedule_table_cache(cache_key)
+    cache_hit = False
+    doc_validate_ms = 0.0
+    derive_ms = 0.0
+    payload = None if debug else _get_schedule_table_cache(cache_key)
     if payload is None:
+        t0 = _sched_time.perf_counter()
         doc = Document.model_validate(row.document)
+        doc_validate_ms = (_sched_time.perf_counter() - t0) * 1000.0
+        t0 = _sched_time.perf_counter()
         try:
             payload = derive_schedule_table(doc, schedule_id, lightweight=lightweight)
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        _set_schedule_table_cache(cache_key, payload)
+        derive_ms = (_sched_time.perf_counter() - t0) * 1000.0
+        if not debug:
+            _set_schedule_table_cache(cache_key, payload)
+    else:
+        cache_hit = True
     if fmt.strip().lower() == "csv":
         export_payload = payload
         if columns and columns.strip():
@@ -137,6 +156,20 @@ async def schedule_derived_table(
         wanted = [c.strip() for c in columns.split(",") if c.strip()]
         if wanted:
             out = schedule_payload_with_column_subset(payload, wanted)
+    if debug and isinstance(out, dict):
+        # PERF-A05: surface the phase timings the validate / projection
+        # routes already expose. Bypassing the cache (above) means timings
+        # always reflect actual recomputation cost.
+        out = {
+            **out,
+            "_perfDebug": {
+                "totalMs": round((_sched_time.perf_counter() - total_start) * 1000.0, 3),
+                "docValidateMs": round(doc_validate_ms, 3),
+                "deriveMs": round(derive_ms, 3),
+                "cacheHit": cache_hit,
+                "lightweight": lightweight,
+            },
+        }
     return out
 
 

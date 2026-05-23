@@ -935,6 +935,7 @@ async def evidence_package(
     model_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     mode: Annotated[str, Query()] = "default",
+    debug: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
     """PERF-D06: mode=summary|default|full.
 
@@ -945,6 +946,9 @@ async def evidence_package(
     - `default` is the historical full payload (back-compat).
     - `full` is currently identical to `default`; kept as a forward seat
       for verbose debug/profiling additions.
+
+    PERF-A05: when `debug=true`, response includes `_perfDebug` with
+    docValidateMs, packageBuildMs, totalMs phase timings.
     """
     row = await load_model_row(session, model_id)
     if row is None:
@@ -954,7 +958,6 @@ async def evidence_package(
         raise HTTPException(
             status_code=400, detail="mode must be one of summary|default|full"
         )
-    doc = Document.model_validate(row.document)
     # PERF-D08: surface wall-clock probe in the payload so the Agent Review
     # performance gate can flip from advisory mock to a real budget-backed
     # warning. Budget threshold (ms) here matches the small.evidence_package
@@ -962,17 +965,29 @@ async def evidence_package(
     _ep_time = time
 
     _ep_start = _ep_time.perf_counter()
+    _t0 = _ep_time.perf_counter()
+    doc = Document.model_validate(row.document)
+    doc_validate_ms = (_ep_time.perf_counter() - _t0) * 1000.0
+    _t0 = _ep_time.perf_counter()
     payload = build_evidence_package_payload(
         model_id=model_id,
         doc=doc,
         source_document=row.document,
         mode=normalised,
     )
+    package_build_ms = (_ep_time.perf_counter() - _t0) * 1000.0
     payload["_packageGenerationMs"] = round((_ep_time.perf_counter() - _ep_start) * 1000.0, 2)
     payload["_packageGenerationBudgetMs"] = 1500.0
     payload["_packageGenerationOverBudget"] = bool(
         payload["_packageGenerationMs"] > payload["_packageGenerationBudgetMs"]
     )
+    if debug:
+        payload["_perfDebug"] = {
+            "totalMs": round((_ep_time.perf_counter() - _ep_start) * 1000.0, 3),
+            "docValidateMs": round(doc_validate_ms, 3),
+            "packageBuildMs": round(package_build_ms, 3),
+            "mode": normalised,
+        }
     return payload
 
 
