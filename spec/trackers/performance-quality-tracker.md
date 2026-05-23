@@ -723,19 +723,28 @@ once medium and large fixtures exist.
 Full code-path audit run on 2026-05-22 surfaced ten new bottlenecks not
 covered by existing tracker items. Items are ordered by leverage.
 
-1. **`evaluate()` defeats its own room-boundary cache.** `constraints_evaluation.py:782`
+1. **`evaluate()` defeats its own room-boundary cache.** ~~`constraints_evaluation.py:782`
    and `:1620` build a fresh `Document(elements=dict(elements))` before
    calling `compute_room_boundary_derivation`. The C04 request-scoped cache
    keys on `id(doc)` / `id(doc.elements)`, so each `evaluate()` call inside a
-   request misses the cache. Highest-impact silent regression. Fix is to
-   key the cache on revision/elements-hash, or stop the defensive re-wrap.
-2. **Cache keys are object-identity, not revision.** Same pattern in
+   request misses the cache.~~ **Resolved in `ced642f1` (2026-05-23)** —
+   `room_derivation` keys on content fingerprint; `evaluate()` no longer
+   defensively re-wraps. Measured: evaluate p50 107->84ms; evidence_package
+   696->563ms on small fixture.
+2. **Cache keys are object-identity, not revision.** ~~Same pattern in
    `room_derivation.py:522`, `schedule_derivation.py:742`,
-   `plan_projection_wire.py:1978`. Safe within one request, vulnerable
-   to in-place mutation. Worth resolving as part of `PERF-C05`.
-3. **`deepcopy(bundle)` on every C04 cache hit** (`room_derivation.py:525,527`).
+   `plan_projection_wire.py:1978`.~~ **Resolved across all three in
+   `ced642f1` + `72fd43b1` (2026-05-23)** — same content-fingerprint pattern
+   applied to schedule + plan-projection request caches. Documentation_heavy
+   evidence_package: 14533->12134ms p50 (-16%); schedule_heavy: 8225->7968ms
+   (-3%). Read-only contract documented; cross-request caches still deepcopy
+   on store.
+3. **`deepcopy(bundle)` on every C04 cache hit** ~~(`room_derivation.py:525,527`).
    On the `room_stress` fixture the deepcopy may consume a meaningful share of
-   the cited 190-230 ms baseline. Return a frozen view instead.
+   the cited 190-230 ms baseline. Return a frozen view instead.~~ **Resolved
+   in `ced642f1` + `72fd43b1` (2026-05-23)** — deepcopy removed from
+   room/schedule/plan-projection request caches; callers documented as
+   read-only.
 4. **`planCanvasClickHandler.ts` is now the dominant full-scan offender.**
    10+ `Object.values(elementsById)` calls (lines 899, 1472, 1484, 1510, 1561,
    1807, 1880, 2321). The post-split hot path moved out of `PlanCanvas.tsx`;
@@ -747,19 +756,26 @@ covered by existing tracker items. Items are ordered by leverage.
    on every snapshot/load/delta (`storeModelRuntimeSlice.ts:73, 115, 168`)
    yet has zero consumers outside tests. Pure overhead today; becomes
    immediate win as soon as `PERF-G03..G05` land.
-7. **`Workspace.tsx:2848, 2866, 2878`** do
+7. **`Workspace.tsx:2848, 2866, 2878`** ~~do
    `Object.values(elementsById).find(...'project_settings')` three times in
-   adjacent blocks. Trivial migration to `modelIndices.projectSettings`.
+   adjacent blocks. Trivial migration to `modelIndices.projectSettings`.~~
+   **Resolved** — all three call sites now consume `modelIndices.projectSettings`
+   (current lines `Workspace.tsx:2851, 2866, 2878`).
 8. **`viewport/dormerRoofCut.ts:22,26` and `levelDatums3d.ts:29`** do full
    scans inside the viewport rebuild path. Candidates for `PERF-G05`.
-9. **`build_evidence_package_payload`** (`routes_api.py:1011-1119`) now
+9. **`build_evidence_package_payload`** ~~(`routes_api.py:1011-1119`) now
    unconditionally derives 10+ heavy artifacts
    (`constructabilitySummary_v1`, `deterministicSheetEvidence`,
    `3dViewEvidence`, `planViewEvidence`, `sectionCutEvidence`,
    `evidenceClosureReview_v1`, `evidenceDiffIngestFixLoop_v1`,
    `bcfTopicsIndex_v1`, `agentReviewActions_v1`, ...). `PERF-D06` summary
    mode should drop the `deterministic*Evidence` + `evidenceClosureReview`
-   chain.
+   chain.~~ **Resolved** — `mode=summary` short-circuit lives at
+   `routes/api.py:1147-1152`; payload returns before the deterministic*Evidence
+   + evidenceClosureReview chain. The `default` mode (Evidence panel UI) still
+   pays the full cost — that is the surface where `documentation_heavy.evidence_package`
+   = 12 s p50 is observable. Splitting `default` further or making it
+   job-backed is the remaining PERF-D07 work.
 10. **`Hub.broadcast_json:118-145`** still iterates clients sequentially
     under `await`. Backpressure (threshold 8) closes slow sockets but no
     per-socket task. One slow client + a large evidence broadcast stalls
