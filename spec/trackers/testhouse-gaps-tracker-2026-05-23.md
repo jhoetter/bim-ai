@@ -336,6 +336,7 @@ grader. Target: 10/10 on all three houses by closing A1-A4.
 | `1bd0ea401` | A2 | stairs — 1 stair per house, deferred to ROOF iter because engine requires DG floor before stair top landing can host |
 | `2d5a59632` | B1 | structural-gate sidecars per floor + `/iterations/{iter}/structural-gate` endpoint |
 | `9664c9220` | Materials + stair-riser engine fix | (a) `materialKey` set on exterior createWall (`render_light_grey`), interior partition (`plaster`), main roof (`roof_tile_terracotta`); (b) `_materialize_stair_runs_and_landings` for shape='straight' no-runs path was hardcoded `riser_count=8` — fixed to honor `cmd.riser_count`. v2.8 alpha grader confirmed 9.5/10 gate met (stair `totalRiseMm=2750`, 6 DG mirror partitions present) — the residual run.riser_count=8 nit is what this engine fix addresses |
+| `46b22d6f5` | A4 Flachdach over EG-only wings | `_roof_bundle` walks EG room outlines; any room whose centroid falls outside the DG polygon is given its own `flat`-mode `createRoof` at DG elevation (material `concrete_smooth`, 200 mm overhang). Dry-run: alpha 1 roof (unchanged), beta **2 roofs** (gable + Flachdach over `room-EG-Garage`), gamma 1 roof (unchanged). Visible effect lands on next beta re-author |
 
 Re-grade after A1+A2+B1 (this session's deliverables):
 
@@ -372,8 +373,9 @@ to 10/10 with the dormer + stair additions.
   Doppelhaus roof spanning 19.80 m and trimming visually. Both are
   meaningful engine work — defer until the rest of the gap pile is
   closed.
-- **A4** — beta Flachdach garage roof (flat roof over the SE garage
-  wing area = EG_footprint − DG_footprint).
+- **A4** — ✅ **landed v2.10** (`46b22d6f5`). Flat roof over the SE
+  garage wing area, derived from EG room centroids outside the DG
+  polygon. Visible effect lands on next beta re-author.
 - **B2** — visual-gate phase as a JSON sidecar pulled from the
   grader subagent's existing output, plus a `gradeHistory: []` field
   in a per-house `run.json` summary so the dashboard can chart
