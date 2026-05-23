@@ -797,10 +797,7 @@ export function PlanCanvas({
         planTool === 'wall'
           ? snapWallPointToConnectivity(
               rw,
-              Object.values(elementsById).filter(
-                (el): el is Extract<Element, { kind: 'wall' }> =>
-                  el.kind === 'wall' && (!displayLevelId || el.levelId === displayLevelId),
-              ),
+              displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
               {
                 levelId: displayLevelId || undefined,
                 toleranceMm: hs.snapMm,
