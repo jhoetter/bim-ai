@@ -87,11 +87,22 @@ def _run_preflight(*, house: str, api_base: str, dpi: int) -> dict:
         "dpi": dpi,
         "runId": f"iter-0-house-{house}",
     }
-    return _post(
+    result = _post(
         api_base=api_base,
         path="/v3/source/prepare-ai-visual-trace-run",
         body=payload,
     )
+    # /agents dashboard (`agent_runs.py::_dashboard_summary`) reads
+    # `house-<X>/rendered-pages/` directly. Our preflight writes one
+    # level deeper at `preflight/rendered-pages/`. Symlink the
+    # convenient short path → the canonical preflight path so both
+    # the dashboard's `renderedPageGroups` count and the existing
+    # downstream tooling stay happy.
+    rendered_under_preflight = out_dir / "rendered-pages"
+    rendered_short = _house_workdir(house) / "rendered-pages"
+    if rendered_under_preflight.is_dir() and not rendered_short.exists():
+        rendered_short.symlink_to(rendered_under_preflight.relative_to(rendered_short.parent))
+    return result
 
 
 def _cmd_preflight(args: argparse.Namespace) -> int:
@@ -610,6 +621,58 @@ def _ortho_capture_plan(
     }
 
 
+# Mapping from our per-house capture name → the {house}-{view}-{variant}.png
+# pattern AgentHouseDashboard.tsx expects (VIEW_KINDS = ['3d', 'elev-N…']).
+# The dashboard renders both the 'full' and 'crop' variants; we only have the
+# full screenshot, so 'crop' aliases the same file.
+_LEGACY_VIEW_NAME_MAP = {
+    "ortho-north": "elev-north",
+    "ortho-east": "elev-east",
+    "ortho-south": "elev-south",
+    "ortho-west": "elev-west",
+}
+
+
+def _dual_write_captures(
+    *, house: str, iter_n: int, source_dir: Path, capture_name_prefix: str = "ortho"
+) -> list[Path]:
+    """Copy per-house captures to the legacy iter-N-captures/ layout.
+
+    `AgentHouseDashboard.tsx` resolves capture filenames as
+    `{house}-{view-kind}-{variant}.png` and discovers them via
+    `agent_runs.py::_enumerate_iterations` which scans
+    `tmp/reverse-bim/iter-N-captures/`. We mirror our per-house PNGs
+    there so the dashboard renders the iter card without any UI change.
+
+    Returns the list of written paths.
+    """
+
+    legacy_dir = REPO_ROOT / "tmp" / "reverse-bim" / f"iter-{iter_n}-captures"
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for png in sorted(source_dir.glob(f"{capture_name_prefix}-*.png")):
+        # Extract direction from "ortho-north.png" → "north"
+        stem = png.stem  # "ortho-north"
+        if "-" not in stem:
+            continue
+        direction = stem.split("-", 1)[1]
+        view_kind = _LEGACY_VIEW_NAME_MAP.get(stem, f"{capture_name_prefix}-{direction}")
+        for variant in ("full", "crop"):
+            dst = legacy_dir / f"{house}-{view_kind}-{variant}.png"
+            dst.write_bytes(png.read_bytes())
+            written.append(dst)
+    # Also drop a top-down 3d-full alias of the south view so the
+    # dashboard's '3d' tile has a thumbnail until per-floor authoring
+    # adds a proper top-down ortho.
+    south = source_dir / f"{capture_name_prefix}-south.png"
+    if south.is_file():
+        for variant in ("full", "crop"):
+            dst = legacy_dir / f"{house}-3d-{variant}.png"
+            dst.write_bytes(south.read_bytes())
+            written.append(dst)
+    return written
+
+
 def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
     house = args.house
     iter_n = int(args.iter)
@@ -663,6 +726,9 @@ def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
     )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     pngs = sorted(out_dir.glob("ortho-*.png"))
+    legacy_written = _dual_write_captures(
+        house=house, iter_n=iter_n, source_dir=out_dir, capture_name_prefix="ortho"
+    )
     status = "ok" if (proc.returncode == 0 and len(pngs) == 4) else "partial"
     logger.info(
         "testhouse_iter.end",
@@ -673,6 +739,7 @@ def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
             "status": status,
             "elapsed_ms": elapsed_ms,
             "png_count": len(pngs),
+            "legacy_dual_write_count": len(legacy_written),
             "runner_returncode": proc.returncode,
             "stderr_tail": (proc.stderr or "")[-400:],
         },
