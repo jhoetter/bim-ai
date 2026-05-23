@@ -361,6 +361,7 @@ def evaluate(
     option_locks: dict[str, str] | None = None,
     design_option_sets: list[Any] | None = None,
     documentation_advisors: bool = True,
+    changed_ids: set[str] | None = None,
 ) -> list[Violation]:
     """Evaluate authoring constraints against a document's elements.
 
@@ -374,7 +375,18 @@ def evaluate(
     that surface the full advisor stream (snapshot, evidence package,
     schedules, validate) must leave the default ``True`` so the surface
     stays consistent.
+
+    PERF-B08: ``changed_ids`` (when supplied) is the set of element ids
+    that changed since the last evaluation. Today this is plumbed only
+    as a future hook — individual advisor passes can opt into reading
+    ``changed_ids`` to early-return when none of their inputs are in
+    the set. ``None`` keeps the full-evaluation behavior.
     """
+    # ``changed_ids`` is accepted but not yet consumed; advisor passes
+    # opt in individually. Touch it once here so static analysis keeps
+    # the param meaningful and future advisor refactors have a single
+    # canonical entry point.
+    _ = changed_ids
     walls: list[WallElem] = []
     doors: list[DoorElem] = []
     windows: list[WindowElem] = []
