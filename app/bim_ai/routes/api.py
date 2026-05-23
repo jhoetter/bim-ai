@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import re
 import time
 from collections import OrderedDict
 from copy import deepcopy
@@ -9,8 +8,176 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
 
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from sqlalchemy import desc, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bim_ai._io.log import get_logger as _ws_log_factory
+from bim_ai.activity import emit_activity_row
+from bim_ai.agent_brief_acceptance_readout import agent_brief_acceptance_readout_v1
+from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
+from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
+from bim_ai.agent_generated_bundle_qa_checklist import (
+    agent_generated_bundle_qa_checklist_v1,
+)
+from bim_ai.agent_review_readout_consistency_closure import (
+    agent_review_readout_consistency_closure_v1,
+)
+from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
+from bim_ai.architecture_lens_query import build_architecture_lens_query
+from bim_ai.assets import search_assets
+from bim_ai.codes import BUILDING_PRESETS
+from bim_ai.commands import Command
+from bim_ai.constructability_bcf import build_constructability_bcf_export
+from bim_ai.constructability_report import (
+    build_constructability_report,
+    build_constructability_summary_v1,
+)
+from bim_ai.construction_lens import build_construction_lens_payload
+from bim_ai.coordination_lens import build_coordination_lens_snapshot
+from bim_ai.cost_quantity import cost_quantity_lens_review_status
+from bim_ai.db import SessionMaker, get_session
+from bim_ai.diff_engine import compute_element_diff
+from bim_ai.document import Document
+from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
+from bim_ai.energy_lens import build_energy_handoff_payload
+from bim_ai.engine import (
+    clone_document,
+    compute_delta_wire,
+    ensure_cardinal_elevation_views,
+    ensure_internal_origin,
+    ensure_seed_hatches,
+    ensure_sun_settings,
+    try_commit_bundle,
+)
+from bim_ai.evidence.room_color_scheme_override_evidence import (
+    build_room_color_scheme_override_evidence_v1,
+    roomColourSchemeLegendEvidence_v1,
+)
+from bim_ai.evidence_manifest import (
+    MINIMAL_PROBE_PNG_BYTES_V1,
+    MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    agent_evidence_closure_hints,
+    artifact_upload_manifest_v1,
+    deterministic_3d_view_evidence_manifest,
+    deterministic_plan_view_evidence_manifest,
+    deterministic_section_cut_evidence_manifest,
+    deterministic_sheet_evidence_manifest,
+    evidence_agent_follow_through_v1,
+    evidence_baseline_lifecycle_readout_v1,
+    evidence_closure_review_v1,
+    evidence_diff_ingest_fix_loop_v1,
+    evidence_lifecycle_signal_v1,
+    evidence_package_digest_invariants_v1,
+    evidence_package_semantic_digest_sha256,
+    evidence_review_performance_gate_v1,
+    expected_screenshot_captures,
+    export_link_map,
+    merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
+    merge_server_png_byte_ingest_into_evidence_closure_review_v1,
+    plan_view_wire_index,
+    sheetProductionEvidenceBaseline_v1,
+)
+from bim_ai.fire_safety_lens import fire_safety_lens_review_status
+from bim_ai.hub import Hub
+from bim_ai.jobs.queue import JobQueue, get_queue
+from bim_ai.jobs.types import CreateJobRequest, Job
+from bim_ai.link_expansion import expand_links
+from bim_ai.mep_lens import build_mep_lens_payload
+from bim_ai.model_summary import compute_model_summary
+from bim_ai.models.api_requests import SemanticAuthoringRequest
+from bim_ai.plan_projection_wire import (
+    plan_projection_wire_from_request,
+    resolve_plan_projection_wire,
+    section_cut_projection_wire,
+)
+from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
+from bim_ai.renderer_diagnostic_persistence import (
+    latest_renderer_diagnostic_packet_for_evidence,
+    renderer_diagnostic_packet_embedding,
+)
+from bim_ai.room_derivation_preview import (
+    room_derivation_candidates_review,
+    room_derivation_preview,
+)
+from bim_ai.routes.activity import activity_router
+from bim_ai.routes.bundles import bundles_router
+from bim_ai.routes.catalogs import catalogs_router
+from bim_ai.routes.commands import commands_router
+from bim_ai.routes.concept_seeds import concept_seeds_router
+from bim_ai.routes.deps import (
+    PERSPECTIVE_IDS,
+    WORKSPACE_LAYOUT_PRESET_IDS,
+    document_to_wire,
+    get_hub,
+    load_model_row,
+    violations_wire,
+)
+from bim_ai.routes.exports import exports_router
+from bim_ai.routes.hybrid_reverse_bim_execute import hybrid_reverse_bim_execute_router
+from bim_ai.routes.imports import imports_router
+from bim_ai.routes.integrity import integrity_router
+from bim_ai.routes.markups import markups_router
+from bim_ai.routes.milestones import milestones_router
+from bim_ai.routes.pixel_map import pixel_map_router
+from bim_ai.routes.presentation import presentation_router
+from bim_ai.routes.query_resolve import query_resolve_router
+from bim_ai.routes.render_export import render_export_router
+from bim_ai.routes.renderer_diagnostics import renderer_diagnostics_router
+from bim_ai.routes.reverse_bim import reverse_bim_router
+from bim_ai.routes.schedules import schedules_router
+from bim_ai.routes.sharing import sharing_router
+from bim_ai.routes.site_import import site_import_router
+from bim_ai.routes.sketch import sketch_router
+from bim_ai.routes.sketch_product import sketch_product_router
+from bim_ai.routes.tokens import tokens_router
+from bim_ai.routes.v3_meta import v3_meta_router
+from bim_ai.routes.ws_bootstrap import ws_bootstrap_router
+from bim_ai.schedule_derivation import list_schedule_ids
+from bim_ai.seed_library import is_seed_library_project_id
+from bim_ai.services.agent_loop import (
+    AgentIterateRequest,
+    AgentIterateResponse,
+    generate_patch,
+)
+from bim_ai.services.semantic_authoring import (
+    UnsupportedSemanticOperationError,
+    build_semantic_authoring_bundle,
+)
+from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
+from bim_ai.structure_lens import structure_analysis_export
+from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
+from bim_ai.tables import (
+    ActivityRowRecord,
+    ModelRecord,
+    ProjectRecord,
+    UndoStackRecord,
+)
+from bim_ai.template_loader import (
+    list_templates,
+    load_template_snapshot,
+    template_exists,
+)
+from bim_ai.type_material_registry import merged_registry_payload
+from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
+from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
+
 logger = logging.getLogger(__name__)
 
+# PERF-F03: cross-request plan-projection cache keyed by
+# (model_id, revision, plan_view_id, fallback_level_id, presentation).
+# Repeated /projection/plan requests for unchanged revisions skip the
+# plan_projection_wire_from_request call which is the dominant cost.
 _PLAN_PROJECTION_CACHE_MAX = 128
 _PLAN_PROJECTION_CACHE: OrderedDict[tuple[str, int, str, str, str], dict[str, Any]] = OrderedDict()
 
@@ -59,230 +226,6 @@ def _set_plan_projection_cache(
         _PLAN_PROJECTION_CACHE.popitem(last=False)
 
 
-# PERF-F04: cross-request schedule table cache keyed by
-# (model_id, revision, schedule_id, lightweight). Same LRU shape as
-# _PLAN_PROJECTION_CACHE — repeated /schedules/{id}/table requests for
-# unchanged revisions skip the derive_schedule_table call, which is the
-# dominant ~230 ms cost on room schedules (tracker baseline). The
-# `lightweight` axis is part of the key so PERF-F06 lightweight mode and
-# the full derivation never collide.
-_SCHEDULE_TABLE_CACHE_MAX = 128
-_SCHEDULE_TABLE_CACHE: OrderedDict[tuple[str, int, str, bool], dict[str, Any]] = OrderedDict()
-
-
-def _schedule_table_cache_key(
-    *, model_id: UUID, revision: int, schedule_id: str, lightweight: bool = False
-) -> tuple[str, int, str, bool]:
-    return (str(model_id), revision, schedule_id, lightweight)
-
-
-def _get_schedule_table_cache(key: tuple[str, int, str, bool]) -> dict[str, Any] | None:
-    cached = _SCHEDULE_TABLE_CACHE.get(key)
-    if cached is None:
-        return None
-    _SCHEDULE_TABLE_CACHE.move_to_end(key)
-    return deepcopy(cached)
-
-
-def _set_schedule_table_cache(
-    key: tuple[str, int, str, bool], payload: dict[str, Any]
-) -> None:
-    _SCHEDULE_TABLE_CACHE[key] = deepcopy(payload)
-    _SCHEDULE_TABLE_CACHE.move_to_end(key)
-    while len(_SCHEDULE_TABLE_CACHE) > _SCHEDULE_TABLE_CACHE_MAX:
-        _SCHEDULE_TABLE_CACHE.popitem(last=False)
-
-
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    HTTPException,
-    Query,
-    WebSocket,
-    WebSocketDisconnect,
-)
-from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
-from sqlalchemy import desc, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from bim_ai.agent_brief_acceptance_readout import agent_brief_acceptance_readout_v1
-from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
-from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
-from bim_ai.agent_generated_bundle_qa_checklist import (
-    agent_generated_bundle_qa_checklist_v1,
-)
-from bim_ai.agent_review_readout_consistency_closure import (
-    agent_review_readout_consistency_closure_v1,
-)
-from bim_ai.architecture_lens_query import build_architecture_lens_query
-from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
-from bim_ai.codes import BUILDING_PRESETS
-from bim_ai.commands import Command
-from bim_ai.constructability_bcf import build_constructability_bcf_export
-from bim_ai.constructability_report import (
-    build_constructability_report,
-    build_constructability_summary_v1,
-)
-from bim_ai.coordination_lens import build_coordination_lens_snapshot
-from bim_ai.construction_lens import build_construction_lens_payload
-from bim_ai.cost_quantity import cost_quantity_lens_review_status
-from bim_ai.db import SessionMaker, find_idempotent_undo_record, get_session
-from bim_ai.diff_engine import compute_element_diff
-from bim_ai.document import Document
-from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
-from bim_ai.fire_safety_lens import fire_safety_lens_review_status
-from bim_ai.assets import search_assets
-from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
-from bim_ai.cmd.types import CommandBundle, BundleResult
-from bim_ai.engine import (
-    clone_document,
-    ensure_cardinal_elevation_views,
-    ensure_internal_origin,
-    ensure_seed_hatches,
-    ensure_sun_settings,
-    try_commit_bundle,
-)
-from bim_ai.services.agent_loop import (
-    AgentIterateRequest,
-    AgentIterateResponse,
-    generate_patch,
-)
-from bim_ai.evidence_manifest import (
-    MINIMAL_PROBE_PNG_BYTES_V1,
-    MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
-    agent_evidence_closure_hints,
-    artifact_upload_manifest_v1,
-    deterministic_3d_view_evidence_manifest,
-    deterministic_plan_view_evidence_manifest,
-    deterministic_section_cut_evidence_manifest,
-    deterministic_sheet_evidence_manifest,
-    evidence_agent_follow_through_v1,
-    evidence_baseline_lifecycle_readout_v1,
-    evidence_closure_review_v1,
-    evidence_diff_ingest_fix_loop_v1,
-    evidence_lifecycle_signal_v1,
-    evidence_package_digest_invariants_v1,
-    evidence_package_semantic_digest_sha256,
-    evidence_review_performance_gate_v1,
-    expected_screenshot_captures,
-    export_link_map,
-    merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
-    merge_server_png_byte_ingest_into_evidence_closure_review_v1,
-    plan_view_wire_index,
-    sheetProductionEvidenceBaseline_v1,
-)
-from bim_ai.collab.orchestrator import get_orchestrator
-from bim_ai.hub import Hub
-from bim_ai.jobs.queue import JobQueue, get_queue
-from bim_ai.jobs.types import CreateJobRequest, Job
-from bim_ai.link_expansion import expand_links
-from bim_ai.model_summary import compute_model_summary
-from bim_ai.mep_lens import build_mep_lens_payload
-from bim_ai.plan_projection_wire import (
-    plan_projection_wire_from_request,
-    resolve_plan_projection_wire,
-    section_cut_projection_wire,
-)
-from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
-from bim_ai.services.hybrid_reverse_bim import (
-    build_hybrid_reverse_bim_run_report,
-    build_hybrid_reverse_bim_slice_report,
-    build_source_spec_revision_report,
-)
-from bim_ai.integrity_preflight import build_integrity_preflight_report
-from bim_ai.query_resolve import query_elements, qa_advisor
-from bim_ai.reverse_bim import (
-    build_mcp_authoring_readiness,
-    build_reverse_bim_phase_packet,
-)
-from bim_ai.reverse_bim.evidence_requirements import build_reverse_bim_evidence_requirements
-from bim_ai.reverse_bim.handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
-from bim_ai.reverse_bim.readback import build_reverse_bim_readback_comparison
-from bim_ai.reverse_bim.source_revision_persistence import (
-    persist_reverse_bim_source_revision_ledger,
-)
-from bim_ai.reverse_bim.source_revision_ledger import build_reverse_bim_source_revision_ledger
-from bim_ai.reverse_bim.visual_capture import build_reverse_bim_view_capture_plan
-from bim_ai.renderer_diagnostic_persistence import (
-    append_renderer_diagnostic_packet,
-    latest_renderer_diagnostic_packet_for_evidence,
-    normalize_renderer_diagnostic_packet,
-    renderer_diagnostic_packet_embedding,
-)
-from bim_ai.evidence.room_color_scheme_override_evidence import (
-    build_room_color_scheme_override_evidence_v1,
-    roomColourSchemeLegendEvidence_v1,
-)
-from bim_ai.room_derivation_preview import (
-    room_derivation_candidates_review,
-    room_derivation_preview,
-)
-from bim_ai.models.api_requests import (
-    ReverseBimHybridRunExecuteRequest,
-    ReverseBimHybridSliceExecuteRequest,
-    SemanticAuthoringRequest,
-)
-from bim_ai.services.semantic_authoring import (
-    UnsupportedSemanticOperationError,
-    build_semantic_authoring_bundle,
-)
-from bim_ai.routes.activity import activity_router
-from bim_ai.routes.catalogs import catalogs_router
-from bim_ai.routes.commands import commands_router
-from bim_ai.routes.deps import (
-    PERSPECTIVE_IDS,
-    WORKSPACE_LAYOUT_PRESET_IDS,
-    document_to_wire,
-    get_hub,
-    load_model_row,
-    resolve_caller_role,
-    resolve_token_role,
-    violations_wire,
-)
-from bim_ai.routes.exports import exports_router
-from bim_ai.routes.integrity import integrity_router
-from bim_ai.routes.markups import markups_router
-from bim_ai.routes.imports import imports_router
-from bim_ai.routes.query_resolve import query_resolve_router
-from bim_ai.routes.presentation import presentation_router
-from bim_ai.routes.reverse_bim import reverse_bim_router
-from bim_ai.routes.sharing import sharing_router
-from bim_ai.routes.sketch import sketch_router
-from bim_ai.routes.sketch_product import sketch_product_router
-from bim_ai.routes.v3_meta import v3_meta_router
-from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
-from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
-from bim_ai.seed_library import is_seed_library_project_id
-from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
-from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
-from bim_ai.structure_lens import structure_analysis_export
-from bim_ai.permissions import authorize_command
-from bim_ai.milestones import CreateMilestoneBody
-from bim_ai.tables import (
-    MilestoneRecord,
-    ModelRecord,
-    ProjectRecord,
-    UndoStackRecord,
-)
-from bim_ai.versioning import commit_context, current_commit_id
-from bim_ai.template_loader import (
-    list_templates,
-    load_template_snapshot,
-    template_exists,
-)
-from bim_ai.transaction_safety import (
-    ActorKind,
-    assess_transaction_safety,
-    build_dry_run_evidence,
-    build_transaction_preflight_audit,
-)
-from bim_ai.type_material_registry import merged_registry_payload
-from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
-from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
-
 api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
 api_router.include_router(commands_router)
@@ -298,17 +241,22 @@ api_router.include_router(sharing_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
 api_router.include_router(v3_meta_router)
+# BRT-24: route families extracted from this file.
+api_router.include_router(bundles_router)
+api_router.include_router(hybrid_reverse_bim_execute_router)
+api_router.include_router(schedules_router)
+api_router.include_router(tokens_router)
+api_router.include_router(milestones_router)
+api_router.include_router(pixel_map_router)
+api_router.include_router(site_import_router)
+api_router.include_router(concept_seeds_router)
+api_router.include_router(render_export_router)
+api_router.include_router(renderer_diagnostics_router)
+api_router.include_router(ws_bootstrap_router)
 
 
 def _get_job_queue() -> JobQueue:
     return get_queue()
-
-
-class RendererDiagnosticPacketPersistBody(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    packet: dict[str, Any]
-    user_id: str | None = Field(default="local-dev", alias="userId")
 
 
 # ---------------------------------------------------------------------------
@@ -780,7 +728,7 @@ async def validate_model_snapshot(
     """PERF-A05: when `debug=true`, response includes `_perfDebug` with
     docValidateMs, violationsMs, summaryMs, totalMs phase timings.
     """
-    import time as _time
+    _time = time
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1011,7 +959,7 @@ async def evidence_package(
     # performance gate can flip from advisory mock to a real budget-backed
     # warning. Budget threshold (ms) here matches the small.evidence_package
     # CI budget (1500 ms); larger fixtures will need their own thresholds.
-    import time as _ep_time
+    _ep_time = time
 
     _ep_start = _ep_time.perf_counter()
     payload = build_evidence_package_payload(
@@ -1296,45 +1244,6 @@ def build_evidence_package_payload(
     return payload
 
 
-@api_router.post("/models/{model_id}/renderer-diagnostics")
-async def persist_renderer_diagnostics(
-    model_id: UUID,
-    body: RendererDiagnosticPacketPersistBody,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    packet_revision = body.packet.get("modelRevision")
-    if packet_revision is not None and str(packet_revision) != str(doc.revision):
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "reason": "renderer_diagnostic_packet_revision_conflict",
-                "currentRevision": doc.revision,
-                "packetRevision": packet_revision,
-            },
-        )
-    packet = normalize_renderer_diagnostic_packet(
-        body.packet,
-        model_id=str(model_id),
-        model_revision=doc.revision,
-    )
-    row.document = append_renderer_diagnostic_packet(row.document, packet)  # type: ignore[assignment]
-    await session.commit()
-    return {
-        "ok": True,
-        "modelId": str(model_id),
-        "revision": doc.revision,
-        "rendererDiagnosticPacket_v1": packet,
-        "rendererDiagnosticPacketEmbedding_v1": renderer_diagnostic_packet_embedding(
-            row.document,
-            model_revision=doc.revision,
-        ),
-    }
-
-
 @api_router.get("/models/{model_id}/room-derivation-candidates")
 async def room_derivation_candidates(
     model_id: UUID,
@@ -1378,7 +1287,7 @@ async def projection_plan_wire_route(
     Debug requests bypass the cross-request cache so the timings reflect
     actual recomputation cost; default requests are unchanged.
     """
-    import time as _time
+    _time = time
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -1522,590 +1431,6 @@ async def semantic_authoring_route(
     return bundle.model_dump(by_alias=True)
 
 
-# ---------------------------------------------------------------------------
-# Existing-building source ingestion and reverse-BIM method surfaces
-# ---------------------------------------------------------------------------
-
-
-@api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-slice-execute")
-async def reverse_bim_hybrid_slice_execute_route(
-    model_id: UUID,
-    body: ReverseBimHybridSliceExecuteRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    hub: Annotated[Hub, Depends(get_hub)],
-    token: Annotated[str | None, Query()] = None,
-) -> dict[str, Any]:
-    """Run one hybrid reverse-BIM authoring slice through the live bundle route."""
-
-    body_dict: dict[str, Any] = body.model_dump(by_alias=True)
-    phase = body_dict.get("phase") if isinstance(body_dict.get("phase"), dict) else {}
-    phase_id = str(phase.get("phaseId") or phase.get("id") or body_dict.get("phaseId") or "unknown")
-    source_facts = (
-        body_dict.get("facts")
-        or body_dict.get("sourceFacts")
-        or body_dict.get("extractedFacts")
-        or []
-    )
-    mcp_readiness = body_dict.get("mcpReadiness") or body_dict.get("mcp_readiness")
-    if not isinstance(mcp_readiness, dict) and isinstance(source_facts, list):
-        mcp_readiness = build_mcp_authoring_readiness(
-            facts=source_facts,
-            target_phase=phase_id,
-        )
-    if not isinstance(mcp_readiness, dict):
-        mcp_readiness = {"ok": True, "summary": {"blockerCount": 0}, "rows": []}
-
-    expected_readback = _hybrid_expected_readback(body_dict, phase)
-    source_fact_ids = _hybrid_source_fact_ids(body_dict, phase, expected_readback)
-    if int((mcp_readiness.get("summary") or {}).get("blockerCount") or 0) and not body_dict.get(
-        "forceDryRunWithBlockers"
-    ):
-        slice_report = build_hybrid_reverse_bim_slice_report(
-            phase={"phaseId": phase_id},
-            mcp_readiness=mcp_readiness,
-        )
-        return {
-            "ok": False,
-            "format": "hybridReverseBimSliceExecution_v1",
-            "modelId": str(model_id),
-            "phaseId": phase_id,
-            "executionState": "source_blocked",
-            "mcpReadiness": mcp_readiness,
-            "sliceReport": slice_report,
-            "nextStep": slice_report.get("nextStep"),
-        }
-
-    bundle_payload = body_dict.get("bundle") or body_dict.get("commandBundle")
-    if not isinstance(bundle_payload, dict):
-        raise HTTPException(status_code=422, detail="bundle or commandBundle is required")
-
-    user_id = str(body_dict.get("userId") or body_dict.get("user_id") or "local-dev")
-    submitter = str(body_dict.get("submitter") or "agent")
-    actor_kind = body_dict.get("actorKind") or body_dict.get("actor_kind") or "agent"
-    client_op_id = body_dict.get("clientOpId") or body_dict.get("client_op_id")
-    dry_run_request = _hybrid_bundle_request(
-        bundle_payload=bundle_payload,
-        mode="dry_run",
-        user_id=user_id,
-        submitter=submitter,
-        actor_kind=actor_kind,
-        client_op_id=client_op_id,
-    )
-    dry_run_result = await apply_bundle_route(
-        model_id,
-        dry_run_request,
-        session=session,
-        hub=hub,
-        token=token,
-    )
-    dry_run_evidence = (
-        dry_run_result.get("dryRunEvidence") if isinstance(dry_run_result, dict) else None
-    )
-    commit_requested = bool(body_dict.get("commit") or body_dict.get("mode") == "commit")
-    commit_result: dict[str, Any] | None = None
-    if (
-        commit_requested
-        and isinstance(dry_run_evidence, dict)
-        and dry_run_evidence.get("ok") is True
-    ):
-        commit_request = _hybrid_bundle_request(
-            bundle_payload=bundle_payload,
-            mode="commit",
-            user_id=user_id,
-            submitter=submitter,
-            actor_kind=actor_kind,
-            client_op_id=client_op_id,
-            dry_run_evidence=dry_run_evidence,
-        )
-        slice_ctx = _hybrid_slice_commit_context(
-            body_dict=body_dict,
-            phase=phase,
-            phase_id=phase_id,
-            source_fact_ids=source_fact_ids,
-            user_id=user_id,
-            submitter=submitter,
-        )
-        slice_summary = f"hybrid slice: phase={phase_id}"
-        async with commit_context(
-            session,
-            model_id=model_id,
-            summary=slice_summary,
-            context=slice_ctx,
-        ):
-            commit_result = await apply_bundle_route(
-                model_id,
-                commit_request,
-                session=session,
-                hub=hub,
-                token=token,
-            )
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    changed_ids = _hybrid_changed_ids(commit_result or dry_run_result)
-    query_request = {
-        "filter": {"ids": changed_ids} if changed_ids else {},
-        "limit": 500,
-    }
-    query_result = query_elements(
-        str(model_id),
-        doc,
-        query_request,
-        include=["geometrySummary", "hostRefs", "raw"],
-    )
-    queried_elements = (query_result.get("data") or {}).get("elements") or []
-    readback_comparison = build_reverse_bim_readback_comparison(
-        expected_readback=expected_readback,
-        model_readback=body_dict.get("modelReadback") or body_dict.get("readback"),
-        elements=queried_elements,
-        tolerance_defaults=body_dict.get("toleranceDefaults")
-        or body_dict.get("tolerance_defaults"),
-    )
-    advisor = qa_advisor(
-        str(model_id),
-        doc,
-        {"profile": body_dict.get("advisorProfile") or "authoring_default", "limit": 500},
-    )
-    constructability = {
-        "modelId": str(model_id),
-        **build_constructability_report(
-            doc.elements,
-            revision=doc.revision,
-            profile=str(body_dict.get("constructabilityProfile") or "authoring_default"),
-            changed_element_ids=changed_ids,
-            design_option_sets=doc.design_option_sets,
-        ),
-    }
-    integrity = build_integrity_preflight_report(
-        doc,
-        revision=doc.revision,
-        model_id=str(model_id),
-        changed_element_ids=changed_ids,
-    )
-    source_spec_revision = build_source_spec_revision_report(
-        readback_comparison=readback_comparison,
-        source_overlay=body_dict.get("sourceOverlay") or body_dict.get("source_overlay"),
-        advisor=advisor,
-        constructability=constructability,
-        integrity=integrity,
-        facts=source_facts if isinstance(source_facts, list) else [],
-    )
-    source_revision_ledger = build_reverse_bim_source_revision_ledger(
-        facts=source_facts if isinstance(source_facts, list) else [],
-        source_spec_revision=source_spec_revision,
-        existing_ledger=body_dict.get("sourceRevisionLedger")
-        or body_dict.get("source_revision_ledger"),
-        phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
-    )
-    source_revision_ledger_persistence = None
-    output_dir = body_dict.get("outputDir") or body_dict.get("output_dir")
-    if output_dir:
-        source_revision_ledger_persistence = persist_reverse_bim_source_revision_ledger(
-            output_dir=output_dir,
-            source_revision_ledger=source_revision_ledger,
-            run_id=body_dict.get("runId") or body_dict.get("run_id") or phase_id,
-        )
-    evidence_package = {
-        "modelSummary": compute_model_summary(doc),
-        "queryElements": query_result,
-        "readbackComparison": readback_comparison,
-        "sourceSpecRevision": source_spec_revision,
-        "sourceRevisionLedger": source_revision_ledger,
-        "sourceRevisionLedgerPersistence": source_revision_ledger_persistence,
-    }
-    phase_packet = build_reverse_bim_phase_packet(
-        phase_id=phase_id,
-        start_revision=(
-            bundle_payload.get("parentRevision") if isinstance(bundle_payload, dict) else None
-        ),
-        end_revision=doc.revision if commit_result else None,
-        source_fact_ids=source_fact_ids,
-        transactions=[
-            {"mode": "dry_run", "result": dry_run_result},
-            *([{"mode": "commit", "result": commit_result}] if commit_result else []),
-        ],
-        advisor=advisor,
-        constructability=constructability,
-        integrity_preflight=integrity,
-        evidence_package=evidence_package,
-        finding_dispositions=body_dict.get("findingDispositions") or [],
-    )
-    evidence_requirements = body_dict.get("evidenceRequirements") or body_dict.get(
-        "evidence_requirements"
-    )
-    if not isinstance(evidence_requirements, dict) and (
-        body_dict.get("sourcePageIndex")
-        or body_dict.get("source_page_index")
-        or body_dict.get("requireVisualEvidence")
-        or body_dict.get("require_visual_evidence")
-    ):
-        evidence_requirements = build_reverse_bim_evidence_requirements(
-            source_page_index=body_dict.get("sourcePageIndex")
-            or body_dict.get("source_page_index"),
-            source_facts=source_facts if isinstance(source_facts, list) else [],
-            phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
-        )
-    view_capture_plan = body_dict.get("viewCapturePlan") or body_dict.get("view_capture_plan")
-    if not isinstance(view_capture_plan, dict) and isinstance(evidence_requirements, dict):
-        required_evidence_count = int(
-            (evidence_requirements.get("summary") or {}).get("requiredEvidenceCount") or 0
-        )
-        capture_output_dir = (
-            body_dict.get("viewCaptureOutputDir")
-            or body_dict.get("view_capture_output_dir")
-            or body_dict.get("outputDir")
-            or body_dict.get("output_dir")
-        )
-        if required_evidence_count and capture_output_dir:
-            view_capture_plan = build_reverse_bim_view_capture_plan(
-                model_id=str(model_id),
-                required_ui_views=evidence_requirements.get("requiredUiViews")
-                or evidence_requirements.get("required_ui_views"),
-                required_overlay_views=evidence_requirements.get("requiredOverlayViews")
-                or evidence_requirements.get("required_overlay_views"),
-                output_dir=str(capture_output_dir),
-                base_url=body_dict.get("viewCaptureBaseUrl")
-                or body_dict.get("view_capture_base_url")
-                or body_dict.get("baseUrl")
-                or body_dict.get("base_url"),
-                run_id=body_dict.get("runId") or body_dict.get("run_id") or phase_id,
-                viewport=body_dict.get("captureViewport") or body_dict.get("viewport"),
-            )
-    source_overlay = body_dict.get("sourceOverlay") or body_dict.get("source_overlay")
-    ui_evidence = body_dict.get("uiEvidence") or body_dict.get("ui_evidence")
-    slice_report = build_hybrid_reverse_bim_slice_report(
-        phase={"phaseId": phase_id},
-        mcp_readiness=mcp_readiness,
-        readback_comparison=readback_comparison,
-        phase_packet=phase_packet if commit_result else None,
-        source_spec_revision=source_spec_revision,
-        source_overlay=source_overlay,
-        ui_evidence=ui_evidence,
-        evidence_requirements=evidence_requirements
-        if isinstance(evidence_requirements, dict)
-        else None,
-        view_capture_plan=view_capture_plan if isinstance(view_capture_plan, dict) else None,
-    )
-    execution_state = (
-        "accepted"
-        if slice_report.get("ok")
-        else "commit_blocked"
-        if commit_requested and not commit_result
-        else "committed_with_blockers"
-        if commit_result
-        else "dry_run_passed"
-        if dry_run_evidence and dry_run_evidence.get("ok")
-        else "dry_run_blocked"
-    )
-    return {
-        "ok": bool(slice_report.get("ok")),
-        "format": "hybridReverseBimSliceExecution_v1",
-        "modelId": str(model_id),
-        "phaseId": phase_id,
-        "executionState": execution_state,
-        "dryRunResult": dry_run_result,
-        "commitResult": commit_result,
-        "changedElementIds": changed_ids,
-        "mcpReadiness": mcp_readiness,
-        "readbackComparison": readback_comparison,
-        "advisor": advisor,
-        "constructability": constructability,
-        "integrityPreflight": integrity,
-        "sourceSpecRevision": source_spec_revision,
-        "sourceRevisionLedger": source_revision_ledger,
-        "sourceRevisionLedgerPersistence": source_revision_ledger_persistence,
-        "evidenceRequirements": evidence_requirements,
-        "viewCapturePlan": view_capture_plan,
-        "phasePacket": phase_packet,
-        "sliceReport": slice_report,
-        "nextStep": slice_report.get("nextStep"),
-    }
-
-
-@api_router.post("/v3/models/{model_id}/reverse-bim/hybrid-run-execute")
-async def reverse_bim_hybrid_run_execute_route(
-    model_id: UUID,
-    body: ReverseBimHybridRunExecuteRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    hub: Annotated[Hub, Depends(get_hub)],
-    token: Annotated[str | None, Query()] = None,
-) -> dict[str, Any]:
-    """Execute an ordered list of reverse-BIM slices and stop on blockers."""
-
-    body_dict: dict[str, Any] = body.model_dump(by_alias=True)
-    slices = [row for row in body_dict.get("slices") or [] if isinstance(row, dict)]
-    if not slices:
-        raise HTTPException(status_code=422, detail="slices must contain at least one slice body")
-    continue_on_blockers = bool(
-        body_dict.get("continueOnBlockers") or body_dict.get("continue_on_blockers")
-    )
-    common_keys = {
-        "facts",
-        "sourceFacts",
-        "extractedFacts",
-        "phaseAuthoringSpec",
-        "phaseSpec",
-        "sourceRevisionLedger",
-        "source_revision_ledger",
-        "findingDispositions",
-        "sourceOverlay",
-        "source_overlay",
-        "uiEvidence",
-        "ui_evidence",
-        "evidenceRequirements",
-        "evidence_requirements",
-        "sourcePageIndex",
-        "source_page_index",
-        "viewCapturePlan",
-        "view_capture_plan",
-        "viewCaptureOutputDir",
-        "view_capture_output_dir",
-        "viewCaptureBaseUrl",
-        "view_capture_base_url",
-        "captureViewport",
-        "requireVisualEvidence",
-        "require_visual_evidence",
-        "outputDir",
-        "output_dir",
-        "runId",
-        "run_id",
-    }
-    common = {key: body_dict[key] for key in common_keys if key in body_dict}
-    results = []
-    stopped = False
-    for slice_body in slices:
-        merged_body = {**common, **slice_body}
-        result = await reverse_bim_hybrid_slice_execute_route(
-            model_id,
-            ReverseBimHybridSliceExecuteRequest.model_validate(merged_body),
-            session=session,
-            hub=hub,
-            token=token,
-        )
-        results.append(result)
-        if result.get("ok") is not True and not continue_on_blockers:
-            stopped = True
-            break
-
-    phase_packets = [
-        row.get("phasePacket") for row in results if isinstance(row.get("phasePacket"), dict)
-    ]
-    slice_reports = [
-        row.get("sliceReport") for row in results if isinstance(row.get("sliceReport"), dict)
-    ]
-    run_report = build_hybrid_reverse_bim_run_report(
-        phase_authoring_spec=body_dict.get("phaseAuthoringSpec")
-        or body_dict.get("phaseSpec")
-        or {},
-        phase_packets=phase_packets,
-        slice_reports=slice_reports,
-        package_acceptance=body_dict.get("packageAcceptance") or body_dict.get("folderOutput"),
-    )
-    latest_source_revision_ledger = None
-    for row in reversed(results):
-        if isinstance(row.get("sourceRevisionLedger"), dict):
-            latest_source_revision_ledger = row.get("sourceRevisionLedger")
-            break
-    handoff_regeneration = None
-    if latest_source_revision_ledger:
-        handoff_regeneration = build_reverse_bim_handoff_regeneration_plan(
-            facts=body_dict.get("facts")
-            or body_dict.get("sourceFacts")
-            or body_dict.get("extractedFacts"),
-            source_revision_ledger=latest_source_revision_ledger,
-            phase_authoring_spec=body_dict.get("phaseAuthoringSpec") or body_dict.get("phaseSpec"),
-        )
-    return {
-        "ok": bool(run_report.get("ok")) and not stopped,
-        "format": "hybridReverseBimRunExecution_v1",
-        "modelId": str(model_id),
-        "summary": {
-            "requestedSliceCount": len(slices),
-            "executedSliceCount": len(results),
-            "stoppedOnBlocker": stopped,
-            "acceptedSliceCount": sum(1 for row in results if row.get("ok") is True),
-        },
-        "sliceExecutions": results,
-        "latestSourceRevisionLedger": latest_source_revision_ledger,
-        "handoffRegeneration": handoff_regeneration,
-        "runReport": run_report,
-        "nextStep": (
-            "All requested slices executed and accepted."
-            if run_report.get("ok") and not stopped
-            else "Repair the first blocked slice using handoffRegeneration/readerRepairRequests when present, then rerun from that slice."
-        ),
-    }
-
-
-def _hybrid_bundle_request(
-    *,
-    bundle_payload: dict[str, Any],
-    mode: str,
-    user_id: str,
-    submitter: str,
-    actor_kind: str,
-    client_op_id: Any = None,
-    dry_run_evidence: dict[str, Any] | None = None,
-) -> Any:
-    try:
-        return CommandBundleRequest.model_validate(
-            {
-                "bundle": bundle_payload,
-                "mode": mode,
-                "userId": user_id,
-                "submitter": submitter,
-                "actorKind": actor_kind,
-                "clientOpId": client_op_id,
-                "dryRunEvidence": dry_run_evidence,
-            }
-        )
-    except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=exc.errors()) from exc
-
-
-def _hybrid_expected_readback(
-    body_dict: dict[str, Any], phase: dict[str, Any]
-) -> list[dict[str, Any]]:
-    direct = (
-        body_dict.get("expectedReadback")
-        or body_dict.get("expected_readback")
-        or phase.get("expectedReadback")
-        or phase.get("expected_readback")
-    )
-    if isinstance(direct, list):
-        return [row for row in direct if isinstance(row, dict)]
-    rows = []
-    for action in phase.get("authoringActions") or []:
-        if not isinstance(action, dict):
-            continue
-        expected = action.get("expectedReadback")
-        if isinstance(expected, dict):
-            rows.append(expected)
-        elif isinstance(expected, list):
-            rows.extend(row for row in expected if isinstance(row, dict))
-    return rows
-
-
-def _hybrid_source_fact_ids(
-    body_dict: dict[str, Any],
-    phase: dict[str, Any],
-    expected_readback: list[dict[str, Any]],
-) -> list[str]:
-    ids = []
-    for value in (
-        body_dict.get("sourceFactIds"),
-        body_dict.get("source_fact_ids"),
-        phase.get("sourceFactIds"),
-        phase.get("source_fact_ids"),
-    ):
-        if isinstance(value, list):
-            ids.extend(str(item) for item in value if item)
-    for row in expected_readback:
-        value = row.get("sourceFactId") or row.get("factId")
-        if value:
-            ids.append(str(value))
-    return sorted(set(ids))
-
-
-_ITERATION_PATH_RE = re.compile(r"(?:^|/)iter[-_]?(\d+[a-z]?)(?:[-_/]|$)", re.IGNORECASE)
-_HOUSE_PATH_RE = re.compile(r"(?:^|/)house[-_/]([a-z0-9]+)(?:[-_/]|$)", re.IGNORECASE)
-
-
-def _infer_iteration_label(*candidates: Any) -> str | None:
-    for value in candidates:
-        if not isinstance(value, str):
-            continue
-        match = _ITERATION_PATH_RE.search(value)
-        if match:
-            return f"iter-{match.group(1).lower()}"
-    return None
-
-
-def _infer_house_name(*candidates: Any) -> str | None:
-    for value in candidates:
-        if not isinstance(value, str):
-            continue
-        match = _HOUSE_PATH_RE.search(value)
-        if match:
-            return match.group(1).lower()
-    return None
-
-
-def _hybrid_slice_commit_context(
-    *,
-    body_dict: dict[str, Any],
-    phase: dict[str, Any],
-    phase_id: str,
-    source_fact_ids: list[str],
-    user_id: str,
-    submitter: str,
-) -> dict[str, Any]:
-    """Build the agent-context payload for a hybrid-slice commit.
-
-    See spec/model-time-travel-tracker.md "Commit Semantics" for the
-    conventional fields. Missing fields are tolerated by the inspector.
-    """
-
-    slice_id = (
-        body_dict.get("sliceId")
-        or body_dict.get("slice_id")
-        or phase.get("sliceId")
-        or phase.get("slice_id")
-    )
-    output_dir = body_dict.get("outputDir") or body_dict.get("output_dir")
-    iteration_label = (
-        body_dict.get("iterationLabel")
-        or body_dict.get("iteration_label")
-        or phase.get("iterationLabel")
-        or phase.get("iteration_label")
-        or _infer_iteration_label(output_dir)
-    )
-    house_name = (
-        body_dict.get("houseName")
-        or body_dict.get("house_name")
-        or phase.get("houseName")
-        or phase.get("house_name")
-        or _infer_house_name(output_dir)
-    )
-    session_id = (
-        body_dict.get("sessionId")
-        or body_dict.get("session_id")
-        or body_dict.get("clientOpId")
-        or body_dict.get("client_op_id")
-    )
-    return {
-        "source": "mcp_slice",
-        "phaseId": phase_id,
-        "sliceId": str(slice_id) if slice_id else None,
-        "iterationLabel": str(iteration_label) if iteration_label else None,
-        "houseName": str(house_name) if house_name else None,
-        "outputDir": str(output_dir) if output_dir else None,
-        "sessionId": str(session_id) if session_id else None,
-        "submitter": submitter,
-        "userId": user_id,
-        "factIds": list(source_fact_ids),
-        "methodologyVersion": "2026-05-22",
-        "commandSchemaVersion": "2026-05-22",
-    }
-
-
-def _hybrid_changed_ids(result: dict[str, Any] | None) -> list[str]:
-    if not isinstance(result, dict):
-        return []
-    candidates = [
-        result.get("changedIds"),
-        result.get("changedElementIds"),
-        (result.get("transactionMetadata") or {}).get("changedIds")
-        if isinstance(result.get("transactionMetadata"), dict)
-        else None,
-    ]
-    ids = []
-    for candidate in candidates:
-        if isinstance(candidate, list):
-            ids.extend(str(item) for item in candidate if item)
-    return sorted(set(ids))
 
 
 # ---------------------------------------------------------------------------
@@ -2126,71 +1451,8 @@ async def structure_analysis_export_route(
 
 
 # ---------------------------------------------------------------------------
-# Schedule table route
+# Energy lens handoff route
 # ---------------------------------------------------------------------------
-
-
-@api_router.get(
-    "/models/{model_id}/schedules/{schedule_id}/table",
-    response_model=None,
-)
-async def schedule_derived_table(
-    model_id: UUID,
-    schedule_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    fmt: Annotated[str, Query(alias="format")] = "json",
-    columns: Annotated[str | None, Query(alias="columns")] = None,
-    include_schedule_totals_csv: Annotated[bool, Query(alias="includeScheduleTotalsCsv")] = False,
-    lightweight: Annotated[bool, Query()] = False,
-) -> dict[str, Any] | PlainTextResponse:
-    """PERF-F06: `?lightweight=true` skips the expensive room programme
-    closure pass (peer_finish_set_by_level +
-    room_finish_schedule_row_extensions) for room/finish schedules. Other
-    category types are unaffected. Use for lightweight grid display
-    surfaces that don't need the finish-set closure.
-    """
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    # PERF-F04: cross-request cache keyed by
-    # (model_id, revision, schedule_id, lightweight).
-    # columns/format/totals only affect post-processing, not the derivation.
-    cache_key = _schedule_table_cache_key(
-        model_id=model_id,
-        revision=_row_revision(row),
-        schedule_id=schedule_id,
-        lightweight=lightweight,
-    )
-    payload = _get_schedule_table_cache(cache_key)
-    if payload is None:
-        doc = Document.model_validate(row.document)
-        try:
-            payload = derive_schedule_table(doc, schedule_id, lightweight=lightweight)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        _set_schedule_table_cache(cache_key, payload)
-    if fmt.strip().lower() == "csv":
-        export_payload = payload
-        if columns and columns.strip():
-            wanted = [c.strip() for c in columns.split(",") if c.strip()]
-            if wanted:
-                export_payload = schedule_payload_with_column_subset(payload, wanted)
-        csv_body = schedule_payload_to_csv(
-            export_payload,
-            include_totals_csv=include_schedule_totals_csv,
-        )
-        safe = "".join(ch for ch in schedule_id if ch.isalnum() or ch in ("-", "_")) or "schedule"
-        return PlainTextResponse(
-            csv_body,
-            media_type="text/csv; charset=utf-8",
-            headers={"Content-Disposition": f'attachment; filename="{safe}.csv"'},
-        )
-    out = payload
-    if columns and columns.strip():
-        wanted = [c.strip() for c in columns.split(",") if c.strip()]
-        if wanted:
-            out = schedule_payload_with_column_subset(payload, wanted)
-    return out
 
 
 @api_router.get("/models/{model_id}/energy/handoff")
@@ -2199,100 +1461,11 @@ async def energy_handoff_route(
     session: Annotated[AsyncSession, Depends(get_session)],
     scenario_id: Annotated[str | None, Query(alias="scenarioId")] = None,
 ) -> dict[str, Any]:
-    from bim_ai.energy_lens import build_energy_handoff_payload
-
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return build_energy_handoff_payload(doc, scenario_id=scenario_id)
-
-
-# ---------------------------------------------------------------------------
-# SCH-V3-01 — Schedule view rows endpoint
-# ---------------------------------------------------------------------------
-
-
-@api_router.get("/v3/models/{model_id}/schedules/{schedule_id}/rows")
-async def schedule_view_rows(
-    model_id: UUID,
-    schedule_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    filter_expr: Annotated[str | None, Query(alias="filterExpr")] = None,
-    sort_key: Annotated[str | None, Query(alias="sortKey")] = None,
-    sort_dir: Annotated[str | None, Query(alias="sortDir")] = None,
-) -> list[dict[str, Any]]:
-    import math as _math
-
-    from bim_ai.elements import ScheduleElem as _ScheduleElem
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    sv = doc.elements.get(schedule_id)
-    if not isinstance(sv, _ScheduleElem) or not sv.category:
-        raise HTTPException(status_code=404, detail="Schedule view not found or has no category")
-
-    category = sv.category
-    effective_filter = filter_expr if filter_expr is not None else sv.filter_expr
-    effective_sort_key = sort_key if sort_key is not None else sv.sort_key
-    effective_sort_dir = sort_dir if sort_dir is not None else sv.sort_dir
-
-    rows: list[dict[str, Any]] = []
-    for elem_id, elem in doc.elements.items():
-        if getattr(elem, "kind", None) != category:
-            continue
-        fields: dict[str, Any] = {"id": elem_id}
-        name = getattr(elem, "name", None)
-        if name is not None:
-            fields["name"] = name
-        if category == "wall":
-            start = getattr(elem, "start", None)
-            end = getattr(elem, "end", None)
-            if start and end:
-                dx = end.x_mm - start.x_mm
-                dy = end.y_mm - start.y_mm
-                fields["lengthMm"] = round(_math.sqrt(dx * dx + dy * dy), 1)
-            t = getattr(elem, "thickness_mm", None)
-            if t is not None:
-                fields["thicknessMm"] = t
-            h = getattr(elem, "height_mm", None)
-            if h is not None:
-                fields["heightMm"] = h
-        elif category == "door":
-            w = getattr(elem, "width_mm", None)
-            if w is not None:
-                fields["widthMm"] = w
-        elif category == "window":
-            for attr, key in (
-                ("width_mm", "widthMm"),
-                ("height_mm", "heightMm"),
-                ("sill_height_mm", "sillHeightMm"),
-            ):
-                v = getattr(elem, attr, None)
-                if v is not None:
-                    fields[key] = v
-        props = getattr(elem, "props", None)
-        if props:
-            fields.update(props)
-        if effective_filter:
-            fl = effective_filter.lower()
-            if not any(fl in str(v).lower() for v in fields.values()):
-                continue
-        rows.append({"elementId": elem_id, "fields": fields})
-
-    if effective_sort_key:
-        reverse = effective_sort_dir == "desc"
-        rows.sort(
-            key=lambda r: (
-                r["fields"].get(effective_sort_key) is None,
-                r["fields"].get(effective_sort_key, ""),
-            ),
-            reverse=reverse,
-        )
-
-    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -2319,248 +1492,6 @@ async def agent_iterate(
     return response.model_dump(by_alias=True)
 
 
-# ---------------------------------------------------------------------------
-# CMD-V3-01 — Command-bundle apply API
-# ---------------------------------------------------------------------------
-
-
-class CommandBundleRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    bundle: CommandBundle
-    mode: str = Field(default="dry_run")
-    user_id: str | None = Field(default="local-dev", alias="userId")
-    client_op_id: str | None = Field(default=None, alias="clientOpId")
-    submitter: str = Field(default="human")
-    actor_kind: ActorKind = Field(default="human", alias="actorKind")
-    dry_run_evidence: dict[str, Any] | None = Field(default=None, alias="dryRunEvidence")
-
-
-@api_router.post("/models/{model_id}/bundles")
-async def apply_bundle_route(
-    model_id: UUID,
-    body: CommandBundleRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    hub: Annotated[Hub, Depends(get_hub)],
-    token: Annotated[str | None, Query()] = None,
-) -> dict[str, Any]:
-    """CMD-V3-01: submit a CommandBundle; returns BundleResult.
-
-    mode='dry_run' (default) — validates without mutating.
-    mode='commit'            — commits if no blocking advisories fire.
-    HTTP 409 on revision_conflict or assumption_log_required / malformed.
-    HTTP 403 when the caller's role forbids the command verb (COL-V3-02).
-    """
-    from datetime import UTC, datetime
-
-    from bim_ai.engine import compute_delta_wire, diff_undo_cmds
-    from bim_ai.routes.deps import delete_redos, document_to_wire
-    from bim_ai.tables import UndoStackRecord
-    from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    # COL-V3-02: resolve caller role and gate commands.
-    if token:
-        caller_role = await resolve_token_role(session, str(model_id), token)
-    else:
-        caller_role = await resolve_caller_role(session, model_id, body.user_id or "local-dev")
-    for cmd in body.bundle.commands:
-        cmd_type = cmd.get("type", "") if isinstance(cmd, dict) else getattr(cmd, "type", "")
-        if not authorize_command(caller_role, str(cmd_type)):  # type: ignore[arg-type]
-            raise HTTPException(
-                status_code=403,
-                detail=f"Role '{caller_role}' is not permitted to execute '{cmd_type}'",
-            )
-
-    doc = Document.model_validate(row.document)
-    mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
-    uid = body.user_id or "local-dev"
-    bundle_digest = command_bundle_digest(
-        body.bundle.commands,
-        parent_revision=body.bundle.parent_revision,
-        assumptions=list(body.bundle.assumptions),
-        submitter=body.submitter,
-        route="/api/models/{model_id}/bundles",
-    )
-
-    if mode == "commit":
-        prior = await find_idempotent_undo_record(
-            session,
-            model_id=model_id,
-            client_op_id=body.client_op_id,
-            bundle_digest=bundle_digest,
-            user_id=uid,
-        )
-        if prior is not None:
-            metadata = prior.transaction_metadata or {}
-            return {
-                "schemaVersion": "cmd-v3.0",
-                "applied": True,
-                "newRevision": prior.revision_after,
-                "currentRevision": row.revision,
-                "changedIds": (
-                    metadata.get("changedIds", []) if isinstance(metadata, dict) else []
-                ),
-                "violations": [],
-                "checkpointSnapshotId": None,
-                "transactionMetadata": metadata,
-                "idempotentReplay": True,
-                "idempotencyMatch": (
-                    metadata.get("idempotency") if isinstance(metadata, dict) else None
-                ),
-            }
-
-    safety_surface = (
-        "mcp-mutation" if body.actor_kind in {"agent", "mcp-client"} else "bundle-commit"
-    )
-    transaction_safety = assess_transaction_safety(
-        current_revision=doc.revision,
-        parent_revision=body.bundle.parent_revision,
-        mode=mode,  # type: ignore[arg-type]
-        surface=safety_surface,  # type: ignore[arg-type]
-        actor_kind=body.actor_kind,
-        commands=body.bundle.commands,
-        dry_run_evidence=body.dry_run_evidence,
-    )
-    transaction_safety_wire = transaction_safety.model_dump(by_alias=True)
-    transaction_preflight_audit = build_transaction_preflight_audit(
-        current_revision=doc.revision,
-        parent_revision=body.bundle.parent_revision,
-        mode=mode,  # type: ignore[arg-type]
-        surface=safety_surface,  # type: ignore[arg-type]
-        actor_kind=body.actor_kind,
-        commands=body.bundle.commands,
-        decision=transaction_safety,
-    )
-    if not transaction_safety.ok:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "reason": transaction_safety.reason_code,
-                "transactionSafety": transaction_safety_wire,
-                "transactionPreflightAudit": transaction_preflight_audit,
-            },
-        )
-
-    result, new_doc_from_bundle = _apply_bundle(
-        doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter
-    )  # type: ignore[arg-type]
-
-    # Surface blocking advisory classes as HTTP 409
-    _BLOCKING_ADVISORY_CLASSES = {
-        "revision_conflict",
-        "assumption_log_required",
-        "assumption_log_malformed",
-        "assumption_log_duplicate_key",
-        "direct_main_commit_forbidden",
-        "option_not_found",
-        "bundle_apply_failed",
-    }
-    if not result.applied and result.violations:
-        blocking_classes = {v.get("advisoryClass") for v in result.violations}
-        if blocking_classes & _BLOCKING_ADVISORY_CLASSES:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "result": result.model_dump(by_alias=True),
-                    "violations": result.violations,
-                },
-            )
-
-    if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
-        new_doc = new_doc_from_bundle
-        doc_before = clone_document(doc)
-        undo_cmds = diff_undo_cmds(doc_before, new_doc)
-        transaction_metadata = build_transaction_metadata(
-            doc_before=doc_before,
-            new_doc=new_doc,
-            commands=body.bundle.commands,
-            user_id=uid,
-            submitter=body.submitter,
-            parent_revision=body.bundle.parent_revision,
-            assumptions=list(body.bundle.assumptions),
-            client_op_id=body.client_op_id,
-            workflow={
-                "route": "/api/models/{model_id}/bundles",
-                "entryPoint": "cmd-v3-apply-bundle",
-                "surface": "api-v3",
-                "mode": "commit",
-            },
-            bundle_digest=bundle_digest,
-        )
-        transaction_metadata["transactionSafety"] = transaction_safety_wire
-        transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
-        await delete_redos(session, model_id, uid)
-
-        session.add(
-            UndoStackRecord(
-                model_id=model_id,
-                user_id=uid,
-                revision_after=new_doc.revision,
-                forward_commands=body.bundle.commands,
-                undo_commands=undo_cmds,
-                transaction_metadata=transaction_metadata,
-                commit_id=current_commit_id(),
-                created_at=datetime.now(UTC),
-            )
-        )
-
-        wire_doc = document_to_wire(new_doc)
-        row.document = wire_doc  # type: ignore[assignment]
-        row.revision = new_doc.revision
-        await session.commit()
-
-        try:
-            from bim_ai.activity import emit_activity_row
-
-            await emit_activity_row(
-                session,
-                model_id=str(model_id),
-                author_id=uid,
-                kind="commit",
-                payload={"commandCount": len(body.bundle.commands)},
-                parent_snapshot_id=str(doc_before.revision),
-                result_snapshot_id=str(new_doc.revision),
-            )
-            await session.commit()
-        except Exception:
-            pass
-
-        delta = compute_delta_wire(doc_before, new_doc)
-        try:
-            await hub.publish(model_id, {"type": "delta", "modelId": str(model_id), **delta})
-        except Exception:
-            pass
-
-        result_wire = result.model_dump(by_alias=True)
-        result_wire["transactionMetadata"] = transaction_metadata
-        result_wire["transactionSafety"] = transaction_safety_wire
-        result_wire["transactionPreflightAudit"] = transaction_preflight_audit
-        return result_wire
-
-    result_wire = result.model_dump(by_alias=True)
-    result_wire["transactionSafety"] = transaction_safety_wire
-    result_wire["transactionPreflightAudit"] = transaction_preflight_audit
-    dry_run_ok = not any(
-        bool(v.get("blocking")) or v.get("severity") == "error" for v in result.violations
-    )
-    result_wire["dryRunEvidence"] = build_dry_run_evidence(
-        parent_revision=body.bundle.parent_revision,
-        commands=body.bundle.commands,
-        ok=dry_run_ok,
-        reason=None if dry_run_ok else "dry_run_violations",
-        violations=result.violations,
-        summary_before={"revision": doc.revision, "elementCount": len(doc.elements)},
-        summary_after={
-            "wouldRevision": result.new_revision,
-            "changedIds": result.changed_ids,
-            "checkpointSnapshotId": result.checkpoint_snapshot_id,
-        },
-    )
-    return result_wire
 
 
 # ---------------------------------------------------------------------------
@@ -2577,10 +1508,6 @@ async def list_activity(
     kind: str | None = None,
     author_id: Annotated[str | None, Query(alias="authorId")] = None,
 ) -> dict[str, Any]:
-    from sqlalchemy import desc, select
-
-    from bim_ai.tables import ActivityRowRecord
-
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -2626,11 +1553,6 @@ async def restore_activity_row(
     session: Annotated[AsyncSession, Depends(get_session)],
     hub: Annotated[Hub, Depends(get_hub)],
 ) -> dict[str, Any]:
-    from bim_ai.activity import emit_activity_row
-    from bim_ai.engine import compute_delta_wire
-    from bim_ai.routes.deps import document_to_wire
-    from bim_ai.tables import ActivityRowRecord
-
     act_row = await session.get(ActivityRowRecord, row_id)
     if act_row is None or act_row.model_id != str(model_id):
         raise HTTPException(status_code=404, detail="Activity row not found")
@@ -2700,11 +1622,8 @@ async def websocket_loop(
     hub.subscribe(sid, websocket)
 
     # PERF-E04: websocket bootstrap timing telemetry.
-    import time as _time
-
-    from bim_ai._io.log import get_logger as _ws_get_logger
-
-    _ws_log = _ws_get_logger("bim_ai.ws_bootstrap")
+    _time = time
+    _ws_log = _ws_log_factory("bim_ai.ws_bootstrap")
     bootstrap_start = _time.perf_counter()
     try:
         if resume_from is None:
@@ -2836,405 +1755,15 @@ async def websocket_loop(
         hub.unregister(websocket)
 
 
-# ---------------------------------------------------------------------------
-# COL-V3-01 — yjs Y-WebSocket collab endpoint
-# ---------------------------------------------------------------------------
 
 
-@api_router.websocket("/models/{model_id}/collab")
-async def collab_ws(
-    websocket: WebSocket,
-    model_id: UUID,
-    subspace: Annotated[str, Query()] = "kernel",
-    token: Annotated[str | None, Query()] = None,
-    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
-) -> None:
-    """COL-V3-01/COL-V3-02: yjs Y-WebSocket endpoint for real-time collab on a model.
 
-    Relays raw yjs sync + awareness bytes between browser clients multiplexed
-    by modelId. Does not interpret CRDT contents — yjs algorithms handle merge
-    deterministically on each client.
 
-    COL-V3-02: viewer and public-link-viewer origins are blocked from mutating
-    the kernel subspace.
-    """
-    orchestrator = get_orchestrator()
-    await websocket.accept()
 
-    async with SessionMaker() as session:
-        if token:
-            try:
-                caller_role = await resolve_token_role(session, str(model_id), token)
-            except HTTPException:
-                await websocket.close(code=4403)
-                return
-        else:
-            caller_role = await resolve_caller_role(session, model_id, user_id)
 
-    room = orchestrator.get_room(str(model_id))
-    room.join(websocket, role=caller_role)
-    try:
-        while True:
-            data = await websocket.receive_bytes()
-            await room.broadcast(
-                data, exclude=websocket, origin_role=caller_role, subspace=subspace
-            )
-    except WebSocketDisconnect:
-        room.leave(websocket)
-        orchestrator.remove_empty_rooms()
-        logger.info("collab ws disconnect model=%s", model_id)
 
 
-# ---------------------------------------------------------------------------
-# TKN-V3-01 — token encode / decode / diff endpoints
-# ---------------------------------------------------------------------------
 
 
-@api_router.get("/models/{model_id}/tokens/encode")
-async def tokens_encode(
-    model_id: UUID,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """Encode the current kernel state into a TokenSequence."""
-    from bim_ai.tkn import encode
 
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    seq = encode(doc.elements)
-    return seq.model_dump(by_alias=True)
 
-
-class TknDecodeRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    sequence: dict[str, Any]
-
-
-@api_router.post("/models/{model_id}/tokens/decode")
-async def tokens_decode(
-    model_id: UUID,
-    body: TknDecodeRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """Decode a TokenSequence into commands relative to the current kernel state."""
-    from bim_ai.tkn import decode
-    from bim_ai.tkn.types import TokenSequence
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    seq = TokenSequence.model_validate(body.sequence)
-    cmds = decode(seq, doc.elements)
-    return {"commands": cmds}
-
-
-class TknDiffRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    sequence_a: dict[str, Any] = Field(alias="sequenceA")
-    sequence_b: dict[str, Any] = Field(alias="sequenceB")
-
-
-# ---------------------------------------------------------------------------
-# VER-V3-02 — Named milestone routes
-# ---------------------------------------------------------------------------
-
-
-@api_router.post("/models/{model_id}/milestones")
-async def create_milestone(
-    model_id: UUID,
-    body: CreateMilestoneBody,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """VER-V3-02: create a named milestone pinned to a snapshot id."""
-    import time as _time
-    from uuid import uuid4 as _uuid4
-
-    from bim_ai.activity import emit_activity_row
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    milestone_id = str(_uuid4())
-    now_ms = int(_time.time() * 1000)
-    record = MilestoneRecord(
-        id=milestone_id,
-        model_id=str(model_id),
-        name=body.name,
-        description=body.description,
-        snapshot_id=body.snapshot_id,
-        author_id=body.author_id,
-        created_at=now_ms,
-    )
-    session.add(record)
-    await session.flush()
-
-    await emit_activity_row(
-        session,
-        model_id=str(model_id),
-        author_id=body.author_id,
-        kind="milestone_created",
-        payload={"name": body.name, "milestoneId": milestone_id},
-    )
-    await session.commit()
-
-    return {
-        "id": milestone_id,
-        "modelId": str(model_id),
-        "name": body.name,
-        "description": body.description,
-        "snapshotId": body.snapshot_id,
-        "authorId": body.author_id,
-        "createdAt": now_ms,
-    }
-
-
-@api_router.get("/models/{model_id}/milestones")
-async def list_milestones(
-    model_id: UUID,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """VER-V3-02: list all milestones for a model, descending createdAt."""
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    res = await session.execute(
-        select(MilestoneRecord)
-        .where(MilestoneRecord.model_id == str(model_id))
-        .order_by(desc(MilestoneRecord.created_at))
-    )
-    milestones = res.scalars().all()
-
-    return {
-        "modelId": str(model_id),
-        "milestones": [
-            {
-                "id": m.id,
-                "modelId": m.model_id,
-                "name": m.name,
-                "description": m.description,
-                "snapshotId": m.snapshot_id,
-                "authorId": m.author_id,
-                "createdAt": m.created_at,
-            }
-            for m in milestones
-        ],
-    }
-
-
-@api_router.delete("/models/{model_id}/milestones/{milestone_id}")
-async def delete_milestone(
-    model_id: UUID,
-    milestone_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """VER-V3-02: delete a milestone by id."""
-    res = await session.execute(
-        select(MilestoneRecord).where(
-            MilestoneRecord.id == milestone_id,
-            MilestoneRecord.model_id == str(model_id),
-        )
-    )
-    record = res.scalars().first()
-    if record is None:
-        raise HTTPException(status_code=404, detail="Milestone not found")
-    await session.delete(record)
-    await session.commit()
-    return {"deleted": milestone_id}
-
-
-@api_router.post("/models/{model_id}/tokens/diff")
-async def tokens_diff(
-    model_id: UUID,
-    body: TknDiffRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """Return the structural diff between two TokenSequences."""
-    from bim_ai.tkn import diff
-    from bim_ai.tkn.types import TokenSequence
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    seq_a = TokenSequence.model_validate(body.sequence_a)
-    seq_b = TokenSequence.model_validate(body.sequence_b)
-    delta = diff(seq_a, seq_b)
-    return delta.model_dump(by_alias=True)
-
-
-# ---------------------------------------------------------------------------
-# MRK-V3-03 — Sheet pixel-map endpoint
-# ---------------------------------------------------------------------------
-
-
-@api_router.get("/models/{model_id}/sheets/{sheet_id}/pixel-map")
-async def get_sheet_pixel_map(
-    model_id: UUID,
-    sheet_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
-) -> dict[str, Any]:
-    """MRK-V3-03: return pixel→source-view/element mapping for a sheet.
-
-    Requires at least viewer permission (public-link viewers included).
-    Returns ``{ "map": { "<x>,<y>": { "sourceViewId": "...", "sourceElementId": "..." } } }``.
-    """
-    # Resolve role; will raise 403 for invalid/expired tokens automatically.
-    # For unauthenticated callers we require a userId or token parameter.
-    if user_id == "local-dev":
-        pass  # dev shortcut — accepted
-    else:
-        # Confirm the user has at least viewer access.
-        role = await resolve_caller_role(session, model_id, user_id)
-        if role not in ("admin", "editor", "viewer"):
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    doc = Document.model_validate(row.document)
-
-    # Build the pixel map by walking view placements on the sheet.
-    # For v3: all pixels inside a placement bounding box map to that viewId;
-    # sourceElementId is "" unless the hit-test index is available.
-    pixel_map: dict[str, dict[str, str]] = {}
-    sheet_elem = doc.elements.get(sheet_id)
-    if sheet_elem is not None and hasattr(sheet_elem, "view_placements"):
-        for vp in getattr(sheet_elem, "view_placements", []) or []:
-            vp_dict = (
-                vp
-                if isinstance(vp, dict)
-                else (vp.model_dump(by_alias=True) if hasattr(vp, "model_dump") else {})
-            )
-            view_id = vp_dict.get("viewId", "")
-            x_min = int(vp_dict.get("xPxMin", 0))
-            x_max = int(vp_dict.get("xPxMax", 0))
-            y_min = int(vp_dict.get("yPxMin", 0))
-            y_max = int(vp_dict.get("yPxMax", 0))
-            if not view_id:
-                continue
-            # Register every integer pixel coordinate in the bounding box.
-            for px in range(x_min, x_max + 1):
-                for py in range(y_min, y_max + 1):
-                    pixel_map[f"{px},{py}"] = {
-                        "sourceViewId": view_id,
-                        "sourceElementId": "",
-                    }
-
-    return {"map": pixel_map}
-
-
-# ---------------------------------------------------------------------------
-# OSM-V3-01 — Neighborhood massing import
-# ---------------------------------------------------------------------------
-
-
-@api_router.post("/v3/models/{model_id}/neighborhood-import")
-async def import_neighborhood(
-    model_id: UUID,
-    body: dict,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[str, Query(alias="userId")] = "local-dev",
-) -> dict[str, Any]:
-    """OSM-V3-01: fetch OSM buildings within radius_m of lat/lon and upsert into the model."""
-    lat = float(body.get("lat", 0.0))
-    lon = float(body.get("lon", 0.0))
-    radius_m = float(body.get("radiusM", 200.0))
-
-    from bim_ai.site.osm_import import fetch_buildings, elements_to_masses
-
-    elements = fetch_buildings(lat, lon, radius_m)
-    masses = elements_to_masses(elements, lat, lon)
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    doc = Document.model_validate(row.document)
-
-    existing_osm_ids = {
-        elem_id
-        for elem_id, elem in doc.elements.items()
-        if getattr(elem, "kind", None) == "neighborhood_mass"
-        and getattr(elem, "source", None) == "osm"
-    }
-    for elem_id in existing_osm_ids:
-        del doc.elements[elem_id]
-
-    for mass in masses:
-        doc.elements[mass["id"]] = mass  # type: ignore[assignment]
-
-    row.document = doc.model_dump(by_alias=True)
-    await session.commit()
-
-    return {"imported": len(masses), "masses": masses}
-
-
-# ---------------------------------------------------------------------------
-# CON-V3-02 — Concept-seed handoff endpoint (T6 → T9)
-# ---------------------------------------------------------------------------
-
-
-@api_router.get("/v3/models/{model_id}/concept-seeds")
-async def list_concept_seeds(
-    model_id: UUID,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    status: Annotated[str | None, Query()] = None,
-) -> list[dict[str, Any]]:
-    """CON-V3-02: return concept seeds for a model, optionally filtered by status."""
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    doc = Document.model_validate(row.document)
-
-    from bim_ai.elements import ConceptSeedElem as _ConceptSeedElem
-
-    seeds: list[dict[str, Any]] = []
-    for elem in doc.elements.values():
-        if not isinstance(elem, _ConceptSeedElem):
-            continue
-        if status is not None and elem.status != status:
-            continue
-        seeds.append(elem.model_dump(by_alias=True))
-
-    return seeds
-
-
-# ---------------------------------------------------------------------------
-# EXP-V3-01 — Render-pipeline export (glTF / IFC / metadata bundle)
-# ---------------------------------------------------------------------------
-
-_VALID_EXPORT_FORMATS = {"gltf", "gltf-pbr", "ifc-bundle", "metadata-only"}
-
-
-@api_router.get("/v3/models/{model_id}/export", tags=["exp-v3-01"])
-async def render_export(
-    model_id: UUID,
-    session: Annotated[AsyncSession, Depends(get_session)],
-    format: Annotated[str, Query()] = "metadata-only",
-    viewId: Annotated[str | None, Query()] = None,
-) -> dict[str, Any]:
-    """EXP-V3-01 — Export model as glTF, IFC, or metadata bundle for external renderers."""
-    from bim_ai.exp.render_export import build_export_bundle
-
-    if format not in _VALID_EXPORT_FORMATS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid export format '{format}'. Valid values: {sorted(_VALID_EXPORT_FORMATS)}",
-        )
-
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    doc = Document.model_validate(row.document)
-    elements_list = [v.model_dump(by_alias=True) for v in doc.elements.values()]
-    model_state = {"elements": elements_list}
-
-    bundle = build_export_bundle(model_state, format, view_id=viewId)  # type: ignore[arg-type]
-    return bundle.to_dict()
