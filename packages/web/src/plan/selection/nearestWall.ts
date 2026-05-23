@@ -7,19 +7,23 @@ export type NearestWallHit = {
   distMm: number;
 };
 
+/**
+ * Find the closest opening-host-eligible wall to a point.
+ *
+ * PERF-G04: callers pass a precomputed wall slice (typically
+ * `modelIndices.wallsByLevel[displayLevelId] ?? modelIndices.walls`) so this
+ * helper does not need to scan `elementsById` on every pointermove / click.
+ */
 export function nearestWallAt(
-  elementsById: Record<string, Element>,
-  activeLevelId: string | undefined,
+  walls: Iterable<Extract<Element, { kind: 'wall' }>>,
   xMm: number,
   yMm: number,
 ): NearestWallHit | undefined {
   const px = xMm / 1000;
   const pz = yMm / 1000;
   let best: NearestWallHit | undefined;
-  for (const el of Object.values(elementsById)) {
-    if (el.kind !== 'wall') continue;
+  for (const el of walls) {
     if (!isPhysicalHostedOpeningWall(el)) continue;
-    if (activeLevelId && el.levelId !== activeLevelId) continue;
     const ax = el.start.xMm / 1000;
     const az = el.start.yMm / 1000;
     const bx = el.end.xMm / 1000;

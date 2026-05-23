@@ -106,19 +106,18 @@ export function handleTagToolClick({
 export function handleDoorWindowToolClick({
   tool,
   pointMm,
-  elementsById,
-  displayLevelId,
+  walls,
   activeComponentFamilyTypeId,
   onSemanticCommand,
 }: {
   tool: 'door' | 'window';
   pointMm: MmPoint;
-  elementsById: Record<string, Element>;
-  displayLevelId: string | null | undefined;
+  /** Pre-filtered walls for the active level (PERF-G04: caller selects from `modelIndices.wallsByLevel`). */
+  walls: readonly Extract<Element, { kind: 'wall' }>[];
   activeComponentFamilyTypeId: string | null | undefined;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
 }): void {
-  const n = nearestWallAt(elementsById, displayLevelId || undefined, pointMm.xMm, pointMm.yMm);
+  const n = nearestWallAt(walls, pointMm.xMm, pointMm.yMm);
   if (!n || n.distMm > 900) return;
   if (tool === 'door') {
     void onSemanticCommand({

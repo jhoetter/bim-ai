@@ -531,6 +531,7 @@ export function PlanCanvas({
   // The click handler still receives the broad `elementsById` for the remaining
   // tool paths; migrating those needs additional modelIndices fields.
   const modelWalls = useBimStore((s) => s.modelIndices.walls);
+  const wallsByLevel = useBimStore((s) => s.modelIndices.wallsByLevel);
   const modelBeams = useBimStore((s) => s.modelIndices.beams);
   const modelColumns = useBimStore((s) => s.modelIndices.columns);
   const columnsByLevel = useBimStore((s) => s.modelIndices.columnsByLevel);
@@ -953,8 +954,7 @@ export function PlanCanvas({
           renderer: rnd,
           group: grp,
           cameraHalf: camRef.current.half,
-          elementsById,
-          displayLevelId,
+          levelWalls: displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
           snapEngineRef,
           snapIndicatorRef,
           setSnapLabel,
@@ -1112,8 +1112,7 @@ export function PlanCanvas({
         }
         updateSplitWallHover({
           planTool,
-          elementsById,
-          displayLevelId,
+          walls: displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
           cursorMm: v,
           splitWallStateRef,
           bumpGeom,
@@ -1250,6 +1249,7 @@ export function PlanCanvas({
       display,
       elementsById,
       modelWalls,
+      wallsByLevel,
       modelBeams,
       modelColumns,
       columnsByLevel,

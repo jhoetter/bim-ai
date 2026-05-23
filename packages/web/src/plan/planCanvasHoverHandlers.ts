@@ -19,27 +19,21 @@ type PointerLike = {
 
 export function updateSplitWallHover({
   planTool,
-  elementsById,
-  displayLevelId,
+  walls,
   cursorMm,
   splitWallStateRef,
   bumpGeom,
 }: {
   planTool: PlanTool;
-  elementsById: Record<string, Element>;
-  displayLevelId: string | undefined;
+  /** Pre-filtered walls for the active level (PERF-G04). */
+  walls: readonly Extract<Element, { kind: 'wall' }>[];
   cursorMm: { xMm: number; yMm: number };
   splitWallStateRef: MutableRef<SplitWallState>;
   bumpGeom: (updater: (value: number) => number) => void;
 }) {
   if (planTool !== 'split-wall') return;
 
-  const nearest = nearestWallAt(
-    elementsById,
-    displayLevelId || undefined,
-    cursorMm.xMm,
-    cursorMm.yMm,
-  );
+  const nearest = nearestWallAt(walls, cursorMm.xMm, cursorMm.yMm);
   if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
     const hoverPt = {
       xMm:
@@ -95,15 +89,13 @@ export function updateComponentGhostHover({
     return;
   }
 
-  const entry = activeComponentAssetId
-    ? (Object.values(elementsById).find(
-        (el): el is Extract<Element, { kind: 'asset_library_entry' }> =>
-          el.kind === 'asset_library_entry' && el.id === activeComponentAssetId,
-      ) ??
-      (activeComponentAssetPreviewEntry?.id === activeComponentAssetId
+  const directEntry = activeComponentAssetId ? elementsById[activeComponentAssetId] : undefined;
+  const entry =
+    directEntry?.kind === 'asset_library_entry'
+      ? directEntry
+      : activeComponentAssetPreviewEntry?.id === activeComponentAssetId
         ? activeComponentAssetPreviewEntry
-        : undefined))
-    : undefined;
+        : undefined;
   const familyType = activeComponentFamilyTypeId
     ? elementsById[activeComponentFamilyTypeId]
     : undefined;

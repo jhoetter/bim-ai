@@ -32,8 +32,13 @@ type Props = {
   renderer: THREE.WebGLRenderer;
   group: THREE.Group;
   cameraHalf: number;
-  elementsById: Record<string, Element>;
-  displayLevelId: string | undefined;
+  /**
+   * Walls on the snap-eligible level. Pass `modelIndices.wallsByLevel[displayLevelId]`
+   * (or the flat `modelIndices.walls` for the all-levels case). PERF-G04: avoids
+   * the prior `Object.values(elementsById).filter(wall)` scan that ran on
+   * every pointermove.
+   */
+  levelWalls: readonly Extract<Element, { kind: 'wall' }>[];
   snapEngineRef: MutableRef<SnapEngine>;
   snapIndicatorRef: MutableRef<THREE.Mesh | null>;
   setSnapLabel: (value: string | null) => void;
@@ -76,8 +81,7 @@ export function updatePlanCanvasSnapHover({
   renderer,
   group,
   cameraHalf,
-  elementsById,
-  displayLevelId,
+  levelWalls,
   snapEngineRef,
   snapIndicatorRef,
   setSnapLabel,
@@ -108,10 +112,6 @@ export function updatePlanCanvasSnapHover({
   const pixH = renderer.domElement.clientHeight || 1;
   const toleranceMm = (12 / pixH) * 2 * cameraHalf * 1000;
   const candidates: SnapCandidate[] = [];
-  const levelWalls = Object.values(elementsById).filter(
-    (el): el is Extract<Element, { kind: 'wall' }> =>
-      el.kind === 'wall' && (!displayLevelId || el.levelId === displayLevelId),
-  );
   for (const el of levelWalls) {
     if (Math.hypot(el.start.xMm - cursorMm.xMm, el.start.yMm - cursorMm.yMm) < toleranceMm) {
       candidates.push({ mode: 'endpoint', xMm: el.start.xMm, yMm: el.start.yMm });

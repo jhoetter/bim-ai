@@ -222,6 +222,7 @@ export interface PlanCanvasClickHandlerArgs {
   display: PlanViewResolvedDisplay;
   elementsById: Record<string, Element>;
   modelWalls: readonly Extract<Element, { kind: 'wall' }>[];
+  wallsByLevel: Readonly<Record<string, readonly Extract<Element, { kind: 'wall' }>[]>>;
   modelBeams: readonly Extract<Element, { kind: 'beam' }>[];
   modelColumns: readonly Extract<Element, { kind: 'column' }>[];
   columnsByLevel: Readonly<Record<string, readonly Extract<Element, { kind: 'column' }>[]>>;
@@ -378,6 +379,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     display,
     elementsById,
     modelWalls,
+    wallsByLevel,
     modelBeams,
     modelColumns,
     columnsByLevel,
@@ -549,8 +551,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       handleDoorWindowToolClick({
         tool: 'door',
         pointMm: sp,
-        elementsById,
-        displayLevelId,
+        walls: displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
         activeComponentFamilyTypeId,
         onSemanticCommand,
       });
@@ -560,8 +561,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       handleDoorWindowToolClick({
         tool: 'window',
         pointMm: sp,
-        elementsById,
-        displayLevelId,
+        walls: displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
         activeComponentFamilyTypeId,
         onSemanticCommand,
       });
@@ -797,7 +797,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       // VIE-03: drop an elevation marker. Auto-orient toward the nearest
       // exterior wall when one is reasonably close; otherwise default to
       // 'north'.
-      const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+      const n = nearestWallAt(
+        displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+        sp.xMm,
+        sp.yMm,
+      );
       const params =
         n && n.distMm < 5000
           ? elevationFromWall(n.wall)
@@ -908,7 +912,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       setAlignReferenceMm(nextState.referenceMm);
       if (effect.commitAlign) {
         const tMm = effect.commitAlign.targetMm;
-        const wallHit = nearestWallAt(elementsById, displayLevelId || undefined, tMm.xMm, tMm.yMm);
+        const wallHit = nearestWallAt(
+          displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+          tMm.xMm,
+          tMm.yMm,
+        );
         let targetId: string | undefined;
         let bestDist = wallHit && wallHit.distMm < 900 ? wallHit.distMm : Infinity;
         if (wallHit && wallHit.distMm < 900) targetId = wallHit.wall.id;
@@ -1327,7 +1335,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
           const placesAsDetail = familyTypePlacesAsDetailComponent(familyType);
           const requiresWallHost = familyTypeRequiresWallHost(familyType);
           const wallHit = requiresWallHost
-            ? nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm)
+            ? nearestWallAt(
+                displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+                sp.xMm,
+                sp.yMm,
+              )
             : undefined;
           if (!requiresWallHost || (wallHit && wallHit.distMm <= 900)) {
             onSemanticCommand({
@@ -1362,8 +1374,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       splitStateRef.current = nextState;
       if (effect.commitSplit) {
         const nearest = nearestWallAt(
-          elementsById,
-          displayLevelId || undefined,
+          displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
           effect.commitSplit.pointMm.xMm,
           effect.commitSplit.pointMm.yMm,
         );
@@ -1378,7 +1389,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       return;
     }
     if (planTool === 'split-wall') {
-      const nearest = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+      const nearest = nearestWallAt(
+        displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+        sp.xMm,
+        sp.yMm,
+      );
       if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
         const pointMm = {
           xMm:
@@ -1471,7 +1486,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       return;
     }
     if (planTool === 'trim-extend') {
-      const nearestWall = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+      const nearestWall = nearestWallAt(
+        displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+        sp.xMm,
+        sp.yMm,
+      );
       if (!nearestWall || nearestWall.distMm > 900) return;
       if (!trimExtendFirstWallRef.current) {
         // First click: pick wall A
@@ -2411,7 +2430,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     // ANN-10 — material tag: click nearest wall, tag its first material layer
     if (planTool === 'material-tag') {
       if (!activePlanViewId) return;
-      const nearest = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+      const nearest = nearestWallAt(
+        displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
+        sp.xMm,
+        sp.yMm,
+      );
       if (nearest && nearest.distMm < 2000) {
         // Tag position is offset ~500mm diagonally from click; leader end touches the wall
         const tagPos = { xMm: sp.xMm + 500, yMm: sp.yMm - 500 };
