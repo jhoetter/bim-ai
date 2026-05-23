@@ -56,9 +56,7 @@ from bim_ai.versioning import commit_context
 hybrid_reverse_bim_execute_router = APIRouter()
 
 
-@hybrid_reverse_bim_execute_router.post(
-    "/v3/models/{model_id}/reverse-bim/hybrid-slice-execute"
-)
+@hybrid_reverse_bim_execute_router.post("/v3/models/{model_id}/reverse-bim/hybrid-slice-execute")
 async def reverse_bim_hybrid_slice_execute_route(
     model_id: UUID,
     body: ReverseBimHybridSliceExecuteRequest,
@@ -355,9 +353,7 @@ async def reverse_bim_hybrid_slice_execute_route(
     }
 
 
-@hybrid_reverse_bim_execute_router.post(
-    "/v3/models/{model_id}/reverse-bim/hybrid-run-execute"
-)
+@hybrid_reverse_bim_execute_router.post("/v3/models/{model_id}/reverse-bim/hybrid-run-execute")
 async def reverse_bim_hybrid_run_execute_route(
     model_id: UUID,
     body: ReverseBimHybridRunExecuteRequest,
@@ -608,7 +604,7 @@ def _hybrid_slice_commit_context(
         or body_dict.get("clientOpId")
         or body_dict.get("client_op_id")
     )
-    return {
+    ctx: dict[str, Any] = {
         "source": "mcp_slice",
         "phaseId": phase_id,
         "sliceId": str(slice_id) if slice_id else None,
@@ -622,6 +618,25 @@ def _hybrid_slice_commit_context(
         "methodologyVersion": "2026-05-22",
         "commandSchemaVersion": "2026-05-22",
     }
+    # spec/trackers/testhouse-clean-rebuild-tracker.md pins this exact
+    # block shape so the inspector iter-picker can resolve "iter N of
+    # house X" → commit_id without ambiguity.
+    testhouse_iter = body_dict.get("testhouseIter") or body_dict.get("testhouse_iter")
+    if isinstance(testhouse_iter, dict):
+        ctx["testhouse_iter"] = {
+            "house": str(testhouse_iter.get("house")) if testhouse_iter.get("house") else None,
+            "iter": int(testhouse_iter["iter"]) if testhouse_iter.get("iter") is not None else None,
+            "phase": str(testhouse_iter.get("phase")) if testhouse_iter.get("phase") else None,
+        }
+    tool = body_dict.get("tool")
+    if isinstance(tool, str) and tool:
+        ctx["tool"] = tool
+    controlling_tracker = body_dict.get("controllingTracker") or body_dict.get(
+        "controlling_tracker"
+    )
+    if isinstance(controlling_tracker, str) and controlling_tracker:
+        ctx["controlling_tracker"] = controlling_tracker
+    return ctx
 
 
 def _hybrid_changed_ids(result: dict[str, Any] | None) -> list[str]:
