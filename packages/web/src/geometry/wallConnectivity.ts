@@ -183,7 +183,7 @@ function makeJoin(
 }
 
 export function collectWallConnectivity(
-  walls: WallConnectivityWall[],
+  walls: readonly WallConnectivityWall[],
   options: { toleranceMm?: number } = {},
 ): WallConnectivityJoin[] {
   const toleranceMm = options.toleranceMm ?? DEFAULT_TOLERANCE_MM;
@@ -246,7 +246,7 @@ export function collectWallConnectivity(
 
 export function snapWallPointToConnectivity(
   point: { xMm: number; yMm: number },
-  walls: WallConnectivityWall[],
+  walls: readonly WallConnectivityWall[],
   options: { toleranceMm?: number; levelId?: string } = {},
 ): WallConnectivitySnap | null {
   const toleranceMm = options.toleranceMm ?? DEFAULT_TOLERANCE_MM;

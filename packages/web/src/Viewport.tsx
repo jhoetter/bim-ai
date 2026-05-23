@@ -351,6 +351,9 @@ export function Viewport({
   // PERF-G05: read derived indices instead of scanning Object.values per memo.
   const projectSettings = useBimStore((s) => s.modelIndices.projectSettings);
   const levelsIndex = useBimStore((s) => s.modelIndices.levels);
+  const wallsByLevelIndex = useBimStore((s) => s.modelIndices.wallsByLevel);
+  const wallsByLevelRef = useRef(wallsByLevelIndex);
+  wallsByLevelRef.current = wallsByLevelIndex;
 
   // Serialised key — only changes when georeference VALUES change, not on every elementsById ref update.
   const georeferenceKey = useMemo(() => {
@@ -1214,10 +1217,7 @@ export function Viewport({
       if (options.preferWallConnectivity) {
         const wallSnap = snapWallPointToConnectivity(
           projected.point,
-          Object.values(elementsByIdRef.current).filter(
-            (element): element is WallElem =>
-              element.kind === 'wall' && element.levelId === levelInfo.id,
-          ),
+          (wallsByLevelRef.current[levelInfo.id] ?? []) as readonly WallElem[],
           {
             levelId: levelInfo.id,
             toleranceMm: 160,
