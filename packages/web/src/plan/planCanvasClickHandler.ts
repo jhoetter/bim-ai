@@ -222,6 +222,13 @@ export interface PlanCanvasClickHandlerArgs {
   display: PlanViewResolvedDisplay;
   elementsById: Record<string, Element>;
   modelWalls: readonly Extract<Element, { kind: 'wall' }>[];
+  modelBeams: readonly Extract<Element, { kind: 'beam' }>[];
+  modelColumns: readonly Extract<Element, { kind: 'column' }>[];
+  columnsByLevel: Readonly<Record<string, readonly Extract<Element, { kind: 'column' }>[]>>;
+  placedAssetsByLevel: Readonly<
+    Record<string, readonly Extract<Element, { kind: 'placed_asset' }>[]>
+  >;
+  floorsByLevel: Readonly<Record<string, readonly Extract<Element, { kind: 'floor' }>[]>>;
   projectBasePoint: Extract<Element, { kind: 'project_base_point' }> | null;
   selectedId: string | undefined;
   selectedIds: string[];
@@ -371,6 +378,11 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     display,
     elementsById,
     modelWalls,
+    modelBeams,
+    modelColumns,
+    columnsByLevel,
+    placedAssetsByLevel,
+    floorsByLevel,
     projectBasePoint,
     selectedId,
     selectedIds,
@@ -900,10 +912,21 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
         let targetId: string | undefined;
         let bestDist = wallHit && wallHit.distMm < 900 ? wallHit.distMm : Infinity;
         if (wallHit && wallHit.distMm < 900) targetId = wallHit.wall.id;
-        for (const el of Object.values(elementsById)) {
-          if (el.kind !== 'column' && el.kind !== 'placed_asset') continue;
-          if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
-          const pos = (el as { positionMm?: { xMm: number; yMm: number } }).positionMm;
+        const levelColumns: readonly Extract<Element, { kind: 'column' }>[] = displayLevelId
+          ? (columnsByLevel[displayLevelId] ?? [])
+          : modelColumns;
+        const levelPlacedAssets: readonly Extract<Element, { kind: 'placed_asset' }>[] =
+          displayLevelId ? (placedAssetsByLevel[displayLevelId] ?? []) : [];
+        for (const el of levelColumns) {
+          const pos = el.positionMm;
+          const dist = Math.hypot(pos.xMm - tMm.xMm, pos.yMm - tMm.yMm);
+          if (dist < bestDist) {
+            bestDist = dist;
+            targetId = el.id;
+          }
+        }
+        for (const el of levelPlacedAssets) {
+          const pos = el.positionMm;
           if (!pos) continue;
           const dist = Math.hypot(pos.xMm - tMm.xMm, pos.yMm - tMm.yMm);
           if (dist < bestDist) {
@@ -1559,10 +1582,9 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
           );
           centroid.xMm /= shaftBoundary.length;
           centroid.yMm /= shaftBoundary.length;
-          const hostFloor = Object.values(elementsById).find(
-            (e): e is Extract<Element, { kind: 'floor' }> =>
-              e.kind === 'floor' && (!displayLevelId || e.levelId === displayLevelId),
-          );
+          const hostFloor: Extract<Element, { kind: 'floor' }> | undefined = displayLevelId
+            ? floorsByLevel[displayLevelId]?.[0]
+            : Object.values(floorsByLevel).flat()[0];
           if (hostFloor) {
             onSemanticCommand({
               type: 'createSlabOpening',
@@ -1805,27 +1827,28 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     if (planTool === 'steel-connection') {
       const px = sp.xMm / 1000;
       const pz = sp.yMm / 1000;
-      const pickedEl = Object.values(elementsById).find((el) => {
-        if (el.kind === 'beam') {
-          const sx = el.startMm.xMm / 1000;
-          const sz = el.startMm.yMm / 1000;
-          const ex = el.endMm.xMm / 1000;
-          const ez = el.endMm.yMm / 1000;
-          const dx = ex - sx;
-          const dz = ez - sz;
-          const len2 = dx * dx + dz * dz;
-          if (len2 < 1e-9) return false;
-          const tParam = Math.max(0, Math.min(1, ((px - sx) * dx + (pz - sz) * dz) / len2));
-          const dist = Math.hypot(px - (sx + tParam * dx), pz - (sz + tParam * dz));
-          return dist < 0.5;
-        }
-        if (el.kind === 'column') {
-          const cx2 = el.positionMm.xMm / 1000;
-          const cz2 = el.positionMm.yMm / 1000;
-          return Math.hypot(px - cx2, pz - cz2) < 0.5;
-        }
-        return false;
+      const beamHit = modelBeams.find((el) => {
+        const sx = el.startMm.xMm / 1000;
+        const sz = el.startMm.yMm / 1000;
+        const ex = el.endMm.xMm / 1000;
+        const ez = el.endMm.yMm / 1000;
+        const dx = ex - sx;
+        const dz = ez - sz;
+        const len2 = dx * dx + dz * dz;
+        if (len2 < 1e-9) return false;
+        const tParam = Math.max(0, Math.min(1, ((px - sx) * dx + (pz - sz) * dz) / len2));
+        const dist = Math.hypot(px - (sx + tParam * dx), pz - (sz + tParam * dz));
+        return dist < 0.5;
       });
+      const columnHit = beamHit
+        ? undefined
+        : modelColumns.find((el) => {
+            const cx2 = el.positionMm.xMm / 1000;
+            const cz2 = el.positionMm.yMm / 1000;
+            return Math.hypot(px - cx2, pz - cz2) < 0.5;
+          });
+      const pickedEl: Extract<Element, { kind: 'beam' | 'column' }> | undefined =
+        beamHit ?? columnHit;
       if (pickedEl) {
         const { state: scState, effect } = reduceSteelConnection(steelConnectionStateRef.current, {
           kind: 'click',

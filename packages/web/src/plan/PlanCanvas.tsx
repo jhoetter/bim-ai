@@ -531,6 +531,11 @@ export function PlanCanvas({
   // The click handler still receives the broad `elementsById` for the remaining
   // tool paths; migrating those needs additional modelIndices fields.
   const modelWalls = useBimStore((s) => s.modelIndices.walls);
+  const modelBeams = useBimStore((s) => s.modelIndices.beams);
+  const modelColumns = useBimStore((s) => s.modelIndices.columns);
+  const columnsByLevel = useBimStore((s) => s.modelIndices.columnsByLevel);
+  const placedAssetsByLevel = useBimStore((s) => s.modelIndices.placedAssetsByLevel);
+  const floorsByLevel = useBimStore((s) => s.modelIndices.floorsByLevel);
   const projectBasePoint = useBimStore((s) => s.modelIndices.projectBasePoint);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -1245,6 +1250,11 @@ export function PlanCanvas({
       display,
       elementsById,
       modelWalls,
+      modelBeams,
+      modelColumns,
+      columnsByLevel,
+      placedAssetsByLevel,
+      floorsByLevel,
       projectBasePoint,
       selectedId,
       selectedIds,
