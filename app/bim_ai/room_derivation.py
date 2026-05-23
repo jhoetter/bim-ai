@@ -238,9 +238,13 @@ def quad_closes_rectangle(
             pts.append((x, ya))
             pts.append((x, yb))
 
-    uniq: set[tuple[float, float]] = set()
-    for px, py in pts:
-        uniq.add((snap_mm(px), snap_mm(py)))
+    # PERF-C07: `pts` come from AxisSeg tuples produced by
+    # `axis_aligned_wall_segment` / `axis_aligned_room_separation_segment`,
+    # which already snap every coordinate to the grid before storing them.
+    # Re-snapping here was a measured share of the room_stress hot path —
+    # the audit profile recorded ~48.6M `snap_mm` calls under profiling, of
+    # which 8 per `quad_closes_rectangle` call lived in this loop.
+    uniq: set[tuple[float, float]] = set(pts)
     if len(uniq) != 4:
         return None
 
