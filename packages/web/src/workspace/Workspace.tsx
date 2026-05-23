@@ -425,6 +425,13 @@ export function Workspace(): JSX.Element {
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [save3dViewAsOpen, setSave3dViewAsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
+  // Time-travel Wave 4: `?at=<commit_id>` forces historical/read-only
+  // mode. Captured once at mount — switching commits is a full reload
+  // via the iter-picker (which opens a new tab or swaps an iframe).
+  const historicalCommitId = useMemo<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('at');
+  }, []);
   const {
     insertSeedHouse,
     loadSeedModel,
@@ -435,7 +442,8 @@ export function Workspace(): JSX.Element {
     setSeedError,
     wsOn,
     codePresetIds,
-  } = useWorkspaceSnapshot();
+    isHistorical,
+  } = useWorkspaceSnapshot(historicalCommitId);
   const [_collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
@@ -877,7 +885,7 @@ export function Workspace(): JSX.Element {
     setComments,
   });
 
-  const onSemanticCommand = useWorkspaceSemanticCommand({
+  const onSemanticCommandLive = useWorkspaceSemanticCommand({
     activeLevelId,
     activePlanViewId,
     ApiHttpError,
@@ -925,6 +933,27 @@ export function Workspace(): JSX.Element {
     userId,
   });
 
+  // Time-travel Wave 4: in historical mode every command-authoring path
+  // funnels back through `onSemanticCommand`, so guarding it here
+  // disables the entire write surface without plumbing a flag through
+  // every button. `applyCommand` calls in the few specialised flows
+  // (library place, catalog family load, …) are guarded individually
+  // below.
+  const onSemanticCommand = useCallback(
+    async (cmd: Record<string, unknown>): Promise<void> => {
+      if (isHistorical) {
+        log.info(
+          'historical',
+          'semantic command ignored — workspace is in historical (read-only) mode',
+          String((cmd as { type?: unknown })?.type ?? ''),
+        );
+        return;
+      }
+      return onSemanticCommandLive(cmd);
+    },
+    [isHistorical, onSemanticCommandLive],
+  );
+
   const deleteSelectedElements = useCallback((): boolean => {
     const st = useBimStore.getState();
     const idsToDelete = [
@@ -966,6 +995,10 @@ export function Workspace(): JSX.Element {
       entry: import('@bim-ai/core').AssetLibraryEntry,
       paramValues: Record<string, unknown>,
     ): Promise<void> => {
+      if (isHistorical) {
+        log.info('historical', 'library place ignored in historical (read-only) mode');
+        return;
+      }
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
       const lvlId = useBimStore.getState().activeLevelId;
@@ -997,13 +1030,17 @@ export function Workspace(): JSX.Element {
         setPendingCommandCount((count) => Math.max(0, count - 1));
       }
     },
-    [hydrateFromSnapshot],
+    [hydrateFromSnapshot, isHistorical],
   );
 
   /* ── Undo / Redo ────────────────────────────────────────────────────── */
   const handleUndoRedo = useCallback(
-    (isUndo: boolean) =>
-      runUndoRedo(
+    (isUndo: boolean) => {
+      if (isHistorical) {
+        log.info('historical', 'undo/redo ignored in historical (read-only) mode');
+        return Promise.resolve();
+      }
+      return runUndoRedo(
         {
           hydrateFromSnapshot,
           setPendingCommandCount,
@@ -1013,8 +1050,9 @@ export function Workspace(): JSX.Element {
           setCollaborationConflictQueue,
         },
         isUndo,
-      ),
-    [hydrateFromSnapshot, setActivity],
+      );
+    },
+    [hydrateFromSnapshot, setActivity, isHistorical],
   );
 
   /* ── Viewpoint field persistence (3D viewport internal controls) ────── */
@@ -1789,6 +1827,13 @@ export function Workspace(): JSX.Element {
 
   const loadCatalogFamilyIntoProject = useCallback(
     async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
+      if (isHistorical) {
+        log.info(
+          'historical',
+          'catalog-family load ignored in historical (read-only) mode',
+        );
+        return null;
+      }
       if (!modelId) return null;
       const loadPlan = planCatalogFamilyLoad(placement, elementsById, { overwriteOption });
       const assetEntry = shouldPlaceCatalogFamilyAsAsset(placement) ? placement.assetEntry : null;
@@ -1824,7 +1869,7 @@ export function Workspace(): JSX.Element {
         assetId: canPlaceAsAsset ? assetEntry?.id : undefined,
       };
     },
-    [elementsById, hydrateFromSnapshot, modelId],
+    [elementsById, hydrateFromSnapshot, modelId, isHistorical],
   );
 
   const handleLoadCatalogFamily = useCallback(
@@ -2603,6 +2648,40 @@ export function Workspace(): JSX.Element {
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
     <>
+      {isHistorical && historicalCommitId ? (
+        <div
+          data-testid="historical-mode-banner"
+          role="status"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10_000,
+            background: 'var(--color-warning)',
+            color: 'var(--color-warning-foreground)',
+            padding: '6px 14px',
+            fontFamily:
+              'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+            fontSize: 13,
+            fontWeight: 500,
+            letterSpacing: 0.2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            pointerEvents: 'none',
+          }}
+        >
+          <span aria-hidden="true">⏪</span>
+          <span>
+            Viewing historical state — commit{' '}
+            <code style={{ padding: '1px 6px' }}>
+              {historicalCommitId.slice(0, 12)}
+            </code>
+            . Commands are disabled (read-only).
+          </span>
+        </div>
+      ) : null}
       <WorkspaceOverlays
         elementsById={elementsById}
         modelId={modelId}

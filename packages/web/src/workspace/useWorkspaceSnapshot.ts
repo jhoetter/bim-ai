@@ -110,7 +110,14 @@ export function seedModelsFromBootstrap(bx: {
   return rows;
 }
 
-export function useWorkspaceSnapshot(): {
+export type HistoricalSnapshotPayload = {
+  modelId?: string;
+  at?: string | null;
+  revision?: number;
+  document?: { elements?: Record<string, unknown> } | null;
+};
+
+export function useWorkspaceSnapshot(historicalCommitId?: string | null): {
   insertSeedHouse: () => Promise<void>;
   loadSeedModel: (modelId: string) => Promise<void>;
   seedModels: SeedModelOption[];
@@ -120,6 +127,7 @@ export function useWorkspaceSnapshot(): {
   setSeedError: (err: string | null) => void;
   wsOn: boolean;
   codePresetIds: string[];
+  isHistorical: boolean;
 } {
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
   const setActivity = useBimStore((s) => s.setActivity);
@@ -344,6 +352,43 @@ export function useWorkspaceSnapshot(): {
     [loadModelSnapshot, seedModels],
   );
 
+  // Time-travel Wave 4: load a frozen historical document for ?at=<commit_id>.
+  // Skips the websocket + seed-library bootstrap entirely; the document is
+  // read-only by virtue of the websocket never opening (no deltas, no
+  // presence) and the Workspace component refusing to dispatch commands.
+  const loadHistoricalSnapshot = useCallback(
+    async (mid: string, commitId: string): Promise<void> => {
+      setSeedLoading(true);
+      setSeedError(null);
+      try {
+        const res = await fetch(
+          `/api/models/${encodeURIComponent(mid)}/state?at=${encodeURIComponent(commitId)}`,
+        );
+        if (!res.ok) {
+          throw new Error(`state?at=${commitId} → ${res.status} ${res.statusText}`);
+        }
+        const payload = (await res.json()) as HistoricalSnapshotPayload;
+        if (!mountedRef.current) return;
+        const elements = (payload.document?.elements ?? {}) as Record<string, unknown>;
+        hydrateFromSnapshot({
+          modelId: payload.modelId ?? mid,
+          revision: Number(payload.revision ?? 0),
+          elements,
+          violations: [],
+        });
+        setActiveSeedLabel(`Historical · ${commitId.slice(0, 8)}…`);
+      } catch (err) {
+        if (!mountedRef.current) return;
+        setSeedError(
+          err instanceof Error ? err.message : 'Failed to load historical snapshot',
+        );
+      } finally {
+        if (mountedRef.current) setSeedLoading(false);
+      }
+    },
+    [hydrateFromSnapshot],
+  );
+
   // modelId is the cache key for server-fetched, model-scoped state. Whenever
   // it changes, prior activity/comments must be cleared (so the previous
   // model's history doesn't bleed into the new one) and refetched. Empty/unset
@@ -396,7 +441,10 @@ export function useWorkspaceSnapshot(): {
       typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get('modelId')
         : null;
-    if (requestedModelId) {
+    if (historicalCommitId && requestedModelId) {
+      // Time-travel mode: hydrate from /state?at=<commit_id>, never open ws.
+      void loadHistoricalSnapshot(requestedModelId, historicalCommitId);
+    } else if (requestedModelId) {
       void loadSeedModel(requestedModelId);
     } else {
       void insertSeedHouse();
@@ -455,5 +503,6 @@ export function useWorkspaceSnapshot(): {
     setSeedError,
     wsOn,
     codePresetIds,
+    isHistorical: Boolean(historicalCommitId),
   };
 }

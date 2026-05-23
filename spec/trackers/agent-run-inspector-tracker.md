@@ -2,10 +2,12 @@
 
 Last updated: 2026-05-23
 
-Status: **Wave 1 shipped; Wave 2 first slice (iteration capture viewer +
-per-house dashboard) shipped; Wave 2 remaining slices (lineage trace,
-commit time-slider, schema-driven registries) deferred to follow-up
-sessions — no work in progress.** Defines the
+Status: **Wave 1 + Wave 2 first slice + Wave 2 iter-picker / commit
+time-slider shipped (per-house dashboard now renders a horizontal iter
+strip that opens the historical Workspace viewer in a new tab). Wave 2
+remaining slices (lineage trace, artifact browser, sub-agent transcript
+linkage, schema-driven registries) deferred to follow-up sessions — no
+work in progress.** Defines the
 `/agents` UI surface that lets the developer inspect how an AI agent
 applied the hybrid reverse-BIM methodology to a source folder: which
 files were processed, what the agent and its sub-agents thought, which
@@ -44,19 +46,92 @@ telemetry pipeline and not a methodology change.
   path-traversal rejection, iteration ordering, capture MIME, fact
   stats, scoring 404 vs 200.
 
+### What landed (truthful UI pass — 2026-05-23 follow-up)
+
+- **/agents index dropped the hardcoded `alpha / beta / gamma` per-house
+  link list**. Now driven from `/api/agent-runs/houses` and rendered
+  with a provenance tag per house: `active model` (DB row exists),
+  `artifacts only` (filesystem-only, no model), `seed (nothing yet)`
+  (hardcoded fallback, no real state). The latter render as
+  strikethrough non-links so a fresh checkout doesn't dare the user
+  into clicking through to empty pages.
+- **/agents index sessions table now explicitly labels itself
+  "Historical Claude Code sessions"** with a note that the list
+  persists across testhouse rebuilds, so iter-19 / iter-13 / iter-9
+  rows from months-old runs no longer read as live state.
+- **Per-house dashboard sessions table** split into three collapsible
+  buckets: `current model` (sessions whose `inferred_model_id`
+  matches the resolved house model), `historical (different model)`
+  (different `inferred_model_id` — typical post-rebuild leftovers),
+  `unattributed` (`inferred_model_id` null — the REST-driven
+  testhouse runs always land here, as do pre-MCP sessions). Only the
+  current bucket is expanded by default. This defuses the iter-19
+  confusion that drove the rework.
+- **Stale "Iterations with captures" card** removed from the dashboard
+  (the iter picker subsumes it). The legacy `iter-N-captures/`
+  capture section only renders when the legacy directory layout
+  exists, with an explanation that the new rebuild puts captures
+  under `tmp/reverse-bim/house-<X>/iter-N/` and renders them via the
+  iter picker's iframe.
+- **`tsconfig.tsbuildinfo` added to `.gitignore`** to stop the typecheck
+  artifact from showing up in `git status`.
+
+### What landed (iter-picker — 2026-05-23, unified pass)
+
+- **Unified iter-picker endpoint** at
+  `GET /api/agent-runs/houses/{house}/iter-picker` returns one row per
+  iter merged from:
+  - filesystem evidence under `tmp/reverse-bim/house-<X>/iter-N/` (the
+    new rebuild layout) **plus** the legacy `iter-N-captures/` listing
+    filtered by house prefix — so preflight iters (iter-0/1/2) and
+    capture-only iters appear even without commits;
+  - `bim_model_commits` rows tagged with
+    `context.testhouse_iter.house == X`, latest commit per iter wins.
+- **Inline iframe preview** in
+  `packages/web/src/agents/AgentHouseDashboard.tsx`: clicking an iter
+  button below the iter strip swaps an iframe to
+  `/?modelId=&at=<commitId>` so you can compare the historical BIM
+  state against the rest of the dashboard cards without changing
+  tabs. The "Open in new tab" link is kept as a secondary affordance
+  for full-screen work. Preflight iters render as visible-but-disabled
+  buttons with a "preflight (no model commit yet)" tooltip.
+- **Dynamic house discovery** in
+  `app/bim_ai/routes/agent_runs.py`: `_discover_houses()` unions the
+  seed list (`alpha`, `beta`, `gamma`), filesystem `house-*/` dirs,
+  and `bim_models.slug='house-*'` rows. `/agent-runs/houses` now
+  annotates each row with `inSeed / inFilesystem / inDatabase`
+  provenance flags. Sync `_validate_house` accepts seed + filesystem;
+  `_validate_house_async` extends to DB-discovered names.
+- **Server-resolved modelId**: the dashboard field
+  (`bim_models.slug = 'house-<X>'` → commit-tag fallback) is the
+  load-bearing path; `dominantModelId(sessions)` is kept as a final
+  fallback. Needed because REST-driven testhouse runs
+  (`submitter: "testhouse_drive.author-shell"`) never appear in
+  Claude Code session JSONLs and so carry no session-level model
+  attribution.
+- **Tests** under `app/tests/test_agent_runs_iter_picker.py` (8 tests)
+  cover the iter-token parser, both filesystem layouts, the houses
+  endpoint provenance flags, and the iter-picker payload shape. The
+  existing `test_agent_runs_routes.py` fixture now uses a
+  `_StubSession` dependency override to avoid the asyncpg
+  event-loop-closed lifecycle issue that surfaces when several
+  DB-touching route tests run in the same suite via `TestClient`.
+
+(For posterity: the prior pass shipped a strip that only consumed
+`/api/models/{id}/commits?testhouse_house=...` and only the commits
+filter — so iters without commits and preflight iters were invisible.
+This unified pass replaces it.)
+
+- **Helpers** (`dominantModelId`, `lastCommitPerIter`,
+  `historicalViewerUrl`) remain exported from
+  `AgentHouseDashboard.tsx` for unit coverage in
+  `packages/web/src/agents/iterPicker.test.ts`. Only
+  `historicalViewerUrl` is on the live dashboard's hot path now (the
+  iframe `src` + the new-tab link); the others are kept for the test
+  surface and as fallbacks.
+
 ### Still to ship from Wave 2
 
-- **Iter-picker + commit time-slider on the per-house dashboard.**
-  Promoted to top priority on 2026-05-23. Consumes
-  `/api/models/{id}/commits` filtered by
-  `agent_context.testhouse_iter.{house,iter}` + the new
-  `?at=:commitId` viewer mode specified in
-  [`spec/trackers/model-time-travel-tracker.md`](./model-time-travel-tracker.md) Wave 4.
-  Behaviour: a horizontal iter strip showing every iter for which a
-  commit exists; clicking iter-N opens a new tab at
-  `/workspace/<modelId>?at=<last_commit_of_iter_N>` rendering the
-  actual BIM model state, not a screenshot. This is the primary
-  acceptance test for the `testhouse-clean-rebuild-tracker.md` rebuild.
 - **Lineage trace** (`/agents/houses/{house}/trace/{factId}`):
   backward from a fact id through reader response → page image →
   source PDF; forward to MCP call → element → captured screenshot.

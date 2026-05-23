@@ -71,11 +71,41 @@ def fake_tree(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return root
 
 
+class _StubSession:
+    """Empty-result AsyncSession stand-in for route tests.
+
+    The dashboard endpoint's modelId resolver runs a SQL query that
+    works fine in production but the asyncpg pool's per-test
+    teardown leaks "Event loop is closed" errors when several
+    DB-touching tests run in the same suite via TestClient. Replace
+    the session with a stub that returns "nothing" for every query —
+    the dashboard then reports ``modelId: null`` which is the
+    documented behaviour for a house with no committed model.
+    """
+
+    async def execute(self, *args: object, **kwargs: object):  # noqa: ARG002
+        from unittest.mock import MagicMock
+
+        mock = MagicMock()
+        mock.scalar_one_or_none.return_value = None
+        mock.scalars.return_value = iter(())
+        mock.all.return_value = []
+        return mock
+
+
 @pytest.fixture()
 def client(fake_tree: Path) -> TestClient:  # noqa: ARG001 — fixture autouses tree
+    from bim_ai.db import get_session
     from bim_ai.main import app
 
-    return TestClient(app)
+    async def override():
+        yield _StubSession()
+
+    app.dependency_overrides[get_session] = override
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(get_session, None)
 
 
 def test_validate_house_accepts_known_set() -> None:

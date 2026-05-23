@@ -1,7 +1,18 @@
 import { type JSX, useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import type { SessionListResponse, SessionSummary } from './types';
+import type {
+  HouseListItem,
+  HouseListResponse,
+  SessionListResponse,
+  SessionSummary,
+} from './types';
 import './agents.css';
+
+function houseProvenanceTag(h: HouseListItem): string {
+  if (h.inDatabase) return 'active model';
+  if (h.inFilesystem) return 'artifacts only';
+  return 'seed (nothing yet)';
+}
 
 function formatTimestamp(ts: string | null): string {
   if (!ts) return '—';
@@ -43,6 +54,8 @@ export function AgentsIndex(): JSX.Element {
   const [data, setData] = useState<SessionListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [houses, setHouses] = useState<HouseListResponse | null>(null);
+  const [housesError, setHousesError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,32 +82,81 @@ export function AgentsIndex(): JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/agent-runs/houses')
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json() as Promise<HouseListResponse>;
+      })
+      .then((payload) => {
+        if (!cancelled) setHouses(payload);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setHousesError(err instanceof Error ? err.message : String(err));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Houses with an active model first (most-likely-clicked), then
+  // artifacts-only, then seed-empty rows. The seed-empty rows render
+  // as plain text rather than links so a fresh checkout doesn't mislead
+  // users into clicking through to empty pages.
+  const houseRows = (houses?.items ?? []).slice().sort((a, b) => {
+    const score = (h: HouseListItem) =>
+      (h.inDatabase ? 0 : 1) * 10 + (h.inFilesystem ? 0 : 1);
+    return score(a) - score(b);
+  });
+
   return (
     <div className="agents-page">
       <header className="agents-header">
         <h1>Agent Runs</h1>
         <p className="agents-subtitle">
-          Claude Code session transcripts. Each row is one session on disk.
+          Two data sources joined here: live BIM models (postgres) and Claude Code
+          session transcripts on disk.
         </p>
         {data?.sessionsDir ? (
           <p className="agents-source">
-            <code>{data.sessionsDir}</code>
+            sessions: <code>{data.sessionsDir}</code>
           </p>
         ) : null}
-        <p className="agents-house-links">
-          <strong>Per-house dashboards:</strong>{' '}
-          <Link to="/agents/houses/alpha" className="agents-link">
-            alpha
-          </Link>{' '}
-          ·{' '}
-          <Link to="/agents/houses/beta" className="agents-link">
-            beta
-          </Link>{' '}
-          ·{' '}
-          <Link to="/agents/houses/gamma" className="agents-link">
-            gamma
-          </Link>
-        </p>
+        {housesError ? (
+          <p className="agents-error">Failed to load houses: {housesError}</p>
+        ) : null}
+        {houseRows.length > 0 ? (
+          <p className="agents-house-links">
+            <strong>Per-house dashboards:</strong>{' '}
+            {houseRows.map((h, i) => (
+              <span key={h.name}>
+                {i > 0 ? ' · ' : ''}
+                {h.inDatabase || h.inFilesystem ? (
+                  <Link
+                    to={`/agents/houses/${h.name}`}
+                    className="agents-link"
+                    title={`${h.name} · ${houseProvenanceTag(h)}`}
+                  >
+                    {h.name}
+                  </Link>
+                ) : (
+                  <span
+                    className="agents-house-empty"
+                    title={`${h.name} · ${houseProvenanceTag(h)}`}
+                  >
+                    {h.name}
+                  </span>
+                )}{' '}
+                <small className="agents-iter-count">
+                  ({houseProvenanceTag(h)})
+                </small>
+              </span>
+            ))}
+          </p>
+        ) : null}
       </header>
 
       {loading ? <p>Loading sessions…</p> : null}
@@ -102,8 +164,12 @@ export function AgentsIndex(): JSX.Element {
 
       {data && !loading ? (
         <>
+          <h2 className="agents-section-heading">Historical Claude Code sessions</h2>
           <p className="agents-count">
-            {data.returned} of {data.total} sessions
+            {data.returned} of {data.total} session transcripts on disk. Sessions
+            persist across testhouse rebuilds — older rows may reference model ids
+            that no longer exist. Use the per-house dashboards above for current
+            live state.
           </p>
           <table className="agents-table">
             <thead>

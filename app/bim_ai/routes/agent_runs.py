@@ -19,8 +19,10 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai.agent_run_parser import (
     default_sessions_dir,
@@ -29,15 +31,20 @@ from bim_ai.agent_run_parser import (
     session_path,
     summarize_session,
 )
+from bim_ai.db import get_session
+from bim_ai.tables import ModelCommitRecord, ModelRecord
 
 agent_runs_router = APIRouter()
 
-# Restrict house ids to the known testhouse set; matches the parser
-# (alpha/beta/gamma). Extend when adding houses.
+# Seed list — extended at request time by `_discover_houses` from the
+# filesystem and from ``bim_models.slug='house-*'``. Kept as a
+# fallback so the inspector still surfaces something on a fresh
+# checkout with no DB / no artifact tree.
 _KNOWN_HOUSES = ("alpha", "beta", "gamma")
 _HOUSE_RE = re.compile(r"^[a-z][a-z0-9]{1,32}$")
 _ITER_RE = re.compile(r"^iter-(\d+[a-z]?)$", re.IGNORECASE)
 _CAPTURE_FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*\.(png|jpg|jpeg|svg)$", re.IGNORECASE)
+_HOUSE_SLUG_RE = re.compile(r"^house-([a-z][a-z0-9]{1,32})$")
 
 
 def _reverse_bim_dir() -> Path:
@@ -50,16 +57,73 @@ def _reverse_bim_dir() -> Path:
     return Path(__file__).resolve().parents[3] / "tmp" / "reverse-bim"
 
 
-def _validate_house(house: str) -> str:
+def _discover_filesystem_houses() -> set[str]:
+    """House short-names from ``tmp/reverse-bim/house-<X>/`` directories."""
+
+    root = _reverse_bim_dir()
+    if not root.is_dir():
+        return set()
+    out: set[str] = set()
+    try:
+        for entry in root.iterdir():
+            if not entry.is_dir():
+                continue
+            m = _HOUSE_SLUG_RE.match(entry.name)
+            if m:
+                out.add(m.group(1))
+    except OSError:
+        pass
+    return out
+
+
+async def _discover_db_houses(session: AsyncSession) -> set[str]:
+    """House short-names from ``bim_models.slug LIKE 'house-%'``."""
+
+    res = await session.execute(
+        select(ModelRecord.slug).where(ModelRecord.slug.like("house-%"))
+    )
+    out: set[str] = set()
+    for (slug,) in res.all():
+        m = _HOUSE_SLUG_RE.match(str(slug or ""))
+        if m:
+            out.add(m.group(1))
+    return out
+
+
+async def _discover_houses(session: AsyncSession) -> list[str]:
+    """Union of seed + filesystem + DB houses, deterministic order.
+
+    Used by ``list_houses`` and by ``_validate_house``; both endpoints
+    need to agree on the universe of allowed houses so a slug newly
+    added to ``bim_models`` shows up in the inspector without a
+    deploy.
+    """
+
+    found = set(_KNOWN_HOUSES) | _discover_filesystem_houses() | await _discover_db_houses(session)
+    return sorted(found)
+
+
+async def _validate_house_async(session: AsyncSession, house: str) -> str:
     if not _HOUSE_RE.match(house):
         raise HTTPException(status_code=400, detail=f"Invalid house id: {house!r}")
-    if house not in _KNOWN_HOUSES:
-        # Allow unknown houses if a directory exists; helps when new
-        # testhouses are added without redeploying.
-        candidate = _reverse_bim_dir() / f"house-{house}"
-        if not candidate.is_dir():
-            raise HTTPException(status_code=404, detail=f"Unknown house: {house}")
-    return house
+    if house in await _discover_houses(session):
+        return house
+    raise HTTPException(status_code=404, detail=f"Unknown house: {house}")
+
+
+def _validate_house(house: str) -> str:
+    """Sync validator used by endpoints that don't need DB discovery.
+
+    Accepts seed-list + filesystem-discovered names. Endpoints that
+    also want DB-discovered names (the dashboard + iter-picker) use
+    ``_validate_house_async`` instead.
+    """
+
+    if not _HOUSE_RE.match(house):
+        raise HTTPException(status_code=400, detail=f"Invalid house id: {house!r}")
+    if house in set(_KNOWN_HOUSES) | _discover_filesystem_houses():
+        return house
+    raise HTTPException(status_code=404, detail=f"Unknown house: {house}")
 
 
 def _validate_iteration(label: str) -> str:
@@ -158,31 +222,35 @@ async def get_session_run(
 
 
 @agent_runs_router.get("/agent-runs/houses")
-async def list_houses() -> dict[str, Any]:
-    """Enumerate known houses with their artifact-tree presence."""
+async def list_houses(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    """Enumerate every house known to the inspector.
+
+    Union of: the hardcoded seed list, every ``house-<X>/`` directory
+    under ``tmp/reverse-bim/``, and every ``bim_models.slug='house-<X>'``
+    row. A house's row is annotated with whether each source actually
+    knows about it so the UI can flag DB-only and FS-only houses.
+    """
 
     root = _reverse_bim_dir()
+    fs_houses = _discover_filesystem_houses()
+    db_houses = await _discover_db_houses(session)
+    universe = sorted(set(_KNOWN_HOUSES) | fs_houses | db_houses)
+
     items = []
-    for name in _KNOWN_HOUSES:
+    for name in universe:
         house_dir = root / f"house-{name}"
         items.append(
             {
                 "name": name,
-                "present": house_dir.is_dir(),
+                "present": name in fs_houses,
                 "path": str(house_dir),
+                "inSeed": name in _KNOWN_HOUSES,
+                "inFilesystem": name in fs_houses,
+                "inDatabase": name in db_houses,
             }
         )
-    # Also surface any extra house-<x>/ directories on disk.
-    if root.is_dir():
-        for entry in sorted(root.iterdir()):
-            if not entry.is_dir() or not entry.name.startswith("house-"):
-                continue
-            short = entry.name[len("house-"):]
-            if short in _KNOWN_HOUSES:
-                continue
-            if not _HOUSE_RE.match(short):
-                continue
-            items.append({"name": short, "present": True, "path": str(entry)})
     return {"reverseBimDir": str(root), "items": items}
 
 
@@ -388,18 +456,245 @@ def _dashboard_summary(house: str) -> dict[str, Any]:
     return summary
 
 
+def _parse_iter_token(token: str) -> tuple[int, str] | None:
+    """Parse ``"3"`` / ``"12b"`` / ``"5a"`` into ``(num, suffix)`` keys."""
+
+    m = re.match(r"^(\d+)([a-z]?)$", token.lower())
+    if not m:
+        return None
+    return int(m.group(1)), m.group(2)
+
+
+def _scan_house_iter_directories(house: str) -> dict[str, dict[str, Any]]:
+    """Filesystem evidence per iter under ``house-<X>/``.
+
+    Returns ``{iter_label: {"label": ..., "path": ..., "captureCount": N}}``.
+    Recognises two layouts:
+
+    * **New rebuild**: ``tmp/reverse-bim/house-<X>/iter-N/`` (one dir per
+      iter, holds whatever the iter produced — captures live alongside
+      `mcp-handoff/` etc.).
+    * **Legacy**: ``tmp/reverse-bim/iter-N-captures/<house>-*.png`` (kept
+      working so old runs still surface).
+    """
+
+    out: dict[str, dict[str, Any]] = {}
+    root = _reverse_bim_dir()
+    house_dir = root / f"house-{house}"
+
+    # New layout: per-house iter dirs.
+    if house_dir.is_dir():
+        try:
+            for entry in house_dir.iterdir():
+                if not entry.is_dir():
+                    continue
+                m = _ITER_RE.match(entry.name)
+                if not m:
+                    continue
+                label = f"iter-{m.group(1).lower()}"
+                cap_count = 0
+                try:
+                    cap_count = sum(
+                        1
+                        for p in entry.iterdir()
+                        if p.is_file() and _CAPTURE_FILENAME_RE.match(p.name)
+                    )
+                except OSError:
+                    pass
+                out[label] = {"label": label, "path": str(entry), "captureCount": cap_count}
+        except OSError:
+            pass
+
+    # Legacy layout: shared iter-N-captures/ at the top level filtered by
+    # the house prefix on filenames.
+    if root.is_dir():
+        try:
+            for entry in root.iterdir():
+                if not entry.is_dir():
+                    continue
+                m = re.match(r"^iter-(\d+[a-z]?)-captures$", entry.name, re.IGNORECASE)
+                if not m:
+                    continue
+                label = f"iter-{m.group(1).lower()}"
+                house_files = 0
+                try:
+                    for p in entry.iterdir():
+                        if not p.is_file():
+                            continue
+                        name = p.name
+                        if name.startswith(f"{house}-") or name.startswith(f"{house}_"):
+                            house_files += 1
+                except OSError:
+                    continue
+                if house_files == 0:
+                    continue
+                existing = out.get(label)
+                if existing is None:
+                    out[label] = {
+                        "label": label,
+                        "path": str(entry),
+                        "captureCount": house_files,
+                    }
+                else:
+                    existing["captureCount"] = existing["captureCount"] + house_files
+        except OSError:
+            pass
+
+    return out
+
+
+async def _scan_house_iter_commits(
+    session: AsyncSession, house: str
+) -> dict[str, dict[str, Any]]:
+    """Latest commit per iter for ``house``, keyed by ``iter-<N>`` label.
+
+    "Latest" is by ``created_at`` descending — matches the
+    inspector's iter-picker semantics ("show the iter's final state").
+    """
+
+    res = await session.execute(
+        select(ModelCommitRecord)
+        .where(ModelCommitRecord.context["testhouse_iter"]["house"].astext == house)
+        .order_by(ModelCommitRecord.created_at.desc())
+    )
+    out: dict[str, dict[str, Any]] = {}
+    for commit in res.scalars():
+        block = (commit.context or {}).get("testhouse_iter")
+        iter_value = (block or {}).get("iter") if isinstance(block, dict) else None
+        if iter_value is None:
+            continue
+        # Tolerate string-encoded iter numbers (e.g. JSON wire-format drift).
+        try:
+            iter_int = int(str(iter_value))
+        except (TypeError, ValueError):
+            continue
+        label = f"iter-{iter_int}"
+        if label in out:
+            # Older commit for the same iter — keep the newest (first seen).
+            continue
+        out[label] = {
+            "commitId": commit.commit_id,
+            "modelId": str(commit.model_id),
+            "phase": (block or {}).get("phase") if isinstance(block, dict) else None,
+            "summary": commit.summary,
+            "state": commit.state,
+            "createdAt": commit.created_at.isoformat() if commit.created_at else None,
+            "firstRevision": commit.first_revision,
+            "lastRevision": commit.last_revision,
+        }
+    return out
+
+
+async def _resolve_house_model_id(session: AsyncSession, house: str) -> str | None:
+    """Resolve ``house → modelId`` for the iter-picker.
+
+    Tried in order, first hit wins:
+
+    1. ``bim_models.slug = 'house-<house>'`` — the testhouse rebuild's
+       slug convention. Single SELECT, unambiguous when the convention
+       holds.
+    2. Any ``bim_model_commits`` row whose
+       ``context.testhouse_iter.house`` matches. Falls back to the
+       agent-side attribution if the slug convention is ever broken.
+
+    Returns ``None`` if neither resolves — the dashboard then surfaces
+    "no model id resolved" and the iter-picker explains itself.
+    """
+
+    slug = f"house-{house}"
+    row = await session.execute(select(ModelRecord.id).where(ModelRecord.slug == slug))
+    by_slug = row.scalar_one_or_none()
+    if by_slug is not None:
+        return str(by_slug)
+
+    res = await session.execute(
+        select(ModelCommitRecord.model_id)
+        .where(ModelCommitRecord.context["testhouse_iter"]["house"].astext == house)
+        .limit(1)
+    )
+    by_commit = res.scalar_one_or_none()
+    if by_commit is not None:
+        return str(by_commit)
+
+    return None
+
+
 @agent_runs_router.get("/agent-runs/houses/{house}/dashboard")
-async def get_house_dashboard(house: str) -> dict[str, Any]:
+async def get_house_dashboard(
+    house: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
     """Per-house methodology dashboard (Wave 2 — minimal slice).
 
     Returns: fact-ledger stats from understanding/existing-building-ir.json,
     validation report inventory, rendered-page-group count, reader-pass
-    count, and iteration capture summary. Missing artifacts return null
-    rather than 404 so the dashboard renders for partial houses.
+    count, iteration capture summary, and (Wave 4) the resolved
+    ``modelId`` so the iter-picker can target the right BIM model
+    without depending on session-attribution heuristics. Missing
+    artifacts return null rather than 404 so the dashboard renders for
+    partial houses.
     """
 
     house = _validate_house(house)
+    model_id = await _resolve_house_model_id(session, house)
     return {
         **_dashboard_summary(house),
+        "modelId": model_id,
         "iterations": _enumerate_iterations(house),
+    }
+
+
+@agent_runs_router.get("/agent-runs/houses/{house}/iter-picker")
+async def get_house_iter_picker(
+    house: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    """Unified per-iter view for the inspector's iter-picker.
+
+    Merges two evidence sources keyed by iter label (``iter-<N>``):
+
+    * Filesystem: directories under ``tmp/reverse-bim/house-<X>/iter-N/``
+      (new rebuild layout) AND legacy ``iter-N-captures/`` filtered to
+      this house. These cover preflight iters (iter-0/1/2) that don't
+      write to the BIM model.
+    * Commits: ``bim_model_commits`` rows tagged with
+      ``context.testhouse_iter.house == <house>``. Only iters that
+      actually authored model state.
+
+    Each iter row is **clickable** in the UI only when ``commit`` is
+    non-null; preflight iters render as visible-but-disabled with a
+    tooltip. The result is sorted ``iter-1, iter-2, ..., iter-12b``.
+    """
+
+    house = await _validate_house_async(session, house)
+    model_id = await _resolve_house_model_id(session, house)
+
+    fs_iters = _scan_house_iter_directories(house)
+    commit_iters = await _scan_house_iter_commits(session, house)
+
+    labels = sorted(
+        set(fs_iters) | set(commit_iters),
+        key=lambda label: _parse_iter_token(label[len("iter-"):]) or (10**9, label),
+    )
+
+    items: list[dict[str, Any]] = []
+    for label in labels:
+        fs = fs_iters.get(label)
+        commit = commit_iters.get(label)
+        items.append(
+            {
+                "iter": label,
+                # numeric form for sorting / linking in JS without re-parsing.
+                "iterNumber": _parse_iter_token(label[len("iter-"):]) and
+                              _parse_iter_token(label[len("iter-"):])[0],
+                "fsPath": (fs or {}).get("path"),
+                "captureCount": (fs or {}).get("captureCount", 0),
+                "commit": commit,  # null when this iter has no model commit
+            }
+        )
+
+    return {
+        "house": house,
+        "modelId": model_id,
+        "items": items,
     }

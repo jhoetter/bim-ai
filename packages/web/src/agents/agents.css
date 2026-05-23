@@ -33,6 +33,18 @@
   font-size: 13px;
 }
 
+.agents-house-empty {
+  color: #888;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.agents-section-heading {
+  margin: 16px 0 4px;
+  font-size: 15px;
+  color: #333;
+}
+
 .agents-count {
   font-size: 12px;
   color: #777;
@@ -271,13 +283,115 @@
 }
 
 .agents-capture-section,
-.agents-sessions-section {
+.agents-sessions-section,
+.agents-iter-picker-section {
   margin-top: 24px;
 }
 .agents-capture-section h2,
-.agents-sessions-section h2 {
+.agents-sessions-section h2,
+.agents-iter-picker-section h2 {
   margin: 8px 0 4px;
   font-size: 16px;
+}
+
+.agents-iter-strip {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agents-iter-pick-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid #1659b8;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #1659b8;
+  text-decoration: none;
+  cursor: pointer;
+  min-width: 60px;
+  font-family: inherit;
+}
+.agents-iter-pick-btn:hover:not(:disabled) {
+  background: #1659b8;
+  color: white;
+}
+.agents-iter-pick-btn small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+.agents-iter-pick-btn--active {
+  background: #1659b8;
+  color: white;
+}
+.agents-iter-pick-btn--disabled,
+.agents-iter-pick-btn:disabled {
+  border-color: #ccc;
+  color: #888;
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.agents-iter-preview {
+  margin-top: 12px;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+.agents-iter-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f0f3f7;
+  border-bottom: 1px solid #cfd6dc;
+  font-size: 12px;
+}
+.agents-iter-preview-toolbar code {
+  font-size: 11px;
+}
+.agents-iter-preview-spacer {
+  flex: 1;
+}
+.agents-iter-preview-newtab {
+  color: #1659b8;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+.agents-iter-preview-newtab:hover {
+  text-decoration: underline;
+}
+.agents-iter-preview-close {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #555;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 6px;
+}
+.agents-iter-preview-close:hover {
+  border-color: #cfd6dc;
+  background: #fff;
+}
+
+.agents-iter-preview-iframe {
+  display: block;
+  width: 100%;
+  height: 640px;
+  border: 0;
+  background: #fff;
 }
 
 .agents-capture-toolbar {

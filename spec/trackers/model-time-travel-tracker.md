@@ -2,9 +2,13 @@
 
 Last updated: 2026-05-23
 
-Status: **Waves 1–3 shipped; Wave 4 (inspector integration) and Wave 5
-(operational hardening) deferred to follow-up sessions — no work in
-progress.** Prerequisite for
+Status: **Waves 1–4 shipped, Wave 5 partial (sweeper + storage summary
+landed; sparse-snapshot toggle remains optional).** Per-iter commit
+filter, historical Workspace viewer, iter-picker UI, and the
+operational-hardening admin endpoints are live; the end-to-end iter-3
+viewer demo from the testhouse rebuild is pending the testhouse agent
+producing commits with `agent_context.testhouse_iter` populated.
+Prerequisite for
 [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
 Defines git-like time travel for BIM models — commits with agent context,
 snapshots at logical boundaries, checkout/diff/log API, and retroactive
@@ -41,13 +45,73 @@ open questions resolved 2026-05-23 (see
 
 ### Still to ship
 
-- **Wave 4 — inspector integration**: per-model commit timeline page
-  consuming the read API; "checkout commit C" route that renders past
-  state via the existing viewer with `?at=:commitId`. Tracked in
-  [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md).
-- **Wave 5 — operational hardening**: orphaned-open-commit sweeper,
-  snapshot storage monitoring, optional sparse-snapshot toggle.
-  Revisit when material.
+- **Wave 4 — end-to-end iter-picker demo**: the wiring is in place
+  (filter + viewer + UI + tests, see "What landed (Wave 4)" below) but
+  the human-visible "click iter-3 marker → see iter-3 BIM in 3D" demo
+  needs the testhouse agent (see
+  [`testhouse-clean-rebuild-tracker.md`](./testhouse-clean-rebuild-tracker.md))
+  to author commits with `agent_context.testhouse_iter` populated.
+- **Wave 5 — optional sparse-snapshot toggle**: deferred. The orphaned-
+  open-commit sweeper and snapshot-storage-monitoring endpoints shipped
+  alongside Wave 4 — see "What landed (Wave 5 partial)" below.
+
+### What landed (Wave 4 — 2026-05-23)
+
+- **Per-iter commits filter** (`app/bim_ai/routes/time_travel.py`):
+  `GET /api/models/{id}/commits` now accepts `testhouse_house=` and
+  `testhouse_iter=` query params that read the structured
+  `context.testhouse_iter.{house,iter}` sub-path pinned by
+  [`testhouse-clean-rebuild-tracker.md`](./testhouse-clean-rebuild-tracker.md).
+  Legacy flat fields (`houseName` / `iterationLabel`) are unaffected.
+- **Workspace historical-mode bootstrap**
+  (`packages/web/src/workspace/useWorkspaceSnapshot.ts` +
+  `packages/web/src/workspace/Workspace.tsx`):
+  `/?modelId=<uuid>&at=<commit_id>` swaps the bootstrap to
+  `GET /api/models/{id}/state?at=<commit_id>`, feeds the response
+  through `useBimStore.hydrateFromSnapshot`, and never opens a
+  websocket. Note: the URL pattern is `/?modelId=&at=` instead of
+  `/workspace/:modelId?at=` to avoid touching `App.tsx` route
+  registration — functional behaviour is identical to the spec.
+- **Read-only banner + command lockout**: a fixed banner at the top of
+  the Workspace renders the short commit id and "Commands are
+  disabled". `onSemanticCommand`, `handleUndoRedo`,
+  `handleLibraryPlace`, and `loadCatalogFamilyIntoProject` all
+  short-circuit to a logged no-op in historical mode — so every
+  authoring path the chrome surfaces is inert. (The CommandPalette
+  buttons still render enabled; pressing one logs "ignored" and stays
+  silent. Disabling button visuals would require plumbing a flag
+  through the entire ribbon — out of scope for this slice.)
+- **Iter-picker UI** (`packages/web/src/agents/AgentHouseDashboard.tsx`):
+  a horizontal strip per house resolves the dominant model id from the
+  session attribution, pulls the filtered commits, groups them by
+  `testhouse_iter.iter`, and renders one link per iter that opens the
+  historical viewer in a new tab.
+- **Tests**: 4 frontend tests
+  (`packages/web/src/workspace/historicalMode.test.ts`) cover the
+  websocket-not-opened contract + the state-endpoint fetch path; 8
+  frontend tests
+  (`packages/web/src/agents/iterPicker.test.ts`) cover the iter
+  grouping helpers; 4 backend tests
+  (`app/tests/test_time_travel_iter_filter.py`) pin the filter SQL +
+  state-endpoint wire shape.
+
+### What landed (Wave 5 partial — 2026-05-23)
+
+- **Orphaned-open-commit sweeper** (`app/bim_ai/versioning.py`):
+  `sweep_orphaned_open_commits(session, older_than_seconds=3600)`
+  closes commits with ≥1 attached undo row and aborts those with
+  none. Idempotent. Exposed via
+  `POST /api/time-travel/sweep-orphans`.
+- **Snapshot storage monitoring** (`app/bim_ai/versioning.py`):
+  `snapshot_storage_summary(session, top_n_models=10)` returns
+  `{snapshotCount, totalBytes, maxBytes, perModel[], commitStateMix}`.
+  Exposed via `GET /api/time-travel/storage-summary`. The
+  `totalBytes` watch is the cheap signal for the v2 trigger
+  ("snapshot storage > 10 GB").
+- **Tests**: 8 backend tests
+  (`app/tests/test_time_travel_wave5.py`) pin the route registration,
+  the orphan-filter SQL clauses, the per-model rollup ORDER BY, and
+  the helper response shapes.
 
 ## Purpose
 
@@ -911,3 +975,22 @@ On a fresh testhouse rebuild (per
 - Comparing two commits visually (overlay or diff view).
 - Editing from a historical state ("rewind and apply" workflow).
 - Sparse-snapshot toggle (operational hardening, separate item).
+
+### Wave 4 ship notes (2026-05-23)
+
+Two deviations from the original sketch above, both kept small to
+minimise blast radius:
+
+1. **URL pattern** — the iter-picker opens `/?modelId=<uuid>&at=<commit>`
+   instead of `/workspace/<modelId>?at=<commit>`. `App.tsx` has no
+   `/workspace/:modelId` route today and the Workspace bootstrap
+   already reads `?modelId=` and now also `?at=`; adding the path-style
+   route would require touching the router config which isn't in this
+   slice's owned files. Functional behaviour matches the spec; the
+   iframe-preview nice-to-have remains out of scope.
+2. **Command lockout** — the historical guard sits at
+   `onSemanticCommand` / `handleUndoRedo` / `handleLibraryPlace` /
+   `loadCatalogFamilyIntoProject`, not at each ribbon button. The
+   banner is the visual signal; pressing a button still works as a
+   click but does not author anything. Plumbing a `disabled` prop
+   through the full ribbon would be a separate slice.

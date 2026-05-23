@@ -24,6 +24,7 @@ app/.venv/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
+**/tsconfig.tsbuildinfo
 tmp/
 app/data/
 # Generated/local seed artifacts are not committed by default. Promote a seed

@@ -31,7 +31,7 @@ import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -273,6 +273,126 @@ async def abort_commit(
 
     await session.flush()
     return commit
+
+
+async def sweep_orphaned_open_commits(
+    session: AsyncSession,
+    *,
+    older_than_seconds: int = 3600,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Close or abort commits stuck in ``state='open'`` past ``older_than_seconds``.
+
+    Wave 5 hardening: the open-commit partial-unique index makes a single
+    orphan block every subsequent write on its model. The slice executor
+    is supposed to close-or-abort within the request, but crashes,
+    interrupted processes, and stale connections do happen.
+
+    Resolution policy:
+
+    * **Has ≥1 attached undo-stack row** → ``close_commit`` (snapshot
+      taken; treats the work as accepted). The commit then participates
+      in the normal log, just without an explicit author-side close.
+    * **Has 0 attached rows** → ``abort_commit`` (no snapshot; the
+      open-marker was speculatively created and the work never reached
+      the database).
+
+    Returns ``{"closed": [...], "aborted": [...], "considered": N}``
+    where the lists are commit ids. Idempotent: re-running after a
+    successful sweep returns empty lists.
+    """
+
+    current = now or datetime.now(UTC)
+    threshold = current - timedelta(seconds=max(1, int(older_than_seconds)))
+
+    res = await session.execute(
+        select(ModelCommitRecord)
+        .where(ModelCommitRecord.state == "open")
+        .where(ModelCommitRecord.created_at < threshold)
+    )
+    orphans = list(res.scalars())
+
+    closed: list[str] = []
+    aborted: list[str] = []
+    for commit in orphans:
+        row_count_res = await session.execute(
+            select(func.count(UndoStackRecord.id)).where(
+                UndoStackRecord.commit_id == commit.commit_id
+            )
+        )
+        attached = int(row_count_res.scalar() or 0)
+        if attached > 0:
+            await close_commit(session, commit_id=commit.commit_id)
+            closed.append(commit.commit_id)
+        else:
+            await abort_commit(session, commit_id=commit.commit_id)
+            aborted.append(commit.commit_id)
+
+    return {
+        "considered": len(orphans),
+        "closed": closed,
+        "aborted": aborted,
+        "thresholdAt": threshold.isoformat(),
+    }
+
+
+async def snapshot_storage_summary(
+    session: AsyncSession,
+    *,
+    top_n_models: int = 10,
+) -> dict[str, Any]:
+    """Aggregate snapshot-storage stats for the operational dashboard.
+
+    Surfaces:
+
+    * total snapshot count + total bytes + max single-snapshot size
+      (informs the v2 trigger "snapshot storage > 10 GB" in the tracker);
+    * per-model rollup limited to the ``top_n_models`` heaviest models;
+    * commit-state mix (open / closed / aborted) so an orphaned commit
+      stuck in ``open`` is visible without scrolling the log.
+    """
+
+    totals_res = await session.execute(
+        select(
+            func.count(ModelSnapshotRecord.id),
+            func.coalesce(func.sum(ModelSnapshotRecord.document_size_bytes), 0),
+            func.coalesce(func.max(ModelSnapshotRecord.document_size_bytes), 0),
+        )
+    )
+    total_count, total_bytes, max_bytes = totals_res.one()
+
+    per_model_res = await session.execute(
+        select(
+            ModelSnapshotRecord.model_id,
+            func.count(ModelSnapshotRecord.id),
+            func.coalesce(func.sum(ModelSnapshotRecord.document_size_bytes), 0),
+        )
+        .group_by(ModelSnapshotRecord.model_id)
+        .order_by(desc(func.sum(ModelSnapshotRecord.document_size_bytes)))
+        .limit(top_n_models)
+    )
+    per_model = [
+        {
+            "modelId": str(mid),
+            "snapshotCount": int(count),
+            "totalBytes": int(sum_bytes),
+        }
+        for mid, count, sum_bytes in per_model_res.all()
+    ]
+
+    state_mix_res = await session.execute(
+        select(ModelCommitRecord.state, func.count(ModelCommitRecord.commit_id))
+        .group_by(ModelCommitRecord.state)
+    )
+    state_mix = {str(state): int(count) for state, count in state_mix_res.all()}
+
+    return {
+        "snapshotCount": int(total_count or 0),
+        "totalBytes": int(total_bytes or 0),
+        "maxBytes": int(max_bytes or 0),
+        "perModel": per_model,
+        "commitStateMix": state_mix,
+    }
 
 
 @asynccontextmanager

@@ -32,6 +32,10 @@ from bim_ai.tables import (
     ModelSnapshotRecord,
     UndoStackRecord,
 )
+from bim_ai.versioning import (
+    snapshot_storage_summary,
+    sweep_orphaned_open_commits,
+)
 
 time_travel_router = APIRouter()
 
@@ -99,8 +103,16 @@ async def list_commits(
     iteration: Annotated[str | None, Query()] = None,
     source: Annotated[str | None, Query()] = None,
     state: Annotated[str | None, Query()] = None,
+    testhouse_house: Annotated[str | None, Query()] = None,
+    testhouse_iter: Annotated[int | None, Query()] = None,
 ) -> dict[str, Any]:
-    """Paged commit log, newest first."""
+    """Paged commit log, newest first.
+
+    The ``testhouse_house`` / ``testhouse_iter`` filters read the
+    structured ``context.testhouse_iter`` block whose schema is pinned
+    by ``spec/trackers/testhouse-clean-rebuild-tracker.md`` to
+    ``{house, iter, phase}``. They power the inspector's iter-picker.
+    """
 
     await _require_model(session, model_id)
 
@@ -128,6 +140,16 @@ async def list_commits(
         stmt = stmt.where(ModelCommitRecord.context["source"].astext == source)
     if state:
         stmt = stmt.where(ModelCommitRecord.state == state)
+    if testhouse_house is not None:
+        stmt = stmt.where(
+            ModelCommitRecord.context["testhouse_iter"]["house"].astext == testhouse_house
+        )
+    if testhouse_iter is not None:
+        # Integer comparison via cast — the value is stored as JSON number
+        # but ->>'iter' returns text, so compare as text.
+        stmt = stmt.where(
+            ModelCommitRecord.context["testhouse_iter"]["iter"].astext == str(testhouse_iter)
+        )
 
     stmt = stmt.limit(limit + 1)
     res = await session.execute(stmt)
@@ -480,3 +502,42 @@ async def element_history(
         "elementId": element_id,
         "items": items,
     }
+
+
+# ── Wave 5 operational hardening ────────────────────────────────────────
+# Both routes are read-only inspectors of the time-travel tables; the
+# sweeper is mutating and POST-only so an accidental GET doesn't sweep
+# in production.
+
+
+@time_travel_router.get("/time-travel/storage-summary")
+async def get_storage_summary(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    top_n_models: Annotated[int, Query(ge=1, le=100, alias="topNModels")] = 10,
+) -> dict[str, Any]:
+    """Snapshot-storage rollup powering the v2 trigger watch.
+
+    The tracker pins the v2 trigger at "total snapshot storage > 10 GB
+    across the project" — this endpoint is the cheapest way to keep an
+    eye on it without a postgres shell.
+    """
+
+    return await snapshot_storage_summary(session, top_n_models=top_n_models)
+
+
+@time_travel_router.post("/time-travel/sweep-orphans")
+async def post_sweep_orphans(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    older_than_seconds: Annotated[
+        int, Query(ge=60, le=86400, alias="olderThanSeconds")
+    ] = 3600,
+) -> dict[str, Any]:
+    """Close-or-abort commits stuck in ``state='open'``.
+
+    Idempotent; safe to schedule on a cron. Default age threshold is one
+    hour (the longest realistic slice runtime under hybrid-reverse-bim).
+    """
+
+    return await sweep_orphaned_open_commits(
+        session, older_than_seconds=older_than_seconds
+    )
