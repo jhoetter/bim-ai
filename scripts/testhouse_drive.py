@@ -749,15 +749,27 @@ def _ortho_camera(
     }
 
 
-def _ortho_views_bundle(*, snapshot: dict, parent_revision: int, iter_n: int, house: str) -> dict:
+def _ortho_views_bundle(
+    *,
+    snapshot: dict,
+    parent_revision: int,
+    iter_n: int,
+    house: str,
+    tag: str | None = None,
+) -> dict:
+    """Author 4 cardinal viewpoints. ``tag`` (e.g. floor slug) keeps the
+    viewpoint ids unique when this is called multiple times within a
+    single iter — without it, KG/EG/DG/ROOF per-iter ortho phases would
+    409 after the first floor."""
     bbox = _model_bbox_mm(snapshot)
+    suffix = f"-{tag}" if tag else ""
     commands: list[dict] = []
     for direction, offset in ORTHO_DIRECTIONS.items():
         commands.append(
             {
                 "type": "saveViewpoint",
-                "id": f"th-{house}-i{iter_n}-view-3d-ortho-{direction}",
-                "name": f"3D ortho — {direction}",
+                "id": f"th-{house}-i{iter_n}{suffix}-view-3d-ortho-{direction}",
+                "name": f"3D ortho — {direction}" + (f" ({tag})" if tag else ""),
                 "camera": _ortho_camera(bbox, offset),
                 "mode": "orbit_3d",
             }
@@ -959,10 +971,13 @@ def _rooms_bundle(
             poly = poly[:-1]
         if not poly or len(poly) < 3:
             continue
+        # ID derivation: prefer factId (guaranteed unique per IR) over
+        # text (multiple rooms in one level can share a label like "Keller").
+        ident = _slugify(r.get("factId") or r.get("text"))
         commands.append(
             {
                 "type": "createRoomOutline",
-                "id": f"th-{house}-i-{level_short}-room-{_slugify(r.get('text') or r.get('factId'))}",
+                "id": f"th-{house}-i-{level_short}-room-{ident}",
                 "name": str(r.get("text") or "Room"),
                 "levelId": level_id,
                 "outlineMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
@@ -2323,7 +2338,11 @@ def _cmd_floor(args: argparse.Namespace) -> int:
             snap = _snapshot(api_base=api_base, model_id=model_id)
             rev = int(snap.get("revision") or 1)
             ov_bundle = _ortho_views_bundle(
-                snapshot=snap, parent_revision=rev, iter_n=iter_n, house=house
+                snapshot=snap,
+                parent_revision=rev,
+                iter_n=iter_n,
+                house=house,
+                tag=floor.lower(),
             )
             _apply_slice_v2(
                 house=house,
