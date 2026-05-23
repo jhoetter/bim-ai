@@ -34,6 +34,7 @@ import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 APP_DIR = REPO_ROOT / "app"
@@ -42,13 +43,37 @@ if str(APP_DIR) not in sys.path:
 
 import httpx  # noqa: E402
 
-from bim_ai._io.log import get_logger, set_correlation_id  # noqa: E402
+from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
 
 HOUSES = ("alpha", "beta", "gamma")
 DEFAULT_API_BASE = "http://127.0.0.1:28500/api"
 DEFAULT_DPI = 240
 
 logger = get_logger("bim_ai.testhouse_iter")
+
+
+def _attach_house_run_log_sink(house: str) -> None:
+    """Attach a per-house ``run.jsonl`` file handler to the testhouse_iter logger.
+
+    Append-only JSONL: every structured log record the driver emits
+    while authoring ``house`` is also written to
+    ``tmp/reverse-bim/house-<X>/run.jsonl`` so a reviewer can read
+    the full agent timeline post-hoc. The /agents dashboard surfaces
+    the tail of this file via the ``log-tail`` endpoint.
+    """
+
+    import logging
+
+    run_log_path = _house_workdir(house) / "run.jsonl"
+    run_log_path.parent.mkdir(parents=True, exist_ok=True)
+    sink_attr = f"_bim_ai_run_log_{house}"
+    for h in logger.handlers:
+        if getattr(h, sink_attr, False):
+            return
+    handler = logging.FileHandler(str(run_log_path), mode="a", encoding="utf-8")
+    handler.setFormatter(JSONFormatter())
+    setattr(handler, sink_attr, True)
+    logger.addHandler(handler)
 
 
 def _house_root(house: str) -> Path:
@@ -1972,6 +1997,36 @@ def _apply_slice_v2(
     return out
 
 
+def _emit_event(
+    *,
+    house: str,
+    iter_n: int | None,
+    phase: str,
+    category: str,
+    severity: str = "info",
+    msg: str | None = None,
+    **extras: Any,
+) -> None:
+    """Emit one structured ``bim_ai.testhouse_iter.<msg>`` record.
+
+    Adds a ``category`` + ``severity`` field so the /agents dashboard
+    can filter / icon-color the timeline (gap B5). All keyword
+    arguments after ``msg`` land in the record as extras.
+    """
+
+    payload = {
+        "house": house,
+        "iter": iter_n,
+        "phase": phase,
+        "category": category,
+        "severity": severity,
+        **extras,
+    }
+    log_msg = msg or f"testhouse_iter.{category}"
+    level = logger.error if severity == "error" else logger.warning if severity == "warn" else logger.info
+    level(log_msg, extra=payload)
+
+
 def _cmd_narrate_globals(args: argparse.Namespace) -> int:
     """Synthesise iter-1 (reader) + iter-2 (scope) narrative.json sidecars
     from the on-disk IR so the /agents dashboard's global-phase strip has
@@ -2081,6 +2136,26 @@ def _cmd_narrate_globals(args: argparse.Namespace) -> int:
         extra={"scope": scope},
     )
 
+    _emit_event(
+        house=house,
+        iter_n=1,
+        phase="reader-pass-narrative",
+        category="narrative_global",
+        severity="info",
+        msg="testhouse_iter.narrate_globals.iter1_written",
+        factTotal=len(facts),
+        byKind=by_kind,
+        path=str(_house_workdir(house) / "iter-1" / "narrative.json"),
+    )
+    _emit_event(
+        house=house,
+        iter_n=2,
+        phase="scope-decisions-narrative",
+        category="narrative_global",
+        severity="info",
+        msg="testhouse_iter.narrate_globals.iter2_written",
+        path=str(_house_workdir(house) / "iter-2" / "narrative.json"),
+    )
     print(
         json.dumps(
             {
@@ -2375,6 +2450,11 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    # Every subcommand that takes --house gets a per-house run.jsonl
+    # log sink attached so /agents can tail the full agent timeline.
+    house = getattr(args, "house", None)
+    if isinstance(house, str) and house in HOUSES:
+        _attach_house_run_log_sink(house)
     return int(args.func(args))
 
 

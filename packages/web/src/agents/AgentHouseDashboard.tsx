@@ -817,6 +817,9 @@ export function AgentHouseDashboard(): JSX.Element {
             ) : null}
           </section>
 
+          <RunLogTail house={house} />
+
+
           {data.iterations.length > 0 ? (
           <details className="agents-detail agents-capture-section">
             <summary>
@@ -1538,5 +1541,160 @@ function GlobalPhaseOutput({ output }: GlobalPhaseOutputProps): JSX.Element {
       {role ? <code className="agents-global-phase-output-role">{role}</code> : null}
       <code className="agents-global-phase-output-path">{output.path}</code>
     </span>
+  );
+}
+
+interface RunLogEvent {
+  ts?: string;
+  level?: string;
+  logger?: string;
+  msg?: string;
+  category?: string;
+  severity?: string;
+  house?: string;
+  iter?: number | null;
+  phase?: string;
+  correlation_id?: string;
+  [k: string]: unknown;
+}
+
+interface RunLogTailResponse {
+  house: string;
+  path: string;
+  lineCount: number;
+  events: RunLogEvent[];
+}
+
+interface RunLogTailProps {
+  house: string;
+}
+
+/**
+ * Tail of the per-house ``run.jsonl`` log written by the testhouse
+ * driver. Lets a reviewer scroll the full agent timeline without
+ * grepping stderr. Lazy-loaded on first <details> open and refreshed
+ * on demand. The endpoint reads at most the last 1 MB tail so it
+ * stays cheap on long runs.
+ */
+function RunLogTail({ house }: RunLogTailProps): JSX.Element {
+  const [data, setData] = useState<RunLogTailResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const fetchTail = (): void => {
+    setLoading(true);
+    setErr(null);
+    fetch(
+      `/api/agent-runs/houses/${encodeURIComponent(house)}/log-tail?lines=300`,
+    )
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+        return r.json() as Promise<RunLogTailResponse>;
+      })
+      .then((p) => {
+        setData(p);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setErr(e instanceof Error ? e.message : String(e));
+        setLoading(false);
+      });
+  };
+
+  const onToggle = (e: React.SyntheticEvent<HTMLDetailsElement>): void => {
+    if (e.currentTarget.open && !data && !loading) fetchTail();
+  };
+
+  return (
+    <details
+      className="agents-detail agents-run-log-section"
+      onToggle={onToggle}
+      data-testid="agents-run-log"
+    >
+      <summary>
+        <strong>Run log (run.jsonl tail)</strong>{" "}
+        <small>
+          {data
+            ? `${data.lineCount} events`
+            : loading
+              ? "loading…"
+              : "click to load"}
+        </small>{" "}
+        <button
+          type="button"
+          className="agents-run-log-refresh"
+          onClick={(ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            fetchTail();
+          }}
+        >
+          refresh
+        </button>
+      </summary>
+      {err ? <p className="agents-error">Failed: {err}</p> : null}
+      {data ? (
+        <ol className="agents-run-log-events" data-testid="agents-run-log-events">
+          {data.events.map((ev, i) => {
+            const severity = String(ev.severity ?? ev.level ?? "info");
+            const msg = String(ev.msg ?? "");
+            const category = String(
+              ev.category ??
+                (msg.includes("ortho_capture") || msg.includes("captured")
+                  ? "capture"
+                  : msg.includes("grade")
+                    ? "grade"
+                    : msg.includes("narrative")
+                      ? "narrative_global"
+                      : msg.includes("skipped") || msg.includes("skip")
+                        ? "skip"
+                        : msg.endsWith(".end")
+                          ? "phase_end"
+                          : msg.endsWith(".start")
+                            ? "phase_start"
+                            : msg.endsWith(".commit_opened") ||
+                                msg.endsWith(".commit_closed")
+                              ? "commit"
+                              : "phase"),
+            );
+            const icon =
+              severity === "error"
+                ? "⛔"
+                : severity === "warn"
+                  ? "⚠️"
+                  : category.startsWith("capture")
+                    ? "📸"
+                    : category.startsWith("grade")
+                      ? "🏁"
+                      : category.startsWith("narrative")
+                        ? "📝"
+                        : category.startsWith("skip")
+                          ? "⤵️"
+                          : category === "phase_start"
+                            ? "▶"
+                            : category === "phase_end"
+                              ? "✓"
+                              : category === "commit"
+                                ? "💾"
+                                : "•";
+            const ts = String(ev.ts ?? "");
+            const phase = String(ev.phase ?? "");
+            const iter =
+              ev.iter === null || ev.iter === undefined ? "" : `iter-${ev.iter}`;
+            return (
+              <li key={i} className={`agents-run-log-event sev-${severity}`}>
+                <span className="agents-run-log-icon" title={category}>
+                  {icon}
+                </span>
+                <code className="agents-run-log-ts">{ts}</code>{" "}
+                {iter ? <code className="agents-run-log-iter">{iter}</code> : null}{" "}
+                {phase ? <code className="agents-run-log-phase">{phase}</code> : null}{" "}
+                <span className="agents-run-log-msg">{String(ev.msg ?? "")}</span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+    </details>
   );
 }

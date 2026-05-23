@@ -331,6 +331,58 @@
   background: #1659b8;
   color: white;
 }
+.agents-run-log-section {
+  margin-top: 24px;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  background: #fcfcfd;
+  padding: 12px;
+}
+.agents-run-log-section > summary {
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.agents-run-log-refresh {
+  margin-left: auto;
+  font-size: 12px;
+  border: 1px solid #c4c9d1;
+  background: white;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.agents-run-log-events {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  max-height: 480px;
+  overflow-y: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  background: #fafafa;
+  border-radius: 3px;
+}
+.agents-run-log-event {
+  padding: 2px 12px;
+  border-bottom: 1px solid #eef0f3;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.agents-run-log-event:hover { background: #f0f4f8; }
+.agents-run-log-event.sev-warn { background: #fff9e6; }
+.agents-run-log-event.sev-error { background: #fdecea; color: #8a1c13; }
+.agents-run-log-icon { width: 18px; text-align: center; }
+.agents-run-log-ts { color: #7a808a; font-size: 11px; }
+.agents-run-log-iter { color: #1a5fb4; font-size: 11px; }
+.agents-run-log-phase { color: #25543e; font-size: 11px; }
+.agents-run-log-msg { font-family: inherit; color: #20232a; }
+
 .agents-iter-pick-btn--disabled,
 .agents-iter-pick-btn:disabled {
   border-color: #ccc;

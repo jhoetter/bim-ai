@@ -469,6 +469,59 @@ async def get_iteration_scoring(
     return PlainTextResponse(text, media_type="text/markdown; charset=utf-8")
 
 
+@agent_runs_router.get("/agent-runs/houses/{house}/log-tail")
+async def get_house_log_tail(
+    house: str,
+    lines: Annotated[int, Query(ge=1, le=2000)] = 200,
+) -> dict[str, Any]:
+    """Tail the per-house ``run.jsonl`` driver log.
+
+    ``scripts/testhouse_drive.py::_attach_house_run_log_sink`` writes
+    every structured ``bim_ai.testhouse_iter`` log record to
+    ``tmp/reverse-bim/house-<X>/run.jsonl`` for the lifetime of every
+    driver invocation. This endpoint returns the last ``lines`` JSONL
+    records (parsed into objects) so the dashboard can render the
+    full agent timeline without grepping stderr.
+
+    Each returned record is the JSONFormatter payload:
+    ``{ts, level, logger, msg, correlation_id, ...extras}``.
+    """
+
+    house = _validate_house(house)
+    path = _reverse_bim_dir() / f"house-{house}" / "run.jsonl"
+    if not path.is_file():
+        return {"house": house, "path": str(path), "lineCount": 0, "events": []}
+    try:
+        # Read up to ~1 MB tail to keep this cheap on long runs.
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            start = max(0, size - 1_000_000)
+            f.seek(start)
+            tail_bytes = f.read()
+        text = tail_bytes.decode("utf-8", errors="replace")
+        # Drop the (possibly truncated) first line.
+        text_lines = text.splitlines()
+        if start > 0 and text_lines:
+            text_lines = text_lines[1:]
+        events: list[dict[str, Any]] = []
+        for raw in text_lines[-lines:]:
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                events.append(json.loads(raw))
+            except json.JSONDecodeError:
+                events.append({"raw": raw, "_parseError": True})
+        return {
+            "house": house,
+            "path": str(path),
+            "lineCount": len(events),
+            "events": events,
+        }
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
+
+
 @agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/narrative")
 async def get_iteration_narrative(house: str, iteration: str) -> dict[str, Any]:
     """Return the human-readable phase-narrative JSON for an iteration.
