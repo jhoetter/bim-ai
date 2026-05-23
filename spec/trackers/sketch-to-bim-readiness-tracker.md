@@ -16,7 +16,7 @@ Related sources:
 - `spec/methodology/sketch-to-bim-methodology.md`
 - `spec/methodology/sketch-to-bim-product-surfaces.md`
 - `spec/data/sketch-to-bim-capability-matrix.json`
-- `spec/ui-mcp-parity-tracker.md`
+- `spec/trackers/ui-mcp-parity-tracker.md`
 - `spec/generated/api-descriptor-ledger.md`
 - `spec/target-house/target-house-seed.md`
 - `~/repos/bim-book/docs/chapters`

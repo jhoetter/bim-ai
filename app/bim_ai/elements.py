@@ -79,6 +79,7 @@ from bim_ai.elements_constructability import (
     ConstructionPackageElem,
     ConstructionQaChecklistElem,
     SiteContextType,
+    SkbPhaseId,  # noqa: F401 - re-exported via this legacy module
     ValidationRuleElem,
 )
 from bim_ai.elements_links import (

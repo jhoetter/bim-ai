@@ -26,8 +26,8 @@ benchmark for `claude-skills/hybrid-reverse-bim`.
 Controlling method:
 
 - [`claude-skills/hybrid-reverse-bim/SKILL.md`](../claude-skills/hybrid-reverse-bim/SKILL.md)
-- [`spec/hybrid-reverse-bim-methodology-tracker.md`](./hybrid-reverse-bim-methodology-tracker.md)
-- [`spec/reverse-bim-actual-methodology-tracker.md`](./reverse-bim-actual-methodology-tracker.md)
+- [`spec/trackers/hybrid-reverse-bim-methodology-tracker.md`](./hybrid-reverse-bim-methodology-tracker.md)
+- [`spec/trackers/reverse-bim-actual-methodology-tracker.md`](./reverse-bim-actual-methodology-tracker.md)
 
 ## Purpose
 

@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 
-from bim_ai.routes import exports as routes_exports
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, WallElem
 from bim_ai.evidence_manifest import export_link_map
@@ -18,6 +17,7 @@ from bim_ai.export_3mf import (
     document_to_3mf_model_xml,
 )
 from bim_ai.export_stl import stl_export_options
+from bim_ai.routes import exports as routes_exports
 
 
 def _wall_doc() -> Document:

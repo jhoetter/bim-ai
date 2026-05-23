@@ -7,8 +7,6 @@ from typing import Any
 from bim_ai.constraints import evaluate
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, SheetElem
-from bim_ai.evidence_manifest import deterministic_sheet_evidence_manifest
-from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.evidence.schedule_sheet_export_parity import (
     FORMAT_V1,
     PARITY_ALIGNED,
@@ -16,6 +14,8 @@ from bim_ai.evidence.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_sheet,
     collect_schedule_sheet_export_parity_rows_for_doc,
 )
+from bim_ai.evidence_manifest import deterministic_sheet_evidence_manifest
+from bim_ai.schedule_derivation import derive_schedule_table
 
 
 def _square_room(rid: str, name: str = "") -> RoomElem:

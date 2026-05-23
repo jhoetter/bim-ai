@@ -7,7 +7,6 @@ from uuid import UUID
 import pytest
 from fastapi import HTTPException
 
-from bim_ai.routes import exports as routes_exports
 from bim_ai.document import Document
 from bim_ai.elements import (
     BalconyElem,
@@ -34,6 +33,7 @@ from bim_ai.export_stl import (
     document_to_stl_triangles,
     stl_export_options,
 )
+from bim_ai.routes import exports as routes_exports
 
 
 def _wall_doc() -> Document:

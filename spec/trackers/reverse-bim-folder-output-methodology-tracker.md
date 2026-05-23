@@ -8,7 +8,7 @@ BIM authoring.**
 
 Reset note: after the failed `target-house-3` Leo benchmark, the controlling
 methodology tracker is
-`spec/reverse-bim-actual-methodology-tracker.md`. This folder-output contract
+`spec/trackers/reverse-bim-actual-methodology-tracker.md`. This folder-output contract
 remains valid only when its outputs feed the stricter live MCP phase gates,
 Advisor gates, physical-topology gates, and UI/source-overlay evidence gates
 defined there.
@@ -697,7 +697,7 @@ Observed blockers:
 - The visual UI state clearly contradicts any claim of "accepted model".
 
 The current controlling plan is
-`spec/reverse-bim-actual-methodology-tracker.md`. This folder-output tracker
+`spec/trackers/reverse-bim-actual-methodology-tracker.md`. This folder-output tracker
 defines the handoff contract, but Leo is not considered successful until a fresh
 run passes the stricter live MCP, Advisor, physical-topology, source-overlay,
 and UI evidence gates.

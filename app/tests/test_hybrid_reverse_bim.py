@@ -6,11 +6,6 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.services.hybrid_reverse_bim import (
-    build_hybrid_reverse_bim_run_report,
-    build_hybrid_reverse_bim_slice_report,
-    build_source_spec_revision_report,
-)
 from bim_ai.reverse_bim.document_authority import build_reverse_bim_document_authority_report
 from bim_ai.reverse_bim.handoff_regeneration import build_reverse_bim_handoff_regeneration_plan
 from bim_ai.reverse_bim.readback import build_reverse_bim_readback_comparison
@@ -19,6 +14,11 @@ from bim_ai.reverse_bim.source_revision_persistence import (
     persist_reverse_bim_source_revision_ledger,
 )
 from bim_ai.routes.api import api_router
+from bim_ai.services.hybrid_reverse_bim import (
+    build_hybrid_reverse_bim_run_report,
+    build_hybrid_reverse_bim_slice_report,
+    build_source_spec_revision_report,
+)
 
 
 def _expectation() -> dict:

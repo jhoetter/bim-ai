@@ -8,7 +8,6 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bim_ai.api.registry import get_descriptor
-from bim_ai.services.folder_output import build_reverse_bim_folder_output
 from bim_ai.reverse_bim import (
     build_existing_building_ir_seed,
     build_mcp_authoring_readiness,
@@ -17,11 +16,12 @@ from bim_ai.reverse_bim import (
     plan_mcp_authoring_actions,
     validate_existing_building_ir,
 )
-from bim_ai.routes.api import api_router
 from bim_ai.reverse_bim.reader_dispatch import (
     build_reverse_bim_reader_dispatch_plan,
     execute_reverse_bim_reader_dispatch,
 )
+from bim_ai.routes.api import api_router
+from bim_ai.services.folder_output import build_reverse_bim_folder_output
 from bim_ai.services.source_agent_loop import (
     build_ai_visual_trace_agent_requests,
     build_ai_visual_trace_reader_pass_manifest,

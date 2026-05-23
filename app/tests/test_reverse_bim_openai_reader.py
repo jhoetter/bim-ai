@@ -9,7 +9,6 @@ from bim_ai.reverse_bim.openai_reader import (
     normalize_openai_reader_response,
 )
 
-
 PNG_1X1 = (
     b"\x89PNG\r\n\x1a\n"
     b"\x00\x00\x00\rIHDR"

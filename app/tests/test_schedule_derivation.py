@@ -9,13 +9,13 @@ import pytest
 
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, SheetElem, StairElem
-from bim_ai.schedule_csv import schedule_payload_to_csv
-from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.evidence.schedule_pagination_placement_evidence import (
     ADV_MULTI_SEGMENT,
     ADV_UNPLACED,
     ADV_VIEWPORT_MISSING,
 )
+from bim_ai.schedule_csv import schedule_payload_to_csv
+from bim_ai.schedule_derivation import derive_schedule_table
 
 
 def test_schedule_pagination_evidence_unplaced() -> None:

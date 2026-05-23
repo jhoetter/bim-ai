@@ -73,7 +73,7 @@ element → readback / QA / visual evidence**.
 The goal is empirical methodology refinement: judge which phases are
 overcomplicated, which are too simplified, where time is actually spent, how
 faithfully sub-agent reader passes flow into MCP authoring, and whether
-methodology gates ([`spec/reverse-bim-actual-methodology-tracker.md`](./reverse-bim-actual-methodology-tracker.md))
+methodology gates ([`spec/trackers/reverse-bim-actual-methodology-tracker.md`](./reverse-bim-actual-methodology-tracker.md))
 fire when they should.
 
 Today this information is spread across:

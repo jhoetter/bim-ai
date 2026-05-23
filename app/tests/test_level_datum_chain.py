@@ -9,7 +9,9 @@ from bim_ai.constraints import evaluate
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import bundle_replay_diagnostics, clone_document, try_commit_bundle
-from bim_ai.evidence.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
+from bim_ai.evidence.level_datum_propagation_evidence import (
+    build_level_elevation_propagation_evidence_v0,
+)
 
 
 def test_create_level_derives_child_elevation_from_parent_offset_and_propagates_on_move():

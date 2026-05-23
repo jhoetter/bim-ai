@@ -9,10 +9,10 @@ BIM_AI_REVERSE_BIM_DIR env var.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from bim_ai.routes.agent_runs import (
@@ -21,7 +21,6 @@ from bim_ai.routes.agent_runs import (
     _validate_house,
     _validate_iteration,
 )
-from fastapi import HTTPException
 
 
 def _build_tree(root: Path) -> None:

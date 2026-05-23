@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from bim_ai.services.folder_output import _build_open_repair_requests, _build_package_acceptance_report
+from bim_ai.services.folder_output import (
+    _build_open_repair_requests,
+    _build_package_acceptance_report,
+)
 from bim_ai.source_roof_dormer import build_source_roof_dormer_report
 
 

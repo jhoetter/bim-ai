@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import UTC
 
 from bim_ai.versioning import (
+    _current_commit,  # type: ignore[attr-defined]
     canonical_document_bytes,
     current_commit_id,
     element_counts,
     new_commit_id,
-    _current_commit,  # type: ignore[attr-defined]
 )
 
 
@@ -47,9 +48,9 @@ def test_canonical_document_bytes_is_stable() -> None:
 def test_canonical_document_bytes_handles_non_native() -> None:
     """Non-JSON-native types stringify via ``default=str`` (matches transaction_metadata)."""
 
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    doc = {"ts": datetime(2026, 5, 23, tzinfo=timezone.utc)}
+    doc = {"ts": datetime(2026, 5, 23, tzinfo=UTC)}
     out = canonical_document_bytes(doc)
     # Should not raise; result is valid JSON.
     json.loads(out.decode("utf-8"))
