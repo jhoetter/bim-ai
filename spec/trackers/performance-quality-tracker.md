@@ -600,7 +600,7 @@ Relevant files:
 | `PERF-E02` | P0 | `Done` | Prevent backend traceback on initial websocket send disconnect. | Initial websocket bootstrap send is inside disconnect handling and unregisters cleanly. |
 | `PERF-E03` | P0 | `Done` | Remove duplicate REST + websocket snapshot bootstrap. | After REST snapshot load, websocket can connect in delta/resume-only mode without sending another full snapshot. |
 | `PERF-E04` | P1 | `Done` | Add websocket bootstrap timing telemetry. | `websocket_loop` emits structured JSON via `bim_ai.ws_bootstrap` for all four bootstrap modes (snapshot/skip/resume-RESYNC/resume-replay) with model_id, revision, element_count, violations_count, violations_ms, send_ms, total_bootstrap_ms. |
-| `PERF-E05` | P1 | `Not started` | Implement per-socket send tasks/queues. | One slow websocket cannot block broadcast to other clients. |
+| `PERF-E05` | P1 | `Partial` | Implement per-socket send tasks/queues. | `Hub.broadcast_json` now fans out concurrently via `asyncio.gather` (commit `d54bf777`), so a single slow websocket cannot stall the broadcast to other clients — verified by `test_broadcast_json_fans_out_concurrently`. A full per-socket queue/task model (decoupling broadcast latency entirely from any single socket via dedicated sender tasks + bounded queues) is the remaining work; whether it is still needed depends on production load profiles. |
 | `PERF-E06` | P1 | `Not started` | Add large-delta/presence backpressure policy. | Slow clients receive RESYNC or disconnect based on queue size and age, not just synchronous send failure. |
 | `PERF-E07` | P2 | `Not started` | Compress or slim initial websocket snapshot. | Snapshot payload avoids duplicate fields and can use HTTP snapshot plus websocket deltas for cold start. |
 
@@ -791,10 +791,16 @@ covered by existing tracker items. Items are ordered by leverage.
    pays the full cost — that is the surface where `documentation_heavy.evidence_package`
    = 12 s p50 is observable. Splitting `default` further or making it
    job-backed is the remaining PERF-D07 work.
-10. **`Hub.broadcast_json:118-145`** still iterates clients sequentially
+10. **`Hub.broadcast_json:118-145`** ~~still iterates clients sequentially
     under `await`. Backpressure (threshold 8) closes slow sockets but no
     per-socket task. One slow client + a large evidence broadcast stalls
-    every other connected client.
+    every other connected client.~~ **Resolved in `d54bf777` (2026-05-23)** —
+    `broadcast_json` now fans out via `asyncio.gather` over per-socket
+    helpers; the depth-based backpressure check + increment is still atomic
+    per `_send_one` frame. Regression test asserts 3 slow + 1 fast sockets
+    finish in ~50 ms (max) instead of ~150 ms (sum). A full per-socket
+    queue/stream model is left for `PERF-E05` if it is still needed beyond
+    the gather fan-out.
 
 ### Status drift since 2026-05-21
 
