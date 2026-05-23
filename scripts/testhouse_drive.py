@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import time
 import uuid
@@ -275,17 +276,29 @@ def _current_revision(*, api_base: str, model_id: str) -> int:
     return int(r.json().get("revision") or 1)
 
 
-def _cmd_author_shell(args: argparse.Namespace) -> int:
-    house = args.house
-    iter_n = int(args.iter)
-    phase = "exterior-shell"
-    set_correlation_id(f"iter-{iter_n}-house-{house}-{uuid.uuid4().hex[:8]}")
+def _snapshot(*, api_base: str, model_id: str) -> dict:
+    r = httpx.get(f"{api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0)
+    r.raise_for_status()
+    return r.json()
 
-    ir_path = _ir_path(house)
-    if not ir_path.is_file():
-        raise FileNotFoundError(f"missing iter-1 IR: {ir_path}. Run iter-1 (reader pass) first.")
-    ir = json.loads(ir_path.read_text(encoding="utf-8"))
 
+def _apply_slice(
+    *,
+    house: str,
+    iter_n: int,
+    phase: str,
+    bundle: dict,
+    api_base: str,
+    submitter: str,
+) -> dict:
+    """Apply a CMD-V3-01 bundle as a hybrid slice with testhouse_iter context.
+
+    Returns ``{model_id, commit_id, revision_after, ok, executionState,
+    elapsed_ms}`` and emits the four structured-log records the tracker
+    pins on ``bim_ai.testhouse_iter``.
+    """
+
+    set_correlation_id(f"iter-{iter_n}-{phase}-house-{house}-{uuid.uuid4().hex[:8]}")
     logger.info(
         "testhouse_iter.start",
         extra={
@@ -299,10 +312,7 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
     started = time.monotonic()
 
     try:
-        model_id = _ensure_model(house=house, api_base=args.api_base)
-        parent_rev = _current_revision(api_base=args.api_base, model_id=model_id)
-        bundle = _shell_bundle_from_ir(ir=ir, parent_revision=parent_rev, iter_n=iter_n)
-
+        model_id = _ensure_model(house=house, api_base=api_base)
         payload = {
             "phase": {"phaseId": phase},
             "bundle": bundle,
@@ -310,11 +320,9 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
             "iterationLabel": f"iter-{iter_n}",
             "houseName": house,
             "outputDir": str(_house_workdir(house) / f"iter-{iter_n}"),
-            "submitter": "testhouse_drive.author-shell",
+            "submitter": submitter,
             "userId": "local-dev",
             "advisorProfile": "authoring_default",
-            # The tracker pins this exact context schema; the route
-            # propagates it into bim_model_commits.context.
             "testhouseIter": {"house": house, "iter": iter_n, "phase": phase},
             "tool": "hybrid-reverse-bim",
             "controllingTracker": TRACKER_PATH,
@@ -327,12 +335,11 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
                 "phase": phase,
                 "commit_id": None,
                 "model_id": model_id,
-                "parent_revision": parent_rev,
                 "command_count": len(bundle["commands"]),
             },
         )
         result = _post(
-            api_base=args.api_base,
+            api_base=api_base,
             path=f"/v3/models/{model_id}/reverse-bim/hybrid-slice-execute",
             body=payload,
             timeout=600.0,
@@ -352,20 +359,21 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
         raise
 
     elapsed_ms = int((time.monotonic() - started) * 1000)
-    snapshot = httpx.get(
-        f"{args.api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0
-    ).json()
-    rev_after = int(snapshot.get("revision") or parent_rev)
+    rev_after = int((_snapshot(api_base=api_base, model_id=model_id).get("revision")) or 1)
     # time-travel router is mounted at /api (not /api/v3) — see main.py.
+    # Filter on phase too (the tracker schema's `phase` field) by paging
+    # the recent commits and matching client-side.
     commits = httpx.get(
-        f"{args.api_base.rstrip('/')}/models/{model_id}/commits",
-        params={"limit": 1, "testhouse_house": house, "testhouse_iter": iter_n},
+        f"{api_base.rstrip('/')}/models/{model_id}/commits",
+        params={"limit": 10, "testhouse_house": house, "testhouse_iter": iter_n},
         timeout=30.0,
     ).json()
     commit_id = None
-    items = commits.get("items") or commits.get("commits") or []
-    if items:
-        commit_id = items[0].get("commitId") or items[0].get("commit_id")
+    for item in commits.get("items") or commits.get("commits") or []:
+        ctx_phase = ((item.get("context") or {}).get("testhouse_iter") or {}).get("phase")
+        if ctx_phase == phase:
+            commit_id = item.get("commitId") or item.get("commit_id")
+            break
 
     logger.info(
         "testhouse_iter.commit_closed",
@@ -389,23 +397,303 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
             "model_id": model_id,
         },
     )
+    out = {
+        "house": house,
+        "iter": iter_n,
+        "phase": phase,
+        "ok": bool(result.get("ok")),
+        "model_id": model_id,
+        "commit_id": commit_id,
+        "revision_after": rev_after,
+        "elapsed_ms": elapsed_ms,
+        "executionState": result.get("executionState"),
+    }
+    print(json.dumps(out, sort_keys=True))
+    return out
+
+
+def _cmd_author_shell(args: argparse.Namespace) -> int:
+    house = args.house
+    iter_n = int(args.iter)
+    ir_path = _ir_path(house)
+    if not ir_path.is_file():
+        raise FileNotFoundError(f"missing iter-1 IR: {ir_path}. Run iter-1 (reader pass) first.")
+    ir = json.loads(ir_path.read_text(encoding="utf-8"))
+    model_id = _ensure_model(house=house, api_base=args.api_base)
+    parent_rev = _current_revision(api_base=args.api_base, model_id=model_id)
+    bundle = _shell_bundle_from_ir(ir=ir, parent_revision=parent_rev, iter_n=iter_n)
+    out = _apply_slice(
+        house=house,
+        iter_n=iter_n,
+        phase="exterior-shell",
+        bundle=bundle,
+        api_base=args.api_base,
+        submitter="testhouse_drive.author-shell",
+    )
+    return 0 if out["ok"] else 1
+
+
+# ───────────────────────────────────────────────────────────────────
+# ortho-viewpoints phase (cardinal 3D cameras for the visual loop)
+# ───────────────────────────────────────────────────────────────────
+
+ORTHO_DIRECTIONS: dict[str, tuple[float, float, float]] = {
+    # camera offset from building center, unit direction. +z=0.05 gives
+    # a slight downward tilt so the eave line stays visible.
+    "north": (0.0, 1.0, 0.05),  # camera north of building, looking south
+    "east": (1.0, 0.0, 0.05),
+    "south": (0.0, -1.0, 0.05),
+    "west": (-1.0, 0.0, 0.05),
+}
+
+
+def _model_bbox_mm(snapshot: dict) -> tuple[float, float, float, float, float, float]:
+    """Coarse axis-aligned bbox over walls + floors + roofs in the live model.
+
+    Falls back to ``(0,0,0,1,1,1)`` if no geometry is present (lets the
+    caller fail cleanly without crashing on empty models).
+    """
+
+    xs: list[float] = []
+    ys: list[float] = []
+    zs: list[float] = []
+    levels: dict[str, float] = {}
+    for e in (snapshot.get("elements") or {}).values():
+        if not isinstance(e, dict):
+            continue
+        if e.get("kind") == "level":
+            levels[str(e.get("id"))] = float(e.get("elevationMm") or 0)
+    for e in (snapshot.get("elements") or {}).values():
+        if not isinstance(e, dict):
+            continue
+        kind = e.get("kind")
+        if kind == "wall":
+            for pt in (e.get("start"), e.get("end")):
+                if isinstance(pt, dict):
+                    xs.append(float(pt.get("xMm") or 0))
+                    ys.append(float(pt.get("yMm") or 0))
+            base_z = levels.get(str(e.get("levelId")), 0)
+            zs.extend([base_z, base_z + float(e.get("heightMm") or 0)])
+        elif kind in {"floor", "roof"}:
+            boundary = e.get("boundaryMm") or e.get("footprintMm") or []
+            for pt in boundary:
+                if isinstance(pt, dict):
+                    xs.append(float(pt.get("xMm") or 0))
+                    ys.append(float(pt.get("yMm") or 0))
+            base_z = levels.get(str(e.get("levelId") or e.get("referenceLevelId")), 0)
+            zs.append(base_z)
+    if not xs or not ys:
+        return (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    if not zs:
+        zs = [0.0, 3000.0]
+    return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
+
+def _ortho_camera(
+    bbox: tuple[float, float, float, float, float, float],
+    offset_unit: tuple[float, float, float],
+) -> dict:
+    """Cardinal-direction camera at 2.5× bbox diagonal — near-orthographic perspective."""
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    cx = (xmin + xmax) / 2
+    cy = (ymin + ymax) / 2
+    cz = (zmin + zmax) / 2
+    diag = math.sqrt((xmax - xmin) ** 2 + (ymax - ymin) ** 2 + (zmax - zmin) ** 2)
+    radius = 2.5 * (diag or 10_000)
+    norm = math.sqrt(sum(c * c for c in offset_unit)) or 1.0
+    return {
+        "position": {
+            "xMm": round(cx + radius * offset_unit[0] / norm, 1),
+            "yMm": round(cy + radius * offset_unit[1] / norm, 1),
+            "zMm": round(cz + radius * offset_unit[2] / norm, 1),
+        },
+        "target": {"xMm": round(cx, 1), "yMm": round(cy, 1), "zMm": round(cz, 1)},
+        "up": {"xMm": 0.0, "yMm": 0.0, "zMm": 1.0},
+    }
+
+
+def _ortho_views_bundle(*, snapshot: dict, parent_revision: int, iter_n: int, house: str) -> dict:
+    bbox = _model_bbox_mm(snapshot)
+    commands: list[dict] = []
+    for direction, offset in ORTHO_DIRECTIONS.items():
+        commands.append(
+            {
+                "type": "saveViewpoint",
+                "id": f"th-{house}-i{iter_n}-view-3d-ortho-{direction}",
+                "name": f"3D ortho — {direction}",
+                "camera": _ortho_camera(bbox, offset),
+                "mode": "orbit_3d",
+            }
+        )
+    return {
+        "schemaVersion": "cmd-v3.0",
+        "commands": commands,
+        "parentRevision": parent_revision,
+        "assumptions": [
+            {
+                "key": f"testhouse_iter_{iter_n}_{house}_ortho_views",
+                "value": "Four cardinal 3D viewpoints @ 2.5×bbox-diag for near-orthographic facade capture",
+                "confidence": 0.9,
+                "source": f"bbox over walls/floors/roofs in model snapshot rev {parent_revision}",
+                "contestable": False,
+                "evidence": "scripts/archive/testhouse_iter14_author_ortho_viewpoints.py (recipe of record)",
+            }
+        ],
+    }
+
+
+def _cmd_author_ortho_views(args: argparse.Namespace) -> int:
+    house = args.house
+    iter_n = int(args.iter)
+    model_id = _ensure_model(house=house, api_base=args.api_base)
+    snap = _snapshot(api_base=args.api_base, model_id=model_id)
+    parent_rev = int(snap.get("revision") or 1)
+    bundle = _ortho_views_bundle(
+        snapshot=snap, parent_revision=parent_rev, iter_n=iter_n, house=house
+    )
+    out = _apply_slice(
+        house=house,
+        iter_n=iter_n,
+        phase="ortho-viewpoints",
+        bundle=bundle,
+        api_base=args.api_base,
+        submitter="testhouse_drive.author-ortho-views",
+    )
+    return 0 if out["ok"] else 1
+
+
+# ───────────────────────────────────────────────────────────────────
+# capture phase — drive Playwright via packages/web's capture runner
+# ───────────────────────────────────────────────────────────────────
+
+import subprocess  # noqa: E402
+
+DEFAULT_WEB_BASE = "http://127.0.0.1:22000"
+
+
+def _ortho_capture_plan(
+    *, house: str, iter_n: int, model_id: str, web_base: str, out_dir: Path
+) -> dict:
+    captures = []
+    for direction in ORTHO_DIRECTIONS:
+        view_id = f"th-{house}-i{iter_n}-view-3d-ortho-{direction}"
+        captures.append(
+            {
+                "captureId": f"ui:ortho-{direction}",
+                "evidenceKind": "ui",
+                "viewId": view_id,
+                "viewKind": "orbit_3d",
+                "url": f"{web_base.rstrip('/')}/?modelId={model_id}&activeViewpoint={view_id}",
+                "path": str(out_dir / f"ortho-{direction}.png"),
+                "playwrightSteps": [
+                    {"action": "open_url", "target": "url"},
+                    {"action": "wait_for_model_idle", "target": "jobs/status"},
+                    {"action": "activate_3d_view", "viewId": view_id},
+                    {"action": "screenshot", "selector": "[data-evidence-capture-root], body"},
+                ],
+                "visualChecklistItems": [
+                    "exterior_silhouette_matches_source_elevation",
+                    "wall_top_meets_roof_eave",
+                    "roof_pitch_matches_ansichten",
+                ],
+            }
+        )
+    return {
+        "format": "reverseBimViewCapturePlan_v1",
+        "modelId": model_id,
+        "runId": f"iter-{iter_n}-house-{house}-ortho",
+        "baseUrl": web_base,
+        "viewport": {"width": 1920, "height": 1200, "deviceScaleFactor": 1},
+        "captures": captures,
+        "blockers": [],
+    }
+
+
+def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
+    house = args.house
+    iter_n = int(args.iter)
+    phase = "ortho-captures"
+    set_correlation_id(f"iter-{iter_n}-{phase}-house-{house}-{uuid.uuid4().hex[:8]}")
+
+    model_id = _ensure_model(house=house, api_base=args.api_base)
+    out_dir = _house_workdir(house) / f"iter-{iter_n}" / "captures"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plan = _ortho_capture_plan(
+        house=house,
+        iter_n=iter_n,
+        model_id=model_id,
+        web_base=args.web_base,
+        out_dir=out_dir,
+    )
+    plan_path = out_dir / "ortho-capture-plan.json"
+    plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True), encoding="utf-8")
+
+    logger.info(
+        "testhouse_iter.start",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "phase": phase,
+            "source_root": str(_house_root(house)),
+            "model_id": model_id,
+            "capture_count": len(plan["captures"]),
+            "plan_path": str(plan_path),
+        },
+    )
+    started = time.monotonic()
+    cmd = [
+        "pnpm",
+        "--filter",
+        "@bim-ai/web",
+        "reverse-bim:capture",
+        "--",
+        "--plan",
+        str(plan_path),
+        "--out",
+        str(out_dir),
+        "--json",
+    ]
+    proc = subprocess.run(  # noqa: S603 — known command, args from this driver
+        cmd,
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=240,
+    )
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+    pngs = sorted(out_dir.glob("ortho-*.png"))
+    status = "ok" if (proc.returncode == 0 and len(pngs) == 4) else "partial"
+    logger.info(
+        "testhouse_iter.end",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "phase": phase,
+            "status": status,
+            "elapsed_ms": elapsed_ms,
+            "png_count": len(pngs),
+            "runner_returncode": proc.returncode,
+            "stderr_tail": (proc.stderr or "")[-400:],
+        },
+    )
     print(
         json.dumps(
             {
                 "house": house,
                 "iter": iter_n,
                 "phase": phase,
-                "ok": bool(result.get("ok")),
-                "model_id": model_id,
-                "commit_id": commit_id,
-                "revision_after": rev_after,
+                "status": status,
                 "elapsed_ms": elapsed_ms,
-                "executionState": result.get("executionState"),
+                "png_count": len(pngs),
+                "pngs": [str(p) for p in pngs],
+                "plan_path": str(plan_path),
+                "runner_returncode": proc.returncode,
             },
             sort_keys=True,
         )
     )
-    return 0 if result.get("ok") else 1
+    return 0 if status == "ok" else 1
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -433,6 +721,23 @@ def _build_parser() -> argparse.ArgumentParser:
     auth.add_argument("--house", required=True, choices=HOUSES)
     auth.add_argument("--iter", type=int, required=True)
     auth.set_defaults(func=_cmd_author_shell)
+
+    ov = sub.add_parser(
+        "author-ortho-views",
+        help="Iter-3+ visual loop: 4 cardinal 3D viewpoints @ 2.5×bbox-diag.",
+    )
+    ov.add_argument("--house", required=True, choices=HOUSES)
+    ov.add_argument("--iter", type=int, required=True)
+    ov.set_defaults(func=_cmd_author_ortho_views)
+
+    cap = sub.add_parser(
+        "capture-ortho-views",
+        help="Iter-3+ visual loop: drive Playwright to screenshot the 4 ortho views.",
+    )
+    cap.add_argument("--house", required=True, choices=HOUSES)
+    cap.add_argument("--iter", type=int, required=True)
+    cap.add_argument("--web-base", default=DEFAULT_WEB_BASE)
+    cap.set_defaults(func=_cmd_capture_ortho_views)
 
     return parser
 
