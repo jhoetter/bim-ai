@@ -762,7 +762,15 @@ covered by existing tracker items. Items are ordered by leverage.
    **Resolved** — all three call sites now consume `modelIndices.projectSettings`
    (current lines `Workspace.tsx:2851, 2866, 2878`).
 8. **`viewport/dormerRoofCut.ts:22,26` and `levelDatums3d.ts:29`** do full
-   scans inside the viewport rebuild path. Candidates for `PERF-G05`.
+   scans inside the viewport rebuild path. ~~Candidates for `PERF-G05`.~~
+   **`levelDatums3d.ts` resolved in `ccb889f0` (2026-05-23)** —
+   `resolveLevelDatum3dRows` now takes `modelIndices.levels` directly, and
+   the effect's dep array swapped `elementsById` for `modelLevels` so the
+   datum group rebuilds only on actual level-set changes (not on viewport
+   filter writes). `dormerRoofCut.ts` still open: `applyDormerCutsToRoofGeom`
+   is registered through `registerDormerCutFn` and invoked deep inside
+   meshBuilders, which has no access to modelIndices today; threading it
+   through is a wider refactor.
 9. **`build_evidence_package_payload`** ~~(`routes_api.py:1011-1119`) now
    unconditionally derives 10+ heavy artifacts
    (`constructabilitySummary_v1`, `deterministicSheetEvidence`,
