@@ -24,7 +24,7 @@ site_import_router = APIRouter()
 @site_import_router.post("/v3/models/{model_id}/neighborhood-import")
 async def import_neighborhood(
     model_id: UUID,
-    body: dict,
+    body: dict[str, Any],
     session: Annotated[AsyncSession, Depends(get_session)],
     user_id: Annotated[str, Query(alias="userId")] = "local-dev",
 ) -> dict[str, Any]:

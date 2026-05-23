@@ -58,7 +58,7 @@ async def persist_renderer_diagnostics(
         model_id=str(model_id),
         model_revision=doc.revision,
     )
-    row.document = append_renderer_diagnostic_packet(row.document, packet)  # type: ignore[assignment]
+    row.document = append_renderer_diagnostic_packet(row.document, packet)
     await session.commit()
     return {
         "ok": True,

@@ -260,7 +260,7 @@ async def reverse_bim_source_view_evidence_upsert_route(
 @reverse_bim_router.post("/v3/source/rerender-for-legibility", response_model=OperationResponse)
 async def source_rerender_for_legibility_route(
     body: SourceRerenderForLegibilityRequest,
-) -> dict[str, Any]:
+) -> dict[str, Any] | JSONResponse:
     output_dir = body.output_dir
     targets = body.targets
     if not output_dir:

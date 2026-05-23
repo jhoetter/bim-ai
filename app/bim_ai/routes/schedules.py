@@ -46,6 +46,8 @@ def _row_revision(row: Any) -> int:
     raw = getattr(row, "revision", None)
     if raw is None and isinstance(getattr(row, "document", None), dict):
         raw = row.document.get("revision")
+    if raw is None:
+        return 0
     try:
         return int(raw)
     except (TypeError, ValueError):

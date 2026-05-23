@@ -123,7 +123,28 @@ plugins = []
 # baseline entries are driven to zero. Run `cd app && uv run mypy
 # bim_ai/<module>` — if it returns "Success: no issues found", the
 # module is ready to graduate to this list.
-module = ["bim_ai._io.*", "bim_ai._errors", "bim_ai.models.*"]
+module = [
+    "bim_ai._io.*",
+    "bim_ai._errors",
+    "bim_ai.models.*",
+    "bim_ai.routes.agent_runs",
+    "bim_ai.routes.catalogs",
+    "bim_ai.routes.concept_seeds",
+    "bim_ai.routes.milestones",
+    "bim_ai.routes.pixel_map",
+    "bim_ai.routes.presentation",
+    "bim_ai.routes.query_resolve",
+    "bim_ai.routes.render_export",
+    "bim_ai.routes.renderer_diagnostics",
+    "bim_ai.routes.reverse_bim",
+    "bim_ai.routes.schedules",
+    "bim_ai.routes.sharing",
+    "bim_ai.routes.site_import",
+    "bim_ai.routes.sketch_product",
+    "bim_ai.routes.time_travel",
+    "bim_ai.routes.tokens",
+    "bim_ai.routes.ws_bootstrap",
+]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_return_any = true
