@@ -1422,6 +1422,43 @@ def _openings_bundle(
             },
         )
 
+    # P1a (nightshift) — DG-window mirror from EG.
+    # When the IR has zero window facts for level-DG but EG has windows
+    # AND DG has the same exterior wall chain (typical SFH / Doppelhaus),
+    # mirror each EG window onto DG at the same XY position, using a
+    # smaller window (knee-wall storeys carry ~1000 mm shorter sashes)
+    # and a higher sill so it reads as a DG facade window. Tag with
+    # ``-mirror-dg`` factId suffix so the inspector flags the synthesised
+    # opening separately from IR-sourced ones. Skipped if a fact-driven
+    # window is already on the same EG wall on the DG storey (would
+    # overlap-collide).
+    mirrored_from_eg_count = 0
+    if level_short == "DG" and not _facts_by_kind(facts, "window"):
+        eg_facts = _facts_for_level(ir, "level-EG")
+        eg_windows = _facts_by_kind(eg_facts, "window")
+        # DG window height: smaller than EG (~1000 mm), high sill (1100 mm)
+        # so it visually reads as a knee-wall facade window.
+        dg_win_height = int(min(1200, max(700, eg_height - 1100 - 200)))
+        for ew in eg_windows:
+            synth = {
+                **ew,
+                "levelId": "level-DG",
+                "factId": f"{ew.get('factId','')}-mirror-dg",
+            }
+            before = len(commands)
+            _try_host(
+                fact=synth,
+                opening_kind="window",
+                opening_width_mm=1000.0,  # narrower DG sashes
+                cmd_type="insertWindowOnWall",
+                extra_cmd_fields={
+                    "sillHeightMm": 1100,
+                    "heightMm": dg_win_height,
+                },
+            )
+            if len(commands) > before:
+                mirrored_from_eg_count += 1
+
     if not commands:
         return None
 
@@ -1438,6 +1475,11 @@ def _openings_bundle(
                         f"{sum(1 for c in commands if c['type'] == 'insertWindowOnWall')} windows "
                         f"hosted on nearest exterior wall (≤3 m); "
                         f"{len(skipped)} interior openings skipped (no partition host yet)"
+                        + (
+                            f"; {mirrored_from_eg_count} DG windows mirrored from EG facts"
+                            if mirrored_from_eg_count
+                            else ""
+                        )
                     ),
                     "confidence": 0.5,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
