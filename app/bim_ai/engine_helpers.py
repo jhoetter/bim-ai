@@ -696,7 +696,7 @@ def _materialize_stair_runs_and_landings(
                 start_mm=cmd.run_start_mm,
                 end_mm=cmd.run_end_mm,
                 width_mm=cmd.width_mm,
-                riser_count=8,
+                riser_count=cmd.riser_count or 8,
             )
         ]
 

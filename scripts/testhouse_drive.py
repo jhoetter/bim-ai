@@ -1060,6 +1060,7 @@ def _exterior_walls_bundle(
                 "end": {"xMm": b[0], "yMm": b[1]},
                 "thicknessMm": 365,
                 "heightMm": float(eg_height),
+                "materialKey": "render_light_grey",
             }
         )
     # slab — boundary follows the same polygon.
@@ -1164,6 +1165,7 @@ def _partitions_bundle(
                 "end": {"xMm": float(b[0]), "yMm": float(b[1])},
                 "thicknessMm": 175,
                 "heightMm": float(floor_height),
+                "materialKey": "plaster",
             }
         )
         consumed.append(str(p.get("factId")))
@@ -1772,6 +1774,7 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
                     "overhangMm": 400,
                     "slopeDeg": 35,
                     "roofGeometryMode": "gable_pitched_rectangle",
+                    "materialKey": "roof_tile_terracotta",
                 },
             ],
             "parentRevision": parent_revision,
