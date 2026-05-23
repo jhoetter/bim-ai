@@ -325,3 +325,73 @@ engine team. E-items are nice-to-haves.
 
 After each item, re-run the affected house's iter sequence + the
 grader. Target: 10/10 on all three houses by closing A1-A4.
+
+## Progress log — 2026-05-23 afternoon session
+
+| commit | landed | notes |
+|---|---|---|
+| `5d07e8304` | — | gaps tracker (this doc) |
+| `b4d53dbeb` | B3 + B5 (partial) | per-house run.jsonl sink + /agents log-tail panel with categorised icons (▶ start, 💾 commit, ✓ end, 📸 capture, 📝 narrative, 🏁 grade, ⤵️ skip, ⛔ error, ⚠️ warn) |
+| `7d0a1c5bb` | A1 | dormers — alpha 2, beta 1, gamma 2 Schleppgauben authored from IR. Critical: driver MUST use engine's footprint-axis ridge heuristic (longer span = ridge), not the IR's ridge_orientation text, or position_on_roof along/across get swapped and the engine 409s |
+| `1bd0ea401` | A2 | stairs — 1 stair per house, deferred to ROOF iter because engine requires DG floor before stair top landing can host |
+| `2d5a59632` | B1 | structural-gate sidecars per floor + `/iterations/{iter}/structural-gate` endpoint |
+
+Re-grade after A1+A2+B1 (this session's deliverables):
+
+| house | grade | delta vs v2.1 | notes |
+|---|---|---|---|
+| alpha | **7.0/10** | **−2.0** (regression) | dormers + stair landed BUT openings phase commit_blocked on the current IR — net regression on element completeness |
+| beta  | **9.0/10** | ±0   | Schleppgaube authored; stair lands; openings + partitions still fully populated |
+| gamma | **9.5/10** | **+0.5** | 2 Schleppgauben + party-wall flat both landed; +0.5 source-faithful presence retired |
+
+Net: 1 house improved, 1 stable, 1 regressed. The alpha regression
+is gap C1 (opening hosting fallback) — when the current IR's
+opening positions don't pass the 500 mm proximity check + corner
+clamp, the whole openings phase silently emits zero commands.
+Closing C1 should restore alpha to 9/10 and unlock all 3 houses
+to 10/10 with the dormer + stair additions.
+
+## Remaining priorities for the next session
+
+- **C1** — opening 2-pass fallback (text-parsed wall match when the
+  primary host search returns no candidates). Highest impact:
+  retires alpha's regression + handles gamma's DG openings.
+- **A3** — Doppelhaus party-wall roof flatness (alpha + gamma still
+  render with a full gable peak on the west; not a definite-failure
+  with the partition-only convention but reads as "the building is
+  detached" in the captures).
+- **A4** — beta Flachdach garage roof (flat roof over the SE garage
+  wing area = EG_footprint − DG_footprint).
+- **B2** — visual-gate phase as a JSON sidecar pulled from the
+  grader subagent's existing output, plus a `gradeHistory: []` field
+  in a per-house `run.json` summary so the dashboard can chart
+  scores across iters (B4).
+- **C2** — KG inheritance when source-limited (alpha + gamma KG
+  rooms come from the IR; gamma KG has 3 storage rooms, alpha KG
+  has 5).
+- **Materials** — every surface is uniform grey. Authoring even a
+  simple Aussenwand-stucco + Innenwand-paint + Roof-tile material
+  triplet would lift "source-faithful presence" for all 3 houses.
+- **B2 / B4 / E2** — dashboard improvements (visual diff overlay,
+  per-house run.json summary, score chart).
+
+## Logging amazing continuously — status
+
+Per-house `run.jsonl` is alive at
+`tmp/reverse-bim/house-<X>/run.jsonl` and tails through
+`GET /agent-runs/houses/{house}/log-tail` to the dashboard. Every
+phase + capture + grade + skip + retry now emits a structured
+event with `category` + `severity` so reviewers see icons + colors.
+Sample (latest 10 alpha events):
+
+  ▶ iter-7 roof-main           testhouse_iter.start
+  💾 iter-7 roof-main           testhouse_iter.commit_opened
+  ✓ iter-7 roof-main           testhouse_iter.end
+  ▶ iter-7 roof-dormers        testhouse_iter.start
+  💾 iter-7 roof-dormers        testhouse_iter.commit_opened
+  ✓ iter-7 roof-dormers        testhouse_iter.end
+  ▶ iter-7 eg-stairs           testhouse_iter.start
+  ✓ iter-7 eg-stairs           testhouse_iter.end
+  🏁 iter-7 roof-structural-gate  testhouse_iter.structural_gate.fail
+  📸 iter-7 roof-ortho-viewpoints testhouse_iter.per_iter_ortho_captured
+
