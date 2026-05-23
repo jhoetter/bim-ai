@@ -12,7 +12,10 @@ from collections import Counter
 from typing import Any
 
 from bim_ai._io.digest import digest as _digest
+from bim_ai._io.log import get_logger
 from bim_ai.reverse_bim.phase_runner import build_reverse_bim_phase_run_report
+
+_logger = get_logger("bim_ai.services.hybrid_reverse_bim")
 
 SOURCE_REVISION_CLASSIFICATIONS = {
     "source_fact_misread",
@@ -116,6 +119,16 @@ def build_hybrid_reverse_bim_slice_report(
     phase = phase or {}
     blockers: list[dict[str, Any]] = []
     state = "mcp_ready"
+    _logger.info(
+        "hybrid_slice_execute.start",
+        extra={
+            "phase": "hybrid_slice_execute",
+            "slice_phase_id": str(phase.get("phaseId") or ""),
+            "has_mcp_readiness": mcp_readiness is not None,
+            "has_readback_comparison": readback_comparison is not None,
+            "has_source_overlay": source_overlay is not None,
+        },
+    )
     readiness_summary = _summary(mcp_readiness)
     if int(readiness_summary.get("blockerCount") or 0):
         state = "source_blocked"
@@ -257,6 +270,14 @@ def build_hybrid_reverse_bim_run_report(
 ) -> dict[str, Any]:
     """Aggregate source package, phase-run, and slice state for the runtime agent."""
 
+    _logger.info(
+        "hybrid_run_execute.start",
+        extra={
+            "phase": "hybrid_run_execute",
+            "slice_count": len(slice_reports or []),
+            "has_package_acceptance": package_acceptance is not None,
+        },
+    )
     phase_run = build_reverse_bim_phase_run_report(
         phase_authoring_spec=phase_authoring_spec,
         phase_packets=phase_packets,

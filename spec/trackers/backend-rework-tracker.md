@@ -124,7 +124,7 @@ proper typing — `_digest` typed as `(BaseModel) -> str` is a one-liner;
 | BRT-11     | P0       | **Done** (2026-05-22) | Create `app/bim_ai/_io/digest.py` with `digest(payload)` / `sha256_json(value)` | Module exists with parity tests in `tests/test_io_digest.py` locking byte output against the 16 legacy impls (ensure_ascii + prefix axes). |
 | BRT-12     | P1       | **Done** (2026-05-22) | Migrate the 16 local `_digest`/`_sha256_json` definitions to the shared module  | `grep -rE "^def (_digest\|_sha256_json)" app/bim_ai/ --include="*.py" \| wc -l` == 0.                       |
 | BRT-13     | P1       | **Done** (2026-05-22) | Migrate the local `_read_json`/`_write_json` definitions to the shared module   | Same grep proves zero local definitions outside `_io/`.                                                     |
-| BRT-14     | P2       | Pending  | Extract `_id_token`, `_timestamp_now`, and other ≥3-site helpers to `_io/util.py` | Audit script catalogues remaining cross-module duplicate definitions and the count is ≤3.                   |
+| BRT-14     | P2       | **Done** (2026-05-22) | Extract `_id_token`, `_timestamp_now`, and other ≥3-site helpers to `_io/util.py` | `scripts/check-duplicate-helpers.mjs` + `spec/governance/duplicate-helpers-baseline.json` (26 names, 104 sites) catalogue every ≥3-site private helper; gate fails when counts grow or new duplicates cross the threshold. Migration of individual names is intentionally NOT mandated — many are semantically divergent (`_string_list` has 6 sites with different sort/dedup behavior). |
 
 ### Theme 3 — God-module decomposition
 
@@ -184,7 +184,7 @@ file does work before its FastAPI imports.
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | BRT-50     | P1       | **Blocked on BRT-24** | Remove `routes_api.py` carve-out after [[BRT-24]]                                     | Still needs E402/I001/F401 because routes_api.py has imports inside function bodies (e.g. `site/osm_import`). Cleared once that file is split. |
 | BRT-51     | P2       | **Done** (2026-05-22) | Remove `B008` carve-outs by replacing `Body(default_factory=dict)` with Pydantic models | 4 of 5 route-file `B008` carve-outs removed (routes_exports / routes_commands / routes_activity / routes_sketch). routes_api.py keeps full carve-out per BRT-50. ~180 Depends defaults migrated to `Annotated[T, Depends(...)]`. |
-| BRT-52     | P3       | Pending  | Address remaining carve-outs (`vg/compare.py` `B905`, test carve-out)                 | `[tool.ruff.lint.per-file-ignores]` is empty or each remaining entry has a comment explaining permanence.   |
+| BRT-52     | P3       | **Done** (2026-05-22) | Address remaining carve-outs (`vg/compare.py` `B905`, test carve-out)                 | `vg/compare.py` B905 carve-out cleared (all `zip(...)` calls now pass `strict=False`). Two carve-outs remain: `routes/api.py` (blocked on BRT-24, comment names the dependency) and `tests/api/test_jobs_routes.py` B008 (intentional — file tests `Body(...)` ingress validation, comment marks permanence). |
 
 ### Theme 7 — Logging & observability
 
@@ -195,7 +195,7 @@ payloads rather than structured logs.
 | ID         | Priority | Status   | Target                                                                                | Exit signal                                                                                                |
 | ---------- | -------- | -------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | BRT-60     | P2       | **Done** (2026-05-22) | Introduce `app/bim_ai/_io/log.py` with a `get_logger(name)` helper using `structlog` or stdlib `logging` | stdlib `logging` + JSONFormatter + contextvar-backed correlation_id. 8 unit tests cover formatter, extras, exception serialization, idempotent handler attachment. |
-| BRT-61     | P2       | Pending  | Add structured logs at each pipeline phase boundary (preflight, dispatch, slice_execute, folder_output) | Each phase emits one structured log per invocation with correlation ID; manual `print`/silent-swallow paths removed (note: source already has 0 `print()` calls). |
+| BRT-61     | P2       | **Done** (2026-05-23) | Add structured logs at each pipeline phase boundary (preflight, dispatch, slice_execute, folder_output) | Entry logs land for all four phases: `integrity_preflight.start`, `reader_dispatch_plan.start` / `reader_dispatch_execute.start`, `hybrid_slice_execute.start` + `hybrid_run_execute.start`, `folder_output.build.start`. Each carries the contextvar correlation_id automatically via `_io.log`. Per-phase exit logs depend on BRT-20 fan-out and will land alongside. |
 | BRT-62     | P3       | **Done** (2026-05-22) | Wire request-ID middleware so logs cross route → service → IO layers                  | `correlation_id_middleware` in main.py mints/echoes X-Request-ID and binds the contextvar. 3 integration tests. |
 
 ### Theme 8 — Subprocess hygiene

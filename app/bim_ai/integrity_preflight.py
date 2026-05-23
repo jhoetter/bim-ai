@@ -4,6 +4,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from bim_ai._io.log import get_logger
 from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 from bim_ai.constraints_core import Violation
 from bim_ai.constructability_performance import advisor_incremental_diagnostic_eligibility_v1
@@ -17,6 +18,8 @@ from bim_ai.model_integrity_hosting import (
 )
 from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
+
+_logger = get_logger("bim_ai.integrity_preflight")
 
 DEFAULT_PROFILE_COMPARISON_PROFILES = (
     "authoring_default",
@@ -40,6 +43,16 @@ def build_integrity_preflight_report(
 ) -> dict[str, Any]:
     elements = _elements(doc_or_elements)
     changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
+    _logger.info(
+        "integrity_preflight.start",
+        extra={
+            "phase": "preflight",
+            "model_id": model_id,
+            "revision": str(revision),
+            "element_count": len(elements),
+            "changed_element_count": len(changed_ids),
+        },
+    )
     incremental_eligibility = advisor_incremental_diagnostic_eligibility_v1(
         dict(elements),
         changed_element_ids=changed_ids,
