@@ -360,7 +360,21 @@ def evaluate(
     phase_filter: str = "all",
     option_locks: dict[str, str] | None = None,
     design_option_sets: list[Any] | None = None,
+    documentation_advisors: bool = True,
 ) -> list[Violation]:
+    """Evaluate authoring constraints against a document's elements.
+
+    PERF-C09 / PERF-B07: pass ``documentation_advisors=False`` to skip
+    the info-level advisory passes (agent-brief, exchange, gltf-manifest,
+    plan-view tag style, room color scheme, section-on-sheet,
+    monitored-source drift, dormer overflow, constructability). Blocking
+    and error-level violations still run. Routes that only care about
+    failure rollback semantics (hosted-opening optimistic placement,
+    interactive command commit) can opt into this fast path; callers
+    that surface the full advisor stream (snapshot, evidence package,
+    schedules, validate) must leave the default ``True`` so the surface
+    stays consistent.
+    """
     walls: list[WallElem] = []
     doors: list[DoorElem] = []
     windows: list[WindowElem] = []
@@ -1768,28 +1782,34 @@ def evaluate(
             if ok_kind and kind == "plan" and isinstance(targ_el, PlanViewElem):
                 _plan_on_sheet_advisory_violations(viols, sh_el, vp, targ_el)
 
-    viols.extend(_agent_brief_advisory_violations(elements))
-    viols.extend(_exchange_advisory_violations(elements))
-    viols.extend(_gltf_manifest_closure_advisory_violations(elements))
-    viols.extend(_plan_view_tag_style_advisor_violations(elements))
-    viols.extend(_room_color_scheme_advisory_violations(elements))
-    viols.extend(_section_on_sheet_advisory_violations(elements))
+    # PERF-C09 / PERF-B07: documentation_advisors=False skips the info-only
+    # advisor passes for command paths that only care about blocking/error
+    # rollback. _room_boundary_open_violations + _toposolid_pierce_check_violations
+    # stay outside the gate because they emit blocking/error violations and
+    # callers (e.g. shaft cut, vertical-circulation) rely on them.
     viols.extend(_room_boundary_open_violations(elements))
-    viols.extend(_monitored_source_drift_advisory_violations(elements))
-    viols.extend(_dormer_overflow_advisory_violations(elements))
     viols.extend(_toposolid_pierce_check_violations(elements))
-    constructability_elements = scope_constructability_elements(
-        elements,
-        phase_filter=phase_filter,
-        option_locks=option_locks,
-        design_option_sets=design_option_sets or (),
-    )
-    viols.extend(
-        constructability_advisory_violations(
-            constructability_elements,
-            profile=constructability_profile,
+    if documentation_advisors:
+        viols.extend(_agent_brief_advisory_violations(elements))
+        viols.extend(_exchange_advisory_violations(elements))
+        viols.extend(_gltf_manifest_closure_advisory_violations(elements))
+        viols.extend(_plan_view_tag_style_advisor_violations(elements))
+        viols.extend(_room_color_scheme_advisory_violations(elements))
+        viols.extend(_section_on_sheet_advisory_violations(elements))
+        viols.extend(_monitored_source_drift_advisory_violations(elements))
+        viols.extend(_dormer_overflow_advisory_violations(elements))
+        constructability_elements = scope_constructability_elements(
+            elements,
+            phase_filter=phase_filter,
+            option_locks=option_locks,
+            design_option_sets=design_option_sets or (),
         )
-    )
+        viols.extend(
+            constructability_advisory_violations(
+                constructability_elements,
+                profile=constructability_profile,
+            )
+        )
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
