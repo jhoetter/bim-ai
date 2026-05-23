@@ -4,6 +4,7 @@ import json
 import re
 import shutil
 from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -115,6 +116,90 @@ PHASE_ORDER = [
 ]
 
 
+@dataclass
+class FolderOutputPhaseState:
+    """Cross-phase mutable state for ``build_reverse_bim_folder_output``.
+
+    Each phase reads from earlier phases and writes its outputs back onto this
+    state. Fields default to ``None`` / empty so the dataclass can be created
+    before any phase has run, and the orchestrator can pass it around with no
+    keyword-argument explosion.
+    """
+
+    # Entry-phase inputs (set by orchestrator before phase 1)
+    source_root: Path
+    out_dir: Path
+    run_id: str | None = None
+    reader_responses_provided: bool = False
+
+    # Render & extract phase
+    manifest: dict[str, Any] = field(default_factory=dict)
+    rendered_pages: list[dict[str, Any]] = field(default_factory=list)
+    text_extractions: list[dict[str, Any]] = field(default_factory=list)
+    classifications: dict[str, Any] = field(default_factory=dict)
+    visual_packet: dict[str, Any] = field(default_factory=dict)
+    page_classification_dispatch: dict[str, Any] = field(default_factory=dict)
+    page_classification_responses: dict[str, Any] = field(default_factory=dict)
+    page_classification_application: dict[str, Any] = field(default_factory=dict)
+    work_order: dict[str, Any] = field(default_factory=dict)
+    requests: dict[str, Any] = field(default_factory=dict)
+
+    # Reader-pass phase
+    discovered_reader_response_diagnostics: list[dict[str, Any]] = field(default_factory=list)
+    raw_response_file_count: int = 0
+    scanned_response_file_count: int = 0
+    raw_response_file_error_count: int = 0
+    raw_responses: dict[str, Any] = field(default_factory=dict)
+    loop: dict[str, Any] = field(default_factory=dict)
+    reader_pass_manifest: dict[str, Any] = field(default_factory=dict)
+    reader_assignment_progress: dict[str, Any] = field(default_factory=dict)
+    reader_consensus: dict[str, Any] = field(default_factory=dict)
+    normalized: dict[str, Any] = field(default_factory=dict)
+    reader_response_index: dict[str, Any] = field(default_factory=dict)
+
+    # Facts-derivation phase
+    facts: list[dict[str, Any]] = field(default_factory=list)
+    source_building_scope: dict[str, Any] = field(default_factory=dict)
+    source_level_completeness: dict[str, Any] = field(default_factory=dict)
+    room_topology: dict[str, Any] = field(default_factory=dict)
+    source_area_consistency: dict[str, Any] = field(default_factory=dict)
+    opening_reconciliation: dict[str, Any] = field(default_factory=dict)
+    roof_dormer: dict[str, Any] = field(default_factory=dict)
+
+    # Decisions phase (site/conflict/coordinate)
+    site_terrain_decision_report: dict[str, Any] = field(default_factory=dict)
+    site_terrain: dict[str, Any] = field(default_factory=dict)
+    conflicts: dict[str, Any] = field(default_factory=dict)
+    conflict_disposition_report: dict[str, Any] = field(default_factory=dict)
+    source_material_assemblies: dict[str, Any] = field(default_factory=dict)
+    fact_ledger: dict[str, Any] = field(default_factory=dict)
+    conflict_dispositions: dict[str, Any] = field(default_factory=dict)
+    coordinate_frames: dict[str, Any] = field(default_factory=dict)
+    coordinate_frame_alignment_report: dict[str, Any] = field(default_factory=dict)
+    coordinate_frame_worklist: dict[str, Any] = field(default_factory=dict)
+
+    # MCP handoff phase
+    ir: dict[str, Any] = field(default_factory=dict)
+    ir_validation: dict[str, Any] = field(default_factory=dict)
+    coverage: dict[str, Any] = field(default_factory=dict)
+    readiness: dict[str, Any] = field(default_factory=dict)
+    authoring_plan: dict[str, Any] = field(default_factory=dict)
+    resolver_worklist: dict[str, Any] = field(default_factory=dict)
+    phase_spec: dict[str, Any] = field(default_factory=dict)
+
+    # Acceptance + run-summary phase
+    source_completeness: dict[str, Any] = field(default_factory=dict)
+    acceptance: dict[str, Any] = field(default_factory=dict)
+    run_summary: dict[str, Any] = field(default_factory=dict)
+    document_registry: dict[str, Any] = field(default_factory=dict)
+    source_page_index: dict[str, Any] = field(default_factory=dict)
+    evidence_requirements: dict[str, Any] = field(default_factory=dict)
+    tolerance_policy: dict[str, Any] = field(default_factory=dict)
+    reader_assignment_prompts: dict[str, Any] = field(default_factory=dict)
+    repair_requests_open: dict[str, Any] = field(default_factory=dict)
+    source_repair_plan: dict[str, Any] = field(default_factory=dict)
+
+
 def build_reverse_bim_folder_output(
     *,
     root_path: str | Path,
@@ -138,6 +223,9 @@ def build_reverse_bim_folder_output(
     packages the source folder and writes the exact AI-reader work still needed.
     When responses are supplied, it normalizes them, validates completeness,
     builds MCP-readiness, and writes the modeling handoff artifacts.
+
+    The body is a thin orchestrator over phase functions (BRT-20). Each phase
+    mutates ``FolderOutputPhaseState``; cross-phase wiring lives on the state.
     """
 
     source_root = Path(root_path).expanduser().resolve()
@@ -161,280 +249,386 @@ def build_reverse_bim_folder_output(
 
     forbidden_source_reason = _forbidden_source_root_reason(source_root)
     if forbidden_source_reason:
-        result = {
-            "ok": False,
-            "format": "reverseBimFolderOutputPackage_v1",
-            "packageState": "source_rejected",
-            "sourceFolder": str(source_root),
-            "outputDir": str(out_dir),
-            "summary": {
-                "sourceDocumentCount": 0,
-                "renderedPageCount": 0,
-                "workPackageCount": 0,
-                "openBlockerCount": 1,
-            },
-            "acceptance": {
-                "ok": False,
-                "format": "reverseBimFolderOutputAcceptanceReport_v1",
-                "packageState": "source_rejected",
-                "summary": {"errorCount": 1, "warningCount": 0},
-                "findings": [
-                    {
-                        "code": "folder_output_generated_source_rejected",
-                        "severity": "error",
-                        "message": forbidden_source_reason,
-                    }
-                ],
-            },
-            "nextStep": "Use the original source-document folder, not seed-artifacts or generated reverse-BIM outputs.",
-        }
-        _write_json_shared(out_dir / "run-summary.json", result)
-        _write_json_shared(
-            out_dir / "validation" / "package-acceptance-report.json", result["acceptance"]
+        return _build_source_rejected_response(
+            source_root=source_root,
+            out_dir=out_dir,
+            reason=forbidden_source_reason,
         )
-        return FolderOutputResponse.model_validate(result)
 
     manifest = build_folder_manifest(source_root)
     if manifest.get("ok") is False:
         _write_json_shared(out_dir / "run-summary.json", manifest)
         return FolderOutputResponse.model_validate(manifest)
 
-    rendered_pages, text_extractions = _render_and_extract(
+    state = FolderOutputPhaseState(
+        source_root=source_root,
+        out_dir=out_dir,
+        run_id=run_id,
+        reader_responses_provided=reader_responses is not None,
         manifest=manifest,
-        output_dir=out_dir / "source" / "rendered-pages",
+    )
+
+    _phase_render_and_extract(state, dpi=dpi, max_pages_per_pdf=max_pages_per_pdf)
+    _phase_reader_pass(
+        state,
+        reader_responses=reader_responses,
+        reader_command=reader_command,
+        reader_timeout_seconds=reader_timeout_seconds,
+        reader_consensus_dispositions=reader_consensus_dispositions,
+    )
+    _phase_facts_derivation(state, building_scope_decisions=building_scope_decisions)
+    _phase_decisions(
+        state,
+        conflict_decisions=conflict_decisions,
+        coordinate_frame_alignments=coordinate_frame_alignments,
+        site_terrain_decisions=site_terrain_decisions,
+    )
+    _phase_mcp_handoff(state)
+    _phase_acceptance(state)
+    return _phase_write_artifacts(
+        state,
+        reader_responses=reader_responses,
+        reader_consensus_dispositions=reader_consensus_dispositions,
+        building_scope_decisions=building_scope_decisions,
+    )
+
+
+def _build_source_rejected_response(
+    *,
+    source_root: Path,
+    out_dir: Path,
+    reason: str,
+) -> FolderOutputResponse:
+    """Phase 0a: write the early-return ``packageState: source_rejected`` package."""
+    result = {
+        "ok": False,
+        "format": "reverseBimFolderOutputPackage_v1",
+        "packageState": "source_rejected",
+        "sourceFolder": str(source_root),
+        "outputDir": str(out_dir),
+        "summary": {
+            "sourceDocumentCount": 0,
+            "renderedPageCount": 0,
+            "workPackageCount": 0,
+            "openBlockerCount": 1,
+        },
+        "acceptance": {
+            "ok": False,
+            "format": "reverseBimFolderOutputAcceptanceReport_v1",
+            "packageState": "source_rejected",
+            "summary": {"errorCount": 1, "warningCount": 0},
+            "findings": [
+                {
+                    "code": "folder_output_generated_source_rejected",
+                    "severity": "error",
+                    "message": reason,
+                }
+            ],
+        },
+        "nextStep": "Use the original source-document folder, not seed-artifacts or generated reverse-BIM outputs.",
+    }
+    _write_json_shared(out_dir / "run-summary.json", result)
+    _write_json_shared(
+        out_dir / "validation" / "package-acceptance-report.json", result["acceptance"]
+    )
+    return FolderOutputResponse.model_validate(result)
+
+
+def _phase_render_and_extract(
+    state: FolderOutputPhaseState,
+    *,
+    dpi: int,
+    max_pages_per_pdf: int | None,
+) -> None:
+    """Phase 1: render PDFs, extract text, classify documents, build visual trace inputs."""
+    state.rendered_pages, state.text_extractions = _render_and_extract(
+        manifest=state.manifest,
+        output_dir=state.out_dir / "source" / "rendered-pages",
         dpi=dpi,
         max_pages_per_pdf=max_pages_per_pdf,
     )
-    classifications = classify_documents(manifest, text_extractions=text_extractions)
-    visual_packet = build_ai_visual_trace_packet(
-        manifest=manifest,
-        classifications=classifications,
-        rendered_pages=rendered_pages,
-        text_extractions=text_extractions,
+    state.classifications = classify_documents(
+        state.manifest, text_extractions=state.text_extractions
     )
-    page_classification_dispatch = build_page_classification_dispatch_plan(
-        visual_packet=visual_packet,
-        output_dir=out_dir,
+    state.visual_packet = build_ai_visual_trace_packet(
+        manifest=state.manifest,
+        classifications=state.classifications,
+        rendered_pages=state.rendered_pages,
+        text_extractions=state.text_extractions,
+    )
+    state.page_classification_dispatch = build_page_classification_dispatch_plan(
+        visual_packet=state.visual_packet,
+        output_dir=state.out_dir,
         mode="auto",
         write_assignments=True,
     )
-    page_classification_responses = load_page_classification_responses(out_dir)
-    page_classification_application = apply_page_classifications(
-        visual_packet,
-        responses=page_classification_responses.get("responses") or [],
+    state.page_classification_responses = load_page_classification_responses(state.out_dir)
+    state.page_classification_application = apply_page_classifications(
+        state.visual_packet,
+        responses=state.page_classification_responses.get("responses") or [],
     )
-    work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=visual_packet)
-    requests = build_ai_visual_trace_agent_requests(
-        work_order=work_order,
-        run_id=run_id,
+    state.work_order = build_ai_visual_trace_work_order(ai_visual_trace_packet=state.visual_packet)
+    state.requests = build_ai_visual_trace_agent_requests(
+        work_order=state.work_order,
+        run_id=state.run_id,
     )
 
-    discovered_reader_response_payload = (
+
+def _phase_reader_pass(
+    state: FolderOutputPhaseState,
+    *,
+    reader_responses: list[dict[str, Any]] | dict[str, Any] | None,
+    reader_command: list[str] | None,
+    reader_timeout_seconds: int,
+    reader_consensus_dispositions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> None:
+    """Phase 2: load/normalize reader responses, run the agent loop, build consensus."""
+    discovered_payload = (
         _empty_reader_response_file_payload()
         if reader_responses is not None
-        else _load_reader_response_files(out_dir)
+        else _load_reader_response_files(state.out_dir)
     )
-    discovered_reader_responses = discovered_reader_response_payload.get("responses") or []
-    discovered_reader_response_diagnostics = (
-        discovered_reader_response_payload.get("diagnostics") or []
-    )
+    discovered_reader_responses = discovered_payload.get("responses") or []
+    state.discovered_reader_response_diagnostics = discovered_payload.get("diagnostics") or []
+    state.raw_response_file_count = int(discovered_payload.get("responseFileCount") or 0)
+    state.scanned_response_file_count = int(discovered_payload.get("scannedResponseFileCount") or 0)
+    state.raw_response_file_error_count = int(discovered_payload.get("responseFileErrorCount") or 0)
+
     raw_responses = _reader_response_payload(
         reader_responses if reader_responses is not None else discovered_reader_responses
     )
     raw_response_source = "provided" if reader_responses is not None else "response_files"
-    raw_response_file_count = int(discovered_reader_response_payload.get("responseFileCount") or 0)
-    scanned_response_file_count = int(
-        discovered_reader_response_payload.get("scannedResponseFileCount") or 0
-    )
-    raw_response_file_error_count = int(
-        discovered_reader_response_payload.get("responseFileErrorCount") or 0
-    )
     raw_responses["source"] = raw_response_source
-    raw_responses["responseFileCount"] = raw_response_file_count
-    raw_responses["scannedResponseFileCount"] = scanned_response_file_count
-    raw_responses["responseFileErrorCount"] = raw_response_file_error_count
-    raw_responses["diagnostics"] = discovered_reader_response_diagnostics
-    loop = run_ai_visual_trace_agent_loop(
-        work_order=work_order,
+    raw_responses["responseFileCount"] = state.raw_response_file_count
+    raw_responses["scannedResponseFileCount"] = state.scanned_response_file_count
+    raw_responses["responseFileErrorCount"] = state.raw_response_file_error_count
+    raw_responses["diagnostics"] = state.discovered_reader_response_diagnostics
+
+    state.loop = run_ai_visual_trace_agent_loop(
+        work_order=state.work_order,
         responses=raw_responses.get("responses") or [],
-        run_id=requests.get("runId"),
+        run_id=state.requests.get("runId"),
         reader_command=reader_command,
         reader_timeout_seconds=reader_timeout_seconds,
     )
     raw_response_source = _raw_reader_response_source(
         reader_responses_provided=reader_responses is not None,
         discovered_response_count=len(discovered_reader_responses or []),
-        loop_response_count=len(loop.get("readerResponses") or []),
+        loop_response_count=len(state.loop.get("readerResponses") or []),
         reader_command_used=bool(reader_command),
     )
     raw_responses = _reader_response_payload(
-        loop.get("readerResponses") or raw_responses.get("responses") or []
+        state.loop.get("readerResponses") or raw_responses.get("responses") or []
     )
     raw_responses["source"] = raw_response_source
-    raw_responses["responseFileCount"] = raw_response_file_count
-    raw_responses["scannedResponseFileCount"] = scanned_response_file_count
-    raw_responses["responseFileErrorCount"] = raw_response_file_error_count
-    raw_responses["diagnostics"] = discovered_reader_response_diagnostics
-    reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
-        agent_requests=requests,
-        work_order=work_order,
-        responses=raw_responses.get("responses") or [],
+    raw_responses["responseFileCount"] = state.raw_response_file_count
+    raw_responses["scannedResponseFileCount"] = state.scanned_response_file_count
+    raw_responses["responseFileErrorCount"] = state.raw_response_file_error_count
+    raw_responses["diagnostics"] = state.discovered_reader_response_diagnostics
+    state.raw_responses = raw_responses
+
+    state.reader_pass_manifest = build_ai_visual_trace_reader_pass_manifest(
+        agent_requests=state.requests,
+        work_order=state.work_order,
+        responses=state.raw_responses.get("responses") or [],
     )
-    reader_assignment_progress = _build_reader_assignment_progress(
-        reader_pass_manifest=reader_pass_manifest,
-        raw_responses=raw_responses,
+    state.reader_assignment_progress = _build_reader_assignment_progress(
+        reader_pass_manifest=state.reader_pass_manifest,
+        raw_responses=state.raw_responses,
     )
-    reader_consensus = build_source_reader_consensus_report(
-        raw_responses,
+    state.reader_consensus = build_source_reader_consensus_report(
+        state.raw_responses,
         consensus_dispositions=reader_consensus_dispositions,
     )
-    normalized = normalize_ai_visual_trace_reader_responses(raw_responses)
-    reader_response_index = _build_reader_response_index(raw_responses, loop)
-    facts = _facts_for_handoff(loop=loop, normalized=normalized)
-    source_building_scope = build_source_building_scope_report(
-        facts,
+    state.normalized = normalize_ai_visual_trace_reader_responses(state.raw_responses)
+    state.reader_response_index = _build_reader_response_index(state.raw_responses, state.loop)
+
+
+def _phase_facts_derivation(
+    state: FolderOutputPhaseState,
+    *,
+    building_scope_decisions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> None:
+    """Phase 3: derive facts-for-handoff and the per-aspect source reports."""
+    state.facts = _facts_for_handoff(loop=state.loop, normalized=state.normalized)
+    state.source_building_scope = build_source_building_scope_report(
+        state.facts,
         scope_decisions=building_scope_decisions,
     )
-    source_level_completeness = build_source_level_completeness_report(facts)
-    room_topology = build_source_room_topology_report(facts)
-    source_area_consistency = build_source_area_consistency_report(facts)
-    opening_reconciliation = build_source_opening_reconciliation(facts)
-    roof_dormer = build_source_roof_dormer_report(facts)
-    site_terrain_decision_report = apply_source_site_terrain_decisions(
-        build_source_site_terrain_report(facts),
+    state.source_level_completeness = build_source_level_completeness_report(state.facts)
+    state.room_topology = build_source_room_topology_report(state.facts)
+    state.source_area_consistency = build_source_area_consistency_report(state.facts)
+    state.opening_reconciliation = build_source_opening_reconciliation(state.facts)
+    state.roof_dormer = build_source_roof_dormer_report(state.facts)
+
+
+def _phase_decisions(
+    state: FolderOutputPhaseState,
+    *,
+    conflict_decisions: list[dict[str, Any]] | dict[str, Any] | None,
+    coordinate_frame_alignments: list[dict[str, Any]] | dict[str, Any] | None,
+    site_terrain_decisions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> None:
+    """Phase 4: apply site/conflict/coordinate-frame decisions; reconcile facts/ledgers."""
+    state.site_terrain_decision_report = apply_source_site_terrain_decisions(
+        build_source_site_terrain_report(state.facts),
         site_terrain_decisions,
     )
-    site_terrain = site_terrain_decision_report["siteTerrainReport"]
-    facts = _apply_site_terrain_decisions_to_facts(facts, site_terrain)
-    conflicts = _build_conflict_ledger(facts, loop=loop)
-    conflict_disposition_report = apply_source_conflict_dispositions(
+    state.site_terrain = state.site_terrain_decision_report["siteTerrainReport"]
+    state.facts = _apply_site_terrain_decisions_to_facts(state.facts, state.site_terrain)
+    conflicts = _build_conflict_ledger(state.facts, loop=state.loop)
+    state.conflict_disposition_report = apply_source_conflict_dispositions(
         conflicts,
         conflict_decisions,
     )
-    conflicts = conflict_disposition_report["conflictLedger"]
-    facts = _apply_conflict_dispositions_to_facts(facts, conflicts)
-    source_material_assemblies = build_source_material_assembly_report(facts)
-    fact_ledger = _build_source_fact_ledger(facts)
-    conflict_dispositions = build_source_conflict_disposition_worklist(conflicts)
+    state.conflicts = state.conflict_disposition_report["conflictLedger"]
+    state.facts = _apply_conflict_dispositions_to_facts(state.facts, state.conflicts)
+    state.source_material_assemblies = build_source_material_assembly_report(state.facts)
+    state.fact_ledger = _build_source_fact_ledger(state.facts)
+    state.conflict_dispositions = build_source_conflict_disposition_worklist(state.conflicts)
     coordinate_frames = _build_coordinate_frames(
-        rendered_pages=rendered_pages,
-        classifications=classifications,
-        text_extractions=text_extractions,
+        rendered_pages=state.rendered_pages,
+        classifications=state.classifications,
+        text_extractions=state.text_extractions,
     )
-    coordinate_frame_alignment_report = apply_coordinate_frame_alignments(
+    state.coordinate_frame_alignment_report = apply_coordinate_frame_alignments(
         coordinate_frames,
         coordinate_frame_alignments,
-        facts=facts,
+        facts=state.facts,
     )
-    coordinate_frames = coordinate_frame_alignment_report["coordinateFrames"]
-    coordinate_frame_worklist = build_coordinate_frame_alignment_worklist(
-        coordinate_frames,
-        facts=facts,
-    )
-    ir = build_existing_building_ir_seed(
-        source_manifest=manifest,
-        source_facts={"facts": facts},
-        classifications=classifications,
-    )
-    ir["coordinateFrames"] = coordinate_frames["coordinateFrames"]
-    ir["conflicts"] = conflicts["conflicts"]
-    ir_validation = validate_existing_building_ir(ir)
-    coverage = build_source_coverage_matrix(facts=facts)
-    readiness = build_mcp_authoring_readiness(facts=facts, target_phase="folder-output")
-    authoring_plan = plan_mcp_authoring_actions(facts=facts, target_phase="folder-output")
-    resolver_worklist = _build_resolver_worklist(readiness)
-    phase_spec = _build_phase_authoring_spec(
-        facts=facts,
-        readiness=readiness,
-        authoring_plan=authoring_plan,
-        resolver_worklist=resolver_worklist,
-        conflicts=conflicts,
-    )
-    source_completeness = _build_source_completeness_report(work_order=work_order, loop=loop)
-    acceptance = _build_package_acceptance_report(
-        raw_responses=raw_responses,
-        loop=loop,
-        readiness=readiness,
-        conflicts=conflicts,
-        source_completeness=source_completeness,
-        room_topology=room_topology,
-        source_level_completeness=source_level_completeness,
-        source_area_consistency=source_area_consistency,
-        coordinate_frame_alignment_report=coordinate_frame_alignment_report,
-        site_terrain=site_terrain,
-        roof_dormer=roof_dormer,
-        source_material_assemblies=source_material_assemblies,
-        reader_consensus=reader_consensus,
-        source_building_scope=source_building_scope,
-    )
-    run_summary = _build_run_summary(
-        source_folder=source_root,
-        output_dir=out_dir,
-        manifest=manifest,
-        rendered_pages=rendered_pages,
-        work_order=work_order,
-        loop=loop,
-        normalized=normalized,
-        readiness=readiness,
-        conflicts=conflicts,
-        acceptance=acceptance,
-        raw_responses=raw_responses,
-        agent_requests=requests,
-        reader_pass_manifest=reader_pass_manifest,
-        reader_assignment_progress=reader_assignment_progress,
-    )
-    document_registry = _build_document_registry(manifest, classifications)
-    source_page_index = _build_source_page_index(
-        rendered_pages=rendered_pages,
-        classifications=classifications,
-        text_extractions=text_extractions,
-        coordinate_frames=coordinate_frames,
-    )
-    evidence_requirements = build_reverse_bim_evidence_requirements(
-        source_page_index=source_page_index,
-        source_facts=facts,
-        phase_authoring_spec=phase_spec,
-    )
-    tolerance_policy = _build_tolerance_policy()
-    reader_assignment_prompts = _write_reader_assignment_prompts(
-        output_dir=out_dir / "ai-reading" / "assignments",
-        agent_requests=requests,
-        reader_pass_manifest=reader_pass_manifest,
-    )
-    run_summary["summary"]["readerAssignmentPromptCount"] = reader_assignment_prompts.get(
-        "promptCount", 0
-    )
-    run_summary["summary"]["pageClassificationAssignmentCount"] = page_classification_dispatch.get(
-        "assignmentCount", 0
-    )
-    run_summary["summary"]["pageClassificationResponseCount"] = page_classification_responses.get(
-        "responseCount", 0
-    )
-    run_summary["summary"]["pageClassificationAppliedPageCount"] = (
-        page_classification_application.get("appliedPageCount", 0)
-    )
-    repair_requests_open = {
-        "format": "reverseBimOpenRepairRequests_v1",
-        "requests": _build_open_repair_requests(
-            loop=loop,
-            source_building_scope=source_building_scope,
-            source_level_completeness=source_level_completeness,
-            room_topology=room_topology,
-            source_area_consistency=source_area_consistency,
-            site_terrain=site_terrain,
-            roof_dormer=roof_dormer,
-            source_material_assemblies=source_material_assemblies,
-            reader_consensus=reader_consensus,
-        ),
-    }
-    source_repair_plan = _build_source_repair_plan(
-        run_summary=run_summary,
-        acceptance=acceptance,
-        reader_assignment_progress=reader_assignment_progress,
-        repair_requests_open=repair_requests_open,
-        coordinate_frame_worklist=coordinate_frame_worklist,
+    state.coordinate_frames = state.coordinate_frame_alignment_report["coordinateFrames"]
+    state.coordinate_frame_worklist = build_coordinate_frame_alignment_worklist(
+        state.coordinate_frames,
+        facts=state.facts,
     )
 
+
+def _phase_mcp_handoff(state: FolderOutputPhaseState) -> None:
+    """Phase 5: build the existing-building IR + MCP authoring readiness/plan/spec."""
+    ir = build_existing_building_ir_seed(
+        source_manifest=state.manifest,
+        source_facts={"facts": state.facts},
+        classifications=state.classifications,
+    )
+    ir["coordinateFrames"] = state.coordinate_frames["coordinateFrames"]
+    ir["conflicts"] = state.conflicts["conflicts"]
+    state.ir = ir
+    state.ir_validation = validate_existing_building_ir(ir)
+    state.coverage = build_source_coverage_matrix(facts=state.facts)
+    state.readiness = build_mcp_authoring_readiness(facts=state.facts, target_phase="folder-output")
+    state.authoring_plan = plan_mcp_authoring_actions(
+        facts=state.facts, target_phase="folder-output"
+    )
+    state.resolver_worklist = _build_resolver_worklist(state.readiness)
+    state.phase_spec = _build_phase_authoring_spec(
+        facts=state.facts,
+        readiness=state.readiness,
+        authoring_plan=state.authoring_plan,
+        resolver_worklist=state.resolver_worklist,
+        conflicts=state.conflicts,
+    )
+
+
+def _phase_acceptance(state: FolderOutputPhaseState) -> None:
+    """Phase 6: build the package-acceptance report and run-summary."""
+    state.source_completeness = _build_source_completeness_report(
+        work_order=state.work_order, loop=state.loop
+    )
+    state.acceptance = _build_package_acceptance_report(
+        raw_responses=state.raw_responses,
+        loop=state.loop,
+        readiness=state.readiness,
+        conflicts=state.conflicts,
+        source_completeness=state.source_completeness,
+        room_topology=state.room_topology,
+        source_level_completeness=state.source_level_completeness,
+        source_area_consistency=state.source_area_consistency,
+        coordinate_frame_alignment_report=state.coordinate_frame_alignment_report,
+        site_terrain=state.site_terrain,
+        roof_dormer=state.roof_dormer,
+        source_material_assemblies=state.source_material_assemblies,
+        reader_consensus=state.reader_consensus,
+        source_building_scope=state.source_building_scope,
+    )
+    state.run_summary = _build_run_summary(
+        source_folder=state.source_root,
+        output_dir=state.out_dir,
+        manifest=state.manifest,
+        rendered_pages=state.rendered_pages,
+        work_order=state.work_order,
+        loop=state.loop,
+        normalized=state.normalized,
+        readiness=state.readiness,
+        conflicts=state.conflicts,
+        acceptance=state.acceptance,
+        raw_responses=state.raw_responses,
+        agent_requests=state.requests,
+        reader_pass_manifest=state.reader_pass_manifest,
+        reader_assignment_progress=state.reader_assignment_progress,
+    )
+    state.document_registry = _build_document_registry(state.manifest, state.classifications)
+    state.source_page_index = _build_source_page_index(
+        rendered_pages=state.rendered_pages,
+        classifications=state.classifications,
+        text_extractions=state.text_extractions,
+        coordinate_frames=state.coordinate_frames,
+    )
+    state.evidence_requirements = build_reverse_bim_evidence_requirements(
+        source_page_index=state.source_page_index,
+        source_facts=state.facts,
+        phase_authoring_spec=state.phase_spec,
+    )
+    state.tolerance_policy = _build_tolerance_policy()
+    state.reader_assignment_prompts = _write_reader_assignment_prompts(
+        output_dir=state.out_dir / "ai-reading" / "assignments",
+        agent_requests=state.requests,
+        reader_pass_manifest=state.reader_pass_manifest,
+    )
+    state.run_summary["summary"]["readerAssignmentPromptCount"] = (
+        state.reader_assignment_prompts.get("promptCount", 0)
+    )
+    state.run_summary["summary"]["pageClassificationAssignmentCount"] = (
+        state.page_classification_dispatch.get("assignmentCount", 0)
+    )
+    state.run_summary["summary"]["pageClassificationResponseCount"] = (
+        state.page_classification_responses.get("responseCount", 0)
+    )
+    state.run_summary["summary"]["pageClassificationAppliedPageCount"] = (
+        state.page_classification_application.get("appliedPageCount", 0)
+    )
+    state.repair_requests_open = {
+        "format": "reverseBimOpenRepairRequests_v1",
+        "requests": _build_open_repair_requests(
+            loop=state.loop,
+            source_building_scope=state.source_building_scope,
+            source_level_completeness=state.source_level_completeness,
+            room_topology=state.room_topology,
+            source_area_consistency=state.source_area_consistency,
+            site_terrain=state.site_terrain,
+            roof_dormer=state.roof_dormer,
+            source_material_assemblies=state.source_material_assemblies,
+            reader_consensus=state.reader_consensus,
+        ),
+    }
+    state.source_repair_plan = _build_source_repair_plan(
+        run_summary=state.run_summary,
+        acceptance=state.acceptance,
+        reader_assignment_progress=state.reader_assignment_progress,
+        repair_requests_open=state.repair_requests_open,
+        coordinate_frame_worklist=state.coordinate_frame_worklist,
+    )
+
+
+def _phase_write_artifacts(
+    state: FolderOutputPhaseState,
+    *,
+    reader_responses: list[dict[str, Any]] | dict[str, Any] | None,
+    reader_consensus_dispositions: list[dict[str, Any]] | dict[str, Any] | None,
+    building_scope_decisions: list[dict[str, Any]] | dict[str, Any] | None,
+) -> FolderOutputResponse:
+    """Phase 7: build the artifact path map, write all JSON + markdown files, return response."""
+    del reader_responses  # absorbed via state; signature kept for symmetry/grep-ability
+    out_dir = state.out_dir
     artifacts = {
         "runSummary": out_dir / "run-summary.json",
         "folderManifest": out_dir / "source" / "folder-manifest.json",
@@ -512,89 +706,93 @@ def build_reverse_bim_folder_output(
         "readme": out_dir / "README.md",
     }
     payloads = {
-        "runSummary": run_summary,
-        "folderManifest": manifest,
-        "documentRegistry": document_registry,
-        "documentClassification": classifications,
-        "renderedPages": rendered_pages,
-        "pageClassificationDispatch": page_classification_dispatch,
-        "pageClassificationResponses": page_classification_responses,
-        "pageClassificationApplication": page_classification_application,
-        "nativeTextExtractions": text_extractions,
-        "sourcePageIndex": source_page_index,
-        "aiVisualTracePacket": visual_packet,
-        "aiVisualTraceWorkOrder": work_order,
-        "aiVisualAgentRequests": requests,
-        "readerPassManifest": reader_pass_manifest,
-        "readerAssignmentProgress": reader_assignment_progress,
-        "readerAssignmentPrompts": reader_assignment_prompts,
-        "readerResponsesRaw": raw_responses,
-        "readerResponseIndex": reader_response_index,
-        "readerConsensus": reader_consensus,
-        "readerResponsesNormalized": normalized,
-        "agentLoopAccepted": loop,
+        "runSummary": state.run_summary,
+        "folderManifest": state.manifest,
+        "documentRegistry": state.document_registry,
+        "documentClassification": state.classifications,
+        "renderedPages": state.rendered_pages,
+        "pageClassificationDispatch": state.page_classification_dispatch,
+        "pageClassificationResponses": state.page_classification_responses,
+        "pageClassificationApplication": state.page_classification_application,
+        "nativeTextExtractions": state.text_extractions,
+        "sourcePageIndex": state.source_page_index,
+        "aiVisualTracePacket": state.visual_packet,
+        "aiVisualTraceWorkOrder": state.work_order,
+        "aiVisualAgentRequests": state.requests,
+        "readerPassManifest": state.reader_pass_manifest,
+        "readerAssignmentProgress": state.reader_assignment_progress,
+        "readerAssignmentPrompts": state.reader_assignment_prompts,
+        "readerResponsesRaw": state.raw_responses,
+        "readerResponseIndex": state.reader_response_index,
+        "readerConsensus": state.reader_consensus,
+        "readerResponsesNormalized": state.normalized,
+        "agentLoopAccepted": state.loop,
         "readerConsensusDispositions": _reader_consensus_disposition_payload(
             reader_consensus_dispositions
         ),
         "buildingScopeDecisions": _building_scope_decision_payload(building_scope_decisions),
-        "repairRequestsOpen": repair_requests_open,
-        "sourceRepairPlan": source_repair_plan,
-        "coordinateFrames": coordinate_frames,
-        "coordinateFrameWorklist": coordinate_frame_worklist,
-        "sourceFactLedger": fact_ledger,
-        "sourceBuildingScope": source_building_scope,
-        "sourceLevelCompleteness": source_level_completeness,
-        "roomTopology": room_topology,
-        "sourceAreaConsistency": source_area_consistency,
-        "sourceMaterialAssemblies": source_material_assemblies,
-        "openingReconciliation": opening_reconciliation,
-        "roofDormer": roof_dormer,
-        "siteTerrain": site_terrain,
-        "siteTerrainDecisionReport": site_terrain_decision_report,
-        "conflictLedger": conflicts,
-        "conflictDispositionReport": conflict_disposition_report,
-        "conflictDispositionWorklist": conflict_dispositions,
-        "existingBuildingIr": ir,
-        "existingBuildingIrValidation": ir_validation,
-        "sourceCoverageInitial": coverage,
-        "mcpReadiness": readiness,
-        "authoringPlan": authoring_plan,
-        "resolverWorklist": resolver_worklist,
-        "phaseAuthoringSpec": phase_spec,
-        "evidenceRequirements": evidence_requirements,
-        "tolerancePolicy": tolerance_policy,
-        "sourceCompletenessReport": source_completeness,
-        "coordinateFrameReport": coordinate_frame_alignment_report,
-        "siteTopologyReport": site_terrain,
-        "packageAcceptanceReport": acceptance,
+        "repairRequestsOpen": state.repair_requests_open,
+        "sourceRepairPlan": state.source_repair_plan,
+        "coordinateFrames": state.coordinate_frames,
+        "coordinateFrameWorklist": state.coordinate_frame_worklist,
+        "sourceFactLedger": state.fact_ledger,
+        "sourceBuildingScope": state.source_building_scope,
+        "sourceLevelCompleteness": state.source_level_completeness,
+        "roomTopology": state.room_topology,
+        "sourceAreaConsistency": state.source_area_consistency,
+        "sourceMaterialAssemblies": state.source_material_assemblies,
+        "openingReconciliation": state.opening_reconciliation,
+        "roofDormer": state.roof_dormer,
+        "siteTerrain": state.site_terrain,
+        "siteTerrainDecisionReport": state.site_terrain_decision_report,
+        "conflictLedger": state.conflicts,
+        "conflictDispositionReport": state.conflict_disposition_report,
+        "conflictDispositionWorklist": state.conflict_dispositions,
+        "existingBuildingIr": state.ir,
+        "existingBuildingIrValidation": state.ir_validation,
+        "sourceCoverageInitial": state.coverage,
+        "mcpReadiness": state.readiness,
+        "authoringPlan": state.authoring_plan,
+        "resolverWorklist": state.resolver_worklist,
+        "phaseAuthoringSpec": state.phase_spec,
+        "evidenceRequirements": state.evidence_requirements,
+        "tolerancePolicy": state.tolerance_policy,
+        "sourceCompletenessReport": state.source_completeness,
+        "coordinateFrameReport": state.coordinate_frame_alignment_report,
+        "siteTopologyReport": state.site_terrain,
+        "packageAcceptanceReport": state.acceptance,
     }
     for key, payload in payloads.items():
         _write_json_shared(artifacts[key], payload)
     artifacts["sourceRepairPlanMarkdown"].write_text(
-        _source_repair_plan_markdown(source_repair_plan),
+        _source_repair_plan_markdown(state.source_repair_plan),
         encoding="utf-8",
     )
     artifacts["sourceAnalysis"].write_text(
-        _source_analysis_markdown(run_summary, source_completeness, readiness, conflicts),
+        _source_analysis_markdown(
+            state.run_summary, state.source_completeness, state.readiness, state.conflicts
+        ),
         encoding="utf-8",
     )
     artifacts["readerDispatchGuide"].write_text(
-        _reader_dispatch_markdown(run_summary, reader_pass_manifest, reader_assignment_progress),
+        _reader_dispatch_markdown(
+            state.run_summary, state.reader_pass_manifest, state.reader_assignment_progress
+        ),
         encoding="utf-8",
     )
-    artifacts["readme"].write_text(_readme(run_summary, artifacts), encoding="utf-8")
+    artifacts["readme"].write_text(_readme(state.run_summary, artifacts), encoding="utf-8")
 
     return FolderOutputResponse.model_validate(
         {
-            "ok": acceptance.get("ok") is True,
+            "ok": state.acceptance.get("ok") is True,
             "format": "reverseBimFolderOutputPackage_v1",
-            "packageState": run_summary["packageState"],
-            "sourceFolder": str(source_root),
-            "outputDir": str(out_dir),
-            "summary": run_summary["summary"],
+            "packageState": state.run_summary["packageState"],
+            "sourceFolder": str(state.source_root),
+            "outputDir": str(state.out_dir),
+            "summary": state.run_summary["summary"],
             "artifacts": {key: str(path) for key, path in artifacts.items()},
-            "acceptance": acceptance,
-            "nextStep": run_summary["nextAgentInstruction"],
+            "acceptance": state.acceptance,
+            "nextStep": state.run_summary["nextAgentInstruction"],
         }
     )
 
