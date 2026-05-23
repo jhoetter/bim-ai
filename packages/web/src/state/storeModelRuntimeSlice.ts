@@ -109,11 +109,26 @@ export function createModelRuntimeSlice(
       const pv = st.activePlanViewId;
       const vp = st.activeViewpointId;
 
+      // PERF-B07: deltas may carry `validationScope: "blocking_only"`
+      // when the server ran a fast-path commit that skipped documentation
+      // advisor passes (e.g. hosted-opening insert). In that case the
+      // delta's violations only contain blocking/error rows — we keep
+      // our prior info-level rows instead of dropping them on replace,
+      // so the advisor panel doesn't flicker. Full deltas (the default)
+      // unconditionally replace, matching pre-B07 behavior.
+      const incomingViolations =
+        d.validationScope === 'blocking_only'
+          ? [
+              ...(d.violations ?? []).map(coerceViolation),
+              ...st.violations.filter((v) => v.severity === 'info'),
+            ]
+          : (d.violations ?? []).map(coerceViolation);
+
       set({
         revision: d.revision,
         elementsById: merged,
         modelIndices: buildModelIndices(merged),
-        violations: (d.violations ?? []).map(coerceViolation),
+        violations: incomingViolations,
         planProjectionPrimitives: null,
         planRoomSchemeWireReadout: null,
         scheduleBudgetHydration: null,

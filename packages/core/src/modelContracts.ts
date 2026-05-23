@@ -98,6 +98,16 @@ export type Snapshot = {
   designOptionSets?: DesignOptionSet[];
 };
 
+/**
+ * PERF-B07: hints which validation passes ran on the server side of this
+ * delta. Default `"full"` matches today's behavior (every advisor pass
+ * ran, `violations` is authoritative). `"blocking_only"` signals that
+ * the server ran only blocking/error passes — info-level advisor rows
+ * may be stale, so the client should preserve its prior info violations
+ * rather than dropping them on replace.
+ */
+export type ValidationScope = 'full' | 'blocking_only';
+
 /** Server delta payload (camelCase aliases). */
 export type ModelDelta = {
   revision: number;
@@ -107,6 +117,9 @@ export type ModelDelta = {
   elements: Record<string, unknown>;
 
   violations: Violation[];
+
+  /** PERF-B07: see {@link ValidationScope}. Absent means "full". */
+  validationScope?: ValidationScope;
 
   clientOpId?: string;
 };

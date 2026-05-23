@@ -799,6 +799,83 @@ describe('applyDelta', () => {
     } as import('@bim-ai/core').ModelDelta);
     expect(useBimStore.getState().activePlanViewId).toBeUndefined();
   });
+
+  // PERF-B07: validationScope='blocking_only' deltas should preserve
+  // prior info-level violations rather than dropping them on replace.
+  it('preserves info-level violations when validationScope is blocking_only', () => {
+    useBimStore.setState({
+      revision: 1,
+      elementsById: {},
+      violations: [
+        {
+          ruleId: 'docs.missing_tag',
+          severity: 'info',
+          elementIds: ['e1'],
+          message: 'missing tag',
+        },
+        {
+          ruleId: 'docs.untitled_view',
+          severity: 'info',
+          elementIds: ['v1'],
+          message: 'untitled view',
+        },
+      ] as import('@bim-ai/core').Violation[],
+    });
+
+    useBimStore.getState().applyDelta({
+      revision: 2,
+      elements: {},
+      removedIds: [],
+      violations: [
+        {
+          ruleId: 'blocking.wall_overlap',
+          severity: 'error',
+          elementIds: ['w1', 'w2'],
+          message: 'overlap',
+        },
+      ],
+      validationScope: 'blocking_only',
+    } as import('@bim-ai/core').ModelDelta);
+
+    const after = useBimStore.getState().violations;
+    expect(after.map((v) => v.ruleId).sort()).toEqual([
+      'blocking.wall_overlap',
+      'docs.missing_tag',
+      'docs.untitled_view',
+    ]);
+  });
+
+  it('replaces all violations when validationScope is full or omitted', () => {
+    useBimStore.setState({
+      revision: 1,
+      elementsById: {},
+      violations: [
+        {
+          ruleId: 'docs.missing_tag',
+          severity: 'info',
+          elementIds: ['e1'],
+          message: 'missing tag',
+        },
+      ] as import('@bim-ai/core').Violation[],
+    });
+
+    useBimStore.getState().applyDelta({
+      revision: 2,
+      elements: {},
+      removedIds: [],
+      violations: [
+        {
+          ruleId: 'blocking.x',
+          severity: 'error',
+          elementIds: ['w1'],
+          message: 'x',
+        },
+      ],
+      // validationScope omitted → defaults to "full" semantics
+    } as import('@bim-ai/core').ModelDelta);
+
+    expect(useBimStore.getState().violations.map((v) => v.ruleId)).toEqual(['blocking.x']);
+  });
 });
 
 // ─── Simple setters ────────────────────────────────────────────────────────────

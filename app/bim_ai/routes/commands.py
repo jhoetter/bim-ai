@@ -24,6 +24,7 @@ from bim_ai.elements import ExternalLinkElem, LinkDxfElem, LinkModelElem
 from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
+    command_supports_fast_validation_path,
     compute_delta_wire,
     compute_view_template_propagation,
     diff_undo_cmds,
@@ -630,7 +631,17 @@ async def apply_command(
     row.revision = new_doc.revision
     await session.commit()
 
-    delta = compute_delta_wire(doc_before, new_doc, violations=violations)
+    # PERF-B07: when try_commit took the fast path (hosted-opening insert
+    # / wall endpoint move), stamp validationScope='blocking_only' so the
+    # FE preserves prior info-level rows instead of dropping them on
+    # replace.
+    fast_path = command_supports_fast_validation_path(command_for_commit)
+    delta = compute_delta_wire(
+        doc_before,
+        new_doc,
+        violations=violations,
+        validation_scope="blocking_only" if fast_path else "full",
+    )
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
 

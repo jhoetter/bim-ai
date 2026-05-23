@@ -59,7 +59,18 @@ def compute_delta_wire(
     next_doc: Document,
     *,
     violations: list[Violation] | None = None,
+    validation_scope: str = "full",
 ) -> dict[str, Any]:
+    """Build the WS delta payload for next_doc.
+
+    PERF-B07: ``validation_scope='blocking_only'`` stamps the wire
+    payload with the matching scope flag so the FE applyDelta path
+    preserves prior info-level violations rather than dropping them on
+    replace.  Default ``'full'`` matches the long-standing contract —
+    callers that pass a precomputed ``violations`` list which still
+    includes all info advisors should leave the default alone.
+    """
+
     removed_ids = sorted(prev_doc.elements.keys() - next_doc.elements.keys())
     elements_patch: dict[str, Any] = {}
     next_ids_all = next_doc.elements.keys()
@@ -73,7 +84,7 @@ def compute_delta_wire(
         if n != p:
             elements_patch[eid] = n.model_dump(by_alias=True)
 
-    return {
+    payload: dict[str, Any] = {
         "revision": next_doc.revision,
         "removedIds": removed_ids,
         "elements": elements_patch,
@@ -82,6 +93,9 @@ def compute_delta_wire(
             for v in (violations if violations is not None else _commit_violations(next_doc))
         ],
     }
+    if validation_scope != "full":
+        payload["validationScope"] = validation_scope
+    return payload
 
 
 def first_blocking_command_index_after_prefixes(doc: Document, cmds: list[Command]) -> int | None:
@@ -182,14 +196,50 @@ def _has_blocking_violations(violations: list[Violation]) -> bool:
     return any(v.blocking or v.severity == "error" for v in violations)
 
 
-def _commit_violations(doc: Document) -> list[Violation]:
-    """Validation surface used by dry-run, commit, and commit deltas."""
+def _commit_violations(doc: Document, *, documentation_advisors: bool = True) -> list[Violation]:
+    """Validation surface used by dry-run, commit, and commit deltas.
+
+    PERF-B07: pass ``documentation_advisors=False`` to skip the
+    info-level advisor passes (see PERF-C09 gate in
+    :func:`bim_ai.constraints_evaluation.evaluate`). The two hosted-
+    integrity passes always run because they emit error/blocking rows
+    that callers rely on for rollback.
+    """
 
     return (
-        evaluate(doc.elements)
+        evaluate(doc.elements, documentation_advisors=documentation_advisors)
         + hosted_opening_integrity_violations(doc)
         + physical_support_context_violations(doc)
     )
+
+
+# PERF-B07: commands whose effect is local enough that documentation
+# advisor passes can be skipped at commit time. Each command in this
+# allowlist only edits one element + its host: dropping the docs
+# advisors during commit doesn't lose blocking/error context, and the
+# FE preserves prior info violations through the validationScope
+# 'blocking_only' delta flag.
+_FAST_PATH_COMMAND_TYPES: frozenset[str] = frozenset(
+    {
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "createWallOpening",
+        "moveWallEndpoints",
+        "moveWallDelta",
+    }
+)
+
+
+def _command_supports_fast_validation_path(cmd_raw: dict[str, Any]) -> bool:
+    raw_type = cmd_raw.get("type") if isinstance(cmd_raw, dict) else None
+    return isinstance(raw_type, str) and raw_type in _FAST_PATH_COMMAND_TYPES
+
+
+def command_supports_fast_validation_path(cmd_raw: dict[str, Any]) -> bool:
+    """Public alias for routes that need to stamp `validationScope` on
+    the delta payload when the command used the fast-path commit."""
+
+    return _command_supports_fast_validation_path(cmd_raw)
 
 
 _AGENT_STRICT_COMMAND_TYPES: dict[str, tuple[str, ...]] = {
@@ -504,10 +554,15 @@ def try_commit(
     apply_inplace(cand, cmds, source_provider=source_provider)
     ensure_sun_settings(cand)
 
-    violations = _commit_violations(cand)
+    # PERF-B07: skip info-level advisor passes when the command is in
+    # the fast-path allowlist (hosted-opening insert + wall endpoint
+    # moves). The compute_delta_wire caller stamps validationScope so
+    # the FE preserves prior info violations.
+    documentation_advisors = not _command_supports_fast_validation_path(cmd_raw)
+    violations = _commit_violations(cand, documentation_advisors=documentation_advisors)
 
     if _has_blocking_violations(violations):
-        before_violations = _commit_violations(doc)
+        before_violations = _commit_violations(doc, documentation_advisors=documentation_advisors)
         blocking = _new_blocking_violations(before_violations, violations)
         if blocking:
             return False, None, cmds, violations, "constraint_error"
