@@ -621,9 +621,9 @@ Relevant files:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `PERF-G01` | P0 | `Not started` | Inventory direct `elementsById` subscriptions. | Generated report lists components subscribing to full model state and their derived scans. No artifact exists today; `useBimStore` has ~1,358 call sites repo-wide. |
-| `PERF-G02` | P0 | `Done` | Add derived model indices to store/selectors. | Store exposes levels, walls by level, openings by wall, schedules, sheets, project settings, rooms by level, and selectable ids. |
+| `PERF-G02` | P0 | `Done` | Add derived model indices to store/selectors. | Store exposes `all`, `levels`, `walls` (flat), `wallsByLevel`, `roomsByLevel`, `openingsByWall`, `planViews`, `schedules`, `sheets`, `projectSettings`, `projectBasePoint`, and `selectableIds`. |
 | `PERF-G03` | P1 | `Partial` | Migrate `Workspace` off broad full-model scans for common derived values. | `Workspace.tsx` `sheetPages` + `levels` now subscribe to `modelIndices.sheets` / `modelIndices.levels` (commit `67b6eca6`). Five scans remaining (commandPaletteEntities, palettePlanTemplates, showEmptyState, projectNorthAngleDeg's project_base_point lookup, driftCount); first three need additional modelIndices fields (`viewpoint`, `saved_view`, `section_cut`, `view_template`, `wallCount` / `projectBasePoint`). The line-202 broad `elementsById` subscription itself is blocked on the viewport-filter storage refactor: `storeViewportRuntimeSlice` mutates `elementsById` without rebuilding `modelIndices`, and Workspace forwards `elementsById` to `PaneRenderer` + `WorkspaceOverlays`, so subscribing to `modelIndices` alone would render filter changes invisible. |
-| `PERF-G04` | P1 | `Not started` | Migrate `PlanCanvas` interaction paths to indices. | Snapping, picking, hover, tags, dimensions, walls, and floors use precomputed indices where possible. |
+| `PERF-G04` | P1 | `Partial` | Migrate `PlanCanvas` interaction paths to indices. | `planCanvasClickHandler.ts` 4 wall scans + project-base-point lookup migrated to `modelIndices.walls` / `modelIndices.projectBasePoint` in `0ee6f39a`. Still open: 3 scans (column + placed_asset L899, floor-by-level L1561, beam pick L1807) need new modelIndices fields; PlanCanvas.tsx parent still subscribes to broad `elementsById` for the remaining handler paths and threads it to siblings. Snapping, hover, tags, dimensions still pending. |
 | `PERF-G05` | P1 | `Partial` | Migrate `Viewport` placement/conflict paths to indices. | `Viewport.tsx` georeferenceKey + georeference + walkLevels + direct3dDraftLevelName now consume `modelIndices.projectSettings` / `modelIndices.levels` (4 full-model scans removed). Hosted-opening conflict + remaining ref-snap scans still pending. |
 | `PERF-G06` | P1 | `Done` | Add selector equality strategy. | `packages/web/src/state/useShallowSelector.ts` re-exports zustand v5's `useShallow` as the canonical primitive; regression test asserts three consecutive set() calls produce zero extra renders when projected fields don't change. Broader adoption is bundled with G03/G04/G05 migrations. |
 | `PERF-G07` | P2 | `Done` | Add frontend render-count instrumentation in dev. | `packages/web/src/state/renderCountProbe.ts` exposes `useRenderCount(name)`; wired into Workspace, PlanCanvas, Viewport. Counts accumulate in `window.__BIM_AI_RENDER_COUNTS__` (auto-on in DEV). Pairs with PERF-M04. |
@@ -746,9 +746,16 @@ covered by existing tracker items. Items are ordered by leverage.
    room/schedule/plan-projection request caches; callers documented as
    read-only.
 4. **`planCanvasClickHandler.ts` is now the dominant full-scan offender.**
-   10+ `Object.values(elementsById)` calls (lines 899, 1472, 1484, 1510, 1561,
-   1807, 1880, 2321). The post-split hot path moved out of `PlanCanvas.tsx`;
-   acceptance for `PERF-G04` / `PERF-H03` should cover this file explicitly.
+   ~~10+ `Object.values(elementsById)` calls (lines 899, 1472, 1484, 1510, 1561,
+   1807, 1880, 2321).~~ **Partially resolved in `0ee6f39a` (2026-05-23)** —
+   4 wall scans (wall-join, wall-opening, ceiling-sketch auto-detect) and the
+   project-base-point lookup now consume `modelIndices.walls` /
+   `modelIndices.projectBasePoint` (new fields). 3 scans still open:
+   `L899` (column + placed_asset nearest-pick), `L1561` (floor by level),
+   `L1807` (beam pick) — each needs a new modelIndices field
+   (`columnsByLevel`, `placedAssetsByLevel`, `floorsByLevel`, `beams`).
+   The post-split hot path lives out of `PlanCanvas.tsx`; acceptance for
+   `PERF-G04` / `PERF-H03` covers this file explicitly.
 5. **`Workspace.tsx:199` subscribes to entire `elementsById`.** A single
    element change rerenders the whole workspace shell. Highest-leverage
    `PERF-G03` / `PERF-G06` fix.
