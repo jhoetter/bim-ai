@@ -61,16 +61,59 @@ test.describe('PERF-M03: interaction perf traces', () => {
       20,
     );
 
-    // place-window / draw-wall require a known model + tool state to
-    // exercise; capture them via best-effort hover-equivalent for now,
-    // and the spec serialises whatever it got so the regression file
-    // exists even on a thin fixture.
+    // place-window / draw-wall / orbit / place-door require a known model +
+    // tool state to fully exercise the placement path; capture them via
+    // best-effort pointer sequences here so the regression file has a row
+    // per scenario even on a thin fixture. Once a model-loader fixture
+    // exists, the inner actions can be swapped for real tool activation.
     await timeScenario(
       'place-window-hover-only',
       async () => {
         await page.mouse.move(600 + Math.random() * 50, 600 + Math.random() * 50);
       },
       40,
+    );
+
+    // place-door — same shape as place-window-hover-only but distinct
+    // coordinate band so any future ghost-render diff is comparable.
+    await timeScenario(
+      'place-door-hover-only',
+      async () => {
+        await page.mouse.move(450 + Math.random() * 50, 500 + Math.random() * 50);
+      },
+      40,
+    );
+
+    // orbit — right-button drag in the 3D viewport produces an orbit
+    // rotation event sequence. The viewport scheduler exits idle while
+    // dragging so this exercises the demand-driven render loop too
+    // (PERF-I02). Coordinates centre the drag in the canvas viewport.
+    await timeScenario(
+      'orbit',
+      async () => {
+        await page.mouse.move(700, 400);
+        await page.mouse.down({ button: 'right' });
+        await page.mouse.move(720 + Math.random() * 40, 420 + Math.random() * 40);
+        await page.mouse.up({ button: 'right' });
+      },
+      20,
+    );
+
+    // draw-wall — without a model loader fixture, we approximate the
+    // wall tool's pointermove path by exercising the snap-hover path
+    // (which is the dominant per-frame cost) plus a click-drag-release
+    // sequence so the snap engine + draft state get touched.
+    await timeScenario(
+      'draw-wall',
+      async () => {
+        const x = 500 + Math.random() * 50;
+        const y = 500 + Math.random() * 50;
+        await page.mouse.move(x, y);
+        await page.mouse.down({ button: 'left' });
+        await page.mouse.move(x + 100, y + 100);
+        await page.mouse.up({ button: 'left' });
+      },
+      20,
     );
 
     await fs.mkdir(path.dirname(OUT_PATH), { recursive: true });
