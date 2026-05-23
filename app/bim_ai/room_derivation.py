@@ -6,10 +6,11 @@ import hashlib
 import itertools
 import json
 import math
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from typing import Any, Literal
 
 from bim_ai.document import Document
@@ -20,6 +21,29 @@ BOUNDARY_SEGMENT_VERSION_V1 = "boundary_segment_v1"
 _ROOM_BOUNDARY_REQUEST_CACHE: ContextVar[
     dict[tuple[int, tuple[str, ...]], dict[str, Any]] | None
 ] = ContextVar("room_boundary_request_cache", default=None)
+
+# PERF-C05: cross-request room-boundary cache. Keyed on a content
+# fingerprint derived from the Document itself — revision, element
+# count, sorted ids — so multiple requests for the same model revision
+# (validate, evidence, snapshot warmups) share one derivation.
+# Stored bundles are deep-copied on store + read so cached entries
+# remain immutable while callers (room-derivation-preview, schedule,
+# plan-projection) may freely splice rows into them.
+_ROOM_BOUNDARY_DOC_CACHE_MAX = 32
+_ROOM_BOUNDARY_DOC_CACHE: OrderedDict[
+    tuple[int, int, tuple[str, ...]], dict[str, Any]
+] = OrderedDict()
+
+
+def _room_boundary_doc_cache_key(doc: Document) -> tuple[int, int, tuple[str, ...]]:
+    return (doc.revision, len(doc.elements), tuple(doc.elements.keys()))
+
+
+def reset_room_boundary_doc_cache() -> None:
+    """Test-only hook. Production code should never need to clear the cache —
+    new revisions land as new keys; old keys age out via the LRU bound."""
+
+    _ROOM_BOUNDARY_DOC_CACHE.clear()
 
 # Shared with preview (orthogonal snap / closure tests)
 _SNAP_MM = 50.0
@@ -515,20 +539,41 @@ def room_boundary_derivation_request_cache() -> Iterator[None]:
 
 
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
-    cache = _ROOM_BOUNDARY_REQUEST_CACHE.get()
-    if cache is None:
-        return _compute_room_boundary_derivation_uncached(doc)
-    # Cache key is a content fingerprint stable across pydantic Document
-    # wraps of the same underlying elements set. Pydantic v2 builds a new
-    # dict during validation, so `id(doc.elements)` is unstable — but the
-    # element ids and ordering are preserved within a request. The bundle
-    # is returned by reference; callers must treat it as read-only.
-    key: tuple[int, tuple[str, ...]] = (len(doc.elements), tuple(doc.elements.keys()))
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
+    in_req_cache = _ROOM_BOUNDARY_REQUEST_CACHE.get()
+    # In-request fingerprint: stable across pydantic Document wraps of the
+    # same elements set within one request. The bundle is returned by
+    # reference; in-request callers must treat it as read-only.
+    in_req_key: tuple[int, tuple[str, ...]] = (len(doc.elements), tuple(doc.elements.keys()))
+    if in_req_cache is not None:
+        cached = in_req_cache.get(in_req_key)
+        if cached is not None:
+            return cached
+
+    # PERF-C05: cross-request cache, keyed on document fingerprint
+    # (revision + element ids). Hit returns a deepcopy so the per-request
+    # callers can mutate freely without poisoning the shared entry.
+    doc_key = _room_boundary_doc_cache_key(doc)
+    cross_cached = _ROOM_BOUNDARY_DOC_CACHE.get(doc_key)
+    if cross_cached is not None:
+        _ROOM_BOUNDARY_DOC_CACHE.move_to_end(doc_key)
+        bundle = deepcopy(cross_cached)
+        if in_req_cache is not None:
+            in_req_cache[in_req_key] = bundle
+        return bundle
+
     bundle = _compute_room_boundary_derivation_uncached(doc)
-    cache[key] = bundle
+    # Deepcopy the canonical entry on store so caller mutations in the current
+    # request cannot poison subsequent requests' reads. Misses are bounded by
+    # the LRU (32 entries) so the deepcopy cost amortizes across many hits.
+    _ROOM_BOUNDARY_DOC_CACHE[doc_key] = deepcopy(bundle)
+    _ROOM_BOUNDARY_DOC_CACHE.move_to_end(doc_key)
+    while len(_ROOM_BOUNDARY_DOC_CACHE) > _ROOM_BOUNDARY_DOC_CACHE_MAX:
+        _ROOM_BOUNDARY_DOC_CACHE.popitem(last=False)
+    if in_req_cache is not None:
+        # Within the originating request, hand out the live bundle so
+        # subsequent in-request callers see the same identity (matches the
+        # PERF-C04 contract verified by test_room_boundary_derivation_request_cache_reuses_document_result).
+        in_req_cache[in_req_key] = bundle
     return bundle
 
 
