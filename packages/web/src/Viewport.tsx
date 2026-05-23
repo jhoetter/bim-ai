@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
 import type { CsgResponse } from './viewport/csgWorker';
+import { recordViewportFrame } from './viewport/viewportFrameStats';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -2569,6 +2570,8 @@ export function Viewport({
       rafRef.current = null;
       const now = performance.now();
       const dt = Math.min(0.05, (now - lastFrameMs) / 1000);
+      // PERF-I03: frame interval for the FPS / frame-time probe.
+      const frameIntervalMs = lastFrameMs === 0 ? 0 : now - lastFrameMs;
       lastFrameMs = now;
 
       // Walk-mode integration drives the camera target through walkController.
@@ -2590,7 +2593,10 @@ export function Viewport({
         placeCamera();
       }
 
+      const renderStart = performance.now();
       composer.render();
+      // PERF-I03: record dev-only frame-time + renderer.info stats.
+      recordViewportFrame(renderer, performance.now() - renderStart, frameIntervalMs);
       if (shouldAnimateViewport()) scheduleViewportRender();
     }
 
