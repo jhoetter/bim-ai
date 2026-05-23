@@ -299,6 +299,10 @@ Each row = one /loop iteration. The loop appends here.
 | iter | timestamp | house | what was tried | honest grade | notes / next |
 |---|---|---|---|---|---|
 | 0   | 2026-05-23 22:30 | (setup) | Phase 0 inventory + tracker authored | n/a | proceed to Phase 1 |
+| 0.6 | 2026-05-23 21:48Z | (all) | Phase 0 complete — API+WEB=200, no parallel dirty, purged 3, cleaned legacy iter dirs | n/a | Phase 1 alpha next |
+| 1 | 2026-05-23 21:53Z | alpha | Phase 1 fresh author chain (TOPOLOGY→ROOF + capture); 30 walls, 20 rooms, 4 doors, 6 windows, 2 dormers, 1 stair, 1 toposolid all landed; all 4 captures > 260KB; grader spawned | **4.33/10** | topGap: perFacade (window+door+dormer fidelity). Next: P1a DG-window mirror |
+| 1 | 2026-05-23 22:00Z | beta | Phase 1 fresh author chain; 30 walls, 20 rooms, 10 doors, 14 windows, 1 dormer, 1 stair, 2 roofs (gable + Flachdach); all 4 captures > 280KB; grader spawned | pending | wait for grader |
+| 1 | 2026-05-23 22:05Z | gamma | Phase 1 fresh author chain spawned in background | pending | wait |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
@@ -776,6 +780,121 @@ go in the final report for user review in the morning.)
 Per convergence loop iteration (one house): ~10 min serial.
 A normal night yields **40-60 convergence iterations** across the
 three houses. That's plenty to hit §4.6.
+
+---
+
+## 19. Missing software features (live catalogue)
+
+The user's 00:00Z directive expanded scope: a real 10/10 may need
+new engine features for architectural details that don't have a
+command today. The loop captures observations here AND ships small
+engine patches where the cost/benefit is right; bigger ones queue
+as §13 engine asks.
+
+**Convention**: each line ID `MF-NN` is the feature stub. State
+column is one of `noted` (just observed) / `working` (loop is
+actively shipping a patch) / `shipped` (landed; record the commit
+sha) / `engine-ask` (escalated to §13).
+
+| ID | feature | state | notes / commit |
+|---|---|---|---|
+| MF-01 | `roofGeometryMode = half_gable` for Doppelhaus | engine-ask | EA-1; alpha+gamma west party wall |
+| MF-02 | chimneys (vertical extrusion through roof) | noted | gamma source has 2 chimneys (Schornstein); no `createChimney` cmd exists |
+| MF-03 | eave fascia / gutter | noted | every house's roof eave reads as a clean cut; source elevations show fascia board + gutter line |
+| MF-04 | window sill detail (extruded stone or concrete band) | noted | gamma source has visible white sills under each window |
+| MF-05 | window shutters / Klappläden | noted | gamma source has visible shutters on some south-facade windows |
+| MF-06 | brick / stone basement course (different material on KG above grade) | noted | gamma source: stone basement to ~600 mm above grade, then plaster above |
+| MF-07 | roller door (garage overhead) | noted | beta has a roller door in the IR but no special door type — currently authored as a plain insertDoorOnWall |
+| MF-08 | French / side-hung / sliding door variants | noted | all doors currently render identical |
+| MF-09 | balcony / terrace slab projection | noted | gamma DG may have a balcony — needs verification |
+| MF-10 | parcel boundary + retaining walls | noted | every model has a default 5m parcel toposolid; no actual parcel polygon authoring |
+| MF-11 | per-side roof overhang | engine-ask | EA-4 |
+| MF-12 | slab base/top extrusion direction | engine-ask | EA-2 (still gates P2 plinth) |
+| MF-13 | `surfaceElevationMm` for toposolid (semantic clarity) | engine-ask | EA-5 |
+| MF-14 | per-face wall material overrides (basement stone vs upper render) | noted | `face_material_overrides` exists on WallElem but no command authors it |
+| MF-15 | dormer cheek wall material | noted | dormers render in roof material; cheek walls should be wall material |
+| MF-16 | gable triangle (Giebel) ornament — half-timbering, vergeboard | noted | low priority; gamma has plain stucco gable per source |
+| MF-17 | window cross-mullion pattern (2x2, 3x1, etc.) | noted | currently all windows are blank panes |
+| MF-18 | door panels (raised / flat / glazed) | noted | currently all doors render as flat panels |
+| MF-19 | downspout (Regenwasserrohr) | noted | visible on gamma east elevation |
+| MF-20 | grade contour / sloped site | noted | toposolid is flat; some IRs note sloped Gartenanteil |
+
+**Working order for the night** (after the per-house convergence
+loop stabilises at ≥ 7/10 across the board):
+
+1. **MF-12 / EA-2** — slab base/top extrusion direction; small
+   engine patch (~15 LOC); likely lifts every house's §4.3
+   verticalCoherence score.
+2. **MF-02 chimneys** — synth a `createChimney` engine cmd OR
+   author chimneys as thin vertical wall extrusions through the
+   roof; visible on gamma south.
+3. **MF-14 per-face wall materials** — author through the existing
+   `face_material_overrides`; closes the "basement stone vs upper
+   render" axis.
+4. **MF-04 window sills** — author as a small horizontal slab band
+   in `insertWindowOnWall` synth-detail.
+5. **MF-17 mullions** — `curtainPanelOverrides` on a window?
+   Investigate before committing.
+
+The loop should never ship a §19 patch concurrent with a Phase 1/2
+re-author (same revision-conflict risk as §9.3). Schedule
+feature-work between re-authoring rounds.
+
+---
+
+## 20. Periodic from-scratch smoke tests
+
+Per the user's nightshift directive: every ~2 hours do a complete
+purge + Phase 1 cycle to verify the methodology converges
+*reproducibly*, not just from accumulated state.
+
+**Schedule** (24h clock CEST, derived from `date +%s` checked at
+00:04Z baseline):
+
+- 02:00 — smoke #1 (purge + Phase 1 all 3, no convergence)
+- 04:00 — smoke #2
+- 06:00 — smoke #3
+- 08:00 — smoke #4
+- 09:30 — final pre-handoff smoke
+
+Each smoke run:
+1. `date` to log timestamp
+2. `uv run --project app python scripts/testhouse_purge.py`
+3. rm tmp/reverse-bim/iter-*-captures + iter-*-scoring
+4. Phase 1 for each house at iter-1 (sequential)
+5. Grade all 3 in parallel
+6. Append §6 with `SMOKE-N` rows
+7. If a smoke degrades vs the prior best convergence, raise an
+   alarm row in §6 + investigate.
+
+The convergence loop pauses while a smoke is running. After the
+smoke, resume with the highest-iter committed model per house.
+
+---
+
+## 21. Commit cadence
+
+- **Every code change** (driver, engine, runner) → commit + push
+  immediately after the change lands. Don't batch.
+- **Every grader return** → tracker §6 row + commit + push.
+- **Every smoke run** → consolidated commit + push.
+- **Every hour on the hour** → if there are uncommitted changes
+  (other than work-in-progress edits), commit + push.
+
+This keeps progress visible to the user and survives any crash.
+
+---
+
+## 22. The wall-clock budget
+
+- Nightshift started: 2026-05-23 22:04Z
+- User return: 2026-05-24 ~08:00Z (10:00 CEST)
+- Wall-clock budget: ~10 h
+- Per /loop wakeup overhead: ~30 s parse + plan + write
+- Expected throughput per wakeup (with parallel author + grader):
+  ~1 grade landed + 1 driver edit committed every ~10 min
+- Total expected iter density: 60 iters across 3 houses + 4 smokes
+  + 5–8 §19 feature patches
 
 ---
 
