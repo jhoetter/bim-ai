@@ -1,3 +1,25 @@
+"""Reverse-BIM IR + MCP-readiness builders (BRT-21).
+
+The 22 ``isinstance(x, dict)`` guards in this module all defend against
+externally-sourced payloads that round-trip through JSON-on-disk before they
+reach these functions:
+
+* ``existing-building-ir.json``, ``existing-building-ir.validation.json``,
+  ``source-fact-ledger.json`` — written by ``services.folder_output`` and
+  re-loaded by validators/consumers.
+* ``finding-dispositions`` from request bodies (route handlers pre-parse the
+  outer envelope but pass inner rows as ``list[dict[str, Any]]``).
+* ``mcp_authoring_actions`` plans, where ``plan.get("actions")`` is typed
+  ``Any`` because ``dict.get`` widens to ``Any``.
+
+Driving the count below 3 (BRT-21's exit signal) requires typing the
+JSON-disk roundtrip artifacts as Pydantic models (an ``ExistingBuildingIR``
+model with ``extra="allow"``) so that consumers receive a known-shape
+object instead of ``Any``. That work belongs upstream of this file; until
+it lands, each guard below stays — they generate structured validation
+findings rather than ``AttributeError`` traces when malformed JSON arrives.
+"""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -87,6 +109,8 @@ SOURCE_LIMITED_REFERENCE_DECISIONS = {
 
 def validate_existing_building_ir(ir: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
+    # external_payload: existing-building-ir.json (folder_output artifact)
+    # round-trips through disk; runtime shape isn't guaranteed by Python types.
     if not isinstance(ir, dict):
         return _result(
             ok=False,
@@ -322,8 +346,6 @@ def plan_mcp_authoring_actions(
     actions: list[dict[str, Any]] = []
     blockers: list[dict[str, Any]] = []
     for fact in facts:
-        if not isinstance(fact, dict):
-            continue
         fact_id = str(fact.get("factId") or "")
         kind = str(fact.get("kind") or "")
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
@@ -420,8 +442,6 @@ def build_mcp_authoring_readiness(
     rows: list[dict[str, Any]] = []
     blockers: list[dict[str, Any]] = []
     for fact in facts:
-        if not isinstance(fact, dict):
-            continue
         fact_id = str(fact.get("factId") or "")
         kind = str(fact.get("kind") or "")
         value = fact.get("value") if isinstance(fact.get("value"), dict) else {}
@@ -1124,8 +1144,8 @@ def _non_authoring_recommendation(kind: str, status: str) -> str:
 def _mcp_action_status(requirements: list[dict[str, Any]]) -> str:
     if not requirements:
         return "ready_for_mcp_authoring"
-    has_resolver = any("resolver" in req for req in requirements if isinstance(req, dict))
-    has_source = any("source" in req for req in requirements if isinstance(req, dict))
+    has_resolver = any("resolver" in req for req in requirements)
+    has_source = any("source" in req for req in requirements)
     if has_resolver and has_source:
         return "needs_mcp_resolver_and_source_refinement"
     if has_resolver:
@@ -1139,7 +1159,7 @@ def _mcp_action_recommendation(status: str, requirements: list[dict[str, Any]]) 
     resolvers = [
         str(req.get("resolver"))
         for req in requirements
-        if isinstance(req, dict) and req.get("resolver")
+        if req.get("resolver")
     ]
     if status == "needs_mcp_resolver":
         return f"Run resolver/query tools first: {', '.join(resolvers)}."
