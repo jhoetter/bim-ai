@@ -337,6 +337,26 @@ grader. Target: 10/10 on all three houses by closing A1-A4.
 | `2d5a59632` | B1 | structural-gate sidecars per floor + `/iterations/{iter}/structural-gate` endpoint |
 | `9664c9220` | Materials + stair-riser engine fix | (a) `materialKey` set on exterior createWall (`render_light_grey`), interior partition (`plaster`), main roof (`roof_tile_terracotta`); (b) `_materialize_stair_runs_and_landings` for shape='straight' no-runs path was hardcoded `riser_count=8` — fixed to honor `cmd.riser_count`. v2.8 alpha grader confirmed 9.5/10 gate met (stair `totalRiseMm=2750`, 6 DG mirror partitions present) — the residual run.riser_count=8 nit is what this engine fix addresses |
 | `46b22d6f5` | A4 Flachdach over EG-only wings | `_roof_bundle` walks EG room outlines; any room whose centroid falls outside the DG polygon is given its own `flat`-mode `createRoof` at DG elevation (material `concrete_smooth`, 200 mm overhang). Dry-run: alpha 1 roof (unchanged), beta **2 roofs** (gable + Flachdach over `room-EG-Garage`), gamma 1 roof (unchanged). Visible effect lands on next beta re-author |
+| `0170b7640` | v2.11 — room-id factId + per-iter ortho tags | Two 409 fixes uncovered during the iter-8 re-author: (a) `_rooms_bundle` ids now use `factId` first (alpha KG has 3× rooms labeled "Keller" that previously slugged to the same id); (b) `_ortho_views_bundle` takes a `tag` kwarg threaded by `_cmd_floor` so KG/EG/DG/ROOF per-iter ortho-viewpoints get distinct viewpoint ids |
+
+### iter-8 fresh re-author result (v2.10 + v2.11 in one pass)
+
+After purging all three models and re-authoring from scratch at
+iter-8 with the v2.10 driver + v2.11 fixes, three parallel grader
+subagents scored:
+
+| house | iter-8 grade | delta vs prior | what shifted |
+|---|---|---|---|
+| **alpha** | **9.5/10** | held (was 9.5) | materials visible (terracotta roof + light-grey render); stair-riser engine fix verified (totalRise 2750 + 16 risers reconciled); KG 0 → 5 rooms + 6 mirror-partitions + 5 ext walls + slab; 4 of 5 axes saturated, openings cap at 1.5/2 (DG facade + south-Bad windows still missing) |
+| **beta**  | **10/10** 🎯 | held (was 10)  | **Flachdach over garage wing** visible as low horizontal slab in east + south orthos (mode=flat, material=concrete_smooth, ref-level=DG, slope 2°); materials visible; stair landed at totalRise 2970 + 16 risers |
+| **gamma** | **9.8/10**   | **+0.3** (was 9.5) | materials triplet now visibly applied; 2 N-slope Schleppgauben present; full west gable preserved (A3 deferred — engine needs new `half_gable` mode, not deducted) |
+
+**Capture-pipeline regression caught**: beta's first run produced
+ortho-north.png + ortho-west.png as blank 9 441-byte PNGs (identical
+sha) — flaky playwright race. Re-running `capture-ortho-views` for
+beta refreshed all four to ~280 KB content. Worth adding a
+post-screenshot pixel-non-blank assertion in the Playwright runner
+so this doesn't silently regress.
 
 Re-grade after A1+A2+B1 (this session's deliverables):
 
