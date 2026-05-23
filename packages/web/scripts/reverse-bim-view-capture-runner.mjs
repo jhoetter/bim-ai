@@ -199,6 +199,13 @@ export function buildReverseBimViewCaptureRunManifest({
   return manifest;
 }
 
+// Pixels below this PNG size on the 1920×1080 viewport are reliably blank
+// canvases (the runner's been observed emitting 9441-byte all-white PNGs when
+// the WebGL renderer hasn't drawn yet). 30 KB is a generous floor; real frames
+// with the 3D viewer + chrome land at ~250 KB+.
+const BLANK_PNG_BYTES_THRESHOLD = 30_000;
+const RETRY_ON_BLANK = 2;
+
 async function captureOneView(page, capture, timeoutMs) {
   const startedAt = new Date().toISOString();
   const screenshotPath = path.resolve(String(capture.path));
@@ -216,12 +223,25 @@ async function captureOneView(page, capture, timeoutMs) {
     await waitForModelIdle(page, timeoutMs);
     const selector = screenshotSelector(capture);
     const target = page.locator(selector).first();
-    if ((await target.count()) > 0) {
-      await target.screenshot({ path: screenshotPath, timeout: timeoutMs });
-    } else {
-      await page.screenshot({ path: screenshotPath, fullPage: true, timeout: timeoutMs });
+    const shoot = async () => {
+      if ((await target.count()) > 0) {
+        await target.screenshot({ path: screenshotPath, timeout: timeoutMs });
+      } else {
+        await page.screenshot({ path: screenshotPath, fullPage: true, timeout: timeoutMs });
+      }
+    };
+    // Tail wait: give the WebGL canvas a brief moment to draw after camera move.
+    await page.waitForTimeout(800);
+    await shoot();
+    // Retry-on-blank: the renderer occasionally drops a blank frame even after
+    // model-idle returns. Detect by file size and re-shoot with a longer wait.
+    let fileBuffer = await fs.readFile(screenshotPath);
+    for (let attempt = 1; attempt <= RETRY_ON_BLANK; attempt++) {
+      if (fileBuffer.length >= BLANK_PNG_BYTES_THRESHOLD) break;
+      await page.waitForTimeout(1500 * attempt);
+      await shoot();
+      fileBuffer = await fs.readFile(screenshotPath);
     }
-    const fileBuffer = await fs.readFile(screenshotPath);
     return {
       captureId: capture.captureId,
       evidenceKind: capture.evidenceKind,

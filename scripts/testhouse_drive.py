@@ -888,10 +888,14 @@ def _topology_bundle(
         {"xMm": xmin, "yMm": ymax},
     ]
 
-    # KG sits at -2500; place the toposolid surface ~at grade (0 mm)
-    # with the solid extending 1500 mm down. The KG excavation is
-    # authored later as a Toposolid excavation relation against the
-    # KG slab.
+    # Engine semantics: ``baseElevationMm`` is the TOP face of the
+    # toposolid; the bottom is computed as ``baseElevationMm − thicknessMm``
+    # (see ``export_stl.py::_append_extruded_polygon_mm`` for the toposolid
+    # element). To land the surface at grade (z=0) so the building isn't
+    # floating, pass baseElevationMm=0 with thicknessMm=1500 → solid extends
+    # from −1500 mm to 0. Earlier versions of this driver mis-interpreted the
+    # field as the bottom and produced a 1500 mm air gap between toposolid
+    # top and the EG slab.
     return (
         {
             "schemaVersion": "cmd-v3.0",
@@ -902,7 +906,7 @@ def _topology_bundle(
                     "name": "Site toposolid",
                     "boundaryMm": topo_poly,
                     "thicknessMm": 1500,
-                    "baseElevationMm": -1500,
+                    "baseElevationMm": 0,
                 }
             ],
             "parentRevision": parent_revision,
