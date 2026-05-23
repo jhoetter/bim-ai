@@ -141,7 +141,13 @@ export function AgentHouseDashboard(): JSX.Element {
       {loading ? <p>Loading dashboard…</p> : null}
       {error ? <p className="agents-error">Failed to load: {error}</p> : null}
 
-      {data && !loading ? (
+      {data && !loading && !data.present ? (
+        <p className="agents-empty">
+          No artifacts found under <code>tmp/reverse-bim/house-{house}/</code>.
+        </p>
+      ) : null}
+
+      {data && !loading && data.present ? (
         <>
           <section className="agents-dashboard-grid">
             <div className="agents-card">

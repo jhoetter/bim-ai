@@ -46,7 +46,8 @@ def _reverse_bim_dir() -> Path:
     env = os.getenv("BIM_AI_REVERSE_BIM_DIR")
     if env:
         return Path(env)
-    return Path(__file__).resolve().parents[2] / "tmp" / "reverse-bim"
+    # routes/agent_runs.py → routes/ → bim_ai/ → app/ → <repo root>
+    return Path(__file__).resolve().parents[3] / "tmp" / "reverse-bim"
 
 
 def _validate_house(house: str) -> str:
