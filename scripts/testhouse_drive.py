@@ -1389,6 +1389,120 @@ def _openings_bundle(
     )
 
 
+def _stair_endpoints(fact: dict) -> tuple[list[float], list[float]] | None:
+    """Return (startMm, endMm) for a stair_run fact across IR variants.
+
+    Tolerates:
+      * ``startMm + endMm`` as ``[x, y]`` lists or ``{xMm, yMm}`` dicts (gamma)
+      * ``polygonMm`` outline — take the bounding box's longer diagonal
+        as the run direction (alpha, beta)
+    """
+
+    s, e = fact.get("startMm"), fact.get("endMm")
+
+    def _to_pt(v: Any) -> list[float] | None:
+        if isinstance(v, list) and len(v) >= 2:
+            try:
+                return [float(v[0]), float(v[1])]
+            except (TypeError, ValueError):
+                return None
+        if isinstance(v, dict):
+            try:
+                return [float(v.get("xMm") or 0), float(v.get("yMm") or 0)]
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    sp, ep = _to_pt(s), _to_pt(e)
+    if sp is not None and ep is not None:
+        return (sp, ep)
+
+    poly = fact.get("polygonMm") or fact.get("polygonMM")
+    if isinstance(poly, list) and len(poly) >= 3:
+        try:
+            xs = [float(p[0]) for p in poly]
+            ys = [float(p[1]) for p in poly]
+            xmin, xmax = min(xs), max(xs)
+            ymin, ymax = min(ys), max(ys)
+            dx, dy = xmax - xmin, ymax - ymin
+            if dx >= dy:
+                cy = (ymin + ymax) / 2
+                return ([xmin, cy], [xmax, cy])
+            cx = (xmin + xmax) / 2
+            return ([cx, ymin], [cx, ymax])
+        except (TypeError, ValueError, IndexError):
+            return None
+    return None
+
+
+def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
+    """Author createStair commands for IR stair_run facts on the EG floor.
+
+    EG owns the EG↔DG stair per the SKILL.md convention. Each fact's
+    geometry resolves to a straight run via ``_stair_endpoints``.
+    """
+
+    facts = [
+        f
+        for f in (ir.get("extractedFacts") or [])
+        if f.get("kind") == "stair_run"
+        # EG owns the EG↔DG stair; we filter to ones either levelId=level-EG
+        # or that explicitly reference EG↔DG.
+        and (f.get("levelId") in (None, "level-EG", "global") or "EG" in str(f.get("factId") or ""))
+    ]
+    if not facts:
+        return None
+    eg_level_id = f"th-{house}-level-EG"
+    dg_level_id = f"th-{house}-level-DG"
+    commands: list[dict] = []
+    consumed: list[str] = []
+    for f in facts:
+        pts = _stair_endpoints(f)
+        if pts is None:
+            continue
+        sp, ep = pts
+        # Treads: fact may give an integer count. Default 16 (typical
+        # EG↔DG run with 2.7 m rise / 175 mm riser ≈ 15.4 → 16).
+        risers = int(f.get("risers") or f.get("riserCount") or 16)
+        commands.append(
+            {
+                "type": "createStair",
+                "id": f"th-{house}-stair-{_slugify(f.get('factId'))}",
+                "name": (str(f.get("text") or "Stair EG↔DG"))[:80],
+                "baseLevelId": eg_level_id,
+                "topLevelId": dg_level_id,
+                "runStartMm": {"xMm": float(sp[0]), "yMm": float(sp[1])},
+                "runEndMm": {"xMm": float(ep[0]), "yMm": float(ep[1])},
+                "widthMm": float(f.get("widthMm") or 1000),
+                "riserMm": 175.0,
+                "treadMm": float(f.get("treadMm") or 275),
+                "shape": "straight",
+                "riserCount": risers,
+            }
+        )
+        consumed.append(str(f.get("factId")))
+    if not commands:
+        return None
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_eg_stairs",
+                    "value": f"{len(commands)} stair(s) EG↔DG from IR.stair_run facts",
+                    "confidence": 0.6,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": "iter-1 reader: stair_run facts",
+                }
+            ],
+        },
+        consumed,
+    )
+
+
 def _dormer_facade_side(fact: dict) -> str | None:
     """Extract the facade side (north/east/south/west) from a dormer fact.
 
@@ -2007,6 +2121,47 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 narrative_outcome=(
                     f"{len(consumed)} Schleppgauben hosted on the main roof; closes the "
                     "iter-7 source-faithful gap the grader flagged on all three houses."
+                ),
+            )
+
+        # eg-stairs — deferred to ROOF iter because the engine requires
+        # the DG slab + base/top floor surfaces to exist before a stair
+        # can land its top landing. Fires after roof-main so both
+        # floors are fully in place.
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        stairs_pair = _stairs_bundle(ir=ir, parent_revision=rev, house=house)
+        if stairs_pair is not None:
+            bundle, consumed = stairs_pair
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(ir.get("extractedFacts") or [], "stair_run")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase="eg-stairs",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+                narrative_input=(
+                    f"{len(consumed)} stair_run fact(s) from the iter-1 reader for "
+                    "the Treppenhaus EG↔DG run. Each fact carries either explicit "
+                    "startMm/endMm endpoints or a polygon outline of the run."
+                ),
+                narrative_reasoning=(
+                    "Deferred from the EG iter to the ROOF iter because the engine's "
+                    "stair-landing check requires the DG floor surface to exist before "
+                    "the top landing can host. Author straight-shape createStair with "
+                    "EG (base) + DG (top); polygon outlines reduce to the bounding "
+                    "box's longer diagonal. Default 16 risers @ 175 mm / 275 mm tread."
+                ),
+                narrative_outcome=(
+                    f"{len(consumed)} stair(s) committed; DG rooms now have actual "
+                    "vertical-circulation access from EG (closes the "
+                    "room_without_door_access warning chain on DG)."
                 ),
             )
 
