@@ -272,6 +272,75 @@ used to score it at 6.5 / 10.
 individual exit-condition greps for the largest god files remain
 above target.
 
+## 2026-05-23 Pickup Session — Summary
+
+Carried forward from the 2026-05-22 session (PC crash interrupted
+cleanup). Net move: **25 → 28 of 36** packages done. Six godfile
+splits + the pipeline-boundary typing remain genuinely multi-PR
+and are explicitly deferred to focused future sessions.
+
+### Done this session
+- **BRT-33 follow-up.** Two callers (`constraints_evaluation.py`,
+  `constraints_tail_advisories.py`) still imported from the
+  pre-move `bim_ai.schedule_sheet_export_parity` and
+  `bim_ai.room_color_scheme_override_evidence` paths — both modules
+  raised `ImportError` until the imports moved under
+  `bim_ai.evidence.*`. Committed as `035e2d9c`.
+- **Test baseline rehydrated.** `EXPECTED_COMMAND_COUNT` bumped
+  261 → 262 to match `UpsertSourceViewEvidenceCmd`. Two
+  `fake_uncached` signatures accept the `lightweight` kwarg added
+  by PERF-F06. Suite now green: 3,361 passed, 97 skipped.
+- **BRT-14 marked Done.** The duplicate-helpers gate + baseline
+  (`scripts/check-duplicate-helpers.mjs` +
+  `spec/governance/duplicate-helpers-baseline.json`) landed in
+  commit `77639aa5`; tracker hadn't been updated.
+- **BRT-52 marked Done.** Two remaining ruff carve-outs each
+  carry an explanatory comment naming the dependency.
+- **BRT-61 marked Done.** Added three structured entry logs to
+  round out the per-phase set: `integrity_preflight.start`,
+  `hybrid_slice_execute.start`, `hybrid_run_execute.start`. With
+  the existing `folder_output` + `reader_dispatch` entries, all
+  four pipeline phases now emit a structured log carrying the
+  contextvar correlation_id minted by the BRT-62 middleware.
+  Per-phase exit logs depend on BRT-20 fan-out.
+- **`routes/catalogs.py`.** Single bare-`dict` return type
+  promoted to `dict[str, Any]` — only typed-contracts gap among
+  the seven `routes/*.py` modules that pass mypy clean.
+
+### Still Pending — explicit reasons each is deferred
+- **BRT-05 + BRT-21** (pipeline-boundary typing → drop
+  isinstance guards): Six entry-point functions return
+  `dict[str, Any]` with deeply variable shapes. Pydantic models
+  with `extra="allow"` are the spec'd shape but converting at
+  every call site touches 10+ modules and risks wire-format
+  drift on response bodies that FastAPI re-serializes. The
+  cleanest first slice is to wrap with TypedDict instead — but
+  the spec is explicit about Pydantic, so this needs a
+  scope/design conversation before a deep dive.
+- **BRT-20** (440-LOC orchestrator decomposition):
+  `build_reverse_bim_folder_output` chains 50+ inter-phase
+  variables. Each phase reads from earlier phases; many phase
+  results feed multiple downstream consumers. Decomposing
+  without breaking byte-identity needs a phase-state dataclass
+  threaded through named callables — 4-8 hours of careful
+  test-protected extraction.
+- **BRT-22 / BRT-23 / BRT-24 / BRT-25 / BRT-26** (god-file
+  splits): each is multi-day work on its own. Notes from the
+  2026-05-22 summary still apply: `commands.py` (2,995),
+  `elements.py` (2,936), `routes/api.py` (2,909),
+  `api/registry.py` (2,946), `folder_output.py` (3,022 today,
+  ↑ from 2,851 — drifted further).
+- **BRT-50** stays blocked on BRT-24.
+- **BRT-43** progress: investigated expanding the strict-
+  override list to 7 additional `routes/*.py` modules that
+  mypy-clean today (agent_runs, catalogs, presentation,
+  query_resolve, sharing, sketch_product, time_travel).
+  Reverted because adding strict flags to those modules
+  cascades 318 new `note:` lines elsewhere — net-negative for
+  the baseline-shrink goal. Real progress here needs a
+  targeted error-class fix (e.g., the 145 `type-arg` errors)
+  rather than scope expansion.
+
 ### Done
 - **Theme 2 (shared utilities) — complete.** BRT-10/11/12/13/14 all
   done. `bim_ai._io.*` exists with `digest`, `sha256_json`,
