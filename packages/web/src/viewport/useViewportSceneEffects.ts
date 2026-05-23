@@ -7,6 +7,7 @@ import type { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import type { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { CsgRequest } from './csgWorker';
+import { recordViewportRebuild } from './viewportRebuildStats';
 import type { Element, LensMode } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import type { StoreState } from '../state/storeTypes';
@@ -483,6 +484,10 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
   useEffect(() => {
     const root = rootGroupRef.current;
     if (!root) return;
+
+    // PERF-I04: time the diff + rebuild pass so the probe can report rebuild
+    // cadence + mesh churn after a scenario.
+    const rebuildStart = performance.now();
 
     const curr = elementsById;
     const prev = prevElementsByIdRef.current;
@@ -1213,6 +1218,15 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     }
 
     prevElementsByIdRef.current = curr;
+
+    // PERF-I04: emit diff sizes + wall-clock to the dev probe.
+    recordViewportRebuild({
+      addedCount: addedIds.size,
+      removedCount: removedIds.size,
+      changedCount: changedIds.size,
+      extraDirtyCount: extraDirty.size,
+      rebuildMs: performance.now() - rebuildStart,
+    });
   }, [
     elementsById,
     roofJoinPreview,
