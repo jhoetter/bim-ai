@@ -263,6 +263,73 @@ def _ir_path(house: str) -> Path:
     return _house_workdir(house) / "understanding" / "existing-building-ir.json"
 
 
+def _lvl_height_mm(lvl: dict, default: float = 2700.0) -> float:
+    """Read a level's floor-to-floor height tolerant of every IR schema variant.
+
+    Reader IRs across v2.0 / v2.1 use one of these keys:
+      * ``heightMM`` — alpha v2.0 (uppercase MM)
+      * ``heightMm`` — gamma v2.1 (lowercase Mm)
+      * ``floorToFloorMm`` — alpha v2.1 fact-grounded variant
+    """
+
+    for key in ("heightMM", "heightMm", "floorToFloorMm"):
+        v = lvl.get(key)
+        if v is not None:
+            return float(v)
+    return default
+
+
+def _lvl_elevation_mm(lvl: dict, default: float = 0.0) -> float:
+    """Mirror of :func:`_lvl_height_mm` for the level elevation."""
+
+    for key in ("elevationMM", "elevationMm"):
+        v = lvl.get(key)
+        if v is not None:
+            return float(v)
+    return default
+
+
+def _partition_segment(fact: dict) -> list[list[float]] | None:
+    """Return a 2-vertex line segment for an interior_partition fact.
+
+    Tolerant of both reader-IR shapes:
+      * ``polygonMm: [[ax, ay], [bx, by]]`` (alpha, beta)
+      * ``startMm: {xMm, yMm}`` + ``endMm: {xMm, yMm}`` (gamma)
+    Returns ``None`` if neither is present or malformed.
+    """
+
+    seg = fact.get("polygonMm") or fact.get("polygonMM")
+    if isinstance(seg, list) and len(seg) >= 2:
+        try:
+            return [
+                [float(seg[0][0]), float(seg[0][1])],
+                [float(seg[1][0]), float(seg[1][1])],
+            ]
+        except (KeyError, TypeError, IndexError):
+            pass
+    start = fact.get("startMm")
+    end = fact.get("endMm")
+    if isinstance(start, dict) and isinstance(end, dict):
+        try:
+            return [
+                [float(start.get("xMm") or 0), float(start.get("yMm") or 0)],
+                [float(end.get("xMm") or 0), float(end.get("yMm") or 0)],
+            ]
+        except (TypeError, ValueError):
+            pass
+    # Some IRs use [x, y] lists rather than {xMm, yMm} dicts for the
+    # endpoints (gamma v2.1).
+    if isinstance(start, list) and isinstance(end, list) and len(start) >= 2 and len(end) >= 2:
+        try:
+            return [
+                [float(start[0]), float(start[1])],
+                [float(end[0]), float(end[1])],
+            ]
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 def _ensure_model(*, house: str, api_base: str) -> str:
     """Return a bim_models.id for ``house``; create if absent.
 
@@ -300,7 +367,7 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     house = ir["house"]
     poly = ir["exteriorWallChainEG"]["polygonMM"]
     thickness = float(ir["exteriorWallChainEG"]["wallThicknessMM"])
-    eg_height = next((lvl["heightMM"] for lvl in ir["levels"] if lvl["id"] == "level-EG"), 2700)
+    eg_height = next((_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"] == "level-EG"), 2700)
 
     level_kg = f"th-{house}-i{iter_n}-level-KG"
     level_eg = f"th-{house}-i{iter_n}-level-EG"
@@ -313,7 +380,7 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
                 "type": "createLevel",
                 "id": {"KG": level_kg, "EG": level_eg, "DG": level_dg}[lvl["id"].split("-")[-1]],
                 "name": lvl["name"],
-                "elevationMm": float(lvl["elevationMM"]),
+                "elevationMm": _lvl_elevation_mm(lvl),
             }
         )
 
@@ -786,7 +853,7 @@ def _project_setup_bundle(*, ir: dict, parent_revision: int, house: str) -> dict
                 "type": "createLevel",
                 "id": f"th-{house}-level-{short}",
                 "name": lvl.get("name") or short,
-                "elevationMm": float(lvl.get("elevationMM") or 0),
+                "elevationMm": _lvl_elevation_mm(lvl),
             }
         )
     if not commands:
@@ -813,7 +880,7 @@ def _rooms_bundle(
 ) -> tuple[dict, list[str]] | None:
     level_id = f"th-{house}-level-{level_short}"
     eg_height = next(
-        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+        (_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
     )
     facts = _facts_for_level(ir, f"level-{level_short}")
     rooms = _facts_by_kind(facts, "room_outline")
@@ -864,7 +931,7 @@ def _exterior_walls_bundle(
 ) -> tuple[dict, list[str]] | None:
     level_id = f"th-{house}-level-{level_short}"
     eg_height = next(
-        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+        (_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
     )
     facts = _facts_for_level(ir, f"level-{level_short}")
     chain_facts = _facts_by_kind(facts, "exterior_wall_chain")
@@ -890,12 +957,12 @@ def _exterior_walls_bundle(
         text = f"{p.get('text') or ''} {p.get('note') or ''} {p.get('factId') or ''}".lower()
         if "party" not in text:
             continue
-        seg = p.get("polygonMm") or p.get("polygonMM") or []
-        if isinstance(seg, list) and len(seg) >= 2:
+        seg = _partition_segment(p)
+        if seg is not None:
             party_segments.append(
                 (
-                    (float(seg[0][0]), float(seg[0][1])),
-                    (float(seg[1][0]), float(seg[1][1])),
+                    (seg[0][0], seg[0][1]),
+                    (seg[1][0], seg[1][1]),
                 )
             )
 
@@ -977,7 +1044,7 @@ def _partitions_bundle(
 
     level_id = f"th-{house}-level-{level_short}"
     floor_height = next(
-        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+        (_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
     )
     facts = _facts_for_level(ir, f"level-{level_short}")
     partitions = _facts_by_kind(facts, "interior_partition")
@@ -987,8 +1054,13 @@ def _partitions_bundle(
     commands: list[dict] = []
     consumed: list[str] = []
     for p in partitions:
-        seg = p.get("polygonMm") or p.get("polygonMM") or []
-        if not isinstance(seg, list) or len(seg) < 2:
+        # Author EVERY partition (incl. party-wall partitions) as a
+        # 175 mm interior wall. The exterior-walls bundle separately
+        # detects party-wall partitions and drops the matching
+        # exterior-chain edge so the two never stack — the visible
+        # west boundary is the 175 mm partition, no 365 mm exterior.
+        seg = _partition_segment(p)
+        if seg is None:
             continue
         a, b = seg[0], seg[1]
         if a == b:
@@ -1092,7 +1164,7 @@ def _openings_bundle(
     windows = _facts_by_kind(facts, "window")
 
     eg_height = next(
-        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+        (_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
     )
 
     commands: list[dict] = []
@@ -1111,8 +1183,30 @@ def _openings_bundle(
         cmd_type: str,
         extra_cmd_fields: dict,
     ) -> None:
+        # Reader IRs use one of three shapes for opening position:
+        #   1. ``vertexMm: [x, y]`` (alpha) — the door/window center.
+        #   2. ``wallStartMm + wallEndMm`` (gamma) — the host wall
+        #      segment; we take its midpoint as the vertex.
+        #   3. ``startMm + endMm`` (beta-ish alt) — same idea.
         vertex = fact.get("vertexMm")
-        if not isinstance(vertex, list) or len(vertex) < 2:
+        if not (isinstance(vertex, list) and len(vertex) >= 2):
+            for ks, ke in (("wallStartMm", "wallEndMm"), ("startMm", "endMm")):
+                s, e = fact.get(ks), fact.get(ke)
+                # Dict-shape endpoints {xMm, yMm}.
+                if isinstance(s, dict) and isinstance(e, dict):
+                    vertex = [
+                        (float(s.get("xMm") or 0) + float(e.get("xMm") or 0)) / 2,
+                        (float(s.get("yMm") or 0) + float(e.get("yMm") or 0)) / 2,
+                    ]
+                    break
+                # List-shape endpoints [x, y].
+                if isinstance(s, list) and isinstance(e, list) and len(s) >= 2 and len(e) >= 2:
+                    vertex = [
+                        (float(s[0]) + float(e[0])) / 2,
+                        (float(s[1]) + float(e[1])) / 2,
+                    ]
+                    break
+        if not (isinstance(vertex, list) and len(vertex) >= 2):
             return
         wall, t = _host_on_nearest_wall(vertex, walls)
         if wall is None:
@@ -1329,7 +1423,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 narrative_input=(
                     f"{len(levels)} storey level(s) declared by the iter-1 reader: "
                     + ", ".join(
-                        f"{lvl['name']} @ {lvl['elevationMM']}mm (height {lvl['heightMM']}mm)"
+                        f"{lvl['name']} @ {int(_lvl_elevation_mm(lvl))}mm (height {int(_lvl_height_mm(lvl))}mm)"
                         for lvl in levels
                     )
                 ),
@@ -1619,7 +1713,109 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 ),
             )
 
+    # Always author + capture 4 cardinal ortho views at the end of
+    # every floor iter so the /agents dashboard renders a visual
+    # progression (bare site → KG slab → EG mass → DG → roof). See
+    # spec/trackers/testhouse-clean-rebuild-tracker.md "Per-floor
+    # phase contract".
+    if not args.skip_per_iter_capture:
+        try:
+            snap = _snapshot(api_base=api_base, model_id=model_id)
+            rev = int(snap.get("revision") or 1)
+            ov_bundle = _ortho_views_bundle(
+                snapshot=snap, parent_revision=rev, iter_n=iter_n, house=house
+            )
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-ortho-viewpoints",
+                bundle=ov_bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=[],
+                source_evidence=[],
+                narrative_input=(
+                    f"Live model bbox at revision {rev} after the {floor.lower()} "
+                    "authoring slices — walls, slabs, and roof if present."
+                ),
+                narrative_reasoning=(
+                    "Per-iter visual loop: author 4 cardinal cameras (N/E/S/W) at "
+                    "2.5× bbox diagonal so the perspective is near-orthographic, "
+                    "then drive Playwright to capture each viewpoint. Lands the "
+                    "per-iter ortho strip on the /agents dashboard so a reviewer "
+                    "sees the building grow across iters."
+                ),
+                narrative_outcome=(
+                    "4 saveViewpoint commands committed. Playwright capture follows."
+                ),
+            )
+            _capture_ortho_for_iter(
+                house=house, iter_n=iter_n, api_base=api_base, web_base=DEFAULT_WEB_BASE
+            )
+        except Exception as exc:  # noqa: BLE001 — capture is best-effort per iter
+            logger.warning(
+                "testhouse_iter.per_iter_ortho_failed",
+                extra={
+                    "house": house,
+                    "iter": iter_n,
+                    "phase": f"{floor.lower()}-ortho-captures",
+                    "error": str(exc)[:200],
+                },
+            )
+
     return 0
+
+
+def _capture_ortho_for_iter(*, house: str, iter_n: int, api_base: str, web_base: str) -> dict:
+    """Drive Playwright to capture 4 ortho views for a single iter.
+
+    Extracted so the per-iter floor command can call it without going
+    through the argparse subcommand wrapper. Same dual-write to the
+    legacy iter-N-captures/ layout the dashboard reads.
+    """
+
+    model_id = _ensure_model(house=house, api_base=api_base)
+    out_dir = _house_workdir(house) / f"iter-{iter_n}" / "captures"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plan = _ortho_capture_plan(
+        house=house, iter_n=iter_n, model_id=model_id, web_base=web_base, out_dir=out_dir
+    )
+    plan_path = out_dir / "ortho-capture-plan.json"
+    plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True), encoding="utf-8")
+    cmd = [
+        "pnpm",
+        "--filter",
+        "@bim-ai/web",
+        "reverse-bim:capture",
+        "--",
+        "--plan",
+        str(plan_path),
+        "--out",
+        str(out_dir),
+        "--json",
+    ]
+    proc = subprocess.run(  # noqa: S603 — known command
+        cmd,
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=240,
+    )
+    pngs = sorted(out_dir.glob("ortho-*.png"))
+    legacy_written = _dual_write_captures(
+        house=house, iter_n=iter_n, source_dir=out_dir, capture_name_prefix="ortho"
+    )
+    logger.info(
+        "testhouse_iter.per_iter_ortho_captured",
+        extra={
+            "house": house,
+            "iter": iter_n,
+            "png_count": len(pngs),
+            "legacy_dual_write_count": len(legacy_written),
+            "returncode": proc.returncode,
+        },
+    )
+    return {"png_count": len(pngs), "returncode": proc.returncode}
 
 
 def _apply_slice_v2(
@@ -2157,6 +2353,11 @@ def _build_parser() -> argparse.ArgumentParser:
     fl.add_argument("--house", required=True, choices=HOUSES)
     fl.add_argument("--iter", type=int, required=True)
     fl.add_argument("--floor", required=True, choices=("TOPOLOGY", "KG", "EG", "DG", "ROOF"))
+    fl.add_argument(
+        "--skip-per-iter-capture",
+        action="store_true",
+        help="Skip the auto ortho-view authoring + Playwright capture at the end of this iter.",
+    )
     fl.set_defaults(func=_cmd_floor)
 
     cap = sub.add_parser(

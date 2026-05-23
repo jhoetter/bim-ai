@@ -170,6 +170,14 @@ distinct `phase` slug; the six commits together form one floor:
    source floor plan + elevation pages; require **`≥ 9/10`** to
    advance (target `10/10`).
 
+**4 cardinal ortho 3D views land at EVERY iter, not just the final
+one.** Topology, KG, EG, DG and roof each get their own
+`<iter>-ortho-viewpoints` + `<iter>-ortho-captures` pair so the
+`/agents` dashboard shows the visual progression from bare site →
+KG slab on toposolid → EG mass → DG mass → topped-out roof. A
+reviewer scanning iter cards sees the building grow without needing
+to query the live model at every commit.
+
 If `<floor>-visual-gate` returns `< 9/10`, open a
 `<floor>-corrector-<N>` phase: spawn a corrector subagent with the
 captures + the grader's `topFixesForNextIter` list, apply the

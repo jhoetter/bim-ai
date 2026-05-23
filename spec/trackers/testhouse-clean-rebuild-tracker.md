@@ -116,6 +116,16 @@ but with distinct `phase` slugs (`<floor>-rooms`, `<floor>-partitions`,
 phase. The `<floor>-visual-gate` phase is the ONLY one that calls the
 grader subagent; the other five just commit + log.
 
+**4 cardinal ortho 3D views must land at every iter, not only the
+final roof iter.** After every floor iter (`topology`, `KG`, `EG`,
+`DG`, `roof`) the driver authors + captures 4 ortho viewpoints
+(north / east / south / west @ 2.5× bbox-diag, near-orthographic
+perspective). They land under `tmp/reverse-bim/house-<X>/iter-<N>/captures/`
+AND are dual-written to the legacy `iter-<N>-captures/` layout so the
+`/agents` dashboard renders a per-iter visual progression — bare
+site → KG slab on toposolid → EG mass → DG mass → topped-out roof —
+without a reviewer needing to query the live model at every commit.
+
 If `<floor>-visual-gate` returns `< 9/10`, the driver opens a
 `<floor>-corrector` phase: spawn a focused subagent with the rendered
 captures + the grader's `topFixesForNextIter` array, apply the
