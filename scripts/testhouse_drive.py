@@ -1235,10 +1235,11 @@ def _openings_bundle(
     commands: list[dict] = []
     consumed: list[str] = []
     skipped: list[dict] = []
-    # Track running opening width per wall so we don't pile multiple
-    # doors onto a short interior partition (e.g. the 1300 mm bad/wc
-    # wall can host one door, not two).
-    wall_load_mm: dict[str, float] = {}
+    # Track placed-opening intervals per wall as (alongT_start, alongT_end)
+    # pairs. Detects positional OVERLAP (two openings sharing wall
+    # span), not just total load — the engine's hosted_opening_overlap
+    # rule rejects the bundle even if total load fits the wall.
+    wall_intervals: dict[str, list[tuple[float, float]]] = {}
 
     def _try_host(
         *,
@@ -1311,17 +1312,22 @@ def _openings_bundle(
             return
         t = max(t_min, min(t_max, t))
         wid = str(wall.get("id"))
-        used = wall_load_mm.get(wid, 0.0)
-        if used + extent > wlen:
+        # Compute the parametric interval this opening would occupy:
+        # half_extent_t = (width/2 + 100mm clearance) / wlen
+        half_t = ((opening_width_mm / 2) + 100.0) / wlen
+        my_lo, my_hi = t - half_t, t + half_t
+        # Overlap check: does (my_lo, my_hi) intersect any placed interval?
+        placed = wall_intervals.get(wid) or []
+        if any(my_lo < ph and my_hi > pl for (pl, ph) in placed):
             skipped.append(
                 {
                     "factId": fact.get("factId"),
                     "kind": opening_kind,
-                    "reason": "wall_capacity_exceeded",
+                    "reason": "overlaps_existing_opening_on_wall",
                 }
             )
             return
-        wall_load_mm[wid] = used + extent
+        wall_intervals.setdefault(wid, []).append((my_lo, my_hi))
         commands.append(
             {
                 "type": cmd_type,
