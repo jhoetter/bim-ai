@@ -341,7 +341,7 @@ Re-grade after A1+A2+B1 (this session's deliverables):
 | house | grade | delta vs v2.1 | notes |
 |---|---|---|---|
 | alpha | **7.0/10** | **−2.0** (regression) | dormers + stair landed BUT openings phase commit_blocked on the current IR — net regression on element completeness |
-| beta  | **9.0/10** | ±0   | Schleppgaube authored; stair lands; openings + partitions still fully populated |
+| beta  | **10/10** 🎯 | **+1.0** | Schleppgaube authored (closes source-faithful), stair landed, openings + partitions fully populated — first house to hit perfect score |
 | gamma | **9.5/10** | **+0.5** | 2 Schleppgauben + party-wall flat both landed; +0.5 source-faithful presence retired |
 
 Net: 1 house improved, 1 stable, 1 regressed. The alpha regression
