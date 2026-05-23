@@ -47,6 +47,7 @@ BUDGETS_MS: dict[str, float] = {
     "small.insert_window_commit": 150.0,
     "small.insert_door_commit": 150.0,  # PERF-B05
     "small.create_wall_commit": 150.0,  # PERF-B05
+    "small.move_wall_commit": 150.0,  # PERF-B05 (move existing endpoint)
     "small.evidence_package": 1_500.0,
     "schedule_heavy.room_schedule": 500.0,
     "schedule_heavy.door_schedule": 250.0,
@@ -426,6 +427,22 @@ def run_budgets() -> dict[str, Any]:
                     "end": {"xMm": 1, "yMm": 5_000},
                     "thicknessMm": 240,
                     "heightMm": 3_000,
+                },
+            ),
+        ),
+        # PERF-B05: move-wall budget. Slightly nudges an existing wall's
+        # endpoint so the command exercises the wall-geometry-change path
+        # (which dirties hosted openings + room boundaries) rather than a
+        # no-op. The east wall on the small fixture sits at x=16000.
+        _measure(
+            "small.move_wall_commit",
+            lambda: try_commit(
+                small,
+                {
+                    "type": "moveWallEndpoints",
+                    "wallId": "small-wall-east",
+                    "start": {"xMm": 16_000, "yMm": 0},
+                    "end": {"xMm": 16_050, "yMm": 9_600},
                 },
             ),
         ),
