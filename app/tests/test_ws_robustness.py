@@ -243,3 +243,33 @@ async def test_backpressure_disconnect() -> None:
         assert model_id not in hub._rooms or ws not in hub._rooms.get(model_id, set())
     finally:
         hub_module.BACKPRESSURE_THRESHOLD = original_threshold
+
+
+async def test_broadcast_json_fans_out_concurrently() -> None:
+    """PERF audit #10: broadcast_json must send to clients concurrently so a
+    slow client does not stall fast ones. Three slow sockets (50 ms each) +
+    one fast: serial would be ~150 ms, concurrent is ~50 ms."""
+    hub = Hub()
+    model_id = "model-fanout"
+
+    slow_ws_a: Any = _SlowWS(delay=0.05)
+    slow_ws_b: Any = _SlowWS(delay=0.05)
+    slow_ws_c: Any = _SlowWS(delay=0.05)
+    fast_ws: Any = _MockWS()
+    hub.subscribe(model_id, slow_ws_a)
+    hub.subscribe(model_id, slow_ws_b)
+    hub.subscribe(model_id, slow_ws_c)
+    hub.subscribe(model_id, fast_ws)
+
+    start = asyncio.get_event_loop().time()
+    await hub.broadcast_json(model_id, {"type": "delta", "n": 1})
+    elapsed = asyncio.get_event_loop().time() - start
+
+    payload = {"type": "delta", "n": 1}
+    assert slow_ws_a.sent == [payload]
+    assert slow_ws_b.sent == [payload]
+    assert slow_ws_c.sent == [payload]
+    assert fast_ws.sent == [payload]
+    # Concurrent fan-out: ~max(50, 50, 50, 0) = ~50 ms. Serial would be ~150 ms.
+    # Threshold of 120 ms catches regression to serial sends with 70 ms CI slack.
+    assert elapsed < 0.12, f"Expected concurrent fan-out (<120 ms), got {elapsed * 1000:.1f} ms"

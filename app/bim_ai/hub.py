@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from collections import deque
 from copy import deepcopy
@@ -116,14 +117,22 @@ class Hub:
         await self.broadcast_json(model_id, payload)
 
     async def broadcast_json(self, model_id: str, payload: dict[str, Any]) -> None:
+        # PERF audit #10: sends fan out concurrently via asyncio.gather so one
+        # slow socket cannot stall the others. Depth-based backpressure still
+        # gates each socket synchronously before the send awaits — the
+        # check + increment is atomic within a single _send_one frame.
         model_id = self._model_key(model_id)
         room = self._rooms.get(model_id)
         if not room:
             return
 
-        stale: list[WebSocket] = []
+        sockets = list(room)
+        if not sockets:
+            return
 
-        for ws in list(room):
+        async def _send_one(ws: WebSocket) -> WebSocket | None:
+            """Send `payload` to `ws`. Returns the ws if it should be unregistered
+            (backpressure-closed or send raised); None on success."""
             wsid = id(ws)
             depth = self._send_queue_depth.get(wsid, 0)
             if depth >= BACKPRESSURE_THRESHOLD:
@@ -131,15 +140,18 @@ class Hub:
                     await ws.close(code=1011)
                 except Exception:
                     pass
-                stale.append(ws)
-                continue
+                return ws
             self._send_queue_depth[wsid] = depth + 1
             try:
                 await ws.send_json(payload)
+                return None
             except Exception:
-                stale.append(ws)
+                return ws
             finally:
                 self._send_queue_depth[wsid] = max(0, self._send_queue_depth.get(wsid, 1) - 1)
 
-        for ws in stale:
-            self.unregister(ws)
+        results = await asyncio.gather(*(_send_one(ws) for ws in sockets))
+
+        for stale_ws in results:
+            if stale_ws is not None:
+                self.unregister(stale_ws)
