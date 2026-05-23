@@ -230,6 +230,42 @@ describe('StatusBar — spec §17', () => {
     expect(getByText('saving…')).toBeTruthy();
   });
 
+  // PERF-B06 / PERF-L03: undo button enables as soon as the
+  // pendingCommandCount goes positive, so the user gets responsive feedback
+  // during the round-trip while the authoritative undoDepth catches up.
+  it('enables the undo button speculatively when a command is pending (depth=0)', () => {
+    const onUndo = vi.fn();
+    const { getByLabelText } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        undoDepth={0}
+        redoDepth={0}
+        pendingCommandCount={1}
+        onUndo={onUndo}
+      />,
+    );
+    const undoButton = getByLabelText('Undo');
+    expect(undoButton.hasAttribute('disabled')).toBe(false);
+    expect(undoButton.getAttribute('data-undo-speculative')).toBe('true');
+    expect(undoButton.getAttribute('title')).toContain('pending');
+    fireEvent.click(undoButton);
+    expect(onUndo).toHaveBeenCalled();
+  });
+
+  it('keeps the undo button disabled when both depth and pending count are zero', () => {
+    const { getByLabelText } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        undoDepth={0}
+        redoDepth={0}
+        pendingCommandCount={0}
+      />,
+    );
+    const undoButton = getByLabelText('Undo');
+    expect(undoButton.hasAttribute('disabled')).toBe(true);
+    expect(undoButton.getAttribute('data-undo-speculative')).toBeNull();
+  });
+
   it('renders a placeholder when cursor is off-canvas', () => {
     const { getByLabelText } = renderWithI18n(
       <ViewContextStatusPanel mode="plan" level={{ id: 'lvl-ground', label: 'Ground' }} />,

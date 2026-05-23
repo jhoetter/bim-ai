@@ -725,14 +725,30 @@ function UndoCluster({
 }): JSX.Element {
   const { t } = useTranslation();
   const pendingLabel = t('statusbar.pendingCommandCount', { count: pendingCommandCount });
+  // PERF-B06 / PERF-L03: the authoritative undo depth bumps only after
+  // the server confirms each commit. To make undo feel instant during
+  // the round-trip, the button enables as soon as pendingCommandCount
+  // > 0 — that's the speculative-undo-reservation surface the L02
+  // closeout flagged. The displayed depth still shows the authoritative
+  // count (no flicker), and the +N badge surfaces the in-flight commits
+  // so the user can tell why undo is reachable when the count reads 0.
+  // If the pending commit fails, pendingCommandCount drops back to 0
+  // and the button re-disables before the user's undo click can race.
+  const speculativeUndoAvailable = undoDepth > 0 || pendingCommandCount > 0;
+  const undoBudgetLabel = t('statusbar.undoTitle');
+  const undoSpeculativeLabel =
+    pendingCommandCount > 0
+      ? `${undoBudgetLabel} (${pendingCommandCount} pending — undo reservation)`
+      : undoBudgetLabel;
   return (
     <div className="flex items-center gap-1">
       <button
         type="button"
         onClick={onUndo}
-        disabled={undoDepth <= 0}
-        title={t('statusbar.undoTitle')}
+        disabled={!speculativeUndoAvailable}
+        title={undoSpeculativeLabel}
         aria-label={t('statusbar.undoLabel')}
+        data-undo-speculative={pendingCommandCount > 0 ? 'true' : undefined}
         className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Icons.undo size={ICON_SIZE.chrome} aria-hidden="true" />
