@@ -9,6 +9,7 @@ import type { PaneNode } from './paneLayout';
 import { CompositionBar, type WorkspaceCompositionState } from './compositions';
 import { EmptyStateHint, ParticipantStrip, StatusBar } from './shell';
 import type { StatusBarProps } from './shell/StatusBar';
+import { DegradedModeBadge } from './shell/DegradedModeBadge';
 import { EmptyStateOverlay } from './WorkspaceHelpers';
 import { QuickAccessToolbar } from './QuickAccessToolbar';
 
@@ -215,5 +216,13 @@ export function WorkspaceCanvasSlot({
 }
 
 export function WorkspaceFooterSlot(props: StatusBarProps): JSX.Element {
-  return <StatusBar {...props} />;
+  return (
+    <>
+      <StatusBar {...props} />
+      {/* PERF-L05: degraded-mode chip lights up when frame-time / rebuild
+          budgets are sustained-over. Returns null when budgets are
+          healthy, so this is safe to mount unconditionally. */}
+      <DegradedModeBadge />
+    </>
+  );
 }
