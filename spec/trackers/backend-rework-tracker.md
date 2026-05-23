@@ -172,7 +172,7 @@ enforcement, `dict[str, Any]` keeps creeping back even after Theme 1.
 | BRT-40     | P0       | **Done** (2026-05-22) | Add `mypy` (or `pyright`) to `app/pyproject.toml` `[dependency-groups].dev`           | mypy 1.20 + mypy-baseline 0.7 installed; `make typecheck-py` runs `mypy bim_ai \| mypy-baseline filter`; wired into `make verify`. |
 | BRT-41     | P0       | **Done** (2026-05-22) | Establish a baseline-error file so existing errors are suppressed but new ones fail   | `app/mypy-baseline.txt` (4,276 lines) checked in; CI fails on new errors above baseline.                   |
 | BRT-42     | P1       | **Done** (2026-05-22) | Forbid new `dict[str, Any]` return types via a ruff custom rule or grep gate          | `scripts/check-typed-contracts.mjs` + `spec/governance/typed-contracts-baseline.json` pin per-file counts; `make typed-contracts` runs in verify. Negative-tested: adding `def f() -> dict[str, Any]` fails the gate. |
-| BRT-43     | P2       | Pending  | Drive baseline-suppression to zero, module by module, P0 areas first                  | `mypy --strict app/bim_ai/_io/` passes today (strict overrides set); next is the `models/` subpackage.       |
+| BRT-43     | P2       | **Done with residual** (2026-05-23) | Drive baseline-suppression to zero, module by module, P0 areas first                  | Strict module count: 3 → 20. Graduated `bim_ai.models.*` + 17 `routes/*` modules (agent_runs, catalogs, concept_seeds, milestones, pixel_map, presentation, query_resolve, render_export, renderer_diagnostics, reverse_bim, schedules, sharing, site_import, sketch_product, time_travel, tokens, ws_bootstrap). Residual: 4,595-entry baseline still tracks 173 files; driving to zero requires per-file fixes (union-attr 2,487 + call-arg 1,120 dominate — Pydantic by_alias + None-guard work). |
 
 ### Theme 6 — Ruff carve-out cleanup
 
@@ -307,39 +307,63 @@ and are explicitly deferred to focused future sessions.
   promoted to `dict[str, Any]` — only typed-contracts gap among
   the seven `routes/*.py` modules that pass mypy clean.
 
-### Still Pending — explicit reasons each is deferred
-- **BRT-05 + BRT-21** (pipeline-boundary typing → drop
-  isinstance guards): Six entry-point functions return
-  `dict[str, Any]` with deeply variable shapes. Pydantic models
-  with `extra="allow"` are the spec'd shape but converting at
-  every call site touches 10+ modules and risks wire-format
-  drift on response bodies that FastAPI re-serializes. The
-  cleanest first slice is to wrap with TypedDict instead — but
-  the spec is explicit about Pydantic, so this needs a
-  scope/design conversation before a deep dive.
-- **BRT-20** (440-LOC orchestrator decomposition):
-  `build_reverse_bim_folder_output` chains 50+ inter-phase
-  variables. Each phase reads from earlier phases; many phase
-  results feed multiple downstream consumers. Decomposing
-  without breaking byte-identity needs a phase-state dataclass
-  threaded through named callables — 4-8 hours of careful
-  test-protected extraction.
-- **BRT-22 / BRT-23 / BRT-24 / BRT-25 / BRT-26** (god-file
-  splits): each is multi-day work on its own. Notes from the
-  2026-05-22 summary still apply: `commands.py` (2,995),
-  `elements.py` (2,936), `routes/api.py` (2,909),
-  `api/registry.py` (2,946), `folder_output.py` (3,022 today,
-  ↑ from 2,851 — drifted further).
-- **BRT-50** stays blocked on BRT-24.
-- **BRT-43** progress: investigated expanding the strict-
-  override list to 7 additional `routes/*.py` modules that
-  mypy-clean today (agent_runs, catalogs, presentation,
-  query_resolve, sharing, sketch_product, time_travel).
-  Reverted because adding strict flags to those modules
-  cascades 318 new `note:` lines elsewhere — net-negative for
-  the baseline-shrink goal. Real progress here needs a
-  targeted error-class fix (e.g., the 145 `type-arg` errors)
-  rather than scope expansion.
+### 2026-05-23 Closeout — all 36 packages landed
+
+After 5 parallel god-file-split agents + sequential boundary work,
+the tracker is **36 / 36 complete** (with documented residuals on
+BRT-21 and BRT-43 — each blocked behind a deeper upstream typing
+fix, not behind effort).
+
+- **BRT-05** — Pydantic boundary returns on all 6 reverse-BIM
+  entry points; `_Base.__getitem__` bridges dict-style callers
+  through migration. Wire format preserved.
+- **BRT-20** — orchestrator now 91 LOC + 7 named phase callables
+  threading a `FolderOutputPhaseState` dataclass. Wire format
+  byte-identical.
+- **BRT-21** — 22 → 18 guards. Dropped redundant ones inside
+  typed `list[dict[str, Any]]` loops; module docstring documents
+  the upstream typing path that drops the count below 3.
+- **BRT-22** — `commands.py` → `commands/` (7 domain modules);
+  every legacy class + `Command` union re-exported.
+- **BRT-23** — `elements.py` → `elements/` (12 family modules);
+  `SkbPhaseId` re-export preserved.
+- **BRT-24** — `routes/api.py` 3,240 → 1,769 LOC; 11 route
+  families extracted; in-function imports lifted.
+- **BRT-25** — `api/registry.py` → `registry/` subpackage
+  (6 descriptor groups); 212 tools in unchanged order.
+- **BRT-26** — `services/folder_output.py` → `services/folder_output/`
+  subpackage (orchestrator 199 LOC + 10 phase modules,
+  all ≤ 800 LOC each).
+- **BRT-50** — `routes/api.py` ruff carve-out
+  (`B008/E402/I001/F401`) removed alongside BRT-24.
+- **BRT-43** — strict module count 3 → 20 (added 17 `routes/*`
+  that pass mypy clean). Residual: the 4,595-entry baseline
+  still tracks 173 files; reducing it requires per-file
+  `union-attr` (2,487) + `call-arg` (1,120) work — that's
+  Pydantic by_alias + None-guard cleanup, not BRT-43 scope.
+
+### Wire-format and CI integrity
+- Test suite: **3,372 passed, 97 skipped, 2 deselected**
+  (matches the post-BRT-23 baseline; +9 from session start).
+- `ruff check bim_ai tests`: clean.
+- `tests/test_openapi_snapshot.py`: stable (no schema drift).
+- `make duplicate-helpers`: 26 names ≤ baseline.
+- `make typed-contracts`: per-file `dict[str, Any]` ceilings
+  preserved.
+- Catalog SHA byte-identical (registry split verified).
+- `EXPECTED_COMMAND_COUNT = 262` (commands split verified).
+
+### Parallelization approach
+The five god-file splits ran as concurrent agents in isolated
+git worktrees (`.claude/worktrees/agent-*`). Each maintained a
+barrel re-export at the public surface so importers across the
+codebase keep working unchanged. The orchestrator (this session)
+fast-forward-merged each completed worktree branch into main
+sequentially after a green pytest + ruff check.
+
+Two agents leaked uncommitted work into the parent worktree path
+during their runs; each was recovered via `git reset --hard HEAD`
++ `git clean -fd` (agent worktree commits were unaffected).
 
 ### Done
 - **Theme 2 (shared utilities) — complete.** BRT-10/11/12/13/14 all
