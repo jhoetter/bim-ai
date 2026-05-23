@@ -63,6 +63,12 @@ export interface TestHouseSourceEvidence {
   renderedPath?: string | null;
 }
 
+export interface TestHousePhaseNarrative {
+  input?: string | null;
+  reasoning?: string | null;
+  outcome?: string | null;
+}
+
 export interface TestHouseIterRef {
   house?: string | null;
   iter?: number | null;
@@ -70,6 +76,41 @@ export interface TestHouseIterRef {
   consumedFactIds?: string[];
   producedElementIds?: string[];
   sourceEvidence?: TestHouseSourceEvidence[];
+  // Human-readable trio written by the testhouse driver alongside the
+  // commit. The dashboard renders this above the chip lists so reviewers
+  // can read what the agent saw / decided / produced without diving into
+  // the bundle JSON. Absent on legacy commits (pre-narrative driver).
+  narrative?: TestHousePhaseNarrative;
+  commandCount?: number;
+}
+
+// Per-house global-phase narrative JSON sidecar shape. Written by the
+// testhouse driver to ``tmp/reverse-bim/house-<X>/iter-<N>/narrative.json``
+// for phases that run BEFORE any bim_models row exists (iter-0 preflight,
+// iter-1 reader, iter-2 scope). Served at
+// ``/api/agent-runs/houses/{house}/iterations/{iter}/narrative``.
+export interface PhaseNarrativeInput {
+  path: string;
+  fileCount?: number | null;
+  [key: string]: unknown;
+}
+
+export interface PhaseNarrativeOutput {
+  path: string;
+  role?: string | null;
+  [key: string]: unknown;
+}
+
+export interface PhaseNarrativeFile {
+  schemaVersion?: string;
+  house: string;
+  iter: number;
+  phase: string;
+  narrative: TestHousePhaseNarrative;
+  inputs?: PhaseNarrativeInput[];
+  outputs?: PhaseNarrativeOutput[];
+  summary?: Record<string, unknown>;
+  elapsedMs?: number | null;
 }
 
 // IR v2 fact shape. The fact endpoint returns whatever lives in
@@ -84,6 +125,11 @@ export interface ExtractedFact {
   sourcePage?: string | null;
   confidence?: string | null;
   note?: string | null;
+  // Free-form "how the reader saw it" sentence written by the reader
+  // sub-agent (e.g. "Wohnzimmer outline traced from EG-1.png at 1:50
+  // scale, clockwise from NW corner"). Optional — older IRs predating
+  // the derivation-note channel won't carry this field.
+  derivationNote?: string | null;
   text?: string | null;
   valueMm?: number | null;
   vertexMm?: [number, number] | null;

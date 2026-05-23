@@ -703,3 +703,188 @@
   color: #888;
   margin-left: 4px;
 }
+
+.agents-trail-cmd-count {
+  font-size: 11px;
+  color: #888;
+  margin-left: 4px;
+}
+
+/* ── Narrative trio (per-commit + global-phase) ──────────────────── */
+
+.agents-narrative-panel {
+  background: #f4f8fc;
+  border: 1px solid #d4e1f0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 6px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agents-narrative-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.agents-narrative-label {
+  flex: 0 0 80px;
+  color: #4a6788;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+
+.agents-narrative-text {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1c2733;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Global preflight + reader trace section ─────────────────────── */
+
+.agents-global-phase-section {
+  margin-top: 24px;
+}
+.agents-global-phase-section h2 {
+  margin: 8px 0 4px;
+  font-size: 16px;
+}
+
+.agents-global-phase-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agents-global-phase-card {
+  background: #fff;
+  border: 1px solid #d8dde3;
+  border-radius: 5px;
+  padding: 10px 14px;
+}
+
+.agents-global-phase-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.agents-global-phase-iter code {
+  background: #eef3fa;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #1659b8;
+}
+
+.agents-global-phase-phase {
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+}
+
+.agents-global-phase-elapsed {
+  font-size: 11px;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+  background: #f7f7f7;
+  border: 1px solid #e3e3e3;
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.agents-global-phase-section .agents-global-phase-section-label {
+  display: block;
+  color: #666;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 6px 0 2px;
+}
+
+.agents-global-phase-inputs,
+.agents-global-phase-outputs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agents-global-phase-inputs code,
+.agents-global-phase-outputs code {
+  font-size: 11px;
+  color: #444;
+}
+
+.agents-global-phase-input-idx {
+  color: #777;
+  font-size: 11px;
+}
+
+.agents-global-phase-output {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.agents-global-phase-output-role {
+  background: #fff3dc;
+  border: 1px solid #e0c87a;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #80551c;
+}
+
+.agents-global-phase-output-path {
+  word-break: break-all;
+}
+
+/* ── Fact popover: derivationNote + source-page thumbnail ────────── */
+
+.agents-fact-derivation-label {
+  color: #4a6788;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.agents-fact-source-thumb {
+  display: inline-block;
+  margin-top: 4px;
+  border: 1px solid #cfd6dc;
+  border-radius: 3px;
+  padding: 2px;
+  background: #fff;
+  text-decoration: none;
+}
+.agents-fact-source-thumb:hover {
+  border-color: #1659b8;
+}
+.agents-fact-source-thumb img {
+  display: block;
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 2px;
+  background: #f0f0f0;
+}

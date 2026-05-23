@@ -6,7 +6,10 @@ import type {
   ExtractedFact,
   IterPickerItem,
   IterPickerResponse,
+  PhaseNarrativeFile,
+  PhaseNarrativeOutput,
   SessionSummary,
+  TestHousePhaseNarrative,
   TestHouseSourceEvidence,
 } from './types';
 import './agents.css';
@@ -161,6 +164,15 @@ export function AgentHouseDashboard(): JSX.Element {
   // or 404. The fetch is lazy so we don't fan out N requests on first
   // render for houses with many iters.
   const [iterScoring, setIterScoring] = useState<Record<string, string>>({});
+  // Global-phase narratives (iter-0 preflight, iter-1 reader, iter-2
+  // scope). These run BEFORE any bim_models row exists so they can't
+  // ride on the commit-context carrier; instead the driver writes a
+  // sidecar JSON we fetch here. Map iter label → narrative file (or
+  // null = 404 = not yet written).
+  const [globalPhaseNarratives, setGlobalPhaseNarratives] = useState<
+    Record<string, PhaseNarrativeFile | null>
+  >({});
+  const [globalPhaseLoading, setGlobalPhaseLoading] = useState(true);
 
   useEffect(() => {
     if (!house) return;
@@ -317,6 +329,63 @@ export function AgentHouseDashboard(): JSX.Element {
       cancelled = true;
     };
   }, [house, trailModelId]);
+
+  // Fetch the three global-phase narrative sidecars in parallel.
+  // 404 is the common-and-expected case (driver hasn't run yet or
+  // didn't write a sidecar for that phase), so we store null on 404
+  // and surface a placeholder when ALL three are missing.
+  useEffect(() => {
+    if (!house) {
+      setGlobalPhaseNarratives({});
+      setGlobalPhaseLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setGlobalPhaseLoading(true);
+    const iters = ['iter-0', 'iter-1', 'iter-2'];
+    Promise.all(
+      iters.map(async (iter) => {
+        const res = await fetch(
+          `/api/agent-runs/houses/${encodeURIComponent(house)}/iterations/${encodeURIComponent(iter)}/narrative`,
+        );
+        if (res.status === 404) return [iter, null] as const;
+        if (!res.ok) {
+          // Treat unexpected errors as "absent" for the placeholder
+          // path; we don't want a flaky endpoint to crash the page.
+          return [iter, null] as const;
+        }
+        const payload = (await res.json()) as PhaseNarrativeFile;
+        return [iter, payload] as const;
+      }),
+    )
+      .then((entries) => {
+        if (cancelled) return;
+        const next: Record<string, PhaseNarrativeFile | null> = {};
+        for (const [iter, file] of entries) next[iter] = file;
+        setGlobalPhaseNarratives(next);
+        setGlobalPhaseLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGlobalPhaseNarratives({});
+        setGlobalPhaseLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [house]);
+
+  // Ordered iter-0/1/2 entries for the global-phase section. Skipped
+  // entries (404) drop out; if ALL drop out we render a placeholder.
+  const globalPhaseEntries = useMemo<Array<{ iter: string; file: PhaseNarrativeFile }>>(() => {
+    const order = ['iter-0', 'iter-1', 'iter-2'];
+    const out: Array<{ iter: string; file: PhaseNarrativeFile }> = [];
+    for (const iter of order) {
+      const file = globalPhaseNarratives[iter];
+      if (file) out.push({ iter, file });
+    }
+    return out;
+  }, [globalPhaseNarratives]);
 
   const selected = useMemo(
     () => data?.iterations.find((it) => it.iteration === selectedIter) ?? null,
@@ -600,6 +669,38 @@ export function AgentHouseDashboard(): JSX.Element {
                   data-testid="agents-iter-preview-iframe"
                 />
               </div>
+            ) : null}
+          </section>
+
+          <section
+            className="agents-global-phase-section"
+            data-testid="agents-global-phase-section"
+          >
+            <h2>Global preflight + reader trace</h2>
+            <p className="agents-count">
+              Narrative of what the testhouse driver did during the global
+              pre-MCP phases (iter-0 preflight, iter-1 reader, iter-2 scope).
+              Each phase runs before any BIM model exists, so it can't ride
+              on the per-commit narrative — the driver writes a sidecar
+              JSON we surface here instead.
+            </p>
+            {globalPhaseLoading ? (
+              <p>Loading global-phase narratives…</p>
+            ) : null}
+            {!globalPhaseLoading && globalPhaseEntries.length === 0 ? (
+              <p className="agents-warning">
+                No global-phase narratives yet — run preflight / reader /
+                scope to populate.
+              </p>
+            ) : null}
+            {globalPhaseEntries.length > 0 ? (
+              <ul className="agents-global-phase-list">
+                {globalPhaseEntries.map(({ iter, file }) => (
+                  <li key={iter}>
+                    <GlobalPhaseCard iter={iter} file={file} house={house} />
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </section>
 
@@ -985,6 +1086,13 @@ function CommitTrailCard({
   const evidence = block?.sourceEvidence ?? [];
   const elements = block?.producedElementIds ?? [];
   const phase = block?.phase ?? null;
+  const narrative = block?.narrative;
+  const commandCount = block?.commandCount;
+  const narrativePresent =
+    !!narrative &&
+    (typeof narrative.input === 'string' ||
+      typeof narrative.reasoning === 'string' ||
+      typeof narrative.outcome === 'string');
   return (
     <li
       className="agents-trail-card"
@@ -994,6 +1102,11 @@ function CommitTrailCard({
         <span className="agents-trail-phase">
           {phase ? <code>{phase}</code> : <em>no phase</em>}
         </span>
+        {typeof commandCount === 'number' && commandCount > 0 ? (
+          <small className="agents-trail-cmd-count">
+            {commandCount} cmd{commandCount === 1 ? '' : 's'}
+          </small>
+        ) : null}
         <span className="agents-trail-card-spacer" />
         <a
           className="agents-trail-card-link"
@@ -1005,6 +1118,7 @@ function CommitTrailCard({
           <code>{commit.commitId.slice(0, 12)}…</code>
         </a>
       </div>
+      {narrativePresent ? <NarrativeTrio narrative={narrative} /> : null}
       {facts.length === 0 && evidence.length === 0 && elements.length === 0 ? (
         <p className="agents-trail-empty">
           No v2 trail metadata on this commit (legacy or v1 row).
@@ -1113,14 +1227,14 @@ function FactChip({ house, factId }: FactChipProps): JSX.Element {
         <div className="agents-chip-popover" role="dialog">
           {loading ? <p>Loading…</p> : null}
           {err ? <p className="agents-error">{err}</p> : null}
-          {fact ? <FactDetails fact={fact} /> : null}
+          {fact ? <FactDetails fact={fact} house={house} /> : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-function FactDetails({ fact }: { fact: ExtractedFact }): JSX.Element {
+function FactDetails({ fact, house }: { fact: ExtractedFact; house: string }): JSX.Element {
   // Pick the most-load-bearing value field to summarise. Order matches
   // the IR schema's most-specific-first preference: a polygonMm fact
   // (room outline) reads as N vertices, a vertexMm fact (single point)
@@ -1187,6 +1301,24 @@ function FactDetails({ fact }: { fact: ExtractedFact }): JSX.Element {
           <dt>source</dt>
           <dd>
             <code>{fact.sourcePage}</code>
+            {fact.sourceDocId ? (
+              <FactSourceThumb
+                house={house}
+                docId={fact.sourceDocId}
+                page={fact.sourcePage}
+              />
+            ) : null}
+          </dd>
+        </>
+      ) : null}
+      {fact.derivationNote ? (
+        <>
+          <dt>derived</dt>
+          <dd>
+            <span className="agents-fact-derivation-label">
+              How the reader saw it:
+            </span>{' '}
+            {fact.derivationNote}
           </dd>
         </>
       ) : null}
@@ -1197,6 +1329,33 @@ function FactDetails({ fact }: { fact: ExtractedFact }): JSX.Element {
         </>
       ) : null}
     </dl>
+  );
+}
+
+interface FactSourceThumbProps {
+  house: string;
+  docId: string;
+  page: string;
+}
+
+/**
+ * Inline thumbnail of the rendered source PNG that backs a fact. The
+ * fact carries ``sourceDocId`` + ``sourcePage`` (e.g. ``"EG-1.png"``);
+ * we reuse the per-house source-pages endpoint so the popover shows
+ * the reader's evidence inline. Click → full PNG in a new tab.
+ */
+function FactSourceThumb({ house, docId, page }: FactSourceThumbProps): JSX.Element {
+  const url = `/api/agent-runs/houses/${encodeURIComponent(house)}/source-pages/${encodeURIComponent(docId)}/${encodeURIComponent(page)}`;
+  return (
+    <a
+      className="agents-fact-source-thumb"
+      href={url}
+      target="_blank"
+      rel="noreferrer noopener"
+      title={`Open ${docId}/${page} in a new tab`}
+    >
+      <img src={url} alt={`Source page ${page}`} loading="lazy" />
+    </a>
   );
 }
 
@@ -1228,5 +1387,135 @@ function SourceThumb({ evidence, house }: SourceThumbProps): JSX.Element {
         {evidence.role ? <small>{evidence.role}</small> : null}
       </span>
     </a>
+  );
+}
+
+interface NarrativeTrioProps {
+  narrative: TestHousePhaseNarrative | undefined;
+}
+
+/**
+ * Renders the three-block "Input / Reasoning / Outcome" narrative
+ * panel used in two places:
+ *   1. Inside each per-commit trail card (the per-commit narrative
+ *      carrier the v2 driver writes alongside chip lists).
+ *   2. Inside each global-phase card (preflight / reader / scope).
+ *
+ * Empty fields render as a hyphen so the layout doesn't collapse;
+ * the caller decides whether to mount the component at all.
+ */
+function NarrativeTrio({ narrative }: NarrativeTrioProps): JSX.Element {
+  const input = narrative?.input ?? '';
+  const reasoning = narrative?.reasoning ?? '';
+  const outcome = narrative?.outcome ?? '';
+  return (
+    <div className="agents-narrative-panel">
+      <div className="agents-narrative-block">
+        <span className="agents-narrative-label">Input</span>
+        <p className="agents-narrative-text">{input || <em>—</em>}</p>
+      </div>
+      <div className="agents-narrative-block">
+        <span className="agents-narrative-label">Reasoning</span>
+        <p className="agents-narrative-text">{reasoning || <em>—</em>}</p>
+      </div>
+      <div className="agents-narrative-block">
+        <span className="agents-narrative-label">Outcome</span>
+        <p className="agents-narrative-text">{outcome || <em>—</em>}</p>
+      </div>
+    </div>
+  );
+}
+
+interface GlobalPhaseCardProps {
+  iter: string;
+  file: PhaseNarrativeFile;
+  house: string;
+}
+
+/**
+ * One card per global pre-MCP phase (iter-0 preflight, iter-1 reader,
+ * iter-2 scope). Displays the narrative trio, the list of inputs the
+ * phase consumed, the list of outputs it produced (rendered-pages
+ * outputs expand to a thumbnail strip via the per-house source-page
+ * endpoint), and the elapsed-ms metric in the corner.
+ */
+function GlobalPhaseCard({ iter, file, house }: GlobalPhaseCardProps): JSX.Element {
+  const inputs = Array.isArray(file.inputs) ? file.inputs : [];
+  const outputs = Array.isArray(file.outputs) ? file.outputs : [];
+  const elapsedSeconds =
+    typeof file.elapsedMs === 'number' && file.elapsedMs > 0
+      ? (file.elapsedMs / 1000).toFixed(1)
+      : null;
+  return (
+    <div
+      className="agents-global-phase-card"
+      data-testid={`agents-global-phase-${iter}`}
+    >
+      <div className="agents-global-phase-header">
+        <span className="agents-global-phase-iter">
+          <code>{iter}</code>
+        </span>
+        <span className="agents-global-phase-phase">{file.phase}</span>
+        <span className="agents-trail-card-spacer" />
+        {elapsedSeconds ? (
+          <span className="agents-global-phase-elapsed" title="Elapsed wall-time">
+            {elapsedSeconds}s
+          </span>
+        ) : null}
+      </div>
+      <NarrativeTrio narrative={file.narrative} />
+      {inputs.length > 0 ? (
+        <div className="agents-global-phase-section">
+          <span className="agents-global-phase-section-label">Inputs</span>
+          <ul className="agents-global-phase-inputs">
+            {inputs.map((inp, i) => (
+              <li key={`${inp.path}-${i}`}>
+                <span className="agents-global-phase-input-idx">
+                  Input {i + 1}:
+                </span>{' '}
+                <code>{inp.path}</code>
+                {typeof inp.fileCount === 'number' ? (
+                  <small> ({inp.fileCount} files)</small>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {outputs.length > 0 ? (
+        <div className="agents-global-phase-section">
+          <span className="agents-global-phase-section-label">Outputs</span>
+          <ul className="agents-global-phase-outputs">
+            {outputs.map((out, i) => (
+              <li key={`${out.path}-${i}`}>
+                <GlobalPhaseOutput output={out} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface GlobalPhaseOutputProps {
+  output: PhaseNarrativeOutput;
+}
+
+/**
+ * Render one entry from a phase's ``outputs[]`` list. We show the
+ * role tag (e.g. "manifest", "renderedPages") plus the on-disk path.
+ * Path strings are relative to the repo root and surfaced as plain
+ * code — they're not directly clickable without a filesystem-browse
+ * endpoint (the per-fact source-evidence chip strip already provides
+ * the visual thumbnail path through the source-pages endpoint).
+ */
+function GlobalPhaseOutput({ output }: GlobalPhaseOutputProps): JSX.Element {
+  const role = output.role ?? null;
+  return (
+    <span className="agents-global-phase-output">
+      {role ? <code className="agents-global-phase-output-role">{role}</code> : null}
+      <code className="agents-global-phase-output-path">{output.path}</code>
+    </span>
   );
 }
