@@ -1721,11 +1721,25 @@ def _dormers_bundle(
         if cxy is None:
             continue
         cx, cy = cxy[0], cxy[1]
+        # NS-2026-05-24: prefer polygon bbox over default widthMm/depthMm
+        # so continuous shed-dormer strips (beta: ~5500 mm) author at
+        # source width rather than the 2000 mm default. Polygon shape:
+        # [[x0,y0],[x1,y0],[x1,y1],[x0,y1]] — bbox is along x = width
+        # (when ridge runs E-W), bbox along y = depth.
+        poly_w, poly_d = None, None
+        poly = f.get("polygonMm") or f.get("polygonMM")
+        if isinstance(poly, list) and len(poly) >= 3:
+            pxs = [float(p[0]) if isinstance(p, list) else float((p or {}).get("xMm") or 0) for p in poly]
+            pys = [float(p[1]) if isinstance(p, list) else float((p or {}).get("yMm") or 0) for p in poly]
+            if pxs and pys:
+                poly_w = max(pxs) - min(pxs)
+                poly_d = max(pys) - min(pys)
         # Default width / depth / wall height — pulled from the fact
-        # when present, otherwise typical Schleppgaube proportions.
-        width = float(f.get("widthMm") or 2000)
+        # when present, otherwise polygon bbox, otherwise typical
+        # Schleppgaube proportions.
+        width = float(f.get("widthMm") or poly_w or 2000)
         height = float(f.get("heightMm") or 1300)
-        depth = float(f.get("depthMm") or 1800)
+        depth = float(f.get("depthMm") or poly_d or 1800)
         # The engine validates `abs(alongRidgeMm) + width/2 ≤ span/2`
         # — i.e. position is signed and centered at the ROOF CENTER
         # (origin = center of the footprint), not at a corner. Same
@@ -1829,6 +1843,33 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
     if not poly or len(poly) < 3:
         return None
     dg_level_id = f"th-{house}-level-DG"
+    # NS-2026-05-24: derive pitch from IR eave_height + ridge_height + the
+    # building half-span instead of hardcoding 35°. The half-span is
+    # measured PERPENDICULAR to the ridge: if ridge runs E-W (alpha/gamma/
+    # beta typical), the relevant span is the building depth (y-extent);
+    # if ridge runs N-S, the x-extent.
+    pitch_deg = 35.0
+    eave_h = next(
+        (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "eave_height"), None
+    )
+    ridge_h = next(
+        (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "ridge_height"), None
+    )
+    if eave_h and ridge_h:
+        try:
+            eave_mm = float(eave_h.get("valueMm") or 0)
+            ridge_mm = float(ridge_h.get("valueMm") or 0)
+            xs = [float(p[0]) for p in poly]
+            ys = [float(p[1]) for p in poly]
+            span_x = max(xs) - min(xs)
+            span_y = max(ys) - min(ys)
+            # Engine ridge heuristic: ridge_along_x iff span_x >= span_y.
+            half_span = (span_y if span_x >= span_y else span_x) / 2
+            rise = ridge_mm - eave_mm
+            if rise > 0 and half_span > 0:
+                pitch_deg = round(math.degrees(math.atan(rise / half_span)), 1)
+        except (TypeError, ValueError):
+            pass
     commands: list[dict] = [
         {
             "type": "createRoof",
@@ -1837,7 +1878,7 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
             "referenceLevelId": dg_level_id,
             "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
             "overhangMm": 400,
-            "slopeDeg": 35,
+            "slopeDeg": pitch_deg,
             "roofGeometryMode": "gable_pitched_rectangle",
             "materialKey": "roof_tile_terracotta",
         },
