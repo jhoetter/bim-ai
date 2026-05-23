@@ -22,17 +22,22 @@ export function selectableLevelDatumId(object: THREE.Object3D): string | null {
 }
 
 export function resolveLevelDatum3dRows(
-  elementsById: Record<string, Element>,
+  levels: readonly Extract<Element, { kind: 'level' }>[],
   activeLevelId: string | undefined,
   levelHidden: Record<string, boolean>,
 ): LevelDatum3dRow[] {
-  const levels = Object.values(elementsById)
-    .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-    .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }))
-    .sort((a, b) => a.elevationMm - b.elevationMm);
-  const active = resolve3dDraftLevel(levels, activeLevelId);
+  // PERF audit #8 / G05 step: callers pass `modelIndices.levels`, which is
+  // already sorted by (elevationMm, id). This replaces an
+  // `Object.values(elementsById).filter(kind === 'level').sort(...)` scan
+  // that ran on every viewport scene rebuild.
+  const rows = levels.map((level) => ({
+    id: level.id,
+    elevationMm: level.elevationMm,
+    name: level.name,
+  }));
+  const active = resolve3dDraftLevel(rows, activeLevelId);
 
-  return levels.map((level) => ({
+  return rows.map((level) => ({
     ...level,
     active: active?.id === level.id,
     hidden: Boolean(levelHidden[level.id]),

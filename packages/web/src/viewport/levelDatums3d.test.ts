@@ -8,11 +8,11 @@ import {
   selectableLevelDatumId,
 } from './levelDatums3d';
 
-const levels: Record<string, Element> = {
-  'lvl-ground': { kind: 'level', id: 'lvl-ground', name: 'Ground floor', elevationMm: 0 },
-  'lvl-first': { kind: 'level', id: 'lvl-first', name: 'First floor', elevationMm: 3000 },
-  'lvl-roof': { kind: 'level', id: 'lvl-roof', name: 'Roof', elevationMm: 6200 },
-};
+const levels: readonly Extract<Element, { kind: 'level' }>[] = [
+  { kind: 'level', id: 'lvl-ground', name: 'Ground floor', elevationMm: 0 },
+  { kind: 'level', id: 'lvl-first', name: 'First floor', elevationMm: 3000 },
+  { kind: 'level', id: 'lvl-roof', name: 'Roof', elevationMm: 6200 },
+];
 
 describe('3D level datums', () => {
   it('marks the active authoring level and preserves elevation order', () => {

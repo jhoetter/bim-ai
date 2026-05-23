@@ -2747,6 +2747,7 @@ export function Viewport({
     makeWindowMesh,
     materialDependencyDirtyIds,
     mirrorSceneCameraPose,
+    modelLevels: levelsIndex,
     mountRef,
     orbitCameraNonce,
     orbitCameraPoseMm,

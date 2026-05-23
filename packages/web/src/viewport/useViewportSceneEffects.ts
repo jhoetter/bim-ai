@@ -136,6 +136,7 @@ type ViewportSceneEffectsArgs = {
   makeWindowMesh: typeof import('./meshBuilders').makeWindowMesh;
   materialDependencyDirtyIds: typeof import('./materialDependencyInvalidation').materialDependencyDirtyIds;
   mirrorSceneCameraPose: typeof import('./cameraMatrixSync').mirrorSceneCameraPose;
+  modelLevels: readonly Extract<Element, { kind: 'level' }>[];
   mountRef: RefObject<HTMLDivElement | null>;
   orbitCameraNonce: StoreState['orbitCameraNonce'];
   orbitCameraPoseMm: StoreState['orbitCameraPoseMm'];
@@ -311,6 +312,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     makeWindowMesh,
     materialDependencyDirtyIds,
     mirrorSceneCameraPose,
+    modelLevels,
     mountRef,
     orbitCameraNonce,
     orbitCameraPoseMm,
@@ -1322,7 +1324,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     }
     if (!root || !direct3dAuthoringActive) return;
 
-    const rows = resolveLevelDatum3dRows(elementsById, activeLevelId, viewerLevelHidden);
+    const rows = resolveLevelDatum3dRows(modelLevels, activeLevelId, viewerLevelHidden);
     if (rows.length === 0) return;
     const bounds = levelDatumBoundsFromBox(computeRootBoundingBox(root));
     const group = makeLevelDatum3dGroup(rows, bounds);
@@ -1339,10 +1341,10 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     computeRootBoundingBox,
     direct3dAuthoringActive,
     disposeObject3D,
-    elementsById,
     levelDatumBoundsFromBox,
     levelDatumGroupRef,
     makeLevelDatum3dGroup,
+    modelLevels,
     resolveLevelDatum3dRows,
     rootGroupRef,
     viewerLevelHidden,
