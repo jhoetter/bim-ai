@@ -1113,6 +1113,30 @@ def _partitions_bundle(
     )
     facts = _facts_for_level(ir, f"level-{level_short}")
     partitions = _facts_by_kind(facts, "interior_partition")
+    # DG-mirror fallback: when the requested level has NO partition
+    # facts in the IR but it does have rooms, mirror the EG partitions
+    # to it. Typical SFH/Doppelhaus interior layouts repeat EG↔DG; this
+    # closes the "DG has 0 partitions" gap without requiring a reader
+    # re-pass. Tagged with `mirroredFromEG=True` in the bundle's
+    # assumption so the inspector flags the inherited partitions.
+    mirrored_from_eg = False
+    if not partitions and level_short != "EG":
+        has_rooms_here = bool(_facts_by_kind(facts, "room_outline"))
+        if has_rooms_here:
+            eg_facts = _facts_for_level(ir, "level-EG")
+            eg_partitions = _facts_by_kind(eg_facts, "interior_partition")
+            if eg_partitions:
+                partitions = [
+                    # Re-stamp the levelId + factId so they don't
+                    # clash with the actual EG partition commits.
+                    {
+                        **p,
+                        "levelId": f"level-{level_short}",
+                        "factId": f"{p.get('factId', '')}-mirror-{level_short}",
+                    }
+                    for p in eg_partitions
+                ]
+                mirrored_from_eg = True
     if not partitions:
         return None
 
@@ -1154,11 +1178,22 @@ def _partitions_bundle(
             "assumptions": [
                 {
                     "key": f"testhouse_{house}_{level_short}_partitions",
-                    "value": f"{len(commands)} interior partitions @ 175 mm from IR.extractedFacts[kind=interior_partition]",
-                    "confidence": 0.6,
+                    "value": (
+                        f"{len(commands)} interior partitions @ 175 mm "
+                        + (
+                            "mirrored from EG (no IR partition facts for this level)"
+                            if mirrored_from_eg
+                            else "from IR.extractedFacts[kind=interior_partition]"
+                        )
+                    ),
+                    "confidence": 0.45 if mirrored_from_eg else 0.6,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                     "contestable": True,
-                    "evidence": f"iter-1 reader: partition line segments for level-{level_short}",
+                    "evidence": (
+                        f"v2.7 driver mirror-from-EG fallback (no IR partition facts for level-{level_short})"
+                        if mirrored_from_eg
+                        else f"iter-1 reader: partition line segments for level-{level_short}"
+                    ),
                 }
             ],
         },
@@ -1470,6 +1505,15 @@ def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict,
         # Treads: fact may give an integer count. Default 16 (typical
         # EG↔DG run with 2.7 m rise / 175 mm riser ≈ 15.4 → 16).
         risers = int(f.get("risers") or f.get("riserCount") or 16)
+        # totalRiseMm derived from IR levels (EG-to-DG elevation
+        # delta) so the engine doesn't fall back to half-derived
+        # geometry. Default 2750 mm matches the typical EG floor-to-
+        # floor when IR levels aren't queriable.
+        eg_lvl = next((lvl for lvl in (ir.get("levels") or []) if lvl["id"] == "level-EG"), None)
+        dg_lvl = next((lvl for lvl in (ir.get("levels") or []) if lvl["id"] == "level-DG"), None)
+        total_rise = 2750.0
+        if dg_lvl and eg_lvl:
+            total_rise = float(_lvl_elevation_mm(dg_lvl) - _lvl_elevation_mm(eg_lvl))
         commands.append(
             {
                 "type": "createStair",
@@ -1480,10 +1524,11 @@ def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict,
                 "runStartMm": {"xMm": float(sp[0]), "yMm": float(sp[1])},
                 "runEndMm": {"xMm": float(ep[0]), "yMm": float(ep[1])},
                 "widthMm": float(f.get("widthMm") or 1000),
-                "riserMm": 175.0,
+                "riserMm": round(total_rise / risers, 1),
                 "treadMm": float(f.get("treadMm") or 275),
                 "shape": "straight",
                 "riserCount": risers,
+                "totalRiseMm": total_rise,
             }
         )
         consumed.append(str(f.get("factId")))
