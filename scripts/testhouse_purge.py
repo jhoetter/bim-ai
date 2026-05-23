@@ -61,16 +61,21 @@ HOUSES = ("alpha", "beta", "gamma")
 
 
 async def _select_model_ids(session, *, houses: tuple[str, ...]) -> list:
-    """Find every model row whose slug contains one of `house-<name>`.
+    """Find every model row owned by one of the requested testhouses.
 
-    Catches both clean slugs (``house-alpha``) and iter-prefixed variants
-    (``iter5-house-alpha``, ``iter10-house-beta``).
+    Matches both the v2 convention (slug IS the bare house name, e.g.
+    ``alpha``) and the legacy ``house-<name>`` + iter-prefixed
+    variants (``house-alpha``, ``iter5-house-alpha``,
+    ``iter10-house-beta``) so historical models can be cleaned up.
     """
 
-    patterns = [f"%house-{h}%" for h in houses]
-    stmt = select(ModelRecord.id, ModelRecord.slug).where(
-        or_(*[ModelRecord.slug.ilike(p) for p in patterns])
-    )
+    conditions = []
+    for h in houses:
+        # v2: slug is exactly the house name.
+        conditions.append(ModelRecord.slug == h)
+        # Legacy: slug contains house-<name>.
+        conditions.append(ModelRecord.slug.ilike(f"%house-{h}%"))
+    stmt = select(ModelRecord.id, ModelRecord.slug).where(or_(*conditions))
     rows = (await session.execute(stmt)).all()
     return [(row[0], row[1]) for row in rows]
 

@@ -585,13 +585,13 @@ export function AgentHouseDashboard(): JSX.Element {
                   const className =
                     'agents-iter-pick-btn' +
                     (selected ? ' agents-iter-pick-btn--active' : '') +
-                    (hasCommit ? '' : ' agents-iter-pick-btn--disabled');
+                    (hasCommit ? '' : ' agents-iter-pick-btn--global');
                   const phase = it.commit?.phase ?? null;
                   const tooltip = hasCommit
                     ? `${it.iter}` +
                       (phase ? ` · ${phase}` : '') +
                       ` · ${it.commit?.commitId}`
-                    : `${it.iter} · preflight (no model commit yet)`;
+                    : `${it.iter} · global pre-MCP phase (click to jump to its trace card below)`;
                   return (
                     <li key={it.iter}>
                       <button
@@ -601,16 +601,37 @@ export function AgentHouseDashboard(): JSX.Element {
                         data-commit-id={it.commit?.commitId ?? ''}
                         data-model-id={it.commit?.modelId ?? ''}
                         data-has-commit={hasCommit ? 'true' : 'false'}
-                        disabled={!hasCommit}
                         title={tooltip}
                         onClick={() => {
-                          if (!hasCommit) return;
-                          setPreviewIter(it);
+                          if (hasCommit) {
+                            setPreviewIter(it);
+                            return;
+                          }
+                          // Global pre-MCP iter (iter-0 preflight,
+                          // iter-1 reader, iter-2 scope) — no live BIM
+                          // commit to preview, so scroll the dashboard
+                          // to that iter's narrative card in the
+                          // global-phase section instead.
+                          const target = document.querySelector(
+                            `[data-testid="agents-global-phase-${it.iter}"]`,
+                          );
+                          if (target instanceof HTMLElement) {
+                            target.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            });
+                            target.classList.add('agents-global-phase-card--flash');
+                            window.setTimeout(() => {
+                              target.classList.remove(
+                                'agents-global-phase-card--flash',
+                              );
+                            }, 1600);
+                          }
                         }}
                       >
                         {it.iter}
                         {phase ? <small>{phase}</small> : null}
-                        {!hasCommit ? <small>preflight</small> : null}
+                        {!hasCommit ? <small>narrative ↓</small> : null}
                       </button>
                     </li>
                   );

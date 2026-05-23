@@ -338,6 +338,28 @@
   background: #f5f5f5;
   cursor: not-allowed;
 }
+/* iter-0/1/2 pre-MCP phases — no commit to preview, but click jumps
+   to the matching global-phase narrative card below. */
+.agents-iter-pick-btn--global {
+  border-color: #b8d2c4;
+  color: #25543e;
+  background: #eaf5ef;
+}
+.agents-iter-pick-btn--global:hover {
+  background: #d8ebe0;
+}
+.agents-iter-pick-btn--global > small {
+  color: #1a6e4a;
+}
+/* Brief highlight pulse when the global-phase card is jumped to. */
+@keyframes agents-global-phase-card-flash {
+  0% { box-shadow: 0 0 0 0 rgba(26, 110, 74, 0.6); }
+  60% { box-shadow: 0 0 0 14px rgba(26, 110, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(26, 110, 74, 0); }
+}
+.agents-global-phase-card--flash {
+  animation: agents-global-phase-card-flash 1.6s ease-out;
+}
 
 .agents-iter-preview {
   margin-top: 12px;

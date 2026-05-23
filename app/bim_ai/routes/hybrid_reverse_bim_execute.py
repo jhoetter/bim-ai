@@ -643,6 +643,8 @@ def _hybrid_slice_commit_context(
         source_evidence = testhouse_iter.get("sourceEvidence") or testhouse_iter.get(
             "source_evidence"
         )
+        narrative = testhouse_iter.get("narrative")
+        command_count = testhouse_iter.get("commandCount") or testhouse_iter.get("command_count")
         ctx["testhouse_iter"] = {
             "house": str(testhouse_iter.get("house")) if testhouse_iter.get("house") else None,
             "iter": int(testhouse_iter["iter"]) if testhouse_iter.get("iter") is not None else None,
@@ -654,6 +656,12 @@ def _hybrid_slice_commit_context(
             # producedElementIds populated post-commit from the bundle's
             # changedIds — see _attach_produced_element_ids().
             "producedElementIds": [],
+            # Human-readable narrative trio (input / reasoning / outcome).
+            # The inspector renders this on each iter card so a reviewer
+            # can read what the agent saw, decided, and produced without
+            # cross-referencing the driver code.
+            "narrative": dict(narrative) if isinstance(narrative, dict) else {},
+            "commandCount": int(command_count) if command_count is not None else 0,
         }
     tool = body_dict.get("tool")
     if isinstance(tool, str) and tool:

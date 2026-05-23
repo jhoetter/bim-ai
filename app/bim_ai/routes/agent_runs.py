@@ -77,12 +77,25 @@ def _discover_filesystem_houses() -> set[str]:
 
 
 async def _discover_db_houses(session: AsyncSession) -> set[str]:
-    """House short-names from ``bim_models.slug LIKE 'house-%'``."""
+    """House short-names from ``bim_models.slug``.
 
-    res = await session.execute(
-        select(ModelRecord.slug).where(ModelRecord.slug.like("house-%"))
-    )
+    Convention (enforced by ``scripts/testhouse_drive.py::_ensure_model``):
+    a testhouse model's slug IS the house name — no ``house-`` prefix.
+    A separate legacy probe handles models that still carry the
+    pre-2026-05-23 ``house-<name>`` slug so old artefacts stay visible
+    while we migrate.
+    """
+
     out: set[str] = set()
+    # New convention: slug == house name (alpha | beta | gamma).
+    res = await session.execute(select(ModelRecord.slug).where(ModelRecord.slug.in_(_KNOWN_HOUSES)))
+    for (slug,) in res.all():
+        if slug:
+            out.add(str(slug))
+    # Legacy convention: slug == 'house-<name>'. Kept so models
+    # authored before the convention switch still appear in the
+    # dashboard until they're re-purged + re-authored.
+    res = await session.execute(select(ModelRecord.slug).where(ModelRecord.slug.like("house-%")))
     for (slug,) in res.all():
         m = _HOUSE_SLUG_RE.match(str(slug or ""))
         if m:
@@ -151,6 +164,19 @@ def _scoring_dir_for(iteration: str) -> Path:
 
 def _scoring_path_for(iteration: str, house: str) -> Path:
     return _scoring_dir_for(iteration) / f"{house}-subagent-report.md"
+
+
+def _phase_narrative_path(house: str, iteration: str) -> Path:
+    """Per-house JSON written by testhouse_drive for global phases.
+
+    Global phases (preflight, reader-pass, scope-decisions) run before
+    any bim_models row exists, so they can't ride on the commit context.
+    The driver drops a narrative.json sidecar at
+    ``tmp/reverse-bim/house-<X>/iter-<N>/narrative.json`` and this
+    endpoint surfaces it.
+    """
+
+    return _reverse_bim_dir() / f"house-{house}" / iteration / "narrative.json"
 
 
 @agent_runs_router.get("/agent-runs/sessions")
@@ -279,7 +305,9 @@ def _enumerate_iterations(house: str) -> list[dict[str, Any]]:
             all_files = sorted(p.name for p in entry.iterdir() if p.is_file())
         except OSError:
             continue
-        house_files = [n for n in all_files if n.startswith(f"{house}-") or n.startswith(f"{house}_")]
+        house_files = [
+            n for n in all_files if n.startswith(f"{house}-") or n.startswith(f"{house}_")
+        ]
         scoring_path = _scoring_path_for(iteration_label, house)
         try:
             mtime = entry.stat().st_mtime
@@ -297,6 +325,7 @@ def _enumerate_iterations(house: str) -> list[dict[str, Any]]:
                 "mtime": mtime,
             }
         )
+
     # Sort iter-1 < iter-2 < ... < iter-9 < iter-10 < ... < iter-12b.
     def _iter_key(item: dict[str, Any]) -> tuple[int, str]:
         label = str(item.get("iteration") or "")
@@ -376,12 +405,7 @@ async def get_source_page(house: str, doc_id: str, filename: str) -> FileRespons
     if ".." in filename or "/" in filename or not _SOURCE_PAGE_FILENAME_RE.match(filename):
         raise HTTPException(status_code=400, detail=f"Invalid filename: {filename!r}")
     path = (
-        _reverse_bim_dir()
-        / f"house-{house}"
-        / "preflight"
-        / "rendered-pages"
-        / doc_id
-        / filename
+        _reverse_bim_dir() / f"house-{house}" / "preflight" / "rendered-pages" / doc_id / filename
     )
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"Source page not found: {filename}")
@@ -443,6 +467,33 @@ async def get_iteration_scoring(
     except OSError as exc:
         raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
     return PlainTextResponse(text, media_type="text/markdown; charset=utf-8")
+
+
+@agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/narrative")
+async def get_iteration_narrative(house: str, iteration: str) -> dict[str, Any]:
+    """Return the human-readable phase-narrative JSON for an iteration.
+
+    Global phases (preflight, reader-pass, scope-decisions) run before
+    any ``bim_models`` row exists, so they can't ride on the
+    ``bim_model_commits.context.testhouse_iter.narrative`` carrier.
+    They write a sidecar at
+    ``tmp/reverse-bim/house-<X>/iter-<N>/narrative.json``; this
+    endpoint serves it so the dashboard shows "what the preflight saw
+    / decided / produced" inline next to the MCP-driven iters.
+    """
+
+    house = _validate_house(house)
+    iteration = _validate_iteration(iteration)
+    path = _phase_narrative_path(house, iteration)
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"No phase narrative for house={house} iteration={iteration}",
+        )
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
 
 
 def _dashboard_summary(house: str) -> dict[str, Any]:
@@ -620,9 +671,7 @@ def _scan_house_iter_directories(house: str) -> dict[str, dict[str, Any]]:
     return out
 
 
-async def _scan_house_iter_commits(
-    session: AsyncSession, house: str
-) -> dict[str, dict[str, Any]]:
+async def _scan_house_iter_commits(session: AsyncSession, house: str) -> dict[str, dict[str, Any]]:
     """Latest commit per iter for ``house``, keyed by ``iter-<N>`` label.
 
     "Latest" is by ``created_at`` descending — matches the
@@ -667,22 +716,29 @@ async def _resolve_house_model_id(session: AsyncSession, house: str) -> str | No
 
     Tried in order, first hit wins:
 
-    1. ``bim_models.slug = 'house-<house>'`` — the testhouse rebuild's
-       slug convention. Single SELECT, unambiguous when the convention
-       holds.
-    2. Any ``bim_model_commits`` row whose
+    1. ``bim_models.slug == house`` — the v2 convention: a testhouse
+       model's slug IS the house name (alpha | beta | gamma). Enforced
+       by ``scripts/testhouse_drive.py::_ensure_model`` so this branch
+       is hot once a model exists.
+    2. ``bim_models.slug == 'house-<house>'`` — legacy convention from
+       runs before 2026-05-23.
+    3. Any ``bim_model_commits`` row whose
        ``context.testhouse_iter.house`` matches. Falls back to the
-       agent-side attribution if the slug convention is ever broken.
+       agent-side attribution if neither slug convention is in play.
 
-    Returns ``None`` if neither resolves — the dashboard then surfaces
-    "no model id resolved" and the iter-picker explains itself.
+    Returns ``None`` if nothing resolves.
     """
 
-    slug = f"house-{house}"
-    row = await session.execute(select(ModelRecord.id).where(ModelRecord.slug == slug))
+    row = await session.execute(select(ModelRecord.id).where(ModelRecord.slug == house))
     by_slug = row.scalar_one_or_none()
     if by_slug is not None:
         return str(by_slug)
+
+    legacy_slug = f"house-{house}"
+    row = await session.execute(select(ModelRecord.id).where(ModelRecord.slug == legacy_slug))
+    by_legacy = row.scalar_one_or_none()
+    if by_legacy is not None:
+        return str(by_legacy)
 
     res = await session.execute(
         select(ModelCommitRecord.model_id)
@@ -751,7 +807,7 @@ async def get_house_iter_picker(
 
     labels = sorted(
         set(fs_iters) | set(commit_iters),
-        key=lambda label: _parse_iter_token(label[len("iter-"):]) or (10**9, label),
+        key=lambda label: _parse_iter_token(label[len("iter-") :]) or (10**9, label),
     )
 
     items: list[dict[str, Any]] = []
@@ -762,8 +818,8 @@ async def get_house_iter_picker(
             {
                 "iter": label,
                 # numeric form for sorting / linking in JS without re-parsing.
-                "iterNumber": _parse_iter_token(label[len("iter-"):]) and
-                              _parse_iter_token(label[len("iter-"):])[0],
+                "iterNumber": _parse_iter_token(label[len("iter-") :])
+                and _parse_iter_token(label[len("iter-") :])[0],
                 "fsPath": (fs or {}).get("path"),
                 "captureCount": (fs or {}).get("captureCount", 0),
                 "commit": commit,  # null when this iter has no model commit

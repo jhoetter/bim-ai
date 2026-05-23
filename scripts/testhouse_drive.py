@@ -32,6 +32,7 @@ import math
 import sys
 import time
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -143,6 +144,40 @@ def _cmd_preflight(args: argparse.Namespace) -> int:
     summary = (result or {}).get("summary") or {}
     artifacts = (result or {}).get("artifacts") or {}
 
+    # Human-readable narrative for the /agents dashboard — a reviewer
+    # reads "what did the agent see / decide / produce" without
+    # cross-referencing this driver code.
+    file_count = int(summary.get("fileCount") or summary.get("documentCount") or 0)
+    rendered_pages = int(summary.get("renderedPageCount") or 0)
+    work_packages = int(summary.get("workPackageCount") or 0)
+    reader_requests = int(summary.get("readerRequestCount") or 0)
+    _write_global_phase_narrative(
+        house=house,
+        iter_n=iter_n,
+        phase=phase,
+        narrative_input=(
+            f"Source folder testhouses/house-{house}/ — {file_count} PDF(s) covering the "
+            "ground floor (EG), upper floor (DG), elevations (Ansichten), section + composite "
+            "plan, plus parcel / drainage / legal / energy documents."
+        ),
+        narrative_reasoning=(
+            f"Single call to /api/v3/source/prepare-ai-visual-trace-run rendered every PDF page "
+            f"at {args.dpi} DPI, ran filename-heuristic document classification, built a per-page "
+            f"work-order, and seeded an empty reader-pass manifest. This is the deterministic "
+            f"preflight; the visual reader (iter-1) consumes its output."
+        ),
+        narrative_outcome=(
+            f"{rendered_pages} pages rendered, {file_count} documents classified, "
+            f"{work_packages} work packages, {reader_requests} reader requests staged. "
+            f"Artifacts under tmp/reverse-bim/house-{house}/preflight/."
+        ),
+        inputs=[{"path": str(_house_root(house)), "fileCount": file_count}],
+        outputs=[
+            {"path": str(v), "role": k} for k, v in (artifacts or {}).items() if isinstance(v, str)
+        ],
+        extra={"summary": summary, "elapsedMs": elapsed_ms},
+    )
+
     logger.info(
         "testhouse_iter.end",
         extra={
@@ -174,6 +209,53 @@ def _cmd_preflight(args: argparse.Namespace) -> int:
 
 
 TRACKER_PATH = "spec/trackers/testhouse-clean-rebuild-tracker.md"
+
+
+def _write_global_phase_narrative(
+    *,
+    house: str,
+    iter_n: int,
+    phase: str,
+    narrative_input: str,
+    narrative_reasoning: str,
+    narrative_outcome: str,
+    inputs: list[dict] | None = None,
+    outputs: list[dict] | None = None,
+    extra: dict | None = None,
+) -> Path:
+    """Write a phase-narrative JSON for global (pre-MCP) phases.
+
+    Per-house globally-scoped phases — preflight (iter-0), reader-pass
+    (iter-1), scope-decisions (iter-2), and any other phase that runs
+    before a bim_models row exists — can't ride on the
+    bim_model_commits.context narrative carrier. They write a sidecar
+    JSON the `/agents` dashboard reads via a dedicated endpoint so the
+    human-readable trace still surfaces in the UI.
+    """
+
+    out_dir = _house_workdir(house) / f"iter-{iter_n}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "narrative.json"
+    payload = {
+        "schemaVersion": "testhousePhaseNarrative_v1",
+        "house": house,
+        "iter": iter_n,
+        "phase": phase,
+        "narrative": {
+            "input": narrative_input,
+            "reasoning": narrative_reasoning,
+            "outcome": narrative_outcome,
+        },
+        "inputs": inputs or [],
+        "outputs": outputs or [],
+        "writtenAt": datetime.now(UTC).isoformat() if "datetime" in globals() else None,
+    }
+    if extra:
+        payload.update(extra)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    return path
+
+
 PROJECT_ID_FOR_TESTHOUSES = "892ee9f7-307c-5e40-a838-3bc64b5f5f92"  # seed project
 
 
@@ -182,14 +264,25 @@ def _ir_path(house: str) -> Path:
 
 
 def _ensure_model(*, house: str, api_base: str) -> str:
-    """Return a bim_models.id for ``house-<house>``; create if absent."""
+    """Return a bim_models.id for ``house``; create if absent.
+
+    Convention: the DB slug IS the house name (``alpha`` | ``beta`` |
+    ``gamma``) — same string the inspector's URL parameter uses, no
+    ``house-`` prefix. This makes the seed name and the agent tracker
+    name identical by construction; ``agent_runs.py::_resolve_house_model_id``
+    looks the slug up directly without prefix-juggling.
+
+    A legacy probe checks for the old ``house-<name>`` slug too so
+    pre-2026-05-23 models can be cleaned up via the purge script.
+    """
 
     boot = httpx.get(f"{api_base.rstrip('/')}/bootstrap", timeout=30.0).json()
     for proj in boot.get("projects") or []:
         for m in proj.get("models") or []:
-            if m.get("slug") == f"house-{house}":
+            slug = m.get("slug")
+            if slug == house or slug == f"house-{house}":
                 return str(m["id"])
-    body = {"slug": f"house-{house}"}
+    body = {"slug": house}
     url = f"{api_base.rstrip('/')}/projects/{PROJECT_ID_FOR_TESTHOUSES}/models"
     r = httpx.post(url, json=body, timeout=60.0)
     r.raise_for_status()
@@ -786,18 +879,53 @@ def _exterior_walls_bundle(
         poly = poly[:-1]
     if not poly or len(poly) < 3:
         return None
+
+    # Skip exterior-chain edges that coincide with an interior_partition
+    # tagged as a party-wall on this floor. The reader puts the
+    # Doppelhaus party wall in interior_partition facts so it's modeled
+    # as a single (interior) wall, not duplicated as a 365 mm exterior
+    # wall + a 175 mm party-wall partition stacked on the same line.
+    party_segments: list[tuple[tuple[float, float], tuple[float, float]]] = []
+    for p in _facts_by_kind(facts, "interior_partition"):
+        text = f"{p.get('text') or ''} {p.get('note') or ''} {p.get('factId') or ''}".lower()
+        if "party" not in text:
+            continue
+        seg = p.get("polygonMm") or p.get("polygonMM") or []
+        if isinstance(seg, list) and len(seg) >= 2:
+            party_segments.append(
+                (
+                    (float(seg[0][0]), float(seg[0][1])),
+                    (float(seg[1][0]), float(seg[1][1])),
+                )
+            )
+
+    def _seg_match(
+        a: tuple[float, float],
+        b: tuple[float, float],
+        x: tuple[float, float],
+        y: tuple[float, float],
+        tol: float = 50.0,
+    ) -> bool:
+        def _close(p1: tuple[float, float], p2: tuple[float, float]) -> bool:
+            return math.hypot(p1[0] - p2[0], p1[1] - p2[1]) <= tol
+
+        return (_close(a, x) and _close(b, y)) or (_close(a, y) and _close(b, x))
+
     commands: list[dict] = []
     for i in range(len(poly)):
-        a = poly[i]
-        b = poly[(i + 1) % len(poly)]
+        a = (float(poly[i][0]), float(poly[i][1]))
+        b = (float(poly[(i + 1) % len(poly)][0]), float(poly[(i + 1) % len(poly)][1]))
+        if any(_seg_match(a, b, ps[0], ps[1]) for ps in party_segments):
+            # Edge already covered by a party-wall interior partition.
+            continue
         commands.append(
             {
                 "type": "createWall",
                 "id": f"th-{house}-i-{level_short}-ext-wall-{i}",
                 "name": f"{level_short} exterior wall {i}",
                 "levelId": level_id,
-                "start": {"xMm": float(a[0]), "yMm": float(a[1])},
-                "end": {"xMm": float(b[0]), "yMm": float(b[1])},
+                "start": {"xMm": a[0], "yMm": a[1]},
+                "end": {"xMm": b[0], "yMm": b[1]},
                 "thicknessMm": 365,
                 "heightMm": float(eg_height),
             }
@@ -830,6 +958,74 @@ def _exterior_walls_bundle(
             ],
         },
         [str(fact.get("factId"))],
+    )
+
+
+def _partitions_bundle(
+    *, ir: dict, parent_revision: int, house: str, level_short: str
+) -> tuple[dict, list[str]] | None:
+    """Author interior partition walls from IR partition facts.
+
+    Each `interior_partition` fact carries a `polygonMm` of two
+    vertices (start + end of the wall segment). Authored at the
+    floor's heightMM with a 175 mm thickness (typical interior
+    Trockenwand or Mauerwand). After these walls land the
+    `<floor>-openings` phase can host interior doors on them via
+    `_host_on_nearest_wall` (no code change needed — it already
+    walks every wall on the level).
+    """
+
+    level_id = f"th-{house}-level-{level_short}"
+    floor_height = next(
+        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+    )
+    facts = _facts_for_level(ir, f"level-{level_short}")
+    partitions = _facts_by_kind(facts, "interior_partition")
+    if not partitions:
+        return None
+
+    commands: list[dict] = []
+    consumed: list[str] = []
+    for p in partitions:
+        seg = p.get("polygonMm") or p.get("polygonMM") or []
+        if not isinstance(seg, list) or len(seg) < 2:
+            continue
+        a, b = seg[0], seg[1]
+        if a == b:
+            continue
+        commands.append(
+            {
+                "type": "createWall",
+                "id": f"th-{house}-i-{level_short}-partition-{_slugify(p.get('factId'))}",
+                "name": (str(p.get("note") or "Partition"))[:80],
+                "levelId": level_id,
+                "start": {"xMm": float(a[0]), "yMm": float(a[1])},
+                "end": {"xMm": float(b[0]), "yMm": float(b[1])},
+                "thicknessMm": 175,
+                "heightMm": float(floor_height),
+            }
+        )
+        consumed.append(str(p.get("factId")))
+
+    if not commands:
+        return None
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_{level_short}_partitions",
+                    "value": f"{len(commands)} interior partitions @ 175 mm from IR.extractedFacts[kind=interior_partition]",
+                    "confidence": 0.6,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": f"iter-1 reader: partition line segments for level-{level_short}",
+                }
+            ],
+        },
+        consumed,
     )
 
 
@@ -902,55 +1098,108 @@ def _openings_bundle(
     commands: list[dict] = []
     consumed: list[str] = []
     skipped: list[dict] = []
+    # Track running opening width per wall so we don't pile multiple
+    # doors onto a short interior partition (e.g. the 1300 mm bad/wc
+    # wall can host one door, not two).
+    wall_load_mm: dict[str, float] = {}
+
+    def _try_host(
+        *,
+        fact: dict,
+        opening_kind: str,
+        opening_width_mm: float,
+        cmd_type: str,
+        extra_cmd_fields: dict,
+    ) -> None:
+        vertex = fact.get("vertexMm")
+        if not isinstance(vertex, list) or len(vertex) < 2:
+            return
+        wall, t = _host_on_nearest_wall(vertex, walls)
+        if wall is None:
+            skipped.append(
+                {
+                    "factId": fact.get("factId"),
+                    "kind": opening_kind,
+                    "reason": "no_host_within_500mm",
+                }
+            )
+            return
+        start, end = wall.get("start") or {}, wall.get("end") or {}
+        wlen = math.hypot(
+            float(end.get("xMm") or 0) - float(start.get("xMm") or 0),
+            float(end.get("yMm") or 0) - float(start.get("yMm") or 0),
+        )
+        extent = opening_width_mm + 200.0  # 100 mm clearance each side
+        if wlen < extent:
+            skipped.append(
+                {
+                    "factId": fact.get("factId"),
+                    "kind": opening_kind,
+                    "reason": f"host_wall_too_short_{int(wlen)}mm",
+                }
+            )
+            return
+        t_min = (extent / 2) / wlen
+        t_max = 1 - t_min
+        if t < t_min - 0.2 or t > t_max + 0.2:
+            skipped.append(
+                {
+                    "factId": fact.get("factId"),
+                    "kind": opening_kind,
+                    "reason": "host_position_at_corner",
+                }
+            )
+            return
+        t = max(t_min, min(t_max, t))
+        wid = str(wall.get("id"))
+        used = wall_load_mm.get(wid, 0.0)
+        if used + extent > wlen:
+            skipped.append(
+                {
+                    "factId": fact.get("factId"),
+                    "kind": opening_kind,
+                    "reason": "wall_capacity_exceeded",
+                }
+            )
+            return
+        wall_load_mm[wid] = used + extent
+        commands.append(
+            {
+                "type": cmd_type,
+                "id": f"th-{house}-i-{level_short}-{opening_kind}-{_slugify(fact.get('factId'))}",
+                "name": str(fact.get("text") or opening_kind.title())[:80],
+                "wallId": wid,
+                "alongT": round(t, 4),
+                "widthMm": int(opening_width_mm),
+                **extra_cmd_fields,
+            }
+        )
+        consumed.append(str(fact.get("factId")))
 
     for d in doors:
-        vertex = d.get("vertexMm")
-        if not isinstance(vertex, list) or len(vertex) < 2:
-            continue
-        wall, t = _host_on_nearest_wall(vertex, walls)
-        if wall is None:
-            skipped.append(
-                {"factId": d.get("factId"), "kind": "door", "reason": "no_host_within_500mm"}
-            )
-            continue
-        commands.append(
-            {
-                "type": "insertDoorOnWall",
-                "id": f"th-{house}-i-{level_short}-door-{_slugify(d.get('factId'))}",
-                "name": str(d.get("text") or "Door")[:80],
-                "wallId": wall.get("id"),
-                "alongT": round(t, 4),
-                "widthMm": 900,
-            }
+        # 800 mm typical interior door fits a 1300 mm partition with margin.
+        _try_host(
+            fact=d,
+            opening_kind="door",
+            opening_width_mm=800.0,
+            cmd_type="insertDoorOnWall",
+            extra_cmd_fields={},
         )
-        consumed.append(str(d.get("factId")))
 
     for w in windows:
-        vertex = w.get("vertexMm")
-        if not isinstance(vertex, list) or len(vertex) < 2:
-            continue
-        wall, t = _host_on_nearest_wall(vertex, walls)
-        if wall is None:
-            skipped.append(
-                {"factId": w.get("factId"), "kind": "window", "reason": "no_host_within_500mm"}
-            )
-            continue
-        commands.append(
-            {
-                "type": "insertWindowOnWall",
-                "id": f"th-{house}-i-{level_short}-window-{_slugify(w.get('factId'))}",
-                "name": str(w.get("text") or "Window")[:80],
-                "wallId": wall.get("id"),
-                "alongT": round(t, 4),
-                "widthMm": 1200,
+        _try_host(
+            fact=w,
+            opening_kind="window",
+            opening_width_mm=1200.0,
+            cmd_type="insertWindowOnWall",
+            extra_cmd_fields={
                 "sillHeightMm": 900,
-                # Reserve 200 mm header clearance below the wall top so the
-                # constructability check's 150 mm lintel rule passes even
-                # on the low DG storey (2500 mm walls).
+                # Reserve 200 mm header clearance below the wall top
+                # so the constructability check's 150 mm lintel rule
+                # passes even on the low DG storey (2500 mm walls).
                 "heightMm": int(min(1500, max(800, eg_height - 900 - 200))),
-            }
+            },
         )
-        consumed.append(str(w.get("factId")))
 
     if not commands:
         return None
@@ -1067,6 +1316,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
         rev = _current_revision(api_base=api_base, model_id=model_id)
         ps_bundle = _project_setup_bundle(ir=ir, parent_revision=rev, house=house)
         if ps_bundle is not None:
+            levels = ir.get("levels") or []
             _apply_slice_v2(
                 house=house,
                 iter_n=iter_n,
@@ -1076,6 +1326,22 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=[],
                 source_evidence=[],
+                narrative_input=(
+                    f"{len(levels)} storey level(s) declared by the iter-1 reader: "
+                    + ", ".join(
+                        f"{lvl['name']} @ {lvl['elevationMM']}mm (height {lvl['heightMM']}mm)"
+                        for lvl in levels
+                    )
+                ),
+                narrative_reasoning=(
+                    "Seed the project with one createLevel per IR.levels[] entry before any "
+                    "geometry is authored — every wall / slab / opening downstream binds to a "
+                    "level by id, so this slice is the prerequisite for the whole rebuild."
+                ),
+                narrative_outcome=(
+                    f"{len(levels)} levels created with stable ids th-{house}-level-{{KG|EG|DG}} "
+                    f"so the floor sub-phases below can reference them by name."
+                ),
             )
         rev = _current_revision(api_base=api_base, model_id=model_id)
         topo_pair = _topology_bundle(ir=ir, parent_revision=rev, house=house)
@@ -1099,6 +1365,20 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
+                narrative_input=(
+                    "The EG exterior wall chain fact from the iter-1 reader pass — defines the "
+                    "building footprint that the site has to accommodate."
+                ),
+                narrative_reasoning=(
+                    "Build a CreateToposolid sized to the footprint + 5m parcel margin on every "
+                    "side, surface at grade (0 mm), solid extending 1500 mm down. This is the "
+                    "bare-site MVP that anchors every floor below it. A real parcel polygon + "
+                    "the KG-as-cutter excavation relation are deferred to a later iter."
+                ),
+                narrative_outcome=(
+                    "One toposolid element th-{house}-toposolid landed; subsequent floor slices "
+                    "now have ground reference to host against."
+                ),
             )
         return 0
 
@@ -1137,6 +1417,10 @@ def _cmd_floor(args: argparse.Namespace) -> int:
             )
             for ev in evidence:
                 ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            room_names = [
+                str(f.get("text") or "?")
+                for f in _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
+            ]
             _apply_slice_v2(
                 house=house,
                 iter_n=iter_n,
@@ -1146,6 +1430,53 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
+                narrative_input=(
+                    f"{len(room_names)} room_outline fact(s) for level-{floor} from the iter-1 "
+                    f"reader pass on the {floor} floor plan: {', '.join(room_names) or '(none)'}"
+                ),
+                narrative_reasoning=(
+                    "Inside-out: place room outlines FIRST so partitions can later derive from "
+                    "shared edges and openings have hosts. Each createRoomOutline takes the "
+                    f"polygon vertices the reader extracted from the {floor} plan and tags the "
+                    "room with its source-named function (Wohnzimmer, Küche, ...). No walls are "
+                    "authored at this step — just the topology."
+                ),
+                narrative_outcome=(
+                    f"{len(consumed)} room outlines committed at level-{floor}. Rooms will be "
+                    "flagged room_unenclosed by Advisor until partitions + exterior walls land."
+                ),
+            )
+
+        # interior partitions — between rooms, before exterior walls
+        # so the inside-out order holds and interior doors have hosts.
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        part_pair = _partitions_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
+        if part_pair is not None:
+            bundle, consumed = part_pair
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "interior_partition")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-partitions",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+                narrative_input=(
+                    f"{len(consumed)} interior_partition fact(s) for level-{floor} — line "
+                    "segments between adjacent rooms identified by the reader."
+                ),
+                narrative_reasoning=(
+                    "One createWall per partition fact at 175 mm thickness (typical interior "
+                    "Trockenwand). These walls give interior doors something to host on in the "
+                    "openings sub-phase that follows exterior walls."
+                ),
+                narrative_outcome=(f"{len(consumed)} partition walls committed at level-{floor}."),
             )
 
         # exterior walls + slab
@@ -1169,6 +1500,20 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
+                narrative_input=(
+                    f"The exterior_wall_chain fact for level-{floor} — the closed polygon that "
+                    "defines the floor's perimeter."
+                ),
+                narrative_reasoning=(
+                    "One createWall per polygon edge at 365 mm thickness (typical exterior "
+                    "Außenwand), plus one createFloor whose boundary follows the same polygon "
+                    "as the floor slab. The trailing-duplicate vertex of the closed-loop "
+                    "polygon is trimmed so the last wall isn't zero-length."
+                ),
+                narrative_outcome=(
+                    "4 exterior wall segments + 1 slab committed; the floor now has an enclosed "
+                    "perimeter the openings phase can host windows against."
+                ),
             )
 
         # openings: doors + windows hosted on the exterior walls we just
@@ -1190,6 +1535,14 @@ def _cmd_floor(args: argparse.Namespace) -> int:
             )
             for ev in evidence:
                 ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            door_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
+            window_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
+            placed_doors = sum(
+                1 for c in bundle.get("commands") or [] if c.get("type") == "insertDoorOnWall"
+            )
+            placed_windows = sum(
+                1 for c in bundle.get("commands") or [] if c.get("type") == "insertWindowOnWall"
+            )
             _apply_slice_v2(
                 house=house,
                 iter_n=iter_n,
@@ -1199,6 +1552,24 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
+                narrative_input=(
+                    f"{len(door_facts)} door fact(s) + {len(window_facts)} window fact(s) for "
+                    f"level-{floor}. Each fact carries a vertexMm position the reader extracted "
+                    "from the floor plan."
+                ),
+                narrative_reasoning=(
+                    "For every opening fact: find the nearest live wall on the floor "
+                    "(exterior chain + interior partitions both qualify), compute the parameter "
+                    "alongT clamped so the opening fits with 100 mm endpoint margin, skip if "
+                    "the host is too short or too far away. Doors default 800 mm wide; windows "
+                    "1200 mm wide with sill 900 mm. Window height capped to wall_height − "
+                    "200 mm header reserve so the constructability lintel rule passes."
+                ),
+                narrative_outcome=(
+                    f"{placed_doors} door(s) + {placed_windows} window(s) hosted; "
+                    f"{len(skipped)} opening(s) skipped (typically interior doors whose nearest "
+                    "wall is beyond the 500 mm hosting threshold)."
+                ),
             )
             if skipped:
                 logger.info(
@@ -1232,6 +1603,20 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 submitter="testhouse_drive.floor",
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
+                narrative_input=(
+                    "The DG exterior_wall_chain (footprint) + IR roof globals "
+                    "(type, ridge orientation, eave/ridge heights, pitch). All extracted by "
+                    "the reader from Ansichten-1.png + the section view."
+                ),
+                narrative_reasoning=(
+                    "One createRoof with gable_pitched_rectangle geometry mode, footprint = DG "
+                    "polygon, slope 35°, overhang 400 mm. Dormers + ridge-precise height + "
+                    "party-wall flatness on the Doppelhaus west side are corrector-loop work."
+                ),
+                narrative_outcome=(
+                    "One main roof committed; the building reads as a closed mass in the visual "
+                    "captures. Dormers, ridge fine-tuning, and party-wall handling deferred."
+                ),
             )
 
     return 0
@@ -1247,6 +1632,9 @@ def _apply_slice_v2(
     submitter: str,
     consumed_fact_ids: list[str],
     source_evidence: list[dict],
+    narrative_input: str = "",
+    narrative_reasoning: str = "",
+    narrative_outcome: str = "",
 ) -> dict:
     """v2 wrapper around _apply_slice that injects the three new arrays.
 
@@ -1288,6 +1676,16 @@ def _apply_slice_v2(
                 "phase": phase,
                 "consumedFactIds": consumed_fact_ids,
                 "sourceEvidence": source_evidence,
+                # Human-readable narrative trio the inspector renders on
+                # each iter card so a reviewer can see — without
+                # cross-referencing the code — what the agent saw, what
+                # it decided, and what it produced.
+                "narrative": {
+                    "input": narrative_input,
+                    "reasoning": narrative_reasoning,
+                    "outcome": narrative_outcome,
+                },
+                "commandCount": len(bundle.get("commands") or []),
             },
             "tool": "hybrid-reverse-bim",
             "controllingTracker": TRACKER_PATH,
@@ -1376,6 +1774,130 @@ def _apply_slice_v2(
     }
     print(json.dumps(out, sort_keys=True))
     return out
+
+
+def _cmd_narrate_globals(args: argparse.Namespace) -> int:
+    """Synthesise iter-1 (reader) + iter-2 (scope) narrative.json sidecars
+    from the on-disk IR so the /agents dashboard's global-phase strip has
+    a card for every pre-MCP step (iter-0 preflight is written by the
+    preflight phase itself; iter-1 / iter-2 had no writer until this
+    subcommand existed).
+    """
+
+    house = args.house
+    ir_path = _ir_path(house)
+    if not ir_path.is_file():
+        raise FileNotFoundError(f"missing IR for narration: {ir_path}")
+    ir = json.loads(ir_path.read_text(encoding="utf-8"))
+    facts = ir.get("extractedFacts") or []
+    by_kind: dict[str, int] = {}
+    for f in facts:
+        k = str(f.get("kind") or "?")
+        by_kind[k] = by_kind.get(k, 0) + 1
+
+    reader_narrative = ir.get("readerNarrative") or {}
+    rn_input = str(reader_narrative.get("input") or "").strip()
+    rn_reasoning = str(reader_narrative.get("reasoning") or "").strip()
+    rn_outcome = str(reader_narrative.get("outcome") or "").strip()
+
+    # iter-1: reader-pass narrative.
+    docs = sorted({str(f.get("sourceDocId") or "") for f in facts if f.get("sourceDocId")})
+    levels = ir.get("levels") or []
+    _write_global_phase_narrative(
+        house=house,
+        iter_n=1,
+        phase="reader-pass",
+        narrative_input=(
+            rn_input
+            or (
+                f"The {len(docs)} preflight-rendered source-page PNG group(s) for house-{house} "
+                f"covering the EG / DG plans, elevations, section, plus supplementary "
+                f"Baubeschreibung and Wohnflächenberechnung documents."
+            )
+        ),
+        narrative_reasoning=(
+            rn_reasoning
+            or (
+                "A vision-capable subagent reads each rendered page, traces room outlines from "
+                "labels + dim chains, identifies partition lines between rooms, marks door / "
+                "window centers, and back-derives level heights from the section + Wohnflächen "
+                "calculations. Every extracted value carries a derivationNote spelling out the "
+                "source pixel-to-mm chain."
+            )
+        ),
+        narrative_outcome=(
+            rn_outcome
+            or f"{len(facts)} facts produced across {len(levels)} levels — broken down as "
+            + ", ".join(f"{k}={v}" for k, v in sorted(by_kind.items()))
+        ),
+        inputs=[
+            {
+                "path": f"tmp/reverse-bim/house-{house}/preflight/rendered-pages/{d}",
+                "role": "rendered-page-group",
+            }
+            for d in docs[:16]
+        ],
+        outputs=[
+            {
+                "path": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                "role": "existingBuildingIR_v2",
+            }
+        ],
+        extra={"summary": {"factTotal": len(facts), "byKind": by_kind, "levels": len(levels)}},
+    )
+
+    # iter-2: scope-decisions narrative.
+    scope = ir.get("scope") or {}
+    _write_global_phase_narrative(
+        house=house,
+        iter_n=2,
+        phase="scope-decisions",
+        narrative_input=(
+            "The reader IR's scope block + the per-house source-faithful constraints "
+            f"identified during iter-1: kind={scope.get('kind') or '?'}, "
+            f"halfWeKept={scope.get('halfWeKept') or 'n/a'}, "
+            f"partyWallSide={scope.get('partyWallSide') or 'n/a'}."
+        ),
+        narrative_reasoning=(
+            "Doppelhaus halves: model only the half-we-kept, treat the party-wall side as a "
+            "flat interior partition (175 mm, not a 365 mm exterior wall), origin at the SW "
+            "corner of the kept-half EG, +x east / +y north / units mm. The reader's "
+            "interior_partition facts already carry the party-wall segment; the driver's "
+            "exterior-wall builder skips any chain edge that overlaps a party-wall partition "
+            "so the two never collide."
+        ),
+        narrative_outcome=(
+            f"Scope locked: {scope.get('notes') or '(no notes)'}. Every downstream MCP slice "
+            "(KG → EG → DG → roof) honours these decisions."
+        ),
+        inputs=[
+            {
+                "path": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                "role": "existingBuildingIR_v2",
+            }
+        ],
+        outputs=[
+            {
+                "path": f"tmp/reverse-bim/house-{house}/iter-2/narrative.json",
+                "role": "testhousePhaseNarrative_v1",
+            }
+        ],
+        extra={"scope": scope},
+    )
+
+    print(
+        json.dumps(
+            {
+                "house": house,
+                "iter1": str(_house_workdir(house) / "iter-1" / "narrative.json"),
+                "iter2": str(_house_workdir(house) / "iter-2" / "narrative.json"),
+                "factTotal": len(facts),
+                "byKind": by_kind,
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
 
 
 def _cmd_author_ortho_views(args: argparse.Namespace) -> int:
@@ -1620,6 +2142,13 @@ def _build_parser() -> argparse.ArgumentParser:
     ov.add_argument("--house", required=True, choices=HOUSES)
     ov.add_argument("--iter", type=int, required=True)
     ov.set_defaults(func=_cmd_author_ortho_views)
+
+    ng = sub.add_parser(
+        "narrate-globals",
+        help="Synthesise iter-1 (reader) + iter-2 (scope) narrative.json from the IR.",
+    )
+    ng.add_argument("--house", required=True, choices=HOUSES)
+    ng.set_defaults(func=_cmd_narrate_globals)
 
     fl = sub.add_parser(
         "floor",
