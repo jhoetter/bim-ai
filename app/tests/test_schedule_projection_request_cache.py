@@ -23,6 +23,7 @@ def test_schedule_table_request_cache_reuses_document_schedule_result(monkeypatc
         schedule_id: str,
         *,
         room_boundary_derivation: dict[str, Any] | None = None,
+        lightweight: bool = False,
     ) -> dict[str, Any]:
         nonlocal calls
         calls += 1
@@ -61,6 +62,7 @@ def test_schedule_table_request_cache_keys_room_boundary_bundle(monkeypatch) -> 
         _schedule_id: str,
         *,
         room_boundary_derivation: dict[str, Any] | None = None,
+        lightweight: bool = False,
     ) -> dict[str, Any]:
         nonlocal calls
         calls += 1
