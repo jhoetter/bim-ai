@@ -52,10 +52,44 @@ export interface SessionDetailResponse {
 
 // Time-travel Wave 4: wire types for the per-house iter-picker.
 // Mirrors app/bim_ai/routes/time_travel.py:list_commits().
+// The v2 testhouse driver also writes consumedFactIds + sourceEvidence
+// + producedElementIds on each phase commit so the agents dashboard
+// can render the full doc → fact → element trail per iter card; see
+// spec/agents-view-traceability-spec.md (Ask 2) for the contract.
+export interface TestHouseSourceEvidence {
+  docId: string;
+  page: string; // PNG filename inside rendered-pages/<docId>/
+  role?: string | null;
+  renderedPath?: string | null;
+}
+
 export interface TestHouseIterRef {
   house?: string | null;
   iter?: number | null;
   phase?: string | null;
+  consumedFactIds?: string[];
+  producedElementIds?: string[];
+  sourceEvidence?: TestHouseSourceEvidence[];
+}
+
+// IR v2 fact shape. The fact endpoint returns whatever lives in
+// existing-building-ir.json#extractedFacts[], so we type the fields
+// we render and pass the rest through as a passthrough record.
+export interface ExtractedFact {
+  factId: string;
+  kind: string;
+  status?: string;
+  levelId?: string | null;
+  sourceDocId?: string | null;
+  sourcePage?: string | null;
+  confidence?: string | null;
+  note?: string | null;
+  text?: string | null;
+  valueMm?: number | null;
+  vertexMm?: [number, number] | null;
+  polygonMm?: Array<[number, number]> | null;
+  // Pass-through for unknown keys without losing typing on the known ones.
+  [key: string]: unknown;
 }
 
 export interface CommitListItem {

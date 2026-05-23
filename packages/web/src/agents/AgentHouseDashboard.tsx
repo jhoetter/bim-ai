@@ -1,10 +1,13 @@
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import type {
   CommitListItem,
+  CommitListResponse,
+  ExtractedFact,
   IterPickerItem,
   IterPickerResponse,
   SessionSummary,
+  TestHouseSourceEvidence,
 } from './types';
 import './agents.css';
 
@@ -116,10 +119,15 @@ export function lastCommitPerIter(commits: CommitListItem[]): Array<{
  * `/workspace/<modelId>?at=…`; the functional behaviour is identical and
  * keeping the existing route avoids a router rewrite.
  */
-export function historicalViewerUrl(modelId: string, commitId: string): string {
+export function historicalViewerUrl(
+  modelId: string,
+  commitId: string,
+  selectElementId?: string,
+): string {
   const params = new URLSearchParams();
   params.set('modelId', modelId);
   params.set('at', commitId);
+  if (selectElementId) params.set('select', selectElementId);
   return `/?${params.toString()}`;
 }
 
@@ -141,6 +149,18 @@ export function AgentHouseDashboard(): JSX.Element {
   // means "no iframe loaded" — picking an iter sets it; users can also
   // explicitly unload via the close button to free the embedded viewer.
   const [previewIter, setPreviewIter] = useState<IterPickerItem | null>(null);
+  // All per-phase commits for this house, newest first. Used by the
+  // trail section to render one card PER commit (not collapsed to one
+  // per iter), surfacing consumedFactIds / sourceEvidence /
+  // producedElementIds for full traceability.
+  const [houseCommits, setHouseCommits] = useState<CommitListItem[] | null>(null);
+  const [houseCommitsError, setHouseCommitsError] = useState<string | null>(null);
+  // Per-iter scoring markdown, fetched on demand when its parent
+  // ``iterations[]`` entry reports ``scoringReportPresent``. Keyed by
+  // iter label (``iter-3``) → markdown text. Missing = not yet fetched
+  // or 404. The fetch is lazy so we don't fan out N requests on first
+  // render for houses with many iters.
+  const [iterScoring, setIterScoring] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!house) return;
@@ -266,10 +286,115 @@ export function AgentHouseDashboard(): JSX.Element {
     if (latestCommitted) setPreviewIter(latestCommitted);
   }, [iterPicker, previewIter]);
 
+  // Fetch ALL per-phase commits for this house so the trail section can
+  // render one card per commit (not one per iter). Resolved modelId
+  // comes from the iter-picker / dashboard endpoint chain; we wait for
+  // it before issuing the fetch to avoid a doomed call against an empty
+  // model id.
+  const trailModelId = iterPicker?.modelId ?? data?.modelId ?? null;
+  useEffect(() => {
+    if (!house || !trailModelId) {
+      setHouseCommits(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(
+      `/api/models/${encodeURIComponent(trailModelId)}/commits?testhouse_house=${encodeURIComponent(house)}&limit=50`,
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json() as Promise<CommitListResponse>;
+      })
+      .then((payload) => {
+        if (cancelled) return;
+        setHouseCommits(payload.items);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setHouseCommitsError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [house, trailModelId]);
+
   const selected = useMemo(
     () => data?.iterations.find((it) => it.iteration === selectedIter) ?? null,
     [data, selectedIter],
   );
+
+  // Group commits into iters in the same order the testhouse driver
+  // produces them. Returns iters newest-first (matches the API), and
+  // within each iter we keep the commit order the server delivered
+  // (newest first → oldest), then reverse so the UI reads phase-by-
+  // phase chronologically inside one iter card.
+  const commitsByIter = useMemo(() => {
+    type Group = { iter: number; iterLabel: string; commits: CommitListItem[] };
+    if (!houseCommits) return [] as Group[];
+    const groups = new Map<number, Group>();
+    for (const c of houseCommits) {
+      const iter = c.context?.testhouse_iter?.iter;
+      if (typeof iter !== 'number') continue;
+      let g = groups.get(iter);
+      if (!g) {
+        g = { iter, iterLabel: `iter-${iter}`, commits: [] };
+        groups.set(iter, g);
+      }
+      g.commits.push(c);
+    }
+    // Iter ordering: newest iter first (matches the rest of the page).
+    // Within an iter the API delivered newest-first; reverse so the
+    // earliest phase commit of the iter renders at the top of the card.
+    return [...groups.values()]
+      .sort((a, b) => b.iter - a.iter)
+      .map((g) => ({ ...g, commits: [...g.commits].reverse() }));
+  }, [houseCommits]);
+
+  // Lazy-load scoring markdown for an iter when its panel is expanded.
+  // The fetch caches into iterScoring so re-expanding doesn't re-fetch;
+  // the empty-string sentinel covers 404 (gate present in iterations[]
+  // metadata but markdown missing on disk — shouldn't happen but we
+  // tolerate it gracefully).
+  const ensureScoringLoaded = useCallback(
+    (iterLabel: string) => {
+      if (!house) return;
+      if (iterLabel in iterScoring) return;
+      // Mark as in-flight by setting empty string first to avoid double-fetch.
+      setIterScoring((prev) => ({ ...prev, [iterLabel]: '' }));
+      fetch(
+        `/api/agent-runs/houses/${encodeURIComponent(house)}/iterations/${encodeURIComponent(iterLabel)}/scoring`,
+      )
+        .then((res) => {
+          if (res.status === 404) return '_No scoring report on disk for this iter._';
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          return res.text();
+        })
+        .then((text) => {
+          setIterScoring((prev) => ({ ...prev, [iterLabel]: text }));
+        })
+        .catch((err) => {
+          setIterScoring((prev) => ({
+            ...prev,
+            [iterLabel]: `Failed to load scoring: ${err instanceof Error ? err.message : String(err)}`,
+          }));
+        });
+    },
+    [house, iterScoring],
+  );
+
+  // Convenience map iter-label → boolean from the dashboard summary
+  // (iterations[].scoringReportPresent is the truth source; legacy iter-
+  // captures dirs are the only ones the dashboard summary scans, but
+  // scoring sidecars live in iter-N-scoring/ keyed by iter label, so we
+  // also fall back to "always offer" the report load action and let
+  // the endpoint 404 when absent).
+  const scoringPresentByIter = useMemo(() => {
+    const out: Record<string, boolean> = {};
+    for (const it of data?.iterations ?? []) {
+      out[it.iteration] = !!it.scoringReportPresent;
+    }
+    return out;
+  }, [data]);
 
   const currentCapture = useMemo(() => {
     if (!selected) return null;
@@ -476,6 +601,85 @@ export function AgentHouseDashboard(): JSX.Element {
                 />
               </div>
             ) : null}
+          </section>
+
+          <section
+            className="agents-trail-section"
+            data-testid="agents-trail-section"
+          >
+            <h2>Doc → fact → element trail</h2>
+            <p className="agents-count">
+              One card per phase commit, newest iter first. Each card shows
+              which IR facts the slice consumed, the rendered source pages
+              it drew evidence from, and the BIM elements it produced.
+            </p>
+            {houseCommitsError ? (
+              <p className="agents-error">
+                Failed to load commits: {houseCommitsError}
+              </p>
+            ) : null}
+            {!houseCommits && !houseCommitsError ? (
+              <p>Loading commits…</p>
+            ) : null}
+            {houseCommits && commitsByIter.length === 0 ? (
+              <p>
+                No phase commits with <code>testhouse_iter</code> context
+                found for <code>{house}</code>.
+              </p>
+            ) : null}
+            {commitsByIter.map((group) => {
+              const scoringText = iterScoring[group.iterLabel];
+              const scoringFlag = scoringPresentByIter[group.iterLabel];
+              return (
+                <div
+                  key={group.iter}
+                  className="agents-trail-iter"
+                  data-testid={`agents-trail-${group.iterLabel}`}
+                >
+                  <h3 className="agents-trail-iter-title">
+                    <span>{group.iterLabel}</span>
+                    <small>
+                      {group.commits.length} phase commit
+                      {group.commits.length === 1 ? '' : 's'}
+                    </small>
+                  </h3>
+                  <ul className="agents-trail-commit-list">
+                    {group.commits.map((c) => (
+                      <CommitTrailCard
+                        key={c.commitId}
+                        commit={c}
+                        house={house}
+                        modelId={c.modelId}
+                      />
+                    ))}
+                  </ul>
+                  <details
+                    className="agents-trail-scoring"
+                    onToggle={(e) => {
+                      if ((e.target as HTMLDetailsElement).open) {
+                        ensureScoringLoaded(group.iterLabel);
+                      }
+                    }}
+                  >
+                    <summary>
+                      Visual-fidelity scoring report
+                      {scoringFlag ? (
+                        <small> (present)</small>
+                      ) : (
+                        <small> (may be absent — opens to check)</small>
+                      )}
+                    </summary>
+                    {scoringText === undefined ? (
+                      <p>Click to load.</p>
+                    ) : scoringText === '' ? (
+                      <p>Loading…</p>
+                    ) : (
+                      <pre className="agents-scoring">{scoringText}</pre>
+                    )}
+                  </details>
+                </div>
+              );
+            })}
           </section>
 
           <section className="agents-sessions-section">
@@ -719,5 +923,284 @@ function SessionTable({
         </table>
       )}
     </details>
+  );
+}
+
+interface CommitTrailCardProps {
+  commit: CommitListItem;
+  house: string;
+  modelId: string;
+}
+
+/**
+ * One trail card per phase commit. Renders three orthogonal slices of
+ * the v2 commit-context block (``testhouse_iter.{consumedFactIds,
+ * sourceEvidence, producedElementIds}``):
+ *
+ *  - **consumedFactIds** as chip buttons. Click → lazy-fetch the fact
+ *    JSON from the IR endpoint and pop a small inline detail panel.
+ *  - **sourceEvidence** as a thumbnail strip. Each thumbnail loads the
+ *    rendered source page via the per-house source-page endpoint
+ *    (Ask 1). Click → opens the full PNG in a new tab.
+ *  - **producedElementIds** as chip links to the historical viewer at
+ *    ``/?modelId=<m>&at=<commit>&select=<elementId>``.
+ *
+ * Empty arrays are tolerated silently (e.g. the v1 commit
+ * `01KSA86DE7T4FMP0A61EZ40P0N` and any future phase commits the driver
+ * hasn't filled out yet — the card just renders the title and a hint).
+ */
+function CommitTrailCard({
+  commit,
+  house,
+  modelId,
+}: CommitTrailCardProps): JSX.Element {
+  const block = commit.context?.testhouse_iter;
+  const facts = block?.consumedFactIds ?? [];
+  const evidence = block?.sourceEvidence ?? [];
+  const elements = block?.producedElementIds ?? [];
+  const phase = block?.phase ?? null;
+  return (
+    <li
+      className="agents-trail-card"
+      data-testid={`agents-trail-commit-${commit.commitId}`}
+    >
+      <div className="agents-trail-card-header">
+        <span className="agents-trail-phase">
+          {phase ? <code>{phase}</code> : <em>no phase</em>}
+        </span>
+        <span className="agents-trail-card-spacer" />
+        <a
+          className="agents-trail-card-link"
+          href={historicalViewerUrl(modelId, commit.commitId)}
+          target="_blank"
+          rel="noreferrer noopener"
+          title={`Open commit ${commit.commitId} in the historical viewer`}
+        >
+          <code>{commit.commitId.slice(0, 12)}…</code>
+        </a>
+      </div>
+      {facts.length === 0 && evidence.length === 0 && elements.length === 0 ? (
+        <p className="agents-trail-empty">
+          No v2 trail metadata on this commit (legacy or v1 row).
+        </p>
+      ) : null}
+      {facts.length > 0 ? (
+        <div className="agents-trail-block">
+          <span className="agents-trail-label">Consumed facts</span>
+          <ul className="agents-chip-list">
+            {facts.map((fid) => (
+              <li key={fid}>
+                <FactChip house={house} factId={fid} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {evidence.length > 0 ? (
+        <div className="agents-trail-block">
+          <span className="agents-trail-label">Source evidence</span>
+          <ul className="agents-thumb-strip">
+            {evidence.map((ev, i) => (
+              <li key={`${ev.docId}-${ev.page}-${i}`}>
+                <SourceThumb evidence={ev} house={house} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {elements.length > 0 ? (
+        <div className="agents-trail-block">
+          <span className="agents-trail-label">Produced elements</span>
+          <ul className="agents-chip-list">
+            {elements.map((eid) => (
+              <li key={eid}>
+                <a
+                  className="agents-chip agents-chip--element"
+                  href={historicalViewerUrl(modelId, commit.commitId, eid)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={`Open ${eid} at this commit`}
+                >
+                  <code>{eid}</code>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+interface FactChipProps {
+  house: string;
+  factId: string;
+}
+
+/**
+ * A chip that lazily loads the underlying IR fact via the per-house
+ * fact endpoint when expanded. Renders the chip text as the factId and
+ * a compact value summary in the popover (one of valueMm, vertexMm,
+ * polygonMm-vertex-count, or text — whichever is present).
+ */
+function FactChip({ house, factId }: FactChipProps): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [fact, setFact] = useState<ExtractedFact | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = (): void => {
+    const next = !open;
+    setOpen(next);
+    if (next && !fact && !loading && !err) {
+      setLoading(true);
+      fetch(
+        `/api/agent-runs/houses/${encodeURIComponent(house)}/facts/${encodeURIComponent(factId)}`,
+      )
+        .then((res) => {
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          return res.json() as Promise<ExtractedFact>;
+        })
+        .then((payload) => {
+          setFact(payload);
+          setLoading(false);
+        })
+        .catch((e) => {
+          setErr(e instanceof Error ? e.message : String(e));
+          setLoading(false);
+        });
+    }
+  };
+
+  return (
+    <div className={'agents-chip-wrap' + (open ? ' agents-chip-wrap--open' : '')}>
+      <button
+        type="button"
+        className="agents-chip agents-chip--fact"
+        onClick={toggle}
+        aria-expanded={open}
+        title={`Show details for ${factId}`}
+      >
+        <code>{factId}</code>
+      </button>
+      {open ? (
+        <div className="agents-chip-popover" role="dialog">
+          {loading ? <p>Loading…</p> : null}
+          {err ? <p className="agents-error">{err}</p> : null}
+          {fact ? <FactDetails fact={fact} /> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FactDetails({ fact }: { fact: ExtractedFact }): JSX.Element {
+  // Pick the most-load-bearing value field to summarise. Order matches
+  // the IR schema's most-specific-first preference: a polygonMm fact
+  // (room outline) reads as N vertices, a vertexMm fact (single point)
+  // reads as a coordinate, a valueMm fact (height) reads as the
+  // millimetre integer, and a text-only fact reads as the text.
+  let valueSummary: JSX.Element | null = null;
+  if (Array.isArray(fact.polygonMm)) {
+    valueSummary = (
+      <>
+        <strong>polygonMm:</strong> {fact.polygonMm.length} vertices
+      </>
+    );
+  } else if (Array.isArray(fact.vertexMm)) {
+    valueSummary = (
+      <>
+        <strong>vertexMm:</strong> [{fact.vertexMm[0]}, {fact.vertexMm[1]}]
+      </>
+    );
+  } else if (typeof fact.valueMm === 'number') {
+    valueSummary = (
+      <>
+        <strong>valueMm:</strong> {fact.valueMm} mm
+      </>
+    );
+  } else if (typeof fact.text === 'string' && fact.text.length > 0) {
+    valueSummary = (
+      <>
+        <strong>text:</strong> {fact.text}
+      </>
+    );
+  }
+  return (
+    <dl className="agents-fact-details">
+      <dt>kind</dt>
+      <dd>
+        <code>{fact.kind}</code>
+      </dd>
+      <dt>status</dt>
+      <dd>
+        <code>{fact.status ?? '—'}</code>
+      </dd>
+      {fact.levelId ? (
+        <>
+          <dt>level</dt>
+          <dd>
+            <code>{fact.levelId}</code>
+          </dd>
+        </>
+      ) : null}
+      {fact.confidence ? (
+        <>
+          <dt>confidence</dt>
+          <dd>{fact.confidence}</dd>
+        </>
+      ) : null}
+      {valueSummary ? (
+        <>
+          <dt>value</dt>
+          <dd>{valueSummary}</dd>
+        </>
+      ) : null}
+      {fact.sourcePage ? (
+        <>
+          <dt>source</dt>
+          <dd>
+            <code>{fact.sourcePage}</code>
+          </dd>
+        </>
+      ) : null}
+      {fact.note ? (
+        <>
+          <dt>note</dt>
+          <dd>{fact.note}</dd>
+        </>
+      ) : null}
+    </dl>
+  );
+}
+
+interface SourceThumbProps {
+  evidence: TestHouseSourceEvidence;
+  house: string;
+}
+
+/**
+ * Renders one ``<a>`` wrapping a thumbnail ``<img>`` for a source-
+ * evidence row. The `page` field carries the PNG filename (e.g.
+ * "EG-1.png") and the docId picks the rendered-pages subfolder. The
+ * source-page endpoint serves the full PNG; the browser scales it
+ * down for the thumbnail without a separate thumb file.
+ */
+function SourceThumb({ evidence, house }: SourceThumbProps): JSX.Element {
+  const url = `/api/agent-runs/houses/${encodeURIComponent(house)}/source-pages/${encodeURIComponent(evidence.docId)}/${encodeURIComponent(evidence.page)}`;
+  return (
+    <a
+      className="agents-thumb"
+      href={url}
+      target="_blank"
+      rel="noreferrer noopener"
+      title={`${evidence.docId} / ${evidence.page}${evidence.role ? ` · role=${evidence.role}` : ''}`}
+    >
+      <img src={url} alt={`${evidence.docId} ${evidence.page}`} loading="lazy" />
+      <span className="agents-thumb-caption">
+        <code>{evidence.page}</code>
+        {evidence.role ? <small>{evidence.role}</small> : null}
+      </span>
+    </a>
   );
 }

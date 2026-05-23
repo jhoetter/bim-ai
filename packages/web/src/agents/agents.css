@@ -452,3 +452,254 @@
   max-height: 500px;
   overflow: auto;
 }
+
+/* ── Doc → fact → element trail ───────────────────────────────────── */
+
+.agents-trail-section {
+  margin-top: 24px;
+}
+.agents-trail-section h2 {
+  margin: 8px 0 4px;
+  font-size: 16px;
+}
+
+.agents-trail-iter {
+  margin: 16px 0;
+  padding: 8px 12px 4px;
+  background: #f7f8fa;
+  border: 1px solid #d8dde3;
+  border-radius: 5px;
+}
+
+.agents-trail-iter-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.agents-trail-iter-title small {
+  font-size: 11px;
+  color: #777;
+  font-weight: normal;
+}
+
+.agents-trail-commit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agents-trail-card {
+  background: #fff;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.agents-trail-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.agents-trail-card-spacer {
+  flex: 1;
+}
+.agents-trail-phase code {
+  background: #eef3fa;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #1659b8;
+}
+.agents-trail-card-link {
+  color: #1659b8;
+  text-decoration: none;
+  font-size: 11px;
+}
+.agents-trail-card-link:hover {
+  text-decoration: underline;
+}
+
+.agents-trail-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.agents-trail-label {
+  flex: 0 0 110px;
+  color: #666;
+  font-weight: 600;
+  padding-top: 4px;
+}
+
+.agents-trail-empty {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.agents-chip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.agents-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #cfd6dc;
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #333;
+  text-decoration: none;
+  font-family: inherit;
+}
+.agents-chip:hover {
+  border-color: #1659b8;
+  color: #1659b8;
+}
+.agents-chip code {
+  font-size: 11px;
+}
+
+.agents-chip--fact {
+  background: #fffbe6;
+  border-color: #e0d180;
+}
+.agents-chip--fact:hover {
+  background: #fff7c2;
+  border-color: #b58a00;
+  color: #b58a00;
+}
+
+.agents-chip--element {
+  background: #e6f5ec;
+  border-color: #93cba6;
+  color: #2e7d32;
+}
+.agents-chip--element:hover {
+  background: #d4ecdf;
+  border-color: #2e7d32;
+  color: #1c5722;
+}
+
+.agents-chip-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.agents-chip-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  min-width: 260px;
+  max-width: 360px;
+  background: #fff;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #222;
+}
+
+.agents-fact-details {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 2px 8px;
+}
+.agents-fact-details dt {
+  color: #777;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.agents-fact-details dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.agents-thumb-strip {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.agents-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #cfd6dc;
+  border-radius: 3px;
+  background: #fff;
+  padding: 4px;
+  text-decoration: none;
+  color: inherit;
+  max-width: 140px;
+}
+.agents-thumb:hover {
+  border-color: #1659b8;
+}
+.agents-thumb img {
+  display: block;
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  background: #f0f0f0;
+  border-radius: 2px;
+}
+.agents-thumb-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  font-size: 10px;
+  color: #444;
+  text-align: center;
+}
+.agents-thumb-caption code {
+  font-size: 10px;
+}
+.agents-thumb-caption small {
+  font-size: 9px;
+  color: #888;
+}
+
+.agents-trail-scoring {
+  margin: 8px 0 4px;
+}
+.agents-trail-scoring summary {
+  cursor: pointer;
+  color: #555;
+  font-size: 12px;
+}
+.agents-trail-scoring summary small {
+  color: #888;
+  margin-left: 4px;
+}

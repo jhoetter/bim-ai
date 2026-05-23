@@ -346,6 +346,83 @@ async def get_iteration_capture(
     return FileResponse(str(path), media_type=media_type)
 
 
+# Source-doc id pattern: srcdoc-<12 lowercase hex chars>. The testhouse
+# preflight pipeline writes rendered PNGs under
+# ``tmp/reverse-bim/house-<X>/preflight/rendered-pages/<docId>/<filename>.png``;
+# commit-context ``sourceEvidence[].renderedPath`` references those paths
+# and the dashboard resolves a thumbnail via this endpoint.
+_SOURCE_DOC_ID_RE = re.compile(r"^srcdoc-[a-f0-9]{12}$")
+# Filename allows letters/digits/underscores plus hyphens, dots, spaces,
+# and commas — the renderer occasionally produces filenames like
+# ``"Grundrisse, Schnitt-1.png"`` so we widen beyond ``[\w\-.]``.
+_SOURCE_PAGE_FILENAME_RE = re.compile(r"^[\w\-., ]+\.png$")
+
+
+@agent_runs_router.get("/agent-runs/houses/{house}/source-pages/{doc_id}/{filename}")
+async def get_source_page(house: str, doc_id: str, filename: str) -> FileResponse:
+    """Serve a single rendered source-document page for a house.
+
+    Mirrors :func:`get_iteration_capture`'s security model: validate the
+    house, then validate ``doc_id`` and ``filename`` against tight regexes
+    before joining to a path under ``tmp/reverse-bim/house-<X>/preflight
+    /rendered-pages/<docId>/<filename>.png``. The dashboard's source-
+    evidence thumbnail strip calls this endpoint with the ``docId`` +
+    ``page`` fields from each commit's ``sourceEvidence[]`` row.
+    """
+
+    house = _validate_house(house)
+    if not _SOURCE_DOC_ID_RE.match(doc_id):
+        raise HTTPException(status_code=400, detail=f"Invalid doc_id: {doc_id!r}")
+    if ".." in filename or "/" in filename or not _SOURCE_PAGE_FILENAME_RE.match(filename):
+        raise HTTPException(status_code=400, detail=f"Invalid filename: {filename!r}")
+    path = (
+        _reverse_bim_dir()
+        / f"house-{house}"
+        / "preflight"
+        / "rendered-pages"
+        / doc_id
+        / filename
+    )
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail=f"Source page not found: {filename}")
+    return FileResponse(str(path), media_type="image/png")
+
+
+# Fact ids in IR v2 are short kebab-case slugs like ``room-eg-wohnzimmer``
+# or ``exterior-chain-dg``. The schema permits dots (for nested ids) and
+# underscores; we keep the regex broad but reject path separators.
+_FACT_ID_RE = re.compile(r"^[\w\-.]+$")
+
+
+@agent_runs_router.get("/agent-runs/houses/{house}/facts/{fact_id}")
+async def get_fact(house: str, fact_id: str) -> dict[str, Any]:
+    """Return the raw IR fact dict for ``fact_id`` under ``house``.
+
+    Reads ``tmp/reverse-bim/house-<X>/understanding/existing-building-ir
+    .json`` and linear-scans ``extractedFacts`` for a matching ``factId``.
+    Used by the dashboard's consumed-fact chip popovers so the UI can
+    show ``kind`` / ``status`` / ``text`` / value summary without
+    loading the whole IR client-side.
+    """
+
+    house = _validate_house(house)
+    if not _FACT_ID_RE.match(fact_id):
+        raise HTTPException(status_code=400, detail=f"Invalid fact_id: {fact_id!r}")
+    ir_path = _reverse_bim_dir() / f"house-{house}" / "understanding" / "existing-building-ir.json"
+    if not ir_path.is_file():
+        raise HTTPException(status_code=404, detail=f"No IR for house {house}")
+    try:
+        ir = json.loads(ir_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail=f"IR read/parse failed: {exc}") from exc
+    facts = ir.get("extractedFacts") if isinstance(ir, dict) else None
+    if isinstance(facts, list):
+        for fact in facts:
+            if isinstance(fact, dict) and str(fact.get("factId")) == fact_id:
+                return fact
+    raise HTTPException(status_code=404, detail=f"Fact {fact_id} not found in IR")
+
+
 @agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/scoring")
 async def get_iteration_scoring(
     house: str,
