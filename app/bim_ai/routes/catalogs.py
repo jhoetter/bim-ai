@@ -34,7 +34,7 @@ async def catalog_query_endpoint(
     style: str | None = None,
     page: int = 0,
     pageSize: int = 50,
-) -> dict:
+) -> dict[str, Any]:
     from bim_ai.catalog.query import query_catalog
 
     return query_catalog(
