@@ -8,7 +8,6 @@ import math
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -1984,9 +1983,14 @@ def resolve_plan_projection_wire(
             global_plan_presentation=global_plan_presentation,
             sheet_viewport_row_for_crop=sheet_viewport_row_for_crop,
         )
+    # Cache key fingerprints the element set (length + ordered ids) so throwaway
+    # `Document(elements=...)` wraps of the same underlying elements still hit —
+    # `id(doc.elements)` is unstable because pydantic v2 builds a new dict during
+    # validation. Mirrors the PERF-C04 fix in `room_derivation.compute_room_boundary_derivation`.
+    # The wire is returned by reference; callers must treat it as read-only.
+    # The cross-request `_PLAN_PROJECTION_CACHE` in `routes/api.py` already deepcopies on store.
     key = (
-        id(doc),
-        id(doc.elements),
+        (len(doc.elements), tuple(doc.elements.keys())),
         plan_view_id or "",
         fallback_level_id or "",
         global_plan_presentation,
@@ -1994,7 +1998,7 @@ def resolve_plan_projection_wire(
     )
     cached = cache.get(key)
     if cached is not None:
-        return deepcopy(cached)
+        return cached
     wire = _resolve_plan_projection_wire_uncached(
         doc,
         plan_view_id=plan_view_id,
@@ -2002,7 +2006,7 @@ def resolve_plan_projection_wire(
         global_plan_presentation=global_plan_presentation,
         sheet_viewport_row_for_crop=sheet_viewport_row_for_crop,
     )
-    cache[key] = deepcopy(wire)
+    cache[key] = wire
     return wire
 
 

@@ -6,7 +6,6 @@ from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from copy import deepcopy
 from typing import Any
 
 from bim_ai.construction_lens import construction_progress_rows
@@ -753,17 +752,28 @@ def derive_schedule_table(
             room_boundary_derivation=room_boundary_derivation,
             lightweight=lightweight,
         )
-    key = (id(doc), id(doc.elements), schedule_id, id(room_boundary_derivation), lightweight)
+    # Cache key fingerprints the element set (length + ordered ids) so throwaway
+    # `Document(elements=...)` wraps of the same underlying elements still hit —
+    # `id(doc.elements)` is unstable because pydantic v2 builds a new dict during
+    # validation. Mirrors the PERF-C04 fix in `room_derivation.compute_room_boundary_derivation`.
+    # The table is returned by reference; callers must treat it as read-only.
+    # The cross-request caches in `routes/api.py` already deepcopy on store.
+    key = (
+        (len(doc.elements), tuple(doc.elements.keys())),
+        schedule_id,
+        id(room_boundary_derivation),
+        lightweight,
+    )
     cached = cache.get(key)
     if cached is not None:
-        return deepcopy(cached)
+        return cached
     table = _derive_schedule_table_uncached(
         doc,
         schedule_id,
         room_boundary_derivation=room_boundary_derivation,
         lightweight=lightweight,
     )
-    cache[key] = deepcopy(table)
+    cache[key] = table
     return table
 
 
