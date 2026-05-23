@@ -317,6 +317,10 @@ Each row = one /loop iteration. The loop appends here.
 | 3.g | 2026-05-24 01:04Z | beta | iter-2 grade: **8.9/10** (+0.76); topGap south dormer (still 1100 mm — driver clamp shrinks 5500 → 1100 because engine ridge heuristic says ridge is N-S for beta DG, dormer position lands near a ridge end). FIX = engine ridgeAlongX field (queued as EA-NEW) or driver footprint swap | 8.9 | iter-3 + maybe ridge fix |
 | 3.g | 2026-05-24 01:08Z | gamma | iter-2 grade: **8.94/10** (+2.49); topGap east facade (rounded ARBEITEN bay collapsed to flat wall — IR-noted v2.1 simplification); roof pitch 35° vs IR 45° = noted defect | 8.94 | iter-3 with derived pitch |
 | 4 | 2026-05-24 01:12Z | (all) | IR-patch: added `valueMm=eave,ridge` to beta+gamma eave_height/ridge_height facts (driver pitch derivation requires numeric valueMm; reader pass only filled the `text` field). Now alpha 40.6° / beta 39.8° / gamma 45.7° vs prior hardcoded 35° | n/a | iter-3 author |
+| 4.g | 2026-05-24 01:27Z | alpha | iter-3 (tight-rubric): **8.9/10** (consistent with iter-2 visual gains; §4.5 NOT inflated now); topGap=materials (wall.materialKey set but viewer ignores) | 8.9 | NS-4 materials fix |
+| 4.g | 2026-05-24 01:33Z | beta | iter-3: **7.41/10** (grader caught ridge rotation 90°: IR says E-W, engine span heuristic says N-S); dormer on wrong face | 7.41 | NS-4 ridgeAlongX |
+| 4.g | 2026-05-24 01:25Z | gamma | iter-3: **7.5/10** (KG+DG partition sparseness — IR has 1 each; driver mirror-from-EG only triggers at zero) | 7.5 | NS-5 lower mirror threshold |
+| 5 | 2026-05-24 01:35Z | (all) | NS-4 shipped (`06e6c0f8c`): explicit ridgeAlongX engine field + wall material visibility (materialKey → face_material_overrides synthesis when no wall_type bound). Driver reads IR ridge_orientation text → ridgeAlongX True/False; beta pitch now 31.1° per E-W ridge math | n/a | iter-4 author |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
