@@ -107,28 +107,74 @@ reference evidence with decision, reason, affected scope, and reviewed source
 evidence. They must not become modeled geometry or hide missing values that are
 required to author walls, rooms, openings, stairs, roofs, terrain, or schedules.
 
-## Modeling Slices
+## Modeling Slices — inside-out per floor
 
 Model in this order unless the source package says otherwise:
 
 1. project setup, levels, origin, target scope, review views;
-2. KG/basement;
-3. EG/ground floor;
-4. DG/upper floor;
-5. vertical circulation, stairs, slab openings, railing;
-6. roof, dormers, roof openings, elevations;
-7. site, parcel, terrain/topology;
-8. materials, assemblies, schedules, areas, volumes;
-9. final evidence and acceptance.
+2. **per floor, KG → EG → DG, inside-out** (see "Per-floor loop" below);
+3. roof + dormers + roof openings + ridge + eaves (treated as the upper-most "floor");
+4. vertical circulation, stairs, slab openings, railing (authored as part of
+   the floor that owns each segment — typically EG owns the EG↔DG stair);
+5. site, parcel, terrain/topology;
+6. materials, assemblies, schedules, areas, volumes;
+7. final evidence and acceptance.
 
-For every slice:
+**Inside-out is non-negotiable.** Authoring exterior walls first
+("outside-in") and trying to derive rooms from them afterwards
+consistently produces a "vanilla box" with no room topology, no
+party-wall flatness in Doppelhaus halves, and openings that fail to
+host. Inside-out reads the source floor plan room-by-room, places the
+room outlines first, derives partitions between rooms, places openings
+inside the partition + exterior segments, and *then* the exterior wall
+chain follows from the perimeter of the room outlines.
+
+### Per-floor loop
+
+For each floor in order (KG → EG → DG → roof), run all six phases
+before the next floor opens. Every phase commits its own slice with a
+distinct `phase` slug; the six commits together form one floor:
+
+1. `<floor>-rooms` — author room outlines from the source floor plan.
+   One `createRoomOutline` (or equivalent) per source-named room.
+2. `<floor>-partitions` — interior partitions between rooms, derived
+   from the shared edges of adjacent room outlines.
+3. `<floor>-openings` — doors + windows + slab openings, hosted on
+   the partitions and exterior segments authored so far. Vertical
+   circulation (stairs) that originates on this floor lands here.
+4. `<floor>-exterior-walls` — the perimeter of the union of room
+   outlines becomes the exterior wall chain. For Doppelhaus halves
+   the party-wall side stays flat (no gable, no eave overhang).
+5. `<floor>-structural-gate` — run `qa.advisor`,
+   `qa.constructability`, `qa.integrity_preflight`,
+   `reverse_bim.level_completeness`, `reverse_bim.physical_topology`.
+   Block on errors; tolerate warnings only with explicit
+   source-backed dispositions.
+6. `<floor>-visual-gate` — capture plan view + 4 cardinal ortho 3D
+   views + 4 elevation views; spawn a grader subagent against the
+   source floor plan + elevation pages; require **`≥ 9/10`** to
+   advance (target `10/10`).
+
+If `<floor>-visual-gate` returns `< 9/10`, open a
+`<floor>-corrector-<N>` phase: spawn a corrector subagent with the
+captures + the grader's `topFixesForNextIter` list, apply the
+returned bundle, recapture, regrade. Loop until pass.
+
+### Per-slice mechanics
+
+For every slice (including each of the six per-floor phases):
 
 1. Select the slice facts from the source specification.
 2. Run MCP readiness.
 3. Resolve levels, hosts, wall matches, loops, types, and roof positions.
 4. Generate semantic MCP bundles.
 5. Dry-run every mutation.
-6. Commit only after dry-run passes.
+6. Commit only after dry-run passes — the commit wraps in
+   `commit_context()` with `agent_context.testhouse_iter` carrying
+   `consumedFactIds`, `sourceEvidence`, and (populated on close)
+   `producedElementIds`. See
+   `spec/trackers/testhouse-clean-rebuild-tracker.md` for the exact
+   payload shape.
 7. Query the live model after commit.
 8. Compare expected readback with live model readback.
 9. Run Advisor, constructability, integrity, area/volume checks.
@@ -169,19 +215,56 @@ rerun only the impacted slice.
 
 For model-authoring problems, repair the live model and rerun readback/QA.
 
-## Visual Geometry Gate
+## Visual Geometry Gate — `≥ 9/10` per floor
 
-Advisor-clean is not acceptance. Every slice that changes visible geometry must
-have source-equivalent screenshots or overlays, and those views must be checked
-for defects that deterministic rules may miss.
+Advisor-clean is not acceptance. Every floor must clear a per-floor
+visual gate scored by a grader subagent on a `0..10` rubric, with
+**`≥ 9/10` to advance** and `10/10` as the target. The earlier `≥
+4/10` / `≥ 7/10` bars from prior runs were too low — they let a
+stripped-down extruded rectangle pass and produced a "vanilla box"
+that the source plans did not justify.
 
-The slice fails if screenshots show:
+### Gate inputs (the grader must see, per floor)
+
+- the `<floor>-visual-gate` captures: plan view + 4 cardinal ortho 3D
+  + 4 elevation views, at `1920×1200`;
+- the source floor plan page (e.g. `EG-1.png`) at 240 DPI;
+- the source elevation page(s) (`Ansichten-*.png`);
+- the structured `extractedFacts[]` rows for the floor
+  (`existing-building-ir.json`), so the grader can check that every
+  source-stated room, door, window, dimension call-out has a
+  corresponding element in the captures.
+
+### Rubric (per floor)
+
+Score on five dimensions, weighted as shown — 10 pts total:
+
+1. **Room topology (3 pts)** — every source-named room is present, in
+   the right relative position, with roughly correct area.
+2. **Openings (2 pts)** — every source-named door + window placed on
+   the correct wall, at the correct facade.
+3. **Wall continuity (2 pts)** — interior partitions match the source
+   plan's wall thicknesses + alignments; exterior wall chain follows
+   the perimeter without gaps or overlaps; for Doppelhaus halves the
+   party-wall side is flat.
+4. **Vertical coherence (2 pts)** — heights, slab thicknesses, and
+   (for the upper floor) where the wall top meets the roof match the
+   section + elevation evidence.
+5. **Source-faithful presence (1 pt)** — the right *kind* of building
+   for its neighborhood / source set (single-family Doppelhaus half,
+   not a multi-unit flat, etc.).
+
+### Definite failures (block regardless of rubric score)
+
+The floor fails if screenshots show:
 
 - walls visibly passing through a roof or stopping below it with a gap;
 - roof, eave, ridge, dormer, or roof-window height/position mismatching the
   source view;
 - doors/windows floating, duplicated, outside walls, or at wrong source-backed
   height;
+- a Doppelhaus party-wall side modeled as a free-standing gable instead of
+  a flat boundary;
 - terrain/toposolid offset, mirrored, starting on the wrong side of the
   building, or missing the building-pad/excavation relationship;
 - site/parcel placement inconsistent with the accepted coordinate frame;
@@ -192,6 +275,15 @@ conditions. Fix the model, repair the source specification, or record a tool
 gap and rerun the impacted slice. Existing-condition tolerances apply only to
 source-backed nonconforming realities, not to visible authoring or renderer
 errors.
+
+### Below-bar response — corrector loop
+
+A grade `< 9/10` does **not** mean "next iter is iter N+1". It means
+open `<floor>-corrector-<N>`: spawn a focused subagent with the
+captures + the grader's `topFixesForNextIter` array, apply the
+returned bundle through the same `hybrid-slice-execute` route,
+recapture, regrade. Loop until pass. Do not advance to the next floor
+until this floor's grader returns `≥ 9/10`.
 
 ## Existing-Condition Warnings
 

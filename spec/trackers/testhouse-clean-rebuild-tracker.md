@@ -1,88 +1,121 @@
-# Testhouse Clean-Rebuild Tracker
+# Testhouse Clean-Rebuild Tracker (v2 — inside-out, ≥9/10)
 
 Last updated: 2026-05-23
 
-Status: **Not started. Supersedes the iter-1..iter-19 sequence captured in
-[`testhouse-visual-fidelity-tracker.md`](./testhouse-visual-fidelity-tracker.md).**
-The prior runs produced models that are no longer acceptable as a baseline.
-This tracker drives a clean re-author of all three testhouses from iter-0,
-using the methodology learned through iter-19, and produces a model history
-that the time-travel + inspector stack can actually navigate.
+Status: **v1 iter ladder rejected after iter-3 alpha produced a "vanilla
+box" exterior. v2 replaces the outside-in slice order with a per-floor
+inside-out loop and raises the per-iter score bar from `≥4/10` to
+`≥9/10` (target `10/10`).** See `spec/methodology-audit-2026-05-23.md`
+for the five flaws this rewrite addresses.
+
+The v1 iter table (iter-3..N for shell-first, openings-later) is gone.
+A v1 commit (`01KSA86DE7T4FMP0A61EZ40P0N`) still exists in the time-travel
+log so the inspector iter-picker has historical data to render — it is
+not part of the v2 acceptance.
 
 ## Purpose
 
-Rebuild `house-alpha`, `house-beta`, `house-gamma` from scratch, with three
-hard requirements the prior iter-1..iter-19 sequence did not meet:
+Rebuild `house-alpha`, `house-beta`, `house-gamma` from scratch, with
+five hard requirements:
 
-1. **Every iteration is a real time-travel commit.** Each iteration's MCP
-   authoring must run inside `commit_context()` (`app/bim_ai/versioning.py`)
-   with an `agent_context.testhouse_iter` block. The end result is that the
-   inspector can render iter-3's model state in the browser while you are
-   inspecting iter-5 — see
-   [`model-time-travel-tracker.md`](./model-time-travel-tracker.md) Wave 4.
-2. **Every iteration emits structured logs.** Use `_io.log.get_logger(...)`
-   (already exists via BRT-60/61/62) with one start + one end record per
-   iteration phase, plus phase-level events. No `print()` in iter scripts.
-3. **No more one-off `scripts/testhouse_iterN_*.py` apply scripts.** Iteration
-   work goes through the `claude-skills/hybrid-reverse-bim/` methodology and
-   the MCP slice executor (`routes/hybrid_reverse_bim_execute.py`). The old
-   scripts bypassed the commit + log surface, which is why the prior runs
-   are invisible to the time-travel stack.
+1. **Inside-out per floor.** Each floor goes
+   *rooms → partitions → openings → exterior walls* before the next
+   floor opens. Authoring follows the source floor plan; exterior walls
+   are derived from the room outlines, never authored independently.
+2. **Per-floor visual + structural gate.** Each floor commits, runs the
+   structural battery (advisor + constructability + integrity +
+   level-completeness + physical-topology), captures plan + 4 cardinal
+   ortho 3D + 4 elevation views, then asks a subagent for a `0..10`
+   grade against the source floor plan + elevations. The floor must
+   score **`≥9/10`** before the next floor opens. `10/10` is the
+   target.
+3. **Real time-travel commits with full provenance.** Every MCP slice
+   runs inside `commit_context()` with the
+   `agent_context.testhouse_iter` block. The v2 schema adds three
+   required arrays (`consumedFactIds`, `sourceEvidence`,
+   `producedElementIds`) so the inspector can render the
+   "doc → fact → element" trail in `/agents` without guessing.
+4. **Structured logs on `bim_ai.testhouse_iter`.** Four records per
+   phase (start / commit_opened / commit_closed / end). End records
+   carry the grade, the phase outcome, and the produced element ids.
+5. **No one-off `scripts/testhouse_iterN_*.py` apply files.** The
+   `scripts/testhouse_drive.py` generic driver covers every phase
+   (preflight, reader, scope, floor, ortho-views, capture, grade).
 
 ## What to preserve, what to delete
 
 ### Preserve
 - `testhouses/house-{alpha,beta,gamma}/source/` — source PDFs, never touched.
-- `claude-skills/hybrid-reverse-bim/` — methodology of record.
-- `spec/trackers/testhouse-visual-fidelity-tracker.md` — historical reference;
-  the "Known carryover" section captures the bug list we are paying down.
-- `spec/trackers/testhouse-hybrid-reverse-bim-tracker.md` — execution-log
-  format and the iteration-2 unblocker findings (TH-X-F006..F010).
+- `claude-skills/hybrid-reverse-bim/` — methodology of record (now
+  encodes inside-out per floor + `≥9/10` gate).
 - All `app/bim_ai/reverse_bim/` and `app/bim_ai/services/` infrastructure.
 - DB schema (`bim_models`, `bim_undo_stack`, `bim_model_commits`,
   `bim_model_snapshots`).
+- `scripts/testhouse_purge.py` + `scripts/testhouse_drive.py` (the
+  driver gains new phases for v2 but the shell stays the same).
 
-### Delete (first commit of this work)
-- `bim_models` rows for `house-alpha`, `house-beta`, `house-gamma`
-  (cascade through `bim_undo_stack`, `bim_model_commits`,
-  `bim_model_snapshots`, element rows). Use a one-shot script under
-  `scripts/testhouse_purge.py` — keep it; the coordinator may need to
-  re-run it on a follow-up rebuild.
+### Delete (every rebuild attempt begins with a full purge)
+- `bim_models` rows for `house-alpha`, `house-beta`, `house-gamma`.
 - `tmp/reverse-bim/house-{alpha,beta,gamma}/` — all runtime state.
 - `tmp/reverse-bim/iter-*` — captures, scoring, apply JSON, prompts,
-  visual-diffs, handoff docs.
+  visual-diffs, handoff docs (legacy layout).
 - `tmp/reverse-bim/convergence-state.json`.
 
-### Archive (don't delete, move out of `scripts/`)
-- `scripts/testhouse_iter*.py` → `scripts/archive/testhouse_iter*.py`.
-  These are historical artifacts from before the methodology+MCP path
-  existed. Keep them readable but out of the live tree.
+The cleanup is a single `uv run python scripts/testhouse_purge.py`
+followed by `rm -rf tmp/reverse-bim/{house-*,iter-*,convergence-state.json}`.
+It is idempotent and safe to re-run.
 
-## Iteration sequence
+## Iteration sequence (v2 — per-floor inside-out)
 
-The order is small-house-first so we learn before authoring the larger ones.
+The order is `house ∈ {alpha, beta, gamma}` outer × `floor ∈ {KG, EG,
+DG, roof}` inner. Smallest house first so methodology errors surface
+on a single PDF.
+
+### Preflight (once per house)
 
 | Iter | Houses | Phase | Done-criteria |
 |------|--------|-------|---------------|
-| 0    | alpha + beta + gamma | Source render @ 240 DPI + page classification + reader-pass plan | All three houses have a `tmp/reverse-bim/<house>/preflight/` with rendered pages + page-class labels |
-| 1    | alpha + beta + gamma | Reader-pass: extract numeric coordinate facts | `understanding/existing-building-ir.json` exists per house with at least exterior wall coordinates as numbers (no `"~9.5 m x 8.0 m"`-style prose) |
-| 2    | alpha + beta + gamma | Scope decisions + iteration-2 unblockers | Decisions match `testhouse-hybrid-reverse-bim-tracker.md` for building scope; alpha + beta scopes resolved, gamma at `target_half` |
-| 3    | alpha (smallest) | First MCP slice authoring — exterior walls + floors + main roof | iter-3 commit exists; subagent grade ≥ 4/10 exterior |
-| 4    | beta  | Same surface | iter-4 commit; ≥ 4/10 exterior |
-| 5    | gamma | Same surface | iter-5 commit; ≥ 4/10 exterior |
-| 6    | all   | Openings (windows + doors) on placed walls | one commit per house; ≥ 5/10 exterior per house |
-| 7    | all   | Rooms + interior partitions | one commit per house; ≥ 5/10 interior per house |
-| 8    | all   | Dormers, stairs, terrain materials | one commit per house |
-| 9    | all   | Visual review + corrector subagent + apply loop | ≥ 6/10 exterior AND ≥ 5/10 interior per house |
-| 10+  | as needed | Convergence loop until stop criterion | **Stop criterion**: ≥ 7/10 exterior AND ≥ 6/10 interior per house, AND every iteration since the previous stop check has a non-null commit_id |
+| 0 | all | `preflight` — source render @ 240 DPI + page classification + reader-pass plan | `tmp/reverse-bim/<house>/preflight/` with rendered pages + page-class labels |
+| 1 | all | `reader-facts` — subagent reads each source page and emits structured `extractedFacts[]` for every level (rooms, dimensions, openings, vertical circulation, roof) | `understanding/existing-building-ir.json` v2 exists per house with `extractedFacts: [...]` populated (`factTotal > 0` in the `/agents` dashboard); every load-bearing fact has `factId + kind + status + levelId + sourceDocId + sourcePage + (valueMm OR vertexMm) + confidence` |
+| 2 | all | `scope-decisions` — building scope, party walls, coordinate frame, level heights | `understanding/scope-decisions.json` v2; for alpha + gamma at `target_half` with explicit party-wall side + mask polygon; for beta full building |
 
-Convergence loop is identical to iter-15+ from the prior runs — the
-methodology pivot to inside-out + the typology rewrites are already in
-the skill. We re-run them on a clean slate, not from memory.
+### Per-floor inside-out loop (one iter per floor per house)
 
-## Commit-attribution contract (the time-travel hard requirement)
+The iter number is `3 + (4 × house_index) + floor_index` where
+`house_index ∈ {alpha:0, beta:1, gamma:2}` and `floor_index ∈ {KG:0,
+EG:1, DG:2, roof:3}`. Concretely:
 
-Every MCP slice that lands during an iteration MUST be wrapped in:
+| Iter | House | Floor | Phase(s) | Done-criteria |
+|------|-------|-------|----------|---------------|
+| 3  | alpha | KG    | `kg-rooms` → `kg-partitions` → `kg-openings` → `kg-exterior-walls` → `kg-structural-gate` → `kg-visual-gate` | Every gate passes; grader subagent ≥ 9/10 for KG |
+| 4  | alpha | EG    | same shape (`eg-*`) | grader ≥ 9/10 for EG, AND KG still ≥ 9/10 |
+| 5  | alpha | DG    | same shape (`dg-*`) | grader ≥ 9/10 for DG |
+| 6  | alpha | roof  | `roof-main` → `roof-dormers` → `roof-openings` → `roof-structural-gate` → `roof-visual-gate` | grader ≥ 9/10 for roof + exterior shell as a whole |
+| 7..10  | beta  | KG/EG/DG/roof | same shape | each floor grader ≥ 9/10 |
+| 11..14 | gamma | KG/EG/DG/roof | same shape | each floor grader ≥ 9/10 |
+| 15+ | all | `final-acceptance` — terrain, site, materials, schedules; cross-house visual review | All gates from `qa.advisor`, `qa.constructability`, `qa.integrity_preflight`, `reverse_bim.level_completeness`, `reverse_bim.physical_topology`, `reverse_bim.final_acceptance` clean; cross-house grader ≥ 9/10 each |
+
+### Per-floor phase contract
+
+Each of the six per-floor phases above lands its own
+`bim_model_commits` row, all sharing the same iter number and house
+but with distinct `phase` slugs (`<floor>-rooms`, `<floor>-partitions`,
+`<floor>-openings`, `<floor>-exterior-walls`, `<floor>-structural-gate`,
+`<floor>-visual-gate`). The driver emits the four-record log set per
+phase. The `<floor>-visual-gate` phase is the ONLY one that calls the
+grader subagent; the other five just commit + log.
+
+If `<floor>-visual-gate` returns `< 9/10`, the driver opens a
+`<floor>-corrector` phase: spawn a focused subagent with the rendered
+captures + the grader's `topFixesForNextIter` array, apply the
+returned bundle, recapture, regrade. Loop until `≥ 9/10` or the
+operator stops the run. The corrector commits are also tagged with
+the same `{house, iter, floor}` but `phase: "<floor>-corrector-<N>"`
+to keep the history navigable.
+
+## Commit-attribution contract — v2
+
+Every MCP slice MUST land via:
 
 ```python
 async with commit_context(
@@ -90,9 +123,19 @@ async with commit_context(
     model_id=model_id,
     agent_context={
         "testhouse_iter": {
-            "house": "alpha",            # one of: alpha | beta | gamma
-            "iter": 3,                   # monotonic integer
-            "phase": "exterior-walls",   # short slug
+            "house": "alpha",                 # alpha | beta | gamma
+            "iter": 4,                        # monotonic integer
+            "phase": "eg-rooms",              # short slug, see table
+            "consumedFactIds": ["F-EG-room-livingroom", "F-EG-room-kitchen"],
+            "sourceEvidence": [
+                {
+                    "docId": "srcdoc-22993cc5012b",
+                    "page": 1,
+                    "role": "floor_plan",
+                    "renderedPath": "tmp/reverse-bim/house-alpha/preflight/rendered-pages/srcdoc-22993cc5012b/EG-1.png",
+                },
+            ],
+            "producedElementIds": [],         # filled at commit close
         },
         "tool": "hybrid-reverse-bim",
         "controlling_tracker": "spec/trackers/testhouse-clean-rebuild-tracker.md",
@@ -101,70 +144,105 @@ async with commit_context(
     ...
 ```
 
-This is the only fact the iter-picker UI in
-[`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md)
-needs to map "iter 3 of alpha" → `commit_id`. Without this attribution
-the user cannot render iter-3's state in the browser while inspecting
-iter-5, and this tracker is **not done** regardless of visual scores.
+The three new arrays are **additive**: the inspector iter-picker
+still resolves "iter N of house X" using only `{house, iter, phase}`.
+Renderers that want to show the "doc → fact → element" trail consume
+the three arrays; renderers that don't care ignore them.
 
-## Logging contract
+`producedElementIds` is populated on commit close (after the bundle
+applies) from the engine's `changedElementIds` set.
 
-Every iteration emits, at minimum:
+## Logging contract — v2
 
-- `testhouse_iter.start` with `{house, iter, phase, source_root, model_id}`
-- `testhouse_iter.commit_opened` with `{house, iter, phase, commit_id}`
-- `testhouse_iter.commit_closed` with `{house, iter, phase, commit_id, revision_after}`
-- `testhouse_iter.end` with `{house, iter, phase, status: ok|failed, elapsed_ms}`
+Same four records as v1, plus richer payloads:
 
-Logger name: `bim_ai.testhouse_iter`. Use the existing `_io.log.get_logger`
-helper. Correlation ID is minted by `correlation_id_middleware`
-(BRT-62) on the HTTP entry; if the iter is driven from a script, mint one
-explicitly.
+- `testhouse_iter.start` — `{house, iter, phase, source_root, model_id, consumedFactIds, sourceEvidence}`
+- `testhouse_iter.commit_opened` — `{house, iter, phase, commit_id, model_id, command_count}`
+- `testhouse_iter.commit_closed` — `{house, iter, phase, commit_id, revision_after, producedElementIds, advisorFindingCount, constructabilityFindingCount, integrityFindingCount}`
+- `testhouse_iter.end` — `{house, iter, phase, status: ok|failed|gate_failed, elapsed_ms, gradeScore10?, gradeNotes?}` (last two only on `*-visual-gate` phases)
+
+Logger name remains `bim_ai.testhouse_iter`. Correlation ID is minted
+by the driver per phase.
 
 ## Coordination with other parallel agents
 
 This agent **owns**:
-- `scripts/testhouse_*.py` (only those created from this point forward)
-- `scripts/archive/testhouse_iter*.py` (the move target for the old scripts)
+- `scripts/testhouse_*.py` and `scripts/archive/testhouse_iter*.py`
 - `tmp/reverse-bim/` cleanup
-- `testhouses/house-*/source/` — read-only, do not modify
-- `claude-skills/hybrid-reverse-bim/` — only methodology updates that
-  fall out of this run; flag big edits to the coordinator first
-- This tracker file
+- `testhouses/house-*/source/` — **read-only**
+- `claude-skills/hybrid-reverse-bim/` — methodology updates that fall
+  out of v2 (flag big edits to the coordinator first)
+- This tracker file + `spec/methodology-audit-2026-05-23.md` +
+  `spec/agents-view-traceability-spec.md`
 
 This agent **does NOT touch**:
 - `app/bim_ai/versioning.py`, `app/bim_ai/routes/time_travel.py`,
   `app/bim_ai/routes/agent_runs.py`, `app/bim_ai/agent_run_parser.py`
   (time-travel + inspector agent owns)
-- `packages/web/` (time-travel + inspector agent owns the viewer +
-  inspector UI; perf agent owns state/plan/viewport modules)
+- `packages/web/` (time-travel + inspector agent owns
+  `AgentHouseDashboard.tsx`; perf agent owns state/plan/viewport)
 - `spec/trackers/model-time-travel-tracker.md`,
   `spec/trackers/agent-run-inspector-tracker.md`,
-  `spec/trackers/performance-quality-tracker.md` (other agents own these)
-- `app/bim_ai/main.py` route registration block (time-travel agent owns)
+  `spec/trackers/performance-quality-tracker.md`
+- `app/bim_ai/main.py` route registration block
 
-## Definition of Done
+v2 introduces a coordination ask for the inspector agent — see
+[`spec/agents-view-traceability-spec.md`](../agents-view-traceability-spec.md)
+for the three additions `/agents` needs (source-page server,
+provenance-trail renderer, inline grade-report).
+
+## Capture-layout contract
+
+The driver writes captures to **both** layouts so the dashboard AND
+iter-picker see them:
+
+```
+tmp/reverse-bim/iter-<N>-captures/<house>-3d-full.png
+tmp/reverse-bim/iter-<N>-captures/<house>-elev-{north,east,south,west}-full.png
+tmp/reverse-bim/iter-<N>-captures/<house>-plan-<level>-full.png
+tmp/reverse-bim/iter-<N>-scoring/<house>-subagent-report.md
+tmp/reverse-bim/house-<X>/iter-<N>/captures/<same files>
+tmp/reverse-bim/house-<X>/iter-<N>/scoring/<same report>
+```
+
+The legacy `iter-<N>-captures/` path is the one
+`agent_runs.py::_enumerate_iterations` reads for the dashboard cards;
+the per-house path is what the iter-picker recognises. Both are
+populated by `testhouse_drive.py capture-views`.
+
+## Definition of Done (v2)
 
 This tracker is complete when:
 
-- All three testhouse models exist as fresh `bim_models` rows with
-  `created_at` after the start of this rebuild.
-- Subagent grading at the most recent iter ≥ 7/10 exterior AND ≥ 6/10
-  interior for all three houses.
-- `SELECT count(*) FROM bim_model_commits WHERE agent_context->'testhouse_iter'->>'house' = 'alpha'`
-  returns ≥ one commit per iteration that ran on alpha; same for beta + gamma.
-- Every `bim_model_commits` row created during this rebuild has a non-null
-  `agent_context.testhouse_iter` block.
+- All three testhouse models exist as fresh `bim_models` rows.
+- **Every per-floor visual gate scored `≥ 9/10`**, and at least 50 %
+  of the floor gates scored `10/10`.
+- `final-acceptance` for each house passes — advisor / constructability
+  / integrity / level-completeness / physical-topology all clean.
+- Every `bim_model_commits` row for this rebuild carries
+  `context.testhouse_iter` with the v2 schema (the three new arrays
+  present and non-empty for authoring phases; `producedElementIds`
+  populated on close).
 - `bim_ai.testhouse_iter` log channel has start/end records for every
-  iteration that ran (verify by tailing whatever sink the app is wired to).
-- The inspector iter-picker (`agent-run-inspector-tracker.md` Wave 2
-  extension) successfully checks out iter-3 state in the live Workspace
-  viewer when invoked from iter-5's dashboard.
+  phase that ran.
+- The inspector iter-picker successfully checks out an earlier floor
+  (e.g. iter-4 EG) in the live Workspace viewer when invoked from a
+  later floor's dashboard (e.g. iter-6 roof).
+- The `/agents` dashboard renders, per house:
+  - non-zero `factTotal` (because IR v2 carries `extractedFacts`),
+  - at least one capture thumbnail per iter that ran,
+  - the grader's `subagent-report.md` markdown inline,
+  - (subject to the inspector agent landing the coordination spec)
+    the source page that produced each fact, and the
+    consumed-fact / source-evidence / produced-element trail per
+    commit.
 
 ## Related trackers
 
-- [`testhouse-visual-fidelity-tracker.md`](./testhouse-visual-fidelity-tracker.md) — historical record of iter-1..iter-19 (superseded by this tracker)
-- [`testhouse-hybrid-reverse-bim-tracker.md`](./testhouse-hybrid-reverse-bim-tracker.md) — per-house execution log format and iter-2 unblocker findings
-- [`model-time-travel-tracker.md`](./model-time-travel-tracker.md) — Wave 4 (this tracker is the integration test for Wave 4)
-- [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md) — iter-picker UI consumer
+- [`spec/methodology-audit-2026-05-23.md`](../methodology-audit-2026-05-23.md) — why v1 was rejected
+- [`spec/agents-view-traceability-spec.md`](../agents-view-traceability-spec.md) — coordination ask for the inspector agent
+- [`testhouse-visual-fidelity-tracker.md`](./testhouse-visual-fidelity-tracker.md) — historical record of iter-1..iter-19 (superseded)
+- [`testhouse-hybrid-reverse-bim-tracker.md`](./testhouse-hybrid-reverse-bim-tracker.md) — per-house execution log format (still applicable)
+- [`model-time-travel-tracker.md`](./model-time-travel-tracker.md) — Wave 4 (this tracker remains its integration test)
+- [`agent-run-inspector-tracker.md`](./agent-run-inspector-tracker.md) — iter-picker + the v2 coordination additions
 - [`claude-skills/hybrid-reverse-bim/SKILL.md`](../../claude-skills/hybrid-reverse-bim/SKILL.md) — methodology of record
