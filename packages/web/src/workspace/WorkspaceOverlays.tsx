@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import type { Dispatch, JSX, RefObject, SetStateAction } from 'react';
 import type { AssetLibraryEntry, Element, PerspectiveId, Violation } from '@bim-ai/core';
 
@@ -9,11 +10,19 @@ import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { AppearanceAssetBrowserDialog } from '../familyEditor/AppearanceAssetBrowserDialog';
 import { MaterialBrowserDialog } from '../familyEditor/MaterialBrowserDialog';
-import {
-  FamilyLibraryPanel,
-  type ExternalCatalogPlacement,
-  type FamilyLibraryArrayFormulaUpdate,
-  type FamilyLibraryPlaceKind,
+// PERF-J04: lazy-load heavy / open-on-demand panels so they don't ship
+// in the eager workspace bundle. Each becomes its own chunk; the first
+// time the user opens the surface, we pay one network round-trip;
+// subsequent opens are instant from cache.
+const FamilyLibraryPanel = lazy(() =>
+  import('../families/FamilyLibraryPanel').then((m) => ({
+    default: m.FamilyLibraryPanel,
+  })),
+);
+import type {
+  ExternalCatalogPlacement,
+  FamilyLibraryArrayFormulaUpdate,
+  FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
 import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReload';
 import { CreateGroupDialog } from '../groups/CreateGroupDialog';
@@ -40,9 +49,9 @@ import {
   ProjectMenu,
   ProjectSetupDialog,
   ProjectUnitsDialog,
+  VVDialog,
   type ProjectMenuItemRecent,
   type ProjectMenuSeedModel,
-  VVDialog,
 } from './project';
 import { GlobalParamsDialog } from './project/GlobalParamsDialog';
 import { uploadDxfFile } from '../lib/api';
@@ -52,7 +61,12 @@ import { AppSettingsPanel } from './AppSettingsPanel';
 import { DimensionStyleDialog } from './DimensionStyleDialog';
 import { DxfImportDialog } from './DxfImportDialog';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
-import { ProjectVersionHistoryPanel } from './ProjectVersionHistoryPanel';
+// PERF-J04: project version history is open-on-demand.
+const ProjectVersionHistoryPanel = lazy(() =>
+  import('./ProjectVersionHistoryPanel').then((m) => ({
+    default: m.ProjectVersionHistoryPanel,
+  })),
+);
 import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
 import { TerracePresetDialog } from './TerracePresetDialog';
 import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
@@ -408,29 +422,35 @@ export function WorkspaceOverlays({
         onSave={commitSave3dViewWithName}
         onCancel={() => setSave3dViewAsOpen(false)}
       />
-      <FamilyLibraryPanel
-        open={familyLibraryOpen}
-        onClose={() => setFamilyLibraryOpen(false)}
-        elementsById={elementsById}
-        onPlaceType={handlePlaceFamilyType}
-        onPlaceCatalogFamily={handlePlaceCatalogFamily}
-        onLoadCatalogFamily={handleLoadCatalogFamily}
-        onUpdateArrayFormula={handleUpdateArrayFormula}
-        onImportLibraryFamilies={(families) => {
-          const { elementsById: cur } = useBimStore.getState();
-          useBimStore.setState({
-            elementsById: {
-              ...cur,
-              ...Object.fromEntries(
-                families.map((family) => {
-                  const id = cur[family.id] ? `fam-import-${Date.now()}-${family.id}` : family.id;
-                  return [id, { ...family, id }];
-                }),
-              ),
-            },
-          });
-        }}
-      />
+      {/* PERF-J04: keep the always-mounted contract that downstream
+          tests rely on, but the chunk itself is lazy so the JS is
+          deferred until the FamilyLibraryPanel surface is needed
+          (the panel internally renders null while closed). */}
+      <Suspense fallback={null}>
+        <FamilyLibraryPanel
+          open={familyLibraryOpen}
+          onClose={() => setFamilyLibraryOpen(false)}
+          elementsById={elementsById}
+          onPlaceType={handlePlaceFamilyType}
+          onPlaceCatalogFamily={handlePlaceCatalogFamily}
+          onLoadCatalogFamily={handleLoadCatalogFamily}
+          onUpdateArrayFormula={handleUpdateArrayFormula}
+          onImportLibraryFamilies={(families) => {
+            const { elementsById: cur } = useBimStore.getState();
+            useBimStore.setState({
+              elementsById: {
+                ...cur,
+                ...Object.fromEntries(
+                  families.map((family) => {
+                    const id = cur[family.id] ? `fam-import-${Date.now()}-${family.id}` : family.id;
+                    return [id, { ...family, id }];
+                  }),
+                ),
+              },
+            });
+          }}
+        />
+      </Suspense>
       {materialBrowserOpen ? (
         <MaterialBrowserDialog
           currentKey={activeMaterialKey}
@@ -466,14 +486,16 @@ export function WorkspaceOverlays({
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       {templatesOpen && <ProjectTemplatesDialog onClose={() => setTemplatesOpen(false)} />}
       {versionHistoryOpen ? (
-        <ProjectVersionHistoryPanel
-          modelId={modelId ?? 'empty'}
-          onClose={() => setVersionHistoryOpen(false)}
-          onRestore={(milestoneId) => {
-            void onSemanticCommand({ type: 'restoreMilestone', milestoneId });
-            setVersionHistoryOpen(false);
-          }}
-        />
+        <Suspense fallback={null}>
+          <ProjectVersionHistoryPanel
+            modelId={modelId ?? 'empty'}
+            onClose={() => setVersionHistoryOpen(false)}
+            onRestore={(milestoneId) => {
+              void onSemanticCommand({ type: 'restoreMilestone', milestoneId });
+              setVersionHistoryOpen(false);
+            }}
+          />
+        </Suspense>
       ) : null}
       {appSettingsOpen ? <AppSettingsPanel onClose={() => setAppSettingsOpen(false)} /> : null}
       {vvDialogOpen ? <VVDialog open={vvDialogOpen} onClose={closeVVDialog} /> : null}
