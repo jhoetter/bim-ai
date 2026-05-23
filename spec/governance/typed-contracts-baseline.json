@@ -1,8 +1,8 @@
 {
   "note": "BRT-42 baseline. Counts allowed `-> dict[str, Any]` and `body: dict[str, Any]` per file. Each PR may only DECREASE these. Refresh with `node scripts/check-typed-contracts.mjs --update` after a legitimate fix.",
-  "generatedAt": "2026-05-22T23:02:07.471Z",
+  "generatedAt": "2026-05-23T06:06:31.366Z",
   "totals": {
-    "dictReturn": 817,
+    "dictReturn": 818,
     "dictBody": 9
   },
   "files": {
@@ -115,7 +115,7 @@
       "app/bim_ai/routes/activity.py": 5,
       "app/bim_ai/routes/agent_runs.py": 6,
       "app/bim_ai/routes/api.py": 52,
-      "app/bim_ai/routes/catalogs.py": 2,
+      "app/bim_ai/routes/catalogs.py": 3,
       "app/bim_ai/routes/commands.py": 14,
       "app/bim_ai/routes/deps.py": 1,
       "app/bim_ai/routes/exports.py": 10,
