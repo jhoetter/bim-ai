@@ -1749,10 +1749,17 @@ def _dormers_bundle(
 
 
 def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
-    """Roof draws on the DG floor extent + IR roof globals."""
+    """Roof draws on the DG floor extent + IR roof globals.
 
-    facts = _facts_for_level(ir, "level-DG")
-    chain = _facts_by_kind(facts, "exterior_wall_chain")
+    When the EG footprint extends beyond the DG footprint (e.g.,
+    beta's integrated garage wing labeled "Flachdach Garage" on
+    DG-1.png), also author one flat roof per EG room whose centroid
+    falls outside the DG polygon — these become Flachdach extensions
+    at DG elevation over the garage / wing area.
+    """
+
+    dg_facts = _facts_for_level(ir, "level-DG")
+    chain = _facts_by_kind(dg_facts, "exterior_wall_chain")
     if not chain:
         return None
     poly = chain[0].get("polygonMm") or chain[0].get("polygonMM") or []
@@ -1761,35 +1768,81 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
     if not poly or len(poly) < 3:
         return None
     dg_level_id = f"th-{house}-level-DG"
+    commands: list[dict] = [
+        {
+            "type": "createRoof",
+            "id": f"th-{house}-main-roof",
+            "name": "Main gable roof",
+            "referenceLevelId": dg_level_id,
+            "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
+            "overhangMm": 400,
+            "slopeDeg": 35,
+            "roofGeometryMode": "gable_pitched_rectangle",
+            "materialKey": "roof_tile_terracotta",
+        },
+    ]
+    consumed: list[str] = [str(chain[0].get("factId"))]
+
+    # Flachdach over EG rooms whose centroid falls outside the DG
+    # polygon (typical integrated garage wing).
+    eg_facts = _facts_for_level(ir, "level-EG")
+    eg_rooms = _facts_by_kind(eg_facts, "room_outline")
+    flat_roofs_added = 0
+    for room in eg_rooms:
+        room_poly = room.get("polygonMm") or room.get("polygonMM") or []
+        if len(room_poly) >= 2 and room_poly[0] == room_poly[-1]:
+            room_poly = room_poly[:-1]
+        if len(room_poly) < 3:
+            continue
+        cx = sum(float(p[0]) for p in room_poly) / len(room_poly)
+        cy = sum(float(p[1]) for p in room_poly) / len(room_poly)
+        if _point_in_polygon(cx, cy, poly):
+            continue  # already covered by main gable roof
+        commands.append(
+            {
+                "type": "createRoof",
+                "id": f"th-{house}-flat-roof-{_slugify(room.get('factId'))}",
+                "name": f"Flachdach over {room.get('text') or room.get('factId') or 'wing'}"[:80],
+                "referenceLevelId": dg_level_id,
+                "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in room_poly],
+                "overhangMm": 200,
+                "slopeDeg": 2,
+                "roofGeometryMode": "flat",
+                "materialKey": "concrete_smooth",
+            }
+        )
+        consumed.append(str(room.get("factId")))
+        flat_roofs_added += 1
+
     return (
         {
             "schemaVersion": "cmd-v3.0",
-            "commands": [
-                {
-                    "type": "createRoof",
-                    "id": f"th-{house}-main-roof",
-                    "name": "Main gable roof",
-                    "referenceLevelId": dg_level_id,
-                    "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
-                    "overhangMm": 400,
-                    "slopeDeg": 35,
-                    "roofGeometryMode": "gable_pitched_rectangle",
-                    "materialKey": "roof_tile_terracotta",
-                },
-            ],
+            "commands": commands,
             "parentRevision": parent_revision,
             "assumptions": [
                 {
                     "key": f"testhouse_{house}_roof",
-                    "value": "Gable roof following DG extent; pitch 35°; overhang 400 mm",
+                    "value": (
+                        "Gable roof following DG extent; pitch 35°; overhang 400 mm"
+                        + (
+                            f" + {flat_roofs_added} Flachdach extension(s) over EG-only wing(s)"
+                            if flat_roofs_added
+                            else ""
+                        )
+                    ),
                     "confidence": 0.6,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                     "contestable": True,
-                    "evidence": "iter-1 reader: Satteldach, ridge E-W, eave 5400, ridge 9500",
+                    "evidence": "iter-1 reader: Satteldach, ridge E-W, eave 5400, ridge 9500"
+                    + (
+                        " + EG-room-centroid-outside-DG-polygon flat-roof heuristic"
+                        if flat_roofs_added
+                        else ""
+                    ),
                 }
             ],
         },
-        [str(chain[0].get("factId"))],
+        consumed,
     )
 
 
@@ -1799,6 +1852,27 @@ def _slugify(s: str | None) -> str:
     if not s:
         return "x"
     return _re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "x"
+
+
+def _point_in_polygon(x: float, y: float, polygon: list) -> bool:
+    """Ray-casting point-in-polygon test.
+
+    ``polygon`` is a list of ``[x, y]`` pairs (or ``(x, y)`` tuples)
+    forming an open polygon (last vertex should NOT repeat the first
+    — callers strip the duplicate before calling).
+    """
+    if len(polygon) < 3:
+        return False
+    inside = False
+    n = len(polygon)
+    j = n - 1
+    for i in range(n):
+        xi, yi = float(polygon[i][0]), float(polygon[i][1])
+        xj, yj = float(polygon[j][0]), float(polygon[j][1])
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi + 1e-9) + xi):
+            inside = not inside
+        j = i
+    return inside
 
 
 def _cmd_floor(args: argparse.Namespace) -> int:
