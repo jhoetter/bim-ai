@@ -121,6 +121,7 @@ import { useRenderCount } from '../state/renderCountProbe';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
 import { snapPlanPoint, type SegmentLine, type SnapHit, type SnapKind } from './snapEngine';
+import { useCoalescedSetter } from './useCoalescedSetter';
 import { SnapEngine } from './planCanvasState';
 import { loadSnapSettings, type SnapSettings, type ToggleableSnapKind } from './snapSettings';
 import { bumpSnapTabCycle, initialSnapTabCycle, type SnapTabCycleState } from './snapTabCycle';
@@ -398,6 +399,13 @@ export function PlanCanvas({
   const sketchPointerToMmRef = useRef<PointerToMm | null>(null);
   const sketchMmToScreenRef = useRef<MmToScreen | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
+  // PERF-H04: pointermove fires faster than the browser paints. Coalesce
+  // the snap label setter to rAF cadence so we re-render at most once
+  // per frame; skip the commit entirely if the label hasn't changed.
+  // The coalesced wrapper is handed only to the pointermove hot path;
+  // low-frequency callers (tab cycle, clear-on-tool-change) keep the
+  // raw setter so updater-function forms still work.
+  const setSnapLabelCoalesced = useCoalescedSetter(setSnapLabel);
   const [boundaryValidationError, setBoundaryValidationError] = useState<string | null>(null);
   // EDT-05 — snap glyph layer state
   const [localSnapSettings] = useState<SnapSettings>(
@@ -423,6 +431,33 @@ export function PlanCanvas({
     }>;
     activeIndex: number;
   }>({ candidates: [], activeIndex: 0 });
+  // PERF-H04: rAF-coalesced wrapper of setSnapGlyphState. Equality check
+  // inspects the candidate semantic shape (kind + position + activeIndex)
+  // rather than full object identity — a fresh array with the same
+  // semantic targets shouldn't re-render the glyph layer. The raw
+  // setSnapGlyphState above remains for keyboard / tool-cycle callers
+  // that pass updater functions; only the pointermove hot path uses
+  // the coalesced wrapper.
+  const setSnapGlyphStateCoalesced = useCoalescedSetter(setSnapGlyphState, (a, b) => {
+    if (a === b) return true;
+    if (a.activeIndex !== b.activeIndex) return false;
+    if (a.candidates.length !== b.candidates.length) return false;
+    for (let i = 0; i < a.candidates.length; i++) {
+      const ac = a.candidates[i]!;
+      const bc = b.candidates[i]!;
+      if (
+        ac.kind !== bc.kind ||
+        ac.pxX !== bc.pxX ||
+        ac.pxY !== bc.pxY ||
+        ac.extensionFromPxX !== bc.extensionFromPxX ||
+        ac.extensionFromPxY !== bc.extensionFromPxY ||
+        ac.associative !== bc.associative
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
   const lastSnapHitsRef = useRef<SnapHit[]>([]);
   const lastSnapLinesRef = useRef<SegmentLine[]>([]);
   // F-080 — one-shot snap override (SI/SE/SM/SP/SX Revit-style shortcuts).
@@ -954,7 +989,10 @@ export function PlanCanvas({
           levelWalls: displayLevelId ? (wallsByLevel[displayLevelId] ?? []) : modelWalls,
           snapEngineRef,
           snapIndicatorRef,
-          setSnapLabel,
+          // PERF-H04: rAF-coalesce the pointermove setters so repeated
+          // pointermove events within a single frame coalesce into one
+          // render and skip redundant commits.
+          setSnapLabel: setSnapLabelCoalesced,
           lastSnapLinesRef,
           anchors,
           centerAnchors,
@@ -964,7 +1002,7 @@ export function PlanCanvas({
           snapSettings,
           snapTabCycleRef,
           lastSnapHitsRef,
-          setSnapGlyphState,
+          setSnapGlyphState: setSnapGlyphStateCoalesced,
           worldToScreen,
         });
 
