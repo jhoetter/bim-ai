@@ -307,6 +307,11 @@ Each row = one /loop iteration. The loop appends here.
 | 1.g | 2026-05-23 22:13Z | gamma | grader return: **4.7/10** topGap=4.1-facades; camera-not-sweeping confirmed (capture plan targets ortho-N/E/S/W but model has level-prefixed -kg-/-eg-/-dg-/-roof- only) | 4.7 | re-grade after camera fix |
 | 2 | 2026-05-24 00:30Z | (all) | NS-2 — camera-sweep fix shipped (commit 94e61d251); runner now executes activate_3d_view step; _cmd_capture_ortho_views authors untagged final viewpoints; MF-12 engine half landed (slabExtrudeDirection field; web viewer integration deferred) | n/a | re-capture all 3 + re-grade |
 | 2.c | 2026-05-24 00:36Z | (all) | re-captured all 3; SHAs distinct, file sizes 315–345 KB (vs 270 KB pre-fix); visual: alpha south shows long facade, east shows gable peak — cameras genuinely sweeping now | n/a | grader subagents spawned in parallel |
+| 2.g | 2026-05-24 00:40Z | alpha | re-grade after camera fix: **8.83/10** (+4.50). topGap=noMajorDefect (roof pitch 35° vs IR 42-45°; DG gable openings absent) | 8.83 | iter-2 with pitch+P1a fixes |
+| 2.g | 2026-05-24 00:42Z | beta | re-grade after camera fix: **8.14/10** (+2.09). topGap=perFacade.south.dormer (1100 mm vs source 5500 mm continuous strip) | 8.14 | iter-2 with dormer-polygon-width fix |
+| 2.g | 2026-05-24 00:43Z | gamma | re-grade after camera fix: **6.45/10** (+1.75). topGap=4.1-facades; multiple sparse-opening + DG-no-partitions + slope 35°-vs-45° gaps | 6.45 | iter-2 with all fixes |
+| 3 | 2026-05-24 00:30Z | (all) | NS-3 — driver pitch derivation from IR eave+ridge (alpha lands 40.6°); dormer width/depth from polygonMm bbox (beta lands 5500 mm). Commit 8fd62bc17 | n/a | iter-2 author |
+| 3.a | 2026-05-24 00:45Z | (all) | iter-2 spawned — purge + author all 3 sequentially per §9.3. ETA ~12 min author + ~5 min capture. Background job in progress | pending | wait for completion |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
