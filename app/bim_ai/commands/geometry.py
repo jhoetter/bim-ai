@@ -282,6 +282,12 @@ class CreateRoofCmd(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    # NS-2026-05-24: explicit ridge orientation override. Engine default
+    # heuristic is `ridge_along_x = span_x >= span_y` (longer footprint
+    # axis carries the ridge). For Doppelhaus halves and other rectangles
+    # where the source elevations contradict the heuristic, set this to
+    # force ridge orientation independent of footprint proportions.
+    ridge_along_x: bool | None = Field(default=None, alias="ridgeAlongX")
 
     @field_validator("roof_geometry_mode", mode="before")
     @classmethod

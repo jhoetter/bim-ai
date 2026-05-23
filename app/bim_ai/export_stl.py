@@ -832,6 +832,12 @@ def _roof_bounds_mm(roof: RoofElem) -> tuple[float, float, float, float] | None:
 
 
 def _roof_ridge_along_x(roof: RoofElem, x0: float, x1: float, y0: float, y1: float) -> bool:
+    # NS-2026-05-24: explicit ridge_along_x override wins over the
+    # span-heuristic. Set on the RoofElem so callers (and IFC export)
+    # see the same orientation as the STL+glTF render.
+    explicit = getattr(roof, "ridge_along_x", None)
+    if explicit is not None:
+        return bool(explicit)
     ridge_axis = getattr(roof, "ridge_axis", None)
     if ridge_axis == "x":
         return True

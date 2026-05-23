@@ -1705,13 +1705,20 @@ def _dormers_bundle(
     xmin, xmax = min(xs), max(xs)
     ymin, ymax = min(ys), max(ys)
     dx, dy = xmax - xmin, ymax - ymin
-    # Ridge orientation: MUST match the engine's heuristic in
-    # ``engine_dispatch_building_edit.py`` (``ridge_along_x = span_x
-    # >= span_y``). The engine ignores IR ridge_orientation facts when
-    # validating ``positionOnRoof``, so we have to too — otherwise a
-    # mismatch swaps along/across and the dormer fails the extent
-    # check.
-    ridge_ew = dx >= dy
+    # Ridge orientation: respect IR `ridge_orientation` fact when set
+    # (matches the v2.12+ engine override `RoofElem.ridge_along_x`);
+    # otherwise fall back to the span heuristic.
+    ridge_fact = next(
+        (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "ridge_orientation"),
+        None,
+    )
+    ridge_ew = dx >= dy  # default span heuristic
+    if ridge_fact:
+        txt = str(ridge_fact.get("text") or ridge_fact.get("note") or "").lower()
+        if "e-w" in txt or "east-west" in txt or "along x" in txt or "+x" in txt:
+            ridge_ew = True
+        elif "n-s" in txt or "north-south" in txt or "along y" in txt or "+y" in txt:
+            ridge_ew = False
 
     commands: list[dict] = []
     consumed: list[str] = []
@@ -1843,6 +1850,23 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
     if not poly or len(poly) < 3:
         return None
     dg_level_id = f"th-{house}-level-DG"
+    # NS-2026-05-24: respect IR ridge_orientation fact. Default engine
+    # heuristic (`span_x >= span_y`) flips on beta DG (6500×8984 → engine
+    # says ridge N-S; source says E-W). When IR is explicit, pass
+    # `ridgeAlongX` to override.
+    ridge_along_x = None
+    ridge_fact = next(
+        (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "ridge_orientation"),
+        None,
+    )
+    if ridge_fact:
+        txt = str(ridge_fact.get("text") or ridge_fact.get("note") or "").lower()
+        # "E-W" or "+x axis" → ridge along x. "N-S" or "+y axis" → along y.
+        if "e-w" in txt or "east-west" in txt or "along x" in txt or "+x" in txt:
+            ridge_along_x = True
+        elif "n-s" in txt or "north-south" in txt or "along y" in txt or "+y" in txt:
+            ridge_along_x = False
+
     # NS-2026-05-24: derive pitch from IR eave_height + ridge_height + the
     # building half-span instead of hardcoding 35°. The half-span is
     # measured PERPENDICULAR to the ridge: if ridge runs E-W (alpha/gamma/
@@ -1863,8 +1887,9 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
             ys = [float(p[1]) for p in poly]
             span_x = max(xs) - min(xs)
             span_y = max(ys) - min(ys)
-            # Engine ridge heuristic: ridge_along_x iff span_x >= span_y.
-            half_span = (span_y if span_x >= span_y else span_x) / 2
+            # Use explicit ridge_along_x if set; otherwise span heuristic.
+            ralong_x = ridge_along_x if ridge_along_x is not None else (span_x >= span_y)
+            half_span = (span_y if ralong_x else span_x) / 2
             rise = ridge_mm - eave_mm
             if rise > 0 and half_span > 0:
                 pitch_deg = round(math.degrees(math.atan(rise / half_span)), 1)
@@ -1881,6 +1906,7 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
             "slopeDeg": pitch_deg,
             "roofGeometryMode": "gable_pitched_rectangle",
             "materialKey": "roof_tile_terracotta",
+            **({"ridgeAlongX": ridge_along_x} if ridge_along_x is not None else {}),
         },
     ]
     consumed: list[str] = [str(chain[0].get("factId"))]

@@ -112,6 +112,10 @@ class RoofElem(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    # NS-2026-05-24: explicit ridge orientation override; when None,
+    # exporters fall back to the span-heuristic (ridge_along_x iff
+    # span_x >= span_y).
+    ridge_along_x: bool | None = Field(default=None, alias="ridgeAlongX")
     load_bearing: bool | None = Field(default=None, alias="loadBearing")
     structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
     structural_material: StructuralMaterial | str | None = Field(

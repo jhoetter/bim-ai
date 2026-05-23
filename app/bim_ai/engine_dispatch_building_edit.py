@@ -304,11 +304,19 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                     raise ValueError(f"createDormer.{label} '{key}' is not in the material catalog")
             # Footprint-fit sanity check. Ridge axis follows the renderer's
             # heuristic: the longer plan dimension is the ridge axis.
+            # NS-2026-05-24: when the host roof carries an explicit
+            # `ridge_along_x` (set via CreateRoofCmd.ridgeAlongX), respect
+            # it so dormer position math agrees with the rendered ridge.
             host_xs = [p.x_mm for p in host.footprint_mm]
             host_ys = [p.y_mm for p in host.footprint_mm]
             span_x = max(host_xs) - min(host_xs)
             span_y = max(host_ys) - min(host_ys)
-            ridge_along_x = span_x >= span_y
+            host_ridge_override = getattr(host, "ridge_along_x", None)
+            ridge_along_x = (
+                bool(host_ridge_override)
+                if host_ridge_override is not None
+                else span_x >= span_y
+            )
             half_along = (span_x if ridge_along_x else span_y) / 2
             half_across = (span_y if ridge_along_x else span_x) / 2
             if abs(cmd.position_on_roof.along_ridge_mm) + cmd.width_mm / 2 > half_along + 1e-3:

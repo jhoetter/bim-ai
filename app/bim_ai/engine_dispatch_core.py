@@ -136,6 +136,30 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 )
             if cmd.lean_mm is not None or cmd.taper_ratio is not None:
                 _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, h_mm)
+            # NS-2026-05-24: when caller sets materialKey but does NOT
+            # bind a wall_type with layers, the 3D viewer's
+            # `effectiveWallFaceMaterialKey` returns null (it only reads
+            # face_material_overrides and wall_type layers, not the raw
+            # WallElem.material_key field). Synthesize a paint-source
+            # exterior face override so the colour actually shows up in
+            # the render. Skip if caller already populated stack_components
+            # (wall_type-driven materials win) or future explicit overrides.
+            synth_face_overrides = None
+            if cmd.material_key and not cmd.stack_components and not cmd.wall_type_id:
+                from bim_ai.elements._shared import MaterialFaceOverride
+
+                synth_face_overrides = [
+                    MaterialFaceOverride(
+                        faceKind="exterior",
+                        materialKey=cmd.material_key,
+                        source="paint",
+                    ),
+                    MaterialFaceOverride(
+                        faceKind="interior",
+                        materialKey=cmd.material_key,
+                        source="paint",
+                    ),
+                ]
             els[eid] = WallElem(
                 kind="wall",
                 id=eid,
@@ -154,6 +178,7 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 top_constraint_offset_mm=cmd.top_constraint_offset_mm,
                 insulation_extension_mm=cmd.insulation_extension_mm,
                 material_key=cmd.material_key,
+                face_material_overrides=synth_face_overrides,
                 load_bearing=cmd.load_bearing,
                 structural_role=cmd.structural_role,
                 analytical_participation=cmd.analytical_participation,

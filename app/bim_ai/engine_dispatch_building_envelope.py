@@ -138,6 +138,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 eave_height_right_mm=cmd.eave_height_right_mm,
                 roof_type_id=rtid,
                 material_key=cmd.material_key,
+                ridge_along_x=cmd.ridge_along_x,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("roof", "arch"),
             )
 
