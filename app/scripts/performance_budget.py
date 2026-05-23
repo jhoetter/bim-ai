@@ -48,6 +48,14 @@ BUDGETS_MS: dict[str, float] = {
     "small.insert_door_commit": 150.0,  # PERF-B05
     "small.create_wall_commit": 150.0,  # PERF-B05
     "small.move_wall_commit": 150.0,  # PERF-B05 (move existing endpoint)
+    # PERF-H05: large-plan budgets. Numbers chosen with headroom so the
+    # current backend passes; tightening is follow-up once PERF-H02 /
+    # PERF-I05 land. evaluate p50 ≈ 3.8 s today on this fixture — set the
+    # budget to 6 s so noise + the documentation_advisors hot path don't
+    # flake CI.
+    "large_plan.room_derivation": 5_000.0,
+    "large_plan.plan_projection": 2_000.0,
+    "large_plan.evaluate": 6_000.0,
     "small.evidence_package": 1_500.0,
     "schedule_heavy.room_schedule": 500.0,
     "schedule_heavy.door_schedule": 250.0,
@@ -278,6 +286,34 @@ def build_room_stress_fixture() -> Document:
     return Document(revision=1, elements=elements)
 
 
+def build_large_plan_fixture() -> Document:
+    """PERF-H05: a synthetic large plan for picking / snapping / interaction
+    budget regression. Sized between `documentation_heavy` (2×10×8) and a
+    hypothetical "real" large model — large enough to surface scale
+    cliffs without making every CI lane wait 30s+ on the evaluate pass.
+
+    20 cols × 12 rows × 2 levels ≈ 1000 walls + 480 rooms before
+    separations and schedules. The intent is that any future plan
+    spatial index (PERF-H02) or raycast acceleration (PERF-I05) can be
+    diffed against this fixture in CI without needing real seed models.
+    """
+    elements: dict[str, Any] = {}
+    for index, level_name in enumerate(["EG", "OG"]):
+        prefix = f"large-{index}"
+        _add_grid_level(
+            elements,
+            prefix=prefix,
+            level_name=level_name,
+            elevation_mm=index * 3_200,
+            cols=20,
+            rows=12,
+            cell_w_mm=3_200,
+            cell_d_mm=2_600,
+        )
+    _add_schedules_and_sheets(elements, prefix="large-0", plan_id="large-0-plan")
+    return Document(revision=1, elements=elements)
+
+
 def build_documentation_heavy_fixture() -> Document:
     elements: dict[str, Any] = {}
     for index, level_name in enumerate(["EG", "OG"]):
@@ -371,6 +407,7 @@ def run_budgets() -> dict[str, Any]:
     schedule_heavy = build_schedule_heavy_fixture()
     documentation_heavy = build_documentation_heavy_fixture()
     room_stress = build_room_stress_fixture()
+    large_plan = build_large_plan_fixture()
 
     results = [
         _measure("small.evaluate", lambda: violations_wire(small.elements)),
@@ -488,6 +525,28 @@ def run_budgets() -> dict[str, Any]:
             lambda: compute_room_boundary_derivation(room_stress),
             repeats=3,
         ),
+        # PERF-H05: large-plan budgets — give H02 / I05 follow-ups a
+        # scale fixture to diff against.
+        _measure(
+            "large_plan.room_derivation",
+            lambda: compute_room_boundary_derivation(large_plan),
+            repeats=3,
+        ),
+        _measure(
+            "large_plan.plan_projection",
+            lambda: resolve_plan_projection_wire(
+                large_plan,
+                plan_view_id="large-0-plan",
+                fallback_level_id="large-0-level",
+                global_plan_presentation="default",
+            ),
+            repeats=3,
+        ),
+        _measure(
+            "large_plan.evaluate",
+            lambda: violations_wire(large_plan.elements),
+            repeats=3,
+        ),
     ]
     fixtures = {
         "small": {"revision": small.revision, "elementCount": len(small.elements)},
@@ -502,6 +561,10 @@ def run_budgets() -> dict[str, Any]:
         "room_stress": {
             "revision": room_stress.revision,
             "elementCount": len(room_stress.elements),
+        },
+        "large_plan": {
+            "revision": large_plan.revision,
+            "elementCount": len(large_plan.elements),
         },
     }
     return {
