@@ -876,3 +876,59 @@ describe('simple setters', () => {
     expect(useBimStore.getState().activityEvents).toEqual(events);
   });
 });
+
+// PERF-G03: any direct setState of elementsById (filter / category-override
+// writers in storeViewportRuntimeSlice + useWorkspaceSemanticCommand) must
+// leave modelIndices consistent so narrow `modelIndices.*` subscribers don't
+// observe stale state.
+describe('modelIndices invariant', () => {
+  it('rebuilds modelIndices when a caller mutates elementsById without it', () => {
+    useBimStore.getState().hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      violations: [],
+      elements: {
+        pv1: { kind: 'plan_view', id: 'pv1', name: 'Plan', levelId: 'lvl' },
+        lvl: { kind: 'level', id: 'lvl', name: 'L1', elevationMm: 0 },
+      },
+    });
+    const before = useBimStore.getState().modelIndices;
+    expect(before.planViews.find((v) => v.id === 'pv1')?.viewFilters ?? []).toEqual([]);
+
+    const cur = useBimStore.getState().elementsById;
+    const pv = cur['pv1'];
+    if (!pv || pv.kind !== 'plan_view') throw new Error('plan_view missing');
+    useBimStore.setState({
+      elementsById: {
+        ...cur,
+        pv1: {
+          ...pv,
+          viewFilters: [{ id: 'f1', name: 'F', rules: [], override: { visible: false } }],
+        },
+      },
+    });
+
+    const after = useBimStore.getState().modelIndices;
+    expect(after).not.toBe(before);
+    const refreshedPv = after.planViews.find((v) => v.id === 'pv1');
+    const refreshedFilters = (refreshedPv?.viewFilters ?? []) as Array<{ id: string }>;
+    expect(refreshedFilters.map((f) => f.id)).toEqual(['f1']);
+  });
+
+  it('does not double-rebuild when the caller already updated modelIndices', () => {
+    useBimStore.getState().hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      violations: [],
+      elements: { lvl: { kind: 'level', id: 'lvl', name: 'L1', elevationMm: 0 } },
+    });
+    const afterHydrate = useBimStore.getState().modelIndices;
+    useBimStore
+      .getState()
+      .applyDelta({ revision: 2, elements: {}, removedIds: [], violations: [] });
+    const afterDelta = useBimStore.getState().modelIndices;
+    expect(afterDelta).not.toBe(afterHydrate);
+    // No subscriber bounce: a second getState() call sees the same indices.
+    expect(useBimStore.getState().modelIndices).toBe(afterDelta);
+  });
+});

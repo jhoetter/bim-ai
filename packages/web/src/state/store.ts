@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type { StoreState } from './storeTypes';
 import { coerceElement, coerceViolation, defaultLevelId } from './storeCoercion';
+import { buildModelIndices } from './modelIndices';
 import {
   createCollaborationRuntimeSlice,
   createPlanAuthoringRuntimeSlice,
@@ -51,6 +52,29 @@ export function newPeerIdentity() {
   }
 }
 
+/**
+ * PERF-G03: keep `modelIndices` in sync with any setState that mutates
+ * `elementsById` (filter / category-override / annotation writers across
+ * viewport + semantic-command slices). The model slice's own writers
+ * (hydrateFromSnapshot, applyDelta, mergeElements) already include the
+ * rebuild in their own setState; this subscriber rebuilds only when a
+ * caller updated elementsById without touching modelIndices, so it
+ * doesn't double-rebuild on hot paths.
+ */
+function installModelIndicesInvariant(store: {
+  subscribe: typeof useBimStore.subscribe;
+  setState: typeof useBimStore.setState;
+}) {
+  store.subscribe((state, prevState) => {
+    if (
+      state.elementsById !== prevState.elementsById &&
+      state.modelIndices === prevState.modelIndices
+    ) {
+      store.setState({ modelIndices: buildModelIndices(state.elementsById) });
+    }
+  });
+}
+
 export const useBimStore = create<StoreState>((set, get) => {
   let peerIdStored = '';
 
@@ -92,6 +116,8 @@ export const useBimStore = create<StoreState>((set, get) => {
     ...createViewportRuntimeSlice(set, get),
   };
 });
+
+installModelIndicesInvariant(useBimStore);
 
 // E2E hook: expose the store on window so Playwright tests can drive
 // viewpoint activation without UI interaction. Compiled out of release
