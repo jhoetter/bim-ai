@@ -5,6 +5,7 @@ type ElementOfKind<K extends Element['kind']> = Extract<Element, { kind: K }>;
 export type ModelIndices = {
   all: readonly Element[];
   levels: readonly ElementOfKind<'level'>[];
+  walls: readonly ElementOfKind<'wall'>[];
   wallsByLevel: Readonly<Record<string, readonly ElementOfKind<'wall'>[]>>;
   roomsByLevel: Readonly<Record<string, readonly ElementOfKind<'room'>[]>>;
   openingsByWall: Readonly<
@@ -14,12 +15,14 @@ export type ModelIndices = {
   schedules: readonly ElementOfKind<'schedule'>[];
   sheets: readonly ElementOfKind<'sheet'>[];
   projectSettings: ElementOfKind<'project_settings'> | null;
+  projectBasePoint: ElementOfKind<'project_base_point'> | null;
   selectableIds: readonly string[];
 };
 
 export const EMPTY_MODEL_INDICES: ModelIndices = Object.freeze({
   all: Object.freeze([]) as readonly Element[],
   levels: Object.freeze([]) as readonly ElementOfKind<'level'>[],
+  walls: Object.freeze([]) as readonly ElementOfKind<'wall'>[],
   wallsByLevel: Object.freeze({}) as Record<string, ElementOfKind<'wall'>[]>,
   roomsByLevel: Object.freeze({}) as Record<string, ElementOfKind<'room'>[]>,
   openingsByWall: Object.freeze({}) as Record<
@@ -30,6 +33,7 @@ export const EMPTY_MODEL_INDICES: ModelIndices = Object.freeze({
   schedules: Object.freeze([]) as readonly ElementOfKind<'schedule'>[],
   sheets: Object.freeze([]) as readonly ElementOfKind<'sheet'>[],
   projectSettings: null,
+  projectBasePoint: null,
   selectableIds: Object.freeze([]) as readonly string[],
 });
 
@@ -45,6 +49,7 @@ function byNameThenId(a: { name?: string; id: string }, b: { name?: string; id: 
 export function buildModelIndices(elementsById: Record<string, Element>): ModelIndices {
   const all = Object.values(elementsById);
   const levels: ElementOfKind<'level'>[] = [];
+  const walls: ElementOfKind<'wall'>[] = [];
   const wallsByLevel: Record<string, ElementOfKind<'wall'>[]> = {};
   const roomsByLevel: Record<string, ElementOfKind<'room'>[]> = {};
   const openingsByWall: Record<string, Array<ElementOfKind<'door'> | ElementOfKind<'window'>>> = {};
@@ -52,6 +57,7 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
   const schedules: ElementOfKind<'schedule'>[] = [];
   const sheets: ElementOfKind<'sheet'>[] = [];
   let projectSettings: ElementOfKind<'project_settings'> | null = null;
+  let projectBasePoint: ElementOfKind<'project_base_point'> | null = null;
 
   for (const element of all) {
     switch (element.kind) {
@@ -59,6 +65,7 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
         levels.push(element);
         break;
       case 'wall':
+        walls.push(element);
         pushByKey(wallsByLevel, element.levelId, element);
         break;
       case 'room':
@@ -80,12 +87,16 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
       case 'project_settings':
         projectSettings = element;
         break;
+      case 'project_base_point':
+        projectBasePoint = element;
+        break;
       default:
         break;
     }
   }
 
   levels.sort((a, b) => a.elevationMm - b.elevationMm || a.id.localeCompare(b.id));
+  walls.sort(byNameThenId);
   planViews.sort(byNameThenId);
   schedules.sort(byNameThenId);
   sheets.sort(byNameThenId);
@@ -96,6 +107,7 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
   return {
     all,
     levels,
+    walls,
     wallsByLevel,
     roomsByLevel,
     openingsByWall,
@@ -103,6 +115,7 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
     schedules,
     sheets,
     projectSettings,
+    projectBasePoint,
     selectableIds: all.map((element) => element.id).sort(),
   };
 }

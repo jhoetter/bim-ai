@@ -526,6 +526,12 @@ export function PlanCanvas({
   > | null>(null);
 
   const elementsByIdRaw = useBimStore((s) => s.elementsById);
+  // PERF audit #4 / G04 step: narrow selectors for tool handlers' formerly-
+  // full-scan paths (wall-join, wall-opening, ceiling-sketch, project-base-point).
+  // The click handler still receives the broad `elementsById` for the remaining
+  // tool paths; migrating those needs additional modelIndices fields.
+  const modelWalls = useBimStore((s) => s.modelIndices.walls);
+  const projectBasePoint = useBimStore((s) => s.modelIndices.projectBasePoint);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
   const selectedId = useBimStore((s) => s.selectedId);
   const selectedIds = useBimStore((s) => s.selectedIds);
@@ -1238,6 +1244,8 @@ export function PlanCanvas({
       activePlanViewId,
       display,
       elementsById,
+      modelWalls,
+      projectBasePoint,
       selectedId,
       selectedIds,
       selectLinkedEnabled,

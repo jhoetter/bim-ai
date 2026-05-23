@@ -221,6 +221,8 @@ export interface PlanCanvasClickHandlerArgs {
   activePlanViewId: string | null | undefined;
   display: PlanViewResolvedDisplay;
   elementsById: Record<string, Element>;
+  modelWalls: readonly Extract<Element, { kind: 'wall' }>[];
+  projectBasePoint: Extract<Element, { kind: 'project_base_point' }> | null;
   selectedId: string | undefined;
   selectedIds: string[];
   selectLinkedEnabled: boolean;
@@ -368,6 +370,8 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     activePlanViewId,
     display,
     elementsById,
+    modelWalls,
+    projectBasePoint,
     selectedId,
     selectedIds,
     selectLinkedEnabled,
@@ -1469,8 +1473,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       const threshMm = 12 * worldPerPxMm;
       let bestCorner: { xMm: number; yMm: number } | null = null;
       let bestDist = Infinity;
-      for (const el of Object.values(elementsById)) {
-        if (el.kind !== 'wall') continue;
+      for (const el of modelWalls) {
         for (const pt of [el.start, el.end]) {
           const d = Math.hypot(sp.xMm - pt.xMm, sp.yMm - pt.yMm);
           if (d < bestDist) {
@@ -1481,8 +1484,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
       }
       if (bestCorner && bestDist <= threshMm) {
         const cornerWallIds: string[] = [];
-        for (const el of Object.values(elementsById)) {
-          if (el.kind !== 'wall') continue;
+        for (const el of modelWalls) {
           if (
             Math.hypot(bestCorner.xMm - el.start.xMm, bestCorner.yMm - el.start.yMm) < 1 ||
             Math.hypot(bestCorner.xMm - el.end.xMm, bestCorner.yMm - el.end.yMm) < 1
@@ -1507,8 +1509,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
         const threshMm = 12 * worldPerPxMm;
         let bestWall: string | null = null;
         let bestDist = Infinity;
-        for (const el of Object.values(elementsById)) {
-          if (el.kind !== 'wall') continue;
+        for (const el of modelWalls) {
           const mx = (el.start.xMm + el.end.xMm) / 2;
           const mz = (el.start.yMm + el.end.yMm) / 2;
           const d = Math.hypot(sp.xMm - mx, sp.yMm - mz);
@@ -1877,11 +1878,7 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
         }
       } else if (ceilingStateRef.current.phase === 'idle' && !ev.shiftKey) {
         // Single-click auto-detect: find enclosing wall boundary.
-        const levelWalls = Object.values(elementsById).filter(
-          (el): el is Extract<(typeof elementsById)[string], { kind: 'wall' }> =>
-            el.kind === 'wall',
-        );
-        const autoBoundary = lvlId ? detectCeilingBoundary(sp, levelWalls, lvlId) : null;
+        const autoBoundary = lvlId ? detectCeilingBoundary(sp, modelWalls, lvlId) : null;
         if (autoBoundary && autoBoundary.length >= 3 && lvlId) {
           const autoIssues = validateBoundary('ceiling-sketch', autoBoundary);
           const autoBlocking = autoIssues.filter((i) => i.severity === 'error');
@@ -2318,11 +2315,10 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     }
     // §2.1.3 — project base point: single click places or moves the PBP
     if (planTool === 'project-base-point') {
-      const existingPbp = Object.values(elementsById).find((e) => e.kind === 'project_base_point');
-      if (existingPbp) {
+      if (projectBasePoint) {
         onSemanticCommand({
           type: 'updateElementProperty',
-          elementId: existingPbp.id,
+          elementId: projectBasePoint.id,
           key: 'positionMm',
           value: { xMm: sp.xMm, yMm: sp.yMm, zMm: 0 },
         });

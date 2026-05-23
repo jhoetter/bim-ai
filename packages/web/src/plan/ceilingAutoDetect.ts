@@ -10,7 +10,7 @@ type WallElem = Extract<Element, { kind: 'wall' }>;
  */
 export function detectCeilingBoundary(
   clickMm: { xMm: number; yMm: number },
-  walls: WallElem[],
+  walls: readonly WallElem[],
   levelId: string,
 ): { xMm: number; yMm: number }[] | null {
   const levelWalls = walls.filter((w) => w.levelId === levelId);
