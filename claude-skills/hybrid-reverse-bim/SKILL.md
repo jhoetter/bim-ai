@@ -107,21 +107,36 @@ reference evidence with decision, reason, affected scope, and reviewed source
 evidence. They must not become modeled geometry or hide missing values that are
 required to author walls, rooms, openings, stairs, roofs, terrain, or schedules.
 
-## Modeling Slices — inside-out per floor
+## Modeling Slices — topology first, then inside-out per floor
 
 Model in this order unless the source package says otherwise:
 
 1. project setup, levels, origin, target scope, review views;
-2. **per floor, KG → EG → DG, inside-out** (see "Per-floor loop" below);
-3. roof + dormers + roof openings + ridge + eaves (treated as the upper-most "floor");
-4. vertical circulation, stairs, slab openings, railing (authored as part of
-   the floor that owns each segment — typically EG owns the EG↔DG stair);
-5. site, parcel, terrain/topology;
+2. **site / topology / parcel** (toposolid + parcel polygon + the
+   excavation polygon that the future KG slab will cut into) — must
+   land BEFORE any building element, so every floor below has a
+   parent reference to anchor against;
+3. **per floor, bottom-up, KG → EG → DG, inside-out** (see "Per-floor
+   loop" below);
+4. roof + dormers + roof openings + ridge + eaves (treated as the
+   upper-most "floor");
+5. vertical circulation, stairs, slab openings, railing (authored as
+   part of the floor that owns each segment — typically EG owns the
+   EG↔DG stair);
 6. materials, assemblies, schedules, areas, volumes;
 7. final evidence and acceptance.
 
-**Inside-out is non-negotiable.** Authoring exterior walls first
-("outside-in") and trying to derive rooms from them afterwards
+**Topology first is non-negotiable.** The KG slab elevation is
+defined by the excavation depth, the EG floor sits on KG walls, and
+the roof eave terminates against the DG wall top. Without the
+toposolid in place first, the basement floats arbitrarily and the
+visual gate cannot judge whether the building sits correctly in its
+parcel. The bare-site view (toposolid + parcel only, no building)
+gets its own `topology-visual-gate` so the grader confirms the
+ground is right before any wall lands on it.
+
+**Inside-out per floor is non-negotiable.** Authoring exterior walls
+first ("outside-in") and trying to derive rooms from them afterwards
 consistently produces a "vanilla box" with no room topology, no
 party-wall flatness in Doppelhaus halves, and openings that fail to
 host. Inside-out reads the source floor plan room-by-room, places the

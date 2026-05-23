@@ -696,14 +696,40 @@ export function AgentHouseDashboard(): JSX.Element {
           </section>
 
           {data.iterations.length > 0 ? (
-          <section className="agents-capture-section">
-            <h2>Legacy iter-N captures {selectedIter ? <code>{selectedIter}</code> : null}</h2>
+          <details className="agents-detail agents-capture-section">
+            <summary>
+              <strong>Legacy iter-N captures</strong>{' '}
+              <small>
+                ({data.iterations.length} from the pre-rebuild{' '}
+                <code>iter-N-captures/</code> layout, collapsed by default)
+              </small>
+            </summary>
             <p className="agents-count">
-              From the pre-rebuild <code>tmp/reverse-bim/iter-N-captures/</code> layout.
               The new rebuild layout puts captures under{' '}
-              <code>tmp/reverse-bim/house-{house}/iter-N/</code> and is rendered live via
-              the iter picker above.
+              <code>tmp/reverse-bim/house-{house}/iter-N/</code> and is rendered
+              live via the iter picker above. This section is here only to surface
+              evidence from the prior pre-rebuild runs that still exists on disk.
             </p>
+            <ul className="agents-iterlist">
+              {data.iterations.map((it) => (
+                <li key={it.iteration}>
+                  <button
+                    type="button"
+                    className={
+                      'agents-iter-btn' +
+                      (selectedIter === it.iteration ? ' agents-iter-btn--active' : '')
+                    }
+                    onClick={() => setSelectedIter(it.iteration)}
+                    disabled={it.captureCount === 0}
+                  >
+                    {it.iteration}{' '}
+                    <span className="agents-iter-count">
+                      {it.captureCount} {it.scoringReportPresent ? '★' : ''}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
             {selected ? (
               <>
                 <div className="agents-capture-toolbar">
@@ -770,7 +796,7 @@ export function AgentHouseDashboard(): JSX.Element {
             ) : (
               <p>Pick a legacy iter above to view captures.</p>
             )}
-          </section>
+          </details>
           ) : null}
         </>
       ) : null}

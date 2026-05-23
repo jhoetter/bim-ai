@@ -607,6 +607,83 @@ def _source_evidence_from_facts(facts: list[dict]) -> list[dict]:
 # source_evidence) or None when the phase is empty (skipped).
 
 
+def _topology_bundle(
+    *, ir: dict, parent_revision: int, house: str
+) -> tuple[dict, list[str]] | None:
+    """v2 topology slice — toposolid sized to the building footprint + 5m margin.
+
+    Per the v2 tracker, topology lands BEFORE any building element so
+    the KG slab + walls have a parent to anchor against. We seed the
+    toposolid from the IR's exterior_wall_chain polygon (the building
+    footprint), expanded by 5 m on every side to give a realistic
+    parcel-like context band, and we set its `baseElevationMm` to
+    just below the KG floor so the basement is "in the ground". A
+    later iter authors a real parcel polygon + the excavation
+    relation; this is the bare-site MVP that unblocks the per-floor
+    loop.
+    """
+
+    chain = next(
+        (
+            f
+            for f in (ir.get("extractedFacts") or [])
+            if f.get("kind") == "exterior_wall_chain" and f.get("levelId") == "level-EG"
+        ),
+        None,
+    )
+    if chain is None:
+        return None
+    poly = chain.get("polygonMm") or chain.get("polygonMM") or []
+    if len(poly) >= 2 and poly[0] == poly[-1]:
+        poly = poly[:-1]
+    if len(poly) < 3:
+        return None
+
+    margin = 5000  # 5 m parcel-context band around the building.
+    xs = [float(p[0]) for p in poly]
+    ys = [float(p[1]) for p in poly]
+    xmin, xmax = min(xs) - margin, max(xs) + margin
+    ymin, ymax = min(ys) - margin, max(ys) + margin
+    topo_poly = [
+        {"xMm": xmin, "yMm": ymin},
+        {"xMm": xmax, "yMm": ymin},
+        {"xMm": xmax, "yMm": ymax},
+        {"xMm": xmin, "yMm": ymax},
+    ]
+
+    # KG sits at -2500; place the toposolid surface ~at grade (0 mm)
+    # with the solid extending 1500 mm down. The KG excavation is
+    # authored later as a Toposolid excavation relation against the
+    # KG slab.
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [
+                {
+                    "type": "CreateToposolid",
+                    "toposolidId": f"th-{house}-toposolid",
+                    "name": "Site toposolid",
+                    "boundaryMm": topo_poly,
+                    "thicknessMm": 1500,
+                    "baseElevationMm": -1500,
+                }
+            ],
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_topology",
+                    "value": f"Toposolid {xmax - xmin:.0f}×{ymax - ymin:.0f} mm around the EG footprint with 5 m parcel margin",
+                    "confidence": 0.5,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": "iter-1 EG exterior_wall_chain expanded by 5 m on every side; surface at grade (0 mm), solid extends 1500 mm down. Parcel boundary + excavation relation deferred.",
+                }
+            ],
+        },
+        [str(chain.get("factId"))],
+    )
+
+
 def _project_setup_bundle(*, ir: dict, parent_revision: int, house: str) -> dict | None:
     commands: list[dict] = []
     for lvl in ir.get("levels") or []:
@@ -978,25 +1055,74 @@ def _cmd_floor(args: argparse.Namespace) -> int:
 
     house = args.house
     iter_n = int(args.iter)
-    floor = args.floor.upper()  # KG | EG | DG | ROOF
+    floor = args.floor.upper()  # TOPOLOGY | KG | EG | DG | ROOF
     ir = json.loads(_ir_path(house).read_text(encoding="utf-8"))
     api_base = args.api_base
 
     model_id = _ensure_model(house=house, api_base=api_base)
 
-    # KG iter also seeds project setup (levels).
-    if floor == "KG":
+    # TOPOLOGY iter seeds the site toposolid + project levels — the
+    # bare-site state every subsequent floor anchors against.
+    if floor == "TOPOLOGY":
         rev = _current_revision(api_base=api_base, model_id=model_id)
-        bundle = _project_setup_bundle(ir=ir, parent_revision=rev, house=house)
-        if bundle is not None:
-            _apply_slice(
+        ps_bundle = _project_setup_bundle(ir=ir, parent_revision=rev, house=house)
+        if ps_bundle is not None:
+            _apply_slice_v2(
                 house=house,
                 iter_n=iter_n,
-                phase=f"{floor.lower()}-project-setup",
+                phase="topology-project-setup",
+                bundle=ps_bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=[],
+                source_evidence=[],
+            )
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        topo_pair = _topology_bundle(ir=ir, parent_revision=rev, house=house)
+        if topo_pair is not None:
+            bundle, consumed = topo_pair
+            evidence = _source_evidence_from_facts(
+                [
+                    f
+                    for f in (ir.get("extractedFacts") or [])
+                    if f.get("kind") == "exterior_wall_chain" and f.get("levelId") == "level-EG"
+                ]
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase="topology-toposolid",
                 bundle=bundle,
                 api_base=api_base,
                 submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
             )
+        return 0
+
+    # KG iter seeds project setup (levels) ONLY if no level exists yet
+    # — supports the v1-style "go straight to KG" path as a fallback,
+    # while staying idempotent when iter-3 TOPOLOGY already ran.
+    if floor == "KG":
+        snap = _snapshot(api_base=api_base, model_id=model_id)
+        has_levels = any(
+            isinstance(e, dict) and e.get("kind") == "level"
+            for e in (snap.get("elements") or {}).values()
+        )
+        if not has_levels:
+            rev = int(snap.get("revision") or 1)
+            bundle = _project_setup_bundle(ir=ir, parent_revision=rev, house=house)
+            if bundle is not None:
+                _apply_slice(
+                    house=house,
+                    iter_n=iter_n,
+                    phase=f"{floor.lower()}-project-setup",
+                    bundle=bundle,
+                    api_base=api_base,
+                    submitter="testhouse_drive.floor",
+                )
 
     # Per-floor sub-phases (skip ROOF — handled separately below).
     if floor in {"KG", "EG", "DG"}:
@@ -1501,7 +1627,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     fl.add_argument("--house", required=True, choices=HOUSES)
     fl.add_argument("--iter", type=int, required=True)
-    fl.add_argument("--floor", required=True, choices=("KG", "EG", "DG", "ROOF"))
+    fl.add_argument("--floor", required=True, choices=("TOPOLOGY", "KG", "EG", "DG", "ROOF"))
     fl.set_defaults(func=_cmd_floor)
 
     cap = sub.add_parser(

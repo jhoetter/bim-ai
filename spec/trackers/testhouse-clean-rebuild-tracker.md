@@ -79,21 +79,32 @@ on a single PDF.
 | 1 | all | `reader-facts` — subagent reads each source page and emits structured `extractedFacts[]` for every level (rooms, dimensions, openings, vertical circulation, roof) | `understanding/existing-building-ir.json` v2 exists per house with `extractedFacts: [...]` populated (`factTotal > 0` in the `/agents` dashboard); every load-bearing fact has `factId + kind + status + levelId + sourceDocId + sourcePage + (valueMm OR vertexMm) + confidence` |
 | 2 | all | `scope-decisions` — building scope, party walls, coordinate frame, level heights | `understanding/scope-decisions.json` v2; for alpha + gamma at `target_half` with explicit party-wall side + mask polygon; for beta full building |
 
-### Per-floor inside-out loop (one iter per floor per house)
+### Topology first, then per-floor inside-out (bottom-up)
 
-The iter number is `3 + (4 × house_index) + floor_index` where
-`house_index ∈ {alpha:0, beta:1, gamma:2}` and `floor_index ∈ {KG:0,
-EG:1, DG:2, roof:3}`. Concretely:
+After preflight + reader + scope decisions, the per-house body of the
+rebuild starts with **topology** (toposolid + parcel + excavation
+under the future basement), and only then builds floors **bottom-up**:
+KG → EG → DG → roof. The rationale is structural — the KG slab
+elevation is defined by the excavation depth, the EG floor sits on
+KG, and the roof eave terminates against the DG wall top. Authoring
+in this order means every later slice has a parent reference to
+anchor against, and the v2 visual gate can check the whole stack from
+the ground up.
 
-| Iter | House | Floor | Phase(s) | Done-criteria |
-|------|-------|-------|----------|---------------|
-| 3  | alpha | KG    | `kg-rooms` → `kg-partitions` → `kg-openings` → `kg-exterior-walls` → `kg-structural-gate` → `kg-visual-gate` | Every gate passes; grader subagent ≥ 9/10 for KG |
-| 4  | alpha | EG    | same shape (`eg-*`) | grader ≥ 9/10 for EG, AND KG still ≥ 9/10 |
-| 5  | alpha | DG    | same shape (`dg-*`) | grader ≥ 9/10 for DG |
-| 6  | alpha | roof  | `roof-main` → `roof-dormers` → `roof-openings` → `roof-structural-gate` → `roof-visual-gate` | grader ≥ 9/10 for roof + exterior shell as a whole |
-| 7..10  | beta  | KG/EG/DG/roof | same shape | each floor grader ≥ 9/10 |
-| 11..14 | gamma | KG/EG/DG/roof | same shape | each floor grader ≥ 9/10 |
-| 15+ | all | `final-acceptance` — terrain, site, materials, schedules; cross-house visual review | All gates from `qa.advisor`, `qa.constructability`, `qa.integrity_preflight`, `reverse_bim.level_completeness`, `reverse_bim.physical_topology`, `reverse_bim.final_acceptance` clean; cross-house grader ≥ 9/10 each |
+The iter number for a house is `3 + (5 × house_index) + slice_index`
+where `house_index ∈ {alpha:0, beta:1, gamma:2}` and
+`slice_index ∈ {topology:0, KG:1, EG:2, DG:3, roof:4}`. Concretely:
+
+| Iter | House | Slice | Phase(s) | Done-criteria |
+|------|-------|----------|----------|---------------|
+| 3  | alpha | topology | `topology-toposolid` → `topology-parcel` → `topology-excavation-stub` → `topology-visual-gate` | Toposolid + parcel + excavation polygon present and sized to scope.mask; grader ≥ 9/10 on the bare-site view |
+| 4  | alpha | KG       | `kg-rooms` → `kg-partitions` → `kg-openings` → `kg-exterior-walls` → `kg-slab-on-toposolid` → `kg-structural-gate` → `kg-visual-gate` | KG slab hosts on toposolid via excavation cutter; grader ≥ 9/10 for KG-on-site |
+| 5  | alpha | EG       | same shape, `eg-*` (EG slab sits on KG walls) | grader ≥ 9/10 for EG; previous slices still ≥ 9/10 |
+| 6  | alpha | DG       | same shape, `dg-*` | grader ≥ 9/10 for DG |
+| 7  | alpha | roof     | `roof-main` → `roof-dormers` → `roof-openings` → `roof-structural-gate` → `roof-visual-gate` | grader ≥ 9/10 for full exterior + site |
+| 8..12  | beta  | topology + KG/EG/DG/roof | same shape | each slice grader ≥ 9/10 |
+| 13..17 | gamma | topology + KG/EG/DG/roof | same shape | each slice grader ≥ 9/10 |
+| 18+ | all | `final-acceptance` — materials, schedules, cross-house visual review | All gates from `qa.advisor`, `qa.constructability`, `qa.integrity_preflight`, `reverse_bim.level_completeness`, `reverse_bim.physical_topology`, `reverse_bim.final_acceptance` clean; cross-house grader ≥ 9/10 each |
 
 ### Per-floor phase contract
 

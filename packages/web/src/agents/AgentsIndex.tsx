@@ -102,15 +102,16 @@ export function AgentsIndex(): JSX.Element {
     };
   }, []);
 
-  // Houses with an active model first (most-likely-clicked), then
-  // artifacts-only, then seed-empty rows. The seed-empty rows render
-  // as plain text rather than links so a fresh checkout doesn't mislead
-  // users into clicking through to empty pages.
-  const houseRows = (houses?.items ?? []).slice().sort((a, b) => {
-    const score = (h: HouseListItem) =>
-      (h.inDatabase ? 0 : 1) * 10 + (h.inFilesystem ? 0 : 1);
-    return score(a) - score(b);
-  });
+  // Only show houses with a live BIM model (i.e., a bim_models row).
+  // FS-only and seed-only houses stay reachable by URL but don't
+  // clutter the index — see spec/trackers/agent-run-inspector-tracker.md
+  // "What landed (truthful UI pass)" for the rationale.
+  const allHouses = houses?.items ?? [];
+  const liveHouses = allHouses
+    .filter((h) => h.inDatabase)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const offlineHouses = allHouses.filter((h) => !h.inDatabase);
 
   return (
     <div className="agents-page">
@@ -128,34 +129,51 @@ export function AgentsIndex(): JSX.Element {
         {housesError ? (
           <p className="agents-error">Failed to load houses: {housesError}</p>
         ) : null}
-        {houseRows.length > 0 ? (
+        {liveHouses.length > 0 ? (
           <p className="agents-house-links">
             <strong>Per-house dashboards:</strong>{' '}
-            {houseRows.map((h, i) => (
+            {liveHouses.map((h, i) => (
               <span key={h.name}>
                 {i > 0 ? ' · ' : ''}
-                {h.inDatabase || h.inFilesystem ? (
+                <Link
+                  to={`/agents/houses/${h.name}`}
+                  className="agents-link"
+                  title={`${h.name} · ${houseProvenanceTag(h)}`}
+                >
+                  {h.name}
+                </Link>
+              </span>
+            ))}
+          </p>
+        ) : (
+          <p className="agents-house-links">
+            <em>
+              No live BIM model for any house yet. The first testhouse rebuild
+              commit will populate this list.
+            </em>
+          </p>
+        )}
+        {offlineHouses.length > 0 ? (
+          <details className="agents-detail">
+            <summary>
+              {offlineHouses.length} house
+              {offlineHouses.length === 1 ? '' : 's'} on disk without a live model
+            </summary>
+            <ul className="agents-stats">
+              {offlineHouses.map((h) => (
+                <li key={h.name}>
                   <Link
                     to={`/agents/houses/${h.name}`}
                     className="agents-link"
                     title={`${h.name} · ${houseProvenanceTag(h)}`}
                   >
                     {h.name}
-                  </Link>
-                ) : (
-                  <span
-                    className="agents-house-empty"
-                    title={`${h.name} · ${houseProvenanceTag(h)}`}
-                  >
-                    {h.name}
-                  </span>
-                )}{' '}
-                <small className="agents-iter-count">
-                  ({houseProvenanceTag(h)})
-                </small>
-              </span>
-            ))}
-          </p>
+                  </Link>{' '}
+                  <small>({houseProvenanceTag(h)})</small>
+                </li>
+              ))}
+            </ul>
+          </details>
         ) : null}
       </header>
 
@@ -163,13 +181,15 @@ export function AgentsIndex(): JSX.Element {
       {error ? <p className="agents-error">Failed to load: {error}</p> : null}
 
       {data && !loading ? (
-        <>
-          <h2 className="agents-section-heading">Historical Claude Code sessions</h2>
+        <details className="agents-detail">
+          <summary>
+            <strong>Historical Claude Code sessions</strong> — {data.returned} of{' '}
+            {data.total} transcripts on disk (collapsed by default)
+          </summary>
           <p className="agents-count">
-            {data.returned} of {data.total} session transcripts on disk. Sessions
-            persist across testhouse rebuilds — older rows may reference model ids
-            that no longer exist. Use the per-house dashboards above for current
-            live state.
+            Sessions persist across testhouse rebuilds — older rows may reference
+            model ids that no longer exist. Use the per-house dashboards above for
+            current live state.
           </p>
           <table className="agents-table">
             <thead>
@@ -216,7 +236,7 @@ export function AgentsIndex(): JSX.Element {
               ))}
             </tbody>
           </table>
-        </>
+        </details>
       ) : null}
     </div>
   );
