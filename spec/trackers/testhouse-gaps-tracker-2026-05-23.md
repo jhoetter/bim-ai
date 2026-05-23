@@ -335,6 +335,7 @@ grader. Target: 10/10 on all three houses by closing A1-A4.
 | `7d0a1c5bb` | A1 | dormers — alpha 2, beta 1, gamma 2 Schleppgauben authored from IR. Critical: driver MUST use engine's footprint-axis ridge heuristic (longer span = ridge), not the IR's ridge_orientation text, or position_on_roof along/across get swapped and the engine 409s |
 | `1bd0ea401` | A2 | stairs — 1 stair per house, deferred to ROOF iter because engine requires DG floor before stair top landing can host |
 | `2d5a59632` | B1 | structural-gate sidecars per floor + `/iterations/{iter}/structural-gate` endpoint |
+| `9664c9220` | Materials + stair-riser engine fix | (a) `materialKey` set on exterior createWall (`render_light_grey`), interior partition (`plaster`), main roof (`roof_tile_terracotta`); (b) `_materialize_stair_runs_and_landings` for shape='straight' no-runs path was hardcoded `riser_count=8` — fixed to honor `cmd.riser_count`. v2.8 alpha grader confirmed 9.5/10 gate met (stair `totalRiseMm=2750`, 6 DG mirror partitions present) — the residual run.riser_count=8 nit is what this engine fix addresses |
 
 Re-grade after A1+A2+B1 (this session's deliverables):
 
@@ -360,6 +361,17 @@ to 10/10 with the dormer + stair additions.
   render with a full gable peak on the west; not a definite-failure
   with the partition-only convention but reads as "the building is
   detached" in the captures).
+  **Note (v2.9 audit)**: the original recipe — "asymmetric_gable with
+  eaveHeightLeftMm = ridge_height on the party-wall side" — is
+  geometrically wrong. For our houses the ridge runs E-W (span_x ≥
+  span_y), so `eaveHeightLeftMm` / `eaveHeightRightMm` control the
+  NORTH/SOUTH eave heights, not the WEST/EAST gable sides. The party
+  wall (x=0) is a **gable end**, not an eave. To make it render flat,
+  the engine needs either (a) a new `roofGeometryMode = "half_gable"`
+  that suppresses one gable triangle, or (b) authoring the full
+  Doppelhaus roof spanning 19.80 m and trimming visually. Both are
+  meaningful engine work — defer until the rest of the gap pile is
+  closed.
 - **A4** — beta Flachdach garage roof (flat roof over the SE garage
   wing area = EG_footprint − DG_footprint).
 - **B2** — visual-gate phase as a JSON sidecar pulled from the
@@ -369,9 +381,12 @@ to 10/10 with the dormer + stair additions.
 - **C2** — KG inheritance when source-limited (alpha + gamma KG
   rooms come from the IR; gamma KG has 3 storage rooms, alpha KG
   has 5).
-- **Materials** — every surface is uniform grey. Authoring even a
-  simple Aussenwand-stucco + Innenwand-paint + Roof-tile material
-  triplet would lift "source-faithful presence" for all 3 houses.
+- **Materials** — ✅ **landed v2.9** (`9664c9220`). Driver now sets
+  `materialKey` on every exterior wall (`render_light_grey`), every
+  interior partition (`plaster`), and the main roof
+  (`roof_tile_terracotta`). Visible effect lands on the **next**
+  re-author per house (existing committed walls/roofs keep their
+  previous null `materialKey`).
 - **B2 / B4 / E2** — dashboard improvements (visual diff overlay,
   per-house run.json summary, score chart).
 
