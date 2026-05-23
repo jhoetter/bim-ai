@@ -2165,6 +2165,26 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 ),
             )
 
+    # Run a structural-gate readout per floor: query the model snapshot,
+    # summarise visible findings (room/wall/opening counts + advisor +
+    # constructability) into a sidecar JSON the /agents dashboard renders
+    # inline. Closes gap B1 from the gaps tracker without requiring a
+    # no-op MCP commit per floor.
+    try:
+        _run_structural_gate(house=house, iter_n=iter_n, floor=floor.lower(), api_base=api_base)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "testhouse_iter.structural_gate_failed",
+            extra={
+                "house": house,
+                "iter": iter_n,
+                "phase": f"{floor.lower()}-structural-gate",
+                "category": "skip",
+                "severity": "warn",
+                "error": str(exc)[:200],
+            },
+        )
+
     # Always author + capture 4 cardinal ortho views at the end of
     # every floor iter so the /agents dashboard renders a visual
     # progression (bare site → KG slab → EG mass → DG → roof). See
@@ -2422,6 +2442,105 @@ def _apply_slice_v2(
     }
     print(json.dumps(out, sort_keys=True))
     return out
+
+
+def _run_structural_gate(*, house: str, iter_n: int, floor: str, api_base: str) -> Path:
+    """Per-floor structural-gate readout (gap B1).
+
+    Queries the live model snapshot + the QA bundle endpoints
+    (advisor / constructability / integrity if available), summarises
+    element counts and finding severities, and writes a sidecar JSON
+    at ``tmp/reverse-bim/house-<X>/iter-<N>/structural-gate.json``
+    that the /agents dashboard renders inline. Also emits a
+    structured ``testhouse_iter.structural_gate_recorded`` log event
+    so the run.jsonl timeline shows the gate decision.
+
+    The gate decision rule:
+      * pass  — zero blocker-level findings + zero error-severity
+      * warn  — only warning + info severities
+      * fail  — any error or blocking finding
+    """
+
+    model_id = _ensure_model(house=house, api_base=api_base)
+    snap = httpx.get(f"{api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0).json()
+    elements = (snap.get("elements") or {}).values()
+    from collections import Counter
+
+    by_kind: Counter[str] = Counter()
+    for e in elements:
+        if isinstance(e, dict):
+            k = str(e.get("kind") or "?")
+            by_kind[k] += 1
+
+    # Advisor + constructability roll-ups via the existing routes.
+    findings: dict[str, dict] = {}
+    for route_path, key in (
+        ("/models/{}/validate", "advisor"),
+        ("/models/{}/constructability-report", "constructability"),
+    ):
+        try:
+            r = httpx.get(
+                f"{api_base.rstrip('/')}{route_path.format(model_id)}",
+                timeout=30.0,
+            )
+            if r.status_code == 200:
+                payload = r.json()
+                viols = (
+                    payload.get("violations")
+                    or payload.get("findings")
+                    or payload.get("issues")
+                    or []
+                )
+                severity_count: Counter[str] = Counter()
+                for v in viols if isinstance(viols, list) else []:
+                    sev = str(v.get("severity") or v.get("level") or "info")
+                    severity_count[sev] += 1
+                findings[key] = {
+                    "count": len(viols) if isinstance(viols, list) else 0,
+                    "bySeverity": dict(severity_count),
+                }
+        except (httpx.HTTPError, ValueError, TypeError):
+            findings[key] = {"count": 0, "bySeverity": {}, "fetchError": True}
+
+    sev_blocking = sum(
+        (r.get("bySeverity", {}).get("error") or 0) + (r.get("bySeverity", {}).get("blocker") or 0)
+        for r in findings.values()
+    )
+    sev_warn = sum(
+        (r.get("bySeverity", {}).get("warning") or r.get("bySeverity", {}).get("warn") or 0)
+        for r in findings.values()
+    )
+    decision = "fail" if sev_blocking else "warn" if sev_warn else "pass"
+
+    out_dir = _house_workdir(house) / f"iter-{iter_n}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "structural-gate.json"
+    payload = {
+        "schemaVersion": "testhouseStructuralGate_v1",
+        "house": house,
+        "iter": iter_n,
+        "phase": f"{floor}-structural-gate",
+        "modelId": model_id,
+        "snapshotRevision": snap.get("revision"),
+        "elementCounts": dict(by_kind),
+        "elementTotal": sum(by_kind.values()),
+        "findings": findings,
+        "decision": decision,
+        "ranAt": datetime.now(UTC).isoformat(),
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    _emit_event(
+        house=house,
+        iter_n=iter_n,
+        phase=f"{floor}-structural-gate",
+        category="grade",
+        severity="info" if decision == "pass" else "warn",
+        msg=f"testhouse_iter.structural_gate.{decision}",
+        decision=decision,
+        elementTotal=sum(by_kind.values()),
+        findings={k: v.get("count") for k, v in findings.items()},
+    )
+    return path
 
 
 def _emit_event(

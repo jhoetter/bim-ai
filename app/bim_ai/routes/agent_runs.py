@@ -522,6 +522,30 @@ async def get_house_log_tail(
         raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
 
 
+@agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/structural-gate")
+async def get_iteration_structural_gate(house: str, iteration: str) -> dict[str, Any]:
+    """Return the per-floor structural-gate JSON written by the driver.
+
+    The driver writes
+    ``tmp/reverse-bim/house-<X>/iter-<N>/structural-gate.json`` after
+    each floor iter (gap B1). It contains element counts, advisor +
+    constructability finding roll-ups, and a pass/warn/fail decision.
+    """
+
+    house = _validate_house(house)
+    iteration = _validate_iteration(iteration)
+    path = _reverse_bim_dir() / f"house-{house}" / iteration / "structural-gate.json"
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"No structural-gate sidecar for house={house} iteration={iteration}",
+        )
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
+
+
 @agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/narrative")
 async def get_iteration_narrative(house: str, iteration: str) -> dict[str, Any]:
     """Return the human-readable phase-narrative JSON for an iteration.
