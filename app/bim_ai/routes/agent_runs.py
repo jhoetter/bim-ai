@@ -522,6 +522,31 @@ async def get_house_log_tail(
         raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
 
 
+@agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/visual-gate")
+async def get_iteration_visual_gate(house: str, iteration: str) -> dict[str, Any]:
+    """Return the per-iter visual-gate JSON written by the grader subagent.
+
+    The grader writes
+    ``tmp/reverse-bim/iter-<N>-scoring/<house>-subagent-grade.json``
+    with the rubric + decision + topFixesForNextIter. This endpoint
+    serves it so the /agents dashboard can show the visual-gate
+    pass/fail decision inline next to the structural-gate sidecar.
+    """
+
+    house = _validate_house(house)
+    iteration = _validate_iteration(iteration)
+    path = _scoring_dir_for(iteration) / f"{house}-subagent-grade.json"
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"No visual-gate sidecar for house={house} iteration={iteration}",
+        )
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail=f"Read failed: {exc}") from exc
+
+
 @agent_runs_router.get("/agent-runs/houses/{house}/iterations/{iteration}/structural-gate")
 async def get_iteration_structural_gate(house: str, iteration: str) -> dict[str, Any]:
     """Return the per-floor structural-gate JSON written by the driver.
