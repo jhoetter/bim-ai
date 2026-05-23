@@ -325,6 +325,8 @@ Each row = one /loop iteration. The loop appends here.
 | 5.g | 2026-05-24 01:55Z | **alpha** | iter-4: **9.2/10 — CONVERGED 🎯**; topGap east facade (model 2+2 windows under hip-style cap vs source steep gable + attic-triangle); §4.5 clean (all 5 visual checks pass); materials VISIBLY applied (face_material_overrides paint=render_light_grey) | **9.2** | CONVERGED — no further iters |
 | 5.g | 2026-05-24 01:50Z | **beta**  | iter-4: **9.0/10 — CONVERGED 🎯**; ridgeAlongX flipped gable to east/west correctly; eaves now horizontal on north/south; topGap south (dormer 5500 mm present but doesn't protrude legibly; garage roller door no visible distinction) | **9.0** | CONVERGED |
 | 5.g | 2026-05-24 01:45Z | gamma | iter-4: **6.3/10** — grader DOUBLE-COUNTED missing source features (cross-gable, arched window, balkon, sparse openings, shallow pitch) as §4.5 defects instead of §4.1 perFacade deductions; rubric §4.5 has only 5 enumerated defect types and none match the listed concerns. Re-grading with strict §4.5 prompt | 6.3 | re-grade tight |
+| 5.g2| 2026-05-24 02:00Z | gamma | iter-4 re-graded tight §4.5: **6.9/10** (real); axis breakdown perFacade 2.2/4 (south Strassenansicht 0.2/1 — missing Zwerchhaus cross-gable + under-fenestration), perFloor 1.7/3 (OG/DG collapse), vertical 1.0, materials 1.0, noMajorDefect 1.0. Real gap = facade fidelity (more windows + Zwerchhaus) | 6.9 | IR-patch + iter-5 |
+| 6   | 2026-05-24 02:03Z | gamma | NS-5 IR patch: added 3 EG south windows (BAD/KUECHE/FLUR) so south facade has 4 EG + 4 DG mirror = 8 windows visible (vs prior 1+1=2). iter-5 author kicked off | n/a | grade after iter-5 |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
