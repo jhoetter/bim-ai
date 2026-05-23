@@ -77,7 +77,7 @@ class RouteError(Exception):
     def to_envelope(self) -> dict[str, Any]:
         # Returned envelope shape is polymorphic — `extra` can carry
         # error-code-specific context. dict[str, Any] is intentional
-        # here; whitelisted via spec/typed-contracts-baseline.json.
+        # here; whitelisted via spec/governance/typed-contracts-baseline.json.
         error: dict[str, Any] = {
             "code": self.code,
             "message": self.message,

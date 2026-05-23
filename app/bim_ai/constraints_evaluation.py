@@ -75,6 +75,27 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    ADV_CSV_DIVERGES as _PARITY_ADV_CSV_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    ADV_JSON_DIVERGES as _PARITY_ADV_JSON_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    ADV_LISTING_DIVERGES as _PARITY_ADV_LISTING_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    PARITY_CSV_DIVERGES as _PARITY_CSV_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    PARITY_JSON_DIVERGES as _PARITY_JSON_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    PARITY_LISTING_DIVERGES as _PARITY_LISTING_DIVERGES,
+)
+from bim_ai.evidence.schedule_sheet_export_parity import (
+    collect_schedule_sheet_export_parity_rows_for_doc,
+)
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.material_assembly_resolve import (
     material_catalog_audit_rows,
@@ -82,27 +103,6 @@ from bim_ai.material_assembly_resolve import (
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
-from bim_ai.schedule_sheet_export_parity import (
-    ADV_CSV_DIVERGES as _PARITY_ADV_CSV_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    ADV_JSON_DIVERGES as _PARITY_ADV_JSON_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    ADV_LISTING_DIVERGES as _PARITY_ADV_LISTING_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    PARITY_CSV_DIVERGES as _PARITY_CSV_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    PARITY_JSON_DIVERGES as _PARITY_JSON_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    PARITY_LISTING_DIVERGES as _PARITY_LISTING_DIVERGES,
-)
-from bim_ai.schedule_sheet_export_parity import (
-    collect_schedule_sheet_export_parity_rows_for_doc,
-)
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
     normalize_titleblock_revision_issue_v1,
     sheet_revision_issue_metadata_present,

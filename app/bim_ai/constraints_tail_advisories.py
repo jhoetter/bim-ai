@@ -22,7 +22,9 @@ from bim_ai.elements import (
     SectionCutElem,
     SheetElem,
 )
-from bim_ai.room_color_scheme_override_evidence import scheme_override_advisory_violations_for_doc
+from bim_ai.evidence.room_color_scheme_override_evidence import (
+    scheme_override_advisory_violations_for_doc,
+)
 from bim_ai.room_derivation import detect_unbounded_rooms_v1
 from bim_ai.section_on_sheet_integration_evidence_v1 import (
     section_cut_line_present,
