@@ -1624,7 +1624,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1640,7 +1640,7 @@ def test_reverse_bim_folder_output_blocks_without_reader_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.render.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",
@@ -1758,7 +1758,7 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1774,7 +1774,7 @@ def test_reverse_bim_folder_output_captures_reader_command_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.render.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",
@@ -1827,7 +1827,7 @@ def test_reverse_bim_reader_dispatch_writes_assignment_responses(
     source_dir.mkdir()
     (source_dir / "EG Grundriss.pdf").write_bytes(b"%PDF-1.4\n% test\n")
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.render_pdf_pages",
+        "bim_ai.services.folder_output.render.render_pdf_pages",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -1843,7 +1843,7 @@ def test_reverse_bim_reader_dispatch_writes_assignment_responses(
         },
     )
     monkeypatch.setattr(
-        "bim_ai.services.folder_output.extract_pdf_text",
+        "bim_ai.services.folder_output.render.extract_pdf_text",
         lambda source_path, **_: {
             "ok": True,
             "format": "sourcePdfTextExtraction_v1",
