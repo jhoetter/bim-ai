@@ -19,6 +19,11 @@ export type ModelIndices = {
   planViews: readonly ElementOfKind<'plan_view'>[];
   schedules: readonly ElementOfKind<'schedule'>[];
   sheets: readonly ElementOfKind<'sheet'>[];
+  /** PERF-G03 finishing: extra view-surface indices the command palette consumes. */
+  viewpoints: readonly ElementOfKind<'viewpoint'>[];
+  savedViews: readonly ElementOfKind<'saved_view'>[];
+  sectionCuts: readonly ElementOfKind<'section_cut'>[];
+  viewTemplates: readonly ElementOfKind<'view_template'>[];
   projectSettings: ElementOfKind<'project_settings'> | null;
   projectBasePoint: ElementOfKind<'project_base_point'> | null;
   selectableIds: readonly string[];
@@ -42,6 +47,10 @@ export const EMPTY_MODEL_INDICES: ModelIndices = Object.freeze({
   planViews: Object.freeze([]) as readonly ElementOfKind<'plan_view'>[],
   schedules: Object.freeze([]) as readonly ElementOfKind<'schedule'>[],
   sheets: Object.freeze([]) as readonly ElementOfKind<'sheet'>[],
+  viewpoints: Object.freeze([]) as readonly ElementOfKind<'viewpoint'>[],
+  savedViews: Object.freeze([]) as readonly ElementOfKind<'saved_view'>[],
+  sectionCuts: Object.freeze([]) as readonly ElementOfKind<'section_cut'>[],
+  viewTemplates: Object.freeze([]) as readonly ElementOfKind<'view_template'>[],
   projectSettings: null,
   projectBasePoint: null,
   selectableIds: Object.freeze([]) as readonly string[],
@@ -71,6 +80,10 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
   const planViews: ElementOfKind<'plan_view'>[] = [];
   const schedules: ElementOfKind<'schedule'>[] = [];
   const sheets: ElementOfKind<'sheet'>[] = [];
+  const viewpoints: ElementOfKind<'viewpoint'>[] = [];
+  const savedViews: ElementOfKind<'saved_view'>[] = [];
+  const sectionCuts: ElementOfKind<'section_cut'>[] = [];
+  const viewTemplates: ElementOfKind<'view_template'>[] = [];
   let projectSettings: ElementOfKind<'project_settings'> | null = null;
   let projectBasePoint: ElementOfKind<'project_base_point'> | null = null;
 
@@ -112,6 +125,18 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
       case 'sheet':
         sheets.push(element);
         break;
+      case 'viewpoint':
+        viewpoints.push(element);
+        break;
+      case 'saved_view':
+        savedViews.push(element);
+        break;
+      case 'section_cut':
+        sectionCuts.push(element);
+        break;
+      case 'view_template':
+        viewTemplates.push(element);
+        break;
       case 'project_settings':
         projectSettings = element;
         break;
@@ -130,6 +155,10 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
   planViews.sort(byNameThenId);
   schedules.sort(byNameThenId);
   sheets.sort(byNameThenId);
+  viewpoints.sort(byNameThenId);
+  savedViews.sort(byNameThenId);
+  sectionCuts.sort(byNameThenId);
+  viewTemplates.sort(byNameThenId);
   for (const values of Object.values(wallsByLevel)) values.sort(byNameThenId);
   for (const values of Object.values(roomsByLevel)) values.sort(byNameThenId);
   for (const values of Object.values(floorsByLevel)) values.sort(byNameThenId);
@@ -152,6 +181,10 @@ export function buildModelIndices(elementsById: Record<string, Element>): ModelI
     planViews,
     schedules,
     sheets,
+    viewpoints,
+    savedViews,
+    sectionCuts,
+    viewTemplates,
     projectSettings,
     projectBasePoint,
     selectableIds: all.map((element) => element.id).sort(),

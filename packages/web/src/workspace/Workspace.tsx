@@ -200,15 +200,28 @@ export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
-  // PERF-G03 step: subscribe to narrow modelIndices fields. The shell-level
-  // `elementsById` subscription above is still wide (audit #5) — moving off it
-  // is blocked on the viewport-filter storage refactor, since storeViewportRuntimeSlice
-  // mutates elementsById without rebuilding modelIndices, and Workspace passes
-  // elementsById to PaneRenderer + WorkspaceOverlays which need filter-fresh data.
-  // Until then, these narrow selectors let downstream useMemos cache-hit through
-  // filter writes (modelIndices is unchanged on those).
+  // PERF-G03: the storeModelRuntimeSlice + installModelIndicesInvariant
+  // subscriber (store.ts) keeps `modelIndices` in lockstep with every
+  // elementsById write — including the filter / category-override
+  // writers in storeViewportRuntimeSlice. So downstream useMemos keyed
+  // on narrow modelIndices fields stay correct through filter writes
+  // and only recompute when the specific slice changes. The line-202
+  // broad subscription remains for inline `elementsById[id]` lookups
+  // (selectedId resolve, drop-target resolve, etc.) — those are still
+  // reactive on the broad ref. Narrow consumers below were the explicit
+  // G03 finishing items (commandPaletteEntities, palettePlanTemplates,
+  // showEmptyState, projectNorthAngleDeg, project_settings derivations).
   const modelSheets = useBimStore((s) => s.modelIndices.sheets);
   const modelLevels = useBimStore((s) => s.modelIndices.levels);
+  const modelWalls = useBimStore((s) => s.modelIndices.walls);
+  const modelPlanViews = useBimStore((s) => s.modelIndices.planViews);
+  const modelSchedules = useBimStore((s) => s.modelIndices.schedules);
+  const modelViewpoints = useBimStore((s) => s.modelIndices.viewpoints);
+  const modelSavedViews = useBimStore((s) => s.modelIndices.savedViews);
+  const modelSectionCuts = useBimStore((s) => s.modelIndices.sectionCuts);
+  const modelViewTemplates = useBimStore((s) => s.modelIndices.viewTemplates);
+  const modelProjectSettings = useBimStore((s) => s.modelIndices.projectSettings);
+  const modelProjectBasePoint = useBimStore((s) => s.modelIndices.projectBasePoint);
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
   const viewerMode = useBimStore((s) => s.viewerMode);
   const setViewerMode = useBimStore((s) => s.setViewerMode);
@@ -331,10 +344,10 @@ export function Workspace(): JSX.Element {
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [jobsOpen, setJobsOpen] = useState(false);
   const [jobsCounts, setJobsCounts] = useState(EMPTY_JOBS_COUNTS);
-  const projectSettings =
-    elementsById.project_settings?.kind === 'project_settings'
-      ? elementsById.project_settings
-      : null;
+  // PERF-G03 finishing: replaces the inline `elementsById.project_settings`
+  // lookup with a narrow modelIndices read so this useMemo no longer
+  // recomputes on every unrelated elementsById delta.
+  const projectSettings = modelProjectSettings;
   const saveAsMaximumBackups = coerceCheckpointRetentionLimit(
     projectSettings?.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT,
   );
@@ -351,17 +364,13 @@ export function Workspace(): JSX.Element {
     [modelSheets],
   );
 
+  // PERF-G03 finishing: narrow modelIndices reads keep the useMemo cache
+  // alive through unrelated elementsById writes.
   const projectNorthAngleDeg = useMemo(() => {
-    const bp = elementsById['project_base_point'] as
-      | Extract<Element, { kind: 'project_base_point' }>
-      | undefined;
-    if (bp?.kind === 'project_base_point') return bp.angleToTrueNorthDeg ?? 0;
-    const ps = elementsById['project_settings'] as
-      | Extract<Element, { kind: 'project_settings' }>
-      | undefined;
-    if (ps?.kind === 'project_settings') return ps.projectNorthAngleDeg ?? 0;
+    if (modelProjectBasePoint) return modelProjectBasePoint.angleToTrueNorthDeg ?? 0;
+    if (modelProjectSettings) return modelProjectSettings.projectNorthAngleDeg ?? 0;
     return 0;
-  }, [elementsById]);
+  }, [modelProjectBasePoint, modelProjectSettings]);
 
   // CHR-V3-05 activity drawer state
   const activityIsOpen = useActivityDrawerStore((s) => s.isOpen);
@@ -1185,8 +1194,7 @@ export function Workspace(): JSX.Element {
 
   /* ── Status bar wiring ────────────────────────────────────────────── */
   const levels = useMemo(
-    () =>
-      modelLevels.map((l) => ({ id: l.id, label: l.name, elevationMm: l.elevationMm })),
+    () => modelLevels.map((l) => ({ id: l.id, label: l.name, elevationMm: l.elevationMm })),
     [modelLevels],
   );
   const activeLevel = levels.find((l) => l.id === activeLevelId) ??
@@ -1387,35 +1395,50 @@ export function Workspace(): JSX.Element {
   );
 
   const paletteViews = useMemo(() => {
-    const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
-      plan_view: 'Plan',
-      viewpoint: '3D',
-      saved_view: '3D',
-      section_cut: 'Section',
-      sheet: 'Sheet',
-      schedule: 'Schedule',
-    };
-    return (Object.values(elementsById) as Element[])
-      .filter((el) => el.kind in KIND_PREFIX)
-      .map((el) => ({
-        id: el.id,
-        label: `${KIND_PREFIX[el.kind]}: ${(el as { name?: string }).name ?? el.id}`,
-        keywords: el.kind.replace('_', ' '),
-      }));
-  }, [elementsById]);
+    // PERF-G03 finishing: assembled from narrow modelIndices slices so
+    // the useMemo only recomputes when one of those view-surface kinds
+    // changes — not on every unrelated elementsById write.
+    type Entity = { id: string; label: string; keywords: string };
+    const out: Entity[] = [];
+    for (const el of modelPlanViews) {
+      out.push({ id: el.id, label: `Plan: ${el.name ?? el.id}`, keywords: 'plan view' });
+    }
+    for (const el of modelViewpoints) {
+      out.push({ id: el.id, label: `3D: ${el.name ?? el.id}`, keywords: 'viewpoint' });
+    }
+    for (const el of modelSavedViews) {
+      out.push({ id: el.id, label: `3D: ${el.name ?? el.id}`, keywords: 'saved view' });
+    }
+    for (const el of modelSectionCuts) {
+      out.push({ id: el.id, label: `Section: ${el.name ?? el.id}`, keywords: 'section cut' });
+    }
+    for (const el of modelSheets) {
+      out.push({ id: el.id, label: `Sheet: ${el.name ?? el.id}`, keywords: 'sheet' });
+    }
+    for (const el of modelSchedules) {
+      out.push({ id: el.id, label: `Schedule: ${el.name ?? el.id}`, keywords: 'schedule' });
+    }
+    return out;
+  }, [
+    modelPlanViews,
+    modelViewpoints,
+    modelSavedViews,
+    modelSectionCuts,
+    modelSheets,
+    modelSchedules,
+  ]);
 
+  // PERF-G03 finishing: narrow modelIndices.viewTemplates subscription
+  // (added in this commit) keeps the palette useMemo cached through
+  // unrelated elementsById writes.
   const palettePlanTemplates = useMemo(
     () =>
-      (Object.values(elementsById) as Element[])
-        .filter(
-          (el): el is Extract<Element, { kind: 'view_template' }> => el.kind === 'view_template',
-        )
-        .map((template) => ({
-          id: template.id,
-          label: template.name,
-          keywords: `${template.name} plan template view template`,
-        })),
-    [elementsById],
+      modelViewTemplates.map((template) => ({
+        id: template.id,
+        label: template.name,
+        keywords: `${template.name} plan template view template`,
+      })),
+    [modelViewTemplates],
   );
   const openElementById = useCallback(
     (id: string) => {
@@ -1828,10 +1851,7 @@ export function Workspace(): JSX.Element {
   const loadCatalogFamilyIntoProject = useCallback(
     async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
       if (isHistorical) {
-        log.info(
-          'historical',
-          'catalog-family load ignored in historical (read-only) mode',
-        );
+        log.info('historical', 'catalog-family load ignored in historical (read-only) mode');
         return null;
       }
       if (!modelId) return null;
@@ -1940,8 +1960,10 @@ export function Workspace(): JSX.Element {
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
-  const showEmptyState =
-    (Object.values(elementsById) as Element[]).filter((e) => e.kind === 'wall').length === 0;
+  // PERF-G03 finishing: modelIndices.walls is updated by the invariant
+  // subscriber, so this check no longer iterates elementsById on every
+  // unrelated delta.
+  const showEmptyState = modelWalls.length === 0;
   const showEmptyStateOverlay = showEmptyState && planTool === 'select';
 
   /* ── CHR-V3-10: canvas hint (select/tool idle) ────────────────────── */
@@ -2661,8 +2683,7 @@ export function Workspace(): JSX.Element {
             background: 'var(--color-warning)',
             color: 'var(--color-warning-foreground)',
             padding: '6px 14px',
-            fontFamily:
-              'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
             fontSize: 13,
             fontWeight: 500,
             letterSpacing: 0.2,
@@ -2675,10 +2696,8 @@ export function Workspace(): JSX.Element {
           <span aria-hidden="true">⏪</span>
           <span>
             Viewing historical state — commit{' '}
-            <code style={{ padding: '1px 6px' }}>
-              {historicalCommitId.slice(0, 12)}
-            </code>
-            . Commands are disabled (read-only).
+            <code style={{ padding: '1px 6px' }}>{historicalCommitId.slice(0, 12)}</code>. Commands
+            are disabled (read-only).
           </span>
         </div>
       ) : null}
