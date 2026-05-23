@@ -1,0 +1,2695 @@
+{
+  "format": "bimAiElementsByIdInventory_v1",
+  "scannedRoot": "packages/web/src",
+  "countsByPattern": {
+    "store_selector_elementsById": 15,
+    "store_getstate_elementsById": 63,
+    "object_values_elementsById": 299,
+    "object_values_elements": 6
+  },
+  "highCount": 314,
+  "totalCount": 383,
+  "matches": [
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/clipboard/PasteToLevelsDialog.tsx",
+      "line": 30,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommands.ts",
+      "line": 112,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommands.ts",
+      "line": 120,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommands.ts",
+      "line": 127,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommands.ts",
+      "line": 338,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 308,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 360,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 387,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 514,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 570,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 1018,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 1022,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 1113,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 1119,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/cmdPalette/defaultCommandsDisplayAndExtras.ts",
+      "line": 1216,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/collab/viewTemplateStore.ts",
+      "line": 48,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/coordination/SelectionSetPanel.tsx",
+      "line": 46,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/coordination/SelectionSetPanel.tsx",
+      "line": 104,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/export/dxfExporter.ts",
+      "line": 235,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/export/dxfExporter.ts",
+      "line": 241,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/export/ifcExporter.ts",
+      "line": 386,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/families/catalogFamilyReload.ts",
+      "line": 89,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/families/FamilyLibraryPanel.tsx",
+      "line": 269,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/families/FamilyLibraryPanel.tsx",
+      "line": 349,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/families/FamilyLibraryPanel.tsx",
+      "line": 979,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/familyEditor/familyEditorPersistence.ts",
+      "line": 260,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/familyEditor/familyEditorPersistence.ts",
+      "line": 332,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/familyEditor/familyEditorPersistence.ts",
+      "line": 405,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/familyEditor/familyEditorPersistence.ts",
+      "line": 421,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/familyEditor/materialImageAssets.ts",
+      "line": 8,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/geometry/boundaryWallGeneration.ts",
+      "line": 185,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/phases/PhaseManagerDialog.tsx",
+      "line": 18,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/phases/PhaseManagerDialog.tsx",
+      "line": 37,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/areaPlacement.ts",
+      "line": 44,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/areaRender.ts",
+      "line": 75,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/autoDimension.ts",
+      "line": 107,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/autoDimension.ts",
+      "line": 190,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/autoDimension.ts",
+      "line": 231,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/autoTags.ts",
+      "line": 92,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/detailComponentsRender.ts",
+      "line": 298,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/DetailRegionRenderer.tsx",
+      "line": 28,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/detectFloorBoundaryFromWalls.ts",
+      "line": 21,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/dxfUnderlay.ts",
+      "line": 249,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/dxfUnderlay.ts",
+      "line": 422,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/elevationProjection.ts",
+      "line": 65,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/familyInstancePlanRendering.ts",
+      "line": 251,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/findWallsAtCorner.ts",
+      "line": 20,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/interiorElevationProjection.ts",
+      "line": 77,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/InteriorElevationViewport.tsx",
+      "line": 76,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/maskingRegionRender.ts",
+      "line": 28,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/monitorDriftBadge.ts",
+      "line": 168,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/neighborhoodMassRender.ts",
+      "line": 50,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/openingClearance.ts",
+      "line": 24,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/PlanCanvas.tsx",
+      "line": 528,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 579,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 1655,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 1677,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 1699,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 2005,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 2046,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 2050,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasClickHandler.ts",
+      "line": 2105,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasColorSchemeState.ts",
+      "line": 16,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/PlanCanvasEditLayers.tsx",
+      "line": 55,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts",
+      "line": 809,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts",
+      "line": 1232,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts",
+      "line": 1366,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts",
+      "line": 1514,
+      "snippet": "Object.values(st.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasKeyboardAuxHandlers.ts",
+      "line": 1595,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasPanMarqueeInteractions.ts",
+      "line": 229,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasPickHelpers.ts",
+      "line": 54,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasPickHelpers.ts",
+      "line": 77,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/plan/planCanvasPickHelpers.ts",
+      "line": 99,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasRenderPasses.ts",
+      "line": 986,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/PlanCanvasSketchOverlay.tsx",
+      "line": 42,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasSnapHover.ts",
+      "line": 38,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/PlanCanvasStatusOverlays.tsx",
+      "line": 43,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasViewState.ts",
+      "line": 42,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planCanvasViewState.ts",
+      "line": 69,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planProjection.ts",
+      "line": 232,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/planProjection.ts",
+      "line": 1307,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/roofByFootprint.ts",
+      "line": 109,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/roomGraph.ts",
+      "line": 34,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/roomGraph.ts",
+      "line": 48,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/shaftCutFloors.ts",
+      "line": 13,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/shaftCutFloors.ts",
+      "line": 25,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/SheetCanvas.tsx",
+      "line": 28,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/SheetCanvas.tsx",
+      "line": 74,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/SheetCanvas.tsx",
+      "line": 85,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/stairComponentList.ts",
+      "line": 22,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/structuralValidation.ts",
+      "line": 197,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/structuralValidation.ts",
+      "line": 223,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/structuralValidation.ts",
+      "line": 226,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/structuralValidation.ts",
+      "line": 263,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/structuralValidation.ts",
+      "line": 272,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 957,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1057,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1063,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1096,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1842,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1859,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1872,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1887,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1898,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1909,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1920,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1931,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1943,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1956,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1969,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1983,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 1995,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2028,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2056,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2080,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2102,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2112,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2124,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2135,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2146,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2190,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2198,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2206,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2231,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2242,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2264,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2286,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2301,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2312,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2325,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2332,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2343,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2354,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2365,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2380,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2449,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2486,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2522,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2548,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2614,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/symbology.ts",
+      "line": 2643,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/plan/tempDimensions.ts",
+      "line": 74,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/usePlanCanvasGripHandlers.ts",
+      "line": 74,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/usePlanCanvasViewEffects.ts",
+      "line": 72,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/wallChainSelection.ts",
+      "line": 31,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/wallPickLines.ts",
+      "line": 102,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/plan/wallPickLines.ts",
+      "line": 178,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/columnSchedule.ts",
+      "line": 15,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/columnSchedule.ts",
+      "line": 22,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/columnSchedule.ts",
+      "line": 38,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/doorSchedule.ts",
+      "line": 16,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/doorSchedule.ts",
+      "line": 24,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/doorSchedule.ts",
+      "line": 40,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/roomColorSchemeLegendReadout.ts",
+      "line": 28,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/roomNetArea.ts",
+      "line": 39,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx",
+      "line": 95,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/scheduleLevelDatumEvidenceReadout.ts",
+      "line": 35,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/scheduleOpeningAdvisoriesReadout.ts",
+      "line": 26,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 109,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 119,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 274,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 338,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 369,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/SchedulePanel.tsx",
+      "line": 446,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/scheduleUtils.ts",
+      "line": 61,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/windowSchedule.ts",
+      "line": 17,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/windowSchedule.ts",
+      "line": 25,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/schedules/windowSchedule.ts",
+      "line": 45,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/state/modelIndices.ts",
+      "line": 60,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/state/storeCoercion.ts",
+      "line": 1363,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/Viewport.tsx",
+      "line": 345,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/dormerMesh.ts",
+      "line": 98,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/dormerRoofCut.ts",
+      "line": 22,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/dormerRoofCut.ts",
+      "line": 26,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/dwgExport.ts",
+      "line": 130,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/levelDatums3d.ts",
+      "line": 31,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/materialCoverageAudit.ts",
+      "line": 208,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/materialDependencyInvalidation.ts",
+      "line": 52,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/materialDependencyInvalidation.ts",
+      "line": 84,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/materials.ts",
+      "line": 1223,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.multiRunStair.ts",
+      "line": 61,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 596,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 767,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 781,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 785,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2490,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/meshBuilders.ts",
+      "line": 2586,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 342,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/planOverlay3d.ts",
+      "line": 364,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/roofHeightSampler.ts",
+      "line": 45,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/roofOpeningRenderDiagnostics.ts",
+      "line": 47,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/roofOpeningRenderDiagnostics.ts",
+      "line": 322,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/roomVisualizationRenderDiagnostics.ts",
+      "line": 31,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/useViewportOverlayControls.ts",
+      "line": 19,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/useViewportOverlayControls.ts",
+      "line": 27,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/verticalCirculationRenderDiagnostics.ts",
+      "line": 35,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/wallHostedCutRenderDiagnostics.ts",
+      "line": 75,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/wallJoinDisplay.ts",
+      "line": 181,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/wallJoinDisplay.ts",
+      "line": 254,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/viewport/wallJoinDisplay.ts",
+      "line": 357,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/agent/AgentReviewPane.tsx",
+      "line": 206,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/agent/AgentReviewPane.tsx",
+      "line": 228,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elements",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/agent/AgentReviewPane.tsx",
+      "line": 588,
+      "snippet": "Object.values(elements)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/AuthoringWorkbenchesPanel.tsx",
+      "line": 33,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 180,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 264,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 341,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 356,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 411,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 495,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 569,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 620,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 765,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 769,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 873,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 877,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 889,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/OptionsBar.tsx",
+      "line": 950,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/RoofAuthoringWorkbench.tsx",
+      "line": 35,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/RoomColorSchemePanel.tsx",
+      "line": 218,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/savedViewTagGraphicsAuthoring.tsx",
+      "line": 21,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/savedViewTagGraphicsAuthoring.tsx",
+      "line": 27,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/savedViewTagGraphicsAuthoring.tsx",
+      "line": 172,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/savedViewTagGraphicsAuthoring.tsx",
+      "line": 178,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/authoring/SiteAuthoringPanel.tsx",
+      "line": 24,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/coordinationLensReadout.ts",
+      "line": 37,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/hideInView.ts",
+      "line": 26,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 902,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 1340,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 1761,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 2003,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 2006,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 2696,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/InspectorContent.tsx",
+      "line": 2828,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/interiorElevationMarkerInspectorSection.tsx",
+      "line": 20,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/linkInspectorSections.tsx",
+      "line": 17,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/structuralInspectorSections.tsx",
+      "line": 149,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/structuralInspectorSections.tsx",
+      "line": 178,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/structuralInspectorSections.tsx",
+      "line": 525,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/ViewTemplateEditPanel.tsx",
+      "line": 34,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/viewTemplateInspectorEditor.tsx",
+      "line": 55,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/wallFloorInspectorSections.tsx",
+      "line": 109,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/wallFloorInspectorSections.tsx",
+      "line": 112,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/wallFloorInspectorSections.tsx",
+      "line": 143,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/wallFloorInspectorSections.tsx",
+      "line": 566,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/inspector/wallPartsPanel.tsx",
+      "line": 19,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/ModeShells.tsx",
+      "line": 47,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/ModeShells.tsx",
+      "line": 1112,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/GlobalParamsDialog.tsx",
+      "line": 62,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 74,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 80,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 88,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 96,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 105,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 114,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+      "line": 123,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 94,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 236,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 313,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 400,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 433,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 489,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 515,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 522,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 529,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 534,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 544,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 551,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 559,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 563,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 567,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 586,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 590,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 595,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 600,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 605,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 609,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 613,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectBrowser.tsx",
+      "line": 1404,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectInfoDialog.tsx",
+      "line": 12,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectSetupDialog.tsx",
+      "line": 111,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectUnitsDialog.tsx",
+      "line": 59,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/ProjectUnitsDialog.tsx",
+      "line": 66,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/VVDialog.tsx",
+      "line": 1064,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/VVDialog.tsx",
+      "line": 1488,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/project/VVDialog.tsx",
+      "line": 1491,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/readouts/browserRenderingBudgetReadout.ts",
+      "line": 132,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/readouts/browserRenderingBudgetReadout.ts",
+      "line": 146,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/readouts/datumLevelStackReadout.ts",
+      "line": 40,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/readouts/datumLevelStackReadout.ts",
+      "line": 64,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/documentationFidelityContracts.ts",
+      "line": 251,
+      "snippet": "Object.values(input.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/documentationFidelityContracts.ts",
+      "line": 258,
+      "snippet": "Object.values(input.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/documentationFidelityContracts.ts",
+      "line": 505,
+      "snippet": "Object.values(input.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/documentationFidelityContracts.ts",
+      "line": 877,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sectionLevelLines.ts",
+      "line": 21,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+      "line": 133,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+      "line": 139,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sectionViewportSvg.tsx",
+      "line": 311,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 69,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 72,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 75,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 244,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 699,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+      "line": 1027,
+      "snippet": "Object.values(props.elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sheetRecommendedViewports.ts",
+      "line": 95,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sheetRecommendedViewports.ts",
+      "line": 263,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sheetTitleblockAuthoring.tsx",
+      "line": 121,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sheetViewportAuthoring.tsx",
+      "line": 253,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/sheets/sheetViewRef.ts",
+      "line": 96,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceCreateViews.ts",
+      "line": 21,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceCreateViews.ts",
+      "line": 28,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceCreateViews.ts",
+      "line": 145,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceCreateViews.ts",
+      "line": 190,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceCreateViews.ts",
+      "line": 217,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceDefaultTab.ts",
+      "line": 57,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspacePaletteActions.ts",
+      "line": 41,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceProjectActions.ts",
+      "line": 60,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceProjectActions.ts",
+      "line": 73,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceProjectActions.ts",
+      "line": 92,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceProjectActions.ts",
+      "line": 98,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 258,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 275,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 293,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 318,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 328,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 338,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 374,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 391,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 413,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 430,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 448,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 565,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 574,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 583,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 723,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 764,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 776,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 787,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 798,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 814,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1037,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1229,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1235,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1241,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1358,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1366,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1373,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1748,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1781,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/useWorkspaceSemanticCommand.ts",
+      "line": 1820,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/useWorkspaceSnapshot.ts",
+      "line": 138,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 202,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 774,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 785,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 977,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 1398,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 1409,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 1422,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 1944,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_getstate_elementsById",
+      "severity": "medium",
+      "file": "packages/web/src/workspace/Workspace.tsx",
+      "line": 2918,
+      "snippet": "useBimStore.getState().elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceHelpers.tsx",
+      "line": 143,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+      "line": 119,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+      "line": 531,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 349,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 357,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 363,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 370,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 407,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceOverlays.tsx",
+      "line": 643,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 133,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 265,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 345,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 355,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 372,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 379,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 386,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 392,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 442,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "store_selector_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 2071,
+      "snippet": "useBimStore((s) => s.elementsById"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 2072,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRail.tsx",
+      "line": 2325,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/WorkspaceRightRailElementInspectors.tsx",
+      "line": 41,
+      "snippet": "Object.values(elementsById)"
+    },
+    {
+      "patternId": "object_values_elementsById",
+      "severity": "high",
+      "file": "packages/web/src/workspace/workspaceUtils.ts",
+      "line": 114,
+      "snippet": "Object.values(elementsById)"
+    }
+  ]
+}
