@@ -756,6 +756,154 @@ def _exterior_walls_bundle(
     )
 
 
+def _host_on_nearest_wall(
+    vertex: list, walls: list[dict], *, max_distance_mm: float = 500.0
+) -> tuple[dict | None, float]:
+    """Return (wall_element, alongT) hosting ``vertex`` on the nearest exterior wall.
+
+    ``walls`` is the snapshot list of wall elements (each carrying
+    ``start: {xMm, yMm}`` + ``end: {xMm, yMm}``). Hosts on the wall
+    whose segment is closest to ``vertex``, clamping the parameter to
+    ``[0, 1]``. Returns ``(None, 0)`` if every wall is farther than
+    ``max_distance_mm``.
+    """
+
+    px = float(vertex[0])
+    py = float(vertex[1])
+    best: tuple[dict | None, float, float] = (None, 0.0, float("inf"))
+    for w in walls:
+        start = w.get("start") or {}
+        end = w.get("end") or {}
+        sx, sy = float(start.get("xMm") or 0), float(start.get("yMm") or 0)
+        ex, ey = float(end.get("xMm") or 0), float(end.get("yMm") or 0)
+        dx, dy = ex - sx, ey - sy
+        ll = dx * dx + dy * dy
+        if ll <= 1e-6:
+            continue
+        t = ((px - sx) * dx + (py - sy) * dy) / ll
+        t = max(0.0, min(1.0, t))
+        cx = sx + t * dx
+        cy = sy + t * dy
+        d = math.hypot(cx - px, cy - py)
+        if d < best[2]:
+            best = (w, t, d)
+    if best[0] is None or best[2] > max_distance_mm:
+        return (None, 0.0)
+    return (best[0], best[1])
+
+
+def _openings_bundle(
+    *, ir: dict, parent_revision: int, house: str, level_short: str, snapshot: dict
+) -> tuple[dict, list[str], list[dict]] | None:
+    """Build doors + windows hosted on existing exterior walls for this level.
+
+    Returns ``(bundle, consumed_fact_ids, skipped_facts)`` or ``None``
+    when there are no openings to author.
+
+    Skipped facts list captures openings whose nearest wall was beyond
+    the max hosting distance — these are typically interior doors that
+    belong on partitions we haven't authored yet.
+    """
+
+    level_id = f"th-{house}-level-{level_short}"
+    walls = [
+        e
+        for e in (snapshot.get("elements") or {}).values()
+        if isinstance(e, dict) and e.get("kind") == "wall" and e.get("levelId") == level_id
+    ]
+    if not walls:
+        return None
+
+    facts = _facts_for_level(ir, f"level-{level_short}")
+    doors = _facts_by_kind(facts, "door")
+    windows = _facts_by_kind(facts, "window")
+
+    eg_height = next(
+        (lvl["heightMM"] for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
+    )
+
+    commands: list[dict] = []
+    consumed: list[str] = []
+    skipped: list[dict] = []
+
+    for d in doors:
+        vertex = d.get("vertexMm")
+        if not isinstance(vertex, list) or len(vertex) < 2:
+            continue
+        wall, t = _host_on_nearest_wall(vertex, walls)
+        if wall is None:
+            skipped.append(
+                {"factId": d.get("factId"), "kind": "door", "reason": "no_host_within_500mm"}
+            )
+            continue
+        commands.append(
+            {
+                "type": "insertDoorOnWall",
+                "id": f"th-{house}-i-{level_short}-door-{_slugify(d.get('factId'))}",
+                "name": str(d.get("text") or "Door")[:80],
+                "wallId": wall.get("id"),
+                "alongT": round(t, 4),
+                "widthMm": 900,
+            }
+        )
+        consumed.append(str(d.get("factId")))
+
+    for w in windows:
+        vertex = w.get("vertexMm")
+        if not isinstance(vertex, list) or len(vertex) < 2:
+            continue
+        wall, t = _host_on_nearest_wall(vertex, walls)
+        if wall is None:
+            skipped.append(
+                {"factId": w.get("factId"), "kind": "window", "reason": "no_host_within_500mm"}
+            )
+            continue
+        commands.append(
+            {
+                "type": "insertWindowOnWall",
+                "id": f"th-{house}-i-{level_short}-window-{_slugify(w.get('factId'))}",
+                "name": str(w.get("text") or "Window")[:80],
+                "wallId": wall.get("id"),
+                "alongT": round(t, 4),
+                "widthMm": 1200,
+                "sillHeightMm": 900,
+                # Reserve 200 mm header clearance below the wall top so the
+                # constructability check's 150 mm lintel rule passes even
+                # on the low DG storey (2500 mm walls).
+                "heightMm": int(min(1500, max(800, eg_height - 900 - 200))),
+            }
+        )
+        consumed.append(str(w.get("factId")))
+
+    if not commands:
+        return None
+
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_{level_short}_openings",
+                    "value": (
+                        f"{sum(1 for c in commands if c['type'] == 'insertDoorOnWall')} doors + "
+                        f"{sum(1 for c in commands if c['type'] == 'insertWindowOnWall')} windows "
+                        f"hosted on nearest exterior wall (≤3 m); "
+                        f"{len(skipped)} interior openings skipped (no partition host yet)"
+                    ),
+                    "confidence": 0.5,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": f"iter-1 reader pass — door/window facts for level-{level_short}",
+                }
+            ],
+        },
+        consumed,
+        skipped,
+    )
+
+
 def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
     """Roof draws on the DG floor extent + IR roof globals."""
 
@@ -896,6 +1044,47 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 consumed_fact_ids=consumed,
                 source_evidence=evidence,
             )
+
+        # openings: doors + windows hosted on the exterior walls we just
+        # placed. Re-snapshot first so we see the live wall ids.
+        snap_after_ext = _snapshot(api_base=api_base, model_id=model_id)
+        rev = int(snap_after_ext.get("revision") or 1)
+        op_triple = _openings_bundle(
+            ir=ir,
+            parent_revision=rev,
+            house=house,
+            level_short=floor,
+            snapshot=snap_after_ext,
+        )
+        if op_triple is not None:
+            bundle, consumed, skipped = op_triple
+            evidence = _source_evidence_from_facts(
+                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
+                + _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
+            )
+            for ev in evidence:
+                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase=f"{floor.lower()}-openings",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=evidence,
+            )
+            if skipped:
+                logger.info(
+                    "testhouse_iter.openings_skipped",
+                    extra={
+                        "house": house,
+                        "iter": iter_n,
+                        "phase": f"{floor.lower()}-openings",
+                        "skipped_count": len(skipped),
+                        "skipped": skipped,
+                    },
+                )
 
     # ROOF: single roof slice on top of existing DG extent.
     if floor == "ROOF":
