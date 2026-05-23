@@ -221,6 +221,24 @@ async function captureOneView(page, capture, timeoutMs) {
       .waitForLoadState('networkidle', { timeout: Math.min(timeoutMs, 10_000) })
       .catch(() => {});
     await waitForModelIdle(page, timeoutMs);
+    // NS-2026-05-24: execute activate_3d_view step before screenshot. The
+    // capture plan ships the viewpoint id; we mutate the zustand store via
+    // window.__bimStore (exposed by src/state/store.ts in dev). Without
+    // this, every URL navigation lands on the default camera and the four
+    // "cardinal orthos" collapse to one view.
+    const activateStep = Array.isArray(capture.playwrightSteps)
+      ? capture.playwrightSteps.find((step) => step?.action === 'activate_3d_view')
+      : null;
+    if (activateStep?.viewId) {
+      await page
+        .evaluate((viewId) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const w = window;
+          const store = w.__bimStore?.getState?.();
+          store?.setActiveViewpointId?.(viewId);
+        }, String(activateStep.viewId))
+        .catch(() => {});
+    }
     const selector = screenshotSelector(capture);
     const target = page.locator(selector).first();
     const shoot = async () => {
@@ -230,8 +248,10 @@ async function captureOneView(page, capture, timeoutMs) {
         await page.screenshot({ path: screenshotPath, fullPage: true, timeout: timeoutMs });
       }
     };
-    // Tail wait: give the WebGL canvas a brief moment to draw after camera move.
-    await page.waitForTimeout(800);
+    // Tail wait: give the WebGL canvas time to draw after viewpoint activation
+    // (camera tween + frame compositing). 1500ms is comfortably past the
+    // observed camera-move animation length.
+    await page.waitForTimeout(1500);
     await shoot();
     // Retry-on-blank: the renderer occasionally drops a blank frame even after
     // model-idle returns. Detect by file size and re-shoot with a longer wait.

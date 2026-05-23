@@ -571,8 +571,12 @@ def _append_wall_print_mesh(doc: Document, triangles: list[StlTriangle], wall: W
 
 
 def _append_floor_print_mesh(doc: Document, triangles: list[StlTriangle], floor: FloorElem) -> None:
-    base = _level_elevation_mm(doc, floor.level_id)
+    level_elev = _level_elevation_mm(doc, floor.level_id)
     thickness = _clamp(float(floor.thickness_mm), 50.0, 1800.0)
+    # MF-12 (nightshift): 'down' direction places slab top AT level so the
+    # level plane reads as the finished floor (slab is below). Default 'up'
+    # preserves prior behaviour where the slab extrudes above the level.
+    base = level_elev - thickness if floor.slab_extrude_direction == "down" else level_elev
     floor_poly = _poly_points_mm(floor.boundary_mm)
     openings = [
         _poly_points_mm(e.boundary_mm)

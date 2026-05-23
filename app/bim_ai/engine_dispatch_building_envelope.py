@@ -83,6 +83,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 thickness_mm=t_mm,
                 structure_thickness_mm=s_mm,
                 finish_thickness_mm=f_mm,
+                slab_extrude_direction=cmd.slab_extrude_direction,
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
                 toposolid_elevation_mm=topo_elev,

@@ -48,6 +48,17 @@ class FloorElem(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=220)
     structure_thickness_mm: float = Field(alias="structureThicknessMm", default=140)
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
+    # MF-12 (nightshift): direction the slab extrudes from its host level.
+    # 'up' (default — Revit convention): slab base at level_elev, top at
+    #     level_elev + thickness. Floor occupies space *above* the level
+    #     reference plane.
+    # 'down': slab top at level_elev, base at level_elev - thickness. Top
+    #     face is the level reference plane itself; walls anchored at the
+    #     level start flush with the slab top. Use this for ground-floor
+    #     slabs so the building isn't lifted above grade by the slab depth.
+    slab_extrude_direction: Literal["up", "down"] = Field(
+        default="up", alias="slabExtrudeDirection"
+    )
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")

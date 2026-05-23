@@ -254,6 +254,11 @@ class CreateFloorCmd(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=220)
     structure_thickness_mm: float = Field(alias="structureThicknessMm", default=140)
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
+    # MF-12 (nightshift): 'up' (default) extrudes above level; 'down'
+    # places slab top AT level so the level plane is the finished floor.
+    slab_extrude_direction: Literal["up", "down"] = Field(
+        default="up", alias="slabExtrudeDirection"
+    )
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     room_bounded: bool = Field(default=False, alias="roomBounded")
     allow_detached: bool = Field(default=False, alias="allowDetached")

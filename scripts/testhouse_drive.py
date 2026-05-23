@@ -3044,6 +3044,41 @@ def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
     model_id = _ensure_model(house=house, api_base=args.api_base)
     out_dir = _house_workdir(house) / f"iter-{iter_n}" / "captures"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # NS-2026-05-24: ensure the untagged final-capture viewpoints exist on
+    # the model BEFORE building the capture plan. The per-floor v2.11 tag
+    # change (kg-/eg-/dg-/roof-) means the per-iter viewpoints now live
+    # under tagged ids; the untagged ones the capture plan references would
+    # otherwise be missing, and the web app falls back to a single default
+    # camera (collapse of all 4 cardinal orthos to one view, observed in
+    # iter-1 nightshift grading). Author them once here; idempotent on
+    # 409 duplicate via the parent_revision retry in _post.
+    snap = _snapshot(api_base=args.api_base, model_id=model_id)
+    parent_rev = int(snap.get("revision") or 1)
+    final_vp_bundle = _ortho_views_bundle(
+        snapshot=snap,
+        parent_revision=parent_rev,
+        iter_n=iter_n,
+        house=house,
+        tag=None,  # untagged → matches the capture plan's view_id template
+    )
+    try:
+        _apply_slice(
+            house=house,
+            iter_n=iter_n,
+            phase=f"ortho-viewpoints-final",
+            bundle=final_vp_bundle,
+            api_base=args.api_base,
+            submitter="testhouse_drive.capture-ortho-views",
+        )
+    except Exception as exc:  # noqa: BLE001
+        # Duplicate ids on re-run are non-fatal — capture still uses the
+        # existing viewpoints (same coords) just fine.
+        logger.warning(
+            "testhouse_iter.final_viewpoints_skipped",
+            extra={"house": house, "iter": iter_n, "error": str(exc)[:200]},
+        )
+
     plan = _ortho_capture_plan(
         house=house,
         iter_n=iter_n,
