@@ -321,6 +321,10 @@ Each row = one /loop iteration. The loop appends here.
 | 4.g | 2026-05-24 01:33Z | beta | iter-3: **7.41/10** (grader caught ridge rotation 90°: IR says E-W, engine span heuristic says N-S); dormer on wrong face | 7.41 | NS-4 ridgeAlongX |
 | 4.g | 2026-05-24 01:25Z | gamma | iter-3: **7.5/10** (KG+DG partition sparseness — IR has 1 each; driver mirror-from-EG only triggers at zero) | 7.5 | NS-5 lower mirror threshold |
 | 5 | 2026-05-24 01:35Z | (all) | NS-4 shipped (`06e6c0f8c`): explicit ridgeAlongX engine field + wall material visibility (materialKey → face_material_overrides synthesis when no wall_type bound). Driver reads IR ridge_orientation text → ridgeAlongX True/False; beta pitch now 31.1° per E-W ridge math | n/a | iter-4 author |
+| 5.s | 2026-05-24 01:38Z | (all) | iter-4 model state: all 76 walls carry face_material_overrides (paint render_light_grey both faces); all main roofs ridgeAlongX=True per IR; beta pitch 31.1°, gamma 45.7°, alpha 40.6° | n/a | spawn graders |
+| 5.g | 2026-05-24 01:55Z | **alpha** | iter-4: **9.2/10 — CONVERGED 🎯**; topGap east facade (model 2+2 windows under hip-style cap vs source steep gable + attic-triangle); §4.5 clean (all 5 visual checks pass); materials VISIBLY applied (face_material_overrides paint=render_light_grey) | **9.2** | CONVERGED — no further iters |
+| 5.g | 2026-05-24 01:50Z | **beta**  | iter-4: **9.0/10 — CONVERGED 🎯**; ridgeAlongX flipped gable to east/west correctly; eaves now horizontal on north/south; topGap south (dormer 5500 mm present but doesn't protrude legibly; garage roller door no visible distinction) | **9.0** | CONVERGED |
+| 5.g | 2026-05-24 01:45Z | gamma | iter-4: **6.3/10** — grader DOUBLE-COUNTED missing source features (cross-gable, arched window, balkon, sparse openings, shallow pitch) as §4.5 defects instead of §4.1 perFacade deductions; rubric §4.5 has only 5 enumerated defect types and none match the listed concerns. Re-grading with strict §4.5 prompt | 6.3 | re-grade tight |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
