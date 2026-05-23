@@ -1,5 +1,6 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
+import type { SessionSummary } from './types';
 import './agents.css';
 
 interface HouseIteration {
@@ -52,6 +53,8 @@ export function AgentHouseDashboard(): JSX.Element {
   const [scoringLoading, setScoringLoading] = useState(false);
   const [view, setView] = useState<ViewKind>('3d');
   const [variant, setVariant] = useState<'full' | 'crop'>('full');
+  const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!house) return;
@@ -74,6 +77,27 @@ export function AgentHouseDashboard(): JSX.Element {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [house]);
+
+  useEffect(() => {
+    if (!house) return;
+    let cancelled = false;
+    fetch(`/api/agent-runs/sessions?house=${encodeURIComponent(house)}&limit=200`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json() as Promise<{ items: SessionSummary[] }>;
+      })
+      .then((payload) => {
+        if (cancelled) return;
+        setSessions(payload.items);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSessionsError(err instanceof Error ? err.message : String(err));
       });
     return () => {
       cancelled = true;
@@ -224,6 +248,47 @@ export function AgentHouseDashboard(): JSX.Element {
                 ))}
               </ul>
             </div>
+          </section>
+
+          <section className="agents-sessions-section">
+            <h2>
+              Sessions for <code>{house}</code>{' '}
+              {sessions ? <span className="agents-iter-count">{sessions.length}</span> : null}
+            </h2>
+            {sessionsError ? (
+              <p className="agents-error">Failed to load sessions: {sessionsError}</p>
+            ) : null}
+            {sessions && sessions.length === 0 ? <p>No sessions tagged with this house.</p> : null}
+            {sessions && sessions.length > 0 ? (
+              <table className="agents-table">
+                <thead>
+                  <tr>
+                    <th>Session</th>
+                    <th>Last activity</th>
+                    <th>Iter</th>
+                    <th>Tool calls</th>
+                    <th>Sub-agents</th>
+                    <th>Branch</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map((s) => (
+                    <tr key={s.session_id}>
+                      <td>
+                        <Link to={`/agents/sessions/${s.session_id}`} className="agents-link">
+                          <code>{s.session_id.slice(0, 8)}…</code>
+                        </Link>
+                      </td>
+                      <td>{s.last_ts ? new Date(s.last_ts).toLocaleString() : '—'}</td>
+                      <td>{s.inferred_iteration ?? '—'}</td>
+                      <td>{s.tool_calls}</td>
+                      <td>{s.sub_agent_dispatches}</td>
+                      <td>{s.git_branch ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
           </section>
 
           <section className="agents-capture-section">

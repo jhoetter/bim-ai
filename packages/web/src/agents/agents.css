@@ -270,10 +270,12 @@
   margin-left: 6px;
 }
 
-.agents-capture-section {
+.agents-capture-section,
+.agents-sessions-section {
   margin-top: 24px;
 }
-.agents-capture-section h2 {
+.agents-capture-section h2,
+.agents-sessions-section h2 {
   margin: 8px 0 4px;
   font-size: 16px;
 }
