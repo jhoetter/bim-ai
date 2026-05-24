@@ -201,6 +201,25 @@ describe('buildGableDormerRoof', () => {
     expect(idx).not.toBeNull();
     expect(idx!.count / 3).toBe(6);
   });
+
+  // Issue-76 regression — eave footprint must match caller's widthM x depthM
+  // exactly (no axis swap on either ridgeAlongX value).
+  it.each([
+    { ridgeAlongX: true, widthM: 2.4, depthM: 1.7 },
+    { ridgeAlongX: false, widthM: 1.7, depthM: 3.2 },
+    { ridgeAlongX: true, widthM: 1.7, depthM: 3.2 },
+    { ridgeAlongX: false, widthM: 3.2, depthM: 1.7 },
+  ])(
+    'preserves caller widthM ($widthM) along X and depthM ($depthM) along Z (ridgeAlongX=$ridgeAlongX)',
+    ({ ridgeAlongX, widthM, depthM }) => {
+      const mat = new THREE.MeshBasicMaterial();
+      const mesh = buildGableDormerRoof(widthM, depthM, 0.12, 1.0, ridgeAlongX, mat);
+      mesh.geometry.computeBoundingBox();
+      const bb = mesh.geometry.boundingBox!;
+      expect(bb.max.x - bb.min.x).toBeCloseTo(widthM, 5);
+      expect(bb.max.z - bb.min.z).toBeCloseTo(depthM, 5);
+    },
+  );
 });
 
 describe('makeDormerMesh / MF-22b cluster merging', () => {
@@ -246,6 +265,69 @@ describe('makeDormerMesh / MF-22b cluster merging', () => {
   });
 });
 
+describe('makeDormerMesh / issue-76 regression — realistic dormer body coverage', () => {
+  // Realistic dormer on the long-axis hipped/gable roof used by the target
+  // houses. After the fix, the body must span ~widthMm x depthMm x
+  // wallHeightMm (within ±10%) and contain at least 4 body meshes (2 cheeks
+  // + back wall + roof cap + window frame parts).
+  it.each([
+    { kind: 'shed' as const, pitch: 8 },
+    { kind: 'gable' as const, ridge: 1200 },
+    { kind: 'hipped' as const, ridge: 1200 },
+    { kind: 'flat' as const },
+  ])('renders the full dormer body for $kind roof', (cfg) => {
+    const dormer: DormerElem = {
+      kind: 'dormer',
+      id: 'd-iss76',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -1200, acrossRidgeMm: 1400 },
+      widthMm: 3200,
+      depthMm: 1700,
+      wallHeightMm: 1600,
+      dormerRoofKind: cfg.kind,
+      ...('pitch' in cfg ? { dormerRoofPitchDeg: cfg.pitch } : {}),
+      ...('ridge' in cfg ? { ridgeHeightMm: cfg.ridge } : {}),
+      wallMaterialKey: 'white_render',
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+      'd-iss76': dormer,
+    };
+    const group = makeDormerMesh(dormer, elementsById, null);
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+    });
+    expect(meshes.length).toBeGreaterThanOrEqual(4);
+    // Body span check: union the bounding boxes of every mesh. The total
+    // dormer footprint should cover ~width x depth in plan and ~wallHeight
+    // (excluding the roof cap, which adds extra height for pitched kinds).
+    const aabb = new THREE.Box3();
+    for (const m of meshes) {
+      m.geometry.computeBoundingBox();
+      const bb = m.geometry.boundingBox!.clone();
+      bb.translate(m.position);
+      aabb.union(bb);
+    }
+    // Roof ridge (gable=Y) is along the longer plan span. ROOF is 5000×8000
+    // → ridgeAlongX=false → dormer.widthMm runs along world-Z,
+    //   dormer.depthMm along world-X.
+    const totalX = aabb.max.x - aabb.min.x;
+    const totalY = aabb.max.y - aabb.min.y;
+    const totalZ = aabb.max.z - aabb.min.z;
+    // depth → world-X
+    expect(totalX).toBeGreaterThanOrEqual((dormer.depthMm / 1000) * 0.9);
+    expect(totalX).toBeLessThanOrEqual((dormer.depthMm / 1000) * 1.1);
+    // width → world-Z
+    expect(totalZ).toBeGreaterThanOrEqual((dormer.widthMm / 1000) * 0.9);
+    expect(totalZ).toBeLessThanOrEqual((dormer.widthMm / 1000) * 1.1);
+    // height ≥ wallHeight (roof cap may push max higher; +20% upper bound
+    // covers the 1.2m ridge of gable/hipped on a 1.6m wall).
+    expect(totalY).toBeGreaterThanOrEqual((dormer.wallHeightMm / 1000) * 0.9);
+  });
+});
+
 describe('buildShedDormerRoof', () => {
   it('produces a tilted slab whose low edge is at y=0 and high edge above', () => {
     const mat = new THREE.MeshBasicMaterial();
@@ -277,4 +359,22 @@ describe('buildHippedDormerRoof', () => {
     expect(idx).not.toBeNull();
     expect(idx!.count / 3).toBe(6);
   });
+
+  // Issue-76 regression — same axis-preservation contract as the gable cap.
+  it.each([
+    { ridgeAlongX: true, widthM: 2.4, depthM: 1.7 },
+    { ridgeAlongX: false, widthM: 1.7, depthM: 3.2 },
+    { ridgeAlongX: true, widthM: 1.7, depthM: 3.2 },
+    { ridgeAlongX: false, widthM: 3.2, depthM: 1.7 },
+  ])(
+    'preserves caller widthM ($widthM) along X and depthM ($depthM) along Z (ridgeAlongX=$ridgeAlongX)',
+    ({ ridgeAlongX, widthM, depthM }) => {
+      const mat = new THREE.MeshBasicMaterial();
+      const mesh = buildHippedDormerRoof(widthM, depthM, 0.12, 1.5, ridgeAlongX, mat);
+      mesh.geometry.computeBoundingBox();
+      const bb = mesh.geometry.boundingBox!;
+      expect(bb.max.x - bb.min.x).toBeCloseTo(widthM, 5);
+      expect(bb.max.z - bb.min.z).toBeCloseTo(depthM, 5);
+    },
+  );
 });

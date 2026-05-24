@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 480" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #76 — dormer body renders full cheeks + roof + glazed front (axis-swap fix in buildGable/HippedDormerRoof)</title>
+  <desc>
+    Side view of a 3.2m x 1.7m x 1.6m gable dormer hosted on a
+    ridgeAlongX=false (long axis along plan-Y) gable roof. Before the
+    fix, buildGableDormerRoof and buildHippedDormerRoof used a
+    geometry-driven longAlongWorldX heuristic that compared widthM vs
+    depthM (which are world-X and world-Z extents at the call site, NOT
+    the dormer's local width/depth). When ridgeAlongX=false this
+    swapped the cap axes: the roof cap rendered with X-extent equal to
+    the dormer's Z-extent and vice versa, so the cap pulled inside the
+    cheeks on one axis and protruded past them on the other. The
+    cheeks/back wall/glass front were drawn correctly with their own
+    spans, but the cap mismatch read as "tiny white sugar-cube dormer
+    with a messy floating roof bar" on top of the host roof. After the
+    fix, hxWorld/hzWorld are taken straight from caller widthM/depthM
+    and the if-branch is selected by ridgeAlongX, so the cap always
+    matches the cheek/back-wall footprint and the dormer renders as 2
+    cheeks + back wall + glazed front + a ridge cap that sits flush on
+    the cheek tops.
+  </desc>
+
+  <defs>
+    <pattern id="tileHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#9b3a25" stroke-width="1"/>
+    </pattern>
+    <marker id="redArrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#b91c1c"/>
+    </marker>
+    <marker id="greenArrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#15803d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="480" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="440" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">
+      Before — sugar-cube dormer
+    </text>
+    <text x="280" y="66" text-anchor="middle" font-size="11" fill="#475569">
+      buildGable/HippedDormerRoof axis-swapped on ridgeAlongX=false
+    </text>
+
+    <!-- Sky -->
+    <rect x="40" y="80" width="480" height="320" fill="#e7f0f7"/>
+    <!-- Roof slope (red tiles) -->
+    <polygon points="40,400 220,170 400,400" fill="#b04830" stroke="#7a2c1c" stroke-width="1.5"/>
+    <polygon points="40,400 220,170 400,400" fill="url(#tileHatch)" opacity="0.45"/>
+
+    <!-- CSG cut hole footprint (correct width 3.2m) shown as dashed gap on slope -->
+    <line x1="190" y1="232" x2="350" y2="356" stroke="#3a1208" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="270" y="384" font-size="10" fill="#3a1208" text-anchor="middle">
+      CSG cut (3.2m wide, correct)
+    </text>
+
+    <!-- Tiny "sugar cube" body — only cheeks/back wall visible footprint -->
+    <rect x="246" y="246" width="58" height="58" fill="#f8f5ef" stroke="#a7a299" stroke-width="1.2"/>
+    <!-- Cheek edges -->
+    <line x1="246" y1="246" x2="246" y2="304" stroke="#736d63" stroke-width="0.8"/>
+    <line x1="304" y1="246" x2="304" y2="304" stroke="#736d63" stroke-width="0.8"/>
+
+    <!-- Misplaced roof cap — too wide along one axis, too narrow along the other -->
+    <polygon points="218,232 332,232 304,206 246,206" fill="#dfe7ec" stroke="#7a8693" stroke-width="1"/>
+    <line x1="246" y1="206" x2="304" y2="206" stroke="#3b4451" stroke-width="1.1"/>
+    <!-- glass mullions -->
+    <line x1="265" y1="218" x2="265" y2="240" stroke="#3b4451" stroke-width="1"/>
+    <line x1="285" y1="218" x2="285" y2="240" stroke="#3b4451" stroke-width="1"/>
+
+    <text x="380" y="208" font-size="10" fill="#b91c1c">cap protrudes past cheeks (wrong axis)</text>
+    <line x1="378" y1="206" x2="335" y2="220" stroke="#b91c1c" stroke-width="1" marker-end="url(#redArrow)"/>
+
+    <text x="380" y="266" font-size="10" fill="#b91c1c">body looks ~1/4 expected</text>
+    <line x1="378" y1="266" x2="312" y2="275" stroke="#b91c1c" stroke-width="1" marker-end="url(#redArrow)"/>
+
+    <text x="200" y="430" font-size="11" fill="#475569">
+      "tiny white box on red roof, no cheek + roof cap geometry"
+    </text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="440" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">
+      After — proper dormer body
+    </text>
+    <text x="820" y="66" text-anchor="middle" font-size="11" fill="#475569">
+      hxWorld=widthM/2, hzWorld=depthM/2, branch picked by ridgeAlongX
+    </text>
+
+    <!-- Sky -->
+    <rect x="580" y="80" width="480" height="320" fill="#e7f0f7"/>
+    <!-- Roof slope -->
+    <polygon points="580,400 760,170 940,400" fill="#b04830" stroke="#7a2c1c" stroke-width="1.5"/>
+    <polygon points="580,400 760,170 940,400" fill="url(#tileHatch)" opacity="0.45"/>
+
+    <!-- CSG cut hole footprint — same 3.2m wide -->
+    <line x1="730" y1="232" x2="890" y2="356" stroke="#3a1208" stroke-width="2" stroke-dasharray="4 3"/>
+
+    <!-- Full dormer body: cheeks span full 1.7m depth, back wall spans full 3.2m width -->
+    <!-- Body wall envelope (correct, wider) -->
+    <rect x="730" y="226" width="160" height="80" fill="#f8f5ef" stroke="#736d63" stroke-width="1.2"/>
+    <!-- Left cheek edge -->
+    <line x1="730" y1="226" x2="730" y2="306" stroke="#3b4451" stroke-width="1"/>
+    <!-- Right cheek edge -->
+    <line x1="890" y1="226" x2="890" y2="306" stroke="#3b4451" stroke-width="1"/>
+
+    <!-- Glass front with mullions and rails (sized to body) -->
+    <rect x="746" y="238" width="128" height="56" fill="#bcd6e6" fill-opacity="0.55" stroke="#4a6473" stroke-width="0.8"/>
+    <line x1="778" y1="238" x2="778" y2="294" stroke="#3b4451" stroke-width="1"/>
+    <line x1="810" y1="238" x2="810" y2="294" stroke="#3b4451" stroke-width="1"/>
+    <line x1="842" y1="238" x2="842" y2="294" stroke="#3b4451" stroke-width="1"/>
+    <line x1="746" y1="266" x2="874" y2="266" stroke="#3b4451" stroke-width="0.8"/>
+
+    <!-- Gable cap sitting flush atop the body (matches width 3.2m) -->
+    <polygon points="730,226 890,226 810,184" fill="#c84d34" stroke="#7a2c1c" stroke-width="1.2"/>
+    <polygon points="730,226 890,226 810,184" fill="url(#tileHatch)" opacity="0.4"/>
+
+    <text x="940" y="200" font-size="10" fill="#15803d">cap flush on cheek tops</text>
+    <line x1="938" y1="200" x2="845" y2="206" stroke="#15803d" stroke-width="1" marker-end="url(#greenArrow)"/>
+
+    <text x="940" y="270" font-size="10" fill="#15803d">body fills CSG cut</text>
+    <line x1="938" y1="270" x2="892" y2="270" stroke="#15803d" stroke-width="1" marker-end="url(#greenArrow)"/>
+
+    <text x="740" y="430" font-size="11" fill="#475569">
+      2 cheeks (1.7m deep) + back wall (3.2m wide) + glazed front + ridge cap
+    </text>
+  </g>
+
+  <text x="550" y="476" text-anchor="middle" font-size="10" fill="#94a3b8">
+    Root cause D — width/depth-axis swap in buildGable/HippedDormerRoof for ridgeAlongX=false dormers.
+  </text>
+</svg>

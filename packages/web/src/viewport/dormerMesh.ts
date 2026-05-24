@@ -385,7 +385,19 @@ function addDormerFaceWindow(
   }
 }
 
-/** KRN-14 — gable roof for a dormer. */
+/**
+ * KRN-14 — gable roof for a dormer.
+ *
+ * `widthM` and `depthM` are **world-X and world-Z extents** of the dormer
+ * footprint (set by the caller from `xMax-xMin` / `zMax-zMin`), NOT the
+ * dormer's local width/depth. The ridge runs parallel to the **host
+ * roof's** ridge: `ridgeAlongX=true` ⇒ ridge along world-X; `false` ⇒
+ * ridge along world-Z. Issue-76: an earlier `longAlongWorldX` heuristic
+ * compared `widthM` vs `depthM` and swapped the cap geometry on
+ * `ridgeAlongX=false` hipped/gable hosts — the roof cap protruded past
+ * the cheeks on one axis and pulled inside them on the other, which read
+ * as "tiny sugar-cube dormer with messy roof".
+ */
 export function buildGableDormerRoof(
   widthM: number,
   depthM: number,
@@ -394,14 +406,14 @@ export function buildGableDormerRoof(
   ridgeAlongX: boolean,
   material: THREE.Material,
 ): THREE.Mesh {
-  const longAlongWorldX = ridgeAlongX ? widthM >= depthM : depthM >= widthM;
-  const hxWorld = ridgeAlongX ? widthM / 2 : depthM / 2;
-  const hzWorld = ridgeAlongX ? depthM / 2 : widthM / 2;
+  const hxWorld = widthM / 2;
+  const hzWorld = depthM / 2;
   const eaveY = roofThickM;
   const ridgeY = eaveY + ridgeHeightM;
   const positions: number[] = [];
   const indices: number[] = [];
-  if (longAlongWorldX) {
+  if (ridgeAlongX) {
+    // Ridge runs along world-X: ridge vertices at (±hxWorld, ridgeY, 0).
     positions.push(-hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, hzWorld);
@@ -413,6 +425,7 @@ export function buildGableDormerRoof(
     indices.push(0, 4, 3);
     indices.push(1, 2, 5);
   } else {
+    // Ridge runs along world-Z: ridge vertices at (0, ridgeY, ±hzWorld).
     positions.push(-hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, hzWorld);
@@ -472,7 +485,15 @@ export function buildShedDormerRoof(
   return new THREE.Mesh(geom, material);
 }
 
-/** KRN-14 — hipped roof for a dormer (ridge shorter than the eave). */
+/**
+ * KRN-14 — hipped roof for a dormer (short ridge inside the eave rect).
+ *
+ * Same call convention as `buildGableDormerRoof`: `widthM`/`depthM` are
+ * world-X/world-Z extents, `ridgeAlongX` is the host roof ridge axis.
+ * The short ridge runs along that same world axis. Issue-76 fix:
+ * removed the `longAlongWorldX` geometry-driven heuristic which swapped
+ * cap axes for `ridgeAlongX=false` hosts.
+ */
 export function buildHippedDormerRoof(
   widthM: number,
   depthM: number,
@@ -481,16 +502,17 @@ export function buildHippedDormerRoof(
   ridgeAlongX: boolean,
   material: THREE.Material,
 ): THREE.Mesh {
-  const longAlongWorldX = ridgeAlongX ? widthM >= depthM : depthM >= widthM;
-  const hxWorld = ridgeAlongX ? widthM / 2 : depthM / 2;
-  const hzWorld = ridgeAlongX ? depthM / 2 : widthM / 2;
+  const hxWorld = widthM / 2;
+  const hzWorld = depthM / 2;
   const eaveY = roofThickM;
   const ridgeY = eaveY + ridgeHeightM;
-  const longHalf = longAlongWorldX ? hxWorld : hzWorld;
-  const ridgeHalf = Math.max(0.05, longHalf * 0.5);
+  // Short ridge sits along the dormer's ridge-parallel axis at 50% of
+  // that axis's half-extent (the rest is taken up by hip slopes).
+  const ridgeHalf = Math.max(0.05, (ridgeAlongX ? hxWorld : hzWorld) * 0.5);
   const positions: number[] = [];
   const indices: number[] = [];
-  if (longAlongWorldX) {
+  if (ridgeAlongX) {
+    // Short ridge along world-X.
     positions.push(-hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, hzWorld);
@@ -502,6 +524,7 @@ export function buildHippedDormerRoof(
     indices.push(3, 0, 4);
     indices.push(1, 2, 5);
   } else {
+    // Short ridge along world-Z.
     positions.push(-hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, -hzWorld);
     positions.push(hxWorld, eaveY, hzWorld);
