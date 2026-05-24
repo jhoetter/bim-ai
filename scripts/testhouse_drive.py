@@ -1667,6 +1667,26 @@ def _exterior_walls_bundle(
     if not chain_facts:
         return None
     fact = chain_facts[0]
+    # MF-render-6 (#60): plumb the per-level exterior_wall_chain
+    # ``materialKey`` through to every createWall in this bundle so a
+    # 2-tone Doppelhaus (EG ``render_light_grey`` Putz + DG
+    # ``cladding_warm_wood`` Holzschalung) renders correctly per storey.
+    # Pre-fix the call hardcoded ``render_light_grey`` regardless of what
+    # the IR fact declared — every floor's walls collapsed onto the same
+    # material and the downstream renderer (PR #55) had nothing per-level
+    # to paint with. Back-compat: when the per-level fact lacks an
+    # explicit key we fall back to the legacy top-level
+    # ``ir["exteriorWallChainEG"]["materialKey"]`` (older IR shape) and
+    # finally to ``render_light_grey`` so iter-3-era IRs keep authoring.
+    material_key = fact.get("materialKey")
+    if not isinstance(material_key, str) or not material_key:
+        legacy_chain = ir.get("exteriorWallChainEG")
+        if isinstance(legacy_chain, dict):
+            legacy_key = legacy_chain.get("materialKey")
+            if isinstance(legacy_key, str) and legacy_key:
+                material_key = legacy_key
+    if not isinstance(material_key, str) or not material_key:
+        material_key = "render_light_grey"
     poly = fact.get("polygonMm") or fact.get("polygonMM") or []
     # If the IR repeats the first vertex at the tail (closed-loop form),
     # drop the duplicate before generating walls — otherwise the last
@@ -1740,7 +1760,7 @@ def _exterior_walls_bundle(
                 "end": {"xMm": b[0], "yMm": b[1]},
                 "thicknessMm": 365,
                 "heightMm": float(eg_height),
-                "materialKey": "render_light_grey",
+                "materialKey": material_key,
             }
         )
     # slab — boundary follows the same polygon.
