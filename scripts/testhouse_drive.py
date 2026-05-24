@@ -43,6 +43,7 @@ if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
 import httpx  # noqa: E402
+from pydantic import BaseModel, ConfigDict, Field, ValidationError  # noqa: E402
 
 from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
 
@@ -327,6 +328,93 @@ PROJECT_ID_FOR_TESTHOUSES = "892ee9f7-307c-5e40-a838-3bc64b5f5f92"  # seed proje
 
 def _ir_path(house: str) -> Path:
     return _house_workdir(house) / "understanding" / "existing-building-ir.json"
+
+
+class _IRLevel(BaseModel):
+    """One level entry. Lenient on height/elevation key naming to match the
+    several reader-IR variants in the wild — see ``_lvl_height_mm`` /
+    ``_lvl_elevation_mm`` for the supported aliases."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str = Field(description="Stable level id, e.g. 'level-KG'.")
+    name: str = Field(description="Human-readable level name.")
+
+
+class _IRExteriorWallChainEG(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    polygonMM: list[Any] = Field(min_length=3)
+    wallThicknessMM: float
+
+
+class _IRSchema(BaseModel):
+    """Driver's minimum-required shape for the existing-building IR.
+
+    MF-driver-1 (#10): keep the validation surface narrow — only the keys
+    every floor phase dereferences. We deliberately allow extra top-level
+    fields (extractedFacts, derivedRooms, …) so reader-pass schema drift
+    doesn't break the driver as long as the required keys are present.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    house: str
+    levels: list[_IRLevel] = Field(min_length=1)
+    exteriorWallChainEG: _IRExteriorWallChainEG
+
+
+def _load_and_validate_ir(ir_path: Path) -> dict:
+    """Read, parse, and schema-validate an IR file.
+
+    On failure emits one structured ``testhouse_iter.ir_invalid`` log line
+    listing every required-key violation, plus a human-readable stderr
+    message naming the offending IR path, then ``sys.exit(2)``. This is
+    the MF-driver-1 fix — without it, a reader-pass that wrote a valid-
+    but-different JSON shape caused every floor phase to crash with
+    ``KeyError: 'levels'`` after the first one already "succeeded" via the
+    tolerant ``ir.get(...)`` codepath, producing 4 PNGs of an empty model
+    that looked like a successful build.
+    """
+
+    if not ir_path.is_file():
+        raise FileNotFoundError(f"missing IR: {ir_path}")
+    data = json.loads(ir_path.read_text(encoding="utf-8"))
+    try:
+        _IRSchema.model_validate(data)
+    except ValidationError as e:
+        problems = [
+            {
+                "loc": list(err.get("loc", [])),
+                "type": err.get("type"),
+                "msg": err.get("msg"),
+            }
+            for err in e.errors()
+        ]
+        logger.error(
+            "ir_invalid",
+            extra={
+                "event": "testhouse_iter.ir_invalid",
+                "ir_path": str(ir_path),
+                "problems": problems,
+            },
+        )
+        missing = sorted(
+            ".".join(str(p) for p in prob["loc"])
+            for prob in problems
+            if prob["type"] in ("missing", "value_error.missing")
+        )
+        hint = (
+            f"missing required key(s): {', '.join(missing)}"
+            if missing
+            else f"{len(problems)} schema violation(s); see ir_invalid log line"
+        )
+        sys.stderr.write(
+            f"testhouse_drive: invalid IR at {ir_path}\n  {hint}\n"
+            f"  full problems: {json.dumps(problems)}\n"
+        )
+        sys.exit(2)
+    return data
 
 
 def _lvl_height_mm(lvl: dict, default: float = 2700.0) -> float:
@@ -734,7 +822,7 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
     ir_path = _ir_path(house)
     if not ir_path.is_file():
         raise FileNotFoundError(f"missing iter-1 IR: {ir_path}. Run iter-1 (reader pass) first.")
-    ir = json.loads(ir_path.read_text(encoding="utf-8"))
+    ir = _load_and_validate_ir(ir_path)
     model_id = _ensure_model(house=house, api_base=args.api_base)
     parent_rev = _current_revision(api_base=args.api_base, model_id=model_id)
     bundle = _shell_bundle_from_ir(ir=ir, parent_revision=parent_rev, iter_n=iter_n)
@@ -2405,7 +2493,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
     house = args.house
     iter_n = int(args.iter)
     floor = args.floor.upper()  # TOPOLOGY | KG | EG | DG | ROOF
-    ir = json.loads(_ir_path(house).read_text(encoding="utf-8"))
+    ir = _load_and_validate_ir(_ir_path(house))
     api_base = args.api_base
 
     model_id = _ensure_model(house=house, api_base=api_base)
@@ -3310,7 +3398,7 @@ def _cmd_narrate_globals(args: argparse.Namespace) -> int:
     ir_path = _ir_path(house)
     if not ir_path.is_file():
         raise FileNotFoundError(f"missing IR for narration: {ir_path}")
-    ir = json.loads(ir_path.read_text(encoding="utf-8"))
+    ir = _load_and_validate_ir(ir_path)
     facts = ir.get("extractedFacts") or []
     by_kind: dict[str, int] = {}
     for f in facts:
