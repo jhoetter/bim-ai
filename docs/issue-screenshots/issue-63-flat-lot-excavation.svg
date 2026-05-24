@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #63 — toposolid_excavation top pinned at level-EG on flat lots</title>
+  <desc>
+    Section view (N-S) of a flat-lot house (e.g. alpha) showing how, after PR #50, the
+    excavation top can lift above grade when a downstream consumer reads the host
+    toposolid's heightSamples nearest the cutter centroid. The "warm-brown" band on the
+    N/S/E faces of all three testhouses turns out to be the misplaced excavation mound
+    occluding the legitimate EG cladding — not wood cladding as iter-8 reviewers read.
+    After issue #63: the driver pins topHeightSamples at the EG elevation (0 mm) on
+    every flat-mode excavation, so the top is authoritatively flat at grade regardless
+    of how the host's heightSamples vary across the parcel.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky63" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="soilHatch63" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#a0805a" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow63" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE #63 ==================== -->
+  <g id="before63">
+    <rect x="20" y="20" width="520" height="420" fill="url(#sky63)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">Before #63 — mound clips into EG cladding</text>
+    <text x="280" y="60" text-anchor="middle" font-size="10" fill="#4b5563">Excavation top reads max(heightSamples) ≈ +2700 mm above level-EG (0)</text>
+
+    <!-- ground line at grade (z=0) -->
+    <line x1="40" y1="280" x2="520" y2="280" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="50" y="275" font-size="9" fill="#6b7280">level-EG.elevationMm = 0 (true grade)</text>
+
+    <!-- Building outline (KG + EG + DG) -->
+    <rect x="180" y="170" width="240" height="200" fill="#f4ead7" stroke="#3a3a3a" stroke-width="1"/>
+    <line x1="180" y1="280" x2="420" y2="280" stroke="#3a3a3a" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <line x1="180" y1="220" x2="420" y2="220" stroke="#3a3a3a" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <text x="430" y="350" font-size="9" fill="#3a3a3a">KG</text>
+    <text x="430" y="260" font-size="9" fill="#3a3a3a">EG</text>
+    <text x="430" y="200" font-size="9" fill="#3a3a3a">DG</text>
+
+    <!-- The MISPLACED excavation mound: top lifted to +2700 mm, burying EG -->
+    <rect x="140" y="220" width="320" height="170" fill="url(#soilHatch63)" stroke="#8B6914" stroke-width="1.5" opacity="0.85"/>
+    <text x="280" y="215" text-anchor="middle" font-size="10" font-weight="700" fill="#b91c1c">excavation top (lifted ~+2700 mm)</text>
+    <line x1="140" y1="220" x2="460" y2="220" stroke="#b91c1c" stroke-width="2"/>
+
+    <!-- Annotation arrow showing the over-burial -->
+    <line x1="490" y1="240" x2="450" y2="240" stroke="#b91c1c" stroke-width="1.2" marker-end="url(#arrow63)"/>
+    <text x="495" y="232" font-size="10" fill="#b91c1c" font-weight="600">EG cladding</text>
+    <text x="495" y="246" font-size="10" fill="#b91c1c" font-weight="600">occluded by mound</text>
+    <text x="495" y="262" font-size="9" fill="#b91c1c">(grade cap: α −0.45,</text>
+    <text x="495" y="274" font-size="9" fill="#b91c1c">β −0.60, γ −0.35)</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER #63 ==================== -->
+  <g id="after63">
+    <rect x="560" y="20" width="520" height="420" fill="url(#sky63)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">After #63 — excavation top at EG.elevationMm</text>
+    <text x="820" y="60" text-anchor="middle" font-size="10" fill="#4b5563">Driver pins topHeightSamples z = level-EG.elevationMm (0) for flat lots</text>
+
+    <!-- ground line at grade -->
+    <line x1="580" y1="280" x2="1060" y2="280" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="590" y="275" font-size="9" fill="#6b7280">level-EG.elevationMm = 0 (true grade)</text>
+
+    <!-- Building outline -->
+    <rect x="720" y="170" width="240" height="200" fill="#f4ead7" stroke="#3a3a3a" stroke-width="1"/>
+    <line x1="720" y1="280" x2="960" y2="280" stroke="#3a3a3a" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <line x1="720" y1="220" x2="960" y2="220" stroke="#3a3a3a" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <text x="970" y="350" font-size="9" fill="#3a3a3a">KG</text>
+    <text x="970" y="260" font-size="9" fill="#3a3a3a">EG</text>
+    <text x="970" y="200" font-size="9" fill="#3a3a3a">DG</text>
+
+    <!-- CORRECT excavation: top pinned at grade (z=0), depth 3200 mm down -->
+    <rect x="680" y="280" width="320" height="110" fill="url(#soilHatch63)" stroke="#8B6914" stroke-width="1.5" opacity="0.85"/>
+    <line x1="680" y1="280" x2="1000" y2="280" stroke="#059669" stroke-width="2"/>
+    <text x="820" y="298" text-anchor="middle" font-size="10" font-weight="700" fill="#059669">topHeightSamples z = 0 (pinned)</text>
+
+    <line x1="1030" y1="240" x2="990" y2="240" stroke="#059669" stroke-width="1.2" marker-end="url(#arrow63)"/>
+    <text x="1035" y="232" font-size="10" fill="#059669" font-weight="600">EG cladding</text>
+    <text x="1035" y="246" font-size="10" fill="#059669" font-weight="600">visible (correct)</text>
+    <text x="1035" y="262" font-size="9" fill="#059669">KG still hidden by</text>
+    <text x="1035" y="274" font-size="9" fill="#059669">excavation (PR #38)</text>
+  </g>
+
+  <text x="550" y="455" text-anchor="middle" font-size="9" fill="#6b7280">MF-driver-13 (#63) — flat-lot fix preserves PR #38 (KG hidden) + PR #50 (hillside follow_terrain unchanged)</text>
+</svg>

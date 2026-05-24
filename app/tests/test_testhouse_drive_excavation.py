@@ -224,3 +224,126 @@ def test_topology_bundle_below_threshold_falls_back_to_flat() -> None:
     # gamma's slope spec is modest enough that std-dev is under the
     # 500 mm threshold — keep flat behavior.
     assert "topSurfaceMode" not in excavation
+
+
+# ---------------------------------------------------------------------------
+# MF-driver-13 (#63): flat-lot excavation top must sit at level-EG, NOT at
+# the host toposolid's heightSamples surface. Without the explicit pin,
+# a downstream renderer that nearest-samples the host terrain at the
+# cutter centroid can lift the excavation top ~peak/2 above grade and
+# occlude the EG cladding on the N/S/E faces (the over-burial bug that
+# alpha/beta/gamma all showed after PR #50 landed).
+# ---------------------------------------------------------------------------
+
+
+def test_topology_bundle_flat_lot_pins_excavation_top_at_eg_elevation() -> None:
+    """alpha is the canonical flat-lot fixture. Its KG excavation MUST
+    carry an explicit ``topHeightSamples`` array whose z values equal
+    ``level-EG.elevationMm`` (0) — not whatever the host toposolid's
+    heightSamples happen to read at the cutter centroid. This is the
+    data-authoritative fix for issue #63."""
+
+    bundle, _ = _DRV._topology_bundle(
+        ir=_ir_with_kg(), parent_revision=1, house="alpha"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    samples = excavation.get("topHeightSamples")
+    assert samples, (
+        "flat-lot excavation must pin topHeightSamples to level-EG.elevationMm "
+        "so the top is authoritative regardless of how a renderer samples the "
+        "host toposolid (issue #63 over-burial fix)."
+    )
+    assert all(s["zMm"] == 0.0 for s in samples), (
+        "flat-lot topHeightSamples must all sit at level-EG.elevationMm (0). "
+        "Any non-zero z here means the excavation top will lift above grade "
+        "and occlude the EG cladding."
+    )
+    # The pinned samples must cover the cutter footprint so the renderer
+    # can reconstruct the flat top everywhere over the cutter, not just
+    # at one point.
+    assert len(samples) >= 4, (
+        "topHeightSamples must cover the cutter polygon corners so the "
+        "flat-top reconstruction is unambiguous everywhere."
+    )
+    # Mode stays absent (engine default = flat); only the data carrier changes.
+    assert "topSurfaceMode" not in excavation
+
+
+def test_topology_bundle_flat_lot_pin_uses_nonzero_eg_elevation() -> None:
+    """When the IR's level-EG sits at a non-zero elevation (e.g. a
+    podium-style design with EG at +500), the flat-mode excavation top
+    must track THAT elevation, not assume 0."""
+
+    ir = _ir_with_kg()
+    # Promote EG to +500 mm — KG correspondingly shifts but we keep its
+    # depth assertion focused on the EG elevation pin.
+    for lvl in ir["levels"]:
+        if lvl["id"] == "level-EG":
+            lvl["elevationMM"] = 500.0
+    bundle, _ = _DRV._topology_bundle(
+        ir=ir, parent_revision=1, house="alpha"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    samples = excavation.get("topHeightSamples") or []
+    assert samples, "flat-mode excavation must carry topHeightSamples"
+    assert all(s["zMm"] == 500.0 for s in samples), (
+        "topHeightSamples z must equal level-EG.elevationMm; got "
+        f"{[s['zMm'] for s in samples]}"
+    )
+
+
+def test_topology_bundle_hillside_keeps_follow_terrain_no_top_pin() -> None:
+    """Guardrail: PR #50 hillside behavior is untouched — beta still
+    emits topSurfaceMode=follow_terrain and does NOT pin topHeightSamples
+    (the engine reads the host's heightSamples nearest the cutter to
+    build the tilted top)."""
+
+    ir = _ir_with_kg()
+    ir["house"] = "beta"
+    bundle, _ = _DRV._topology_bundle(
+        ir=ir, parent_revision=1, house="beta"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    assert excavation.get("topSurfaceMode") == "follow_terrain", (
+        "hillside houses must still flip on follow_terrain (PR #50 contract)."
+    )
+    # On the hillside the daylight side relies on the host's tilted
+    # heightSamples; an explicit pin would re-flatten the top and
+    # re-bury the daylight walls (regress #46).
+    assert "topHeightSamples" not in excavation, (
+        "hillside excavations must NOT pin topHeightSamples — that would "
+        "regress PR #50 by re-flattening the top and re-burying the "
+        "daylight basement walls."
+    )
+
+
+def test_topology_bundle_borderline_lot_uses_flat_path_and_pins_top() -> None:
+    """A borderline lot with heightSamples std-dev JUST UNDER the
+    HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM threshold (e.g. gamma's ~244 mm)
+    must take the flat path AND carry the topHeightSamples pin so the
+    top face stays at grade. Confirms the threshold gates both halves
+    of the fix consistently (no off-by-one between mode + pin)."""
+
+    ir = _ir_with_kg()
+    ir["house"] = "gamma"
+    bundle, _ = _DRV._topology_bundle(
+        ir=ir, parent_revision=1, house="gamma"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    # Threshold gate: flat path -> no follow_terrain mode flip.
+    assert "topSurfaceMode" not in excavation
+    # Same gate: flat path -> explicit topHeightSamples pin.
+    samples = excavation.get("topHeightSamples")
+    assert samples, (
+        "borderline-but-flat lot must also pin topHeightSamples so the "
+        "renderer doesn't lift the excavation top via host heightSamples."
+    )
+    assert all(s["zMm"] == 0.0 for s in samples)

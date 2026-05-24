@@ -335,6 +335,89 @@ def test_top_height_samples_explicit_override_is_persisted() -> None:
     assert zs[-1] == 1100
 
 
+# ---------------------------------------------------------------------------
+# MF-driver-13 (#63): the engine must accept an explicit ``topHeightSamples``
+# pin under the default flat ``topSurfaceMode`` so the driver's flat-lot
+# fix (pinning the top at level-EG.elevationMm) round-trips through
+# dispatch. Without this, a flat-mode excavation that ships an explicit
+# top pin would silently drop it and the over-burial bug returns.
+# ---------------------------------------------------------------------------
+
+
+def test_flat_mode_persists_explicit_top_height_samples_pin() -> None:
+    """When a caller pins ``topHeightSamples`` under the default flat
+    mode (e.g. the driver's MF-driver-13 fix on flat lots), those samples
+    must round-trip onto the element exactly. This is the data carrier
+    for the issue #63 fix — a renderer that consumes topHeightSamples
+    can reconstruct the authoritative flat-at-grade top regardless of
+    the host's heightSamples surface."""
+
+    doc = _fresh_doc_with_hillside_topo()
+    apply_inplace(
+        doc,
+        TypeAdapter(CreateToposolidExcavationCmd).validate_python(
+            {
+                "type": "CreateToposolidExcavation",
+                "id": "exc-flat-pinned",
+                "hostToposolidId": "topo-1",
+                "cutterElementId": "basement-cutter",
+                "cutMode": "custom_depth",
+                "customDepthMm": 3200,
+                # No topSurfaceMode -> default flat (the #38/#63 contract).
+                "topHeightSamples": [
+                    {"xMm": 5000, "yMm": 5000, "zMm": 0},
+                    {"xMm": 15000, "yMm": 5000, "zMm": 0},
+                    {"xMm": 15000, "yMm": 15000, "zMm": 0},
+                    {"xMm": 5000, "yMm": 15000, "zMm": 0},
+                ],
+            }
+        ),
+    )
+    exc = doc.elements.get("exc-flat-pinned")
+    assert isinstance(exc, ToposolidExcavationElem)
+    # Mode stays the default flat — the pin must NOT silently force
+    # follow_terrain.
+    assert exc.top_surface_mode == "flat"
+    # All four pin samples persisted at z=0 (level-EG.elevationMm).
+    assert exc.top_height_samples is not None
+    assert len(exc.top_height_samples) == 4
+    assert all(s.z_mm == 0 for s in exc.top_height_samples), (
+        "flat-mode pin at level-EG.elevationMm must round-trip; got "
+        f"{[s.z_mm for s in exc.top_height_samples]}"
+    )
+
+
+def test_hillside_follow_terrain_unchanged_by_issue_63() -> None:
+    """Regression guard: PR #50's follow_terrain contract on hillside
+    excavations (~3.8 m E-W drop, std-dev > 500 mm threshold) is
+    untouched by the issue #63 flat-lot fix. follow_terrain must still
+    derive the top from the host's heightSamples (no explicit pin
+    required) and the volume must still reflect the daylight-side
+    shrink."""
+
+    doc = _fresh_doc_with_hillside_topo()
+    apply_inplace(
+        doc,
+        TypeAdapter(CreateToposolidExcavationCmd).validate_python(
+            {
+                "type": "CreateToposolidExcavation",
+                "id": "exc-hillside",
+                "hostToposolidId": "topo-1",
+                "cutterElementId": "basement-cutter",
+                "cutMode": "custom_depth",
+                "customDepthMm": 3200,
+                "topSurfaceMode": "follow_terrain",
+            }
+        ),
+    )
+    exc = doc.elements["exc-hillside"]
+    assert isinstance(exc, ToposolidExcavationElem)
+    assert exc.top_surface_mode == "follow_terrain"
+    # No explicit pin needed — engine derives the top from the host
+    # heightSamples on a hillside (PR #50 behavior preserved).
+    assert exc.top_height_samples is None
+
+
 def test_unknown_top_surface_mode_value_rejected() -> None:
     """``topSurfaceMode`` is a Literal — unknown values must be rejected
     at command-validation time, not silently accepted."""
