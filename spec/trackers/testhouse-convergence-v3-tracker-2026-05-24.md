@@ -917,6 +917,8 @@ The loop appends here. Format:
 `| iter | timestamp | house | phase | what | grade | next |`
 
 | 0 | 2026-05-24 07:48Z | (setup) | tracker | v3 tracker authored | n/a | Phase 0 |
+| 0.6 | 2026-05-24 08:01Z | (all) | Phase 0 complete — API+WEB 200, purged 3 houses, cleaned legacy iter-N-captures + iter-N-scoring, archived prior per-house iters to _archive_v1/, IRs preserved | n/a | Phase 1 alpha |
+| 1 | 2026-05-24 08:03Z | alpha | Phase 1 author chain v3 started — TOPOLOGY → KG → EG → DG → ROOF + capture-ortho-views (note: per-phase floorplan capture infra EA-17 not yet built; using v1 author chain for first pass) | running | wait for completion |
 
 (Loop will fill below.)
 
