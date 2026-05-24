@@ -344,6 +344,7 @@ Each row = one /loop iteration. The loop appends here.
 | 11.g| 2026-05-24 04:14Z | (all) | iter-11 grades: alpha **8.95**, beta 8.25 (DG IR windows skipped because didn't fit Kniestock), gamma 8.85 | mixed | NS-9 |
 | 12  | 2026-05-24 04:20Z | (all) | NS-9 Kniestock-aware DG opening sill+height (300/800mm vs 900/1500mm) so windows fit in knee-wall | n/a | iter-12 |
 | **12.g** | 2026-05-24 04:38Z | **(all)** | **🎯🎯🎯 iter-12 strict-rubric BREAKTHROUGH: alpha 9.8 / beta 9.05 / gamma 9.8 / AVG 9.55**. All cumulative NS-1..NS-9 compound: camera sweep + materials synth + ridgeAlongX + pitch derivation + dormer polygon + Zwerchhaus + KG-EG stair + chimneys + Kniestock + Kniestock-aware openings | **9.55 avg** | CONVERGED above gate by wide margin |
+| 13.smoke | 2026-05-24 05:03Z | (all) | **SMOKE-2 iter-13: same scores as iter-12 — alpha 9.8 / beta 9.05 / gamma 9.8**. Methodology REPRODUCIBLE; element counts byte-identical. Final report at tmp/reverse-bim/nightshift-report.md | **9.55 avg** | end loop |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
