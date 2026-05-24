@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { Element } from '@bim-ai/core';
+import { groupDormersByOverlap } from './dormerGrouping';
 
 /**
  * KRN-14 / IFC-03 — subtract tall axis-aligned cut boxes for roof-hosted
@@ -53,15 +54,21 @@ export function applyDormerCutsToRoofGeom(
     let brush = new Brush(csgInput);
     brush.updateMatrixWorld();
     let cutsApplied = 0;
+    // MF-22b: cluster overlapping/near dormers and emit ONE cut per cluster.
+    // Without this, two adjacent shed dormers produced two ragged-edge cuts
+    // that read as a single untidy band instead of two clean openings — or,
+    // with this merge, one combined opening that the surviving primary
+    // dormer body fills.
+    const dormerGroups = groupDormersByOverlap(dormers, roof);
     const cuts: Array<{
       id: string;
       kind: 'dormer' | 'roof_opening';
       footprint: { minX: number; maxX: number; minY: number; maxY: number };
     }> = [
-      ...dormers.map((d) => ({
-        id: d.id,
+      ...dormerGroups.map((g) => ({
+        id: g.memberIds.length === 1 ? g.primaryId : `merged(${g.memberIds.join('+')})`,
         kind: 'dormer' as const,
-        footprint: computeDormerFootprintMm(d, roof),
+        footprint: g.mergedFootprint,
       })),
       ...roofOpenings.map((o) => ({
         id: o.id,
@@ -138,44 +145,6 @@ function bboxesOverlap(
   b: { minX: number; maxX: number; minY: number; maxY: number },
 ): boolean {
   return a.maxX > b.minX && a.minX < b.maxX && a.maxY > b.minY && a.minY < b.maxY;
-}
-
-function computeDormerFootprintMm(
-  dormer: Extract<Element, { kind: 'dormer' }>,
-  hostRoof: Extract<Element, { kind: 'roof' }>,
-): { minX: number; maxX: number; minY: number; maxY: number } {
-  const xs = hostRoof.footprintMm.map((p) => p.xMm);
-  const ys = hostRoof.footprintMm.map((p) => p.yMm);
-  const minRx = Math.min(...xs);
-  const maxRx = Math.max(...xs);
-  const minRy = Math.min(...ys);
-  const maxRy = Math.max(...ys);
-  const cx = (minRx + maxRx) / 2;
-  const cy = (minRy + maxRy) / 2;
-  const spanX = maxRx - minRx;
-  const spanY = maxRy - minRy;
-  const ridgeAlongX =
-    hostRoof.ridgeAxis === 'x' ? true : hostRoof.ridgeAxis === 'z' ? false : spanX >= spanY;
-  const dx = ridgeAlongX ? dormer.positionOnRoof.alongRidgeMm : dormer.positionOnRoof.acrossRidgeMm;
-  const dy = ridgeAlongX ? dormer.positionOnRoof.acrossRidgeMm : dormer.positionOnRoof.alongRidgeMm;
-  const centreX = cx + dx;
-  const centreY = cy + dy;
-  const halfW = dormer.widthMm / 2;
-  const halfD = dormer.depthMm / 2;
-  if (ridgeAlongX) {
-    return {
-      minX: centreX - halfW,
-      maxX: centreX + halfW,
-      minY: centreY - halfD,
-      maxY: centreY + halfD,
-    };
-  }
-  return {
-    minX: centreX - halfD,
-    maxX: centreX + halfD,
-    minY: centreY - halfW,
-    maxY: centreY + halfW,
-  };
 }
 
 function computeRoofOpeningFootprintMm(opening: Extract<Element, { kind: 'roof_opening' }>): {

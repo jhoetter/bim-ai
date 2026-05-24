@@ -3,6 +3,7 @@ import type { Element } from '@bim-ai/core';
 import { resolveMaterial, type ViewportPaintBundle } from './materials';
 import { addEdges, categoryColorOr } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
+import { groupDormersByOverlap } from './dormerGrouping';
 
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lvl = elementsById[levelId];
@@ -89,6 +90,19 @@ export function makeDormerMesh(
 
   const hostRoof = elementsById[dormer.hostRoofId];
   if (!hostRoof || hostRoof.kind !== 'roof') return group;
+
+  // MF-22b: when two dormers share an AABB cluster the roof cut is merged
+  // (dormerRoofCut.ts), so skip the non-primary bodies here — otherwise we
+  // double-render walls inside one combined opening and the surviving roof
+  // strip reads as a ragged band.
+  const siblingDormers = Object.values(elementsById).filter(
+    (e): e is DormerElem => e.kind === 'dormer' && e.hostRoofId === hostRoof.id,
+  );
+  if (siblingDormers.length > 1) {
+    const groups = groupDormersByOverlap(siblingDormers, hostRoof);
+    const myGroup = groups.find((g) => g.memberIds.includes(dormer.id));
+    if (myGroup && myGroup.primaryId !== dormer.id) return group;
+  }
 
   const fp = dormerFootprintMm(dormer, hostRoof);
 

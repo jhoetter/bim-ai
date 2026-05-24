@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">
+  <style>
+    .roof { fill: #f4ead2; stroke: #8a7a3e; stroke-width: 2; }
+    .cut-bad { fill: #fde2e2; stroke: #c0392b; stroke-width: 2; stroke-dasharray: 6 4; }
+    .cut-good { fill: #d6f0d3; stroke: #27ae60; stroke-width: 2.2; }
+    .lbl { font-weight: 600; }
+    .meta { fill: #555; font-size: 12px; }
+    .title { font-size: 16px; font-weight: 600; }
+  </style>
+
+  <text x="20" y="30" class="title">Before (issue #8): two separate AABB cuts → ragged strip</text>
+  <text x="600" y="30" class="title">After (this PR): one merged AABB cut</text>
+
+  <!-- BEFORE -->
+  <g transform="translate(40,60)">
+    <!-- roof outline 5000 x 8000 mm scaled to 320 x 350 px -->
+    <rect class="roof" x="0" y="0" width="320" height="350"/>
+    <text x="160" y="-8" text-anchor="middle" class="meta">testhouse-1 host roof (top view)</text>
+
+    <!-- two dormer cuts ~900mm apart edge-to-edge along the ridge -->
+    <!-- dormer A: 2400 wide x 2000 deep, alongRidge -1650 -->
+    <rect class="cut-bad" x="64" y="80" width="96" height="80"/>
+    <rect class="cut-bad" x="64" y="190" width="96" height="80"/>
+
+    <text x="112" y="125" text-anchor="middle" class="lbl">dormer A cut</text>
+    <text x="112" y="235" text-anchor="middle" class="lbl">dormer B cut</text>
+
+    <line x1="170" y1="160" x2="170" y2="190" stroke="#c0392b" stroke-width="1"/>
+    <text x="200" y="180" class="meta">~900mm gap</text>
+
+    <text x="0" y="385" class="meta">Each dormer subtracted independently. The 900mm strip between</text>
+    <text x="0" y="402" class="meta">them survives as a ragged band on the south facade.</text>
+  </g>
+
+  <!-- AFTER -->
+  <g transform="translate(620,60)">
+    <rect class="roof" x="0" y="0" width="320" height="350"/>
+    <text x="160" y="-8" text-anchor="middle" class="meta">testhouse-1 host roof (top view)</text>
+
+    <!-- merged AABB encompassing both -->
+    <rect class="cut-good" x="64" y="80" width="96" height="190"/>
+    <text x="112" y="180" text-anchor="middle" class="lbl">merged cut</text>
+    <text x="112" y="200" text-anchor="middle" class="meta">(A ∪ B AABB)</text>
+
+    <text x="0" y="385" class="meta">groupDormersByOverlap unions footprints within 200mm. The</text>
+    <text x="0" y="402" class="meta">primary (larger) dormer body fills the merged opening; the</text>
+    <text x="0" y="419" class="meta">secondary body is skipped so we don't double-render walls.</text>
+  </g>
+</svg>
