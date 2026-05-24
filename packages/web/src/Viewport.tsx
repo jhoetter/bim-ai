@@ -775,7 +775,10 @@ export function Viewport({
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       applyRenderRole(mesh, 'model');
-      addEdges(mesh);
+      // MF-cosmetic (issue #9): match meshBuilders.makeWallMesh — 30° edge
+      // threshold suppresses CSG triangulation seams on the async-loaded
+      // cut wall geometry so the worker swap-in doesn't look "sketched".
+      addEdges(mesh, 30);
       applyModelEdgeDisplay(mesh, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
 
