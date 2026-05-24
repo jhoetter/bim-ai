@@ -964,6 +964,24 @@ export function Viewport({
       syncCameraOrientationState(snap, orientationSync);
       const oc = orthoCameraRef.current;
       if (oc) {
+        // Issue #59: the ortho camera position must mirror the perspective
+        // pose, *and* its frustum extents must scale with the rig radius —
+        // otherwise a viewpoint applied after mount (any cardinal ortho
+        // capture URL) ends up positioned correctly but framed against a
+        // stale frustum sized for the rig's default radius=16 m, which
+        // crops the model and (combined with SSAO mis-projection) renders
+        // E/S/N captures as opaque black silhouettes.
+        const rendererEl = rendererRef.current?.domElement;
+        const w = rendererEl?.clientWidth || 1;
+        const h = rendererEl?.clientHeight || 1;
+        const frustum = rig.orthoFrustum(w / h);
+        oc.left = frustum.left;
+        oc.right = frustum.right;
+        oc.top = frustum.top;
+        oc.bottom = frustum.bottom;
+        oc.near = frustum.near;
+        oc.far = frustum.far;
+        oc.updateProjectionMatrix();
         mirrorSceneCameraPose(camera, oc, snap.target);
       }
       scheduleViewportRender();

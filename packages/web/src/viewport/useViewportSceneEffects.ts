@@ -44,6 +44,76 @@ type CameraOrientationSync = (
   mode?: 'defer' | 'immediate',
 ) => void;
 
+/**
+ * Issue #59 — sync three.js's bundled SSAOPass to the active camera's
+ * projection mode.
+ *
+ * The pass owns two shaders (``ssaoMaterial`` + ``depthRenderMaterial``) that
+ * each carry a compile-time ``PERSPECTIVE_CAMERA`` define. When the define is
+ * ``1`` the depth probe uses ``perspectiveDepthToViewZ``; when it's ``0`` the
+ * probe uses ``orthographicDepthToViewZ``. Swapping ``ssao.camera`` at runtime
+ * (Viewport.tsx does this when ``viewerProjection`` toggles) does **not**
+ * touch the define — three.js leaves it pinned at the original perspective
+ * setting. With an orthographic camera, ``perspectiveDepthToViewZ`` collapses
+ * to a near-zero range, the SSAO occlusion factor reads ~1 everywhere, and
+ * the SSAO copy pass (``blendSrc: DstColorFactor, blendDst: ZeroFactor``)
+ * multiplies the rendered scene by ~0 — producing the opaque-black-silhouette
+ * symptom of issue #59 (E/S/N ortho captures after PR #58).
+ *
+ * Re-publishing the projection matrix + ``cameraNear/cameraFar`` is also
+ * required so the next probe samples the right depth range for the swapped
+ * camera (otherwise even with the correct define, stale uniforms keep the
+ * pass calibrated to the previous camera).
+ */
+export function syncSsaoCameraDefines(ssaoPass: SSAOPass, camera: THREE.Camera): void {
+  const persp = camera as THREE.PerspectiveCamera;
+  const ortho = camera as THREE.OrthographicCamera;
+  const isPerspective = persp.isPerspectiveCamera ? 1 : 0;
+  const cameraNear = persp.isPerspectiveCamera
+    ? persp.near
+    : ortho.isOrthographicCamera
+      ? ortho.near
+      : 0.05;
+  const cameraFar = persp.isPerspectiveCamera
+    ? persp.far
+    : ortho.isOrthographicCamera
+      ? ortho.far
+      : 500;
+  const ssaoMaterial = (ssaoPass as unknown as { ssaoMaterial?: THREE.ShaderMaterial })
+    .ssaoMaterial;
+  const depthRenderMaterial = (
+    ssaoPass as unknown as { depthRenderMaterial?: THREE.ShaderMaterial }
+  ).depthRenderMaterial;
+  if (ssaoMaterial?.defines) {
+    const defs = ssaoMaterial.defines as Record<string, number>;
+    if (defs.PERSPECTIVE_CAMERA !== isPerspective) {
+      defs.PERSPECTIVE_CAMERA = isPerspective;
+      ssaoMaterial.needsUpdate = true;
+    }
+    const uniforms = ssaoMaterial.uniforms as Record<string, { value: unknown }> | undefined;
+    if (uniforms?.cameraNear) uniforms.cameraNear.value = cameraNear;
+    if (uniforms?.cameraFar) uniforms.cameraFar.value = cameraFar;
+    if (uniforms?.cameraProjectionMatrix) {
+      (uniforms.cameraProjectionMatrix.value as THREE.Matrix4).copy(camera.projectionMatrix);
+    }
+    if (uniforms?.cameraInverseProjectionMatrix) {
+      (uniforms.cameraInverseProjectionMatrix.value as THREE.Matrix4).copy(
+        camera.projectionMatrixInverse,
+      );
+    }
+  }
+  if (depthRenderMaterial?.defines) {
+    const defs = depthRenderMaterial.defines as Record<string, number>;
+    if (defs.PERSPECTIVE_CAMERA !== isPerspective) {
+      defs.PERSPECTIVE_CAMERA = isPerspective;
+      depthRenderMaterial.needsUpdate = true;
+    }
+    const uniforms = depthRenderMaterial.uniforms as Record<string, { value: unknown }> | undefined;
+    if (uniforms?.cameraNear) uniforms.cameraNear.value = cameraNear;
+    if (uniforms?.cameraFar) uniforms.cameraFar.value = cameraFar;
+  }
+}
+
 type ViewportSceneEffectsArgs = {
   activeLensMode: LensMode;
   activeLevelId: StoreState['activeLevelId'];
@@ -406,6 +476,23 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     if (renderPassRef.current) renderPassRef.current.camera = cam;
     if (ssaoPassRef.current) ssaoPassRef.current.camera = cam;
     if (outlinePassRef.current) outlinePassRef.current.renderCamera = cam;
+    // Issue #59: SSAOPass's shader has a compile-time ``PERSPECTIVE_CAMERA``
+    // define that selects between ``perspectiveDepthToViewZ`` and
+    // ``orthographicDepthToViewZ`` for depth reconstruction. The pass leaves
+    // it pinned at ``1`` (perspective) when ``ssao.camera`` is swapped at
+    // runtime. With an orthographic camera, the perspective depth math
+    // collapses to a tiny range near 0 → SSAO reports near-total occlusion
+    // for every visible pixel → the copy pass (``blendSrc: DstColorFactor,
+    // blendDst: ZeroFactor``) multiplies the rendered scene by ~0 and the
+    // building reads as an opaque black silhouette against the (background-
+    // cleared) sky. PR #58 enabled this code path via ``?projection=
+    // orthographic`` and surfaced the regression on E/S/N captures. Toggle
+    // the shader define + uniforms whenever the active camera changes so
+    // the depth probe matches the actual projection.
+    const ssaoPass = ssaoPassRef.current;
+    if (ssaoPass) {
+      syncSsaoCameraDefines(ssaoPass, cam);
+    }
     if (orthoMode && orthoCameraRef.current && cameraRigRef.current) {
       const renderer = rendererRef.current;
       const w = renderer?.domElement.clientWidth || 1;
@@ -424,11 +511,18 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
         const snap = cameraRigRef.current.snapshot();
         mirrorSceneCameraPose(persp, oc, snap.target);
       }
+      // Issue #59: re-publish the (now ortho) projection matrix + near/far
+      // to the SSAO uniforms so the next render samples the right depths.
+      if (ssaoPass) {
+        syncSsaoCameraDefines(ssaoPass, oc);
+      }
     }
   }, [
     cameraRef,
     cameraRigRef,
     mirrorSceneCameraPose,
+    orbitCameraNonce,
+    orbitCameraPoseMm,
     orthoCameraRef,
     orthoMode,
     outlinePassRef,
