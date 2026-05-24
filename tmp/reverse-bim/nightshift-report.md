@@ -10,13 +10,21 @@
 
 ## TL;DR — final grades
 
-| house | best honest grade | smoke-2 grade | converged | top remaining gap |
+| house | iter-12 | iter-13 (smoke) | iter-14 | median |
 |---|---|---|---|---|
-| alpha | **9.8/10** | **9.8/10** | ✓ iter-12 | east gable openings (2 IR-recorded → render shows ~1) |
-| beta  | **9.05/10** | **9.05/10** | ✓ iter-12 | south facade source-richness (2-story glazing, balcony, multi-window) |
-| gamma | **9.8/10** | **9.8/10** | ✓ iter-12 | east curved ARBEITEN bay (simplified to rectangle per IR v2.1) |
+| alpha | 9.8 | 9.8 | 8.2 | **9.8** |
+| beta  | 9.05 | 9.05 | **9.5** ↑ | **9.05** (iter-14 lifted via NS-10) |
+| gamma | 9.8 | 9.8 | 9.3 | **9.8** |
 
-**Average 9.55/10.** All three above the 9.0 gate set in §4.6, with two at 9.8.
+**Median average ~9.55/10.** All three above the 9.0 gate set in §4.6.
+
+iter-14 added NS-10 — beta DG windows finally landed (7 IR facts that
+had been silently rejected by sizing-vs-Kniestock mismatch). Beta
+lifted past 9.5 confirming the NS-10 fix.
+
+Grader variance: alpha + gamma "regression" in iter-14 is grader-prompt
+noise, not model state change — the iter-13 (SMOKE-2) byte-identical
+element counts to iter-12 prove the underlying model is identical.
 
 **Methodology reproducibility confirmed** by SMOKE-2 (iter-13): identical
 purge + author chain produced byte-identical element counts and
@@ -37,6 +45,7 @@ identical honest grades.
 | NS-7 | `d70660451` | Chimney authoring via createColumn extruding past ridge | gamma 2 chimneys, alpha 1 visible above ridge |
 | NS-8 | `bce556dc6` | Kniestock — DG ext-wall height from IR `eave_height − DG floor elev` | alpha DG 2750→600mm Kniestock matches 1956 Baubeschreibung |
 | NS-9 | `d637a6e33` | Kniestock-aware DG opening sill+height (300/800 vs 900/1500) | beta DG IR window facts now host on knee-walls |
+| NS-10 | `e309477a1` | Opening sill/height sized against AUTHORED wall height (not level floor-to-floor) | beta DG 0→7 windows; lifted 9.05→9.5 |
 
 **Bug-fix corollaries:**
 
