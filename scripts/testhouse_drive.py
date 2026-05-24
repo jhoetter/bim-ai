@@ -1822,6 +1822,85 @@ def _dormer_center_xy(fact: dict) -> list[float] | None:
     return None
 
 
+def _balconies_bundle(
+    *, ir: dict, parent_revision: int, house: str, snapshot: dict
+) -> tuple[dict, list[str]] | None:
+    """NS-V3-03 / EA-6 closeout: author createBalcony per IR `balcony` fact.
+
+    Each fact must carry `vertexMm` (center of host wall along facade) or
+    `polygonMm` (balcony slab outline; we host on the nearest wall to the
+    polygon centroid). Default 650 mm projection, 150 mm slab, 1050 mm
+    balustrade.
+    """
+    facts = [f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "balcony"]
+    if not facts:
+        return None
+    walls = [
+        e
+        for e in (snapshot.get("elements") or {}).values()
+        if isinstance(e, dict) and e.get("kind") == "wall"
+    ]
+    if not walls:
+        return None
+    commands: list[dict] = []
+    consumed: list[str] = []
+    for f in facts:
+        vertex = f.get("vertexMm")
+        if not vertex:
+            poly = f.get("polygonMm") or []
+            if isinstance(poly, list) and len(poly) >= 2:
+                xs = [float(p[0]) for p in poly if isinstance(p, list)]
+                ys = [float(p[1]) for p in poly if isinstance(p, list)]
+                if xs and ys:
+                    vertex = [sum(xs) / len(xs), sum(ys) / len(ys)]
+        if not (isinstance(vertex, list) and len(vertex) >= 2):
+            continue
+        wall, _ = _host_on_nearest_wall(vertex, walls, max_distance_mm=2000.0)
+        if wall is None:
+            continue
+        level_id = wall.get("levelId", "")
+        level_short = level_id.split("-")[-1] if level_id else "DG"
+        # Balcony elevation = DG floor (or whichever level the wall hosts).
+        level_elev = 0.0
+        for e in (snapshot.get("elements") or {}).values():
+            if isinstance(e, dict) and e.get("kind") == "level" and e.get("id") == level_id:
+                level_elev = float(e.get("elevationMm") or 0)
+                break
+        commands.append(
+            {
+                "type": "createBalcony",
+                "id": f"th-{house}-balcony-{_slugify(f.get('factId'))}",
+                "name": (str(f.get("text") or "Balcony"))[:80],
+                "wallId": wall.get("id"),
+                "elevationMm": level_elev,
+                "projectionMm": float(f.get("projectionMm") or 1200),
+                "slabThicknessMm": float(f.get("slabThicknessMm") or 150),
+                "balustradeHeightMm": float(f.get("balustradeHeightMm") or 1050),
+            }
+        )
+        consumed.append(str(f.get("factId")))
+    if not commands:
+        return None
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_balconies",
+                    "value": f"{len(commands)} balcony(s) hosted on nearest DG ext wall",
+                    "confidence": 0.55,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": "IR balcony facts",
+                }
+            ],
+        },
+        consumed,
+    )
+
+
 def _dormers_bundle(
     *, ir: dict, parent_revision: int, house: str, snapshot: dict
 ) -> tuple[dict, list[str]] | None:
@@ -2627,6 +2706,39 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 ),
                 narrative_outcome=f"{len(consumed)} chimney(s) committed.",
             )
+
+        # NS-V3-03 balconies — author after chimneys; needs DG ext walls.
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        snap_now = _snapshot(api_base=api_base, model_id=model_id)
+        balcony_pair = _balconies_bundle(
+            ir=ir, parent_revision=rev, house=house, snapshot=snap_now
+        )
+        if balcony_pair is not None:
+            bundle, consumed = balcony_pair
+            try:
+                _apply_slice_v2(
+                    house=house,
+                    iter_n=iter_n,
+                    phase="roof-balconies",
+                    bundle=bundle,
+                    api_base=api_base,
+                    submitter="testhouse_drive.floor",
+                    consumed_fact_ids=consumed,
+                    source_evidence=[],
+                    narrative_input=(
+                        f"{len(consumed)} balcony fact(s) — host on nearest DG ext wall."
+                    ),
+                    narrative_reasoning=(
+                        "Authored as createBalcony with 1200 mm projection, 150 mm "
+                        "slab, 1050 mm balustrade."
+                    ),
+                    narrative_outcome=f"{len(consumed)} balcony(s) committed.",
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "testhouse_iter.balcony_failed",
+                    extra={"house": house, "iter": iter_n, "error": str(exc)[:200]},
+                )
 
     # Run a structural-gate readout per floor: query the model snapshot,
     # summarise visible findings (room/wall/opening counts + advisor +
