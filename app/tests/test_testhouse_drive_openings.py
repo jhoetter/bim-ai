@@ -219,3 +219,169 @@ def test_openings_bundle_dict_and_list_produce_same_command_geometry() -> None:
         assert dict_cmd.get(key) == list_cmd.get(key), (
             f"{key} differs between dict-shape and list-shape vertexMm"
         )
+
+
+# ---- MF-driver-4 (#13): host-distance threshold + per-fact skip log ----
+#
+# Reader vertexMm coords often sit on the room boundary while the
+# authored wall is offset by ``thicknessMm/2`` (and a second offset on
+# the opposite side adds up). A 500 mm threshold silently dropped every
+# opening on iter-4 testhouses. The threshold is now 1000 mm, and every
+# skip-log entry carries the actual nearest wall id + miss distance.
+
+
+def test_resolve_opening_host_hits_within_threshold() -> None:
+    # The south wall runs y=0 from x=0..10000. A vertex 800 mm "into"
+    # the room (y=800) used to fall outside the 500 mm threshold and so
+    # got dropped — under #13 it must now host on that wall.
+    walls = list(_wall_snapshot("alpha", "EG")["elements"].values())
+    wall, t, dist, reason = _DRV._resolve_opening_host(
+        [5000.0, 800.0], walls, threshold_mm=1000.0
+    )
+    assert wall is not None, "800 mm offset must host under the 1000 mm threshold"
+    assert wall.get("id") == "th-h-ext-wall-south"
+    assert 0.0 <= t <= 1.0
+    assert dist == 800.0
+    assert reason is None
+
+
+def test_resolve_opening_host_misses_beyond_threshold() -> None:
+    # 1200 mm > 1000 mm threshold → miss, but the nearest wall + distance
+    # are still reported so the caller can build a useful skip-log entry.
+    walls = list(_wall_snapshot("alpha", "EG")["elements"].values())
+    wall, t, dist, reason = _DRV._resolve_opening_host(
+        [5000.0, 1200.0], walls, threshold_mm=1000.0
+    )
+    assert wall is None, "1200 mm offset must NOT host under the 1000 mm threshold"
+    assert t == 0.0
+    assert dist == 1200.0
+    assert reason is not None
+    # Reason must be the structured shape the operator-facing log expects.
+    assert "nearest_wall_distance_1200mm" in reason
+    assert "threshold_1000mm" in reason
+
+
+def test_resolve_opening_host_reports_no_walls() -> None:
+    wall, t, dist, reason = _DRV._resolve_opening_host(
+        [5000.0, 0.0], [], threshold_mm=1000.0
+    )
+    assert wall is None
+    assert t == 0.0
+    assert dist == float("inf")
+    assert reason == "no_walls_at_level"
+
+
+def test_openings_bundle_hosts_door_800mm_off_wall() -> None:
+    # The regression #13 was fixing: a vertex 800 mm off the nearest
+    # authored wall used to be silently dropped at the old 500 mm
+    # threshold. Under the new 1000 mm threshold it must be hosted.
+    house, level_short = "alpha", "EG"
+    ir = _ir_with_one_door(house, level_short, {"xMm": 5000.0, "yMm": 800.0})
+    snapshot = _wall_snapshot(house, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None, "800 mm-off-wall door must now author under #13"
+    bundle, consumed, skipped = result
+    assert len(bundle["commands"]) == 1
+    assert bundle["commands"][0]["wallId"] == "th-h-ext-wall-south"
+    assert "door-1" in consumed
+    assert skipped == []
+
+
+def test_openings_bundle_skips_door_1200mm_off_wall_with_structured_log() -> None:
+    # 1200 mm is past the 1000 mm threshold → still skipped. But the
+    # skip entry must now carry the operator-facing fields documented
+    # in #13: factId, reason (with distance + threshold), nearestWallId,
+    # and the raw vertexMm so a human can correlate the miss.
+    house, level_short = "alpha", "EG"
+    ir = _ir_with_one_door(house, level_short, {"xMm": 5000.0, "yMm": 1200.0})
+    snapshot = _wall_snapshot(house, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    # The bundle returns None when no openings authored (no commands).
+    assert result is None, "1200 mm-off-wall door must NOT author"
+
+
+def test_openings_bundle_skip_log_shape_for_out_of_range_window() -> None:
+    # Same as above but with a window + a door pair so the bundle has
+    # at least one authored command and so returns a non-None tuple
+    # (which is the path that surfaces the skipped[] log to the caller).
+    house, level_short = "alpha", "EG"
+    ir = _ir_with_one_door(house, level_short, {"xMm": 5000.0, "yMm": 100.0})
+    # Add an out-of-range window so the bundle has 1 authored + 1 skipped.
+    ir["extractedFacts"].append(
+        {
+            "factId": "window-far",
+            "kind": "window",
+            "levelId": f"level-{level_short}",
+            "widthMm": 1200,
+            "heightMm": 1500,
+            # Y=4000 sits 4000 mm off the south wall and 4000 mm off the
+            # north wall (at y=8000) — well beyond the 1000 mm threshold.
+            "vertexMm": {"xMm": 5000.0, "yMm": 4000.0},
+        }
+    )
+    snapshot = _wall_snapshot(house, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    _bundle, consumed, skipped = result
+    assert "door-1" in consumed
+    assert len(skipped) == 1
+    entry = skipped[0]
+    # Required fields per the #13 spec.
+    assert entry["factId"] == "window-far"
+    assert "nearestWallId" in entry
+    assert entry["nearestWallId"] in {
+        "th-h-ext-wall-south",
+        "th-h-ext-wall-north",
+    }, "nearest wall id must be surfaced even though it was out of range"
+    assert "vertexMm" in entry
+    assert entry["vertexMm"] == [5000.0, 4000.0]
+    assert "reason" in entry
+    # The reason must encode both the actual miss distance and the
+    # threshold so an operator can read it without re-running the driver.
+    assert "nearest_wall_distance_" in entry["reason"]
+    assert "threshold_1000mm" in entry["reason"]
+
+
+def test_openings_bundle_old_500mm_threshold_no_longer_drops_800mm() -> None:
+    # Cross-check vs the pre-#13 behaviour: at the old 500 mm threshold
+    # the 800 mm-off vertex would not host. We assert via the helper
+    # (so the test pins behaviour, not just the constant) that the same
+    # vertex hosts at 1000 mm but misses at 500 mm.
+    walls = list(_wall_snapshot("alpha", "EG")["elements"].values())
+    miss_wall, _t, _d, miss_reason = _DRV._resolve_opening_host(
+        [5000.0, 800.0], walls, threshold_mm=500.0
+    )
+    hit_wall, _t2, _d2, hit_reason = _DRV._resolve_opening_host(
+        [5000.0, 800.0], walls, threshold_mm=1000.0
+    )
+    assert miss_wall is None, "old 500 mm threshold must reject 800 mm offset"
+    assert miss_reason and "threshold_500mm" in miss_reason
+    assert hit_wall is not None, "new 1000 mm threshold must accept 800 mm offset"
+    assert hit_reason is None
+
+
+def test_default_host_distance_constant_is_1000mm() -> None:
+    # Pin the constant explicitly: the #13 fix is "bump 500 → 1000". If
+    # someone reverts to 500 mm, this test names the regression.
+    assert _DRV.DEFAULT_HOST_DISTANCE_MM == 1000.0

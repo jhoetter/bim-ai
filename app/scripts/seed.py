@@ -20,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from bim_ai.db import SessionMaker, init_db_schema
 from bim_ai.document import Document
@@ -41,7 +41,9 @@ from bim_ai.tables import (
     ActivityRowRecord,
     CommentRecord,
     MilestoneRecord,
+    ModelCommitRecord,
     ModelRecord,
+    ModelSnapshotRecord,
     ProjectRecord,
     PublicLinkRecord,
     RedoStackRecord,
@@ -184,12 +186,44 @@ def _materialize(artifact: SeedArtifact) -> tuple[Document, dict[str, Any]]:
 
 
 async def _delete_model_records(session: Any, model_ids: list[uuid.UUID]) -> None:
+    """Cascade-delete every row that points at any of ``model_ids`` before
+    removing the ``bim_models`` rows themselves.
+
+    The ordering mirrors ``scripts/testhouse_purge.py`` — interrupted iter
+    sessions leave ``bim_model_commits`` / ``bim_model_snapshots`` /
+    ``bim_undo_stack`` / ``bim_redo_stack`` / ``bim_comments`` rows behind,
+    and a bare ``DELETE FROM bim_models`` would raise
+    ``ForeignKeyViolationError`` (see issue #22).
+
+    The ``bim_model_commits.snapshot_id`` / ``bim_model_snapshots.commit_id``
+    cycle is broken by NULLing ``snapshot_id`` first.
+    """
+
     if not model_ids:
         return
     model_id_strings = [str(mid) for mid in model_ids]
-    await session.execute(delete(CommentRecord).where(CommentRecord.model_id.in_(model_ids)))
+
+    # bim_undo_stack / bim_redo_stack reference bim_model_commits via
+    # commit_id. Deleting them first removes that FK pressure entirely.
     await session.execute(delete(UndoStackRecord).where(UndoStackRecord.model_id.in_(model_ids)))
     await session.execute(delete(RedoStackRecord).where(RedoStackRecord.model_id.in_(model_ids)))
+    await session.execute(delete(CommentRecord).where(CommentRecord.model_id.in_(model_ids)))
+
+    # bim_model_commits.snapshot_id → bim_model_snapshots.id and
+    # bim_model_snapshots.commit_id → bim_model_commits.commit_id form a
+    # cycle. NULL out snapshot_id first, then delete snapshots, then commits.
+    await session.execute(
+        update(ModelCommitRecord)
+        .where(ModelCommitRecord.model_id.in_(model_ids))
+        .values(snapshot_id=None)
+    )
+    await session.execute(
+        delete(ModelSnapshotRecord).where(ModelSnapshotRecord.model_id.in_(model_ids))
+    )
+    await session.execute(
+        delete(ModelCommitRecord).where(ModelCommitRecord.model_id.in_(model_ids))
+    )
+
     await session.execute(
         delete(ActivityRowRecord).where(ActivityRowRecord.model_id.in_(model_id_strings))
     )
