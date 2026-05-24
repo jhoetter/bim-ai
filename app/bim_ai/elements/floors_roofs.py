@@ -84,6 +84,12 @@ class FloorElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     # TOP-V3-01: elevation inherited from a toposolid heightmap at floor centroid (mm).
     toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
+    # NS-V3-01 / EA-2 closeout: explicit top-face elevation. When the dispatcher
+    # sees slab_extrude_direction='down', it sets this to level_elevation_mm so
+    # the web viewer (which already reads `floor.topFaceElevationMm`) draws the
+    # slab top FLUSH WITH the level reference. Without this, every ground-floor
+    # slab extrudes 220 mm ABOVE the level → reads as a pedestal above grade.
+    top_face_elevation_mm: float | None = Field(default=None, alias="topFaceElevationMm")
     discipline: DisciplineTag | None = Field(default=None)
     circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)

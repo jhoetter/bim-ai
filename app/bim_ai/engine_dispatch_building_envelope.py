@@ -74,6 +74,18 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 )
             # TOP-V3-01: check if any toposolid covers the floor centroid.
             topo_elev = _toposolid_elevation_at_centroid_mm(els, cmd.boundary_mm)
+            # NS-V3-01 / EA-2 closeout: when slabExtrudeDirection='down',
+            # also populate `top_face_elevation_mm` with the level's
+            # elevation so the web viewer (which reads `floor.topFaceElevationMm`)
+            # draws the slab with its top face flush with the level reference
+            # (no visible pedestal above grade). The web viewer's
+            # `meshBuilders.ts::makeFloorSlabMesh` already uses
+            # `topFaceElevationMm/1000 - th` for posY when this field is set.
+            top_face_elev_mm = None
+            if cmd.slab_extrude_direction == "down":
+                lvl_elem = els.get(cmd.level_id)
+                if isinstance(lvl_elem, LevelElem):
+                    top_face_elev_mm = float(lvl_elem.elevation_mm)
             els[fid] = FloorElem(
                 kind="floor",
                 id=fid,
@@ -84,6 +96,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 structure_thickness_mm=s_mm,
                 finish_thickness_mm=f_mm,
                 slab_extrude_direction=cmd.slab_extrude_direction,
+                top_face_elevation_mm=top_face_elev_mm,
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
                 toposolid_elevation_mm=topo_elev,

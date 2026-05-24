@@ -1118,6 +1118,11 @@ def _exterior_walls_bundle(
             "levelId": level_id,
             "boundaryMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
             "thicknessMm": 220,
+            # NS-V3-01: slab extrudes DOWN from level (top face flush
+            # with finished floor surface; no visible pedestal above
+            # toposolid). Engine sets topFaceElevationMm so the web
+            # viewer draws it correctly.
+            "slabExtrudeDirection": "down",
         }
     )
     return (
