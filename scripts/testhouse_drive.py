@@ -1476,6 +1476,27 @@ def _topology_bundle(
     else:
         stddev_z = 0.0
     is_hillside = stddev_z > HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM
+    # MF-driver-13 (#63): on a flat lot the excavation top must sit at the
+    # at-grade level elevation (typically level-EG.elevationMm == 0), NOT
+    # at the host toposolid's heightSamples surface. Without this, a
+    # downstream renderer that nearest-samples the host terrain at the
+    # cutter centroid can lift the excavation top up to ~peak/2 above
+    # grade, occluding the EG cladding on the N/S/E faces (the warm-brown
+    # band reviewers misread as wood-cladding in iter-8). We pin
+    # ``topHeightSamples`` at the cutter polygon corners with z = the
+    # at-grade level elevation so the excavation top is authoritatively
+    # flat at grade in the element data, independent of host terrain.
+    # Hillside lots keep follow_terrain (PR #50 behavior) and omit the
+    # explicit override so the engine's nearest-sampling of the host's
+    # heightSamples drives the tilted top face.
+    eg_elevation_mm = next(
+        (
+            _lvl_elevation_mm(lvl)
+            for lvl in (ir.get("levels") or [])
+            if lvl.get("id") == "level-EG"
+        ),
+        0.0,
+    )
     below_grade_count = 0
     for lvl in ir.get("levels") or []:
         elevation_mm = _lvl_elevation_mm(lvl)
@@ -1513,6 +1534,14 @@ def _topology_bundle(
         }
         if is_hillside:
             excavation_cmd["topSurfaceMode"] = "follow_terrain"
+        else:
+            # MF-driver-13 (#63): pin flat-mode excavation top at the EG
+            # elevation so the data is authoritative regardless of how a
+            # downstream consumer samples the host terrain.
+            excavation_cmd["topHeightSamples"] = [
+                {"xMm": pt["xMm"], "yMm": pt["yMm"], "zMm": eg_elevation_mm}
+                for pt in excavation_boundary
+            ]
         commands.append(excavation_cmd)
         below_grade_count += 1
     hillside_note = " (follow_terrain top face)" if is_hillside else ""
