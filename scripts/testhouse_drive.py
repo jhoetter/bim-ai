@@ -1439,11 +1439,25 @@ def _openings_bundle(
             opening_width_mm=1200.0,
             cmd_type="insertWindowOnWall",
             extra_cmd_fields={
-                "sillHeightMm": 900,
+                # NS-9: when DG walls are Kniestock-short (≤1700mm), use
+                # a low sill + small window so the opening fits within the
+                # knee-wall height (otherwise sill+height overflows the
+                # wall top and engine rejects). 300mm sill + 800mm height
+                # → top at 1100 < 1530 typical Kniestock wall. EG falls back
+                # to the standard 900mm sill.
+                "sillHeightMm": 300 if level_short == "DG" and eg_height <= 1700 else 900,
                 # Reserve 200 mm header clearance below the wall top
                 # so the constructability check's 150 mm lintel rule
                 # passes even on the low DG storey (2500 mm walls).
-                "heightMm": int(min(1500, max(800, eg_height - 900 - 200))),
+                "heightMm": int(
+                    min(
+                        800 if level_short == "DG" and eg_height <= 1700 else 1500,
+                        max(
+                            400 if level_short == "DG" and eg_height <= 1700 else 800,
+                            eg_height - (300 if level_short == "DG" and eg_height <= 1700 else 900) - 200,
+                        ),
+                    )
+                ),
             },
         )
 
