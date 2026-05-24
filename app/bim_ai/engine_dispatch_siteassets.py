@@ -120,6 +120,63 @@ def _bbox_overlap_area_mm2(a: list[tuple[float, float]], b: list[tuple[float, fl
     return max(0.0, width) * max(0.0, depth)
 
 
+def _sample_terrain_z_mm(host: ToposolidElem, x_mm: float, y_mm: float) -> float | None:
+    """MF-driver-10 (#46): nearest-sample lookup against a toposolid's
+    ``heightSamples`` so a ``follow_terrain`` excavation can pick up the
+    local grade at each cutter polygon vertex. Returns ``None`` when the
+    host has no samples (caller should fall back to flat behavior).
+
+    Nearest-sample is intentionally simple: the driver authors samples at
+    parcel corners + building corners, which is dense enough that nearest
+    is indistinguishable from inverse-distance for our cases and avoids
+    pulling triangulation into the engine.
+    """
+    samples = list(getattr(host, "height_samples", []) or [])
+    if not samples:
+        return None
+    best_z = float(samples[0].z_mm)
+    best_d2 = (samples[0].x_mm - x_mm) ** 2 + (samples[0].y_mm - y_mm) ** 2
+    for s in samples[1:]:
+        d2 = (s.x_mm - x_mm) ** 2 + (s.y_mm - y_mm) ** 2
+        if d2 < best_d2:
+            best_d2 = d2
+            best_z = float(s.z_mm)
+    return best_z
+
+
+def _follow_terrain_avg_top_mm(
+    host: ToposolidElem,
+    cutter,
+    explicit_samples: list | None,
+) -> float | None:
+    """Average top elevation across the cutter polygon under follow_terrain.
+
+    Used to derive the effective excavation depth for volume estimation.
+    Returns ``None`` if no usable terrain info is available.
+    """
+    pts = _plan_points(cutter)
+    if not pts:
+        return None
+    if explicit_samples:
+        zs: list[float] = []
+        for s in explicit_samples:
+            z = getattr(s, "z_mm", None)
+            if z is None and isinstance(s, dict):
+                z = s.get("zMm", s.get("z_mm"))
+            if z is not None:
+                zs.append(float(z))
+        if zs:
+            return sum(zs) / len(zs)
+    zs2: list[float] = []
+    for x_mm, y_mm in pts:
+        z = _sample_terrain_z_mm(host, x_mm, y_mm)
+        if z is not None:
+            zs2.append(z)
+    if not zs2:
+        return None
+    return sum(zs2) / len(zs2)
+
+
 def _estimate_excavation_volume_m3(
     host: ToposolidElem,
     cutter,
@@ -127,6 +184,8 @@ def _estimate_excavation_volume_m3(
     cut_mode: str,
     offset_mm: float,
     custom_depth_mm: float | None,
+    top_surface_mode: str = "flat",
+    top_height_samples: list | None = None,
 ) -> float | None:
     overlap = _bbox_overlap_area_mm2(_plan_points(host), _plan_points(cutter))
     if overlap <= 1.0:
@@ -137,6 +196,19 @@ def _estimate_excavation_volume_m3(
     if depth is None:
         depth = float(getattr(host, "thickness_mm", 1500.0) or 1500.0)
     depth = max(1.0, float(depth) + float(offset_mm))
+    # MF-driver-10 (#46): under follow_terrain the average top sits on the
+    # tilted grade rather than the host's flat top, so the effective cut
+    # depth shrinks where the daylight side rises above the cutter
+    # elevation. Use the average top offset (negative on the daylight side
+    # of a hillside) to reduce the estimated volume accordingly.
+    if top_surface_mode == "follow_terrain":
+        avg_top = _follow_terrain_avg_top_mm(host, cutter, top_height_samples)
+        host_top = float(getattr(host, "base_elevation_mm", 0.0) or 0.0)
+        if avg_top is not None:
+            # Drop in top-face elevation = host_top - avg_top (positive when
+            # average terrain sits below the host's flat top). Adjust depth
+            # by subtracting that drop — never below the 1 mm floor.
+            depth = max(1.0, depth - max(0.0, host_top - avg_top))
     return round((overlap * depth) / 1_000_000_000.0, 3)
 
 
@@ -395,6 +467,16 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError(
                     "CreateToposolidExcavation.customDepthMm is required for custom_depth mode"
                 )
+            # MF-driver-10 (#46): hydrate optional per-vertex top samples
+            # into HeightSample models for the persisted element.
+            from bim_ai.elements import HeightSample as _HeightSample
+
+            top_height_samples_models: list | None = None
+            if cmd.top_height_samples:
+                top_height_samples_models = [
+                    _HeightSample(**s) if isinstance(s, dict) else s
+                    for s in cmd.top_height_samples
+                ]
             estimated = cmd.estimated_volume_m3
             if estimated is None:
                 estimated = _estimate_excavation_volume_m3(
@@ -403,6 +485,8 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                     cut_mode=cmd.cut_mode,
                     offset_mm=cmd.offset_mm,
                     custom_depth_mm=cmd.custom_depth_mm,
+                    top_surface_mode=cmd.top_surface_mode,
+                    top_height_samples=top_height_samples_models,
                 )
             els[eid] = ToposolidExcavationElem(
                 kind="toposolid_excavation",
@@ -413,6 +497,8 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 offsetMm=cmd.offset_mm,
                 customDepthMm=cmd.custom_depth_mm,
                 estimatedVolumeM3=estimated,
+                topSurfaceMode=cmd.top_surface_mode,
+                topHeightSamples=top_height_samples_models,
             )
 
         case UpdateToposolidExcavationCmd():
@@ -438,6 +524,15 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 patch["custom_depth_mm"] = cmd.custom_depth_mm
             if cmd.estimated_volume_m3 is not None:
                 patch["estimated_volume_m3"] = cmd.estimated_volume_m3
+            if cmd.top_surface_mode is not None:
+                patch["top_surface_mode"] = cmd.top_surface_mode
+            if cmd.top_height_samples is not None:
+                from bim_ai.elements import HeightSample as _HeightSample
+
+                patch["top_height_samples"] = [
+                    _HeightSample(**s) if isinstance(s, dict) else s
+                    for s in cmd.top_height_samples
+                ]
             els[cmd.id] = existing.model_copy(update=patch)
 
         case DeleteToposolidExcavationCmd():

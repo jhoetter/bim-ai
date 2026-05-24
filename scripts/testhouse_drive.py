@@ -401,6 +401,15 @@ def _write_global_phase_narrative(
 
 PROJECT_ID_FOR_TESTHOUSES = "892ee9f7-307c-5e40-a838-3bc64b5f5f92"  # seed project
 
+# MF-driver-10 (#46): heightSample std-dev threshold (mm) above which the
+# driver treats a site as "hillside" and emits ``topSurfaceMode:
+# follow_terrain`` on its toposolid_excavation so legitimate daylight-side
+# basement walls remain exposed instead of being buried by the uniform
+# depth introduced in MF-driver-8 (#37). Tuned at 500 mm so beta's
+# ~3.8 m E-W grade (std-dev ~1300 mm) flips on while alpha's "minor
+# variation" (std-dev under 100 mm) stays on the flat-lot path.
+HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM = 500.0
+
 
 def _ir_path(house: str) -> Path:
     return _house_workdir(house) / "understanding" / "existing-building-ir.json"
@@ -1347,6 +1356,19 @@ def _topology_bundle(
         {"xMm": bxmax, "yMm": bymax},
         {"xMm": bxmin, "yMm": bymax},
     ]
+    # MF-driver-10 (#46): detect hillside sites by the std-dev of
+    # heightSamples authored above. On a hillside we want the excavation
+    # top face to FOLLOW the terrain so the daylight-side basement walls
+    # stay exposed; on a flat lot we keep the uniform-depth cut from #37
+    # so the basement isn't left hanging in open air.
+    sample_zs = [s["zMm"] for s in height_samples if "zMm" in s]
+    if len(sample_zs) >= 2:
+        mean_z = sum(sample_zs) / len(sample_zs)
+        var_z = sum((z - mean_z) ** 2 for z in sample_zs) / len(sample_zs)
+        stddev_z = var_z ** 0.5
+    else:
+        stddev_z = 0.0
+    is_hillside = stddev_z > HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM
     below_grade_count = 0
     for lvl in ir.get("levels") or []:
         elevation_mm = _lvl_elevation_mm(lvl)
@@ -1374,19 +1396,21 @@ def _topology_bundle(
                 "physicalRole": "helper",
             }
         )
-        commands.append(
-            {
-                "type": "CreateToposolidExcavation",
-                "id": excavation_id,
-                "hostToposolidId": f"th-{house}-toposolid",
-                "cutterElementId": cutter_id,
-                "cutMode": "custom_depth",
-                "customDepthMm": depth_mm,
-            }
-        )
+        excavation_cmd = {
+            "type": "CreateToposolidExcavation",
+            "id": excavation_id,
+            "hostToposolidId": f"th-{house}-toposolid",
+            "cutterElementId": cutter_id,
+            "cutMode": "custom_depth",
+            "customDepthMm": depth_mm,
+        }
+        if is_hillside:
+            excavation_cmd["topSurfaceMode"] = "follow_terrain"
+        commands.append(excavation_cmd)
         below_grade_count += 1
+    hillside_note = " (follow_terrain top face)" if is_hillside else ""
     excavation_note = (
-        f" Authored {below_grade_count} below-grade excavation(s) (KG-style levels with elevationMm<0)."
+        f" Authored {below_grade_count} below-grade excavation(s){hillside_note} (KG-style levels with elevationMm<0)."
         if below_grade_count
         else ""
     )

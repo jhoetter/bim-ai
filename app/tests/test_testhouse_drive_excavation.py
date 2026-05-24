@@ -148,3 +148,79 @@ def test_topology_bundle_excavation_depth_scales_with_elevation() -> None:
         c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
     )
     assert excavation["customDepthMm"] == 4000 + 500
+
+
+# ---------------------------------------------------------------------------
+# MF-driver-10 (#46): hillside-aware excavation (topSurfaceMode dispatch).
+# ---------------------------------------------------------------------------
+
+
+def test_topology_bundle_flat_lot_keeps_uniform_depth_excavation() -> None:
+    """alpha is a flat-lot fixture — its heightSamples have negligible
+    variance. The driver must keep the uniform-depth (no topSurfaceMode)
+    cut from #37 so the basement walls aren't left hanging in open air
+    on a flat site."""
+
+    bundle, _ = _DRV._topology_bundle(
+        ir=_ir_with_kg(), parent_revision=1, house="alpha"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    assert "topSurfaceMode" not in excavation, (
+        "flat-lot houses must keep the original uniform-depth excavation "
+        "from #37 — emitting follow_terrain on a flat lot would re-expose "
+        "the basement walls below the topo surface."
+    )
+
+
+def test_topology_bundle_hillside_house_emits_follow_terrain_excavation() -> None:
+    """beta is the hillside fixture (3.8 m E-W drop). After #46 the
+    driver must emit ``topSurfaceMode: follow_terrain`` so the daylight
+    basement walls on the low-terrain side remain exposed instead of
+    being buried by the uniform cut from #37."""
+
+    ir = _ir_with_kg()
+    ir["house"] = "beta"
+    bundle, _ = _DRV._topology_bundle(
+        ir=ir, parent_revision=1, house="beta"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    assert excavation.get("topSurfaceMode") == "follow_terrain", (
+        "hillside houses (heightSamples std-dev > "
+        f"{_DRV.HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM} mm) must emit "
+        "topSurfaceMode=follow_terrain so the daylight basement walls "
+        "remain visible."
+    )
+    # Depth + cutMode preserved — the change is purely the top face mode.
+    assert excavation["cutMode"] == "custom_depth"
+    assert excavation["customDepthMm"] == 2700 + 500
+
+
+def test_topology_bundle_records_hillside_threshold_constant() -> None:
+    """The std-dev threshold is module-level + tunable, per issue #46."""
+
+    threshold = _DRV.HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM
+    assert isinstance(threshold, (int, float))
+    # Per the issue guardrail: defensible value in the 500-1000 mm range.
+    assert 500.0 <= float(threshold) <= 1000.0
+
+
+def test_topology_bundle_below_threshold_falls_back_to_flat() -> None:
+    """gamma's slope (1 m, ~peak/2 amplitude => std-dev well under
+    500 mm) sits below the hillside threshold, so it keeps the flat
+    excavation."""
+
+    ir = _ir_with_kg()
+    ir["house"] = "gamma"
+    bundle, _ = _DRV._topology_bundle(
+        ir=ir, parent_revision=1, house="gamma"
+    )
+    excavation = next(
+        c for c in bundle["commands"] if c["type"] == "CreateToposolidExcavation"
+    )
+    # gamma's slope spec is modest enough that std-dev is under the
+    # 500 mm threshold — keep flat behavior.
+    assert "topSurfaceMode" not in excavation
