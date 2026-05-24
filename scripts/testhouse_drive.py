@@ -1539,6 +1539,83 @@ def _stair_endpoints(fact: dict) -> tuple[list[float], list[float]] | None:
     return None
 
 
+def _chimneys_bundle(
+    *, ir: dict, parent_revision: int, house: str
+) -> tuple[dict, list[str]] | None:
+    """NS-7: author chimneys (Schornstein / Kamin) from IR `chimney` facts.
+
+    Authored as ``createColumn`` extruding from EG level up past the
+    ridge by ~800 mm. Square cross-section (400 × 400 mm typical for
+    1950s gas-flue). Default material is `masonry_brick`. Each IR fact
+    needs ``vertexMm`` (or ``positionMm``) for the chimney center; all
+    other dims have sensible defaults.
+    """
+
+    facts = [
+        f
+        for f in (ir.get("extractedFacts") or [])
+        if f.get("kind") in ("chimney", "schornstein", "kamin")
+    ]
+    if not facts:
+        return None
+    ridge_fact = next(
+        (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "ridge_height"),
+        None,
+    )
+    ridge_above_eg = float((ridge_fact or {}).get("valueMm") or 7000.0)
+    base_level_id = f"th-{house}-level-EG"
+    height_mm = round(ridge_above_eg + 800.0, 1)
+    commands: list[dict] = []
+    consumed: list[str] = []
+    for f in facts:
+        pos = f.get("vertexMm") or f.get("positionMm")
+        if pos is None:
+            continue
+        if isinstance(pos, dict):
+            x, y = float(pos.get("xMm") or 0), float(pos.get("yMm") or 0)
+        elif isinstance(pos, list) and len(pos) >= 2:
+            x, y = float(pos[0]), float(pos[1])
+        else:
+            continue
+        commands.append(
+            {
+                "type": "createColumn",
+                "id": f"th-{house}-chimney-{_slugify(f.get('factId'))}",
+                "name": str(f.get("text") or "Schornstein")[:80],
+                "levelId": base_level_id,
+                "positionMm": {"xMm": x, "yMm": y},
+                "bMm": float(f.get("widthMm") or 400),
+                "hMm": float(f.get("depthMm") or 400),
+                "heightMm": height_mm,
+                "materialKey": str(f.get("materialKey") or "masonry_brick"),
+            }
+        )
+        consumed.append(str(f.get("factId")))
+    if not commands:
+        return None
+    return (
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": [
+                {
+                    "key": f"testhouse_{house}_chimneys",
+                    "value": (
+                        f"{len(commands)} chimney(s) authored as createColumn from EG "
+                        f"to {height_mm:.0f}mm (ridge_height + 800mm); 400×400mm brick"
+                    ),
+                    "confidence": 0.7,
+                    "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
+                    "contestable": True,
+                    "evidence": "IR chimney facts + ridge_height for top elevation",
+                }
+            ],
+        },
+        consumed,
+    )
+
+
 def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
     """Author createStair commands for IR stair_run facts.
 
@@ -2438,6 +2515,33 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                     "vertical-circulation access from EG (closes the "
                     "room_without_door_access warning chain on DG)."
                 ),
+            )
+
+        # NS-7 chimneys — author after stair so the column doesn't 409
+        # against any deferred element. Same rev-retry path as the rest.
+        rev = _current_revision(api_base=api_base, model_id=model_id)
+        chimney_pair = _chimneys_bundle(ir=ir, parent_revision=rev, house=house)
+        if chimney_pair is not None:
+            bundle, consumed = chimney_pair
+            _apply_slice_v2(
+                house=house,
+                iter_n=iter_n,
+                phase="roof-chimneys",
+                bundle=bundle,
+                api_base=api_base,
+                submitter="testhouse_drive.floor",
+                consumed_fact_ids=consumed,
+                source_evidence=[],
+                narrative_input=(
+                    f"{len(consumed)} chimney fact(s) from the IR — each carries a "
+                    "vertex position + optional cross-section dims. Top elevation "
+                    "derived from IR ridge_height + 800 mm clearance above ridge."
+                ),
+                narrative_reasoning=(
+                    "Authored as createColumn from EG level upward; brick material; "
+                    "default 400×400 mm cross-section if IR fact silent."
+                ),
+                narrative_outcome=f"{len(consumed)} chimney(s) committed.",
             )
 
     # Run a structural-gate readout per floor: query the model snapshot,
