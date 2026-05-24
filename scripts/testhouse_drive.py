@@ -1544,6 +1544,22 @@ def _exterior_walls_bundle(
         poly = poly[:-1]
     if not poly or len(poly) < 3:
         return None
+    # MF-driver-11 (#48): apply the same collinear-midpoint strip the
+    # roof bundle uses (PR #41 / #31) so the wall + slab geometry stays
+    # in lock-step with the roof footprint. Without this, reader IRs
+    # that describe an L-shape with an extra collinear vertex per facade
+    # would author one createWall per raw polygon vertex (one redundant
+    # zero-turn segment) and a slab boundary with the same noise, while
+    # the roof bundle silently cleaned them away → roof and skeleton
+    # diverge. After the strip:
+    #   * 4-vertex rectangle → unchanged (4 walls, 4-vert slab).
+    #   * 6-vertex L → unchanged (6 walls, 6-vert slab).
+    #   * 7-vertex L with collinear midpoint → 6 walls + 6-vert slab.
+    #   * 8-vertex U / multi-step polygon → cleaned of any collinear
+    #     midpoints, every remaining edge still becomes its own wall.
+    poly = _strip_collinear_vertices(poly)
+    if len(poly) < 3:
+        return None
 
     # Skip exterior-chain edges that coincide with an interior_partition
     # tagged as a party-wall on this floor. The reader puts the
