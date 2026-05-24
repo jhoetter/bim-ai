@@ -329,6 +329,9 @@ Each row = one /loop iteration. The loop appends here.
 | 6   | 2026-05-24 02:03Z | gamma | NS-5 IR patch: added 3 EG south windows (BAD/KUECHE/FLUR) so south facade has 4 EG + 4 DG mirror = 8 windows visible (vs prior 1+1=2). iter-5 author kicked off | n/a | grade after iter-5 |
 | 6.g | 2026-05-24 02:06Z | gamma | iter-5: **8.4/10** (+1.5 from 6.9 honest). topGap=south (entry door not visible + cross-gable absent). 13 windows total. Real path to 9+ needs cross-gable (Zwerchhaus) engine support OR more IR window facts | 8.4 | smoke #1 + cross-gable feature work |
 | 7   | 2026-05-24 02:08Z | (all) | **SMOKE-1 iter-6**: full purge + Phase 1 rebuild all 3 with current driver+engine (NS-1..NS-5 cumulative). Validates methodology reproducibility per §20. Sequential author chain ~12min + capture ~5min | pending | grade smoke + compare against converged baselines |
+| 7.s | 2026-05-24 02:18Z | (all) | SMOKE-1 result: alpha+beta rebuilt cleanly, **gamma roof-main 409** because ROOF phase isn't idempotent (re-running floor ROOF on existing model duplicates main-roof id). Worked around via purge+iter-7 | n/a | fix idempotency in §15 followup |
+| 7.g | 2026-05-24 02:30Z | gamma | iter-7 (purge+author with Zwerchhaus): **8.85/10** (+0.45 from 8.4); §4.5 still 1.0 (clean); topGap=east facade (ARBEITEN rounded bay + arched gable window) | 8.85 | KG↔EG stair via NS-6 |
+| 8   | 2026-05-24 02:45Z | gamma | NS-6 stairs honor fromLevelId/toLevelId — KG↔EG stair now authored when fact present; gamma IR patched with KG-EG stair fact (13 risers, 2250mm rise). iter-8 author kicked off | n/a | grade after iter-8 |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
