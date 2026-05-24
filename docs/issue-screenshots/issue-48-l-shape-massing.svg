@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #48 — L-shape walls + slab match the polygon, not a rectangular bbox</title>
+  <desc>
+    Plan view of an L-shape footprint (e.g. house-23 EG: main rectangle
+    13990x6910mm plus a carport step 6000x2300mm). PR #41 routes the
+    roof through gable_pitched_l_shape correctly. Before this fix, the
+    wall + slab authoring path silently emitted a rectangular bbox when
+    the reader IR carried an extra collinear vertex per facade (or, more
+    generally, did not mirror the roof bundle's polygon cleanup). After
+    this fix, _exterior_walls_bundle strips collinear midpoints and
+    authors one createWall per CCW edge of the cleaned polygon + a
+    matching slab boundary, so the skeleton matches the roof footprint.
+  </desc>
+
+  <defs>
+    <pattern id="slabHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#9ca3af" stroke-width="1"/>
+    </pattern>
+    <pattern id="roofHatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="#b45309" stroke-width="1"/>
+    </pattern>
+    <marker id="redArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      L-shape roof on rectangular bbox skeleton (garage volume missing)
+    </text>
+
+    <!-- Slab/walls: rectangular bbox (no carport step) -->
+    <rect x="120" y="120" width="320" height="260" fill="url(#slabHatch)" stroke="#1f2937" stroke-width="2"/>
+    <text x="280" y="260" text-anchor="middle" font-size="11" fill="#1f2937">slab + 4 walls (bbox)</text>
+
+    <!-- Roof footprint overlay: actual L-shape, oversized vs the bbox skeleton -->
+    <path d="M 120 120 L 380 120 L 380 80 L 440 80 L 440 380 L 120 380 Z"
+          fill="none" stroke="#b45309" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="410" y="100" font-size="10" fill="#b45309" font-weight="700">roof (L-shape)</text>
+
+    <!-- Missing-garage callout -->
+    <rect x="380" y="80" width="60" height="40" fill="#fde2e2" stroke="#b91c1c" stroke-width="1.5"/>
+    <text x="410" y="105" text-anchor="middle" font-size="9" fill="#7f1d1d" font-weight="700">garage</text>
+    <text x="410" y="115" text-anchor="middle" font-size="9" fill="#7f1d1d">step</text>
+    <path d="M 410 145 L 410 125" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="410" y="160" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="700">
+      no walls, no slab
+    </text>
+    <text x="410" y="173" text-anchor="middle" font-size="9" fill="#b91c1c">
+      under this part of the roof
+    </text>
+
+    <!-- Vertex count badge -->
+    <rect x="40" y="395" width="200" height="32" rx="4" fill="#ffffff" stroke="#b91c1c"/>
+    <text x="50" y="412" font-size="10" fill="#b91c1c" font-weight="700">4 createWall + 4-vert slab</text>
+    <text x="50" y="424" font-size="9" fill="#7f1d1d">(L-shape polygon collapsed to bbox)</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      Walls + slab follow the L-shape polygon (one wall per CCW edge)
+    </text>
+
+    <!-- Slab + walls: L-shape footprint matching the roof -->
+    <path d="M 660 120 L 920 120 L 920 80 L 980 80 L 980 380 L 660 380 Z"
+          fill="url(#slabHatch)" stroke="#1f2937" stroke-width="2"/>
+
+    <!-- Roof overlay: identical L-shape -->
+    <path d="M 660 120 L 920 120 L 920 80 L 980 80 L 980 380 L 660 380 Z"
+          fill="none" stroke="#b45309" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="950" y="100" font-size="10" fill="#b45309" font-weight="700">roof (L-shape)</text>
+
+    <!-- Edge labels (one createWall per labeled edge) -->
+    <text x="790" y="135" text-anchor="middle" font-size="9" fill="#1f2937">edge 1</text>
+    <text x="930" y="105" text-anchor="end" font-size="9" fill="#1f2937">edge 2</text>
+    <text x="985" y="100" font-size="9" fill="#1f2937">edge 3</text>
+    <text x="985" y="230" font-size="9" fill="#1f2937">edge 4</text>
+    <text x="820" y="395" text-anchor="middle" font-size="9" fill="#1f2937">edge 5</text>
+    <text x="655" y="250" text-anchor="end" font-size="9" fill="#1f2937">edge 6</text>
+
+    <!-- Vertex count badge -->
+    <rect x="580" y="395" width="220" height="32" rx="4" fill="#ffffff" stroke="#1e40af"/>
+    <text x="590" y="412" font-size="10" fill="#1e40af" font-weight="700">6 createWall + 6-vert slab</text>
+    <text x="590" y="424" font-size="9" fill="#1e3a8a">(polygon preserved, garage volume intact)</text>
+
+    <!-- Predicate annotation -->
+    <text x="820" y="232" text-anchor="middle" font-size="10" fill="#065f46" font-weight="700">_strip_collinear_vertices + per-edge createWall</text>
+    <text x="820" y="248" text-anchor="middle" font-size="9" fill="#065f46">(same cleanup the roof bundle uses since PR #41)</text>
+  </g>
+</svg>
