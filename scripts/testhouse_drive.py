@@ -2865,7 +2865,12 @@ def _cmd_floor(args: argparse.Namespace) -> int:
     # progression (bare site → KG slab → EG mass → DG → roof). See
     # spec/trackers/testhouse-clean-rebuild-tracker.md "Per-floor
     # phase contract".
-    if not args.skip_per_iter_capture:
+    # NS-V3-08: skip per-floor ortho-viewpoints by default. They produce
+    # 4 viewpoints × 5 floors × N iters = 20+ stale "3D ortho — east (kg)"
+    # entries in /agents/{house}'s 3D Views list — pure clutter for the
+    # convergence loop. Only the final capture-ortho-views phase authors
+    # the canonical 4 cardinals. Re-enable with --include-per-floor-orthos.
+    if False and not args.skip_per_iter_capture:
         try:
             snap = _snapshot(api_base=api_base, model_id=model_id)
             rev = int(snap.get("revision") or 1)
