@@ -605,6 +605,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "gable_pitched_rectangle",
             "asymmetric_gable",
             "flat",
+            "mono_pitch",
         ):
             replay_mode = bim_ai_geometry_mode
 
@@ -625,6 +626,14 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 else:
                     eave_right_mm = float(v)
 
+        mono_pitch_high_edge_raw = bucket_bim_ai.get("BimAiRoofMonoPitchHighEdge")
+        mono_pitch_high_edge_replay: str | None = (
+            mono_pitch_high_edge_raw.strip()
+            if isinstance(mono_pitch_high_edge_raw, str)
+            and mono_pitch_high_edge_raw.strip() in {"n", "e", "s", "w"}
+            else None
+        )
+
         rname = str(getattr(rfl, "Name", None) or "") or ref_s
         roof_cmds.append(
             CreateRoofCmd(
@@ -638,6 +647,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 ridge_offset_transverse_mm=ridge_offset_mm,
                 eave_height_left_mm=eave_left_mm,
                 eave_height_right_mm=eave_right_mm,
+                mono_pitch_high_edge=mono_pitch_high_edge_replay,  # type: ignore[arg-type]
                 roof_type_id=roof_type_id_replay,
             ).model_dump(mode="json", by_alias=True)
         )

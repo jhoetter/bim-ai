@@ -118,6 +118,26 @@ export function roofHeightAtPoint(
     }
   }
 
+  if (roof.roofGeometryMode === 'mono_pitch') {
+    // ISSUE-53 — Pultdach: linear ramp from low eave to high ridge along the
+    // axis perpendicular to the ridge. Default high edge tracks the longer
+    // footprint span when the field is omitted.
+    const defaultHighEdge: 'n' | 'e' | 's' | 'w' = spanXm >= spanZm ? 'n' : 'e';
+    const highEdge = roof.monoPitchHighEdge ?? defaultHighEdge;
+    const ridgeAlongX = highEdge === 'n' || highEdge === 's';
+    if (ridgeAlongX) {
+      const runM = oz1 - oz0;
+      const dz = highEdge === 'n' ? z - oz0 : oz1 - z; // distance from low eave along Z
+      const t = runM > 0 ? Math.max(0, Math.min(1, dz / runM)) : 0;
+      return eaveY + t * runM * tan;
+    } else {
+      const runM = ox1 - ox0;
+      const dx = highEdge === 'e' ? x - ox0 : ox1 - x;
+      const t = runM > 0 ? Math.max(0, Math.min(1, dx / runM)) : 0;
+      return eaveY + t * runM * tan;
+    }
+  }
+
   if (roof.roofGeometryMode === 'hip') {
     if (ridgeAlongX) {
       const halfSpanZ = (oz1 - oz0) / 2;

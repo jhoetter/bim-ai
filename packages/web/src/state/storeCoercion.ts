@@ -520,9 +520,16 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       rawMode === 'asymmetric_gable' ||
       rawMode === 'gable_pitched_l_shape' ||
       rawMode === 'hip' ||
-      rawMode === 'flat'
+      rawMode === 'flat' ||
+      rawMode === 'mono_pitch'
         ? rawMode
         : 'mass_box';
+    // ISSUE-53: Pultdach high-edge passes through unchanged when present.
+    const rawHighEdge = raw.monoPitchHighEdge ?? raw.mono_pitch_high_edge;
+    const monoPitchHighEdge: 'n' | 'e' | 's' | 'w' | undefined =
+      typeof rawHighEdge === 'string' && ['n', 'e', 's', 'w'].includes(rawHighEdge)
+        ? (rawHighEdge as 'n' | 'e' | 's' | 'w')
+        : undefined;
     return {
       kind: 'roof',
       id,
@@ -559,6 +566,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
           : raw.eave_height_right_mm !== undefined
             ? Number(raw.eave_height_right_mm)
             : undefined,
+      ...(monoPitchHighEdge ? { monoPitchHighEdge } : {}),
       ...(raw.materialKey || raw.material_key
         ? { materialKey: String(raw.materialKey ?? raw.material_key) }
         : {}),

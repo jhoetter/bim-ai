@@ -32,7 +32,7 @@ from bim_ai.elements import (
     WallStructuralRole,
     WallTypeLayer,
 )
-from bim_ai.roof_geometry import RoofGeometryMode
+from bim_ai.roof_geometry import MonoPitchHighEdge, RoofGeometryMode
 
 
 class CreateLevelCmd(BaseModel):
@@ -280,6 +280,11 @@ class CreateRoofCmd(BaseModel):
     ridge_offset_transverse_mm: float | None = Field(default=None, alias="ridgeOffsetTransverseMm")
     eave_height_left_mm: float | None = Field(default=None, alias="eaveHeightLeftMm")
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
+    # ISSUE-53: compass quadrant of the high (ridge) edge for `mono_pitch`
+    # (Pultdach) roofs. None → derive from the longer footprint span.
+    mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
+        default=None, alias="monoPitchHighEdge"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override. Engine default
@@ -294,6 +299,10 @@ class CreateRoofCmd(BaseModel):
     def _normalize_roof_geometry_mode(cls, value: Any) -> Any:
         if value == "gable":
             return "gable_pitched_rectangle"
+        # ISSUE-53: accept common aliases for the Pultdach mode so authoring
+        # callers don't have to know the kernel literal verbatim.
+        if value in ("mono_slope", "shed", "pultdach", "lean_to"):
+            return "mono_pitch"
         return value
 
 

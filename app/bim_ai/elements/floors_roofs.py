@@ -16,7 +16,7 @@ from bim_ai.element_primitives import (
     ThermalEnvelopeClassification,
     Vec2Mm,
 )
-from bim_ai.roof_geometry import RoofGeometryMode
+from bim_ai.roof_geometry import MonoPitchHighEdge, RoofGeometryMode
 
 from ._shared import CircularityProperties
 from .walls import WallTypeLayer
@@ -123,6 +123,12 @@ class RoofElem(BaseModel):
     ridge_offset_transverse_mm: float | None = Field(default=None, alias="ridgeOffsetTransverseMm")
     eave_height_left_mm: float | None = Field(default=None, alias="eaveHeightLeftMm")
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
+    # ISSUE-53: compass quadrant of the high (ridge) edge for `mono_pitch`
+    # (Pultdach) roofs. None → derive from the longer footprint span. Ignored
+    # for non-mono_pitch modes.
+    mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
+        default=None, alias="monoPitchHighEdge"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,

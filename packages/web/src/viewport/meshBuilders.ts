@@ -59,6 +59,7 @@ import {
   _buildHipGeometry,
   _buildHipPolygonGeometry,
   _buildLShapeGeometry,
+  _buildMonoPitchGeometry,
   _compactnessRatio,
 } from './roofGeometry';
 
@@ -862,6 +863,12 @@ export function makeRoofMassMesh(
 
     if (isLShape) {
       geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
+    } else if (roof.roofGeometryMode === 'mono_pitch') {
+      // ISSUE-53 — Pultdach: pick high-edge default from longer span when the
+      // field is omitted. Long-axis carries the ridge; short axis is the run.
+      const defaultHighEdge: 'n' | 'e' | 's' | 'w' = spanXm >= spanZm ? 'n' : 'e';
+      const highEdge = roof.monoPitchHighEdge ?? defaultHighEdge;
+      geom = _buildMonoPitchGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, highEdge);
     } else if (roof.roofGeometryMode === 'hip') {
       // KRN-03: arbitrary convex polygons (≥5 vertices) get a pavilion hip mesh.
       // 4-vertex axis-aligned rectangles fall through to the AABB hip helper.

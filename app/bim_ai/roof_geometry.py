@@ -12,6 +12,7 @@ RoofGeometryMode = Literal[
     "gable_pitched_l_shape",
     "hip",
     "flat",
+    "mono_pitch",
 ]
 
 RoofGeometrySupportTokenV0 = Literal[
@@ -19,10 +20,16 @@ RoofGeometrySupportTokenV0 = Literal[
     "gable_pitched_l_shape_supported",
     "hip_supported",
     "hip_candidate_deferred",
+    "mono_pitch_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
     "missing_slope_or_level",
 ]
+
+# Compass-quadrant high edge for `mono_pitch` roofs (Pultdach). The opposite
+# edge sits at the eave (low side). When omitted, defaults are inferred from
+# the longer footprint span.
+MonoPitchHighEdge = Literal["n", "e", "s", "w"]
 
 RoofPlanGeometryReadoutV0 = Literal[
     "gable_projection_supported",
@@ -180,6 +187,11 @@ def roof_geometry_support_token_v0(
     ) and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
         return "gable_pitched_rectangle_supported"
 
+    if roof_geometry_mode == "mono_pitch" and footprint_is_valid_axis_aligned_rectangle_mm(
+        footprint_mm
+    ):
+        return "mono_pitch_supported"
+
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
     if roof_geometry_mode == "hip" and is_convex and len(footprint_mm) >= 4:
@@ -303,6 +315,57 @@ def assert_valid_l_shape_footprint_mm(footprint_mm: list[tuple[float, float]]) -
             "gable_pitched_l_shape footprintMm must be an axis-aligned 6-vertex L-shape"
             " with exactly one reflex corner"
         )
+
+
+def assert_valid_mono_pitch_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-53: mono_pitch (Pultdach) requires an axis-aligned rectangle for v0.
+
+    Non-rectangular footprints defer to the slab fallback (same as flat).
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "mono_pitch footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Pultdach is deferred"
+        )
+
+
+def mono_pitch_default_high_edge(
+    span_x: float, span_z: float, *, fallback: MonoPitchHighEdge = "n"
+) -> MonoPitchHighEdge:
+    """ISSUE-53: when `mono_pitch_high_edge` is omitted, pick a deterministic default.
+
+    The Pultdach ridge runs along the longer footprint span; the high edge sits
+    perpendicular to that ridge on whichever quadrant the renderer/exporter
+    picks. We default the high edge to the "n" side when the ridge runs along
+    X (so the pitch points south→north uphill) and to "e" when the ridge runs
+    along Z (uphill west→east). The caller may override at any time.
+    """
+
+    if span_x >= span_z:
+        return "n"
+    return "e"
+
+
+def mono_pitch_ridge_rise_mm(
+    span_x: float,
+    span_z: float,
+    slope_deg: float,
+    high_edge: MonoPitchHighEdge,
+) -> tuple[float, str]:
+    """Vertical rise (mm) at the high edge of a mono_pitch roof + ridge axis token.
+
+    Pitch direction (n/s vs e/w) selects which footprint span is the "run"
+    perpendicular to the ridge. The full footprint span is the run for a
+    Pultdach (unlike a symmetric gable, where the run is half the span).
+    """
+
+    slope_rad = math.radians(slope_deg)
+    if high_edge in ("n", "s"):
+        # Ridge runs along X; pitch points along Z. Run = full Z span.
+        return span_z * math.tan(slope_rad), "alongX"
+    # high_edge in ("e", "w") — ridge runs along Z; pitch along X.
+    return span_x * math.tan(slope_rad), "alongZ"
 
 
 def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
