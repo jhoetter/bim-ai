@@ -356,6 +356,69 @@ def _extract_pdf_text_with_pdftotext(
     return pages, None
 
 
+# Per-page render timeout. The whole-PDF render used to hard-code 120s; on
+# house-21 (25 MB / 63 pages at 240 DPI) that whole-document call routinely
+# exceeded the cap (#69). We now render one page per subprocess so each
+# invocation fits comfortably under a small budget.
+_PDFTOPPM_PER_PAGE_TIMEOUT_S = 30
+
+
+def _count_pdf_pages(path: Path) -> tuple[int | None, dict[str, Any] | None]:
+    """Return ``(page_count, diagnostic)``.
+
+    Tries ``pypdf`` first (pure-Python, already used by ``extract_pdf_text``),
+    then falls back to Poppler's ``pdfinfo`` which ships alongside
+    ``pdftoppm``. Returns ``(None, diag)`` when both fail; the diag is
+    surfaced so callers can include it in their result.
+    """
+    try:
+        from pypdf import PdfReader  # type: ignore[import-not-found]
+
+        reader = PdfReader(str(path))
+        return len(reader.pages), None
+    except Exception:
+        # Fall through to pdfinfo. We deliberately swallow the pypdf error
+        # here because pdfinfo is the more authoritative source for the
+        # Poppler-based render pipeline and is almost always present
+        # wherever pdftoppm is.
+        pass
+
+    try:
+        proc = subprocess.run(
+            ["pdfinfo", str(path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except FileNotFoundError:
+        return None, {
+            "code": "pdfinfo_unavailable",
+            "message": "Poppler pdfinfo is not installed or not on PATH; cannot count pages.",
+        }
+    except subprocess.TimeoutExpired:
+        return None, {
+            "code": "pdfinfo_timeout",
+            "message": "pdfinfo timed out while counting pages.",
+        }
+    if proc.returncode != 0:
+        return None, {
+            "code": "pdfinfo_failed",
+            "returnCode": proc.returncode,
+            "stderr": proc.stderr.strip(),
+        }
+    for line in proc.stdout.splitlines():
+        if line.startswith("Pages:"):
+            try:
+                return int(line.split(":", 1)[1].strip()), None
+            except ValueError:
+                break
+    return None, {
+        "code": "pdfinfo_unparseable",
+        "message": "pdfinfo output did not contain a parseable Pages: line.",
+    }
+
+
 def render_pdf_pages(
     pdf_path: str | Path,
     *,
@@ -371,15 +434,122 @@ def render_pdf_pages(
         return _error("source_pdf_not_found", f"PDF does not exist: {path}", 404)
 
     prefix = out_dir / path.stem
-    cmd = ["pdftoppm", "-png", "-r", str(dpi)]
-    if first_page is not None:
-        cmd.extend(["-f", str(first_page)])
-    if last_page is not None:
-        cmd.extend(["-l", str(last_page)])
-    cmd.extend([str(path), str(prefix)])
-    try:
-        proc = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=120)
-    except FileNotFoundError:
+    diagnostics: list[dict[str, Any]] = []
+
+    # Resolve the page range up-front so each subprocess call is bounded
+    # to a single page (#69 — the previous whole-document call timed out
+    # on 25 MB / 63 pp combined PDFs at 240 DPI).
+    page_count, count_diag = _count_pdf_pages(path)
+    if page_count is None:
+        # Page count unavailable (no pypdf, no pdfinfo, or parse failure).
+        # Surface the diagnostic and bail with no rendered pages — falling
+        # back to a single whole-document pdftoppm call would just
+        # reintroduce the timeout this fix exists to eliminate.
+        if count_diag is not None:
+            diagnostics.append(count_diag)
+        # When pdfinfo is missing, pdftoppm is almost certainly missing
+        # too. Probe it so the diagnostic shape matches the historical
+        # "no poppler" path.
+        try:
+            subprocess.run(
+                ["pdftoppm", "-v"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            return {
+                "ok": True,
+                "format": "sourcePdfRender_v1",
+                "sourcePath": str(path),
+                "outputDir": str(out_dir),
+                "dpi": dpi,
+                "pages": [],
+                "diagnostics": [
+                    {
+                        "code": "pdftoppm_unavailable",
+                        "message": "Poppler pdftoppm is not installed or not on PATH.",
+                        "recommendation": "Install poppler to render PDF pages.",
+                    }
+                ],
+            }
+        return {
+            "ok": True,
+            "format": "sourcePdfRender_v1",
+            "sourcePath": str(path),
+            "outputDir": str(out_dir),
+            "dpi": dpi,
+            "pages": [],
+            "diagnostics": diagnostics,
+        }
+
+    start = max(1, first_page) if first_page is not None else 1
+    end = min(page_count, last_page) if last_page is not None else page_count
+    if end < start:
+        return {
+            "ok": True,
+            "format": "sourcePdfRender_v1",
+            "sourcePath": str(path),
+            "outputDir": str(out_dir),
+            "dpi": dpi,
+            "pages": [],
+            "diagnostics": diagnostics,
+        }
+
+    poppler_missing = False
+    for page_no in range(start, end + 1):
+        cmd = [
+            "pdftoppm",
+            "-png",
+            "-r",
+            str(dpi),
+            "-f",
+            str(page_no),
+            "-l",
+            str(page_no),
+            str(path),
+            str(prefix),
+        ]
+        try:
+            proc = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=_PDFTOPPM_PER_PAGE_TIMEOUT_S,
+            )
+        except FileNotFoundError:
+            poppler_missing = True
+            break
+        except subprocess.TimeoutExpired as exc:
+            diagnostics.append(
+                {
+                    "code": "pdf_render_page_timeout",
+                    "page": page_no,
+                    "timeoutSeconds": _PDFTOPPM_PER_PAGE_TIMEOUT_S,
+                    "message": (
+                        f"pdftoppm timed out rendering page {page_no} after "
+                        f"{_PDFTOPPM_PER_PAGE_TIMEOUT_S}s."
+                    ),
+                    "stderr": (exc.stderr or b"").decode("utf-8", "replace").strip()
+                    if isinstance(exc.stderr, (bytes, bytearray))
+                    else (exc.stderr or "").strip(),
+                }
+            )
+            continue
+        if proc.returncode != 0:
+            diagnostics.append(
+                {
+                    "code": "pdf_render_page_failed",
+                    "page": page_no,
+                    "returnCode": proc.returncode,
+                    "stderr": proc.stderr.strip(),
+                    "message": f"pdftoppm failed rendering page {page_no}.",
+                }
+            )
+
+    if poppler_missing:
         return {
             "ok": True,
             "format": "sourcePdfRender_v1",
@@ -395,16 +565,8 @@ def render_pdf_pages(
                 }
             ],
         }
+
     rendered = sorted(out_dir.glob(f"{path.stem}-*.png"))
-    diagnostics: list[dict[str, Any]] = []
-    if proc.returncode != 0:
-        diagnostics.append(
-            {
-                "code": "pdf_render_failed",
-                "returnCode": proc.returncode,
-                "stderr": proc.stderr.strip(),
-            }
-        )
     pages = []
     for idx, page_path in enumerate(rendered, start=1):
         pages.append(
