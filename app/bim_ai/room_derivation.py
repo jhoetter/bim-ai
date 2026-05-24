@@ -34,6 +34,20 @@ _ROOM_BOUNDARY_DOC_CACHE: OrderedDict[
     tuple[int, int, tuple[str, ...]], dict[str, Any]
 ] = OrderedDict()
 
+# PERF-C06: per-level slice cache. Keyed on
+# `(level_id, level_element_fingerprint, global_settings_digest)` so
+# editing a wall on level B leaves level A's cached slice (candidates,
+# diagnostics, warnings, unbounded room ids for that level) untouched.
+# When the doc-level cache misses we still run the whole-document
+# uncached pass (the inner enumeration is per-level already, so the
+# blast radius of a single-level mutation is small), but we recover
+# level-A's slice from this layer and splice the recomputed level-B
+# slice in — preserving the object identity of unchanged levels'
+# entries across mutations.
+_ROOM_BOUNDARY_LEVEL_CACHE_MAX = 128
+_LevelCacheKey = tuple[str, str, str]
+_ROOM_BOUNDARY_LEVEL_CACHE: OrderedDict[_LevelCacheKey, dict[str, Any]] = OrderedDict()
+
 
 def _room_boundary_doc_cache_key(doc: Document) -> tuple[int, int, tuple[str, ...]]:
     return (doc.revision, len(doc.elements), tuple(doc.elements.keys()))
@@ -44,6 +58,205 @@ def reset_room_boundary_doc_cache() -> None:
     new revisions land as new keys; old keys age out via the LRU bound."""
 
     _ROOM_BOUNDARY_DOC_CACHE.clear()
+    _ROOM_BOUNDARY_LEVEL_CACHE.clear()
+
+
+def reset_room_boundary_level_cache() -> None:
+    """Test-only hook for the PERF-C06 per-level cache layer.
+
+    `reset_room_boundary_doc_cache` already clears both layers; this is
+    a focused entry point for tests that want to assert the cross-level
+    invalidation behavior independent of the document-level LRU.
+    """
+
+    _ROOM_BOUNDARY_LEVEL_CACHE.clear()
+
+
+# Wire shape (kept verbatim — no fields added or removed):
+_LEVEL_PARTITIONED_KEYS = (
+    "axisAlignedRectangleCandidates",
+    "diagnostics",
+    "warnings",
+)
+
+
+def _global_settings_digest(doc: Document) -> str:
+    """Fingerprint of inputs that affect every level's derivation result.
+
+    Covers project settings (area/volume basis) and the level table
+    itself (elevations drive room volume height; level names appear in
+    candidate output). Changes here invalidate every per-level slice.
+    """
+
+    proj_settings = next(
+        (e for e in doc.elements.values() if isinstance(e, ProjectSettingsElem)),
+        None,
+    )
+    settings_part: dict[str, Any]
+    if proj_settings is None:
+        settings_part = {"basis": "wall_finish", "volume": "finish_faces"}
+    else:
+        settings_part = {
+            "basis": proj_settings.room_area_computation_basis,
+            "volume": proj_settings.volume_computed_at,
+        }
+
+    levels: list[dict[str, Any]] = []
+    for ent in doc.elements.values():
+        if isinstance(ent, LevelElem):
+            levels.append(
+                {
+                    "id": ent.id,
+                    "name": ent.name or ent.id,
+                    "elevationMm": float(ent.elevation_mm),
+                }
+            )
+    levels.sort(key=lambda d: d["id"])
+
+    body = json.dumps(
+        {"levels": levels, "settings": settings_part},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
+
+def _level_input_fingerprints(doc: Document) -> dict[str, str]:
+    """Per-level fingerprint of the elements that drive that level's slice.
+
+    Includes walls + room separations (boundary inputs) and rooms
+    (authored-room overlap check + unbounded-room detection). Two
+    fingerprints match iff the inputs that determine the slice are
+    bitwise identical, so an unchanged key implies an unchanged slice.
+    """
+
+    by_level: defaultdict[str, list[tuple[str, str, Any]]] = defaultdict(list)
+    for ent in doc.elements.values():
+        if isinstance(ent, WallElem):
+            by_level[ent.level_id].append(
+                (
+                    "wall",
+                    ent.id,
+                    {
+                        "sx": float(ent.start.x_mm),
+                        "sy": float(ent.start.y_mm),
+                        "ex": float(ent.end.x_mm),
+                        "ey": float(ent.end.y_mm),
+                        "t": float(ent.thickness_mm),
+                    },
+                )
+            )
+        elif isinstance(ent, RoomSeparationElem):
+            by_level[ent.level_id].append(
+                (
+                    "sep",
+                    ent.id,
+                    {
+                        "sx": float(ent.start.x_mm),
+                        "sy": float(ent.start.y_mm),
+                        "ex": float(ent.end.x_mm),
+                        "ey": float(ent.end.y_mm),
+                    },
+                )
+            )
+        elif isinstance(ent, RoomElem):
+            outline = [
+                {"x": float(p.x_mm), "y": float(p.y_mm)} for p in ent.outline_mm
+            ]
+            by_level[ent.level_id].append(("room", ent.id, {"outline": outline}))
+
+    fingerprints: dict[str, str] = {}
+    for lid, items in by_level.items():
+        items.sort(key=lambda t: (t[0], t[1]))
+        body = json.dumps(items, sort_keys=True, separators=(",", ":"))
+        fingerprints[lid] = hashlib.sha256(body.encode()).hexdigest()[:16]
+    return fingerprints
+
+
+def _partition_bundle_by_level(
+    bundle: dict[str, Any], doc: Document
+) -> dict[str, dict[str, Any]]:
+    """Split a fully-computed bundle into per-level slices.
+
+    The wire shape is unchanged; we only group existing rows so we can
+    later swap unchanged levels' slices in by reference.
+    """
+
+    room_level_by_id: dict[str, str] = {
+        e.id: e.level_id for e in doc.elements.values() if isinstance(e, RoomElem)
+    }
+
+    slices: defaultdict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "axisAlignedRectangleCandidates": [],
+            "diagnostics": [],
+            "warnings": [],
+            "unboundedRoomIds": [],
+        }
+    )
+
+    for key in _LEVEL_PARTITIONED_KEYS:
+        for row in bundle.get(key) or []:
+            if not isinstance(row, dict):
+                continue
+            lid = str(row.get("levelId") or "")
+            slices[lid][key].append(row)
+
+    for rid in bundle.get("unboundedRoomIds") or []:
+        lid = room_level_by_id.get(str(rid), "")
+        slices[lid]["unboundedRoomIds"].append(str(rid))
+
+    return dict(slices)
+
+
+def _empty_level_slice() -> dict[str, Any]:
+    return {
+        "axisAlignedRectangleCandidates": [],
+        "diagnostics": [],
+        "warnings": [],
+        "unboundedRoomIds": [],
+    }
+
+
+def _assemble_bundle_from_level_slices(
+    level_slices: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Inverse of `_partition_bundle_by_level`.
+
+    Reassembles the wire-format bundle by concatenating per-level
+    slices. Sort orders match `_compute_room_boundary_derivation_uncached`
+    so the returned shape is bit-identical to the uncached path.
+    """
+
+    # `_compute_room_boundary_derivation_uncached` emits rows grouped by
+    # `levelId` (candidates and warnings flow from `dedup` sorted by `_sig`,
+    # which keys on levelId first; diagnostics are explicitly sorted by
+    # levelId). Concatenating per-level slices in sorted-levelId order
+    # therefore reproduces the original wire ordering exactly, even when
+    # individual slices were captured at different points in time.
+    candidates: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    unbounded: list[str] = []
+    for lid in sorted(level_slices.keys()):
+        sl = level_slices[lid]
+        candidates.extend(sl.get("axisAlignedRectangleCandidates") or [])
+        diagnostics.extend(sl.get("diagnostics") or [])
+        warnings.extend(sl.get("warnings") or [])
+        unbounded.extend(sl.get("unboundedRoomIds") or [])
+
+    auth_count = sum(
+        1 for ec in candidates if ec.get("derivationAuthority") == "authoritative"
+    )
+    return {
+        "heuristicVersion": HEURISTIC_VERSION,
+        "axisAlignedRectangleCandidates": candidates,
+        "candidateCount": len(candidates),
+        "authoritativeCandidateCount": auth_count,
+        "unboundedRoomIds": sorted(unbounded),
+        "diagnostics": diagnostics,
+        "warnings": warnings,
+    }
 
 # Shared with preview (orthogonal snap / closure tests)
 _SNAP_MM = 50.0
@@ -542,6 +755,44 @@ def room_boundary_derivation_request_cache() -> Iterator[None]:
         _ROOM_BOUNDARY_REQUEST_CACHE.reset(token)
 
 
+def _level_cache_keys_for_doc(doc: Document) -> dict[str, _LevelCacheKey]:
+    """Map each level id present in the document to its cache key tuple."""
+    settings_digest = _global_settings_digest(doc)
+    per_level_fp = _level_input_fingerprints(doc)
+    # Include every level that owns elements *or* is declared as a LevelElem,
+    # plus the implicit "" bucket for orphan rows. The implicit bucket is
+    # always empty for a valid document but the cache lookup needs to be total
+    # so reassembly is deterministic.
+    level_ids: set[str] = set(per_level_fp.keys())
+    for ent in doc.elements.values():
+        if isinstance(ent, LevelElem):
+            level_ids.add(ent.id)
+    out: dict[str, _LevelCacheKey] = {}
+    for lid in level_ids:
+        out[lid] = (lid, per_level_fp.get(lid, "empty"), settings_digest)
+    return out
+
+
+def _store_level_slice(key: _LevelCacheKey, slice_obj: dict[str, Any]) -> dict[str, Any]:
+    """Insert (or refresh LRU position for) a per-level slice.
+
+    Preserves the identity of an already-cached slice for the same key:
+    if a caller computed a fresh slice but the cache already holds one
+    for this exact key, the cached object wins. This is what gives the
+    PERF-C06 acceptance test (level-A identity preserved across a
+    level-B mutation) its hook.
+    """
+    existing = _ROOM_BOUNDARY_LEVEL_CACHE.get(key)
+    if existing is not None:
+        _ROOM_BOUNDARY_LEVEL_CACHE.move_to_end(key)
+        return existing
+    _ROOM_BOUNDARY_LEVEL_CACHE[key] = slice_obj
+    _ROOM_BOUNDARY_LEVEL_CACHE.move_to_end(key)
+    while len(_ROOM_BOUNDARY_LEVEL_CACHE) > _ROOM_BOUNDARY_LEVEL_CACHE_MAX:
+        _ROOM_BOUNDARY_LEVEL_CACHE.popitem(last=False)
+    return slice_obj
+
+
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     in_req_cache = _ROOM_BOUNDARY_REQUEST_CACHE.get()
     # In-request fingerprint: stable across pydantic Document wraps of the
@@ -565,7 +816,44 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
             in_req_cache[in_req_key] = bundle
         return bundle
 
+    # PERF-C06: per-level cache layer. The doc cache missed (different
+    # revision or element set), but unchanged levels may still have
+    # cached slices we can reuse. If *every* level hits, assemble the
+    # bundle from cached slices and skip the whole-document recompute.
+    level_keys = _level_cache_keys_for_doc(doc)
+    cached_slices: dict[str, dict[str, Any]] = {}
+    all_hit = True
+    for lid, key in level_keys.items():
+        sl = _ROOM_BOUNDARY_LEVEL_CACHE.get(key)
+        if sl is None:
+            all_hit = False
+            break
+        cached_slices[lid] = sl
+
+    if all_hit and level_keys:
+        for key in level_keys.values():
+            _ROOM_BOUNDARY_LEVEL_CACHE.move_to_end(key)
+        bundle = _assemble_bundle_from_level_slices(cached_slices)
+        _ROOM_BOUNDARY_DOC_CACHE[doc_key] = deepcopy(bundle)
+        _ROOM_BOUNDARY_DOC_CACHE.move_to_end(doc_key)
+        while len(_ROOM_BOUNDARY_DOC_CACHE) > _ROOM_BOUNDARY_DOC_CACHE_MAX:
+            _ROOM_BOUNDARY_DOC_CACHE.popitem(last=False)
+        if in_req_cache is not None:
+            in_req_cache[in_req_key] = bundle
+        return bundle
+
     bundle = _compute_room_boundary_derivation_uncached(doc)
+
+    # Partition the freshly computed bundle into per-level slices and
+    # store them. For levels whose key already exists in the level
+    # cache (i.e. the slice was preserved across a sibling-level
+    # mutation), `_store_level_slice` keeps the existing object — this
+    # is what makes "level A identity preserved across level B
+    # mutation" observable from callers / tests.
+    fresh_slices = _partition_bundle_by_level(bundle, doc)
+    for lid, key in level_keys.items():
+        sl = fresh_slices.get(lid) or _empty_level_slice()
+        _store_level_slice(key, sl)
     # Deepcopy the canonical entry on store so caller mutations in the current
     # request cannot poison subsequent requests' reads. Misses are bounded by
     # the LRU (32 entries) so the deepcopy cost amortizes across many hits.
