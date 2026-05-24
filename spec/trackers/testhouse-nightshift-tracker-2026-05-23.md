@@ -347,6 +347,7 @@ Each row = one /loop iteration. The loop appends here.
 | 13.smoke | 2026-05-24 05:03Z | (all) | **SMOKE-2 iter-13: same scores as iter-12 — alpha 9.8 / beta 9.05 / gamma 9.8**. Methodology REPRODUCIBLE; element counts byte-identical. Final report at tmp/reverse-bim/nightshift-report.md | **9.55 avg** | end loop |
 | 14   | 2026-05-24 05:50Z | (all) | NS-10: opening sill/height sized against ACTUAL authored wall height (snapshot) not level floor-to-floor. Fixes beta DG which had 0 windows from 7 IR facts because Kniestock-aware NS-9 condition (eg_height<=1700) failed for level eg_height=2500. Now uses ext-wall height 1530 → triggers correctly | n/a | iter-14 |
 | 14.g | 2026-05-24 06:30Z | (all) | iter-14 grades: alpha 8.2 (grader stricter; geometry stable), **beta 9.5 (+0.45 — NS-10 7 DG windows now visible)**, gamma 9.3. Beta jumped past 9.0 by a margin; alpha+gamma still well above gate. Median across iter-12/13/14 grader runs: ~9.5 each | **9.0+ all** | continue or end |
+| 15.smoke | 2026-05-24 06:50Z | (all) | **SMOKE-3 iter-15: byte-identical element counts to iter-14 across all 3 houses** — methodology rock-solid reproducible across NS-1..NS-10 cumulative (10 driver+engine improvements, 14 iters, 3 smoke tests). Final state preserved | n/a | end loop CONVERGED |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
