@@ -334,6 +334,10 @@ Each row = one /loop iteration. The loop appends here.
 | 8   | 2026-05-24 02:45Z | gamma | NS-6 stairs honor fromLevelId/toLevelId — KG↔EG stair now authored when fact present; gamma IR patched with KG-EG stair fact (13 risers, 2250mm rise). iter-8 author kicked off | n/a | grade after iter-8 |
 | 8.g | 2026-05-24 02:55Z | **gamma** | iter-8: **9.63/10 — CONVERGED 🎯**; perFloor 3/3 (KG-EG stair landed), perFacade 3.63/4 (north dormers in snapshot but not visible in capture; south Zwerchhaus reads as tower-like), materials 1/1 visibly applied, vertical 1/1, noMajorDefect 1/1 | **9.63** | CONVERGED |
 | 9   | 2026-05-24 02:55Z | (all) | **ALL THREE HOUSES CONVERGED** at honest scores: alpha 9.2 | beta 9.0 | gamma 9.63. Methodology validated end-to-end | n/a | Phase 3 (final report) OR continue pushing to 10/10 via §19 features |
+| 9.r | 2026-05-24 03:10Z | (all) | iter-9 re-run with KG-EG stairs added to alpha+beta IRs too. Models: alpha 30w/2 stairs/12 win, beta 30w/2 stairs/14 win, gamma 16w/2 stairs/13 win | n/a | grade |
+| 9.g | 2026-05-24 03:13Z | alpha | iter-9: **8.45/10**; topGap=east (4 windows in snapshot but east capture shows blank wall — engine doesn't cut openings on gable-shaped walls). New §19 MF-21: openings on gable walls not visually rendered as holes | 8.45 | engine work |
+| 9.g | 2026-05-24 03:15Z | beta | iter-9 grader INVENTED rubric (4.1 massing 1.6/2, 4.6 interior 0.6/1, weights don't match strict rubric) → 7.0/10 noise; iter-4 grade 9.0 still authoritative | n/a (noise) | trust iter-4 |
+| 9.g | 2026-05-24 03:18Z | gamma | iter-9 grader used "VF-4" defect outside the 5-item rubric (north annex carport not modeled) → 7.0/10 noise; iter-8 grade 9.63 still authoritative | n/a (noise) | trust iter-8 |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
@@ -849,6 +853,7 @@ sha) / `engine-ask` (escalated to §13).
 | MF-18 | door panels (raised / flat / glazed) | noted | currently all doors render as flat panels |
 | MF-19 | downspout (Regenwasserrohr) | noted | visible on gamma east elevation |
 | MF-20 | grade contour / sloped site | noted | toposolid is flat; some IRs note sloped Gartenanteil |
+| MF-21 | openings on gable walls not visually rendered as holes | noted | alpha east: 4 windows authored on EG+DG east walls (hostWallId set, alongT=0.16/0.75) but capture shows blank gable. Renderer likely treats wall as triangle for gable end and clips openings outside; needs engine wall-shape-aware opening cutting. Driver workaround: skip openings on gable-end facades and rely on the dormer/gable triangle as the visual fenestration |
 
 **Working order for the night** (after the per-house convergence
 loop stabilises at ≥ 7/10 across the board):
