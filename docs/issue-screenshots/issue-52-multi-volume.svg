@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #52 — multi-volume massing: main + recessed cube as separate authored volumes</title>
+  <desc>
+    Plan view of a main mass + disjoint NE cube accent (e.g. h13). The IR
+    carries two exterior_wall_chain extractedFacts on the same level. Before
+    this fix, _exterior_walls_bundle took chain_facts[0] only — the second
+    chain was silently dropped and the building collapsed onto a single
+    prismatic bbox of the main mass. The flat-roof heuristic in
+    _roof_bundle then drew a yellow Flachdach sliver where the cube should
+    have been (a roof with no walls under it). After this fix, every chain
+    on the level authors its own walls + slab + materialKey independently;
+    the accent volume survives as a real solid.
+  </desc>
+
+  <defs>
+    <pattern id="slabHatchMain" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#9ca3af" stroke-width="1"/>
+    </pattern>
+    <pattern id="slabHatchCube" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#92400e" stroke-width="1"/>
+    </pattern>
+    <pattern id="flachdach" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#fde68a"/>
+      <line x1="0" y1="0" x2="5" y2="5" stroke="#ca8a04" stroke-width="0.7"/>
+    </pattern>
+    <marker id="redArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      Single bbox swallows accent volume (chain_facts[0] only)
+    </text>
+
+    <!-- Main mass slab + walls (chain 0) -->
+    <rect x="80" y="140" width="320" height="240" fill="url(#slabHatchMain)" stroke="#1f2937" stroke-width="2"/>
+    <text x="240" y="270" text-anchor="middle" font-size="11" fill="#1f2937">main mass: slab + 4 walls</text>
+    <text x="240" y="284" text-anchor="middle" font-size="9" fill="#4b5563">(materialKey: render_light_grey)</text>
+
+    <!-- Cube accent location: NOT authored — only the flat-roof heuristic emitted -->
+    <rect x="420" y="200" width="80" height="80" fill="url(#flachdach)" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="460" y="240" text-anchor="middle" font-size="9" fill="#7c2d12" font-weight="700">Flachdach</text>
+    <text x="460" y="252" text-anchor="middle" font-size="9" fill="#7c2d12">sliver only</text>
+
+    <!-- Annotation: dropped chain -->
+    <path d="M 460 195 L 460 175" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="460" y="170" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="700">no walls,</text>
+    <text x="460" y="182" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="700">no slab</text>
+
+    <!-- Bbox-style collapse annotation -->
+    <text x="430" y="312" text-anchor="middle" font-size="9" fill="#7f1d1d" font-style="italic">cube chain dropped</text>
+    <text x="430" y="324" text-anchor="middle" font-size="9" fill="#7f1d1d" font-style="italic">by chain_facts[0]</text>
+
+    <!-- Badge: chain count -->
+    <rect x="40" y="395" width="240" height="32" rx="4" fill="#ffffff" stroke="#b91c1c"/>
+    <text x="50" y="412" font-size="10" fill="#b91c1c" font-weight="700">1 of N chains authored</text>
+    <text x="50" y="424" font-size="9" fill="#7f1d1d">(disjoint accent volumes silently lost)</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      Per-volume walls + slab for every exterior_wall_chain fact
+    </text>
+
+    <!-- Main mass slab + walls -->
+    <rect x="620" y="140" width="320" height="240" fill="url(#slabHatchMain)" stroke="#1f2937" stroke-width="2"/>
+    <text x="780" y="270" text-anchor="middle" font-size="11" fill="#1f2937">main: slab + 4 walls</text>
+    <text x="780" y="284" text-anchor="middle" font-size="9" fill="#4b5563">th-{house}-i-EG-ext-wall-{0..3} + -slab</text>
+    <text x="780" y="296" text-anchor="middle" font-size="9" fill="#4b5563">(materialKey: render_light_grey)</text>
+
+    <!-- Accent cube: own walls + slab -->
+    <rect x="960" y="200" width="80" height="80" fill="url(#slabHatchCube)" stroke="#92400e" stroke-width="2"/>
+    <text x="1000" y="232" text-anchor="middle" font-size="9" fill="#7c2d12" font-weight="700">cube</text>
+    <text x="1000" y="244" text-anchor="middle" font-size="9" fill="#7c2d12">+4 walls</text>
+    <text x="1000" y="256" text-anchor="middle" font-size="9" fill="#7c2d12">+1 slab</text>
+
+    <!-- ID disambiguator note -->
+    <text x="1000" y="310" text-anchor="middle" font-size="8" fill="#065f46">-v1 suffix</text>
+    <text x="1000" y="320" text-anchor="middle" font-size="8" fill="#065f46">(no id collision)</text>
+    <text x="1000" y="334" text-anchor="middle" font-size="8" fill="#065f46" font-weight="700">cladding_warm_wood</text>
+
+    <!-- Per-volume independence callout -->
+    <text x="780" y="368" text-anchor="middle" font-size="10" fill="#065f46" font-weight="700">
+      each chain → its own (walls + slab + materialKey)
+    </text>
+
+    <!-- Badge: chain count -->
+    <rect x="580" y="395" width="260" height="32" rx="4" fill="#ffffff" stroke="#1e40af"/>
+    <text x="590" y="412" font-size="10" fill="#1e40af" font-weight="700">N of N chains authored</text>
+    <text x="590" y="424" font-size="9" fill="#1e3a8a">(per-volume; chain 0 keeps legacy ids)</text>
+  </g>
+</svg>

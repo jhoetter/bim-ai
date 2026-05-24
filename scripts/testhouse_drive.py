@@ -1666,57 +1666,25 @@ def _exterior_walls_bundle(
     chain_facts = _facts_by_kind(facts, "exterior_wall_chain")
     if not chain_facts:
         return None
-    fact = chain_facts[0]
-    # MF-render-6 (#60): plumb the per-level exterior_wall_chain
-    # ``materialKey`` through to every createWall in this bundle so a
-    # 2-tone Doppelhaus (EG ``render_light_grey`` Putz + DG
-    # ``cladding_warm_wood`` Holzschalung) renders correctly per storey.
-    # Pre-fix the call hardcoded ``render_light_grey`` regardless of what
-    # the IR fact declared — every floor's walls collapsed onto the same
-    # material and the downstream renderer (PR #55) had nothing per-level
-    # to paint with. Back-compat: when the per-level fact lacks an
-    # explicit key we fall back to the legacy top-level
-    # ``ir["exteriorWallChainEG"]["materialKey"]`` (older IR shape) and
-    # finally to ``render_light_grey`` so iter-3-era IRs keep authoring.
-    material_key = fact.get("materialKey")
-    if not isinstance(material_key, str) or not material_key:
-        legacy_chain = ir.get("exteriorWallChainEG")
-        if isinstance(legacy_chain, dict):
-            legacy_key = legacy_chain.get("materialKey")
-            if isinstance(legacy_key, str) and legacy_key:
-                material_key = legacy_key
-    if not isinstance(material_key, str) or not material_key:
-        material_key = "render_light_grey"
-    poly = fact.get("polygonMm") or fact.get("polygonMM") or []
-    # If the IR repeats the first vertex at the tail (closed-loop form),
-    # drop the duplicate before generating walls — otherwise the last
-    # createWall has zero length and the dry-run rejects the bundle.
-    if len(poly) >= 2 and poly[0] == poly[-1]:
-        poly = poly[:-1]
-    if not poly or len(poly) < 3:
-        return None
-    # MF-driver-11 (#48): apply the same collinear-midpoint strip the
-    # roof bundle uses (PR #41 / #31) so the wall + slab geometry stays
-    # in lock-step with the roof footprint. Without this, reader IRs
-    # that describe an L-shape with an extra collinear vertex per facade
-    # would author one createWall per raw polygon vertex (one redundant
-    # zero-turn segment) and a slab boundary with the same noise, while
-    # the roof bundle silently cleaned them away → roof and skeleton
-    # diverge. After the strip:
-    #   * 4-vertex rectangle → unchanged (4 walls, 4-vert slab).
-    #   * 6-vertex L → unchanged (6 walls, 6-vert slab).
-    #   * 7-vertex L with collinear midpoint → 6 walls + 6-vert slab.
-    #   * 8-vertex U / multi-step polygon → cleaned of any collinear
-    #     midpoints, every remaining edge still becomes its own wall.
-    poly = _strip_collinear_vertices(poly)
-    if len(poly) < 3:
-        return None
+
+    # MF-modeling-2 (#52): iterate ALL exterior_wall_chain facts on this
+    # level, not just the first. Pre-fix, h13's NE cube accent (a
+    # disjoint volume that should author its own walls + slab) was
+    # silently dropped because the driver took ``chain_facts[0]`` and
+    # everything else fell off the floor. Per-VOLUME semantics: each
+    # chain runs through the same wall + slab + materialKey + party-wall
+    # filter + collinear strip pipeline INDEPENDENTLY — different chains
+    # may carry different ``materialKey``s and the per-chain ids are
+    # disambiguated with a ``-v{N}`` suffix for chains at index > 0.
+    #
+    # Single-chain back-compat: chain index 0 keeps the legacy id
+    # pattern (``th-{house}-i-{level_short}-ext-wall-{i}``,
+    # ``th-{house}-i-{level_short}-slab``) so a single-chain IR
+    # (testhouse-1 etc.) produces byte-identical output to pre-fix.
 
     # Skip exterior-chain edges that coincide with an interior_partition
-    # tagged as a party-wall on this floor. The reader puts the
-    # Doppelhaus party wall in interior_partition facts so it's modeled
-    # as a single (interior) wall, not duplicated as a 365 mm exterior
-    # wall + a 175 mm party-wall partition stacked on the same line.
+    # tagged as a party-wall on this floor. Computed ONCE (not per chain)
+    # because party-wall partitions are per-level, not per-volume.
     party_segments: list[tuple[tuple[float, float], tuple[float, float]]] = []
     for p in _facts_by_kind(facts, "interior_partition"):
         text = f"{p.get('text') or ''} {p.get('note') or ''} {p.get('factId') or ''}".lower()
@@ -1744,41 +1712,107 @@ def _exterior_walls_bundle(
         return (_close(a, x) and _close(b, y)) or (_close(a, y) and _close(b, x))
 
     commands: list[dict] = []
-    for i in range(len(poly)):
-        a = (float(poly[i][0]), float(poly[i][1]))
-        b = (float(poly[(i + 1) % len(poly)][0]), float(poly[(i + 1) % len(poly)][1]))
-        if any(_seg_match(a, b, ps[0], ps[1]) for ps in party_segments):
-            # Edge already covered by a party-wall interior partition.
+    consumed: list[str] = []
+    for chain_idx, fact in enumerate(chain_facts):
+        # MF-render-6 (#60): plumb the per-chain exterior_wall_chain
+        # ``materialKey`` through to every createWall in this volume so a
+        # 2-tone Doppelhaus (EG ``render_light_grey`` Putz + DG
+        # ``cladding_warm_wood`` Holzschalung) renders correctly per storey.
+        # Pre-fix the call hardcoded ``render_light_grey`` regardless of what
+        # the IR fact declared — every floor's walls collapsed onto the same
+        # material and the downstream renderer (PR #55) had nothing per-level
+        # to paint with. Back-compat: when the per-level fact lacks an
+        # explicit key we fall back to the legacy top-level
+        # ``ir["exteriorWallChainEG"]["materialKey"]`` (older IR shape) and
+        # finally to ``render_light_grey`` so iter-3-era IRs keep authoring.
+        # MF-modeling-2 (#52): each chain resolves its own material key
+        # independently so the accent volume can wear a different finish.
+        material_key = fact.get("materialKey")
+        if not isinstance(material_key, str) or not material_key:
+            legacy_chain = ir.get("exteriorWallChainEG")
+            if isinstance(legacy_chain, dict):
+                legacy_key = legacy_chain.get("materialKey")
+                if isinstance(legacy_key, str) and legacy_key:
+                    material_key = legacy_key
+        if not isinstance(material_key, str) or not material_key:
+            material_key = "render_light_grey"
+        poly = fact.get("polygonMm") or fact.get("polygonMM") or []
+        # If the IR repeats the first vertex at the tail (closed-loop form),
+        # drop the duplicate before generating walls — otherwise the last
+        # createWall has zero length and the dry-run rejects the bundle.
+        if len(poly) >= 2 and poly[0] == poly[-1]:
+            poly = poly[:-1]
+        if not poly or len(poly) < 3:
+            # Skip a malformed chain rather than aborting the whole
+            # level — other chains on this level may still be valid.
             continue
+        # MF-driver-11 (#48): apply the same collinear-midpoint strip the
+        # roof bundle uses (PR #41 / #31) so the wall + slab geometry stays
+        # in lock-step with the roof footprint. Without this, reader IRs
+        # that describe an L-shape with an extra collinear vertex per facade
+        # would author one createWall per raw polygon vertex (one redundant
+        # zero-turn segment) and a slab boundary with the same noise, while
+        # the roof bundle silently cleaned them away → roof and skeleton
+        # diverge. After the strip:
+        #   * 4-vertex rectangle → unchanged (4 walls, 4-vert slab).
+        #   * 6-vertex L → unchanged (6 walls, 6-vert slab).
+        #   * 7-vertex L with collinear midpoint → 6 walls + 6-vert slab.
+        #   * 8-vertex U / multi-step polygon → cleaned of any collinear
+        #     midpoints, every remaining edge still becomes its own wall.
+        poly = _strip_collinear_vertices(poly)
+        if len(poly) < 3:
+            continue
+
+        # Per-chain id suffix: chain 0 keeps the legacy id format for
+        # byte-identical back-compat with single-chain IRs; chains > 0
+        # get a ``-v{N}`` discriminator so the engine doesn't collide.
+        vol_suffix = "" if chain_idx == 0 else f"-v{chain_idx}"
+        vol_name = "" if chain_idx == 0 else f" volume {chain_idx}"
+
+        for i in range(len(poly)):
+            a = (float(poly[i][0]), float(poly[i][1]))
+            b = (float(poly[(i + 1) % len(poly)][0]), float(poly[(i + 1) % len(poly)][1]))
+            if any(_seg_match(a, b, ps[0], ps[1]) for ps in party_segments):
+                # Edge already covered by a party-wall interior partition.
+                continue
+            commands.append(
+                {
+                    "type": "createWall",
+                    "id": f"th-{house}-i-{level_short}-ext-wall{vol_suffix}-{i}",
+                    "name": f"{level_short} exterior wall{vol_name} {i}",
+                    "levelId": level_id,
+                    "start": {"xMm": a[0], "yMm": a[1]},
+                    "end": {"xMm": b[0], "yMm": b[1]},
+                    "thicknessMm": 365,
+                    "heightMm": float(eg_height),
+                    "materialKey": material_key,
+                }
+            )
+        # slab — boundary follows the same polygon. One slab per chain so
+        # each volume has its own floor plate (per-volume semantics).
         commands.append(
             {
-                "type": "createWall",
-                "id": f"th-{house}-i-{level_short}-ext-wall-{i}",
-                "name": f"{level_short} exterior wall {i}",
+                "type": "createFloor",
+                "id": f"th-{house}-i-{level_short}-slab{vol_suffix}",
+                "name": f"{level_short} slab{vol_name}",
                 "levelId": level_id,
-                "start": {"xMm": a[0], "yMm": a[1]},
-                "end": {"xMm": b[0], "yMm": b[1]},
-                "thicknessMm": 365,
-                "heightMm": float(eg_height),
-                "materialKey": material_key,
+                "boundaryMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
+                "thicknessMm": 220,
+                # NS-V3-01: slab extrudes DOWN from level (top face flush
+                # with finished floor surface; no visible pedestal above
+                # toposolid). Engine sets topFaceElevationMm so the web
+                # viewer draws it correctly.
+                "slabExtrudeDirection": "down",
             }
         )
-    # slab — boundary follows the same polygon.
-    commands.append(
-        {
-            "type": "createFloor",
-            "id": f"th-{house}-i-{level_short}-slab",
-            "name": f"{level_short} slab",
-            "levelId": level_id,
-            "boundaryMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
-            "thicknessMm": 220,
-            # NS-V3-01: slab extrudes DOWN from level (top face flush
-            # with finished floor surface; no visible pedestal above
-            # toposolid). Engine sets topFaceElevationMm so the web
-            # viewer draws it correctly.
-            "slabExtrudeDirection": "down",
-        }
-    )
+        fact_id = fact.get("factId")
+        if fact_id is not None:
+            consumed.append(str(fact_id))
+
+    if not commands:
+        # Every chain on this level was malformed (degenerate polygon).
+        return None
+
     return (
         {
             "schemaVersion": "cmd-v3.0",
@@ -1787,15 +1821,21 @@ def _exterior_walls_bundle(
             "assumptions": [
                 {
                     "key": f"testhouse_{house}_{level_short}_ext_walls",
-                    "value": f"Exterior wall chain + slab for {level_short} derived from IR polygon",
+                    "value": (
+                        f"Exterior wall chain + slab for {level_short} derived from "
+                        f"{len(chain_facts)} IR polygon(s)"
+                    ),
                     "confidence": 0.6,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                     "contestable": True,
-                    "evidence": f"iter-1 reader pass — exterior_wall_chain fact level-{level_short}",
+                    "evidence": (
+                        f"iter-1 reader pass — {len(chain_facts)} exterior_wall_chain "
+                        f"fact(s) level-{level_short}"
+                    ),
                 }
             ],
         },
-        [str(fact.get("factId"))],
+        consumed,
     )
 
 
