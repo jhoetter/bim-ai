@@ -244,6 +244,25 @@ export function makeDormerMesh(
     roof.position.set(eaveCenterX, topY, eaveCenterZ);
     addEdges(roof);
     group.add(roof);
+  } else if (roofKind === 'shed') {
+    const perpExtentM = fp.ridgeAlongX ? zMax - zMin : xMax - xMin;
+    const pitchRad =
+      dormer.dormerRoofPitchDeg != null
+        ? (Math.max(0, Math.min(80, dormer.dormerRoofPitchDeg)) * Math.PI) / 180
+        : Math.atan2(ridgeHeightM, Math.max(perpExtentM, 1e-3));
+    const raiseM = Math.tan(pitchRad) * perpExtentM;
+    const roof = buildShedDormerRoof(
+      widthM,
+      depthM,
+      roofThickM,
+      raiseM,
+      fp.ridgeAlongX,
+      openTowardPositiveAcross,
+      roofMat,
+    );
+    roof.position.set(eaveCenterX, topY, eaveCenterZ);
+    addEdges(roof);
+    group.add(roof);
   } else {
     const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(widthM, roofThickM, depthM), roofMat);
     roofSlab.position.set(eaveCenterX, topY + roofThickM / 2, eaveCenterZ);
@@ -395,6 +414,47 @@ export function buildGableDormerRoof(
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geom.setIndex(indices);
   geom.computeVertexNormals();
+  return new THREE.Mesh(geom, material);
+}
+
+/**
+ * Schleppgaube — shed roof for a dormer: a single tilted slab whose eave
+ * stays at the caller's reference Y and whose back edge rises by
+ * `ridgeHeightM`. The eave side faces the same direction the dormer opens
+ * (controlled by `openTowardPositiveAcross`), so the glass front sits under
+ * the low edge.
+ *
+ * `widthM` and `depthM` are world-X and world-Z extents of the dormer
+ * footprint (same call convention as buildGableDormerRoof). The slab tilts
+ * about whichever world axis the ridge runs along.
+ */
+export function buildShedDormerRoof(
+  widthM: number,
+  depthM: number,
+  roofThickM: number,
+  ridgeHeightM: number,
+  ridgeAlongX: boolean,
+  openTowardPositiveAcross: boolean,
+  material: THREE.Material,
+): THREE.Mesh {
+  const perpExtentM = ridgeAlongX ? depthM : widthM;
+  const pitchRad = Math.atan2(Math.max(0, ridgeHeightM), Math.max(perpExtentM, 1e-3));
+  const cos = Math.cos(pitchRad);
+  const sin = Math.sin(pitchRad);
+  // After rotation, the lowest point of the box sits at
+  // y = -roofThickM/2*cos - perpExtentM/2*sin (eave underside). Lift the
+  // geometry so that lowest point lands at y=0 — caller places it at topY.
+  const liftY = (roofThickM / 2) * cos + (perpExtentM / 2) * sin;
+
+  const geom = new THREE.BoxGeometry(widthM, roofThickM, depthM);
+  if (ridgeAlongX) {
+    // rotateX(+pitch) lowers the +Z corner → eave at +Z.
+    geom.rotateX(openTowardPositiveAcross ? +pitchRad : -pitchRad);
+  } else {
+    // rotateZ(-pitch) lowers the +X corner → eave at +X.
+    geom.rotateZ(openTowardPositiveAcross ? -pitchRad : +pitchRad);
+  }
+  geom.translate(0, liftY, 0);
   return new THREE.Mesh(geom, material);
 }
 
