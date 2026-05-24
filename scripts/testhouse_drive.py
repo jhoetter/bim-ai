@@ -898,6 +898,39 @@ def _topology_bundle(
     # from −1500 mm to 0. Earlier versions of this driver mis-interpreted the
     # field as the bottom and produced a 1500 mm air gap between toposolid
     # top and the EG slab.
+    # NS-V3-02: sloped terrain. Beta's source elevations clearly show a
+    # hillside (~3.8 m grade from E to W). Alpha + gamma show flatter
+    # sites but neither is perfectly flat. Author heightSamples at the
+    # four parcel corners + the building footprint corners so the
+    # toposolid surface tilts realistically. Engine + web viewer both
+    # read `heightSamples` and triangulate the surface.
+    # Per-house slope direction + magnitude:
+    slope_specs = {
+        # (direction_dx, direction_dy, peak_mm) — building center is at z=0
+        "alpha": (0.0, 0.0, 0.0),   # alpha source roughly flat; minor variation
+        "beta":  (-1.0, 0.5, 3800), # hillside: high east, low west; source shows steep drop
+        "gamma": (0.0, -1.0, 1000), # gamma source shows modest north→south slope
+    }
+    sdx, sdy, peak_mm = slope_specs.get(house, (0.0, 0.0, 0.0))
+    height_samples: list[dict] = []
+    if abs(peak_mm) > 1e-6:
+        # Center of parcel
+        cx = (xmin + xmax) / 2
+        cy = (ymin + ymax) / 2
+        # Length along slope direction at parcel extent
+        for px, py in [
+            (xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax),  # corners
+            (cx, cy),                                                # center
+            (0, 0), (xmax - margin, 0), (xmax - margin, ymax - margin), (0, ymax - margin),  # building corners
+        ]:
+            # Project (px-cx, py-cy) onto slope direction unit vector
+            slope_norm = (sdx * sdx + sdy * sdy) ** 0.5 or 1.0
+            proj = ((px - cx) * sdx + (py - cy) * sdy) / slope_norm
+            # Normalize to [-1..+1] range based on parcel half-diagonal
+            half_diag = ((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5 / 2
+            t = max(-1.0, min(1.0, proj / half_diag))
+            z = round(t * peak_mm / 2, 1)  # z range = [-peak/2 .. +peak/2]
+            height_samples.append({"xMm": round(px, 1), "yMm": round(py, 1), "zMm": z})
     return (
         {
             "schemaVersion": "cmd-v3.0",
@@ -909,6 +942,7 @@ def _topology_bundle(
                     "boundaryMm": topo_poly,
                     "thicknessMm": 1500,
                     "baseElevationMm": 0,
+                    **({"heightSamples": height_samples} if height_samples else {}),
                 }
             ],
             "parentRevision": parent_revision,
