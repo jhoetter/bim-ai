@@ -327,6 +327,8 @@ Each row = one /loop iteration. The loop appends here.
 | 5.g | 2026-05-24 01:45Z | gamma | iter-4: **6.3/10** — grader DOUBLE-COUNTED missing source features (cross-gable, arched window, balkon, sparse openings, shallow pitch) as §4.5 defects instead of §4.1 perFacade deductions; rubric §4.5 has only 5 enumerated defect types and none match the listed concerns. Re-grading with strict §4.5 prompt | 6.3 | re-grade tight |
 | 5.g2| 2026-05-24 02:00Z | gamma | iter-4 re-graded tight §4.5: **6.9/10** (real); axis breakdown perFacade 2.2/4 (south Strassenansicht 0.2/1 — missing Zwerchhaus cross-gable + under-fenestration), perFloor 1.7/3 (OG/DG collapse), vertical 1.0, materials 1.0, noMajorDefect 1.0. Real gap = facade fidelity (more windows + Zwerchhaus) | 6.9 | IR-patch + iter-5 |
 | 6   | 2026-05-24 02:03Z | gamma | NS-5 IR patch: added 3 EG south windows (BAD/KUECHE/FLUR) so south facade has 4 EG + 4 DG mirror = 8 windows visible (vs prior 1+1=2). iter-5 author kicked off | n/a | grade after iter-5 |
+| 6.g | 2026-05-24 02:06Z | gamma | iter-5: **8.4/10** (+1.5 from 6.9 honest). topGap=south (entry door not visible + cross-gable absent). 13 windows total. Real path to 9+ needs cross-gable (Zwerchhaus) engine support OR more IR window facts | 8.4 | smoke #1 + cross-gable feature work |
+| 7   | 2026-05-24 02:08Z | (all) | **SMOKE-1 iter-6**: full purge + Phase 1 rebuild all 3 with current driver+engine (NS-1..NS-5 cumulative). Validates methodology reproducibility per §20. Sequential author chain ~12min + capture ~5min | pending | grade smoke + compare against converged baselines |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
