@@ -1017,6 +1017,31 @@ def _exterior_walls_bundle(
     eg_height = next(
         (_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"].endswith(level_short)), 2700
     )
+
+    # NS-8 Kniestock: on DG, when the IR carries an eave_height fact, derive
+    # the actual DG ext-wall height as (eave_height − DG_floor_elev). For a
+    # 1956 Doppelhaus with eave at +3350 mm and DG floor at +2750 mm, this
+    # yields a 600 mm knee-wall as authored in the original Bauplan rather
+    # than a 2750 mm full-storey wall (which placed the eave at +5500 mm,
+    # 2.15 m too high vs source elevations).
+    if level_short == "DG":
+        eave_fact = next(
+            (f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "eave_height"),
+            None,
+        )
+        dg_lvl = next(
+            (lvl for lvl in (ir.get("levels") or []) if lvl["id"] == "level-DG"),
+            None,
+        )
+        if eave_fact and dg_lvl:
+            try:
+                eave_mm = float(eave_fact.get("valueMm") or 0)
+                dg_elev = float(_lvl_elevation_mm(dg_lvl))
+                kniestock_mm = eave_mm - dg_elev
+                if 200 <= kniestock_mm <= eg_height:
+                    eg_height = kniestock_mm
+            except (TypeError, ValueError):
+                pass
     facts = _facts_for_level(ir, f"level-{level_short}")
     chain_facts = _facts_by_kind(facts, "exterior_wall_chain")
     if not chain_facts:
@@ -1432,8 +1457,11 @@ def _openings_bundle(
     # opening separately from IR-sourced ones. Skipped if a fact-driven
     # window is already on the same EG wall on the DG storey (would
     # overlap-collide).
+    # NS-8: skip when DG walls are Kniestock-short (<1500mm) — those
+    # facades carry no openings; dormers provide DG light instead.
     mirrored_from_eg_count = 0
-    if level_short == "DG" and not _facts_by_kind(facts, "window"):
+    dg_kniestock_too_short = level_short == "DG" and eg_height < 1500.0
+    if level_short == "DG" and not _facts_by_kind(facts, "window") and not dg_kniestock_too_short:
         eg_facts = _facts_for_level(ir, "level-EG")
         eg_windows = _facts_by_kind(eg_facts, "window")
         # DG window height: smaller than EG (~1000 mm), high sill (1100 mm)
