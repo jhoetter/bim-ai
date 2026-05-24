@@ -757,8 +757,25 @@ export function makeRoofMassMesh(
 
   const ovMm = THREE.MathUtils.clamp(roof.overhangMm ?? 0, 0, 5000);
 
-  // Offset footprint outward in plan space, then derive AABB for simple cases.
+  // MF-modeling-3a (#56): per-edge overhang overrides. Cardinal tokens map to
+  // the axis-aligned plan-bounds extents below:
+  //   "w" → −X (minX), "e" → +X (maxX), "n" → −Z (minZ), "s" → +Z (maxZ).
+  // Missing keys fall back to the scalar ``overhangMm``; an absent
+  // ``edgeOverhangMm`` map preserves the uniform-offset back-compat path
+  // (byte-stable for existing roofs).
+  const edgeOv = roof.edgeOverhangMm ?? null;
+  const clampOv = (v: number | undefined): number => THREE.MathUtils.clamp(v ?? ovMm, 0, 5000);
+  const ovW = edgeOv ? clampOv(edgeOv.w) : ovMm;
+  const ovE = edgeOv ? clampOv(edgeOv.e) : ovMm;
+  const ovN = edgeOv ? clampOv(edgeOv.n) : ovMm;
+  const ovS = edgeOv ? clampOv(edgeOv.s) : ovMm;
+
+  // For the polygon-offset path (used by L-shape / hip-polygon builders),
+  // a single isotropic offset is still the only sensible interpretation, so
+  // fall back to the scalar there. The axis-aligned AABB path below honours
+  // the per-edge overrides directly.
   const offsetPts = ovMm > 0 && rawPts.length >= 3 ? offsetPolygonMm(rawPts, ovMm) : rawPts;
+  const rawBounds = xzBoundsMm(rawPts.length >= 3 ? rawPts : offsetPts);
   const b = xzBoundsMm(offsetPts.length >= 3 ? offsetPts : rawPts);
 
   const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);
@@ -772,10 +789,14 @@ export function makeRoofMassMesh(
       : 0;
   const eaveY = refElev + wallTopM;
 
-  const ox0 = b.minX / 1000;
-  const ox1 = b.maxX / 1000;
-  const oz0 = b.minZ / 1000;
-  const oz1 = b.maxZ / 1000;
+  // When per-edge overhangs are set, build the AABB directly from the raw
+  // footprint plus per-side extensions rather than from a uniform polygon
+  // offset. This is what powers asymmetric cantilevers like terraces and
+  // entry canopies (#56).
+  const ox0 = edgeOv ? (rawBounds.minX - ovW) / 1000 : b.minX / 1000;
+  const ox1 = edgeOv ? (rawBounds.maxX + ovE) / 1000 : b.maxX / 1000;
+  const oz0 = edgeOv ? (rawBounds.minZ - ovN) / 1000 : b.minZ / 1000;
+  const oz1 = edgeOv ? (rawBounds.maxZ + ovS) / 1000 : b.maxZ / 1000;
 
   const dormersForRoof = Object.values(elementsById).filter(
     (e): e is Extract<Element, { kind: 'dormer' }> =>

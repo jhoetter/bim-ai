@@ -110,6 +110,13 @@ class RoofElem(BaseModel):
     reference_level_id: str = Field(alias="referenceLevelId")
     footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
     overhang_mm: float = Field(default=400, alias="overhangMm")
+    # MF-modeling-3a (#56): per-edge overhang overrides for asymmetric cantilevers
+    # (terraces, entry canopies). Keys are cardinal tokens ("n","e","s","w") for
+    # axis-aligned rectangular footprints; missing keys fall back to ``overhang_mm``.
+    # When None, the scalar applies uniformly to every edge (back-compat).
+    edge_overhang_mm: dict[Literal["n", "e", "s", "w"], float] | None = Field(
+        default=None, alias="edgeOverhangMm"
+    )
     slope_deg: float | None = Field(default=25.0, alias="slopeDeg")
     edge_slope_flags: dict[str, bool] = Field(default_factory=dict, alias="edgeSlopeFlags")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
