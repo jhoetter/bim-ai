@@ -924,7 +924,7 @@ export function makeRoofMassMesh(
       (!roofOpeningsHandledAnalytically && roofOpeningsForRoof.length > 0)) &&
     _dormerCutFn
   ) {
-    geom = _dormerCutFn(geom, roof, elementsById, refElev);
+    geom = _dormerCutFn(geom, roof, elementsById, refElev, eaveY);
   }
 
   const roofMaterialKey = effectiveRoofTopMaterialKey(roof, elementsById);
@@ -1068,6 +1068,7 @@ type DormerCutFn = (
   roof: Extract<Element, { kind: 'roof' }>,
   elementsById: Record<string, Element>,
   refElev: number,
+  eaveY?: number,
 ) => THREE.BufferGeometry;
 
 let _dormerCutFn: DormerCutFn | null = null;

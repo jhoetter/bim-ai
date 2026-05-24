@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { Element } from '@bim-ai/core';
+import { computeDormerCutVerticalExtent } from './dormerCutGeometry';
 import { groupDormersByOverlap } from './dormerGrouping';
+
+export { computeDormerCutVerticalExtent, DORMER_CUT_MARGIN_M } from './dormerCutGeometry';
 
 /**
  * KRN-14 / IFC-03 — subtract tall axis-aligned cut boxes for roof-hosted
@@ -13,12 +16,21 @@ import { groupDormersByOverlap } from './dormerGrouping';
  * hole instead of silently no-op'ing. We also validate that the cut
  * footprint actually intersects the host roof bbox before attempting
  * CSG, and surface failures via console.warn rather than swallowing.
+ *
+ * Issue #77 — the cutter's vertical extent is bounded BELOW by `eaveY`
+ * (top of wall) minus a small margin, not by `refElev` (ground floor).
+ * The previous behaviour started the cutter at refElev with a 30m
+ * height; that slab carved through the wall and floor beneath the roof,
+ * which let the EG storey windows behind the dormer leak through the
+ * roof void. Bounding the cutter to the roof volume keeps the hole
+ * strictly above the wall plate so the storey below stays opaque.
  */
 export function applyDormerCutsToRoofGeom(
   geom: THREE.BufferGeometry,
   roof: Extract<Element, { kind: 'roof' }>,
   elementsById: Record<string, Element>,
   refElev: number,
+  eaveY?: number,
 ): THREE.BufferGeometry {
   const dormers = Object.values(elementsById).filter(
     (e): e is Extract<Element, { kind: 'dormer' }> =>
@@ -101,8 +113,9 @@ export function applyDormerCutsToRoofGeom(
         );
         continue;
       }
-      const cutHeightM = 30;
-      const baseY = refElev;
+      // Issue #77 — confine the cutter to the roof volume. See
+      // `computeDormerCutVerticalExtent` for the bounding rationale.
+      const { baseY, cutHeightM } = computeDormerCutVerticalExtent(refElev, eaveY);
       const boxRaw = new THREE.BoxGeometry(widthM, cutHeightM, depthM);
       const cutter = new Brush(normaliseForCsg(boxRaw));
       cutter.position.set((xMin + xMax) / 2, baseY + cutHeightM / 2, (zMin + zMax) / 2);
