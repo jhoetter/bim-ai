@@ -47,6 +47,27 @@ visible-render elements.
 
 ---
 
+## 0a. IR IS IMMUTABLE (loop must respect this)
+
+After the 2026-05-24 ~10:35Z restart, the loop discovered that
+across prior sessions ~22 alpha + 8 beta + 11 gamma "synth" facts
+had been injected into the IR JSON files to artificially expand
+fenestration. This made every "fresh restart" produce the same
+under-articulated house because the polluted IR was rebuild-source.
+
+**Going forward, the IR is the source of truth and MUST NOT be
+edited by the loop.** All architectural improvements must come from:
+- (a) Engine/driver features that author MORE elements from EXISTING
+  IR facts (e.g., gable wall opening cutting, balcony rendering,
+  half_gable roof mode, dormer mesh blending).
+- (b) Re-running the reader pass to get a richer IR (slow, expensive,
+  but legitimate — output is auditable to source PDFs).
+
+Any synth fact still present in an IR is a bug — clean it on first
+loop wakeup.
+
+---
+
 ## 1. Mission + non-negotiables
 
 > **Build three BIM models from source folders that, when rendered,
