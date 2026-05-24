@@ -2064,9 +2064,14 @@ def _dormers_bundle(
         # Default width / depth / wall height — pulled from the fact
         # when present, otherwise polygon bbox, otherwise typical
         # Schleppgaube proportions.
-        width = float(f.get("widthMm") or poly_w or 2000)
-        height = float(f.get("heightMm") or 1300)
-        depth = float(f.get("depthMm") or poly_d or 1800)
+        # NS-V3-07: default dormer dims bumped up so they're visible at
+        # orthographic capture distance. Source elevations show Schleppgauben
+        # spanning ~3-4 m wide × ~1.5 m tall — prior 2000×1300 defaults
+        # render as nearly invisible bumps. Hosted gable dormers / Zwerchhaus
+        # keep their explicit IR dims.
+        width = float(f.get("widthMm") or poly_w or 3500)
+        height = float(f.get("heightMm") or 1500)
+        depth = float(f.get("depthMm") or poly_d or 2200)
         # The engine validates `abs(alongRidgeMm) + width/2 ≤ span/2`
         # — i.e. position is signed and centered at the ROOF CENTER
         # (origin = center of the footprint), not at a corner. Same
