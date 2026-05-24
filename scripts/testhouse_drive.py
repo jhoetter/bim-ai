@@ -2186,6 +2186,7 @@ def _openings_bundle(
         opening_width_mm: float,
         cmd_type: str,
         extra_cmd_fields: dict,
+        idx: str,
     ) -> None:
         # Reader IRs use one of three shapes for opening position:
         #   1. ``vertexMm: [x, y]`` (alpha) or ``vertexMm: {xMm, yMm}``
@@ -2291,7 +2292,15 @@ def _openings_bundle(
         commands.append(
             {
                 "type": cmd_type,
-                "id": f"th-{house}-i-{level_short}-{opening_kind}-{_slugify(fact.get('factId'))}",
+                # MF-driver-16 (#85): include the enumerate idx so ids stay
+                # unique even when factIds are missing — ``_slugify(None)``
+                # collapses to the literal ``"x"``, which used to produce 9
+                # collisions on a 9-window EG facade (h21 iter-17, 409 from
+                # bundle apply with ``duplicate element id 'th-…-window-x'``).
+                "id": (
+                    f"th-{house}-i-{level_short}-{opening_kind}-"
+                    f"{idx}-{_slugify(fact.get('factId'))}"
+                ),
                 "name": str(fact.get("text") or opening_kind.title())[:80],
                 "wallId": wid,
                 "alongT": round(t, 4),
@@ -2301,7 +2310,7 @@ def _openings_bundle(
         )
         consumed.append(str(fact.get("factId")))
 
-    for d in doors:
+    for d_idx, d in enumerate(doors):
         # 800 mm typical interior door fits a 1300 mm partition with margin.
         _try_host(
             fact=d,
@@ -2309,6 +2318,7 @@ def _openings_bundle(
             opening_width_mm=800.0,
             cmd_type="insertDoorOnWall",
             extra_cmd_fields={},
+            idx=str(d_idx),
         )
 
     # NS-10: pick Kniestock-aware sill/height using the AUTHORED wall
@@ -2321,7 +2331,7 @@ def _openings_bundle(
     win_h_cap = 800 if is_kniestock else 1500
     win_h_floor = 400 if is_kniestock else 800
     win_h = int(min(win_h_cap, max(win_h_floor, sizing_h - win_sill - 200)))
-    for w in windows:
+    for w_idx, w in enumerate(windows):
         _try_host(
             fact=w,
             opening_kind="window",
@@ -2334,6 +2344,7 @@ def _openings_bundle(
                 # passes.
                 "heightMm": win_h,
             },
+            idx=str(w_idx),
         )
 
     # P1a (nightshift) — DG-window mirror from EG.
@@ -2356,7 +2367,7 @@ def _openings_bundle(
         # DG window height: smaller than EG (~1000 mm), high sill (1100 mm)
         # so it visually reads as a knee-wall facade window.
         dg_win_height = int(min(1200, max(700, eg_height - 1100 - 200)))
-        for ew in eg_windows:
+        for m_idx, ew in enumerate(eg_windows):
             synth = {
                 **ew,
                 "levelId": "level-DG",
@@ -2372,6 +2383,9 @@ def _openings_bundle(
                     "sillHeightMm": 1100,
                     "heightMm": dg_win_height,
                 },
+                # ``mirror-N`` prefix so DG-mirror ids never collide with
+                # IR-sourced ``window-N-…`` ids on the same level.
+                idx=f"mirror-{m_idx}",
             )
             if len(commands) > before:
                 mirrored_from_eg_count += 1

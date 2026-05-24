@@ -489,3 +489,237 @@ def test_author_level_inside_out_continues_to_openings_when_rooms_bundle_is_none
     assert f"{level_short.lower()}-rooms" not in phases_committed
     assert f"{level_short.lower()}-partitions" not in phases_committed
     assert f"{level_short.lower()}-exterior-walls" not in phases_committed
+
+
+# ---------- MF-driver-16 (#85): unique opening element ids -----------------
+#
+# Sequel regression to #78: once the openings bundle actually emits
+# commands on reader IRs without room facts, every emitted command must
+# carry a UNIQUE element id. Pre-fix, the id template used
+# ``_slugify(fact.get('factId'))`` directly — and ``_slugify(None)``
+# returns the literal ``"x"``. So an IR with N openings whose factIds
+# were missing collapsed to N copies of
+# ``th-{house}-i-{level_short}-window-x``, and the engine rejected the
+# bundle with ``409 duplicate element id 'th-…-window-x'``. Post-fix the
+# id template includes the enumerate index so ids stay unique regardless
+# of factId presence.
+
+
+def _wide_shell_walls_snapshot(house: str, iter_n: int, level_short: str) -> dict:
+    """Shell snapshot with 4 long exterior walls forming a 20m x 12m rect.
+
+    Wide enough to host 9 windows (1400 mm footprint each) along the
+    south wall plus 1 door on the north wall without overlap.
+    """
+
+    shell_level_id = f"th-{house}-i{iter_n}-level-{level_short}"
+    return {
+        "revision": 1,
+        "elements": {
+            shell_level_id: {
+                "id": shell_level_id,
+                "kind": "level",
+                "elevationMm": 0.0,
+            },
+            f"th-{house}-i{iter_n}-eg-wall-south": {
+                "id": f"th-{house}-i{iter_n}-eg-wall-south",
+                "kind": "wall",
+                "levelId": shell_level_id,
+                "start": {"xMm": 0.0, "yMm": 0.0},
+                "end": {"xMm": 20000.0, "yMm": 0.0},
+                "heightMm": 2700.0,
+                "thicknessMm": 365.0,
+            },
+            f"th-{house}-i{iter_n}-eg-wall-north": {
+                "id": f"th-{house}-i{iter_n}-eg-wall-north",
+                "kind": "wall",
+                "levelId": shell_level_id,
+                "start": {"xMm": 0.0, "yMm": 12000.0},
+                "end": {"xMm": 20000.0, "yMm": 12000.0},
+                "heightMm": 2700.0,
+                "thicknessMm": 365.0,
+            },
+        },
+    }
+
+
+def _ir_with_n_openings_missing_factids(
+    house: str, level_short: str, *, n_windows: int, n_doors: int
+) -> dict:
+    """IR carrying N window + N door facts with NO ``factId`` fields.
+
+    Mirrors the exact reader IR shape from house-21 iter-17 that
+    triggered the duplicate-id 409: window/door facts lacked stable
+    factIds (the reader didn't synthesise them), so the slugify path
+    collapsed every fact id to the literal ``"x"``.
+
+    Windows sit ~1800 mm apart along the south wall (y=100, well
+    inside the 1000 mm hosting threshold). Doors sit on the north wall
+    (y=11900) so they never overlap-conflict with the windows.
+    """
+
+    facts: list[dict] = []
+    for i in range(n_windows):
+        facts.append(
+            {
+                # NO factId — the regression case. ``_slugify(None) == "x"``
+                # used to collapse every emitted id to ``…-window-x``.
+                "kind": "window",
+                "levelId": f"level-{level_short}",
+                "widthMm": 1200,
+                "heightMm": 1500,
+                "vertexMm": {"xMm": 1500.0 + (i * 1800.0), "yMm": 100.0},
+            }
+        )
+    for i in range(n_doors):
+        facts.append(
+            {
+                "kind": "door",
+                "levelId": f"level-{level_short}",
+                "widthMm": 900,
+                "heightMm": 2100,
+                "vertexMm": {"xMm": 1500.0 + (i * 1800.0), "yMm": 11900.0},
+            }
+        )
+    return {
+        "house": house,
+        "levels": [
+            {
+                "id": f"level-{level_short}",
+                "name": "Erdgeschoss",
+                "elevationMM": 0,
+                "heightMM": 2700,
+            },
+        ],
+        "exteriorWallChainEG": {
+            "polygonMM": [[0, 0], [20000, 0], [20000, 12000], [0, 12000]],
+            "wallThicknessMM": 365,
+        },
+        "extractedFacts": facts,
+    }
+
+
+def test_openings_bundle_emits_unique_ids_for_nine_windows_without_factids() -> None:
+    """The exact iter-17 house-21 regression: 9 EG windows + 1 EG door
+    on a reader IR whose facts lack ``factId``. Pre-fix every command id
+    collapsed to ``th-h21-i-EG-window-x`` / ``…-door-x`` and the bundle
+    apply 409'd with ``duplicate element id 'th-h21-i-EG-window-x'``.
+    Post-fix the enumerate-idx suffix keeps ids unique across all 9
+    windows (and the door).
+    """
+
+    house, iter_n, level_short = "h21", 17, "EG"
+    ir = _ir_with_n_openings_missing_factids(
+        house, level_short, n_windows=9, n_doors=1
+    )
+    snapshot = _wide_shell_walls_snapshot(house, iter_n, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None, "9 windows + 1 door must produce a non-empty bundle"
+    bundle, _consumed, _skipped = result
+    cmds = bundle.get("commands") or []
+    window_ids = [c["id"] for c in cmds if c.get("type") == "insertWindowOnWall"]
+    door_ids = [c["id"] for c in cmds if c.get("type") == "insertDoorOnWall"]
+
+    assert len(window_ids) == 9, (
+        f"all 9 windows must host on the wide south wall, got {len(window_ids)}"
+    )
+    assert len(door_ids) == 1, (
+        f"the single door must host on the north wall, got {len(door_ids)}"
+    )
+    # The actual #85 regression assertion: every emitted id is unique.
+    assert len(set(window_ids)) == 9, (
+        f"window ids must be unique even with missing factIds, got duplicates in {window_ids}"
+    )
+    # And no id is the bare literal ``-window-x`` (the pre-fix collapse).
+    assert all(not wid.endswith("-window-x") for wid in window_ids), (
+        f"no id may end in the literal '-window-x' (the slugify-None collapse), "
+        f"got {window_ids}"
+    )
+    assert not door_ids[0].endswith("-door-x"), (
+        f"door id must not end in '-door-x' either, got {door_ids[0]}"
+    )
+
+
+def test_openings_bundle_emits_unique_ids_for_nine_doors_without_factids() -> None:
+    """Symmetric to the window case: 9 doors with no factIds must each
+    receive a unique id. Pre-fix every door collapsed to ``…-door-x``.
+    """
+
+    house, iter_n, level_short = "h22", 17, "EG"
+    # Put doors on south wall (y=100), no windows so the spread doesn't fight.
+    ir = _ir_with_n_openings_missing_factids(
+        house, level_short, n_windows=0, n_doors=9
+    )
+    # Reuse the wide-shell snapshot but flip the door y back to 100 so
+    # they host on the south wall (doors-on-north only made sense to
+    # avoid colliding with windows). Rewrite the IR's door vertices
+    # in place since the helper put doors at y=11900.
+    for f in ir["extractedFacts"]:
+        if f.get("kind") == "door":
+            f["vertexMm"] = {"xMm": f["vertexMm"]["xMm"], "yMm": 100.0}
+    snapshot = _wide_shell_walls_snapshot(house, iter_n, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    bundle, _consumed, _skipped = result
+    cmds = bundle.get("commands") or []
+    door_ids = [c["id"] for c in cmds if c.get("type") == "insertDoorOnWall"]
+
+    assert len(door_ids) == 9, (
+        f"all 9 doors must host on the wide south wall, got {len(door_ids)}"
+    )
+    assert len(set(door_ids)) == 9, (
+        f"door ids must be unique even with missing factIds, got duplicates in {door_ids}"
+    )
+    assert all(not did.endswith("-door-x") for did in door_ids), (
+        f"no id may end in the literal '-door-x' (the slugify-None collapse), "
+        f"got {door_ids}"
+    )
+
+
+def test_openings_bundle_ids_unique_when_factids_present_too() -> None:
+    """Back-compat: when factIds ARE present, ids are still unique AND
+    the slugified factId is preserved in the id (so operators can still
+    trace each command back to its source fact). The fix adds the
+    enumerate idx without removing the slug.
+    """
+
+    house, iter_n, level_short = "h23", 17, "EG"
+    ir = _ir_with_openings_only(house, level_short, doors=0, windows=3)
+    # ``_ir_with_openings_only`` populates factIds as ``window-0``,
+    # ``window-1``, ``window-2`` — distinct enough to slugify uniquely.
+    # The id must STILL be unique post-fix.
+    snapshot = _shell_walls_snapshot(house, iter_n, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    bundle, _consumed, _skipped = result
+    cmds = bundle.get("commands") or []
+    window_ids = [c["id"] for c in cmds if c.get("type") == "insertWindowOnWall"]
+    assert len(window_ids) == 3
+    assert len(set(window_ids)) == 3, "factId-present case stays unique"
+    # The slugified factId is still embedded for traceability.
+    for wid in window_ids:
+        assert any(slug in wid for slug in ("window-0", "window-1", "window-2")), (
+            f"id must still embed the slugified factId for operator traceability, "
+            f"got {wid}"
+        )
