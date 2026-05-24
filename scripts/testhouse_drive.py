@@ -210,6 +210,106 @@ def _post(*, api_base: str, path: str, body: dict, timeout: float = 600.0) -> di
         return r.json()
 
 
+def _sibling_combined_pdf(house: str) -> Path | None:
+    """Resolve the sibling ``<house>.pdf`` if the catalog layout has one.
+
+    MF-driver-12 (#49): post-restructure ``bim-database/`` lays each catalog
+    house out as two siblings::
+
+        bim-database/house-5.pdf   ← the combined source PDF (primary doc)
+        bim-database/house-5/      ← folder with AVIF renders (supplementary)
+
+    ``_house_root("house-5")`` returns the folder, which on its own has no
+    PDFs — so the preflight render pass produced ``renderedPdfCount: 0``.
+    This helper returns the sibling PDF when it exists so the preflight can
+    fold it into the source manifest as the primary document. Legacy
+    ``testhouses/house-<alpha>/`` layouts have their PDFs **inside** the
+    folder, so the sibling does not exist and this returns ``None`` — the
+    caller then falls back to scanning the folder unchanged.
+    """
+
+    root = _house_root(house)
+    sibling = root.with_suffix(".pdf")
+    return sibling if sibling.is_file() else None
+
+
+def _prepare_preflight_source_root(house: str) -> tuple[Path, dict[str, Any]]:
+    """Stage the source root preflight should ingest for ``house``.
+
+    Returns ``(root, info)`` where ``root`` is the directory whose contents
+    ``prepare_ai_visual_trace_run_from_folder`` will walk via
+    :func:`bim_ai.services.source_ingestion.build_folder_manifest`, and
+    ``info`` is a small diagnostic dict for the dashboard narrative
+    (``layout``, ``hasSiblingPdf``, ``siblingPdfPath``).
+
+    Behavior matrix:
+
+    * Catalog layout (``bim-database/house-5.pdf`` + ``bim-database/house-5/``)
+      — stage a fresh directory under ``tmp/reverse-bim/house-<X>/
+      preflight-source/`` that symlinks the sibling PDF as the *primary*
+      document plus every file inside the house folder (preserving relative
+      paths) as supplementary context.
+
+    * Legacy layout (``testhouses/house-alpha/Ansichten.pdf`` directly inside
+      the folder, no sibling PDF) — return the folder as-is. PR #44 left
+      this branch working and the existing 11+ tests still rely on it.
+
+    * Neither sibling nor folder exists — surface ``FileNotFoundError`` with
+      the path operators are expected to populate.
+    """
+
+    source_root = _house_root(house)
+    if not source_root.is_dir():
+        raise FileNotFoundError(f"missing source folder: {source_root}")
+
+    sibling = _sibling_combined_pdf(house)
+    if sibling is None:
+        return source_root, {
+            "layout": "legacy_folder_only",
+            "hasSiblingPdf": False,
+            "siblingPdfPath": None,
+        }
+
+    # Catalog layout — stage a directory so build_folder_manifest sees
+    # both the sibling PDF (primary) and the folder contents (supplementary).
+    # `rglob` does not descend through directory symlinks, so symlink each
+    # *file* individually under the staging root while preserving the
+    # relative path inside the house folder.
+    staging = _house_workdir(house) / "preflight-source"
+    if staging.exists():
+        # Idempotent rebuild — stale symlinks from a previous run could
+        # point at moved files. A fresh stage is cheap (symlinks only).
+        import shutil
+
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True, exist_ok=True)
+
+    # 1. Prepend the sibling combined PDF as the primary document. Use a
+    #    `00_` prefix so it sorts first in the folder manifest's
+    #    alphabetical walk and shows up first in the classification table.
+    primary_link = staging / f"00_{sibling.name}"
+    primary_link.symlink_to(sibling.resolve())
+
+    # 2. Mirror every file inside the house folder via per-file symlinks,
+    #    preserving relative paths so any nested structure (galleries,
+    #    sub-folders, …) survives.
+    for src in sorted(source_root.rglob("*")):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(source_root)
+        dst = staging / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.exists() or dst.is_symlink():
+            continue
+        dst.symlink_to(src.resolve())
+
+    return staging, {
+        "layout": "catalog_sibling_pdf",
+        "hasSiblingPdf": True,
+        "siblingPdfPath": str(sibling),
+    }
+
+
 def _run_preflight(*, house: str, api_base: str, dpi: int) -> dict:
     """Iter-0 phase: prepare-ai-visual-trace-run + classify + reader plan.
 
@@ -217,12 +317,19 @@ def _run_preflight(*, house: str, api_base: str, dpi: int) -> dict:
     runs folder-manifest, render at the requested DPI, document
     classification, work-order build, and writes the initial
     reader-pass-manifest under ``preflight/``.
+
+    MF-driver-12 (#49): for catalog houses the source folder
+    (``bim-database/house-5/``) only carries AVIF renders; the actual PDF is
+    the sibling file ``bim-database/house-5.pdf``. We stage a
+    ``preflight-source/`` directory that includes both so the manifest
+    picks up the PDF as the primary document and the AVIFs as supplementary
+    visual context. Legacy ``testhouses/house-<alpha>/`` layouts have the
+    PDFs inside the folder — those bypass staging and pass the folder
+    through unchanged.
     """
 
-    source_root = _house_root(house)
+    source_root, _layout = _prepare_preflight_source_root(house)
     out_dir = _house_workdir(house) / "preflight"
-    if not source_root.is_dir():
-        raise FileNotFoundError(f"missing source folder: {source_root}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     payload = {
