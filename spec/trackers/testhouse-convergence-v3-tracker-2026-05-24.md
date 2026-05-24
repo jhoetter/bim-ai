@@ -99,13 +99,32 @@ iteration cycles it's the bottleneck.
 - "start again from beginning"
 - "purge everything"
 - "production-like simulation"
+- "restart" (per user 2026-05-24 — they want restart = nuclear)
 
 When ANY of those appear in user instructions, Phase 0 (§8) must do
 the full delete + preflight regen, NOT just `testhouse_purge.py`.
 
+**Action level matrix**:
+
+| Trigger | DB purge | FS delete `tmp/reverse-bim/house-{X}/` | Re-run preflight | When used |
+|---|---|---|---|---|
+| "build from scratch", "reset", "restart", "purge everything", "clear seeded artifacts" | YES | YES (full) | YES (regenerate IR from PDFs) | Production-like simulation — default for ALL fresh sessions and ALL inter-iter restarts |
+| "skip preflight" / "keep IR" | YES | YES (everything except `preflight/` + `understanding/`) | NO | Only when user explicitly says it (saves ~10 min reader cost but defeats the production-like point) |
+| "purge DB only" (rare) | YES | NO | NO | Engine-debug scenarios only |
+
 `testhouse_purge.py` alone is the LIGHT clean — only wipes DB models,
-leaves the IR + preflight artifacts intact. That's for in-loop restart
-between converged iters (§11). It is NOT a "build from scratch".
+leaves the IR + preflight artifacts intact. It is NEVER the right
+choice for "restart" / "from scratch" — the IR survives and the next
+build looks identical to the prior. Always combine with the FS
+delete + preflight regen above unless the user explicitly opts out.
+
+**Auto-restart (§11) ALSO follows the FULL from-scratch path.**
+When a house reaches grade ≥ 9.0 or plateaus, the loop performs the
+nuclear-option clean for THAT house: DB purge for the house's model,
+FS delete of `tmp/reverse-bim/house-{X}/`, re-run preflight, then
+build iter-1 fresh from the regenerated IR. The point of the restart
+is to verify the methodology works from genuinely zero state — short-
+circuiting that defeats the purpose.
 
 ---
 
@@ -646,25 +665,37 @@ by ≤ 0.1, mark `PLATEAU` and trigger Phase 3 (auto-restart).
 
 ---
 
-## 11. Phase 3 — auto-restart loop
+## 11. Phase 3 — auto-restart loop (FULL from-scratch per §0b)
 
 Triggered by:
 - A house reaching the converged threshold (verify reproducibility)
 - A house hitting PLATEAU (verify the model isn't fragile to seed
   noise)
+- User explicit `/loop restart {house}` or "restart" trigger word
 
-Process:
+**Process is the FULL nuclear option (§0b §8 matrix top row):**
 
-1. Archive the house's current model + captures to
-   `tmp/reverse-bim/house-{H}/_restarts/restart-{N}/`
-2. Run testhouse_purge for that house
-3. Re-run Phase 1 from scratch
-4. Compare the new grade vs the archived grade
+1. Archive the house's grade history + a single capture snapshot
+   to `tmp/reverse-bim/_restart-history/{house}/restart-{N}/`
+   (kept OUTSIDE the per-house tree so it survives the FS delete).
+2. **DB purge** for the house's model (`testhouse_purge.py --house ...`)
+3. **FS delete** `tmp/reverse-bim/house-{H}/` ENTIRELY (preflight,
+   understanding, iter-*, run.jsonl, everything)
+4. **Re-run preflight** (`scripts/testhouse_drive.py preflight --house H`)
+   to regenerate IR from the source PDFs. This is the load-bearing
+   step — without it the IR survives and the next build is identical.
+5. Re-run Phase 1 from the regenerated IR
+6. Compare the new grade vs the archived grade
    - Within ±0.3 → restart confirms convergence; increment
      "consecutive converged" counter
    - Drops > 0.3 → flag as FRAGILE; investigate which fix in the
-     pipeline was overfitting to a specific seed
-5. Loop until 3 consecutive restarts converge OR the user stops
+     pipeline was overfitting to a specific seed (likely an IR
+     fact the prior reader extracted that the new reader missed)
+7. Loop until 3 consecutive restarts converge OR the user stops
+
+**The user explicitly demands this nuclear-option semantics for
+restart** so each restart genuinely simulates "agent has never seen
+this house". A restart that preserves IR is fake convergence.
 
 ---
 
