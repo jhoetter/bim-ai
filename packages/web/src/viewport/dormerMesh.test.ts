@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {
   buildGableDormerRoof,
   buildHippedDormerRoof,
+  buildShedDormerRoof,
   dormerFootprintMm,
   makeDormerMesh,
 } from './dormerMesh';
@@ -132,6 +133,39 @@ describe('makeDormerMesh', () => {
     expect(meshes.length).toBeGreaterThanOrEqual(4);
   });
 
+  it('renders a shed (Schleppgaube) dormer with a tilted roof slab', () => {
+    const dormer: DormerElem = {
+      kind: 'dormer',
+      id: 'd1',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -2000, acrossRidgeMm: 1000 },
+      widthMm: 2400,
+      wallHeightMm: 2400,
+      depthMm: 2000,
+      dormerRoofKind: 'shed',
+      dormerRoofPitchDeg: 18,
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+    };
+    const group = makeDormerMesh(dormer, elementsById, null);
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+    });
+    expect(meshes.length).toBeGreaterThanOrEqual(4);
+    // The roof slab should reach above topY (otherwise it's flat and the
+    // dormer is visually invisible — the regression this test guards).
+    const roofTopYs = meshes
+      .map((m) => {
+        m.geometry.computeBoundingBox();
+        return m.geometry.boundingBox!.max.y + m.position.y;
+      })
+      .sort((a, b) => b - a);
+    expect(roofTopYs[0] - roofTopYs[roofTopYs.length - 1]).toBeGreaterThan(0.3);
+  });
+
   it('renders a hipped dormer with a ridged roof', () => {
     const dormer: DormerElem = {
       kind: 'dormer',
@@ -166,6 +200,27 @@ describe('buildGableDormerRoof', () => {
     const idx = mesh.geometry.getIndex();
     expect(idx).not.toBeNull();
     expect(idx!.count / 3).toBe(6);
+  });
+});
+
+describe('buildShedDormerRoof', () => {
+  it('produces a tilted slab whose low edge is at y=0 and high edge above', () => {
+    const mat = new THREE.MeshBasicMaterial();
+    const mesh = buildShedDormerRoof(2.4, 2.0, 0.12, 0.65, false, true, mat);
+    mesh.geometry.computeBoundingBox();
+    const bb = mesh.geometry.boundingBox!;
+    expect(bb.min.y).toBeCloseTo(0, 2);
+    expect(bb.max.y).toBeGreaterThan(0.5);
+    // ridgeAlongX=false → perp axis is world-X. openTowardPositiveAcross=true
+    // means the eave (low Y) corner should sit on the +X side. Sample the
+    // raw position attribute to confirm at least one vertex at near-zero Y
+    // sits at maximum X.
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    let minYxOf = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getY(i) < 0.05) minYxOf = Math.max(minYxOf, pos.getX(i));
+    }
+    expect(minYxOf).toBeGreaterThan(0.5);
   });
 });
 
