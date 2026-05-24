@@ -410,6 +410,186 @@ export function _buildAsymmetricGableGeometry(
   return g;
 }
 
+/**
+ * ISSUE-53 — Pultdach (mono-pitch) roof: a single tilted slab spanning the
+ * footprint, eave at the low edge, ridge at the high edge.
+ *
+ * The high edge sits on the side identified by `highEdge` ('n'|'e'|'s'|'w').
+ * For `highEdge ∈ {'n','s'}` the ridge runs along world-X and the slab tilts
+ * across world-Z; for `{'e','w'}` it's swapped. The full footprint span
+ * perpendicular to the ridge is the slope run (NOT half-span, unlike a
+ * symmetric gable).
+ *
+ * Returns a triangular-prism BufferGeometry (low-eave triangle + high-ridge
+ * triangle + four side quads) so it's watertight for any downstream CSG.
+ */
+export function _buildMonoPitchGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  highEdge: 'n' | 'e' | 's' | 'w',
+): THREE.BufferGeometry {
+  const ridgeAlongX = highEdge === 'n' || highEdge === 's';
+  const spanX = ox1 - ox0;
+  const spanZ = oz1 - oz0;
+  const runM = ridgeAlongX ? spanZ : spanX;
+  const ridgeY = eaveY + runM * Math.tan(slopeRad);
+
+  // Pick the (low, high) world coordinates along the across-ridge axis so the
+  // high edge sits on the requested compass side.
+  //   n → high at +Z (oz1), low at -Z (oz0)
+  //   s → high at -Z (oz0), low at +Z (oz1)
+  //   e → high at +X (ox1), low at -X (ox0)
+  //   w → high at -X (ox0), low at +X (ox1)
+  let lowX = ox0,
+    highX = ox1,
+    lowZ = oz0,
+    highZ = oz1;
+  if (ridgeAlongX) {
+    if (highEdge === 'n') {
+      lowZ = oz0;
+      highZ = oz1;
+    } else {
+      lowZ = oz1;
+      highZ = oz0;
+    }
+  } else {
+    if (highEdge === 'e') {
+      lowX = ox0;
+      highX = ox1;
+    } else {
+      lowX = ox1;
+      highX = ox0;
+    }
+  }
+
+  // Four world-space corners: two at the low eave (y=eaveY), two at the high
+  // ridge (y=ridgeY). Triangulated into two top-face triangles, plus four
+  // side quads (low eave, high ridge, two gable triangles) that close the
+  // prism so it's watertight.
+  let positions: number[];
+  if (ridgeAlongX) {
+    // Top face spans from (any x, lowZ, eaveY) → (any x, highZ, ridgeY).
+    // Vertices (CCW from above for outward +Y normals):
+    //   A = (ox0, eaveY, lowZ)   B = (ox1, eaveY, lowZ)
+    //   C = (ox1, ridgeY, highZ) D = (ox0, ridgeY, highZ)
+    const A: [number, number, number] = [ox0, eaveY, lowZ];
+    const B: [number, number, number] = [ox1, eaveY, lowZ];
+    const C: [number, number, number] = [ox1, ridgeY, highZ];
+    const D: [number, number, number] = [ox0, ridgeY, highZ];
+    // Bottom-face corners (close the prism at y=eaveY so it's watertight).
+    const A2: [number, number, number] = [ox0, eaveY, lowZ];
+    const B2: [number, number, number] = [ox1, eaveY, lowZ];
+    const C2: [number, number, number] = [ox1, eaveY, highZ];
+    const D2: [number, number, number] = [ox0, eaveY, highZ];
+    positions = [
+      // Top tilted slab (A-B-C, A-C-D)
+      ...A,
+      ...B,
+      ...C,
+      ...A,
+      ...C,
+      ...D,
+      // Low eave gable triangle (under the eave edge AB) — needed for valid
+      // ridge-side face. Closes the eave-edge wall: AB + A2-B2.
+      ...A2,
+      ...B,
+      ...A,
+      ...A2,
+      ...B2,
+      ...B,
+      // High ridge wall (between top-edge CD and bottom-edge C2-D2)
+      ...D,
+      ...C,
+      ...C2,
+      ...D,
+      ...C2,
+      ...D2,
+      // Left gable (ox0 face): triangle A2-D2-D-A (split into 2 tris)
+      ...A2,
+      ...A,
+      ...D,
+      ...A2,
+      ...D,
+      ...D2,
+      // Right gable (ox1 face): triangle B2-B-C-C2 (split into 2 tris)
+      ...B2,
+      ...C2,
+      ...C,
+      ...B2,
+      ...C,
+      ...B,
+      // Bottom closure quad facing -Y (A2-D2-C2-B2 split into 2 tris)
+      ...A2,
+      ...D2,
+      ...C2,
+      ...A2,
+      ...C2,
+      ...B2,
+    ];
+  } else {
+    // Ridge runs along Z; across-ridge axis is X.
+    const A: [number, number, number] = [lowX, eaveY, oz0];
+    const B: [number, number, number] = [lowX, eaveY, oz1];
+    const C: [number, number, number] = [highX, ridgeY, oz1];
+    const D: [number, number, number] = [highX, ridgeY, oz0];
+    const A2: [number, number, number] = [lowX, eaveY, oz0];
+    const B2: [number, number, number] = [lowX, eaveY, oz1];
+    const C2: [number, number, number] = [highX, eaveY, oz1];
+    const D2: [number, number, number] = [highX, eaveY, oz0];
+    positions = [
+      ...A,
+      ...B,
+      ...C,
+      ...A,
+      ...C,
+      ...D,
+      // Low eave wall
+      ...A2,
+      ...B,
+      ...A,
+      ...A2,
+      ...B2,
+      ...B,
+      // High ridge wall
+      ...D,
+      ...C,
+      ...C2,
+      ...D,
+      ...C2,
+      ...D2,
+      // South gable (oz0 face)
+      ...A2,
+      ...A,
+      ...D,
+      ...A2,
+      ...D,
+      ...D2,
+      // North gable (oz1 face)
+      ...B2,
+      ...C2,
+      ...C,
+      ...B2,
+      ...C,
+      ...B,
+      // Bottom closure
+      ...A2,
+      ...D2,
+      ...C2,
+      ...A2,
+      ...C2,
+      ...B2,
+    ];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
 export function _buildHipGeometry(
   ox0: number,
   ox1: number,

@@ -58,6 +58,7 @@ from bim_ai.material_assembly_resolve import (
 from bim_ai.roof_geometry import (
     footprint_is_valid_axis_aligned_rectangle_mm,
     gable_half_run_mm_and_ridge_axis,
+    mono_pitch_default_high_edge,
 )
 
 
@@ -782,6 +783,14 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             "gable_pitched_rectangle",
             "asymmetric_gable",
         ) and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        # ISSUE-53: mono_pitch (Pultdach) gets a right-triangle prism whose
+        # hypotenuse becomes the single tilted top face. Restricted to
+        # axis-aligned rectangles for v0; non-rectangular Pultdach falls back
+        # to the flat slab body.
+        use_mono_pitch_body = (
+            rf.roof_geometry_mode == "mono_pitch"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
 
         if use_gable_body:
             # Eave plate elevation: walls on the reference level give the eave Y.
@@ -918,6 +927,139 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rmat = np.eye(4, dtype=float)
             rmat[:3, :3] = R
             rmat[:3, 3] = origin_world
+        elif use_mono_pitch_body:
+            # ISSUE-53: Pultdach — right-triangle cross-section extruded along
+            # the ridge axis. Eave at the low edge, ridge at the high edge.
+            walls_at_ref = [
+                w
+                for w in doc.elements.values()
+                if isinstance(w, WallElem) and w.level_id == rf.reference_level_id
+            ]
+            wall_top_m = max(
+                ((w.height_mm or 0) / 1000.0 for w in walls_at_ref),
+                default=0.0,
+            )
+            eave_z_m = elev + wall_top_m
+
+            high_edge = rf.mono_pitch_high_edge or mono_pitch_default_high_edge(
+                span_x_mm, span_z_mm
+            )
+            slope_deg = float(rf.slope_deg or 25.0)
+            slope_rad = math.radians(clamp(slope_deg, 5.0, 70.0))
+            ridge_along_x = high_edge in ("n", "s")
+            # The "run" is the full footprint span perpendicular to the ridge
+            # (NOT half, unlike a symmetric gable).
+            perp_span_mm = span_z_mm if ridge_along_x else span_x_mm
+            along_ridge_mm = span_x_mm if ridge_along_x else span_z_mm
+            perp_span_m = perp_span_mm / 1000.0
+            along_ridge_m = along_ridge_mm / 1000.0
+            ridge_rise_m = perp_span_m * math.tan(slope_rad)
+
+            base_z_m = eave_z_m
+            # Right-triangle profile: eave at one end (height 0), ridge at the
+            # other end (height = ridge_rise_m). Profile lives in local XY:
+            # local-X = across-ridge, local-Y = vertical. The orientation of
+            # the +X local axis is mapped to the +high-edge direction in
+            # placement so the high edge lands on the correct compass side.
+            half_perp_m = perp_span_m / 2.0
+            triangle_pts = [
+                (-half_perp_m, 0.0),
+                (half_perp_m, 0.0),
+                (half_perp_m, ridge_rise_m),
+                (-half_perp_m, 0.0),
+            ]
+            polyline = f.create_entity(
+                "IfcPolyline",
+                Points=[
+                    f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(float(px), float(py)),
+                    )
+                    for px, py in triangle_pts
+                ],
+            )
+            profile = f.create_entity(
+                "IfcArbitraryClosedProfileDef",
+                ProfileType="AREA",
+                OuterCurve=polyline,
+            )
+            extruded = f.create_entity(
+                "IfcExtrudedAreaSolid",
+                SweptArea=profile,
+                Position=f.create_entity(
+                    "IfcAxis2Placement3D",
+                    Location=f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(0.0, 0.0, 0.0),
+                    ),
+                    Axis=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+                    RefDirection=f.create_entity(
+                        "IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)
+                    ),
+                ),
+                ExtrudedDirection=f.create_entity(
+                    "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
+                ),
+                Depth=along_ridge_m,
+            )
+            rep_rf = f.create_entity(
+                "IfcShapeRepresentation",
+                ContextOfItems=body_ctx,
+                RepresentationIdentifier="Body",
+                RepresentationType="SweptSolid",
+                Items=(extruded,),
+            )
+
+            roof_ent = ifcopenshell.api.root.create_entity(
+                f, ifc_class="IfcRoof", name=rf.name or rid
+            )
+            roof_products[rid] = roof_ent
+            roof_z_center_by_id[rid] = float(base_z_m + ridge_rise_m / 2.0)
+            roof_extrusion_depth_by_id[rid] = float(along_ridge_m)
+
+            # Placement rotation so the local-Z extrusion axis aligns with the
+            # ridge (world axis). The high-edge token selects which compass side
+            # the ridge sits on; we flip the across-axis to put the +local-X
+            # corner (the tall corner) on that side.
+            R = np.eye(3, dtype=float)
+            sign_across = 1.0
+            if ridge_along_x:
+                # local Z (extrusion) → world X (ridge). local X → world Y
+                # (across). Flip sign when high_edge == 's' so the tall corner
+                # ends up at the south eave.
+                sign_across = 1.0 if high_edge == "n" else -1.0
+                R = np.array(
+                    [
+                        [0.0, 0.0, 1.0],
+                        [sign_across, 0.0, 0.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m - along_ridge_m / 2.0, cy_m, base_z_m],
+                    dtype=float,
+                )
+            else:
+                # ridge along world Z. local Z → world Z (ridge),
+                # local X → world X (across).
+                sign_across = 1.0 if high_edge == "e" else -1.0
+                R = np.array(
+                    [
+                        [sign_across, 0.0, 0.0],
+                        [0.0, 0.0, 1.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m, cy_m - along_ridge_m / 2.0, base_z_m],
+                    dtype=float,
+                )
+
+            rmat = np.eye(4, dtype=float)
+            rmat[:3, :3] = R
+            rmat[:3, 3] = origin_world
         else:
             r_profile: list[tuple[float, float]] = []
             for px, py in rp_mm:
@@ -938,6 +1080,20 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rmat[1, 3] = cy_m
             rmat[2, 3] = roof_z_center
 
+        # ISSUE-53: tag IfcRoof.PredefinedType for mono_pitch so downstream
+        # consumers (Solibri / BIMcollab / IDS) can identify the Pultdach.
+        # IFC4's IfcRoofTypeEnum uses "SHED_ROOF" for the single-slope variant
+        # — the spec's "monopitch" colloquial maps to SHED_ROOF (per the
+        # IfcRoof description in buildingSMART's IFC4 documentation). Other
+        # modes leave the predefined type untouched (NOTDEFINED) to avoid
+        # back-compat churn with the existing gable export.
+        if use_mono_pitch_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "SHED_ROOF"
+            except (RuntimeError, ValueError):
+                # Schema rejects the keyword; leave the default.
+                pass
+
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
         st_roof = storey_for(rf.reference_level_id)
@@ -957,7 +1113,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rf.roof_type_id:
             bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
         bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
-        if use_gable_body:
+        if use_gable_body or use_mono_pitch_body:
             bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
                 f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )
@@ -969,6 +1125,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 bim_ai_props["BimAiRoofEaveHeightLeftMm"] = float(rf.eave_height_left_mm)
             if rf.eave_height_right_mm is not None:
                 bim_ai_props["BimAiRoofEaveHeightRightMm"] = float(rf.eave_height_right_mm)
+        if use_mono_pitch_body and rf.mono_pitch_high_edge is not None:
+            # ISSUE-53: round-trip the explicit high-edge so authoritative
+            # replay reconstructs the same Pultdach orientation.
+            bim_ai_props["BimAiRoofMonoPitchHighEdge"] = str(rf.mono_pitch_high_edge)
         if bim_ai_props:
             attach_kernel_identity_pset(roof_ent, "Pset_BimAiKernel", rid, **bim_ai_props)
         rf_layers = resolved_layers_for_roof(doc, rf)

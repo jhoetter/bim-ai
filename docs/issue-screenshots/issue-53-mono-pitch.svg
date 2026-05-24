@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #53 — mono_pitch (Pultdach) RoofGeometryMode, before vs after</title>
+  <desc>
+    Section view (east elevation) of a 6000 x 4000 mm catalog accent volume (e.g.
+    house-13's entry cube). Before: the only pitched literal is
+    gable_pitched_rectangle, so the renderer produces a symmetric ridge centered on
+    the footprint (mis-matches the source Pultdach). After: roofGeometryMode =
+    mono_pitch produces a single tilted slab with the eave at the low edge and the
+    ridge at the high edge (monoPitchHighEdge = "n"), matching the source massing.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="roofTilesBefore" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#b35d4f"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#7d3d33" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#7d3d33" stroke-width="0.6"/>
+    </pattern>
+    <pattern id="roofTilesAfter" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#3d6e4b"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#244531" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#244531" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before — gable only</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "gable_pitched_rectangle" — symmetric ridge, wrong for Pultdach
+    </text>
+
+    <!-- Ground line -->
+    <line x1="40" y1="380" x2="520" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- Walls of cube: 6m wide x 3m tall, scale 50 px/m -->
+    <!-- footprint left x=160 (40+120) right x=460 (40+120+300) -->
+    <rect x="160" y="230" width="300" height="150" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+
+    <!-- Symmetric gable: ridge centered at x=310, peak height = 1.5m * tan(35) ≈ 1.05m → 52 px -->
+    <polygon points="160,230 460,230 310,178" fill="url(#roofTilesBefore)" stroke="#7d3d33" stroke-width="1.5"/>
+
+    <!-- Ridge marker -->
+    <circle cx="310" cy="178" r="3" fill="#ffffff" stroke="#7d3d33" stroke-width="1.5"/>
+    <text x="310" y="172" text-anchor="middle" font-size="10" fill="#7d3d33" font-weight="600">ridge</text>
+
+    <!-- Eave labels -->
+    <text x="155" y="245" text-anchor="end" font-size="9" fill="#4b5563">eave</text>
+    <text x="465" y="245" text-anchor="start" font-size="9" fill="#4b5563">eave</text>
+
+    <!-- Annotation: closest existing literal -->
+    <g transform="translate(40, 405)">
+      <text font-size="10" fill="#991b1b" font-weight="600">x</text>
+      <text x="14" font-size="10" fill="#4b5563">
+        Source Pultdach has ridge on ONE edge — symmetric peak misrepresents the massing.
+      </text>
+    </g>
+
+    <!-- Issue badge -->
+    <g transform="translate(40, 90)">
+      <rect width="155" height="22" rx="11" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+      <text x="78" y="15" text-anchor="middle" font-size="10" fill="#7f1d1d" font-weight="600">renderer mismatch</text>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After — Pultdach + gable available</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "mono_pitch", monoPitchHighEdge: "n" — eave south, ridge north
+    </text>
+
+    <line x1="580" y1="380" x2="1060" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- Walls of cube -->
+    <rect x="700" y="230" width="300" height="150" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+
+    <!-- Mono-pitch slab: eave at south (right side in section, lower x), ridge at north (left side, higher y) -->
+    <!-- depth = 4m → run = 4m; slope = 15° → rise = 4 * tan(15°) ≈ 1.07m → ~54 px -->
+    <!-- Section orientation matches "Before" panel: x = across-ridge axis.
+         left edge (north) is the high edge, right edge (south) is the eave.    -->
+    <polygon points="700,176 1000,230 1000,238 700,184" fill="url(#roofTilesAfter)" stroke="#244531" stroke-width="1.5"/>
+
+    <!-- Ridge marker (high edge, north) -->
+    <circle cx="700" cy="176" r="3" fill="#ffffff" stroke="#244531" stroke-width="1.5"/>
+    <text x="700" y="170" text-anchor="middle" font-size="10" fill="#244531" font-weight="600">ridge (N)</text>
+
+    <!-- Eave marker (south, low) -->
+    <circle cx="1000" cy="230" r="3" fill="#ffffff" stroke="#244531" stroke-width="1.5"/>
+    <text x="1000" y="222" text-anchor="middle" font-size="10" fill="#244531" font-weight="600">eave (S)</text>
+
+    <!-- Slope rise annotation -->
+    <line x1="690" y1="176" x2="690" y2="230" stroke="#244531" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="685" y="205" text-anchor="end" font-size="9" fill="#244531">runM·tan(slope)</text>
+
+    <!-- Annotation: this PR -->
+    <g transform="translate(580, 405)">
+      <text font-size="10" fill="#15803d" font-weight="600">✓</text>
+      <text x="14" font-size="10" fill="#4b5563">
+        Single tilted quad; ridge at `eaveY + depthAlongPitch · tan(pitchDeg)`. IFC body
+        = right-triangle prism, PredefinedType = SHED_ROOF.
+      </text>
+    </g>
+
+    <!-- Mode badge -->
+    <g transform="translate(580, 90)">
+      <rect width="185" height="22" rx="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="92" y="15" text-anchor="middle" font-size="10" fill="#14532d" font-weight="600">RoofGeometryMode: mono_pitch</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <text x="550" y="455" text-anchor="middle" font-size="9.5" fill="#6b7280">
+    Issue #53 — closes mono_pitch (Pultdach) gap. Per-edge overhang follow-up tracked in #56.
+  </text>
+</svg>

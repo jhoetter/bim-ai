@@ -1565,10 +1565,13 @@ export type Element =
         | 'asymmetric_gable'
         | 'gable_pitched_l_shape'
         | 'hip'
-        | 'flat';
+        | 'flat'
+        | 'mono_pitch';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
+      /** ISSUE-53: compass quadrant of the high (ridge) edge for `mono_pitch` (Pultdach). */
+      monoPitchHighEdge?: 'n' | 'e' | 's' | 'w' | null;
       roofTypeId?: string | null;
       materialKey?: string | null;
       loadBearing?: boolean | null;

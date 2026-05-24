@@ -52,6 +52,7 @@ from bim_ai.engine import (
     _validate_plan_tag_style_ref,
     _wall_thickness_from_type,
     assert_valid_gable_pitched_rectangle_footprint_mm,
+    assert_valid_mono_pitch_footprint_mm,
     cast,
     new_id,
     parse_plan_category_graphics_property_json,
@@ -852,13 +853,22 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(update={"roof_type_id": rtid})
                 elif cmd.key == "roofGeometryMode":
                     mode_s = raw_r
-                    if mode_s not in ("mass_box", "gable_pitched_rectangle"):
+                    if mode_s not in (
+                        "mass_box",
+                        "gable_pitched_rectangle",
+                        "mono_pitch",
+                    ):
                         raise ValueError(
-                            "roofGeometryMode must be mass_box|gable_pitched_rectangle"
+                            "roofGeometryMode must be "
+                            "mass_box|gable_pitched_rectangle|mono_pitch"
                         )
                     mode = cast(RoofGeometryMode, mode_s)
                     if mode == "gable_pitched_rectangle":
                         assert_valid_gable_pitched_rectangle_footprint_mm(
+                            [(p.x_mm, p.y_mm) for p in el.footprint_mm]
+                        )
+                    elif mode == "mono_pitch":
+                        assert_valid_mono_pitch_footprint_mm(
                             [(p.x_mm, p.y_mm) for p in el.footprint_mm]
                         )
                     els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})

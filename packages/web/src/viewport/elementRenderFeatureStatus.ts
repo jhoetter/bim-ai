@@ -1046,6 +1046,7 @@ function knownRoofGeometryMode(mode: string): boolean {
     'asymmetric_gable',
     'hip',
     'hip_like',
+    'mono_pitch',
     'mono_slope',
     'terrace',
     'sketch',
