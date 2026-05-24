@@ -1,22 +1,51 @@
-# Testhouse Convergence v3 — Multi-Day Loop with Constant Visual Feedback
+# Testhouse Build-from-Scratch Loop — to Genuine 9/10 Across 3 Houses
 
 **Owner**: Claude Opus 4.7 (1M context), autonomous via `/loop`
-**Started**: 2026-05-24 (early morning, after the v1 nightshift)
-**Stop conditions**: each house at honest **≥ 9.0/10** under the v3
-visual-diff rubric (§5), maintained across **3 consecutive fresh
-restarts** (auto-purge → re-author → re-grade). May run for multiple
-days.
-**Cadence**: commit + push after every code change and every grade.
+**Started**: 2026-05-24
+**The real goal**: take the three source folders under
+`testhouses/house-{alpha,beta,gamma}/` (only PDFs — nothing else),
+build a BIM model of each that scores **honestly ≥ 9.0/10** against
+the source documents under a strict source-vs-render visual review,
+and **repeatedly** verify it from genuinely-clean starts. We get
+there by improving — in order of leverage — (1) the **methodology**
+(the per-phase build chain), (2) the **logging** (so we see what the
+model + the graders are actually doing), (3) the **rendering** (web
+viewer's mesh builders, materials, terrain), and (4) the **modeling
+capabilities** (engine commands + element types for sills, balconies,
+half-gable roofs, opening cuts on gable walls, etc.).
+
+**Stop conditions** (all required):
+- Each of the 3 houses at honest **≥ 9.0/10** under the strict
+  visual-diff rubric (§5).
+- This score must be **reproduced ≥ 3 times in a row** from genuine
+  from-scratch builds (§0b + §11). One-off scores don't count —
+  fragile pipelines are not "done".
+- The grader subagents MUST have **looked at the rendered captures
+  side-by-side with the source PDFs** for every grade. A grade that
+  only inspected snapshot JSON or IR is INVALID. See §14.
+
+May run for multiple days. Loop never terminates on a one-shot 9 —
+only on the 3-in-a-row from-clean-state demonstration.
+
+**Cadence**: commit + push after every code change AND every grade.
 **Parallelism**: cross-house authoring may run in parallel via
 subagent fan-out (§17). Engine work + per-house authoring must NOT
 overlap on the same model id.
 
 This tracker supersedes `testhouse-nightshift-tracker-2026-05-23.md`.
-The v1 nightshift hit avg 9.55/10 on a biased rubric; the user looked
-at the live viewer and judged "3/10 at most". See
-`tmp/reverse-bim/honest-gap-analysis-2026-05-24.md` for the root
-cause: subagent graders credited snapshot-JSON elements instead of
-visible-render elements.
+The prior nightshift hit avg 9.55/10 on a biased rubric; the user
+looked at the live viewer and judged "3/10 at most" — root cause:
+subagent graders credited snapshot-JSON elements instead of visible-
+render elements, AND the loop silently polluted the IR with synth
+facts that made every "fresh restart" identical to the prior. Both
+loopholes are explicitly closed in §0a (IR immutable) + §14 (visual-
+diff rubric).
+
+> The name "convergence v3" in the filename is historical baggage
+> (it's the 3rd attempt at this loop). The REAL framing is in this
+> mission statement: **build → grade honestly → improve methodology/
+> logging/rendering/modeling → repeat from scratch until 3 honest
+> ≥9/10 in a row**.
 
 ---
 
@@ -130,18 +159,44 @@ circuiting that defeats the purpose.
 
 ## 1. Mission + non-negotiables
 
-> **Build three BIM models from source folders that, when rendered,
-> are indistinguishable from the source architect's elevations and
-> floorplans to a strict reviewer.** Stop only when each house has
-> sustained ≥ 9.0/10 under the v3 visual-diff rubric across three
-> consecutive fresh restarts.
+> **Build three BIM models from `testhouses/house-{X}/` source folders
+> that, when rendered in the web viewer, are indistinguishable from
+> the source architect's elevations and floorplans to a strict
+> reviewer.** Stop only when each house has sustained honest
+> ≥ 9.0/10 under the strict visual-diff rubric (§5) across three
+> consecutive fresh from-scratch builds (§0b + §11).
+>
+> The loop improves four layers IN PRIORITY ORDER:
+> 1. **Methodology** — the build chain (per-phase order, IR
+>    interpretation, visual checkpoints between phases).
+> 2. **Logging** — every commit + every grade must be inspectable
+>    so we can see WHY a model looks wrong and what the loop tried.
+> 3. **Rendering** — web viewer's mesh builders, material shading,
+>    terrain triangulation, opening cuts. Without these the
+>    geometry can be perfect and the captures still look like
+>    "small toy box".
+> 4. **Modeling capabilities** — engine commands + element types
+>    for the architectural features the source documents show:
+>    sills, lintels, shutters, balconies, half-gable roofs, etc.
+>
+> The loop is NOT done until ALL THREE houses meet the gate from
+> a genuinely fresh state THREE TIMES IN A ROW. Single-shot
+> convergence is not real convergence.
 
 Non-negotiables:
 
-- **No subagent grader bias.** Every grader receives source-render
-  side-by-side PNGs and grades on what is VISIBLE, not what is in
-  the snapshot JSON. If the engine authored a window that doesn't
-  show in the render, that window does NOT count.
+- **Grading is honest visual diff.** Every grader MUST open the
+  rendered ortho captures + the rendered floorplan captures + the
+  3D-perspective capture AND the matching source PDF pages (the
+  Ansichten + Grundrisse + Schnitt drawings) and compare them
+  side-by-side. A grader that only reads snapshot JSON or IR is
+  giving an INVALID grade and its output must be discarded. See
+  §14 for the verbatim grader prompt.
+- **No subagent grader bias.** If the engine authored a window
+  that doesn't show in the render, that window does NOT count.
+  If the snapshot has 10 walls but the render shows 4, the score
+  is on 4. The user looks at the live viewer; the grader must do
+  the same kind of visual audit.
 - **Per-phase visual checkpoints.** Each phase commit captures a
   screenshot (floorplan top-down per floor; ortho elevation per
   facade) and compares it side-by-side against the matching source
@@ -1005,12 +1060,28 @@ After restart, re-grade. Compare:
 
 ## 20. End-state criteria + final report
 
-**Loop terminates when:**
+**Loop terminates ONLY when ALL of the following are true:**
 
-- All 3 houses have `consecutive_converged ≥ 3` AND
-- All P0 engine asks have shipped OR been documented as deferred
-  with user sign-off AND
-- Final grade per house is ≥ 9.0 with all 5 axes ≥ 0.7
+- Each of the 3 houses has `consecutive_converged ≥ 3` (where each
+  "converged" = an honest ≥ 9.0/10 grade from a FRESH from-scratch
+  build per §0b: full DB purge + FS delete + preflight regenerated
+  from PDFs + author chain + visual grade).
+- The grading subagent that produced each ≥ 9.0 explicitly compared
+  rendered captures (orthos + floorplans + 3D perspective) against
+  the source PDF pages. Grades from JSON-only inspection are voided
+  and the iter is re-graded.
+- All P0 engine asks (§16) have either SHIPPED (commit sha in
+  `engine_asks_closed`) OR been documented as deferred with user
+  sign-off.
+- Final grade per house ≥ 9.0 with all 5 rubric axes ≥ 0.7.
+- The loop's most recent 3 consecutive from-scratch grades per house
+  sit within a ±0.5 band — wild swings indicate the methodology is
+  fragile to seed noise + the gate is not yet truly met.
+
+**Single-shot 9/10 is NOT done.** A house that hit 9.2 once but
+6.0 on a re-run from scratch is at 0/3 consecutive. The point of
+the 3-in-a-row requirement is to prove the methodology is robust,
+not that we got lucky with one set of grader noise.
 
 **Final report** (`tmp/reverse-bim/convergence-v3-final-report.md`):
 - Per-house grade trajectory (chart-ready CSV)
