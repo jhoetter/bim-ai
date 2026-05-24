@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220">
+  <title>MAT-01 — Blockhaus log-course material swatches (issue #42)</title>
+  <desc>
+    New MAT-01 entries log_round_natural and log_square_natural shown beside
+    the existing timber_cladding fallback used by readers prior to this fix.
+  </desc>
+  <style>
+    .label { font: 14px/1.2 sans-serif; fill: #222; text-anchor: middle; }
+    .key   { font: 12px/1.2 monospace; fill: #555; text-anchor: middle; }
+    .hex   { font: 11px/1.2 monospace; fill: #777; text-anchor: middle; }
+    .title { font: bold 14px/1.2 sans-serif; fill: #111; text-anchor: middle; }
+  </style>
+
+  <text class="title" x="320" y="24">MAT-01 — Blockhaus log-course swatches (issue #42)</text>
+
+  <!-- timber_cladding (existing fallback) -->
+  <rect x="40"  y="50" width="160" height="100" fill="#7c5b3b" stroke="#222" stroke-width="1"/>
+  <text class="label" x="120" y="172">Timber cladding (fallback)</text>
+  <text class="key"   x="120" y="190">timber_cladding</text>
+  <text class="hex"   x="120" y="206">#7c5b3b</text>
+
+  <!-- log_round_natural (new) -->
+  <rect x="240" y="50" width="160" height="100" fill="#8a6a45" stroke="#222" stroke-width="1"/>
+  <text class="label" x="320" y="172">Round log (natural)</text>
+  <text class="key"   x="320" y="190">log_round_natural</text>
+  <text class="hex"   x="320" y="206">#8a6a45</text>
+
+  <!-- log_square_natural (new) -->
+  <rect x="440" y="50" width="160" height="100" fill="#7c5b3b" stroke="#222" stroke-width="1"/>
+  <text class="label" x="520" y="172">Square log (natural)</text>
+  <text class="key"   x="520" y="190">log_square_natural</text>
+  <text class="hex"   x="520" y="206">#7c5b3b</text>
+</svg>

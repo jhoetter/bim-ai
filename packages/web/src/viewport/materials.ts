@@ -882,6 +882,24 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     displayName: 'Standing-seam metal — copper',
   },
 
+  // ── MAT-01 log-course (Blockhaus / log construction) variants ───────
+  log_round_natural: {
+    key: 'log_round_natural',
+    baseColor: '#8a6a45',
+    roughness: 0.95,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Round log (natural)',
+  },
+  log_square_natural: {
+    key: 'log_square_natural',
+    baseColor: '#7c5b3b',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Square log (natural)',
+  },
+
   // Placeholder for unloaded / unresolved family instances (KRN-09 forward dep).
   placeholder_unloaded: {
     key: 'placeholder_unloaded',
