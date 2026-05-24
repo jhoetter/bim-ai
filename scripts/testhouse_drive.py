@@ -48,7 +48,56 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError  # noqa: E402
 from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
 from bim_ai.roof_geometry import footprint_is_valid_l_shape_mm  # noqa: E402
 
-HOUSES = ("alpha", "beta", "gamma")
+_FALLBACK_HOUSES: tuple[str, ...] = ("alpha", "beta", "gamma")
+
+
+def _bim_database_base() -> Path:
+    """Resolve the bim-database root from ``BIM_DATABASE_PATH`` or default."""
+
+    return Path(
+        os.environ.get(
+            "BIM_DATABASE_PATH",
+            str(Path.home() / "repos" / "bim-database"),
+        )
+    )
+
+
+def _discover_houses() -> tuple[str, ...]:
+    """Discover catalog house keys at startup.
+
+    MF-driver-9 (#39): scripts/testhouse_drive.py used to hard-code
+    ``HOUSES = ("alpha", "beta", "gamma")`` and pass that tuple to
+    ``argparse``'s ``choices=`` argument. Once the catalog grew to
+    ``house-1`` / ``house-2`` / … under ``$BIM_DATABASE_PATH``, every
+    ``--house house-1`` invocation hard-failed at argparse before
+    reaching any code that could discover the real keys.
+
+    Scan ``$BIM_DATABASE_PATH`` (default ``~/repos/bim-database``) for
+    directories named ``house-<N>`` / ``testhouse-<N>`` paired with a
+    sibling ``<dir>.pdf`` (the source brief). Return the sorted tuple of
+    discovered keys. Caller falls back to :data:`_FALLBACK_HOUSES`
+    (alpha/beta/gamma) when discovery returns nothing, so test
+    environments without ``BIM_DATABASE_PATH`` keep working.
+    """
+
+    base = _bim_database_base()
+    keys: list[str] = []
+    try:
+        entries = list(base.iterdir())
+    except (FileNotFoundError, NotADirectoryError, PermissionError):
+        return ()
+    for p in entries:
+        if not p.is_dir():
+            continue
+        name = p.name
+        if not (name.startswith("house-") or name.startswith("testhouse-")):
+            continue
+        if (base / f"{name}.pdf").exists():
+            keys.append(name)
+    return tuple(sorted(keys))
+
+
+HOUSES: tuple[str, ...] = _discover_houses() or _FALLBACK_HOUSES
 DEFAULT_API_BASE = "http://127.0.0.1:28500/api"
 DEFAULT_DPI = 240
 
@@ -80,7 +129,33 @@ def _attach_house_run_log_sink(house: str) -> None:
 
 
 def _house_root(house: str) -> Path:
-    return REPO_ROOT / "testhouses" / f"house-{house}"
+    """Resolve a house's source-folder root.
+
+    MF-driver-9 (#39): catalog houses (``house-1``, ``testhouse-2`` …)
+    live directly under ``$BIM_DATABASE_PATH``; the key IS the folder
+    name. For those, return ``<base>/<house>`` so the dynamic argparse
+    discovery in :func:`_discover_houses` is consistent with the path
+    the rest of the driver reads source PDFs from.
+
+    Back-compat branch (for the alpha/beta/gamma fallback flow): if the
+    legacy ``<REPO_ROOT>/testhouses/house-<name>/`` folder still exists,
+    keep returning it so the 11+ existing tests in
+    ``app/tests/test_testhouse_drive_*.py`` (and any local-dev houses
+    laid out the old way) keep resolving without surprise. The catalog
+    layout wins when both happen to exist.
+    """
+
+    base = _bim_database_base()
+    candidate = base / house
+    if candidate.is_dir():
+        return candidate
+    legacy = REPO_ROOT / "testhouses" / f"house-{house}"
+    if legacy.is_dir():
+        return legacy
+    # Neither path exists — return the catalog path so the caller's
+    # FileNotFoundError mentions the path operators are expected to
+    # populate going forward.
+    return candidate
 
 
 def _house_workdir(house: str) -> Path:
