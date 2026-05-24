@@ -2128,11 +2128,30 @@ def _openings_bundle(
     """
 
     level_id = f"th-{house}-level-{level_short}"
-    walls = [
+    all_walls = [
         e
         for e in (snapshot.get("elements") or {}).values()
-        if isinstance(e, dict) and e.get("kind") == "wall" and e.get("levelId") == level_id
+        if isinstance(e, dict) and e.get("kind") == "wall"
     ]
+    walls = [w for w in all_walls if w.get("levelId") == level_id]
+    if not walls:
+        # MF-driver-14 (#78): fall back to any wall whose levelId ends
+        # with ``-level-{level_short}`` so openings can still host when
+        # the per-floor ``_exterior_walls_bundle`` was skipped (the IR
+        # has window/door facts but no ``exterior_wall_chain`` fact for
+        # this floor). The shell phase authors EG walls at an iter-
+        # prefixed level id like ``th-{house}-i{iter_n}-level-EG`` —
+        # those are perfectly good hosts; the only reason the canonical
+        # filter missed them is the level-id mismatch. Pre-fix, a
+        # reader IR with 9 EG windows + 1 EG door + 0 room_outline +
+        # 0 exterior_wall_chain facts dropped every opening because
+        # this filter returned the empty list and the function returned
+        # None → the model rendered as a windowless barn even though
+        # the IR carried the data. The nearest-host resolver later
+        # picks the geometrically correct wall regardless of which
+        # phase authored it.
+        suffix = f"-level-{level_short}"
+        walls = [w for w in all_walls if str(w.get("levelId") or "").endswith(suffix)]
     if not walls:
         return None
     # NS-10: opening sill/height should size against the AUTHORED wall
