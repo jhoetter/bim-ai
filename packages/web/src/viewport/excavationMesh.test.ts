@@ -73,3 +73,63 @@ describe('buildExcavationMesh', () => {
     expect(grp.children).toHaveLength(2);
   });
 });
+
+describe('issue #75 — toposolid_excavation cutter is invisible at render time', () => {
+  it('flags the group with userData.isInvisibleCsgCutter = true', () => {
+    const grp = buildExcavationMesh(makeExcav(SQUARE, 2000));
+    expect(grp.userData.isInvisibleCsgCutter).toBe(true);
+  });
+
+  it('sets group.visible = false so the cutter never rasterises', () => {
+    const grp = buildExcavationMesh(makeExcav(SQUARE, 2000));
+    expect(grp.visible).toBe(false);
+  });
+
+  it('marks every child mesh (walls + floor) visible=false', () => {
+    const grp = buildExcavationMesh(makeExcav(SQUARE, 2000));
+    expect(grp.children).toHaveLength(2);
+    for (const child of grp.children) {
+      expect(child.visible).toBe(false);
+    }
+  });
+
+  it('flags + hides the group even when boundary is degenerate (no children)', () => {
+    const grp = buildExcavationMesh(
+      makeExcav([
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+      ]),
+    );
+    expect(grp.userData.isInvisibleCsgCutter).toBe(true);
+    expect(grp.visible).toBe(false);
+  });
+
+  it('still tags + hides when the cutter is resolved indirectly via cutterElementId', () => {
+    const elementsById: Record<string, Element> = {
+      'floor-1': {
+        kind: 'floor',
+        id: 'floor-1',
+        levelId: 'lvl-1',
+        boundaryMm: SQUARE,
+        thicknessMm: 200,
+      } as Extract<Element, { kind: 'floor' }>,
+    };
+    const grp = buildExcavationMesh(
+      {
+        kind: 'toposolid_excavation',
+        id: 'test-excav-cutter-vis',
+        hostToposolidId: '',
+        cutterElementId: 'floor-1',
+        cutMode: 'to_bottom_of_cutter',
+        offsetMm: 0,
+        customDepthMm: 2500,
+      },
+      elementsById,
+    );
+    expect(grp.userData.isInvisibleCsgCutter).toBe(true);
+    expect(grp.visible).toBe(false);
+    for (const child of grp.children) {
+      expect(child.visible).toBe(false);
+    }
+  });
+});

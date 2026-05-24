@@ -1120,7 +1120,14 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
 
       if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
       applyRenderRole(obj, 'model');
-      obj.visible = !skipCat(e) && !skipLevel(e);
+      // Issue #75: an invisible CSG cutter (toposolid_excavation) drives the
+      // hole in the host toposolid but must never rasterise itself, and an
+      // orphan-balcony authoring placeholder must not be mistaken for real
+      // geometry. Honor those flags before applying the category/level
+      // visibility gate.
+      const isHiddenCutterOrPlaceholder =
+        obj.userData.isInvisibleCsgCutter === true || obj.userData.isAuthoringPlaceholder === true;
+      obj.visible = !isHiddenCutterOrPlaceholder && !skipCat(e) && !skipLevel(e);
 
       // FED-01: ghost any element resolved through a `link_model` link.
       // Linked element ids are prefixed `<linkId>::<sourceElemId>` by the

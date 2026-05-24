@@ -9,10 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import {
-  _resetEmptyBalconyWarningsForTests,
-  makeBalconyMesh,
-} from './meshBuilders.balcony';
+import { _resetEmptyBalconyWarningsForTests, makeBalconyMesh } from './meshBuilders.balcony';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 type BalconyElem = Extract<Element, { kind: 'balcony' }>;
@@ -134,7 +131,12 @@ describe('issue #64 — diagnostic warn when host wall is missing', () => {
     const group = makeBalconyMesh(BASE_BALCONY, { 'wall-front': notAWall }, null);
 
     expect(warnSpy).toHaveBeenCalled();
-    expect(meshChildrenOf(group).length).toBeGreaterThan(0);
+    // Issue #75: placeholder geometry must NOT be visible. Meshes may still
+    // be present (for pickability) but every mesh must have visible = false.
+    const meshes = meshChildrenOf(group);
+    for (const mesh of meshes) {
+      expect(mesh.visible).toBe(false);
+    }
   });
 
   it('dedupes repeated warnings for the same balcony id', () => {
@@ -152,5 +154,48 @@ describe('issue #64 — diagnostic warn when host wall is missing', () => {
     makeBalconyMesh(BASE_BALCONY, elementsById, null);
 
     expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('issue #75 — orphan-balcony placeholder must be invisible', () => {
+  beforeEach(() => {
+    _resetEmptyBalconyWarningsForTests();
+  });
+
+  it('marks the group with isAuthoringPlaceholder=true when wall is missing', () => {
+    const orphan: BalconyElem = { ...BASE_BALCONY, id: 'balcony-75-orphan' };
+    const group = makeBalconyMesh(orphan, {}, null);
+
+    expect(group.userData.isAuthoringPlaceholder).toBe(true);
+  });
+
+  it('sets group.visible = false when the host wall is missing', () => {
+    const orphan: BalconyElem = { ...BASE_BALCONY, id: 'balcony-75-vis' };
+    const group = makeBalconyMesh(orphan, {}, null);
+
+    expect(group.visible).toBe(false);
+  });
+
+  it('sets every child mesh visible=false when the host wall is missing', () => {
+    const orphan: BalconyElem = { ...BASE_BALCONY, id: 'balcony-75-children' };
+    const group = makeBalconyMesh(orphan, {}, null);
+
+    const meshes = meshChildrenOf(group);
+    // Sanity: the build path still authors geometry so the element is pickable.
+    expect(meshes.length).toBeGreaterThan(0);
+    for (const mesh of meshes) {
+      expect(mesh.visible).toBe(false);
+    }
+  });
+
+  it('does NOT set the placeholder flag when the host wall is present', () => {
+    const elementsById: Record<string, Element> = { [BASE_WALL.id]: BASE_WALL };
+    const group = makeBalconyMesh(BASE_BALCONY, elementsById, null);
+
+    expect(group.userData.isAuthoringPlaceholder).toBeUndefined();
+    expect(group.visible).toBe(true);
+    for (const mesh of meshChildrenOf(group)) {
+      expect(mesh.visible).toBe(true);
+    }
   });
 });
