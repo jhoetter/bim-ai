@@ -15,15 +15,14 @@ const FamilyEditorWorkbench = lazy(() =>
 const PresentationViewer = lazy(() =>
   import('./viewer/PresentationViewer').then((m) => ({ default: m.PresentationViewer })),
 );
-const AgentsIndex = lazy(() =>
-  import('./agents/AgentsIndex').then((m) => ({ default: m.AgentsIndex })),
-);
-const AgentSessionDetail = lazy(() =>
-  import('./agents/AgentSessionDetail').then((m) => ({ default: m.AgentSessionDetail })),
-);
-const AgentHouseDashboard = lazy(() =>
-  import('./agents/AgentHouseDashboard').then((m) => ({ default: m.AgentHouseDashboard })),
-);
+// The /agents web pages moved to bim-agent (separate repo, port :32000).
+// bim-ai keeps the BIM viewer + project workspace; agent run history
+// is the agent's concern, not the modeling engine's. Backend REST
+// `/api/agent-runs/*` routes remain in bim-ai for now because the
+// (still-unported) driver in scripts/testhouse_drive.py uses them
+// to look up model_id by house name — split tracker phase 3 will
+// move the driver to bim-agent, after which agent_runs.py can also
+// be deleted from bim-ai.
 
 export function App() {
   return (
@@ -34,9 +33,6 @@ export function App() {
           <Route path="/p/:token" element={<PublicPresentationRoute />} />
           <Route path="/icons" element={<IconGallery />} />
           <Route path="/family-editor" element={<FamilyEditorWorkbench />} />
-          <Route path="/agents" element={<AgentsIndex />} />
-          <Route path="/agents/sessions/:sessionId" element={<AgentSessionDetail />} />
-          <Route path="/agents/houses/:house" element={<AgentHouseDashboard />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
