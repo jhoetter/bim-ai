@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   curtainGridCellId,
   type CurtainPanelOverride,
@@ -2442,28 +2441,148 @@ export function makeSiteMesh(
   return mesh;
 }
 
+/**
+ * Issue #14: returns the elevation (mm) of the toposolid surface at a plan-XY
+ * point, using whichever sample-set the toposolid carries.
+ *
+ * Priority: heightmapGridMm (true bilinear) > heightSamples (inverse-distance
+ * weighting, falls back to nearest-neighbour when the point coincides with a
+ * sample) > baseElevationMm.
+ *
+ * IDW with power=2 is used over heightSamples because heightSamples may be
+ * scattered (not axis-aligned), and IDW gives a smooth surface that propagates
+ * interior elevation information out to the boundary corners — which fixes the
+ * "44 samples but flat boundary corners" failure mode that made testhouse-2
+ * render as a horizontal slab.
+ */
 function toposolidHeightMmAtPoint(
   topo: Extract<Element, { kind: 'toposolid' }>,
   point: { xMm: number; yMm: number },
 ): number {
+  const grid = topo.heightmapGridMm;
+  if (grid && grid.values.length && grid.rows > 0 && grid.cols > 0 && grid.stepMm > 0) {
+    // True bilinear interpolation on an axis-aligned grid. The grid is
+    // anchored at (0,0) plan space (callers can shift via heightSamples if a
+    // different origin is needed).
+    const fx = point.xMm / grid.stepMm;
+    const fy = point.yMm / grid.stepMm;
+    const ix = Math.max(0, Math.min(grid.cols - 2, Math.floor(fx)));
+    const iy = Math.max(0, Math.min(grid.rows - 2, Math.floor(fy)));
+    const tx = Math.max(0, Math.min(1, fx - ix));
+    const ty = Math.max(0, Math.min(1, fy - iy));
+    const z00 = grid.values[iy * grid.cols + ix] ?? 0;
+    const z10 = grid.values[iy * grid.cols + (ix + 1)] ?? z00;
+    const z01 = grid.values[(iy + 1) * grid.cols + ix] ?? z00;
+    const z11 = grid.values[(iy + 1) * grid.cols + (ix + 1)] ?? z00;
+    return z00 * (1 - tx) * (1 - ty) + z10 * tx * (1 - ty) + z01 * (1 - tx) * ty + z11 * tx * ty;
+  }
+
   const samples = topo.heightSamples ?? [];
   if (samples.length) {
-    let best = samples[0]!;
-    let bestDist = Number.POSITIVE_INFINITY;
+    // Inverse-distance weighting with p=2. A sample within 1mm is treated as
+    // coincident and short-circuits to avoid division by zero.
+    let weightedSum = 0;
+    let weightTotal = 0;
+    const EPSILON_SQ_MM = 1; // 1 mm² ~ "the same point"
     for (const sample of samples) {
       const dx = sample.xMm - point.xMm;
       const dy = sample.yMm - point.yMm;
-      const dist = dx * dx + dy * dy;
-      if (dist < bestDist) {
-        best = sample;
-        bestDist = dist;
-      }
+      const distSq = dx * dx + dy * dy;
+      if (distSq <= EPSILON_SQ_MM) return sample.zMm;
+      const w = 1 / distSq;
+      weightedSum += sample.zMm * w;
+      weightTotal += w;
     }
-    return best.zMm;
+    return weightTotal > 0 ? weightedSum / weightTotal : (topo.baseElevationMm ?? 0);
   }
-  const grid = topo.heightmapGridMm;
-  if (grid && grid.values.length) return grid.values[0] ?? 0;
   return topo.baseElevationMm ?? 0;
+}
+
+/** Even–odd point-in-polygon test in plan space (mm). */
+function pointInPolygonMm(
+  point: { xMm: number; yMm: number },
+  polygon: Array<{ xMm: number; yMm: number }>,
+): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i]!;
+    const pj = polygon[j]!;
+    const intersect =
+      pi.yMm > point.yMm !== pj.yMm > point.yMm &&
+      point.xMm < ((pj.xMm - pi.xMm) * (point.yMm - pi.yMm)) / (pj.yMm - pi.yMm + 1e-9) + pi.xMm;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Issue #14: tessellated top surface for a toposolid that carries
+ * heightSamples or a heightmap grid. Returns interior grid vertices (xMm,yMm)
+ * plus the index pairs into a quad grid so the caller can stitch triangles.
+ *
+ * The grid step is chosen so the longer bbox edge has TARGET_SUBDIVISIONS
+ * cells, capped at MAX_CELLS_PER_AXIS so an outlier boundary doesn't explode
+ * vertex counts.
+ */
+function buildToposolidInteriorGrid(
+  outerBoundary: Array<{ xMm: number; yMm: number }>,
+  holeBoundaries: Array<Array<{ xMm: number; yMm: number }>>,
+): {
+  vertices: Array<{ xMm: number; yMm: number }>;
+  // Each entry is a quad as [v0, v1, v2, v3] in CCW order; consumers emit two
+  // triangles (v0,v1,v2) and (v0,v2,v3). Quads whose centre is outside the
+  // outer polygon or inside any hole are omitted.
+  quads: Array<[number, number, number, number]>;
+} {
+  const TARGET_SUBDIVISIONS = 24;
+  const MAX_CELLS_PER_AXIS = 48;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const p of outerBoundary) {
+    if (p.xMm < minX) minX = p.xMm;
+    if (p.xMm > maxX) maxX = p.xMm;
+    if (p.yMm < minY) minY = p.yMm;
+    if (p.yMm > maxY) maxY = p.yMm;
+  }
+  const width = Math.max(1, maxX - minX);
+  const height = Math.max(1, maxY - minY);
+  const longest = Math.max(width, height);
+  const cellSize = longest / TARGET_SUBDIVISIONS;
+  const nx = Math.min(MAX_CELLS_PER_AXIS, Math.max(2, Math.ceil(width / cellSize)));
+  const ny = Math.min(MAX_CELLS_PER_AXIS, Math.max(2, Math.ceil(height / cellSize)));
+
+  const vertices: Array<{ xMm: number; yMm: number }> = [];
+  const idx = (i: number, j: number) => j * (nx + 1) + i;
+  for (let j = 0; j <= ny; j++) {
+    for (let i = 0; i <= nx; i++) {
+      const xMm = minX + (i / nx) * width;
+      const yMm = minY + (j / ny) * height;
+      vertices.push({ xMm, yMm });
+    }
+  }
+
+  const quads: Array<[number, number, number, number]> = [];
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const cx = minX + ((i + 0.5) / nx) * width;
+      const cy = minY + ((j + 0.5) / ny) * height;
+      const centre = { xMm: cx, yMm: cy };
+      if (!pointInPolygonMm(centre, outerBoundary)) continue;
+      let inHole = false;
+      for (const hole of holeBoundaries) {
+        if (pointInPolygonMm(centre, hole)) {
+          inHole = true;
+          break;
+        }
+      }
+      if (inHole) continue;
+      quads.push([idx(i, j), idx(i + 1, j), idx(i + 1, j + 1), idx(i, j + 1)]);
+    }
+  }
+
+  return { vertices, quads };
 }
 
 function boundaryForToposolidExcavation(
@@ -2518,17 +2637,43 @@ export function makeToposolidMesh(
   const excavationBoundaries = excavationBoundariesForToposolid(topo, elementsById);
   const contours = [points, ...excavationBoundaries];
   const flatPoints = contours.flat();
+
+  // Issue #14: when heightSamples (or a heightmap grid) describe interior
+  // elevation variation, the top surface needs interior vertices — otherwise
+  // it stays a flat slab between the boundary corners and the hillside is
+  // invisible. We tessellate the top surface as a regular plan-XY grid clipped
+  // by the outer boundary and any holes, with each grid vertex's Z sampled
+  // from heightSamples / heightmap via toposolidHeightMmAtPoint.
+  const hasHeightSamples =
+    (topo.heightSamples?.length ?? 0) > 0 || (topo.heightmapGridMm?.values.length ?? 0) > 0;
+  const interior = hasHeightSamples
+    ? buildToposolidInteriorGrid(points, excavationBoundaries)
+    : { vertices: [], quads: [] as Array<[number, number, number, number]> };
+
   const topHeights = flatPoints.map((point) => toposolidHeightMmAtPoint(topo, point));
-  const topMax = Math.max(...topHeights, topo.baseElevationMm ?? 0);
+  const interiorHeights = interior.vertices.map((p) => toposolidHeightMmAtPoint(topo, p));
+  const allTopHeights = [...topHeights, ...interiorHeights];
+  const topMax = Math.max(...allTopHeights, topo.baseElevationMm ?? 0);
   const undersideMm =
     topo.baseElevationMm != null
       ? topo.baseElevationMm - (topo.thicknessMm ?? 1500)
-      : Math.min(...topHeights) - (topo.thicknessMm ?? 1500);
+      : Math.min(...allTopHeights) - (topo.thicknessMm ?? 1500);
+
   const vertices: number[] = [];
+  // Layout: [boundary-top][interior-top][boundary-bottom]
+  // We do NOT emit underside vertices for the interior grid — the underside
+  // remains a flat slab triangulated against the boundary alone, which keeps
+  // index bookkeeping simple and still solves the rendering problem.
   for (let i = 0; i < flatPoints.length; i++) {
     const point = flatPoints[i]!;
     vertices.push(point.xMm / 1000, topHeights[i]! / 1000, point.yMm / 1000);
   }
+  const interiorOffset = flatPoints.length;
+  for (let i = 0; i < interior.vertices.length; i++) {
+    const p = interior.vertices[i]!;
+    vertices.push(p.xMm / 1000, interiorHeights[i]! / 1000, p.yMm / 1000);
+  }
+  const bottomOffset = flatPoints.length + interior.vertices.length;
   for (const point of flatPoints) {
     vertices.push(point.xMm / 1000, undersideMm / 1000, point.yMm / 1000);
   }
@@ -2540,11 +2685,28 @@ export function makeToposolidMesh(
   const holeVectors = excavationBoundaries.map((boundary) =>
     boundary.map((point) => new THREE.Vector2(point.xMm / 1000, point.yMm / 1000)),
   );
-  const topTriangles = THREE.ShapeUtils.triangulateShape(contourVectors, holeVectors);
-  for (const tri of topTriangles) indices.push(tri[0]!, tri[1]!, tri[2]!);
-  const bottomOffset = flatPoints.length;
-  for (const tri of topTriangles) {
-    indices.push(bottomOffset + tri[2]!, bottomOffset + tri[1]!, bottomOffset + tri[0]!);
+
+  if (interior.quads.length > 0) {
+    // Tessellated top surface (interior grid).
+    for (const quad of interior.quads) {
+      const [a, b, c, d] = quad;
+      indices.push(interiorOffset + a, interiorOffset + b, interiorOffset + c);
+      indices.push(interiorOffset + a, interiorOffset + c, interiorOffset + d);
+    }
+    // Underside triangulation from boundary alone (flat slab).
+    const underTriangles = THREE.ShapeUtils.triangulateShape(contourVectors, holeVectors);
+    for (const tri of underTriangles) {
+      indices.push(bottomOffset + tri[2]!, bottomOffset + tri[1]!, bottomOffset + tri[0]!);
+    }
+  } else {
+    // Original codepath: flat top + matching bottom triangulated from
+    // boundary corners. Preserved verbatim so existing snapshot/vertex tests
+    // for the "no heightSamples" case keep passing.
+    const topTriangles = THREE.ShapeUtils.triangulateShape(contourVectors, holeVectors);
+    for (const tri of topTriangles) indices.push(tri[0]!, tri[1]!, tri[2]!);
+    for (const tri of topTriangles) {
+      indices.push(bottomOffset + tri[2]!, bottomOffset + tri[1]!, bottomOffset + tri[0]!);
+    }
   }
 
   let contourStart = 0;
