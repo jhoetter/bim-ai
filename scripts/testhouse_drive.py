@@ -1540,24 +1540,19 @@ def _stair_endpoints(fact: dict) -> tuple[list[float], list[float]] | None:
 
 
 def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, list[str]] | None:
-    """Author createStair commands for IR stair_run facts on the EG floor.
+    """Author createStair commands for IR stair_run facts.
 
-    EG owns the EG↔DG stair per the SKILL.md convention. Each fact's
-    geometry resolves to a straight run via ``_stair_endpoints``.
+    Authors EVERY stair_run fact whose from/to levels exist in the IR.
+    Default to EG↔DG when fromLevelId/toLevelId are missing. NS-2026-05-24:
+    no longer filters by levelId=='level-EG' alone — KG↔EG stairs now author
+    too when an explicit fact is present.
     """
 
-    facts = [
-        f
-        for f in (ir.get("extractedFacts") or [])
-        if f.get("kind") == "stair_run"
-        # EG owns the EG↔DG stair; we filter to ones either levelId=level-EG
-        # or that explicitly reference EG↔DG.
-        and (f.get("levelId") in (None, "level-EG", "global") or "EG" in str(f.get("factId") or ""))
-    ]
+    all_levels = ir.get("levels") or []
+    level_by_id = {lvl["id"]: lvl for lvl in all_levels}
+    facts = [f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "stair_run"]
     if not facts:
         return None
-    eg_level_id = f"th-{house}-level-EG"
-    dg_level_id = f"th-{house}-level-DG"
     commands: list[dict] = []
     consumed: list[str] = []
     for f in facts:
@@ -1565,25 +1560,26 @@ def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict,
         if pts is None:
             continue
         sp, ep = pts
-        # Treads: fact may give an integer count. Default 16 (typical
-        # EG↔DG run with 2.7 m rise / 175 mm riser ≈ 15.4 → 16).
+        # Resolve from/to levels (default EG↔DG when fact silent).
+        from_lvl_id = f.get("fromLevelId") or "level-EG"
+        to_lvl_id = f.get("toLevelId") or "level-DG"
+        from_lvl = level_by_id.get(from_lvl_id)
+        to_lvl = level_by_id.get(to_lvl_id)
+        if from_lvl is None or to_lvl is None:
+            continue
+        base_level_id = f"th-{house}-level-{from_lvl_id.split('-')[-1]}"
+        top_level_id = f"th-{house}-level-{to_lvl_id.split('-')[-1]}"
         risers = int(f.get("risers") or f.get("riserCount") or 16)
-        # totalRiseMm derived from IR levels (EG-to-DG elevation
-        # delta) so the engine doesn't fall back to half-derived
-        # geometry. Default 2750 mm matches the typical EG floor-to-
-        # floor when IR levels aren't queriable.
-        eg_lvl = next((lvl for lvl in (ir.get("levels") or []) if lvl["id"] == "level-EG"), None)
-        dg_lvl = next((lvl for lvl in (ir.get("levels") or []) if lvl["id"] == "level-DG"), None)
-        total_rise = 2750.0
-        if dg_lvl and eg_lvl:
-            total_rise = float(_lvl_elevation_mm(dg_lvl) - _lvl_elevation_mm(eg_lvl))
+        total_rise = float(_lvl_elevation_mm(to_lvl) - _lvl_elevation_mm(from_lvl))
+        if total_rise <= 0:
+            total_rise = 2750.0  # fallback
         commands.append(
             {
                 "type": "createStair",
                 "id": f"th-{house}-stair-{_slugify(f.get('factId'))}",
-                "name": (str(f.get("text") or "Stair EG↔DG"))[:80],
-                "baseLevelId": eg_level_id,
-                "topLevelId": dg_level_id,
+                "name": (str(f.get("text") or f"Stair {from_lvl_id.split('-')[-1]}↔{to_lvl_id.split('-')[-1]}"))[:80],
+                "baseLevelId": base_level_id,
+                "topLevelId": top_level_id,
                 "runStartMm": {"xMm": float(sp[0]), "yMm": float(sp[1])},
                 "runEndMm": {"xMm": float(ep[0]), "yMm": float(ep[1])},
                 "widthMm": float(f.get("widthMm") or 1000),
