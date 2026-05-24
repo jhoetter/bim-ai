@@ -46,6 +46,17 @@ import {
   buildSkyEnvMap,
   addEdges,
 } from './viewport/sceneHelpers';
+// PERF-I05 — accelerate viewport raycast picking via three-mesh-bvh.
+// `installBvhExtensions` patches THREE.Mesh.prototype.raycast once at module
+// init; the ensure/dispose helpers gate BVH builds on the static element
+// meshes used by hover/click picking.
+import {
+  disposeBvhForObject,
+  ensureBvhForPickables,
+  installBvhExtensions,
+} from './viewport/bvhRegistry';
+
+installBvhExtensions();
 import {
   type WallElem,
   CSG_ENABLED,
@@ -727,6 +738,8 @@ export function Viewport({
       if (!data.ok) {
         if (!csgMeta?.retainExisting && existing) {
           rootNow.remove(existing);
+          // PERF-I05 — release the BVH before the geometry it indexes.
+          disposeBvhForObject(existing);
           existing.traverse((node) => {
             const m = node as THREE.Mesh;
             if (!m.isMesh) return;
@@ -784,6 +797,8 @@ export function Viewport({
 
       if (existing) {
         rootNow.remove(existing);
+        // PERF-I05 — release the BVH before the geometry it indexes.
+        disposeBvhForObject(existing);
         existing.traverse((node) => {
           const m = node as THREE.Mesh;
           if (!m.isMesh) return;
@@ -1028,6 +1043,9 @@ export function Viewport({
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
       camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
+      // PERF-I05 — lazy BVH build on static pickable meshes; idempotent
+      // after the first call so the per-click cost decays to a scene walk.
+      ensureBvhForPickables(root);
       const hits = raycaster.intersectObjects(root.children, true);
 
       const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
@@ -1092,6 +1110,8 @@ export function Viewport({
       planeDistanceM: number,
       elevationMm: number,
     ): DraftPlaneProjection['blocker'] | undefined {
+      // PERF-I05 — same BVH preflight as the click/hover paths.
+      ensureBvhForPickables(root);
       const hits = raycaster.intersectObjects(root.children, true);
       for (const hit of hits) {
         if (!isDraftPlaneHitOccluded(planeDistanceM, hit.distance)) continue;
@@ -2467,6 +2487,8 @@ export function Viewport({
       ndc.y = -(((me.clientY - rect.top) / rect.height) * 2 - 1);
       camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
+      // PERF-I05 — BVH preflight before the right-click intersect walk.
+      ensureBvhForPickables(root);
       const hits = raycaster.intersectObjects(root.children, true);
       const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
       const id =

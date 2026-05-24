@@ -9,6 +9,10 @@ import {
 } from './meshBuilders';
 import { resolveWallAssemblyExposedLayers } from '../families/wallTypeCatalog';
 import { wall3dCleanupFootprintMm, wall3dXJoinCleanupFootprintsMm } from './wallJoinDisplay';
+// PERF-I05 — release the BVH attached to a geometry before that geometry is
+// disposed; not doing this leaves the BVH's internal buffers referenced by
+// dead BufferGeometry handles.
+import { disposeBvhForObject } from './bvhRegistry';
 
 export type ViewerEdgeWidth = 1 | 2 | 3 | 4;
 export type ViewerGdoRuntimeState = {
@@ -139,6 +143,9 @@ export function updateSectionBoxHandles(group: THREE.Group, sb: SectionBox): voi
 }
 
 export function disposeObject3D(root: THREE.Object3D): void {
+  // PERF-I05 — drop BVH buffers first so the BufferGeometry we are about to
+  // dispose isn't still referenced by the bounds tree.
+  disposeBvhForObject(root);
   root.traverse((node) => {
     if (
       node instanceof THREE.Mesh ||
