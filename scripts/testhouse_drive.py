@@ -1720,6 +1720,45 @@ def _exterior_walls_bundle(
                 pass
     facts = _facts_for_level(ir, f"level-{level_short}")
     chain_facts = _facts_by_kind(facts, "exterior_wall_chain")
+    # MF-driver-17 (#87): EG-mirror fallback for the exterior wall chain.
+    #
+    # When a non-EG level (KG / OG / DG / SB) has window or door facts in
+    # the IR but no ``exterior_wall_chain`` fact of its own, the openings
+    # phase had nothing to host against and silently dropped every
+    # opening on that level. The shell phase (``_shell_bundle_from_ir``)
+    # only authors EG-level walls, and the openings-bundle suffix
+    # fallback from PR #84 only matched ``-level-EG`` walls — so on
+    # house-21 (17 windows + 1 door spread across KG/EG/OG/DG) only ~5
+    # openings (the EG ones) actually landed → the famous 30 %
+    # authoring-rate symptom.
+    #
+    # Mirror the EG chain to any non-EG level that has openings but no
+    # local chain, the same way ``_partitions_bundle`` already mirrors
+    # EG partitions to upper floors lacking their own (see line 1925).
+    # The mirrored walls land at the canonical ``th-{house}-level-{lvl}``
+    # id with a ``-mirror-{lvl}`` factId so they don't clash with EG's
+    # commit. Openings on that level then host on REAL per-level walls
+    # at the correct elevation — the alternative (cross-level hosting
+    # on EG walls) would dump every KG / OG window onto the EG facade.
+    mirrored_from_eg = False
+    if not chain_facts and level_short != "EG":
+        has_openings = bool(_facts_by_kind(facts, "door")) or bool(
+            _facts_by_kind(facts, "window")
+        )
+        has_rooms = bool(_facts_by_kind(facts, "room_outline"))
+        if has_openings or has_rooms:
+            eg_facts = _facts_for_level(ir, "level-EG")
+            eg_chains = _facts_by_kind(eg_facts, "exterior_wall_chain")
+            if eg_chains:
+                chain_facts = [
+                    {
+                        **ec,
+                        "levelId": f"level-{level_short}",
+                        "factId": f"{ec.get('factId', '')}-mirror-{level_short}",
+                    }
+                    for ec in eg_chains
+                ]
+                mirrored_from_eg = True
     if not chain_facts:
         return None
 
@@ -1880,12 +1919,22 @@ def _exterior_walls_bundle(
                     "value": (
                         f"Exterior wall chain + slab for {level_short} derived from "
                         f"{len(chain_facts)} IR polygon(s)"
+                        + (
+                            " (mirrored from EG — no exterior_wall_chain fact for this "
+                            "level, but openings/rooms exist so a wall ring is "
+                            "synthesised to host them, MF-driver-17)"
+                            if mirrored_from_eg
+                            else ""
+                        )
                     ),
-                    "confidence": 0.6,
+                    "confidence": 0.45 if mirrored_from_eg else 0.6,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                     "contestable": True,
                     "evidence": (
-                        f"iter-1 reader pass — {len(chain_facts)} exterior_wall_chain "
+                        f"v2.7 driver mirror-from-EG fallback "
+                        f"(no IR exterior_wall_chain for level-{level_short}, MF-driver-17)"
+                        if mirrored_from_eg
+                        else f"iter-1 reader pass — {len(chain_facts)} exterior_wall_chain "
                         f"fact(s) level-{level_short}"
                     ),
                 }
