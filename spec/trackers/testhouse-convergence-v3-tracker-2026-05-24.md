@@ -926,6 +926,10 @@ The loop appends here. Format:
 | 1.g.c | 2026-05-24 08:21Z | **gamma** | **v3 honest grade: 4.8/10**, eye-test 2/10 — topGap=facadeDetail+roofProfile (cross-gables + ornament missing) | **4.8** | more Zwerchhaus + EA-13 dormer mesh blending |
 | 2 | 2026-05-24 08:22Z | (eng) | NS-V3-01 / EA-2 closeout shipped (commit `438a840d4`): slab top now flush with level via topFaceElevationMm; addresses "KG slab pedestal" defect on alpha | n/a | iter-2 to verify |
 | 2.a | 2026-05-24 08:23Z | alpha | IR bulk-patched: +10 window facts (5 south EG + 3 north EG + 2 DG mirror) to address grader's "6 vs ~30 windows" deduction | n/a | iter-2 author |
+| 2.g | 2026-05-24 08:43Z | (all) | iter-2 v3 grades: **alpha 3.53** (+0.77), **beta 5.01** (+1.91 !), gamma 4.66. Slab pedestal fix landed visibly on beta+gamma | mixed | NS-V3-02 sloped topo |
+| 3   | 2026-05-24 08:52Z | (all) | NS-V3-02 sloped toposolid (commit `69be4d4f5`): heightSamples on beta (3.8m EW hillside) + gamma (1m NS gentle); alpha flat. Beta east capture visibly shows hillside slope now | n/a | iter-3 |
+| 3.g | 2026-05-24 09:15Z | (all) | iter-3 grades: **alpha 0** (grader noise — geometry unchanged from iter-2), **beta 4.0**, **gamma 3.75**. Beta hillside readable per grader. **Grader variance again** — alpha gave 0 despite identical geometry. Median rule needed | mixed | iter-4 with +Zwerchhauser + balcony |
+| 4   | 2026-05-24 09:18Z | (all) | IR patches: +2 Zwerchhaus facts on gamma north (Gartenansicht), +1 balcony fact on beta south. Ship iter-4 | n/a | iter-4 author |
 
 (Loop will fill below.)
 
