@@ -242,10 +242,27 @@ class GradedRegionElem(BaseModel):
 
 
 ToposolidExcavationCutMode = Literal["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]
+ToposolidExcavationTopSurfaceMode = Literal["flat", "follow_terrain"]
 
 
 class ToposolidExcavationElem(BaseModel):
-    """Revit-like explicit relation: a cutter excavates a host Toposolid."""
+    """Revit-like explicit relation: a cutter excavates a host Toposolid.
+
+    MF-driver-10 (#46): ``top_surface_mode`` controls the shape of the
+    excavation's top face. ``"flat"`` (default, back-compat) gives a uniform
+    cut depth across the cutter footprint — appropriate for flat lots. On a
+    hillside, that uniform cut buries the legitimate exposed lower walls on
+    the daylight side. ``"follow_terrain"`` samples the host toposolid's
+    ``heightSamples`` at each cutter vertex so the excavation's top face
+    tilts with the natural grade and only the truly-below-grade portion of
+    the basement is removed from view.
+
+    ``top_height_samples`` is an optional per-vertex override (parallel to
+    the cutter polygon) for callers that have a pre-computed top elevation
+    profile and want to bypass the implicit lookup against the host's
+    ``heightSamples``. When provided, it takes precedence over
+    ``top_surface_mode``.
+    """
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     kind: Literal["toposolid_excavation"] = "toposolid_excavation"
@@ -256,6 +273,12 @@ class ToposolidExcavationElem(BaseModel):
     offset_mm: float = Field(0.0, alias="offsetMm")
     custom_depth_mm: float | None = Field(None, alias="customDepthMm")
     estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+    top_surface_mode: ToposolidExcavationTopSurfaceMode = Field(
+        "flat", alias="topSurfaceMode"
+    )
+    top_height_samples: list[HeightSample] | None = Field(
+        default=None, alias="topHeightSamples"
+    )
 
 
 # ---------------------------------------------------------------------------

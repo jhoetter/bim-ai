@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #46 — toposolid_excavation follows terrain on hillside houses</title>
+  <desc>
+    Section view (E-W) of a daylight-basement house on a hillside lot with a 3.8 m grade
+    drop from east (high) to west (low daylight side). Before #46: PR #38's uniform-depth
+    excavation cuts a flat-bottomed pit at z = -3200, burying the legitimate exposed west-
+    face KG walls + windows together with the genuinely buried east side. After #46:
+    topSurfaceMode=follow_terrain samples the host toposolid's heightSamples per cutter
+    vertex, so the excavation top tilts with the grade — the east basement is still
+    enclosed by soil (correct) while the west daylight basement remains exposed (correct).
+  </desc>
+
+  <defs>
+    <linearGradient id="sky46" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="soilHatch46" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#a0805a" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow46" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE #46 ==================== -->
+  <g id="before46">
+    <rect x="20" y="20" width="520" height="420" fill="url(#sky46)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">Before #46 — uniform depth buries west face</text>
+    <text x="280" y="60" text-anchor="middle" font-size="10" fill="#4b5563">PR #38: flat excavation at z=-3200 cuts through the daylight grade</text>
+
+    <!-- compass -->
+    <text x="40" y="80" font-size="10" font-weight="700" fill="#6b7280">W</text>
+    <text x="510" y="80" font-size="10" font-weight="700" fill="#6b7280" text-anchor="end">E</text>
+
+    <!-- Tilted natural grade line (from #6 to high east) — DASHED to show what's lost -->
+    <line x1="40" y1="300" x2="520" y2="160" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="120" y="295" font-size="9" fill="#6b7280">natural grade (lost)</text>
+
+    <!-- Flat-bottomed excavation (uniform depth z=-3200) -->
+    <!-- Soil left wedge (above the flat cut) -->
+    <path d="M 40 300 L 200 230 L 200 350 L 40 350 Z" fill="url(#soilHatch46)" stroke="#7a5a3a" stroke-width="1"/>
+    <!-- Soil right wedge -->
+    <path d="M 420 195 L 520 160 L 520 350 L 420 350 Z" fill="url(#soilHatch46)" stroke="#7a5a3a" stroke-width="1"/>
+    <!-- Flat excavation void (cutter footprint, depth = abs(KG)+500 = 3200 below z=0) -->
+    <rect x="200" y="225" width="220" height="125" fill="#fef9e7" stroke="#a16207" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="310" y="245" text-anchor="middle" font-size="9" fill="#a16207">flat excavation (z=-3200)</text>
+
+    <!-- EG above grade (sloped roofline OK to skip) -->
+    <rect x="200" y="125" width="220" height="100" fill="#f1ece4" stroke="#1f2937" stroke-width="1.5"/>
+    <text x="310" y="180" text-anchor="middle" font-size="11" fill="#1f2937">EG</text>
+
+    <!-- KG walls full height -->
+    <rect x="200" y="225" width="6" height="120" fill="#1f2937"/>
+    <rect x="414" y="225" width="6" height="120" fill="#1f2937"/>
+    <line x1="200" y1="345" x2="420" y2="345" stroke="#1f2937" stroke-width="2"/>
+
+    <!-- WEST (daylight) KG window — should be visible but is buried by uniform cut -->
+    <rect x="220" y="280" width="40" height="35" fill="#fcdcdc" stroke="#b91c1c" stroke-width="2"/>
+    <text x="240" y="335" text-anchor="middle" font-size="9" fill="#7f1d1d" font-weight="700">buried W window</text>
+
+    <!-- annotation arrow into the lost grade region -->
+    <text x="115" y="240" font-size="10" fill="#b91c1c" font-weight="700">daylight side</text>
+    <text x="115" y="252" font-size="10" fill="#b91c1c" font-weight="700">buried by cut</text>
+    <path d="M 165 250 L 198 268" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#arrow46)"/>
+
+    <!-- z markers -->
+    <text x="528" y="232" text-anchor="end" font-size="9" fill="#6b7280">0</text>
+    <line x1="520" y1="225" x2="525" y2="225" stroke="#6b7280"/>
+    <text x="528" y="352" text-anchor="end" font-size="9" fill="#6b7280">-3200</text>
+    <line x1="520" y1="350" x2="525" y2="350" stroke="#6b7280"/>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER #46 ==================== -->
+  <g id="after46">
+    <rect x="560" y="20" width="520" height="420" fill="url(#sky46)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">After #46 — excavation follows terrain</text>
+    <text x="820" y="60" text-anchor="middle" font-size="10" fill="#4b5563">topSurfaceMode=follow_terrain samples heightSamples per cutter vertex</text>
+
+    <!-- compass -->
+    <text x="580" y="80" font-size="10" font-weight="700" fill="#6b7280">W</text>
+    <text x="1050" y="80" font-size="10" font-weight="700" fill="#6b7280" text-anchor="end">E</text>
+
+    <!-- Soil hatched left of cutter, FOLLOWING the grade line -->
+    <path d="M 580 300 L 740 230 L 740 350 L 580 350 Z" fill="url(#soilHatch46)" stroke="#7a5a3a" stroke-width="1"/>
+    <!-- Soil hatched right of cutter, FOLLOWING the grade line -->
+    <path d="M 960 195 L 1060 160 L 1060 350 L 960 350 Z" fill="url(#soilHatch46)" stroke="#7a5a3a" stroke-width="1"/>
+    <!-- Tilted excavation void: top edge slopes from west (high z, ~grade line) to east (deep) -->
+    <path d="M 740 300 L 960 195 L 960 350 L 740 350 Z" fill="#fef9e7" stroke="#a16207" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="850" y="235" text-anchor="middle" font-size="9" fill="#a16207">tilted excavation top (follows grade)</text>
+
+    <!-- EG above grade -->
+    <rect x="740" y="125" width="220" height="100" fill="#f1ece4" stroke="#1f2937" stroke-width="1.5"/>
+    <text x="850" y="180" text-anchor="middle" font-size="11" fill="#1f2937">EG</text>
+
+    <!-- KG walls -->
+    <rect x="740" y="225" width="6" height="120" fill="#1f2937"/>
+    <rect x="954" y="225" width="6" height="120" fill="#1f2937"/>
+    <line x1="740" y1="345" x2="960" y2="345" stroke="#1f2937" stroke-width="2"/>
+
+    <!-- EAST KG window — buried under soil (correct) -->
+    <rect x="900" y="280" width="40" height="35" fill="#dde9f3" stroke="#1f2937"/>
+    <text x="920" y="270" text-anchor="middle" font-size="8" fill="#1f2937">E KG (buried)</text>
+
+    <!-- WEST KG window — exposed above the tilted excavation top (correct!) -->
+    <rect x="755" y="305" width="40" height="35" fill="#cde9d4" stroke="#15803d" stroke-width="2"/>
+    <text x="775" y="358" text-anchor="middle" font-size="9" fill="#15803d" font-weight="700">exposed W window</text>
+
+    <!-- annotation -->
+    <text x="850" y="395" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="700">daylight basement preserved on west; east still enclosed</text>
+
+    <!-- z markers -->
+    <text x="1070" y="232" font-size="9" fill="#6b7280">0</text>
+    <line x1="1060" y1="225" x2="1065" y2="225" stroke="#6b7280"/>
+    <text x="1070" y="352" font-size="9" fill="#6b7280">-3200</text>
+    <line x1="1060" y1="350" x2="1065" y2="350" stroke="#6b7280"/>
+  </g>
+</svg>

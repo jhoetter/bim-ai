@@ -114,10 +114,18 @@ class DeleteGradedRegionCmd(BaseModel):
 
 
 ToposolidExcavationCutMode = Literal["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]
+ToposolidExcavationTopSurfaceMode = Literal["flat", "follow_terrain"]
 
 
 class CreateToposolidExcavationCmd(BaseModel):
-    """TOP-V3-05 - declare that a floor/roof/toposolid excavates a host toposolid."""
+    """TOP-V3-05 - declare that a floor/roof/toposolid excavates a host toposolid.
+
+    MF-driver-10 (#46): ``top_surface_mode`` controls the shape of the
+    excavation top face. Default ``"flat"`` preserves the uniform-depth cut
+    introduced by MF-driver-8 (#37). ``"follow_terrain"`` makes the cut
+    follow the host toposolid's ``heightSamples`` surface so the daylight
+    side of a hillside basement stays exposed instead of being buried.
+    """
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["CreateToposolidExcavation"] = "CreateToposolidExcavation"
@@ -128,6 +136,12 @@ class CreateToposolidExcavationCmd(BaseModel):
     offset_mm: float = Field(0.0, alias="offsetMm")
     custom_depth_mm: float | None = Field(None, alias="customDepthMm")
     estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+    top_surface_mode: ToposolidExcavationTopSurfaceMode = Field(
+        "flat", alias="topSurfaceMode"
+    )
+    top_height_samples: list[dict] | None = Field(
+        default=None, alias="topHeightSamples"
+    )
 
 
 class UpdateToposolidExcavationCmd(BaseModel):
@@ -140,6 +154,12 @@ class UpdateToposolidExcavationCmd(BaseModel):
     offset_mm: float | None = Field(None, alias="offsetMm")
     custom_depth_mm: float | None = Field(None, alias="customDepthMm")
     estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+    top_surface_mode: ToposolidExcavationTopSurfaceMode | None = Field(
+        None, alias="topSurfaceMode"
+    )
+    top_height_samples: list[dict] | None = Field(
+        default=None, alias="topHeightSamples"
+    )
 
 
 class DeleteToposolidExcavationCmd(BaseModel):
