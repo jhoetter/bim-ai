@@ -364,6 +364,89 @@ class _IRSchema(BaseModel):
     exteriorWallChainEG: _IRExteriorWallChainEG
 
 
+# MF-driver-3 (#12): map German storey labels emitted verbatim by reader
+# subagents (e.g. "Untergeschoss", "Erdgeschoss (EG)", "Spitzboden") to the
+# canonical level-<KG|EG|OG|DG|SB> ids the driver authors against. Without
+# this normalization step the IR validator either accepts duplicate /
+# untranslated ids (testhouse-2 ends up with 6 levels instead of 3, testhouse-3
+# with 7 instead of 5) or downstream phases fail to find a matching createLevel
+# call. Keys are matched lowercased + stripped; values are the canonical id
+# suffix appended to ``level-``.
+_GERMAN_LEVEL_NORMALIZATION: dict[str, str] = {
+    # UG / Untergeschoss / Kellergeschoss / Keller → KG
+    "ug": "KG",
+    "untergeschoss": "KG",
+    "kellergeschoss": "KG",
+    "keller": "KG",
+    # EG / Erdgeschoss → EG
+    "eg": "EG",
+    "erdgeschoss": "EG",
+    # OG / Obergeschoss → OG
+    "og": "OG",
+    "obergeschoss": "OG",
+    # DG / Dachgeschoss → DG
+    "dg": "DG",
+    "dachgeschoss": "DG",
+    # SB / Spitzboden → SB
+    "sb": "SB",
+    "spitzboden": "SB",
+    # Multi-word source-name forms seen verbatim in testhouse-2 reader output:
+    "untergeschoss (ug / keller)": "KG",
+    "erdgeschoss (eg)": "EG",
+    "dachgeschoss (dg)": "DG",
+}
+
+
+def _normalize_level_id(raw: str) -> str:
+    """Map a German storey label to canonical ``level-<KG|EG|OG|DG|SB>``.
+
+    Idempotent: an already-canonical id (``level-KG``) is returned unchanged.
+    Unknown inputs are passed through verbatim so the IR validator (or the
+    downstream phase) can complain with the original token still visible.
+    """
+
+    if not isinstance(raw, str):
+        return raw
+    s = raw.strip().lower()
+    if s.startswith("level-"):
+        return raw  # already canonical
+    if s in _GERMAN_LEVEL_NORMALIZATION:
+        return f"level-{_GERMAN_LEVEL_NORMALIZATION[s]}"
+    # Substring fallback: any known key contained in the source label.
+    # Sort by length desc so "kellergeschoss" wins over "keller" when both match.
+    for key in sorted(_GERMAN_LEVEL_NORMALIZATION, key=len, reverse=True):
+        if key in s:
+            return f"level-{_GERMAN_LEVEL_NORMALIZATION[key]}"
+    return raw  # let the validator complain
+
+
+def _normalize_ir_level_ids(data: dict) -> None:
+    """Rewrite ``data['levels'][*]['id']`` and ``data['extractedFacts'][*]['levelId']``
+    in place via :func:`_normalize_level_id`.
+
+    Called from :func:`_load_and_validate_ir` BEFORE the pydantic validator
+    runs so the rest of the driver only ever sees canonical ids. Safe to call
+    on already-canonical IRs (idempotent)."""
+
+    levels = data.get("levels")
+    if isinstance(levels, list):
+        for lvl in levels:
+            if isinstance(lvl, dict) and isinstance(lvl.get("id"), str):
+                lvl["id"] = _normalize_level_id(lvl["id"])
+    facts = data.get("extractedFacts")
+    if isinstance(facts, list):
+        for fact in facts:
+            if not isinstance(fact, dict):
+                continue
+            # extractedFacts entries may reference a level either as
+            # ``levelId`` (rooms / walls / openings) or as ``id`` on a
+            # ``kind: 'level'`` fact. Normalize both.
+            if isinstance(fact.get("levelId"), str):
+                fact["levelId"] = _normalize_level_id(fact["levelId"])
+            if fact.get("kind") == "level" and isinstance(fact.get("id"), str):
+                fact["id"] = _normalize_level_id(fact["id"])
+
+
 def _load_and_validate_ir(ir_path: Path) -> dict:
     """Read, parse, and schema-validate an IR file.
 
@@ -375,11 +458,19 @@ def _load_and_validate_ir(ir_path: Path) -> dict:
     ``KeyError: 'levels'`` after the first one already "succeeded" via the
     tolerant ``ir.get(...)`` codepath, producing 4 PNGs of an empty model
     that looked like a successful build.
+
+    MF-driver-3 (#12) extension: German storey labels emitted verbatim by
+    reader subagents (``Untergeschoss``, ``Erdgeschoss (EG)``, ``Spitzboden``,
+    …) are rewritten to canonical ``level-<KG|EG|OG|DG|SB>`` ids before the
+    pydantic validator runs, so downstream phases see one clean id per level.
     """
 
     if not ir_path.is_file():
         raise FileNotFoundError(f"missing IR: {ir_path}")
     data = json.loads(ir_path.read_text(encoding="utf-8"))
+    # Normalize BEFORE validation so the validator sees canonical ids and
+    # downstream callers iterate a clean, deduplicated levels list.
+    _normalize_ir_level_ids(data)
     try:
         _IRSchema.model_validate(data)
     except ValidationError as e:
