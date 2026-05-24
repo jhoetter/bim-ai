@@ -60,11 +60,52 @@ edited by the loop.** All architectural improvements must come from:
 - (a) Engine/driver features that author MORE elements from EXISTING
   IR facts (e.g., gable wall opening cutting, balcony rendering,
   half_gable roof mode, dormer mesh blending).
-- (b) Re-running the reader pass to get a richer IR (slow, expensive,
-  but legitimate — output is auditable to source PDFs).
+- (b) Re-running the preflight reader pass to get a richer IR (slow,
+  expensive, but legitimate — output is auditable to source PDFs).
+  This is the **only** way to legitimately change IR content.
 
 Any synth fact still present in an IR is a bug — clean it on first
 loop wakeup.
+
+---
+
+## 0b. PRODUCTION-LIKE SIMULATION — "build from scratch" semantics
+
+When the user (or the loop) says "build from scratch", we MUST
+simulate the production case: the agent gets ONLY the source folder
+(`testhouses/house-{X}/` with the original PDFs) and has NEVER seen
+this house before. That means **the entire `tmp/reverse-bim/house-{X}/`
+tree is deleted**, including:
+- `preflight/` (rendered source PDFs + reader plan)
+- `understanding/existing-building-ir.json` (the reader's IR output)
+- `iter-*/` (any per-iter captures, grades, articles)
+- `run.jsonl` (telemetry)
+- `_archive*/`, `_restarts/` (anything else stale)
+
+Then the loop re-runs `_cmd_preflight` to regenerate:
+1. Rendered source pages from PDFs (`preflight/rendered-pages/`)
+2. The IR via the reader-pass LLM call (`understanding/existing-building-ir.json`)
+
+Only after preflight regenerates the IR can the loop start authoring.
+
+**Cost**: preflight is slow (~3–5 min per house — LLM reads multiple
+multi-page PDFs). For multi-day runs this is acceptable; for tight
+iteration cycles it's the bottleneck.
+
+**Trigger words that mean "full from-scratch"**:
+- "build from scratch"
+- "clear seeded artifacts"
+- "reset the houses"
+- "start again from beginning"
+- "purge everything"
+- "production-like simulation"
+
+When ANY of those appear in user instructions, Phase 0 (§8) must do
+the full delete + preflight regen, NOT just `testhouse_purge.py`.
+
+`testhouse_purge.py` alone is the LIGHT clean — only wipes DB models,
+leaves the IR + preflight artifacts intact. That's for in-loop restart
+between converged iters (§11). It is NOT a "build from scratch".
 
 ---
 
@@ -462,40 +503,62 @@ rendering / modeling / workflow capability?". Below is the catalog.
 
 ---
 
-## 8. Phase 0 — setup checklist
+## 8. Phase 0 — setup checklist (FROM-SCRATCH default)
 
-Run on the first /loop wakeup of a fresh convergence session.
+Per §0b, "build from scratch" requires deleting EVERYTHING under
+`tmp/reverse-bim/house-{X}/` (including the IR + preflight artifacts)
+and re-running preflight. This is the DEFAULT behavior on first
+/loop wakeup of a fresh session — production-like simulation.
 
 ```bash
 # 0.1 Dev server health
 curl -s -o /dev/null -w "API:%{http_code}\n" http://127.0.0.1:28500/api/health
 curl -s -o /dev/null -w "WEB:%{http_code}\n" http://127.0.0.1:22000/
 
-# 0.2 Purge all 3 houses
+# 0.2 Purge all 3 houses (DB level)
+cd /home/jhoetter/repos/bim-ai
 uv run --project app python scripts/testhouse_purge.py
 
-# 0.3 Clean stale legacy iter dirs (16 iter-N-captures from prior runs)
-cd /home/jhoetter/repos/bim-ai/tmp/reverse-bim
-rm -rf iter-*-captures iter-*-scoring
-ls -d iter-* 2>/dev/null  # should be empty
-
-# 0.4 Reset per-house iter dirs (keep prior captures for reference, but
-# move into archive/ so dashboard doesn't show stale data)
+# 0.3 FROM-SCRATCH DELETE — per §0b, simulate "agent has never seen
+# this house". Wipe EVERY tmp/reverse-bim artifact for the 3 houses
+# and let preflight re-render + re-read from the source PDFs.
+cd tmp/reverse-bim
 for H in alpha beta gamma; do
-  mkdir -p house-$H/_archive
-  mv house-$H/iter-* house-$H/_archive/ 2>/dev/null
+  rm -rf house-$H
+done
+rm -rf iter-*-captures iter-*-scoring *.md 2>/dev/null
+ls -d house-* iter-* 2>/dev/null && echo "STILL HAVE STALE — abort" || echo "clean"
+
+# 0.4 Verify source folders are intact (the agent's only input)
+cd /home/jhoetter/repos/bim-ai
+for H in alpha beta gamma; do
+  COUNT=$(ls testhouses/house-$H/*.pdf 2>/dev/null | wc -l)
+  echo "  $H: $COUNT source PDFs"
 done
 
-# 0.5 Verify IRs intact (don't lose the reader pass)
+# 0.5 Re-run preflight for each house (regenerates IR + rendered pages)
+# This is SLOW (~3-5 min per house, LLM reader pass over PDFs).
 for H in alpha beta gamma; do
-  [ -f house-$H/understanding/existing-building-ir.json ] && echo "$H IR ok"
+  uv run --project app python scripts/testhouse_drive.py preflight --house "$H"
 done
 
-# 0.6 Reset session start timestamp
+# 0.6 Verify each IR is fresh from this preflight
+for H in alpha beta gamma; do
+  FC=$(python3 -c "import json; print(len(json.load(open('tmp/reverse-bim/house-$H/understanding/existing-building-ir.json')).get('extractedFacts',[])))")
+  SYNTH=$(python3 -c "import json; print(sum(1 for f in json.load(open('tmp/reverse-bim/house-$H/understanding/existing-building-ir.json')).get('extractedFacts',[]) if 'synth' in str(f.get('sourceDocId',''))))")
+  echo "  $H: $FC facts (synth=$SYNTH — MUST be 0)"
+done
+
+# 0.7 Reset session start timestamp
 date -u +'%Y-%m-%dT%H:%M:%SZ' > /tmp/bim-ai-convergence-v3.start
 
-# 0.7 Append §21 with "Phase 0 complete"
+# 0.8 Append §21 with "Phase 0 complete — from-scratch including preflight"
 ```
+
+**If the user explicitly says "skip preflight" or "keep IR"**, the
+loop may use the LIGHT clean instead (only `testhouse_purge.py` + delete
+iter dirs, preserve `preflight/` + `understanding/`). But the default
+is ALWAYS the full from-scratch above.
 
 ---
 
