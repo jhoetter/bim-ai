@@ -1235,20 +1235,89 @@ def _topology_bundle(
             t = max(-1.0, min(1.0, proj / half_diag))
             z = round(t * peak_mm / 2, 1)  # z range = [-peak/2 .. +peak/2]
             height_samples.append({"xMm": round(px, 1), "yMm": round(py, 1), "zMm": z})
+    # MF-driver-8 (#37): for every level whose top sits below grade
+    # (``elevationMm < 0`` — typically a Keller), carve an excavation
+    # out of the toposolid so the KG walls + windows aren't left
+    # hanging in open air below the topo surface. The excavation
+    # primitive (TOP-V3-05) needs a cutter element to live in the
+    # element graph; we author a synthetic floor at the building
+    # footprint + 500 mm margin and reference it from the
+    # CreateToposolidExcavation command. The cutter floor's level
+    # equals the below-grade level itself, so its top face sits at
+    # ``elevationMm`` and the excavation depth resolves to
+    # ``abs(elevationMm) + 500 mm`` via the ``custom_depth`` cut mode.
+    # Beta's daylight-east basement is left for a follow-up "daylight
+    # cutout" command — the simple AABB excavation here will hide the
+    # east face too, which is acceptable until that follow-up lands.
+    commands: list[dict] = [
+        {
+            "type": "CreateToposolid",
+            "toposolidId": f"th-{house}-toposolid",
+            "name": "Site toposolid",
+            "boundaryMm": topo_poly,
+            "thicknessMm": 1500,
+            "baseElevationMm": 0,
+            **({"heightSamples": height_samples} if height_samples else {}),
+        }
+    ]
+    excavation_margin = 500  # 500 mm collar around the building footprint
+    bxmin = min(xs) - excavation_margin
+    bxmax = max(xs) + excavation_margin
+    bymin = min(ys) - excavation_margin
+    bymax = max(ys) + excavation_margin
+    excavation_boundary = [
+        {"xMm": bxmin, "yMm": bymin},
+        {"xMm": bxmax, "yMm": bymin},
+        {"xMm": bxmax, "yMm": bymax},
+        {"xMm": bxmin, "yMm": bymax},
+    ]
+    below_grade_count = 0
+    for lvl in ir.get("levels") or []:
+        elevation_mm = _lvl_elevation_mm(lvl)
+        if elevation_mm >= 0:
+            continue
+        short = lvl["id"].split("-")[-1]  # e.g. KG
+        level_id = f"th-{house}-level-{short}"
+        cutter_id = f"th-{house}-excavation-cutter-{short}"
+        excavation_id = f"th-{house}-toposolid-excavation-{short}"
+        depth_mm = abs(elevation_mm) + 500
+        # Synthetic helper floor that hosts the excavation. Authored as
+        # a thin slab at the cellar level so the excavation cmd has a
+        # valid floor cutter to reference. The 1 mm thickness keeps it
+        # invisible in renders; the engine reads it solely for footprint
+        # + level metadata.
+        commands.append(
+            {
+                "type": "createFloor",
+                "id": cutter_id,
+                "name": f"{short} excavation cutter",
+                "levelId": level_id,
+                "boundaryMm": excavation_boundary,
+                "thicknessMm": 1,
+                "slabExtrudeDirection": "down",
+                "physicalRole": "helper",
+            }
+        )
+        commands.append(
+            {
+                "type": "CreateToposolidExcavation",
+                "id": excavation_id,
+                "hostToposolidId": f"th-{house}-toposolid",
+                "cutterElementId": cutter_id,
+                "cutMode": "custom_depth",
+                "customDepthMm": depth_mm,
+            }
+        )
+        below_grade_count += 1
+    excavation_note = (
+        f" Authored {below_grade_count} below-grade excavation(s) (KG-style levels with elevationMm<0)."
+        if below_grade_count
+        else ""
+    )
     return (
         {
             "schemaVersion": "cmd-v3.0",
-            "commands": [
-                {
-                    "type": "CreateToposolid",
-                    "toposolidId": f"th-{house}-toposolid",
-                    "name": "Site toposolid",
-                    "boundaryMm": topo_poly,
-                    "thicknessMm": 1500,
-                    "baseElevationMm": 0,
-                    **({"heightSamples": height_samples} if height_samples else {}),
-                }
-            ],
+            "commands": commands,
             "parentRevision": parent_revision,
             "assumptions": [
                 {
@@ -1257,7 +1326,11 @@ def _topology_bundle(
                     "confidence": 0.5,
                     "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                     "contestable": True,
-                    "evidence": "iter-1 EG exterior_wall_chain expanded by 5 m on every side; surface at grade (0 mm), solid extends 1500 mm down. Parcel boundary + excavation relation deferred.",
+                    "evidence": (
+                        "iter-1 EG exterior_wall_chain expanded by 5 m on every side; "
+                        "surface at grade (0 mm), solid extends 1500 mm down."
+                        + excavation_note
+                    ),
                 }
             ],
         },
