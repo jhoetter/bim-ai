@@ -1456,6 +1456,37 @@ def _partitions_bundle(
     )
 
 
+def _coerce_vertex_mm(value: object) -> list[float] | None:
+    """Normalise an opening ``vertexMm`` value into a ``[x, y]`` float list.
+
+    Reader IRs use two shapes for ``vertexMm``:
+
+    * ``[x, y]`` (alpha) — already a list.
+    * ``{"xMm": ..., "yMm": ...}`` (beta/gamma) — dict carrying the two
+      coordinates as separate keys.
+
+    Historically ``_openings_bundle`` accepted only the list shape, so the
+    dict shape silently fell through to the ``startMm/endMm`` fallback and,
+    when that was also dict-shaped on an opening with no host endpoints,
+    the opening was dropped. This helper closes the gap by translating
+    either shape into a ``[float, float]`` list. Returns ``None`` when
+    ``value`` is neither shape (so callers can fall back to the
+    ``wallStartMm/wallEndMm`` or ``startMm/endMm`` midpoint paths).
+    """
+
+    if isinstance(value, dict) and "xMm" in value and "yMm" in value:
+        try:
+            return [float(value["xMm"]), float(value["yMm"])]
+        except (TypeError, ValueError):
+            return None
+    if isinstance(value, list) and len(value) >= 2:
+        try:
+            return [float(value[0]), float(value[1])]
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
 def _host_on_nearest_wall(
     vertex: list, walls: list[dict], *, max_distance_mm: float = 500.0
 ) -> tuple[dict | None, float]:
@@ -1545,12 +1576,13 @@ def _openings_bundle(
         extra_cmd_fields: dict,
     ) -> None:
         # Reader IRs use one of three shapes for opening position:
-        #   1. ``vertexMm: [x, y]`` (alpha) — the door/window center.
+        #   1. ``vertexMm: [x, y]`` (alpha) or ``vertexMm: {xMm, yMm}``
+        #      (beta/gamma) — the door/window center.
         #   2. ``wallStartMm + wallEndMm`` (gamma) — the host wall
         #      segment; we take its midpoint as the vertex.
         #   3. ``startMm + endMm`` (beta-ish alt) — same idea.
-        vertex = fact.get("vertexMm")
-        if not (isinstance(vertex, list) and len(vertex) >= 2):
+        vertex = _coerce_vertex_mm(fact.get("vertexMm"))
+        if vertex is None:
             for ks, ke in (("wallStartMm", "wallEndMm"), ("startMm", "endMm")):
                 s, e = fact.get(ks), fact.get(ke)
                 # Dict-shape endpoints {xMm, yMm}.
