@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="Inter, system-ui, sans-serif" font-size="12">
+  <style>
+    .facade { fill: #f0ebde; stroke: #6b5e44; stroke-width: 1.5; }
+    .window { fill: #cbd9e2; stroke: #5a6c7a; stroke-width: 1; }
+    .door   { fill: #7c5a37; stroke: #3a2812; stroke-width: 1; }
+    .slab   { fill: #a87a44; stroke: #5a3a18; stroke-width: 1.4; }
+    .rail   { fill: #b0d8e8; fill-opacity: 0.45; stroke: #3a6378; stroke-width: 1; stroke-dasharray: 2 2; }
+    .empty  { fill: none; stroke: #c4322a; stroke-width: 1.6; stroke-dasharray: 6 3; }
+    .ttl    { font-size: 14px; font-weight: 600; fill: #111; }
+    .sub    { font-size: 11px; fill: #555; }
+    .bad    { font-size: 11px; fill: #c4322a; font-weight: 600; }
+    .good   { font-size: 11px; fill: #1f7a3a; font-weight: 600; }
+  </style>
+  <text x="20" y="22" class="ttl">Issue #64 — BalconyElem not visible in any cardinal capture</text>
+  <text x="20" y="40" class="sub">South facade of house-22 (2 declared balconies). Both panels render the same wall + 2 hosted balconies.</text>
+
+  <!-- BEFORE panel -->
+  <g transform="translate(20,60)">
+    <text x="0" y="0" class="ttl">Before — empty balcony slots</text>
+    <rect x="0" y="15" width="360" height="230" class="facade"/>
+    <!-- ground-level door + windows -->
+    <rect x="40" y="170" width="40" height="75" class="door"/>
+    <rect x="120" y="180" width="60" height="40" class="window"/>
+    <rect x="220" y="180" width="60" height="40" class="window"/>
+    <rect x="300" y="180" width="40" height="40" class="window"/>
+    <!-- first-floor windows -->
+    <rect x="40" y="60" width="60" height="40" class="window"/>
+    <rect x="260" y="60" width="60" height="40" class="window"/>
+    <!-- "empty balcony slots" rendered as dashed red outlines where the slab should sit -->
+    <rect x="115" y="100" width="90" height="42" class="empty"/>
+    <rect x="225" y="100" width="90" height="42" class="empty"/>
+    <text x="115" y="160" class="bad">no slab, no rails</text>
+    <text x="225" y="160" class="bad">no slab, no rails</text>
+    <text x="0" y="265" class="sub">makeBalconyMesh() silently returned an empty Group when wall lookup</text>
+    <text x="0" y="278" class="sub">failed; dispatcher added the empty group → no geometry, no wireframe.</text>
+  </g>
+
+  <!-- AFTER panel -->
+  <g transform="translate(420,60)">
+    <text x="0" y="0" class="ttl">After — visible decks + railings</text>
+    <rect x="0" y="15" width="360" height="230" class="facade"/>
+    <rect x="40" y="170" width="40" height="75" class="door"/>
+    <rect x="120" y="180" width="60" height="40" class="window"/>
+    <rect x="220" y="180" width="60" height="40" class="window"/>
+    <rect x="300" y="180" width="40" height="40" class="window"/>
+    <rect x="40" y="60" width="60" height="40" class="window"/>
+    <rect x="260" y="60" width="60" height="40" class="window"/>
+    <!-- balcony slabs + glass balustrades -->
+    <rect x="115" y="120" width="90" height="14" class="slab"/>
+    <rect x="115" y="92"  width="90" height="28" class="rail"/>
+    <rect x="225" y="120" width="90" height="14" class="slab"/>
+    <rect x="225" y="92"  width="90" height="28" class="rail"/>
+    <text x="115" y="160" class="good">slab + glass guard</text>
+    <text x="225" y="160" class="good">slab + glass guard</text>
+    <text x="0" y="265" class="sub">Mesh builder now always produces visible geometry (placeholder when</text>
+    <text x="0" y="278" class="sub">wall is missing) and emits a deduped console.warn so future</text>
+    <text x="0" y="291" class="sub">regressions surface instead of silently disappearing.</text>
+  </g>
+
+  <text x="20" y="345" class="sub">Root cause (A): meshBuilders.balcony.ts returned an empty THREE.Group on wall-lookup failure with no diagnostic.</text>
+</svg>
