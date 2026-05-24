@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #87 — per-level openings density (before / after)</title>
+  <desc>
+    house-21 IR declared 17 windows + 1 door spread across KG / EG / OG / DG.
+    Pre-fix, only the EG-openings phase produced any insertWindowOnWall
+    commands — KG / OG / DG silently returned None from
+    _openings_bundle because _exterior_walls_bundle never authored their
+    walls (no per-level exterior_wall_chain fact) and the shell phase
+    only ever emits EG-level walls. Authoring rate ~30 % (5 of 17).
+    Post-fix, _exterior_walls_bundle mirrors the EG chain onto any
+    non-EG level that has opening or room facts but no chain of its
+    own, the same pattern _partitions_bundle has used for interior
+    walls since iter-3. The mirrored walls land at the canonical
+    per-level levelId so _openings_bundle's primary filter matches
+    them — every level's openings phase fires AND actually hosts its
+    declared windows. Authoring rate jumps to 100 %.
+  </desc>
+
+  <defs>
+    <marker id="redArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before — 30% authoring rate</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">Only EG-openings fires (KG / OG / DG return None: no walls at level)</text>
+
+    <!-- Axes -->
+    <line x1="80" y1="360" x2="500" y2="360" stroke="#4b5563" stroke-width="1.2"/>
+    <line x1="80" y1="360" x2="80" y2="110" stroke="#4b5563" stroke-width="1.2"/>
+    <!-- y-axis ticks: 0, 2, 4, 6 windows -->
+    <g font-size="9" fill="#4b5563" text-anchor="end">
+      <line x1="76" y1="360" x2="80" y2="360" stroke="#4b5563"/>
+      <text x="72" y="363">0</text>
+      <line x1="76" y1="310" x2="80" y2="310" stroke="#4b5563"/>
+      <text x="72" y="313">2</text>
+      <line x1="76" y1="260" x2="80" y2="260" stroke="#4b5563"/>
+      <text x="72" y="263">4</text>
+      <line x1="76" y1="210" x2="80" y2="210" stroke="#4b5563"/>
+      <text x="72" y="213">6</text>
+    </g>
+    <text x="40" y="235" font-size="10" fill="#374151" transform="rotate(-90 40 235)">windows authored</text>
+
+    <!-- IR-declared count (pale grey) behind each level -->
+    <!-- KG: 5 IR -->
+    <rect x="105" y="235" width="60" height="125" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="135" y="228" text-anchor="middle" font-size="9" fill="#6b7280">IR: 5</text>
+    <!-- EG: 5 IR -->
+    <rect x="205" y="235" width="60" height="125" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="235" y="228" text-anchor="middle" font-size="9" fill="#6b7280">IR: 5</text>
+    <!-- OG: 4 IR -->
+    <rect x="305" y="260" width="60" height="100" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="335" y="253" text-anchor="middle" font-size="9" fill="#6b7280">IR: 4</text>
+    <!-- DG: 3 IR -->
+    <rect x="405" y="285" width="60" height="75" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="435" y="278" text-anchor="middle" font-size="9" fill="#6b7280">IR: 3</text>
+
+    <!-- Authored (red) — pre-fix: KG=0, EG=5, OG=0, DG=0 -->
+    <rect x="113" y="360" width="44" height="0" fill="#dc2626" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="135" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#7f1d1d">0</text>
+    <rect x="213" y="235" width="44" height="125" fill="#dc2626" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="235" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#7f1d1d">5</text>
+    <rect x="313" y="360" width="44" height="0" fill="#dc2626" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="335" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#7f1d1d">0</text>
+    <rect x="413" y="360" width="44" height="0" fill="#dc2626" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="435" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#7f1d1d">0</text>
+
+    <!-- Level labels -->
+    <g font-size="10" fill="#374151" text-anchor="middle" font-weight="700">
+      <text x="135" y="395">KG</text>
+      <text x="235" y="395">EG</text>
+      <text x="335" y="395">OG</text>
+      <text x="435" y="395">DG</text>
+    </g>
+
+    <!-- Annotation: only EG fires -->
+    <path d="M 290 200 L 240 230" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="295" y="195" font-size="10" fill="#b91c1c" font-weight="700">only EG has walls</text>
+    <text x="295" y="207" font-size="9" fill="#7f1d1d">(shell phase: EG-only)</text>
+
+    <!-- Badge -->
+    <rect x="40" y="408" width="480" height="22" rx="4" fill="#ffffff" stroke="#b91c1c"/>
+    <text x="280" y="423" text-anchor="middle" font-size="10" fill="#7f1d1d" font-weight="700">5 / 17 windows = 30% authoring rate — h21 reads as half-empty</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After — 100% authoring rate</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">EG chain mirrors to KG / OG / DG; every openings phase hosts on per-level walls</text>
+
+    <!-- Axes -->
+    <line x1="620" y1="360" x2="1040" y2="360" stroke="#4b5563" stroke-width="1.2"/>
+    <line x1="620" y1="360" x2="620" y2="110" stroke="#4b5563" stroke-width="1.2"/>
+    <g font-size="9" fill="#4b5563" text-anchor="end">
+      <line x1="616" y1="360" x2="620" y2="360" stroke="#4b5563"/>
+      <text x="612" y="363">0</text>
+      <line x1="616" y1="310" x2="620" y2="310" stroke="#4b5563"/>
+      <text x="612" y="313">2</text>
+      <line x1="616" y1="260" x2="620" y2="260" stroke="#4b5563"/>
+      <text x="612" y="263">4</text>
+      <line x1="616" y1="210" x2="620" y2="210" stroke="#4b5563"/>
+      <text x="612" y="213">6</text>
+    </g>
+    <text x="580" y="235" font-size="10" fill="#374151" transform="rotate(-90 580 235)">windows authored</text>
+
+    <!-- IR-declared (grey behind) -->
+    <rect x="645" y="235" width="60" height="125" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="675" y="228" text-anchor="middle" font-size="9" fill="#6b7280">IR: 5</text>
+    <rect x="745" y="235" width="60" height="125" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="775" y="228" text-anchor="middle" font-size="9" fill="#6b7280">IR: 5</text>
+    <rect x="845" y="260" width="60" height="100" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="875" y="253" text-anchor="middle" font-size="9" fill="#6b7280">IR: 4</text>
+    <rect x="945" y="285" width="60" height="75" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.8"/>
+    <text x="975" y="278" text-anchor="middle" font-size="9" fill="#6b7280">IR: 3</text>
+
+    <!-- Authored (green) — post-fix: every level's bar fills the IR-declared box -->
+    <rect x="653" y="235" width="44" height="125" fill="#16a34a" stroke="#14532d" stroke-width="1"/>
+    <text x="675" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#14532d">5</text>
+    <rect x="753" y="235" width="44" height="125" fill="#16a34a" stroke="#14532d" stroke-width="1"/>
+    <text x="775" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#14532d">5</text>
+    <rect x="853" y="260" width="44" height="100" fill="#16a34a" stroke="#14532d" stroke-width="1"/>
+    <text x="875" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#14532d">4</text>
+    <rect x="953" y="285" width="44" height="75" fill="#16a34a" stroke="#14532d" stroke-width="1"/>
+    <text x="975" y="375" text-anchor="middle" font-size="10" font-weight="700" fill="#14532d">3</text>
+
+    <g font-size="10" fill="#374151" text-anchor="middle" font-weight="700">
+      <text x="675" y="395">KG</text>
+      <text x="775" y="395">EG</text>
+      <text x="875" y="395">OG</text>
+      <text x="975" y="395">DG</text>
+    </g>
+
+    <!-- Annotation: mirror EG to all -->
+    <path d="M 830 200 L 780 230" stroke="#14532d" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="835" y="195" font-size="10" fill="#14532d" font-weight="700">EG chain mirrors</text>
+    <text x="835" y="207" font-size="9" fill="#166534">to every level with openings</text>
+
+    <!-- Badge -->
+    <rect x="580" y="408" width="480" height="22" rx="4" fill="#ffffff" stroke="#16a34a"/>
+    <text x="820" y="423" text-anchor="middle" font-size="10" fill="#14532d" font-weight="700">17 / 17 windows = 100% authoring rate — every facade reads filled</text>
+  </g>
+
+</svg>
