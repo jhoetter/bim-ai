@@ -1487,8 +1487,17 @@ def _coerce_vertex_mm(value: object) -> list[float] | None:
     return None
 
 
+# MF-driver-4 (#13): the historical hosting threshold was 500 mm, but
+# reader vertexMm values often sit on a room boundary while the authored
+# wall is offset by ``thicknessMm/2`` from there. With two stacked
+# offsets the cumulative gap can exceed 500 mm, which silently dropped
+# every opening (iter-4 saw 0/N for all three test houses). Bumped to
+# 1000 mm as the conservative lenient-snap fix.
+DEFAULT_HOST_DISTANCE_MM = 1000.0
+
+
 def _host_on_nearest_wall(
-    vertex: list, walls: list[dict], *, max_distance_mm: float = 500.0
+    vertex: list, walls: list[dict], *, max_distance_mm: float = DEFAULT_HOST_DISTANCE_MM
 ) -> tuple[dict | None, float]:
     """Return (wall_element, alongT) hosting ``vertex`` on the nearest exterior wall.
 
@@ -1497,6 +1506,38 @@ def _host_on_nearest_wall(
     whose segment is closest to ``vertex``, clamping the parameter to
     ``[0, 1]``. Returns ``(None, 0)`` if every wall is farther than
     ``max_distance_mm``.
+    """
+
+    wall, _t, _d, _reason = _resolve_opening_host(
+        vertex, walls, threshold_mm=max_distance_mm
+    )
+    if wall is None:
+        return (None, 0.0)
+    return (wall, _t)
+
+
+def _resolve_opening_host(
+    vertex: list,
+    walls: list[dict],
+    *,
+    threshold_mm: float = DEFAULT_HOST_DISTANCE_MM,
+) -> tuple[dict | None, float, float, str | None]:
+    """Find the nearest wall to ``vertex`` and report whether it's in range.
+
+    Returns ``(wall_or_None, alongT, distance_mm, reason_or_None)``:
+
+    * On success (nearest wall within ``threshold_mm``): the wall dict,
+      the parametric ``alongT`` clamped to ``[0, 1]``, the perpendicular
+      distance to that wall, and ``reason=None``.
+    * On miss (no walls or nearest wall too far): ``wall=None``,
+      ``alongT=0.0``, the still-meaningful nearest distance (or ``inf``
+      if there were no walls at all), and a structured ``reason`` string
+      of the form ``"nearest_wall_distance_<d>mm > threshold_<t>mm"``
+      that downstream logging can surface unchanged.
+
+    Split out (MF-driver-4 / #13) so per-fact host-distance decisions can
+    be logged with the actual nearest wall id and miss distance, instead
+    of the previous blanket "no_host_within_500mm" message.
     """
 
     px = float(vertex[0])
@@ -1518,9 +1559,16 @@ def _host_on_nearest_wall(
         d = math.hypot(cx - px, cy - py)
         if d < best[2]:
             best = (w, t, d)
-    if best[0] is None or best[2] > max_distance_mm:
-        return (None, 0.0)
-    return (best[0], best[1])
+    wall, t, d = best
+    if wall is None:
+        return (None, 0.0, float("inf"), "no_walls_at_level")
+    if d > threshold_mm:
+        reason = (
+            f"nearest_wall_distance_{int(round(d))}mm > "
+            f"threshold_{int(round(threshold_mm))}mm"
+        )
+        return (None, 0.0, d, reason)
+    return (wall, t, d, None)
 
 
 def _openings_bundle(
@@ -1601,13 +1649,30 @@ def _openings_bundle(
                     break
         if not (isinstance(vertex, list) and len(vertex) >= 2):
             return
-        wall, t = _host_on_nearest_wall(vertex, walls)
+        # MF-driver-4 (#13): use the richer host resolver so we can log
+        # the actual nearest wall id + miss distance per skipped fact.
+        wall, t, _dist, host_reason = _resolve_opening_host(
+            vertex, walls, threshold_mm=DEFAULT_HOST_DISTANCE_MM
+        )
         if wall is None:
+            # Surface which wall was nearest (even though it was out of
+            # range) so the operator can see why a fact missed — e.g.
+            # when vertexMm sits on the room boundary and the authored
+            # wall is offset by thicknessMm/2.
+            nearest_id: str | None = None
+            if walls:
+                _w, _t, _d, _r = _resolve_opening_host(
+                    vertex, walls, threshold_mm=float("inf")
+                )
+                if _w is not None:
+                    nearest_id = str(_w.get("id"))
             skipped.append(
                 {
                     "factId": fact.get("factId"),
                     "kind": opening_kind,
-                    "reason": "no_host_within_500mm",
+                    "reason": host_reason or "no_host_within_threshold",
+                    "nearestWallId": nearest_id,
+                    "vertexMm": [float(vertex[0]), float(vertex[1])],
                 }
             )
             return
@@ -1623,6 +1688,8 @@ def _openings_bundle(
                     "factId": fact.get("factId"),
                     "kind": opening_kind,
                     "reason": f"host_wall_too_short_{int(wlen)}mm",
+                    "nearestWallId": str(wall.get("id")),
+                    "vertexMm": [float(vertex[0]), float(vertex[1])],
                 }
             )
             return
@@ -1634,6 +1701,8 @@ def _openings_bundle(
                     "factId": fact.get("factId"),
                     "kind": opening_kind,
                     "reason": "host_position_at_corner",
+                    "nearestWallId": str(wall.get("id")),
+                    "vertexMm": [float(vertex[0]), float(vertex[1])],
                 }
             )
             return
@@ -1651,6 +1720,8 @@ def _openings_bundle(
                     "factId": fact.get("factId"),
                     "kind": opening_kind,
                     "reason": "overlaps_existing_opening_on_wall",
+                    "nearestWallId": wid,
+                    "vertexMm": [float(vertex[0]), float(vertex[1])],
                 }
             )
             return
@@ -2788,7 +2859,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                 narrative_outcome=(
                     f"{placed_doors} door(s) + {placed_windows} window(s) hosted; "
                     f"{len(skipped)} opening(s) skipped (typically interior doors whose nearest "
-                    "wall is beyond the 500 mm hosting threshold)."
+                    "wall is beyond the 1000 mm hosting threshold)."
                 ),
             )
             if skipped:
