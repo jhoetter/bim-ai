@@ -332,6 +332,8 @@ Each row = one /loop iteration. The loop appends here.
 | 7.s | 2026-05-24 02:18Z | (all) | SMOKE-1 result: alpha+beta rebuilt cleanly, **gamma roof-main 409** because ROOF phase isn't idempotent (re-running floor ROOF on existing model duplicates main-roof id). Worked around via purge+iter-7 | n/a | fix idempotency in §15 followup |
 | 7.g | 2026-05-24 02:30Z | gamma | iter-7 (purge+author with Zwerchhaus): **8.85/10** (+0.45 from 8.4); §4.5 still 1.0 (clean); topGap=east facade (ARBEITEN rounded bay + arched gable window) | 8.85 | KG↔EG stair via NS-6 |
 | 8   | 2026-05-24 02:45Z | gamma | NS-6 stairs honor fromLevelId/toLevelId — KG↔EG stair now authored when fact present; gamma IR patched with KG-EG stair fact (13 risers, 2250mm rise). iter-8 author kicked off | n/a | grade after iter-8 |
+| 8.g | 2026-05-24 02:55Z | **gamma** | iter-8: **9.63/10 — CONVERGED 🎯**; perFloor 3/3 (KG-EG stair landed), perFacade 3.63/4 (north dormers in snapshot but not visible in capture; south Zwerchhaus reads as tower-like), materials 1/1 visibly applied, vertical 1/1, noMajorDefect 1/1 | **9.63** | CONVERGED |
+| 9   | 2026-05-24 02:55Z | (all) | **ALL THREE HOUSES CONVERGED** at honest scores: alpha 9.2 | beta 9.0 | gamma 9.63. Methodology validated end-to-end | n/a | Phase 3 (final report) OR continue pushing to 10/10 via §19 features |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
