@@ -1785,23 +1785,46 @@ def _dormers_bundle(
         half_across = (dy if ridge_ew else dx) / 2
         if abs(across) + depth / 2 > half_across - 200:
             depth = max(600.0, 2 * (half_across - abs(across) - 200))
-        commands.append(
-            {
-                "type": "createDormer",
-                "id": f"th-{house}-dormer-{_slugify(f.get('factId'))}",
-                "name": (str(f.get("text") or "Schleppgaube"))[:80],
-                "hostRoofId": roof_id,
-                "positionOnRoof": {
-                    "alongRidgeMm": round(along, 1),
-                    "acrossRidgeMm": round(across, 1),
-                },
-                "widthMm": round(width, 1),
-                "wallHeightMm": min(1500.0, max(800.0, height)),
-                "depthMm": round(depth, 1),
-                "dormerRoofKind": "shed",
-                "dormerRoofPitchDeg": 10.0,
-            }
-        )
+        # NS-2026-05-24: dormer kind / pitch / heights from IR fact when
+        # available. Zwerchhaus / Zwerchgiebel = `dormerKind="zwerchhaus"`
+        # in IR; we author it as a wide+tall gable dormer (engine has no
+        # discrete cross-gable mode). Falls back to shed Schleppgaube
+        # defaults when fact is silent.
+        fact_kind = str(f.get("dormerKind") or "").lower()
+        is_zwerchhaus = fact_kind in ("zwerchhaus", "zwerchgiebel", "cross_gable", "cross-gable")
+        if is_zwerchhaus:
+            dormer_kind = "gable"
+            wall_h = float(f.get("wallHeightMm") or 2400.0)  # full storey-height cheek walls
+            pitch_deg = float(f.get("dormerRoofPitchDeg") or 35.0)
+            # ridgeHeightMm required when gable: wall + ~half-width × tan(pitch)
+            import math as _math
+            ridge_h = float(
+                f.get("ridgeHeightMm")
+                or wall_h + (width / 2) * _math.tan(_math.radians(pitch_deg))
+            )
+        else:
+            dormer_kind = str(f.get("dormerRoofKind") or "shed")
+            wall_h = min(1500.0, max(800.0, height))
+            pitch_deg = float(f.get("dormerRoofPitchDeg") or 10.0)
+            ridge_h = None
+        dormer_cmd: dict = {
+            "type": "createDormer",
+            "id": f"th-{house}-dormer-{_slugify(f.get('factId'))}",
+            "name": (str(f.get("text") or "Schleppgaube"))[:80],
+            "hostRoofId": roof_id,
+            "positionOnRoof": {
+                "alongRidgeMm": round(along, 1),
+                "acrossRidgeMm": round(across, 1),
+            },
+            "widthMm": round(width, 1),
+            "wallHeightMm": wall_h,
+            "depthMm": round(depth, 1),
+            "dormerRoofKind": dormer_kind,
+            "dormerRoofPitchDeg": pitch_deg,
+        }
+        if ridge_h is not None:
+            dormer_cmd["ridgeHeightMm"] = round(ridge_h, 1)
+        commands.append(dormer_cmd)
         consumed.append(str(f.get("factId")))
 
     if not commands:
