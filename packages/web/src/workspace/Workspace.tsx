@@ -110,6 +110,7 @@ import type {
   FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
 import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
+import { parseViewerRenderStyleParam } from '../viewport/renderStyles';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
   findLoadedCatalogFamilyType,
@@ -1569,6 +1570,23 @@ export function Workspace(): JSX.Element {
     openElementById(targetId);
     if (elevationId) useBimStore.getState().activateElevationView(elevationId);
   }, [elementsById, openElementById]);
+
+  // MF-render-3 (#27): honor ``?renderStyle=<shaded|wireframe|hidden-line|…>``
+  // on mount so the reverse-BIM capture runner can deep-link into a specific
+  // render mode without driving the UI. The capture pipeline emits one URL per
+  // (viewpoint, style) pair — wireframe & hidden-line surface modeling defects
+  // (stray geometry, eave/ridge mismatches) that a shaded surface hides.
+  const urlRenderStyleAppliedRef = useRef(false);
+  useEffect(() => {
+    if (urlRenderStyleAppliedRef.current) return;
+    if (typeof window === 'undefined') return;
+    const requested = parseViewerRenderStyleParam(
+      new URLSearchParams(window.location.search).get('renderStyle'),
+    );
+    if (!requested) return;
+    urlRenderStyleAppliedRef.current = true;
+    useBimStore.getState().setViewerRenderStyle(requested);
+  }, []);
 
   const openProjectSettings = useCallback(() => {
     setProjectSetupOpen(true);

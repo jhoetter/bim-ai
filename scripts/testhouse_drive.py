@@ -3768,33 +3768,89 @@ import subprocess  # noqa: E402
 DEFAULT_WEB_BASE = "http://127.0.0.1:22000"
 
 
+# MF-render-3 (#27): default capture suite is shaded + wireframe per ortho.
+# The viewer already supports `viewerRenderStyle` modes (shaded, wireframe,
+# hidden-line, consistent-colors, realistic, high-fidelity) — see
+# `packages/web/src/viewport/useViewportSceneEffects.ts`. Wireframe captures
+# expose modeling defects (stray geometry, missing joins, misaligned eaves)
+# that shaded surfaces hide, so the bim-agent grader can see them.
+#
+# 'shaded' is emitted WITHOUT a `-shaded` suffix on the PNG path to preserve
+# the existing capture shape (downstream tools find `ortho-east.png` at the
+# same path). New render styles land at `ortho-east-<style>.png`.
+#
+# TODO(#27): also default 'hidden-line' once the grader confirms wireframe
+# alone catches the failure modes; hidden-line is a heavier render mode.
+DEFAULT_ORTHO_RENDER_STYLES: tuple[str, ...] = ("shaded", "wireframe")
+SUPPORTED_ORTHO_RENDER_STYLES: frozenset[str] = frozenset(
+    {"shaded", "wireframe", "hidden-line", "consistent-colors", "realistic"}
+)
+
+
+def _ortho_capture_path(*, out_dir: Path, direction: str, render_style: str) -> Path:
+    """Resolve the PNG path for a (direction, render_style) capture.
+
+    'shaded' keeps the legacy ``ortho-<direction>.png`` shape so existing
+    consumers (legacy iter-N-captures/ mirror, agent dashboards) keep
+    working unchanged. Other styles append a ``-<style>`` suffix.
+    """
+    if render_style == "shaded":
+        return out_dir / f"ortho-{direction}.png"
+    return out_dir / f"ortho-{direction}-{render_style}.png"
+
+
 def _ortho_capture_plan(
-    *, house: str, iter_n: int, model_id: str, web_base: str, out_dir: Path
+    *,
+    house: str,
+    iter_n: int,
+    model_id: str,
+    web_base: str,
+    out_dir: Path,
+    render_styles: tuple[str, ...] = DEFAULT_ORTHO_RENDER_STYLES,
 ) -> dict:
     captures = []
     for direction in ORTHO_DIRECTIONS:
         view_id = f"th-{house}-i{iter_n}-view-3d-ortho-{direction}"
-        captures.append(
-            {
-                "captureId": f"ui:ortho-{direction}",
-                "evidenceKind": "ui",
-                "viewId": view_id,
-                "viewKind": "orbit_3d",
-                "url": f"{web_base.rstrip('/')}/?modelId={model_id}&activeViewpoint={view_id}",
-                "path": str(out_dir / f"ortho-{direction}.png"),
-                "playwrightSteps": [
-                    {"action": "open_url", "target": "url"},
-                    {"action": "wait_for_model_idle", "target": "jobs/status"},
-                    {"action": "activate_3d_view", "viewId": view_id},
-                    {"action": "screenshot", "selector": "[data-evidence-capture-root], body"},
-                ],
-                "visualChecklistItems": [
-                    "exterior_silhouette_matches_source_elevation",
-                    "wall_top_meets_roof_eave",
-                    "roof_pitch_matches_ansichten",
-                ],
-            }
-        )
+        for render_style in render_styles:
+            # Suffix capture-id only for non-shaded so the shaded entry keeps
+            # its legacy ``ui:ortho-<direction>`` shape.
+            capture_id = (
+                f"ui:ortho-{direction}"
+                if render_style == "shaded"
+                else f"ui:ortho-{direction}-{render_style}"
+            )
+            url = (
+                f"{web_base.rstrip('/')}/?modelId={model_id}"
+                f"&activeViewpoint={view_id}&renderStyle={render_style}"
+            )
+            path = _ortho_capture_path(
+                out_dir=out_dir, direction=direction, render_style=render_style
+            )
+            captures.append(
+                {
+                    "captureId": capture_id,
+                    "evidenceKind": "ui",
+                    "viewId": view_id,
+                    "viewKind": "orbit_3d",
+                    "renderStyle": render_style,
+                    "url": url,
+                    "path": str(path),
+                    "playwrightSteps": [
+                        {"action": "open_url", "target": "url"},
+                        {"action": "wait_for_model_idle", "target": "jobs/status"},
+                        {"action": "activate_3d_view", "viewId": view_id},
+                        {
+                            "action": "screenshot",
+                            "selector": "[data-evidence-capture-root], body",
+                        },
+                    ],
+                    "visualChecklistItems": [
+                        "exterior_silhouette_matches_source_elevation",
+                        "wall_top_meets_roof_eave",
+                        "roof_pitch_matches_ansichten",
+                    ],
+                }
+            )
     return {
         "format": "reverseBimViewCapturePlan_v1",
         "modelId": model_id,
@@ -3804,6 +3860,27 @@ def _ortho_capture_plan(
         "captures": captures,
         "blockers": [],
     }
+
+
+def _normalize_render_styles(raw: str | None) -> tuple[str, ...]:
+    """Parse a comma-separated render-style list from the CLI.
+
+    Returns the default (``('shaded', 'wireframe')``) when ``raw`` is empty.
+    Unknown styles raise ``ValueError`` so the CLI fails fast instead of
+    silently producing fewer captures than expected.
+    """
+    if not raw:
+        return DEFAULT_ORTHO_RENDER_STYLES
+    parts = tuple(p.strip() for p in raw.split(",") if p.strip())
+    if not parts:
+        return DEFAULT_ORTHO_RENDER_STYLES
+    bad = [p for p in parts if p not in SUPPORTED_ORTHO_RENDER_STYLES]
+    if bad:
+        raise ValueError(
+            f"unsupported render style(s): {bad!r} "
+            f"(supported: {sorted(SUPPORTED_ORTHO_RENDER_STYLES)})"
+        )
+    return parts
 
 
 # Mapping from our per-house capture name → the {house}-{view}-{variant}.png
@@ -3840,7 +3917,17 @@ def _dual_write_captures(
         stem = png.stem  # "ortho-north"
         if "-" not in stem:
             continue
-        direction = stem.split("-", 1)[1]
+        # MF-render-3 (#27): the capture runner now emits both shaded
+        # (``ortho-<direction>.png``) and wireframe
+        # (``ortho-<direction>-wireframe.png``) per viewpoint. The legacy
+        # dashboard expects exactly ``{house}-{view-kind}-{variant}.png``
+        # with no render-style suffix, so we only mirror the shaded files
+        # to avoid polluting iter-N-captures/ with files the dashboard
+        # cannot resolve.
+        parts = stem.split("-")
+        if len(parts) != 2:
+            continue
+        direction = parts[1]
         view_kind = _LEGACY_VIEW_NAME_MAP.get(stem, f"{capture_name_prefix}-{direction}")
         for variant in ("full", "crop"):
             dst = legacy_dir / f"{house}-{view_kind}-{variant}.png"
@@ -3902,12 +3989,14 @@ def _cmd_capture_ortho_views(args: argparse.Namespace) -> int:
             extra={"house": house, "iter": iter_n, "error": str(exc)[:200]},
         )
 
+    render_styles = _normalize_render_styles(getattr(args, "render_styles", None))
     plan = _ortho_capture_plan(
         house=house,
         iter_n=iter_n,
         model_id=model_id,
         web_base=args.web_base,
         out_dir=out_dir,
+        render_styles=render_styles,
     )
     plan_path = out_dir / "ortho-capture-plan.json"
     plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True), encoding="utf-8")
@@ -4055,6 +4144,15 @@ def _build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--house", required=True, choices=HOUSES)
     cap.add_argument("--iter", type=int, required=True)
     cap.add_argument("--web-base", default=DEFAULT_WEB_BASE)
+    cap.add_argument(
+        "--render-styles",
+        default=",".join(DEFAULT_ORTHO_RENDER_STYLES),
+        help=(
+            "Comma-separated render styles to capture per viewpoint "
+            "(default: shaded,wireframe). Wireframe exposes modeling defects "
+            "the grader cannot see in shaded surfaces (MF-render-3, #27)."
+        ),
+    )
     cap.set_defaults(func=_cmd_capture_ortho_views)
 
     return parser
