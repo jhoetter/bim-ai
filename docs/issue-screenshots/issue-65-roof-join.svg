@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #65 — RoofJoinElem CSG-union: Zwerchgiebel reads as continuous merged solid</title>
+  <desc>
+    Section view through a Zwerchgiebel (cross-gable / dormer-as-gable) on a
+    main gable roof. Before this fix, makeRoofJoinPreviewMesh only drew a
+    thin seam LINE at the bbox intersection — the secondary roof solid still
+    rendered as a stand-alone box on top of the main roof, with an obvious
+    horizontal "lid" where the two roof planes met. After this fix, the
+    bootstrap-registered three-bvh-csg ADDITION evaluator merges the two
+    roof solids into one continuous polyhedron; the seam disappears and the
+    Zwerchgiebel reads as carved out of the main roof rather than glued on
+    top of it. CSG failures and non-overlapping footprints both fall back
+    to the prior seam-line behaviour (never worse than baseline).
+  </desc>
+
+  <defs>
+    <pattern id="roofHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#7c4a30" stroke-width="1"/>
+    </pattern>
+    <marker id="redArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before — seam line only</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">Zwerchgiebel sits as a flat-topped box on top of the main roof</text>
+
+    <!-- Main gable roof (section triangle) -->
+    <polygon points="60,360 280,200 500,360" fill="url(#roofHatch)" stroke="#5b2c0d" stroke-width="2"/>
+    <!-- Zwerchgiebel box: flat top, sits on top — the bug -->
+    <polygon points="220,280 220,180 340,180 340,280" fill="#fde68a" stroke="#a16207" stroke-width="2"/>
+    <!-- Thin seam line where the two solids meet -->
+    <line x1="220" y1="280" x2="340" y2="280" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 2"/>
+    <text x="280" y="296" text-anchor="middle" font-size="9" fill="#334155" font-style="italic">seam LINE only</text>
+
+    <!-- Annotation: flat lid -->
+    <path d="M 360 175 L 340 180" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="395" y="170" font-size="10" fill="#b91c1c" font-weight="700">flat-topped box,</text>
+    <text x="395" y="182" font-size="10" fill="#b91c1c">no continuous ridge</text>
+
+    <!-- Badge -->
+    <rect x="40" y="395" width="280" height="32" rx="4" fill="#ffffff" stroke="#b91c1c"/>
+    <text x="50" y="412" font-size="10" fill="#b91c1c" font-weight="700">two solids drawn independently</text>
+    <text x="50" y="424" font-size="9" fill="#7f1d1d">seam line is decorative; no CSG performed</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After — CSG ADDITION merges solids</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">Cross-gable ridge runs into main roof as one continuous polyhedron</text>
+
+    <!-- Single merged silhouette: main gable + cross gable as one polygon -->
+    <polygon points="600,360 760,200 820,260 880,200 1040,360" fill="url(#roofHatch)" stroke="#5b2c0d" stroke-width="2.5"/>
+    <!-- Cross-gable ridge marker -->
+    <circle cx="820" cy="260" r="3" fill="#065f46"/>
+    <text x="820" y="245" text-anchor="middle" font-size="9" fill="#065f46" font-weight="700">merged ridge intersection</text>
+
+    <!-- Annotation: no seam, no box -->
+    <text x="700" y="290" text-anchor="middle" font-size="9" fill="#065f46" font-style="italic">no seam line — geometry is one solid</text>
+
+    <!-- Badge -->
+    <rect x="580" y="395" width="280" height="32" rx="4" fill="#ffffff" stroke="#1e40af"/>
+    <text x="590" y="412" font-size="10" fill="#1e40af" font-weight="700">three-bvh-csg ADDITION evaluator</text>
+    <text x="590" y="424" font-size="9" fill="#1e3a8a">fallback: CSG failure or disjoint → original seam line</text>
+  </g>
+</svg>

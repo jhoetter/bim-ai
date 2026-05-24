@@ -968,6 +968,9 @@ export function makeRoofJoinPreviewMesh(
   const secondary = elementsById[join.secondaryRoofId];
   const group = new THREE.Group();
   group.userData.bimPickId = join.id;
+  // MF-rendering-X (#65): if either solid is missing we cannot represent the
+  // join — emit an empty group rather than throwing, matching the historical
+  // contract used by the seam-line implementation.
   if (primary?.kind !== 'roof' || secondary?.kind !== 'roof') return group;
 
   const ab = xzBoundsMm(primary.footprintMm);
@@ -976,7 +979,35 @@ export function makeRoofJoinPreviewMesh(
   const maxX = Math.min(ab.maxX, bb.maxX) / 1000;
   const minZ = Math.max(ab.minZ, bb.minZ) / 1000;
   const maxZ = Math.min(ab.maxZ, bb.maxZ) / 1000;
-  if (minX > maxX || minZ > maxZ) return group;
+  const footprintsOverlap = minX <= maxX && minZ <= maxZ;
+
+  // MF-rendering-X (#65): when the bootstrap has registered the CSG union
+  // helper AND the two roof footprints actually intersect, prefer the
+  // merged solid — it makes Zwerchgiebel / cross-gable joins read as one
+  // continuous roof body instead of a flat-topped box sitting on top of
+  // the host. Any failure inside _roofJoinUnionFn (or non-overlapping
+  // footprints) falls through to the seam-line preview below so we never
+  // regress past the prior baseline.
+  if (footprintsOverlap && _roofJoinUnionFn) {
+    const unionGeom = _roofJoinUnionFn(primary, secondary, elementsById);
+    if (unionGeom) {
+      const mergedMesh = new THREE.Mesh(
+        unionGeom,
+        new THREE.MeshStandardMaterial({
+          color: readToken('--roof-merged', '#a3a3a3'),
+          roughness: 0.85,
+          metalness: 0,
+          side: THREE.DoubleSide,
+        }),
+      );
+      mergedMesh.userData.bimPickId = join.id;
+      addEdges(mergedMesh, 30);
+      group.add(mergedMesh);
+      return group;
+    }
+  }
+
+  if (!footprintsOverlap) return group;
 
   const longX = maxX - minX >= maxZ - minZ;
   const y =
@@ -1036,6 +1067,30 @@ let _dormerCutFn: DormerCutFn | null = null;
 
 export function registerDormerCutFn(fn: DormerCutFn | null): void {
   _dormerCutFn = fn;
+}
+
+/**
+ * MF-rendering-X (#65) — registration slot for the roof-join CSG union helper.
+ *
+ * Same jsdom-avoidance pattern as {@link registerDormerCutFn}: the viewport
+ * bootstrap (Viewport.tsx) hands in the implementation that imports
+ * three-bvh-csg, tests leave it null and {@link makeRoofJoinPreviewMesh}
+ * cleanly degrades to the seam-line preview.
+ *
+ * Implementations must return ``null`` on any CSG failure (the caller
+ * already falls back to the seam line in that case); throwing propagates
+ * and is treated as a bug.
+ */
+type RoofJoinUnionFn = (
+  primaryRoof: Extract<Element, { kind: 'roof' }>,
+  secondaryRoof: Extract<Element, { kind: 'roof' }>,
+  elementsById: Record<string, Element>,
+) => THREE.BufferGeometry | null;
+
+let _roofJoinUnionFn: RoofJoinUnionFn | null = null;
+
+export function registerRoofJoinUnionFn(fn: RoofJoinUnionFn | null): void {
+  _roofJoinUnionFn = fn;
 }
 
 function materialSlot(
