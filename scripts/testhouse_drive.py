@@ -518,6 +518,51 @@ def _snapshot(*, api_base: str, model_id: str) -> dict:
     return r.json()
 
 
+def _filter_existing_ids(*, bundle: dict, model_id: str, api_base: str) -> dict:
+    """NS-V3-04: drop create-* commands whose target id already exists.
+
+    Lets the convergence loop run iter-N (N>=2) WITHOUT purging — each
+    iter just commits genuinely new elements. The model accumulates state
+    across iters; the engine's commit history gives version-control-style
+    time-travel per iter on the /agents dashboard.
+
+    Fetches the latest snapshot once per call. Filters commands whose
+    `id` / `toposolidId` / etc. already appears in the snapshot's
+    elements. Returns a NEW bundle dict with filtered commands.
+    """
+    try:
+        snap = httpx.get(
+            f"{api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0
+        ).json()
+    except Exception:  # noqa: BLE001
+        return bundle
+    existing: set[str] = {
+        str(e.get("id"))
+        for e in (snap.get("elements") or {}).values()
+        if isinstance(e, dict) and e.get("id")
+    }
+    if not existing:
+        return bundle
+    cmds = bundle.get("commands") or []
+    filtered: list[dict] = []
+    skipped = 0
+    for c in cmds:
+        # Identify the would-be element id from common cmd shapes.
+        cid = c.get("id") or c.get("toposolidId")
+        if cid and cid in existing:
+            skipped += 1
+            continue
+        filtered.append(c)
+    if skipped:
+        logger.info(
+            "testhouse_iter.idempotent_skip",
+            extra={"model_id": model_id, "skipped": skipped, "kept": len(filtered)},
+        )
+    out = dict(bundle)
+    out["commands"] = filtered
+    return out
+
+
 def _apply_slice(
     *,
     house: str,
@@ -549,6 +594,21 @@ def _apply_slice(
 
     try:
         model_id = _ensure_model(house=house, api_base=api_base)
+        # NS-V3-04: idempotent filter — drop create-* cmds whose target id
+        # already exists. Lets iter-N>=2 commit only genuinely new elements
+        # without purging the prior iter's state. Time-travel via the
+        # model's commit history shows each iter as a version.
+        bundle = _filter_existing_ids(bundle=bundle, model_id=model_id, api_base=api_base)
+        if not bundle.get("commands"):
+            logger.info(
+                "testhouse_iter.skip_all_existing",
+                extra={"house": house, "iter": iter_n, "phase": phase, "category": "skip"},
+            )
+            return {
+                "house": house, "iter": iter_n, "phase": phase,
+                "model_id": model_id, "ok": True, "skipped": True,
+                "executionState": "skipped_all_existing", "elapsed_ms": 0,
+            }
         payload = {
             "phase": {"phaseId": phase},
             "bundle": bundle,
@@ -2907,6 +2967,21 @@ def _apply_slice_v2(
 
     try:
         model_id = _ensure_model(house=house, api_base=api_base)
+        # NS-V3-04: idempotent filter — drop create-* cmds whose target id
+        # already exists. Lets iter-N>=2 commit only genuinely new elements
+        # without purging the prior iter's state. Time-travel via the
+        # model's commit history shows each iter as a version.
+        bundle = _filter_existing_ids(bundle=bundle, model_id=model_id, api_base=api_base)
+        if not bundle.get("commands"):
+            logger.info(
+                "testhouse_iter.skip_all_existing",
+                extra={"house": house, "iter": iter_n, "phase": phase, "category": "skip"},
+            )
+            return {
+                "house": house, "iter": iter_n, "phase": phase,
+                "model_id": model_id, "ok": True, "skipped": True,
+                "executionState": "skipped_all_existing", "elapsed_ms": 0,
+            }
         payload = {
             "phase": {"phaseId": phase},
             "bundle": bundle,
