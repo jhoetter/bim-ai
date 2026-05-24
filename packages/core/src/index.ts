@@ -1556,6 +1556,14 @@ export type Element =
       referenceLevelId: string;
       footprintMm: XY[];
       overhangMm?: number;
+      /**
+       * MF-modeling-3a (#56): per-edge overhang overrides for asymmetric
+       * cantilevers (terraces, entry canopies). Keys are cardinal tokens
+       * ("n","e","s","w") for axis-aligned rectangular footprints; missing
+       * keys fall back to ``overhangMm``. When undefined, the scalar
+       * applies uniformly to every edge (back-compat).
+       */
+      edgeOverhangMm?: Partial<Record<'n' | 'e' | 's' | 'w', number>> | null;
       slopeDeg?: number | null;
       edgeSlopeFlags?: Record<string, boolean>;
       ridgeAxis?: 'x' | 'z' | null;

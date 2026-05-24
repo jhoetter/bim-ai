@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="Inter, system-ui, sans-serif" font-size="12">
+  <style>
+    .wall { fill: #e8e3d8; stroke: #6b5e44; stroke-width: 2; }
+    .roof { fill: #b9a47a; fill-opacity: 0.55; stroke: #5a4b2f; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    .roof-canti { fill: #d28a3a; fill-opacity: 0.55; stroke: #8a4a10; stroke-width: 1.8; stroke-dasharray: 4 3; }
+    .arrow { stroke: #444; stroke-width: 1; fill: none; marker-end: url(#arr); }
+    .lbl { fill: #222; }
+    .ttl { font-size: 14px; font-weight: 600; fill: #111; }
+    .sub { font-size: 11px; fill: #555; }
+    .cap { font-size: 11px; fill: #8a4a10; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <text class="ttl" x="60" y="32">Before — uniform overhang on all 4 sides</text>
+  <text class="sub" x="60" y="50">RoofElem.overhangMm = 400 (single scalar)</text>
+
+  <!-- Left panel: uniform overhang -->
+  <!-- Roof footprint (dashed) -->
+  <rect class="roof" x="80"  y="100" width="280" height="180"/>
+  <!-- Wall footprint inside -->
+  <rect class="wall" x="100" y="120" width="240" height="140"/>
+  <text class="lbl" x="220" y="195" text-anchor="middle">walls (6.0 × 4.0 m)</text>
+
+  <!-- N/E/S/W overhang dimensions -->
+  <line class="arrow" x1="220" y1="100" x2="220" y2="120"/>
+  <text class="lbl" x="226" y="115">400 N</text>
+  <line class="arrow" x1="360" y1="190" x2="340" y2="190"/>
+  <text class="lbl" x="345" y="186" text-anchor="end">400 E</text>
+  <line class="arrow" x1="220" y1="280" x2="220" y2="260"/>
+  <text class="lbl" x="226" y="278">400 S</text>
+  <line class="arrow" x1="80"  y1="190" x2="100" y2="190"/>
+  <text class="lbl" x="105" y="186">400 W</text>
+
+  <!-- Right panel -->
+  <text class="ttl" x="420" y="32">After — long overhang on east only (terrace cantilever)</text>
+  <text class="sub" x="420" y="50">edgeOverhangMm = { e: 2500 } — others fall back to scalar 400</text>
+
+  <!-- Cantilevered roof footprint: east edge extended -->
+  <!-- raw bounds: wall rect at (440,120) 240×140 → (440,120)-(680,260) -->
+  <!-- overhang: n=400→20 px, s=400→20 px, w=400→20 px, e=2500→125 px -->
+  <rect class="roof-canti" x="420" y="100" width="385" height="180"/>
+  <rect class="wall" x="440" y="120" width="240" height="140"/>
+  <text class="lbl" x="560" y="195" text-anchor="middle">walls (6.0 × 4.0 m)</text>
+
+  <!-- Cantilever arrow east -->
+  <line class="arrow" x1="680" y1="190" x2="805" y2="190"/>
+  <text class="cap" x="745" y="186" text-anchor="middle">2500 mm cantilever</text>
+  <text class="sub" x="745" y="206" text-anchor="middle">(covered terrace / canopy)</text>
+
+  <!-- N/S/W still 400 -->
+  <line class="arrow" x1="560" y1="100" x2="560" y2="120"/>
+  <text class="lbl" x="566" y="115">400 N</text>
+  <line class="arrow" x1="560" y1="280" x2="560" y2="260"/>
+  <text class="lbl" x="566" y="278">400 S</text>
+  <line class="arrow" x1="420" y1="190" x2="440" y2="190"/>
+  <text class="lbl" x="445" y="186">400 W</text>
+
+  <text class="sub" x="60" y="330">house-5 (EBH Bungalow F88-130) cantilever terrace, house-13 (Fingerhut) entry canopy — both need per-edge overhang.</text>
+  <text class="sub" x="60" y="346">When edgeOverhangMm is absent the renderer keeps the byte-stable uniform-scalar path for back-compat.</text>
+</svg>
