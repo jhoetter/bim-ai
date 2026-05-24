@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440" viewBox="0 0 720 440">
+  <title>MF-render-4 — walls with materialKey now drive visible face colour (issue #47)</title>
+  <desc>
+    Before: every backend-authored wall + roof rendered as the wall/roof
+    category fallback (~white / generic grey) even though the testhouse
+    driver set explicit materialKeys (render_light_grey, cladding_warm_wood,
+    roof_tile_terracotta). After: the engine-synthesised
+    faceMaterialOverrides survive the snapshot coercion path, the MAT-01
+    registry resolves each key to its baseColor, and unresolved keys
+    surface a dev-tools console warning instead of silently degrading.
+  </desc>
+  <style>
+    .label { font: 13px/1.2 sans-serif; fill: #222; text-anchor: middle; }
+    .key   { font: 11px/1.2 monospace; fill: #555; text-anchor: middle; }
+    .hex   { font: 10px/1.2 monospace; fill: #777; text-anchor: middle; }
+    .title { font: bold 14px/1.2 sans-serif; fill: #111; text-anchor: middle; }
+    .panel { font: bold 13px/1.2 sans-serif; fill: #b00; text-anchor: middle; }
+    .panelok { font: bold 13px/1.2 sans-serif; fill: #060; text-anchor: middle; }
+  </style>
+
+  <text class="title" x="360" y="22">MF-render-4 — materialKey now drives wall + roof colour (issue #47)</text>
+
+  <!-- Before panel -->
+  <text class="panel" x="180" y="50">Before — uniform wall / roof fallback (~white / grey)</text>
+
+  <rect x="40"  y="70" width="120" height="80" fill="#ddd8d0" stroke="#222" stroke-width="1"/>
+  <text class="label" x="100" y="166">Wall fallback</text>
+  <text class="key"   x="100" y="182">render_light_grey</text>
+  <text class="hex"   x="100" y="198">paints #ddd8d0</text>
+
+  <rect x="200" y="70" width="120" height="80" fill="#ddd8d0" stroke="#222" stroke-width="1"/>
+  <text class="label" x="260" y="166">Wall fallback</text>
+  <text class="key"   x="260" y="182">cladding_warm_wood</text>
+  <text class="hex"   x="260" y="198">paints #ddd8d0</text>
+
+  <rect x="40"  y="220" width="280" height="60" fill="hsl(0 18% 40%)" stroke="#222" stroke-width="1"/>
+  <text class="label" x="180" y="296">Roof fallback</text>
+  <text class="key"   x="180" y="312">roof_tile_terracotta</text>
+  <text class="hex"   x="180" y="328">paints hsl(0 18% 40%)</text>
+
+  <!-- After panel -->
+  <text class="panelok" x="540" y="50">After — MAT-01 baseColor drives the mesh</text>
+
+  <rect x="400" y="70" width="120" height="80" fill="#cfd0cd" stroke="#222" stroke-width="1"/>
+  <text class="label" x="460" y="166">Light-grey render</text>
+  <text class="key"   x="460" y="182">render_light_grey</text>
+  <text class="hex"   x="460" y="198">#cfd0cd</text>
+
+  <rect x="560" y="70" width="120" height="80" fill="#a87a44" stroke="#222" stroke-width="1"/>
+  <text class="label" x="620" y="166">Warm wood cladding</text>
+  <text class="key"   x="620" y="182">cladding_warm_wood</text>
+  <text class="hex"   x="620" y="198">#a87a44</text>
+
+  <rect x="400" y="220" width="280" height="60" fill="#7d3424" stroke="#222" stroke-width="1"/>
+  <text class="label" x="540" y="296">Terracotta clay roof tile</text>
+  <text class="key"   x="540" y="312">roof_tile_terracotta</text>
+  <text class="hex"   x="540" y="328">#7d3424</text>
+
+  <!-- Diagnostic line -->
+  <text class="title" x="360" y="380">Diagnostic: unresolved materialKey now logs a dedup'd console warning</text>
+  <text class="key"   x="360" y="402">[MAT-01] makeThreeMaterialForKey: unresolved materialKey 'render_typo'</text>
+  <text class="key"   x="360" y="418">(usage=wallExterior); falling back to category/fallback colour.</text>
+</svg>
