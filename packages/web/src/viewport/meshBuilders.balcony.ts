@@ -5,6 +5,38 @@ import type { ViewportPaintBundle } from './materials';
 import { addEdges } from './sceneHelpers';
 import { yawForPlanSegment } from './planSegmentOrientation';
 
+/**
+ * Issue #64 — MF-render-7: BalconyElem authored but not visible in any
+ * cardinal capture. Root cause was that `makeBalconyMesh` silently returned
+ * an empty `THREE.Group` whenever the host wall lookup failed (missing wall,
+ * wrong `kind`, or a wall added to the scene after the balcony was authored).
+ * The dispatcher still inserted that empty group into the scene, so no
+ * geometry — not even wireframe edges — was ever rendered for the balcony.
+ *
+ * The fix:
+ *   1. Emit a deduped `console.warn` whenever the geometry path bails out so
+ *      future regressions are visible instead of silently invisible.
+ *   2. When the wall is missing, still author a small placeholder slab at the
+ *      balcony's declared elevation so the user has a visible witness (and
+ *      can pick it up in the inspector) instead of staring at an empty hole
+ *      on the facade.
+ */
+const _warnedBalconyEmptyIds = new Set<string>();
+
+/** TEST-ONLY: reset the warning dedupe so tests can assert the warning fires. */
+export function _resetEmptyBalconyWarningsForTests(): void {
+  _warnedBalconyEmptyIds.clear();
+}
+
+function warnEmptyBalcony(id: string, reason: string): void {
+  if (_warnedBalconyEmptyIds.has(id)) return;
+  _warnedBalconyEmptyIds.add(id);
+  console.warn(
+    `[meshBuilders.balcony] balcony "${id}" produced no visible geometry: ${reason}. ` +
+      `The balcony slab will not appear in any view. See issue #64.`,
+  );
+}
+
 export function makeBalconyMesh(
   balcony: Extract<Element, { kind: 'balcony' }>,
   elementsById: Record<string, Element>,
@@ -14,22 +46,49 @@ export function makeBalconyMesh(
   group.userData.bimPickId = balcony.id;
 
   const wall = elementsById[balcony.wallId];
-  if (wall?.kind !== 'wall') return group;
+  const wallOk = wall?.kind === 'wall';
 
-  const sx = wall.start.xMm / 1000;
-  const sz = wall.start.yMm / 1000;
-  const ex = wall.end.xMm / 1000;
-  const ez = wall.end.yMm / 1000;
-  const dx = ex - sx;
-  const dz = ez - sz;
-  const len = Math.max(0.001, Math.hypot(dx, dz));
+  // Resolve plan-axis frame from the wall when possible; otherwise fall back
+  // to a near-origin placeholder so the balcony still has *some* geometry in
+  // the scene. The deduped warn below makes the misconfiguration visible.
+  let sx: number;
+  let sz: number;
+  let dx: number;
+  let dz: number;
+  if (wallOk) {
+    sx = wall.start.xMm / 1000;
+    sz = wall.start.yMm / 1000;
+    const ex = wall.end.xMm / 1000;
+    const ez = wall.end.yMm / 1000;
+    dx = ex - sx;
+    dz = ez - sz;
+  } else {
+    warnEmptyBalcony(
+      balcony.id,
+      `host wall "${balcony.wallId}" missing or not a wall element (placeholder rendered)`,
+    );
+    // Placeholder span: a 1m wide deck floating at the balcony's elevation.
+    sx = 0;
+    sz = 0;
+    dx = 1;
+    dz = 0;
+  }
+
+  const lenRaw = Math.hypot(dx, dz);
+  if (!Number.isFinite(lenRaw) || lenRaw < 0.001) {
+    warnEmptyBalcony(
+      balcony.id,
+      `host wall "${balcony.wallId}" has degenerate length (lenRaw=${lenRaw})`,
+    );
+  }
+  const len = Math.max(0.001, Number.isFinite(lenRaw) ? lenRaw : 0.001);
   const ux = dx / len;
   const uz = dz / len;
   const nx = uz;
   const nz = -ux;
   const yaw = yawForPlanSegment(dx, dz);
 
-  const elevM = balcony.elevationMm / 1000;
+  const elevM = Number.isFinite(balcony.elevationMm) ? balcony.elevationMm / 1000 : 0;
   const projM = THREE.MathUtils.clamp((balcony.projectionMm ?? 650) / 1000, 0.1, 3);
   const slabH = THREE.MathUtils.clamp((balcony.slabThicknessMm ?? 150) / 1000, 0.05, 0.5);
   const balH = THREE.MathUtils.clamp((balcony.balustradeHeightMm ?? 1050) / 1000, 0, 2);
@@ -67,6 +126,12 @@ export function makeBalconyMesh(
     balGlass.rotation.y = yaw;
     addEdges(balGlass);
     group.add(balGlass);
+  }
+
+  // Defensive: if for any reason the group still ended up empty, log so future
+  // regressions in this builder are surfaced rather than silently invisible.
+  if (group.children.length === 0) {
+    warnEmptyBalcony(balcony.id, 'group has zero children after build');
   }
 
   void paint;
