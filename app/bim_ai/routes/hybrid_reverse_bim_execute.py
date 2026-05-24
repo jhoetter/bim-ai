@@ -53,6 +53,74 @@ from bim_ai.services.hybrid_reverse_bim import (
 )
 from bim_ai.versioning import commit_context
 
+_BLOCKING_SEVERITIES = frozenset({"error", "blocker"})
+_BLOCKERS_MAX_DEFAULT = 50
+
+
+def _iter_findings(payload: Any) -> list[dict[str, Any]]:
+    """Best-effort findings extractor.
+
+    - ``advisor`` is the qa.advisor success envelope ``{ok, data: {findings: [...]}}``
+    - ``constructability`` is a bare report dict ``{findings: [...]}``
+    - ``integrity`` is an ``IntegrityPreflightResponse`` pydantic model with
+      a ``.findings`` attribute
+    """
+
+    if payload is None:
+        return []
+    if hasattr(payload, "findings"):
+        findings = getattr(payload, "findings", None)
+        return list(findings) if findings else []
+    if isinstance(payload, dict):
+        if isinstance(payload.get("findings"), list):
+            return list(payload["findings"])
+        data = payload.get("data")
+        if isinstance(data, dict) and isinstance(data.get("findings"), list):
+            return list(data["findings"])
+    return []
+
+
+def _extract_blockers(
+    *,
+    advisor: Any,
+    constructability: Any,
+    integrity: Any,
+    max_blockers: int = _BLOCKERS_MAX_DEFAULT,
+) -> list[dict[str, Any]]:
+    """MF-driver-2 (#11): synthesize a flat ``blockers`` array for the slice
+    response so callers don't have to walk three nested report dicts to find
+    out *why* commit was blocked. Always emitted; ends up empty when nothing
+    blocks. Pulls every finding with severity ``error`` or ``blocker`` from
+    advisor, constructability, and integrity-preflight reports."""
+
+    sources: list[tuple[str, Any]] = [
+        ("advisor", advisor),
+        ("constructability", constructability),
+        ("integrityPreflight", integrity),
+    ]
+    blockers: list[dict[str, Any]] = []
+    for source_name, payload in sources:
+        for finding in _iter_findings(payload):
+            severity = str(finding.get("severity") or "").lower()
+            if severity not in _BLOCKING_SEVERITIES:
+                continue
+            element_ids = [
+                str(eid) for eid in (finding.get("elementIds") or []) if eid is not None
+            ]
+            blockers.append(
+                {
+                    "source": source_name,
+                    "ruleId": finding.get("ruleId"),
+                    "severity": severity,
+                    "message": finding.get("message") or finding.get("description") or "",
+                    "elementIds": element_ids,
+                }
+            )
+            if len(blockers) >= max_blockers:
+                return blockers
+    return blockers
+
+
 hybrid_reverse_bim_execute_router = APIRouter()
 
 
@@ -342,12 +410,18 @@ async def reverse_bim_hybrid_slice_execute_route(
         if dry_run_evidence and dry_run_evidence.get("ok")
         else "dry_run_blocked"
     )
+    blockers = _extract_blockers(
+        advisor=advisor,
+        constructability=constructability,
+        integrity=integrity,
+    )
     return {
         "ok": bool(slice_report.get("ok")),
         "format": "hybridReverseBimSliceExecution_v1",
         "modelId": str(model_id),
         "phaseId": phase_id,
         "executionState": execution_state,
+        "blockers": blockers,
         "dryRunResult": dry_run_result,
         "commitResult": commit_result,
         "changedElementIds": changed_ids,
