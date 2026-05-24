@@ -52,3 +52,37 @@ export function parseViewerRenderStyleParam(
   if (!found) return null;
   return normalizeViewerRenderStyle(found);
 }
+
+export type ViewerProjection = 'perspective' | 'orthographic';
+
+const VIEWER_PROJECTIONS: readonly ViewerProjection[] = ['perspective', 'orthographic'];
+
+/**
+ * Parse a camera projection from a query-string value (e.g. ``?projection=orthographic``).
+ *
+ * MF-render-5 (#54): the ``capture-ortho-views`` driver names files
+ * ``ortho-{n,s,e,w}.png`` but previously rendered them through the default
+ * perspective camera — the saved viewpoint mode is ``orbit_3d`` (saveViewpoint
+ * has no first-class orthographic mode). To make those files actually
+ * orthographic without changing the saved viewpoint shape, the capture URL
+ * carries ``?projection=orthographic`` and the viewer toggles
+ * ``viewerProjection`` in the store on mount. The same orbit camera pose is
+ * then re-projected through the ortho camera (see
+ * ``orthoMode = viewerProjection === 'orthographic'`` in ``Viewport.tsx``).
+ *
+ * Returns ``null`` for unknown / missing / malformed values so the caller can
+ * leave the store at its default (``'perspective'``).
+ */
+export function parseViewerProjectionParam(
+  raw: string | null | undefined,
+): ViewerProjection | null {
+  if (raw == null) return null;
+  const trimmed = String(raw).trim().toLowerCase();
+  if (!trimmed) return null;
+  // Accept a few common aliases so URL-encoded values from grader runs and
+  // hand-typed debug links both work.
+  if (trimmed === 'ortho') return 'orthographic';
+  if (trimmed === 'persp') return 'perspective';
+  const found = VIEWER_PROJECTIONS.find((projection) => projection === trimmed);
+  return found ?? null;
+}

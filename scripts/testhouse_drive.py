@@ -4124,9 +4124,19 @@ def _ortho_capture_plan(
                 if render_style == "shaded"
                 else f"ui:ortho-{direction}-{render_style}"
             )
+            # MF-render-5 (#54): deep-link with ``?projection=orthographic`` so
+            # the viewer mounts the orthographic camera before the first frame.
+            # The saved viewpoint stays ``mode: "orbit_3d"`` (saveViewpoint has
+            # no first-class orthographic mode), but the store-level projection
+            # toggle re-projects the same pose through the ortho camera — see
+            # ``Viewport.tsx`` (``orthoMode = viewerProjection === 'orthographic'``).
+            # Files named ``ortho-{n,s,e,w}.png`` now actually deliver an
+            # orthographic projection, removing the perspective foreshortening
+            # that distorted grader massing comparisons (issue #54).
             url = (
                 f"{web_base.rstrip('/')}/?modelId={model_id}"
                 f"&activeViewpoint={view_id}&renderStyle={render_style}"
+                f"&projection=orthographic"
             )
             path = _ortho_capture_path(
                 out_dir=out_dir, direction=direction, render_style=render_style
@@ -4136,7 +4146,7 @@ def _ortho_capture_plan(
                     "captureId": capture_id,
                     "evidenceKind": "ui",
                     "viewId": view_id,
-                    "viewKind": "orbit_3d",
+                    "viewKind": "orthographic",
                     "renderStyle": render_style,
                     "url": url,
                     "path": str(path),

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isTextureRichRenderStyle,
   normalizeViewerRenderStyle,
+  parseViewerProjectionParam,
   parseViewerRenderStyleParam,
 } from './renderStyles';
 
@@ -46,6 +47,34 @@ describe('viewer render style helpers', () => {
       expect(parseViewerRenderStyleParam('')).toBeNull();
       expect(parseViewerRenderStyleParam('toon')).toBeNull();
       expect(parseViewerRenderStyleParam('path-trace-preview')).toBeNull();
+    });
+  });
+
+  // MF-render-5 (#54): capture-ortho-views deep-links via ``?projection=…``;
+  // without it the ``ortho-…`` files render through the default perspective
+  // camera and disagree with their name.
+  describe('parseViewerProjectionParam', () => {
+    it('returns the matching projection for known values', () => {
+      expect(parseViewerProjectionParam('orthographic')).toBe('orthographic');
+      expect(parseViewerProjectionParam('perspective')).toBe('perspective');
+    });
+
+    it('accepts common aliases so debug links still work', () => {
+      expect(parseViewerProjectionParam('ortho')).toBe('orthographic');
+      expect(parseViewerProjectionParam('persp')).toBe('perspective');
+    });
+
+    it('is case-insensitive and trims whitespace so URL-encoded values match', () => {
+      expect(parseViewerProjectionParam(' Orthographic ')).toBe('orthographic');
+      expect(parseViewerProjectionParam('PERSPECTIVE')).toBe('perspective');
+    });
+
+    it('returns null for missing / unknown values so the store keeps its default', () => {
+      expect(parseViewerProjectionParam(null)).toBeNull();
+      expect(parseViewerProjectionParam(undefined)).toBeNull();
+      expect(parseViewerProjectionParam('')).toBeNull();
+      expect(parseViewerProjectionParam('isometric')).toBeNull();
+      expect(parseViewerProjectionParam('fisheye')).toBeNull();
     });
   });
 });
