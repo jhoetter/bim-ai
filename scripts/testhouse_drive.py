@@ -1304,6 +1304,11 @@ def _openings_bundle(
     ]
     if not walls:
         return None
+    # NS-10: opening sill/height should size against the AUTHORED wall
+    # height (which NS-8 may have shrunk for Kniestock), not the level's
+    # floor-to-floor. Pull the actual ext-wall height from the snapshot.
+    ext_wall_heights = [float(w.get("heightMm") or 0) for w in walls if "ext-wall" in (w.get("id","") or "")]
+    actual_wall_h = min(ext_wall_heights) if ext_wall_heights else None
 
     facts = _facts_for_level(ir, f"level-{level_short}")
     doors = _facts_by_kind(facts, "door")
@@ -1432,6 +1437,16 @@ def _openings_bundle(
             extra_cmd_fields={},
         )
 
+    # NS-10: pick Kniestock-aware sill/height using the AUTHORED wall
+    # height (NS-8 may have shrunk DG walls below the level's floor-to-
+    # floor) rather than the level's eg_height. This is the value the
+    # engine validates against.
+    sizing_h = actual_wall_h if (level_short == "DG" and actual_wall_h is not None) else eg_height
+    is_kniestock = level_short == "DG" and sizing_h <= 1700.0
+    win_sill = 300 if is_kniestock else 900
+    win_h_cap = 800 if is_kniestock else 1500
+    win_h_floor = 400 if is_kniestock else 800
+    win_h = int(min(win_h_cap, max(win_h_floor, sizing_h - win_sill - 200)))
     for w in windows:
         _try_host(
             fact=w,
@@ -1439,25 +1454,11 @@ def _openings_bundle(
             opening_width_mm=1200.0,
             cmd_type="insertWindowOnWall",
             extra_cmd_fields={
-                # NS-9: when DG walls are Kniestock-short (≤1700mm), use
-                # a low sill + small window so the opening fits within the
-                # knee-wall height (otherwise sill+height overflows the
-                # wall top and engine rejects). 300mm sill + 800mm height
-                # → top at 1100 < 1530 typical Kniestock wall. EG falls back
-                # to the standard 900mm sill.
-                "sillHeightMm": 300 if level_short == "DG" and eg_height <= 1700 else 900,
+                "sillHeightMm": win_sill,
                 # Reserve 200 mm header clearance below the wall top
                 # so the constructability check's 150 mm lintel rule
-                # passes even on the low DG storey (2500 mm walls).
-                "heightMm": int(
-                    min(
-                        800 if level_short == "DG" and eg_height <= 1700 else 1500,
-                        max(
-                            400 if level_short == "DG" and eg_height <= 1700 else 800,
-                            eg_height - (300 if level_short == "DG" and eg_height <= 1700 else 900) - 200,
-                        ),
-                    )
-                ),
+                # passes.
+                "heightMm": win_h,
             },
         )
 
