@@ -203,6 +203,49 @@ describe('buildGableDormerRoof', () => {
   });
 });
 
+describe('makeDormerMesh / MF-22b cluster merging', () => {
+  it('renders no body for the non-primary dormer of an overlapping cluster', () => {
+    const small: DormerElem = {
+      kind: 'dormer',
+      id: 'small',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -1000, acrossRidgeMm: 1000 },
+      widthMm: 1600,
+      depthMm: 1400,
+      wallHeightMm: 2000,
+      dormerRoofKind: 'shed',
+    };
+    const large: DormerElem = {
+      kind: 'dormer',
+      id: 'large',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: +1000, acrossRidgeMm: 1000 },
+      widthMm: 2800,
+      depthMm: 2000,
+      wallHeightMm: 2400,
+      dormerRoofKind: 'shed',
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+      small,
+      large,
+    };
+    const smallGroup = makeDormerMesh(small, elementsById, null);
+    const largeGroup = makeDormerMesh(large, elementsById, null);
+    const smallMeshes: THREE.Mesh[] = [];
+    smallGroup.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) smallMeshes.push(o as THREE.Mesh);
+    });
+    const largeMeshes: THREE.Mesh[] = [];
+    largeGroup.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) largeMeshes.push(o as THREE.Mesh);
+    });
+    expect(smallMeshes).toHaveLength(0);
+    expect(largeMeshes.length).toBeGreaterThan(0);
+  });
+});
+
 describe('buildShedDormerRoof', () => {
   it('produces a tilted slab whose low edge is at y=0 and high edge above', () => {
     const mat = new THREE.MeshBasicMaterial();
