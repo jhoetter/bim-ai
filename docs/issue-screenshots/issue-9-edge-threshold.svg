@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">
+  <style>
+    .wall { fill: #f0eadf; stroke: #4a4a45; stroke-width: 2; }
+    .opening { fill: #c8d6e6; stroke: #4a4a45; stroke-width: 2; }
+    .seam-bad { stroke: #8a3a2a; stroke-width: 0.6; opacity: 0.7; }
+    .seam-real { stroke: #1f2933; stroke-width: 1.6; }
+    .title { font-size: 16px; font-weight: 600; }
+    .meta { fill: #555; font-size: 12px; }
+  </style>
+
+  <text x="20" y="30" class="title">Before: addEdges(mesh) with default 20° threshold</text>
+  <text x="600" y="30" class="title">After: addEdges(mesh, 30) — CSG seams suppressed</text>
+
+  <!-- BEFORE: wall with opening + visible CSG seams -->
+  <g transform="translate(40,60)">
+    <rect class="wall" x="0" y="0" width="430" height="320"/>
+    <rect class="opening" x="140" y="100" width="160" height="160"/>
+    <!-- fake CSG triangulation seams across the cut faces (near-coplanar edges) -->
+    <line class="seam-bad" x1="0"   y1="0"  x2="140" y2="100"/>
+    <line class="seam-bad" x1="140" y1="100" x2="0"  y2="200"/>
+    <line class="seam-bad" x1="0"   y1="200" x2="140" y2="260"/>
+    <line class="seam-bad" x1="140" y1="260" x2="0"  y2="320"/>
+    <line class="seam-bad" x1="300" y1="100" x2="430" y2="0"/>
+    <line class="seam-bad" x1="430" y1="200" x2="300" y2="100"/>
+    <line class="seam-bad" x1="300" y1="260" x2="430" y2="200"/>
+    <line class="seam-bad" x1="430" y1="320" x2="300" y2="260"/>
+    <line class="seam-bad" x1="0" y1="50"   x2="140" y2="150"/>
+    <line class="seam-bad" x1="0" y1="150"  x2="140" y2="60"/>
+    <line class="seam-bad" x1="300" y1="60"  x2="430" y2="140"/>
+    <line class="seam-bad" x1="300" y1="200" x2="430" y2="280"/>
+    <text x="215" y="380" text-anchor="middle" class="meta">Triangulation seams of near-coplanar faces emit as edges →</text>
+    <text x="215" y="397" text-anchor="middle" class="meta">finished wall reads as a hand-sketched overlay.</text>
+  </g>
+
+  <!-- AFTER: same wall, only real hard edges -->
+  <g transform="translate(620,60)">
+    <rect class="wall" x="0" y="0" width="430" height="320"/>
+    <rect class="opening" x="140" y="100" width="160" height="160"/>
+    <!-- only legitimate hard edges (corners + sill lines) -->
+    <line class="seam-real" x1="0" y1="0" x2="430" y2="0"/>
+    <line class="seam-real" x1="430" y1="0" x2="430" y2="320"/>
+    <line class="seam-real" x1="0" y1="320" x2="430" y2="320"/>
+    <line class="seam-real" x1="0" y1="0" x2="0" y2="320"/>
+    <line class="seam-real" x1="140" y1="100" x2="300" y2="100"/>
+    <line class="seam-real" x1="300" y1="100" x2="300" y2="260"/>
+    <line class="seam-real" x1="140" y1="260" x2="300" y2="260"/>
+    <line class="seam-real" x1="140" y1="100" x2="140" y2="260"/>
+    <text x="215" y="380" text-anchor="middle" class="meta">30° threshold filters near-coplanar CSG seams while keeping</text>
+    <text x="215" y="397" text-anchor="middle" class="meta">real hard edges (wall corners, opening jambs/sills).</text>
+  </g>
+</svg>

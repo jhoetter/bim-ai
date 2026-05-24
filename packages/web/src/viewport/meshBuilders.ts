@@ -1867,7 +1867,11 @@ export function makeWallMesh(
   mesh.userData.bimPickId = displayWall.id;
   mesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
   mesh.userData.wallFaceMaterialSlots = WALL_BOX_FACE_MATERIAL_INDEX;
-  addEdges(mesh);
+  // MF-cosmetic: 30° threshold suppresses CSG triangulation seams on cut
+  // walls (every wall with an opening) while keeping real hard edges
+  // (corners, sill lines). Default 20° was emitting the near-coplanar
+  // seams that gave finished walls a hand-sketched look.
+  addEdges(mesh, 30);
   if (displayWallMaterialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
   else if (displayWallMaterialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
