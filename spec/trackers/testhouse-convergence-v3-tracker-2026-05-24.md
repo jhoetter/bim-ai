@@ -922,6 +922,10 @@ The loop appends here. Format:
 | 1.g | 2026-05-24 08:13Z | **alpha** | **v3 honest grade: 2.76/10** (matches user's 3/10 claim) — topGap=systemic defects (KG slab above grade with EG walls recessed, wall stub through roof, dormer cubes poking through gable, near-total absence of openings: 6 windows vs source ~30). "Generic toy cottage" per grader | **2.76** | iter-2 needs MF-21 + MF-22 + more openings + slab extrude fix |
 | 1.b | 2026-05-24 08:13Z | beta | Phase 1 v3 done; 30 walls, 14 win, 10 doors, 1 dormer, 2 stairs. Grader spawned | pending | wait |
 | 1.c | 2026-05-24 08:13Z | gamma | Phase 1 v3 author chain kicked off in background | running | wait |
+| 1.g.b | 2026-05-24 08:19Z | **beta** | **v3 honest grade: 3.10/10**, eye-test 2/10 — topGap=site+terrain (flat raft vs source's hillside) | **3.10** | EA-16 sloped toposolid needed |
+| 1.g.c | 2026-05-24 08:21Z | **gamma** | **v3 honest grade: 4.8/10**, eye-test 2/10 — topGap=facadeDetail+roofProfile (cross-gables + ornament missing) | **4.8** | more Zwerchhaus + EA-13 dormer mesh blending |
+| 2 | 2026-05-24 08:22Z | (eng) | NS-V3-01 / EA-2 closeout shipped (commit `438a840d4`): slab top now flush with level via topFaceElevationMm; addresses "KG slab pedestal" defect on alpha | n/a | iter-2 to verify |
+| 2.a | 2026-05-24 08:23Z | alpha | IR bulk-patched: +10 window facts (5 south EG + 3 north EG + 2 DG mirror) to address grader's "6 vs ~30 windows" deduction | n/a | iter-2 author |
 
 (Loop will fill below.)
 
