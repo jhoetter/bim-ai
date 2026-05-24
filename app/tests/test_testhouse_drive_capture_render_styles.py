@@ -103,3 +103,55 @@ def test_normalize_render_styles_defaults_when_empty() -> None:
 def test_normalize_render_styles_rejects_unknown_value() -> None:
     with pytest.raises(ValueError, match="unsupported render style"):
         _DRV._normalize_render_styles("shaded,bogus")
+
+
+# ─── MF-render-5 (#54) ─────────────────────────────────────────────────────
+# The ``ortho-{n,s,e,w}.png`` files previously claimed orthographic but
+# rendered through the default perspective camera (saved viewpoints use
+# ``mode: "orbit_3d"``, which has no first-class ortho variant). The fix
+# stamps ``viewKind: "orthographic"`` on each capture and appends
+# ``?projection=orthographic`` to the deep-link URL so the viewer's
+# ``viewerProjection`` store toggle re-projects the same orbit pose through
+# the orthographic camera before the first frame is composited.
+
+
+def test_all_ortho_captures_advertise_orthographic_view_kind(tmp_path: Path) -> None:
+    """Files named ``ortho-…`` must carry ``viewKind: "orthographic"`` for
+    all 4 cardinals × every render style — graders read this metadata to
+    decide whether a screenshot is comparable to a source elevation panel.
+    """
+    plan = _build(tmp_path=tmp_path)
+    assert plan["captures"], "plan unexpectedly empty"
+    for cap in plan["captures"]:
+        assert cap["viewKind"] == "orthographic", (
+            f"capture {cap['captureId']!r} still advertises "
+            f"{cap['viewKind']!r}; ortho-…png files must report orthographic"
+        )
+
+
+def test_all_ortho_captures_request_orthographic_projection_in_url(tmp_path: Path) -> None:
+    """The viewer parses ``?projection=`` on mount (see Workspace.tsx); without
+    this param the orbit_3d pose renders through the perspective camera and
+    the file disagrees with its name. All 4 cardinals × every style must
+    request orthographic.
+    """
+    plan = _build(tmp_path=tmp_path)
+    assert plan["captures"], "plan unexpectedly empty"
+    for cap in plan["captures"]:
+        assert "projection=orthographic" in cap["url"], (
+            f"capture {cap['captureId']!r} url missing projection=orthographic: "
+            f"{cap['url']!r}"
+        )
+
+
+def test_orthographic_projection_applies_to_every_cardinal_direction(tmp_path: Path) -> None:
+    """Belt-and-braces: pin that N/S/E/W are each covered (no direction
+    silently dropped by a refactor) and each one is orthographic.
+    """
+    plan = _build(tmp_path=tmp_path)
+    shaded = [c for c in plan["captures"] if c["renderStyle"] == "shaded"]
+    directions_seen = {c["viewId"].rsplit("-", 1)[-1] for c in shaded}
+    assert directions_seen == {"north", "south", "east", "west"}
+    for cap in shaded:
+        assert cap["viewKind"] == "orthographic"
+        assert "projection=orthographic" in cap["url"]

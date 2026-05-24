@@ -110,7 +110,7 @@ import type {
   FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
 import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
-import { parseViewerRenderStyleParam } from '../viewport/renderStyles';
+import { parseViewerProjectionParam, parseViewerRenderStyleParam } from '../viewport/renderStyles';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
   findLoadedCatalogFamilyType,
@@ -1586,6 +1586,27 @@ export function Workspace(): JSX.Element {
     if (!requested) return;
     urlRenderStyleAppliedRef.current = true;
     useBimStore.getState().setViewerRenderStyle(requested);
+  }, []);
+
+  // MF-render-5 (#54): honor ``?projection=<perspective|orthographic>`` on
+  // mount so ``capture-ortho-views`` can deliver true orthographic frames for
+  // the ``ortho-{n,s,e,w}.png`` captures. The saved viewpoints stay
+  // ``mode: "orbit_3d"`` (saveViewpoint has no first-class ortho mode), but
+  // the store-level ``viewerProjection`` toggle re-projects the same orbit
+  // pose through the orthographic camera (see ``Viewport.tsx``,
+  // ``orthoMode = viewerProjection === 'orthographic'``). Without this, the
+  // files named ``ortho-…`` shipped a 3/4 perspective with foreshortening
+  // that misled grader massing comparisons.
+  const urlProjectionAppliedRef = useRef(false);
+  useEffect(() => {
+    if (urlProjectionAppliedRef.current) return;
+    if (typeof window === 'undefined') return;
+    const requested = parseViewerProjectionParam(
+      new URLSearchParams(window.location.search).get('projection'),
+    );
+    if (!requested) return;
+    urlProjectionAppliedRef.current = true;
+    useBimStore.getState().setViewerProjection(requested);
   }, []);
 
   const openProjectSettings = useCallback(() => {
