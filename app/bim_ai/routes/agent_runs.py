@@ -163,7 +163,16 @@ def _scoring_dir_for(iteration: str) -> Path:
 
 
 def _scoring_path_for(iteration: str, house: str) -> Path:
-    return _scoring_dir_for(iteration) / f"{house}-subagent-report.md"
+    # NS-11: dashboard now first checks the per-house location where
+    # nightshift graders write (`tmp/reverse-bim/house-{X}/iter-{N}/grade-report.md`)
+    # before falling back to the legacy global `iter-{N}-scoring/` layout.
+    # Without this, all the nightshift grades were invisible to /agents
+    # and every iter showed up as narrative-only.
+    legacy = _scoring_dir_for(iteration) / f"{house}-subagent-report.md"
+    per_house = _reverse_bim_dir() / f"house-{house}" / iteration / "grade-report.md"
+    if per_house.is_file():
+        return per_house
+    return legacy
 
 
 def _phase_narrative_path(house: str, iteration: str) -> Path:

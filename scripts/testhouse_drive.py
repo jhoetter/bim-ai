@@ -674,12 +674,14 @@ def _cmd_author_shell(args: argparse.Namespace) -> int:
 # ───────────────────────────────────────────────────────────────────
 
 ORTHO_DIRECTIONS: dict[str, tuple[float, float, float]] = {
-    # camera offset from building center, unit direction. +z=0.05 gives
-    # a slight downward tilt so the eave line stays visible.
-    "north": (0.0, 1.0, 0.05),  # camera north of building, looking south
-    "east": (1.0, 0.0, 0.05),
-    "south": (0.0, -1.0, 0.05),
-    "west": (-1.0, 0.0, 0.05),
+    # NS-11: removed the +0.05 z-tilt — it was making the building's
+    # vertical lines look tilted in captures (the user flagged this as
+    # "wrong topology"; the data is perfectly orthogonal — the captures
+    # just had a bird's-eye perspective). True horizontal side views now.
+    "north": (0.0, 1.0, 0.0),  # camera north of building, looking south
+    "east": (1.0, 0.0, 0.0),
+    "south": (0.0, -1.0, 0.0),
+    "west": (-1.0, 0.0, 0.0),
 }
 
 
