@@ -20,6 +20,15 @@ import { yawForPlanSegment } from './planSegmentOrientation';
  *      balcony's declared elevation so the user has a visible witness (and
  *      can pick it up in the inspector) instead of staring at an empty hole
  *      on the facade.
+ *
+ * Issue #75 — MF-render-8: the (2) placeholder fallback was rendering as a
+ * realistic-looking floating cantilever deck at the world origin, hugely
+ * misleading on cardinal captures (looks like a real balcony with no host).
+ * The fallback is now an INVISIBLE placeholder Group — geometry is still
+ * authored at the balcony's declared elevation so the element is still
+ * pickable, but every mesh has `visible = false` AND the group carries
+ * `userData.isAuthoringPlaceholder = true` so dispatchers / hit-testers can
+ * differentiate it from real balcony geometry. The deduped warn still fires.
  */
 const _warnedBalconyEmptyIds = new Set<string>();
 
@@ -51,6 +60,10 @@ export function makeBalconyMesh(
   // Resolve plan-axis frame from the wall when possible; otherwise fall back
   // to a near-origin placeholder so the balcony still has *some* geometry in
   // the scene. The deduped warn below makes the misconfiguration visible.
+  // Issue #75: the placeholder geometry must NOT be visible — it was being
+  // mistaken for a real cantilever deck floating at the world origin. We tag
+  // the group with `userData.isAuthoringPlaceholder = true` and mark every
+  // mesh `visible = false` at the end of this function when wallOk is false.
   let sx: number;
   let sz: number;
   let dx: number;
@@ -65,8 +78,9 @@ export function makeBalconyMesh(
   } else {
     warnEmptyBalcony(
       balcony.id,
-      `host wall "${balcony.wallId}" missing or not a wall element (placeholder rendered)`,
+      `host wall "${balcony.wallId}" missing or not a wall element (invisible placeholder rendered — see issue #75)`,
     );
+    group.userData.isAuthoringPlaceholder = true;
     // Placeholder span: a 1m wide deck floating at the balcony's elevation.
     sx = 0;
     sz = 0;
@@ -132,6 +146,17 @@ export function makeBalconyMesh(
   // regressions in this builder are surfaced rather than silently invisible.
   if (group.children.length === 0) {
     warnEmptyBalcony(balcony.id, 'group has zero children after build');
+  }
+
+  // Issue #75: when the host wall is missing, hide every mesh in the group so
+  // the placeholder is not mistaken for real balcony geometry. We still keep
+  // the meshes (with the placeholder flag set above) so the element remains
+  // selectable in the inspector.
+  if (!wallOk) {
+    group.visible = false;
+    group.traverse((node) => {
+      node.visible = false;
+    });
   }
 
   void paint;

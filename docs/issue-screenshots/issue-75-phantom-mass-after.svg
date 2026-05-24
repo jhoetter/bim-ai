@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 480" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #75 — MF-render-8: phantom mass + mirrored ghost (before / after)</title>
+  <desc>
+    Schematic comparison of the iter render scene reported in issue #75.
+    BEFORE: (1) a "floating cantilever slab" on the left — actually the
+    PR #73 BalconyElem placeholder fallback rendered as a solid 1m deck at
+    the world origin when the host wall lookup failed; (2) a "massive yellow
+    EG block" — the `toposolid_excavation` cutter rendered as a standalone
+    brown/mustard solid (the toposolid hole is already cut, so the cutter
+    mesh was double-drawing); (3) a mirrored ghost copy of the house below
+    the topo, a z-fight artefact between the cutter solid and the topo's
+    underside.
+    AFTER: (1) the orphan-balcony placeholder is invisible (Group still
+    pickable via userData.isAuthoringPlaceholder, but visible=false on every
+    mesh); (2) the excavation cutter is flagged userData.isInvisibleCsgCutter
+    with visible=false, so the toposolid hole is the only visible artefact of
+    the basement; (3) the mirrored ghost disappears once (2) stops drawing
+    into the depth buffer below the topo.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky75" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="ground75" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#a0805a" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow75" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="480" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE #75 ==================== -->
+  <g id="before75">
+    <rect x="20" y="20" width="560" height="440" fill="url(#sky75)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="300" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">Before #75 — three render defects in one frame</text>
+    <text x="300" y="60" text-anchor="middle" font-size="10" fill="#4b5563">phantom mass + mirrored ghost below toposolid</text>
+
+    <!-- Toposolid (ground) -->
+    <rect x="40" y="270" width="520" height="32" fill="#cfd8c2" stroke="#7a8868" stroke-width="1"/>
+    <text x="48" y="290" font-size="9" fill="#3e4734">toposolid (correctly cut)</text>
+
+    <!-- Building outline (DG / EG storeys) -->
+    <rect x="220" y="150" width="220" height="120" fill="#f4ead7" stroke="#3a3a3a" stroke-width="1"/>
+    <text x="330" y="215" text-anchor="middle" font-size="10" fill="#4b5563">house (DG + EG)</text>
+
+    <!-- (1) Floating cantilever — orphan balcony placeholder at world origin -->
+    <rect x="60" y="190" width="80" height="14" fill="#a87a44" stroke="#7a5a30" stroke-width="1"/>
+    <rect x="60" y="160" width="80" height="30" fill="#b0d8e8" fill-opacity="0.55" stroke="#7a98a8" stroke-width="1"/>
+    <text x="100" y="178" text-anchor="middle" font-size="9" fill="#7a5a30">(1) phantom deck</text>
+    <line x1="100" y1="208" x2="100" y2="270" stroke="#b91c1c" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="100" y="223" text-anchor="middle" font-size="8" fill="#b91c1c">no host wall</text>
+
+    <!-- (2) Yellow excavation cutter as standalone solid -->
+    <rect x="280" y="280" width="100" height="120" fill="#d4a544" stroke="#8a6a14" stroke-width="1.5"/>
+    <text x="330" y="345" text-anchor="middle" font-size="11" font-weight="700" fill="#7a5a14">(2) yellow EG block</text>
+    <text x="330" y="358" text-anchor="middle" font-size="9" fill="#7a5a14">cutter rendered standalone</text>
+
+    <!-- (3) Mirrored ghost below the topo -->
+    <g opacity="0.35">
+      <rect x="220" y="305" width="220" height="80" fill="#f4ead7" stroke="#3a3a3a" stroke-width="1" stroke-dasharray="3 2"/>
+      <rect x="60" y="320" width="80" height="14" fill="#a87a44" stroke="#7a5a30" stroke-width="1"/>
+    </g>
+    <text x="500" y="410" text-anchor="middle" font-size="9" fill="#b91c1c">(3) mirrored ghost (z-fight)</text>
+    <line x1="450" y1="385" x2="500" y2="402" stroke="#b91c1c" stroke-width="1" marker-end="url(#arrow75)"/>
+
+    <!-- legend -->
+    <text x="40" y="440" font-size="9" fill="#374151">Root causes: PR #73 fallback rendered solid · cutter Group added to scene · z-fight under topo</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER #75 ==================== -->
+  <g id="after75">
+    <rect x="600" y="20" width="560" height="440" fill="url(#sky75)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="880" y="44" text-anchor="middle" font-size="15" font-weight="700" fill="#0f3a1f">After #75 — invisible cutter + invisible orphan placeholder</text>
+    <text x="880" y="60" text-anchor="middle" font-size="10" fill="#4b5563">topo hole already cuts the basement; cutter never rasterises</text>
+
+    <!-- Toposolid — same shape, hole still cut by makeToposolidMesh -->
+    <rect x="620" y="270" width="520" height="32" fill="#cfd8c2" stroke="#7a8868" stroke-width="1"/>
+    <rect x="860" y="270" width="100" height="32" fill="#ffffff" stroke="#7a8868" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="910" y="290" text-anchor="middle" font-size="9" fill="#4b5563">topo hole (cutter)</text>
+
+    <!-- Building -->
+    <rect x="800" y="150" width="220" height="120" fill="#f4ead7" stroke="#3a3a3a" stroke-width="1"/>
+    <text x="910" y="215" text-anchor="middle" font-size="10" fill="#4b5563">house (DG + EG)</text>
+
+    <!-- (1) orphan-balcony placeholder — invisible (dashed outline only, schematic) -->
+    <rect x="640" y="190" width="80" height="14" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="2 3"/>
+    <text x="680" y="180" text-anchor="middle" font-size="8" fill="#6b7280">(1) invisible placeholder</text>
+    <text x="680" y="222" text-anchor="middle" font-size="8" fill="#6b7280">userData.isAuthoringPlaceholder</text>
+
+    <!-- (2) excavation cutter — invisible (dashed outline only) -->
+    <rect x="860" y="302" width="100" height="100" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="910" y="360" text-anchor="middle" font-size="9" fill="#6b7280">(2) cutter visible=false</text>
+    <text x="910" y="375" text-anchor="middle" font-size="8" fill="#6b7280">isInvisibleCsgCutter</text>
+
+    <!-- (3) ghost is gone -->
+    <text x="880" y="430" text-anchor="middle" font-size="10" font-weight="600" fill="#0f3a1f">(3) mirrored ghost gone — z-fight removed</text>
+    <text x="880" y="447" text-anchor="middle" font-size="9" fill="#0f3a1f">no opaque mesh drawn below the topo for the cutter</text>
+  </g>
+</svg>

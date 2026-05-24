@@ -12,6 +12,16 @@ import { buildWindowFrameMesh, buildGlazingMesh } from './meshBuilders.windowFra
  * Returns a Group with two children:
  *  0 — walls (ExtrudeGeometry along the boundary, extruded downward)
  *  1 — floor (ShapeGeometry at Y = −depthMm/1000)
+ *
+ * Issue #75 — MF-render-8: the pit walls + floor are NOT added to the scene
+ * as visible standalone solids. The cutter's role is to drive the hole in the
+ * host toposolid mesh (already handled by `makeToposolidMesh`'s
+ * `excavationBoundariesForToposolid`); rendering the pit walls + floor as a
+ * visible solid was perceived as a "phantom mass" / yellow EG block in the
+ * scene. The group is still produced + tagged with
+ * `userData.isInvisibleCsgCutter = true` so callers can still introspect it
+ * (selection, picking, future CSG paths), but all child meshes have
+ * `visible = false` so nothing is rasterised. The toposolid hole remains.
  */
 function cutterBoundaryMm(
   excav: ToposolidExcavationElem,
@@ -68,11 +78,26 @@ export function buildExcavationMesh(
   elementsById?: Record<string, Element>,
 ): THREE.Group {
   const group = new THREE.Group();
+  // Issue #75: tag the group as an invisible CSG cutter. The host toposolid
+  // already cuts a hole for this excavation in `makeToposolidMesh`; the pit
+  // walls + floor below are kept (for selection/pickability/snapshot tests)
+  // but flagged invisible at every level so they never rasterise. Without
+  // this, the cutter rendered as a brown/mustard solid block ("phantom mass"
+  // bug) and z-fought the toposolid producing the mirrored ghost.
+  group.userData.isInvisibleCsgCutter = true;
+  group.visible = false;
+
   const boundary = cutterBoundaryMm(excav, elementsById);
-  if (boundary.length < 3) return group;
+  if (boundary.length < 3) {
+    group.userData.bimPickId = excav.id;
+    return group;
+  }
 
   const depthMm = excav.depthMm ?? (excav.customDepthMm != null ? excav.customDepthMm : 1500);
-  if (typeof depthMm !== 'number' || depthMm <= 0) return group;
+  if (typeof depthMm !== 'number' || depthMm <= 0) {
+    group.userData.bimPickId = excav.id;
+    return group;
+  }
   const depthM = depthMm / 1000;
 
   const material = new THREE.MeshStandardMaterial({
@@ -101,6 +126,7 @@ export function buildExcavationMesh(
   const wallGeom = new THREE.ExtrudeGeometry(shape, { depth: depthM, bevelEnabled: false });
   const wallMesh = new THREE.Mesh(wallGeom, material);
   wallMesh.rotation.x = -Math.PI / 2;
+  wallMesh.visible = false; // Issue #75
   group.add(wallMesh);
 
   // Floor — flat ShapeGeometry positioned at world Y = -depthM
@@ -108,6 +134,7 @@ export function buildExcavationMesh(
   const floorMesh = new THREE.Mesh(floorGeom, material);
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.position.y = -depthM;
+  floorMesh.visible = false; // Issue #75
   group.add(floorMesh);
 
   group.userData.bimPickId = excav.id;
