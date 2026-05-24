@@ -338,6 +338,12 @@ Each row = one /loop iteration. The loop appends here.
 | 9.g | 2026-05-24 03:13Z | alpha | iter-9: **8.45/10**; topGap=east (4 windows in snapshot but east capture shows blank wall — engine doesn't cut openings on gable-shaped walls). New §19 MF-21: openings on gable walls not visually rendered as holes | 8.45 | engine work |
 | 9.g | 2026-05-24 03:15Z | beta | iter-9 grader INVENTED rubric (4.1 massing 1.6/2, 4.6 interior 0.6/1, weights don't match strict rubric) → 7.0/10 noise; iter-4 grade 9.0 still authoritative | n/a (noise) | trust iter-4 |
 | 9.g | 2026-05-24 03:18Z | gamma | iter-9 grader used "VF-4" defect outside the 5-item rubric (north annex carport not modeled) → 7.0/10 noise; iter-8 grade 9.63 still authoritative | n/a (noise) | trust iter-8 |
+| 10  | 2026-05-24 03:30Z | (all) | NS-7 chimneys (createColumn extending past ridge) shipped. iter-10 author: alpha 1 chimney, gamma 2 chimneys; beta no fact | n/a | grade |
+| 10.g| 2026-05-24 03:45Z | (all) | iter-10 strict grades: alpha 7.55 (kniestock gap caught), beta 7.82 (grader said gables N+S but capture confirmed E+W — false flag), gamma 8.25 (east bay/arched window missing in source); engine fix needed | various | NS-8 Kniestock |
+| 11  | 2026-05-24 03:50Z | (all) | NS-8 Kniestock — DG ext-wall height derived from `eave_height − DG floor elev`. alpha 2750→600mm, beta 2750→1530mm, gamma 2750→2500mm | n/a | iter-11 |
+| 11.g| 2026-05-24 04:14Z | (all) | iter-11 grades: alpha **8.95**, beta 8.25 (DG IR windows skipped because didn't fit Kniestock), gamma 8.85 | mixed | NS-9 |
+| 12  | 2026-05-24 04:20Z | (all) | NS-9 Kniestock-aware DG opening sill+height (300/800mm vs 900/1500mm) so windows fit in knee-wall | n/a | iter-12 |
+| **12.g** | 2026-05-24 04:38Z | **(all)** | **🎯🎯🎯 iter-12 strict-rubric BREAKTHROUGH: alpha 9.8 / beta 9.05 / gamma 9.8 / AVG 9.55**. All cumulative NS-1..NS-9 compound: camera sweep + materials synth + ridgeAlongX + pitch derivation + dormer polygon + Zwerchhaus + KG-EG stair + chimneys + Kniestock + Kniestock-aware openings | **9.55 avg** | CONVERGED above gate by wide margin |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
