@@ -117,7 +117,8 @@ import { makeMassExtrusionMesh } from './viewport/meshBuilders.massExtrusion';
 import { makeMassRevolutionMesh } from './viewport/meshBuilders.massRevolution';
 import { isElementVisibleUnderPhaseFilter } from './viewport/phaseFilter';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
-import { registerDormerCutFn } from './viewport/meshBuilders';
+import { buildRoofJoinUnionGeometry } from './viewport/roofJoinCsg';
+import { registerDormerCutFn, registerRoofJoinUnionFn } from './viewport/meshBuilders';
 import {
   activeComponentAssetId,
   activeComponentFamilyTypeId,
@@ -212,6 +213,11 @@ import {
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
+// MF-rendering-X (#65) — wire the roof-join CSG union into meshBuilders so
+// Zwerchgiebel renders as a continuous merged solid in the browser. Tests
+// that import meshBuilders directly leave this null and degrade to the
+// seam-line preview.
+registerRoofJoinUnionFn(buildRoofJoinUnionGeometry);
 
 type Props = {
   wsConnected: boolean;
