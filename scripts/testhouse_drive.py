@@ -46,6 +46,7 @@ import httpx  # noqa: E402
 from pydantic import BaseModel, ConfigDict, Field, ValidationError  # noqa: E402
 
 from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
+from bim_ai.roof_geometry import footprint_is_valid_l_shape_mm  # noqa: E402
 
 HOUSES = ("alpha", "beta", "gamma")
 DEFAULT_API_BASE = "http://127.0.0.1:28500/api"
@@ -2617,12 +2618,33 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
         poly = poly[:-1]
     if not poly or len(poly) < 3:
         return None
-    # NS-V3-06: rectify L-shape footprint to its bounding box for the
-    # main gable roof. `gable_pitched_rectangle` requires a rectangle;
-    # the L-step is a minor visual delta vs the hipped-roof failure mode
-    # where roof_bundle bails entirely (beta iter-1 fresh-IR: DG had
-    # L-shape 7 vertices → roof never authored → grader 2.9/10).
-    if len(poly) > 4:
+    # MF-modeling-1 (#31): strip collinear midpoints so reader polygons
+    # that emit an extra vertex per facade can still match the engine's
+    # strict shape predicates (rectangle = exactly 4 corners, L-shape =
+    # exactly 6 with one reflex). Gamma's EG chain is 7 vertices because
+    # the carport offset corner is described as
+    # `[..., (13990,0), (17700,0), (17700,3700), (13990,3700), ...]` —
+    # collinear with the first edge.
+    poly = _strip_collinear_vertices(poly)
+    # MF-modeling-1 (#31): if the cleaned polygon is a valid 6-vertex
+    # axis-aligned L-shape, route to `gable_pitched_l_shape` so the
+    # gable correctly follows both L-arms (no overhanging eave into the
+    # void of the inner corner). Falls back to the historical bbox
+    # rectify path for anything else >4 vertices.
+    roof_geometry_mode = "gable_pitched_rectangle"
+    if len(poly) == 6 and footprint_is_valid_l_shape_mm(
+        [(float(p[0]), float(p[1])) for p in poly]
+    ):
+        roof_geometry_mode = "gable_pitched_l_shape"
+    elif len(poly) > 4:
+        # NS-V3-06: rectify >4-vertex footprint to its bounding box for
+        # the main gable roof. `gable_pitched_rectangle` requires a
+        # rectangle; the L-step is a minor visual delta vs the failure
+        # mode where roof_bundle bails entirely (beta iter-1 fresh-IR:
+        # DG had L-shape 7 vertices → roof never authored → grader
+        # 2.9/10). MF-modeling-1 (#31) extends this with the L-shape
+        # branch above so we only rectify when the polygon is NOT a
+        # recognisable L.
         xs = [float(p[0]) for p in poly]
         ys = [float(p[1]) for p in poly]
         xmin, xmax = min(xs), max(xs)
@@ -2683,7 +2705,7 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
             "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
             "overhangMm": 400,
             "slopeDeg": pitch_deg,
-            "roofGeometryMode": "gable_pitched_rectangle",
+            "roofGeometryMode": roof_geometry_mode,
             "materialKey": "roof_tile_terracotta",
             **({"ridgeAlongX": ridge_along_x} if ridge_along_x is not None else {}),
         },
@@ -2730,7 +2752,8 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
                 {
                     "key": f"testhouse_{house}_roof",
                     "value": (
-                        "Gable roof following DG extent; pitch 35°; overhang 400 mm"
+                        f"Gable roof ({roof_geometry_mode}) following DG extent;"
+                        f" pitch {pitch_deg}°; overhang 400 mm"
                         + (
                             f" + {flat_roofs_added} Flachdach extension(s) over EG-only wing(s)"
                             if flat_roofs_added
@@ -2759,6 +2782,49 @@ def _slugify(s: str | None) -> str:
     if not s:
         return "x"
     return _re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "x"
+
+
+def _strip_collinear_vertices(polygon: list, tol: float = 1.0) -> list:
+    """Drop any vertex that lies on the straight line between its two
+    neighbours (axis-aligned tolerance ``tol`` mm).
+
+    MF-modeling-1 (#31): reader IRs often describe an L-shape facade
+    with an extra collinear midpoint per edge (e.g. gamma EG:
+    ``[(0,0),(13990,0),(17700,0),(17700,3700),...]`` — the ``(13990,0)``
+    is collinear with the segment ``(0,0)→(17700,0)`` because the
+    carport offset is described at the corner). The engine's strict
+    shape predicates (``footprint_is_valid_l_shape_mm`` wants exactly
+    6 vertices, ``footprint_is_valid_axis_aligned_rectangle_mm`` wants
+    exactly 4) reject these polygons, which forced ``_roof_bundle`` to
+    fall through to the bbox-rectify path even when a true L-shape was
+    on offer. Returns the cleaned open polygon (closing duplicate is
+    not re-introduced; callers should have already stripped it).
+    """
+
+    if len(polygon) < 3:
+        return [list(p) for p in polygon]
+    cleaned: list[list[float]] = []
+    n = len(polygon)
+    for i in range(n):
+        a = polygon[(i - 1) % n]
+        b = polygon[i]
+        c = polygon[(i + 1) % n]
+        ax, ay = float(a[0]), float(a[1])
+        bx, by = float(b[0]), float(b[1])
+        cx, cy = float(c[0]), float(c[1])
+        # Axis-aligned collinear test: b is collinear with a→c when
+        # both segments share an x or y within tol. Catches the 90%
+        # case of reader polygons where every edge is N-S or E-W.
+        on_horizontal = abs(ay - by) <= tol and abs(by - cy) <= tol
+        on_vertical = abs(ax - bx) <= tol and abs(bx - cx) <= tol
+        if on_horizontal or on_vertical:
+            continue
+        cleaned.append([bx, by])
+    # Safety: if every vertex was collinear (degenerate input), return
+    # the original — the caller's downstream checks will reject it.
+    if len(cleaned) < 3:
+        return [list(p) for p in polygon]
+    return cleaned
 
 
 def _point_in_polygon(x: float, y: float, polygon: list) -> bool:
