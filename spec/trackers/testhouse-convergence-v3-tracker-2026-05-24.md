@@ -930,6 +930,8 @@ The loop appends here. Format:
 | 3   | 2026-05-24 08:52Z | (all) | NS-V3-02 sloped toposolid (commit `69be4d4f5`): heightSamples on beta (3.8m EW hillside) + gamma (1m NS gentle); alpha flat. Beta east capture visibly shows hillside slope now | n/a | iter-3 |
 | 3.g | 2026-05-24 09:15Z | (all) | iter-3 grades: **alpha 0** (grader noise — geometry unchanged from iter-2), **beta 4.0**, **gamma 3.75**. Beta hillside readable per grader. **Grader variance again** — alpha gave 0 despite identical geometry. Median rule needed | mixed | iter-4 with +Zwerchhauser + balcony |
 | 4   | 2026-05-24 09:18Z | (all) | IR patches: +2 Zwerchhaus facts on gamma north (Gartenansicht), +1 balcony fact on beta south. Ship iter-4 | n/a | iter-4 author |
+| RESTART | 2026-05-24 10:00Z | (all) | User asked for full clean restart + version-control style iters. Cleared all artifacts (DB purged, all iter dirs deleted, only preflight/IR retained). Shipped NS-V3-04 idempotent filter (`95f13fd7b`): driver drops create-* cmds whose target id already exists → iter-N>=2 commits only new elements into the SAME model id. Time-travel via commit history per iter | n/a | iter-1 fresh |
+| 1   | 2026-05-24 10:04Z | alpha | v3 iter-1 author chain started — NO PURGE; idempotent filter active. TOPOLOGY → KG → EG → DG → ROOF + capture-ortho-views | running | wait |
 
 (Loop will fill below.)
 
