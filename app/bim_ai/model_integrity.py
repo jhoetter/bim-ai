@@ -686,6 +686,123 @@ def check_model_integrity_invariants(
         findings.extend(_family_content_findings(element, elements))
 
     findings.extend(_schema_compatibility_findings(subject))
+    findings.extend(_below_grade_excavation_findings(elements, level_elevations))
+    return findings
+
+
+def _below_grade_excavation_findings(
+    elements: Mapping[str, Any],
+    level_elevations: dict[str, float],
+) -> list[ModelIntegrityFinding]:
+    """MF-driver-8 (#37): warn when a below-grade level has no enclosing
+    toposolid_excavation covering the building extent on that level.
+
+    The driver should emit a CreateToposolidExcavation for every level
+    whose top sits below grade (typical Keller) so the KG walls + windows
+    aren't left visually hanging in open air below the toposolid surface.
+    This is a soft check (severity ``warning``) so existing models that
+    pre-date the excavation primitive don't retroactively become invalid.
+    """
+
+    below_grade_level_ids = sorted(
+        level_id
+        for level_id, elevation in level_elevations.items()
+        if elevation < 0
+    )
+    if not below_grade_level_ids:
+        return []
+
+    # Index excavations by the level of their cutter floor; that's the
+    # link from "level KG" to "an excavation that covers KG".
+    excavation_level_bboxes: dict[str, list[tuple[float, float, float, float]]] = {}
+    for element in elements.values():
+        if str(_read(element, "kind", default="")) != "toposolid_excavation":
+            continue
+        cutter_id = _read(element, "cutterElementId")
+        if cutter_id in (None, ""):
+            continue
+        cutter = elements.get(str(cutter_id))
+        if cutter is None:
+            continue
+        cutter_level_id = _read(cutter, "levelId") or _read(cutter, "referenceLevelId")
+        if cutter_level_id in (None, ""):
+            continue
+        polygon = _polygon_xy(
+            _read(cutter, "boundaryMm") or _read(cutter, "footprintMm") or []
+        )
+        if len(polygon) < 3:
+            continue
+        xs = [p[0] for p in polygon]
+        ys = [p[1] for p in polygon]
+        excavation_level_bboxes.setdefault(str(cutter_level_id), []).append(
+            (min(xs), min(ys), max(xs), max(ys))
+        )
+
+    # Compute per-level building extent from exterior walls hosted on that
+    # level. (Walls are the most reliable footprint signal — interior
+    # rooms / floors don't always cover the full building extent.)
+    level_wall_bbox: dict[str, tuple[float, float, float, float]] = {}
+    for element in elements.values():
+        if str(_read(element, "kind", default="")) != "wall":
+            continue
+        level_id = _read(element, "levelId")
+        if level_id in (None, ""):
+            continue
+        start = _point_xy(_read(element, "start"))
+        end = _point_xy(_read(element, "end"))
+        if start is None or end is None:
+            continue
+        xs = (start[0], end[0])
+        ys = (start[1], end[1])
+        current = level_wall_bbox.get(str(level_id))
+        if current is None:
+            level_wall_bbox[str(level_id)] = (min(xs), min(ys), max(xs), max(ys))
+        else:
+            level_wall_bbox[str(level_id)] = (
+                min(current[0], *xs),
+                min(current[1], *ys),
+                max(current[2], *xs),
+                max(current[3], *ys),
+            )
+
+    findings: list[ModelIntegrityFinding] = []
+    for level_id in below_grade_level_ids:
+        wall_bbox = level_wall_bbox.get(level_id)
+        if wall_bbox is None:
+            # No walls on this level yet — nothing to enclose; suppress
+            # the finding so an in-progress model with only the level
+            # declared isn't flagged prematurely.
+            continue
+        excavation_bboxes = excavation_level_bboxes.get(level_id, [])
+        if any(
+            ex[0] <= wall_bbox[0] + 1e-3
+            and ex[1] <= wall_bbox[1] + 1e-3
+            and ex[2] >= wall_bbox[2] - 1e-3
+            and ex[3] >= wall_bbox[3] - 1e-3
+            for ex in excavation_bboxes
+        ):
+            continue
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="BELOW_GRADE_LEVEL_NOT_EXCAVATED",
+                severity="warning",
+                message=(
+                    f"Level '{level_id}' sits below grade "
+                    f"(elevationMm={level_elevations[level_id]:g}) but no "
+                    "toposolid_excavation covers the building extent at "
+                    "that level; KG walls/windows will render hanging in "
+                    "open air below the toposolid surface."
+                ),
+                element_ids=(level_id,),
+                field="toposolidExcavation",
+                expected="toposolid_excavation whose cutter footprint covers the level's building extent",
+                actual=(
+                    f"{len(excavation_bboxes)} excavation(s) on level"
+                    if excavation_bboxes
+                    else "no excavation on level"
+                ),
+            )
+        )
     return findings
 
 
