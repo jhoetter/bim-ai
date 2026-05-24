@@ -13,6 +13,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
+    Response,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -90,6 +91,11 @@ from bim_ai.evidence_manifest import (
 )
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.hub import Hub
+from bim_ai.jobs.evidence_package import (
+    EvidencePackageJobStore,
+    get_evidence_package_job_store,
+    submit_evidence_package_job,
+)
 from bim_ai.jobs.queue import JobQueue, get_queue
 from bim_ai.jobs.types import CreateJobRequest, Job
 from bim_ai.link_expansion import expand_links
@@ -259,6 +265,10 @@ def _get_job_queue() -> JobQueue:
     return get_queue()
 
 
+def _get_evidence_package_job_store() -> EvidencePackageJobStore:
+    return get_evidence_package_job_store()
+
+
 # ---------------------------------------------------------------------------
 # System routes
 # ---------------------------------------------------------------------------
@@ -322,6 +332,55 @@ async def get_job(
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
     return job.model_dump(by_alias=True)
+
+
+@api_router.get("/jobs/{job_id}/result")
+async def get_job_result(
+    job_id: str,
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
+    evidence_store: Annotated[
+        EvidencePackageJobStore, Depends(_get_evidence_package_job_store)
+    ],
+) -> dict[str, Any]:
+    """PERF-D07: fetch a completed job's payload.
+
+    Currently supports ``kind="evidence_package"`` only — the payload is
+    returned shape-identical to the sync ``GET /api/models/{id}/evidence-package``
+    response. Returns 404 if the job is unknown, 409 if it has not finished
+    yet, and 410 if its result was evicted from the in-memory LRU.
+    """
+
+    job = queue.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    if job.kind != "evidence_package":
+        raise HTTPException(
+            status_code=400,
+            detail=f"result endpoint not supported for job kind {job.kind!r}",
+        )
+    if job.status == "errored":
+        raise HTTPException(
+            status_code=500,
+            detail=job.error_message or "job errored",
+        )
+    if job.status in ("queued", "running"):
+        raise HTTPException(status_code=409, detail="job not finished")
+    if job.status == "cancelled":
+        raise HTTPException(status_code=409, detail="job was cancelled")
+    result = evidence_store.get(job_id)
+    if result is None:
+        raise HTTPException(
+            status_code=410,
+            detail="job result evicted from cache; resubmit",
+        )
+    return {
+        "jobId": job_id,
+        "modelId": job.model_id,
+        "sourceDigestSha256": result.source_digest_sha256,
+        "mode": result.mode,
+        "completedAt": result.completed_at,
+        "payload": result.payload,
+    }
 
 
 @api_router.post("/jobs/{job_id}/cancel")
@@ -933,9 +992,15 @@ async def sustainability_lens_projection(
 @api_router.get("/models/{model_id}/evidence-package")
 async def evidence_package(
     model_id: UUID,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
+    queue: Annotated[JobQueue, Depends(_get_job_queue)],
+    evidence_store: Annotated[
+        EvidencePackageJobStore, Depends(_get_evidence_package_job_store)
+    ],
     mode: Annotated[str, Query()] = "default",
     debug: Annotated[bool, Query()] = False,
+    async_run: Annotated[bool, Query(alias="async")] = False,
 ) -> dict[str, Any]:
     """PERF-D06: mode=summary|default|full.
 
@@ -949,6 +1014,15 @@ async def evidence_package(
 
     PERF-A05: when `debug=true`, response includes `_perfDebug` with
     docValidateMs, packageBuildMs, totalMs phase timings.
+
+    PERF-D07: when `?async=true`, the build moves off the request path
+    onto an in-process background task tracked by the existing job queue.
+    The response returns 202 + ``{ "jobId": "...", "status": "queued",
+    "sourceDigestSha256": "...", "modelId": "...", "mode": "..." }``;
+    poll ``GET /api/jobs/{jobId}`` for status and ``GET
+    /api/jobs/{jobId}/result`` once status is ``done`` to fetch the
+    same payload shape as the sync path. Sync (default) callers are
+    unaffected.
     """
     row = await load_model_row(session, model_id)
     if row is None:
@@ -958,6 +1032,35 @@ async def evidence_package(
         raise HTTPException(
             status_code=400, detail="mode must be one of summary|default|full"
         )
+    if async_run:
+        # PERF-D07: hand the build to the in-process worker and return
+        # immediately with a job id. The wire shape on the polled result
+        # endpoint matches the sync response exactly.
+        doc = Document.model_validate(row.document)
+        source_digest = evidence_package_semantic_digest_sha256(
+            {"revision": doc.revision, "modelId": str(model_id), "mode": normalised}
+        )
+        submitted = await submit_evidence_package_job(
+            queue=queue,
+            store=evidence_store,
+            model_id=model_id,
+            mode=normalised,
+            debug=debug,
+            doc=doc,
+            source_document=row.document,
+            source_digest_sha256=source_digest,
+            builder=build_evidence_package_payload,
+        )
+        response.status_code = 202
+        return {
+            "jobId": submitted.id,
+            "modelId": str(model_id),
+            "mode": normalised,
+            "status": submitted.status,
+            "sourceDigestSha256": source_digest,
+            "pollJobHref": f"/api/jobs/{submitted.id}",
+            "pollResultHref": f"/api/jobs/{submitted.id}/result",
+        }
     # PERF-D08: surface wall-clock probe in the payload so the Agent Review
     # performance gate can flip from advisory mock to a real budget-backed
     # warning. Budget threshold (ms) here matches the small.evidence_package

@@ -14,6 +14,7 @@ JobKind = Literal[
     "render_still",
     "render_video",
     "agent_call",
+    "evidence_package",
 ]
 
 JobStatus = Literal["queued", "running", "done", "errored", "cancelled"]
