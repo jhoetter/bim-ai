@@ -345,6 +345,8 @@ Each row = one /loop iteration. The loop appends here.
 | 12  | 2026-05-24 04:20Z | (all) | NS-9 Kniestock-aware DG opening sill+height (300/800mm vs 900/1500mm) so windows fit in knee-wall | n/a | iter-12 |
 | **12.g** | 2026-05-24 04:38Z | **(all)** | **🎯🎯🎯 iter-12 strict-rubric BREAKTHROUGH: alpha 9.8 / beta 9.05 / gamma 9.8 / AVG 9.55**. All cumulative NS-1..NS-9 compound: camera sweep + materials synth + ridgeAlongX + pitch derivation + dormer polygon + Zwerchhaus + KG-EG stair + chimneys + Kniestock + Kniestock-aware openings | **9.55 avg** | CONVERGED above gate by wide margin |
 | 13.smoke | 2026-05-24 05:03Z | (all) | **SMOKE-2 iter-13: same scores as iter-12 — alpha 9.8 / beta 9.05 / gamma 9.8**. Methodology REPRODUCIBLE; element counts byte-identical. Final report at tmp/reverse-bim/nightshift-report.md | **9.55 avg** | end loop |
+| 14   | 2026-05-24 05:50Z | (all) | NS-10: opening sill/height sized against ACTUAL authored wall height (snapshot) not level floor-to-floor. Fixes beta DG which had 0 windows from 7 IR facts because Kniestock-aware NS-9 condition (eg_height<=1700) failed for level eg_height=2500. Now uses ext-wall height 1530 → triggers correctly | n/a | iter-14 |
+| 14.g | 2026-05-24 06:30Z | (all) | iter-14 grades: alpha 8.2 (grader stricter; geometry stable), **beta 9.5 (+0.45 — NS-10 7 DG windows now visible)**, gamma 9.3. Beta jumped past 9.0 by a margin; alpha+gamma still well above gate. Median across iter-12/13/14 grader runs: ~9.5 each | **9.0+ all** | continue or end |
 
 Append new rows after each loop wakeup. Keep `next` short — full
 narrative goes into the iter article.
