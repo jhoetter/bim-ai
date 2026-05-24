@@ -230,6 +230,84 @@ describe('MAT-01 — material registry', () => {
     expect(resolveMaterial('')).toBeNull();
   });
 
+  // Issue #47 — render_light_grey was rendering uniform white because
+  // the resolution path either dropped the key or silently fell back.
+  // Lock in a non-white base colour for the canonical render finishes
+  // that the testhouse driver authors on every exterior wall + roof so
+  // a regression that swaps the spec for the category fallback
+  // (#ddd8d0) trips this assertion.
+  it('resolves render_light_grey to a visibly non-white base colour (issue #47)', () => {
+    const spec = resolveMaterial('render_light_grey');
+    expect(spec).not.toBeNull();
+    expect(spec!.baseColor).toBe('#cfd0cd');
+    expect(spec!.baseColor.toLowerCase()).not.toBe('#ffffff');
+  });
+
+  it('resolves roof_tile_terracotta to a visibly non-grey base colour (issue #47)', () => {
+    const spec = resolveMaterial('roof_tile_terracotta');
+    expect(spec).not.toBeNull();
+    expect(spec!.baseColor).toBe('#7d3424');
+  });
+
+  it('resolves cladding_warm_wood to a visibly warm-brown base colour (issue #47)', () => {
+    const spec = resolveMaterial('cladding_warm_wood');
+    expect(spec).not.toBeNull();
+    expect(spec!.baseColor).toBe('#a87a44');
+  });
+
+  // Python catalog / TS mirror drift guard — issue #47 documents that
+  // the kernel-side catalog (`app/bim_ai/material_catalog.py`) and the
+  // TS mirror must agree on the key set so backend-authored walls always
+  // find a spec on the renderer. Refresh PY_CATALOG_KEYS whenever a key
+  // is added to / removed from the Python catalog.
+  const PY_CATALOG_KEYS = [
+    'timber_cladding',
+    'white_cladding',
+    'white_render',
+    'timber_frame_insulation',
+    'timber_stud',
+    'vcl_membrane',
+    'plasterboard',
+    'plaster',
+    'masonry_brick',
+    'masonry_block',
+    'air',
+    'cladding_beige_grey',
+    'cladding_warm_wood',
+    'cladding_dark_grey',
+    'render_light_grey',
+    'render_beige',
+    'render_terracotta',
+    'roof_tile_terracotta',
+    'aluminium_dark_grey',
+    'aluminium_natural',
+    'aluminium_black',
+    'brick_red',
+    'brick_yellow',
+    'brick_grey',
+    'stone_limestone',
+    'stone_slate',
+    'stone_sandstone',
+    'concrete_smooth',
+    'concrete_board_formed',
+    'glass_clear',
+    'glass_low_iron',
+    'glass_fritted',
+    'glass_obscured',
+    'metal_standing_seam_dark_grey',
+    'metal_standing_seam_zinc',
+    'metal_standing_seam_copper',
+    'log_round_natural',
+    'log_square_natural',
+    'placeholder_unloaded',
+  ];
+
+  it.each(PY_CATALOG_KEYS)('TS mirror resolves Python catalog key %s (issue #47)', (key) => {
+    const spec = resolveMaterial(key);
+    expect(spec).not.toBeNull();
+    expect(spec!.key).toBe(key);
+  });
+
   it('resolves wall surface appearance from materialKey for CSG replacement meshes', () => {
     const paint = resolveViewportPaintBundle({ reader: fakeReader({}) });
     const cladding = resolveWallSurfaceMaterial('cladding_warm_wood', paint);

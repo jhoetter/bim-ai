@@ -1,6 +1,74 @@
-import type { Element, XY } from '@bim-ai/core';
+import type { Element, MaterialFaceKind, MaterialFaceOverride, XY } from '@bim-ai/core';
 
 import { coerceNumber, coerceXY, type WireRecord } from './primitives';
+
+const FACE_KINDS: ReadonlySet<MaterialFaceKind> = new Set<MaterialFaceKind>([
+  'exterior',
+  'interior',
+  'top',
+  'bottom',
+  'left',
+  'right',
+  'generated',
+]);
+
+/**
+ * Issue #47: walls authored by `createWall` (engine `engine_dispatch_core.py`)
+ * synthesize `face_material_overrides` so wall.materialKey actually drives a
+ * visible exterior/interior face colour in the renderer. The coercion path
+ * used to drop the field entirely on its way through the snapshot, so the
+ * paint-source overrides never made it back into the FE element store and
+ * the renderer fell back to the wall-category default (~white).
+ */
+function coerceFaceMaterialOverrides(raw: unknown): MaterialFaceOverride[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: MaterialFaceOverride[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const row = entry as WireRecord;
+    const faceKindRaw = row.faceKind ?? row.face_kind;
+    const materialKeyRaw = row.materialKey ?? row.material_key;
+    if (typeof faceKindRaw !== 'string' || !FACE_KINDS.has(faceKindRaw as MaterialFaceKind)) {
+      continue;
+    }
+    if (typeof materialKeyRaw !== 'string' || !materialKeyRaw) continue;
+    const sourceRaw = row.source;
+    const override: MaterialFaceOverride = {
+      faceKind: faceKindRaw as MaterialFaceKind,
+      materialKey: materialKeyRaw,
+    };
+    if (sourceRaw === 'paint' || sourceRaw === 'finish') override.source = sourceRaw;
+    const generatedFaceIdRaw = row.generatedFaceId ?? row.generated_face_id;
+    if (typeof generatedFaceIdRaw === 'string') {
+      override.generatedFaceId = generatedFaceIdRaw;
+    }
+    const uvScaleRaw = row.uvScaleMm ?? row.uv_scale_mm;
+    if (uvScaleRaw && typeof uvScaleRaw === 'object') {
+      const scale = uvScaleRaw as WireRecord;
+      const uMm = coerceNumber(scale.uMm ?? scale.u_mm, NaN);
+      const vMm = coerceNumber(scale.vMm ?? scale.v_mm, NaN);
+      if (Number.isFinite(uMm) && Number.isFinite(vMm)) {
+        override.uvScaleMm = { uMm, vMm };
+      }
+    }
+    const uvOffsetRaw = row.uvOffsetMm ?? row.uv_offset_mm;
+    if (uvOffsetRaw && typeof uvOffsetRaw === 'object') {
+      const offset = uvOffsetRaw as WireRecord;
+      const uMm = coerceNumber(offset.uMm ?? offset.u_mm, NaN);
+      const vMm = coerceNumber(offset.vMm ?? offset.v_mm, NaN);
+      if (Number.isFinite(uMm) && Number.isFinite(vMm)) {
+        override.uvOffsetMm = { uMm, vMm };
+      }
+    }
+    const uvRotationRaw = row.uvRotationDeg ?? row.uv_rotation_deg;
+    if (uvRotationRaw != null) {
+      const deg = coerceNumber(uvRotationRaw, NaN);
+      if (Number.isFinite(deg)) override.uvRotationDeg = deg;
+    }
+    out.push(override);
+  }
+  return out.length > 0 ? out : null;
+}
 
 type BuildingElement =
   | Extract<Element, { kind: 'level' }>
@@ -173,6 +241,12 @@ function coerceWall(id: string, name: string, raw: WireRecord): Extract<Element,
     ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
       ? { materialKey: String(raw.materialKey ?? raw.material_key) }
       : {}),
+    ...(() => {
+      const overrides = coerceFaceMaterialOverrides(
+        raw.faceMaterialOverrides ?? raw.face_material_overrides,
+      );
+      return overrides ? { faceMaterialOverrides: overrides } : {};
+    })(),
     ...(raw.wallTypeId || raw.wall_type_id
       ? { wallTypeId: String(raw.wallTypeId ?? raw.wall_type_id) }
       : {}),

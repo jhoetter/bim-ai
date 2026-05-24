@@ -169,4 +169,81 @@ describe('building element coercion', () => {
     expect(dimension.state).toBe('linked');
     expect(dimension.refElementIdA).toBe('wall-1');
   });
+
+  // Issue #47 — engine_dispatch_core.py synthesizes faceMaterialOverrides
+  // for every agent-authored wall that has a materialKey but no wall_type.
+  // The coercion path used to silently drop the field on its way through
+  // hydrateFromSnapshot, so render_light_grey / cladding_warm_wood walls
+  // fell back to the wall-category default (~white) on the FE. Preserve
+  // the engine-synthesised overrides so the renderer can drive face colour.
+  it('preserves faceMaterialOverrides synthesised by createWall (issue #47)', () => {
+    const wall = coerceElement('wall-ext-1', {
+      kind: 'wall',
+      name: 'EG exterior wall 0',
+      levelId: 'level-EG',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 5000, yMm: 0 },
+      thicknessMm: 365,
+      heightMm: 2800,
+      materialKey: 'render_light_grey',
+      faceMaterialOverrides: [
+        { faceKind: 'exterior', materialKey: 'render_light_grey', source: 'paint' },
+        { faceKind: 'interior', materialKey: 'render_light_grey', source: 'paint' },
+      ],
+    });
+
+    expect(wall?.kind).toBe('wall');
+    if (wall?.kind !== 'wall') return;
+    expect(wall.materialKey).toBe('render_light_grey');
+    expect(wall.faceMaterialOverrides).toEqual([
+      { faceKind: 'exterior', materialKey: 'render_light_grey', source: 'paint' },
+      { faceKind: 'interior', materialKey: 'render_light_grey', source: 'paint' },
+    ]);
+  });
+
+  it('accepts snake_case face_material_overrides as well (issue #47)', () => {
+    const wall = coerceElement('wall-ext-2', {
+      kind: 'wall',
+      name: 'OG exterior wall 1',
+      levelId: 'level-OG',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 4000, yMm: 0 },
+      thicknessMm: 365,
+      heightMm: 2800,
+      materialKey: 'cladding_warm_wood',
+      face_material_overrides: [
+        { face_kind: 'exterior', material_key: 'cladding_warm_wood', source: 'paint' },
+      ],
+    });
+
+    expect(wall?.kind).toBe('wall');
+    if (wall?.kind !== 'wall') return;
+    expect(wall.faceMaterialOverrides).toEqual([
+      { faceKind: 'exterior', materialKey: 'cladding_warm_wood', source: 'paint' },
+    ]);
+  });
+
+  it('skips face overrides with missing or invalid materialKey (issue #47)', () => {
+    const wall = coerceElement('wall-ext-3', {
+      kind: 'wall',
+      name: 'noisy overrides',
+      levelId: 'level-EG',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 4000, yMm: 0 },
+      thicknessMm: 365,
+      heightMm: 2800,
+      materialKey: 'render_terracotta',
+      faceMaterialOverrides: [
+        { faceKind: 'exterior', materialKey: '' },
+        { faceKind: 'not_a_face', materialKey: 'render_beige' },
+        { faceKind: 'interior', materialKey: 'render_beige', source: 'finish' },
+      ],
+    });
+
+    expect(wall?.kind).toBe('wall');
+    if (wall?.kind !== 'wall') return;
+    expect(wall.faceMaterialOverrides).toEqual([
+      { faceKind: 'interior', materialKey: 'render_beige', source: 'finish' },
+    ]);
+  });
 });

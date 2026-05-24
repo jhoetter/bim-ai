@@ -238,6 +238,19 @@ function normalizeOptions(
   return fallbackColorOrOptions;
 }
 
+/**
+ * Tracks unresolved materialKey lookups so the issue #47 diagnostic warning
+ * fires at most once per key per session (Sets dedupe on identity). Without
+ * this, a single bad snapshot can spam the console with thousands of identical
+ * warnings (one per mesh build, per re-render).
+ */
+const _warnedUnresolvedMaterialKeys = new Set<string>();
+
+/** TEST-ONLY: reset the dedupe set so tests can assert the warning fires. */
+export function _resetUnresolvedMaterialKeyWarningsForTests(): void {
+  _warnedUnresolvedMaterialKeys.clear();
+}
+
 export function makeThreeMaterialForKey(
   materialKey: string | null | undefined,
   fallbackColorOrOptions: string | ThreeMaterialFactoryOptions = '#cccccc',
@@ -246,6 +259,21 @@ export function makeThreeMaterialForKey(
   const opts = normalizeOptions(fallbackColorOrOptions, maybeOptions);
   const usage = opts.usage ?? 'generic';
   const spec = resolveMaterial(materialKey, opts.elementsById);
+  // Issue #47: when an element ships a `materialKey` but neither the MAT-01
+  // registry nor a project material element resolves it, the renderer was
+  // silently falling back to the category default — making walls authored
+  // with e.g. `cladding_warm_wood` look identical to plain `render_light_grey`
+  // walls. Log once per unknown key so the failure is visible in the console
+  // instead of needing a side-by-side render diff to spot.
+  if (materialKey && !spec && !_warnedUnresolvedMaterialKeys.has(materialKey)) {
+    _warnedUnresolvedMaterialKeys.add(materialKey);
+    console.warn(
+      `[MAT-01] makeThreeMaterialForKey: unresolved materialKey '${materialKey}' ` +
+        `(usage=${usage}); falling back to category/fallback colour. ` +
+        `Add the key to the MAT-01 registry (packages/web/src/viewport/materials.ts) ` +
+        `or align the snake_case/camelCase casing with the catalog.`,
+    );
+  }
   const manager = opts.textureManager ?? defaultMaterialTextureManager;
   const fallbackColor = opts.fallbackColor ?? opts.fallbackPaint?.color ?? '#cccccc';
   const roughness = clamp01(

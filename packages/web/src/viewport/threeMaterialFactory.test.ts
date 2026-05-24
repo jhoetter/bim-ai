@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
 import {
+  _resetUnresolvedMaterialKeyWarningsForTests,
   applyMaterialUvTransform,
   makeThreeMaterialForKey,
   materialUvTransformForExtent,
@@ -202,5 +203,40 @@ describe('three material factory', () => {
     expect(texture.offset.x).toBe(0.5);
     expect(texture.offset.y).toBe(0.5);
     expect(texture.rotation).toBeCloseTo(Math.PI / 2);
+  });
+
+  // Issue #47 — when an unknown materialKey hits the factory, the
+  // resolver was silently swapping in the fallback colour so a typo
+  // in a backend-authored key was invisible until someone diffed the
+  // render against an expected reference. Emit a deduplicated warning
+  // so the failure is observable in dev tools.
+  it('warns once per unresolved materialKey (issue #47)', () => {
+    _resetUnresolvedMaterialKeyWarningsForTests();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      makeThreeMaterialForKey('definitely_not_a_real_key', { fallbackColor: '#deadbe' });
+      makeThreeMaterialForKey('definitely_not_a_real_key', { fallbackColor: '#deadbe' });
+      makeThreeMaterialForKey('another_missing_key', { fallbackColor: '#caffee' });
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(warn.mock.calls[0]?.[0]).toContain('definitely_not_a_real_key');
+      expect(warn.mock.calls[1]?.[0]).toContain('another_missing_key');
+    } finally {
+      warn.mockRestore();
+      _resetUnresolvedMaterialKeyWarningsForTests();
+    }
+  });
+
+  it('does not warn for known materialKeys or for null/undefined (issue #47)', () => {
+    _resetUnresolvedMaterialKeyWarningsForTests();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      makeThreeMaterialForKey('render_light_grey');
+      makeThreeMaterialForKey(null);
+      makeThreeMaterialForKey(undefined);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      _resetUnresolvedMaterialKeyWarningsForTests();
+    }
   });
 });
