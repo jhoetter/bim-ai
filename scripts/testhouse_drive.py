@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import time
 import uuid
@@ -526,9 +527,12 @@ def _filter_existing_ids(*, bundle: dict, model_id: str, api_base: str) -> dict:
     across iters; the engine's commit history gives version-control-style
     time-travel per iter on the /agents dashboard.
 
-    Fetches the latest snapshot once per call. Filters commands whose
-    `id` / `toposolidId` / etc. already appears in the snapshot's
-    elements. Returns a NEW bundle dict with filtered commands.
+    NS-V3-09: force-rebuild override. When `BIM_AI_FORCE_REBUILD_TYPES`
+    env var lists cmd types (e.g. "createDormer,createRoof"), instead
+    of skipping existing-id matches for those types we PREPEND a
+    `deleteElement` so the create can replace the old geometry within
+    the same iter commit. Use this when an NS- improvement changes the
+    default size/shape of an already-authored element kind.
     """
     try:
         snap = httpx.get(
@@ -543,20 +547,36 @@ def _filter_existing_ids(*, bundle: dict, model_id: str, api_base: str) -> dict:
     }
     if not existing:
         return bundle
+    force_rebuild = {
+        s.strip()
+        for s in os.environ.get("BIM_AI_FORCE_REBUILD_TYPES", "").split(",")
+        if s.strip()
+    }
     cmds = bundle.get("commands") or []
     filtered: list[dict] = []
     skipped = 0
+    rebuilt = 0
     for c in cmds:
-        # Identify the would-be element id from common cmd shapes.
         cid = c.get("id") or c.get("toposolidId")
+        ctype = c.get("type", "")
         if cid and cid in existing:
+            if ctype in force_rebuild:
+                filtered.append({"type": "deleteElement", "elementId": cid})
+                filtered.append(c)
+                rebuilt += 1
+                continue
             skipped += 1
             continue
         filtered.append(c)
-    if skipped:
+    if skipped or rebuilt:
         logger.info(
             "testhouse_iter.idempotent_skip",
-            extra={"model_id": model_id, "skipped": skipped, "kept": len(filtered)},
+            extra={
+                "model_id": model_id,
+                "skipped": skipped,
+                "rebuilt": rebuilt,
+                "kept": len(filtered),
+            },
         )
     out = dict(bundle)
     out["commands"] = filtered
