@@ -19,6 +19,7 @@ from scripts.seed import (
     EMPTY_SEED_MODEL_ID,
     EMPTY_SEED_MODEL_SLUG,
     SEED_PROJECT_ID,
+    _delete_model_records,
     _load_artifact,
     _materialize,
     _purge_disposable_projects,
@@ -360,3 +361,71 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
         if violation.severity == "warning" and violation.rule_id in target_warning_rules
     ]
     assert target_warnings == []
+
+
+def test_delete_model_records_cascades_in_fk_safe_order() -> None:
+    """Regression test for issue #22.
+
+    ``make seed`` was crashing with ``ForeignKeyViolationError`` whenever an
+    interrupted iter session left behind ``bim_model_commits`` /
+    ``bim_model_snapshots`` / ``bim_undo_stack`` / ``bim_redo_stack`` /
+    ``bim_comments`` rows that still referenced the model row being deleted.
+    The cascade order here mirrors ``scripts/testhouse_purge.py`` and must
+    keep every dependent table ahead of ``bim_models``.
+    """
+
+    from sqlalchemy.sql.dml import Delete, Update
+
+    from bim_ai.tables import (
+        ActivityRowRecord,
+        CommentRecord,
+        MilestoneRecord,
+        ModelCommitRecord,
+        ModelRecord,
+        ModelSnapshotRecord,
+        PublicLinkRecord,
+        RedoStackRecord,
+        RoleAssignmentRecord,
+        UndoStackRecord,
+    )
+
+    captured: list[tuple[str, type]] = []
+
+    class RecordingSession:
+        async def execute(self, stmt):
+            if isinstance(stmt, Delete):
+                captured.append(("delete", stmt.entity_description["entity"]))
+            elif isinstance(stmt, Update):
+                captured.append(("update", stmt.entity_description["entity"]))
+            return None
+
+    model_id = uuid4()
+    asyncio.run(_delete_model_records(RecordingSession(), [model_id]))
+
+    table_order = [entity for _, entity in captured]
+    delete_order = [entity for op, entity in captured if op == "delete"]
+
+    # Update (NULL snapshot_id) must come before deleting snapshots / commits.
+    assert ("update", ModelCommitRecord) in captured
+    update_idx = captured.index(("update", ModelCommitRecord))
+    assert captured.index(("delete", ModelSnapshotRecord)) > update_idx
+    assert captured.index(("delete", ModelCommitRecord)) > update_idx
+
+    # bim_models must be the very last delete — every dependent table ahead.
+    assert delete_order[-1] is ModelRecord
+
+    # Each dependent that the issue calls out is purged before bim_models.
+    bim_models_idx = table_order.index(ModelRecord)
+    for dependent in (
+        UndoStackRecord,
+        RedoStackRecord,
+        CommentRecord,
+        ModelCommitRecord,
+        ModelSnapshotRecord,
+        ActivityRowRecord,
+        MilestoneRecord,
+        RoleAssignmentRecord,
+        PublicLinkRecord,
+    ):
+        assert dependent in table_order, dependent
+        assert table_order.index(dependent) < bim_models_idx, dependent
