@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440" viewBox="0 0 720 440">
+  <title>MF-render-6 — per-level wall materialKey routed correctly per storey (issue #60)</title>
+  <desc>
+    Before #60: _exterior_walls_bundle hardcoded materialKey="render_light_grey"
+    on every createWall, ignoring the per-level exterior_wall_chain fact's own
+    materialKey. The renderer (PR #55) then had nothing per-storey to paint
+    with, so both EG and DG ended up authored with the same key — house-22's
+    iter-13 capture showed wood-clad on EG and white on DG (the renderer's
+    fallback path picked one finish across both storeys instead of honouring
+    the IR's explicit 2-tone scheme). After: each per-level fact's
+    materialKey is plumbed through to its own floor's walls (EG ->
+    render_light_grey Putz, DG -> cladding_warm_wood Holzschalung) and the
+    legacy top-level exteriorWallChainEG.materialKey is honoured as a
+    back-compat fallback for older IRs.
+  </desc>
+  <style>
+    .label { font: 13px/1.2 sans-serif; fill: #222; text-anchor: middle; }
+    .key   { font: 11px/1.2 monospace; fill: #555; text-anchor: middle; }
+    .title { font: bold 14px/1.2 sans-serif; fill: #111; text-anchor: middle; }
+    .panel { font: bold 13px/1.2 sans-serif; fill: #b00; text-anchor: middle; }
+    .panelok { font: bold 13px/1.2 sans-serif; fill: #060; text-anchor: middle; }
+    .storey { font: 11px/1.2 sans-serif; fill: #333; text-anchor: end; }
+  </style>
+
+  <text class="title" x="360" y="22">MF-render-6 — per-level wall materialKey routing (issue #60)</text>
+
+  <!-- Before panel -->
+  <text class="panel" x="180" y="50">Before — both storeys collapse onto one key</text>
+
+  <!-- ground line -->
+  <line x1="40" y1="280" x2="320" y2="280" stroke="#333" stroke-width="1"/>
+  <!-- DG (wood-clad in iter-13 capture) -->
+  <rect x="60" y="120" width="240" height="70" fill="#a87a44" stroke="#222" stroke-width="1"/>
+  <text class="storey" x="55" y="160">DG</text>
+  <text class="key" x="180" y="158">cladding_warm_wood (wrong)</text>
+  <!-- EG (also wood-clad — collapsed) -->
+  <rect x="60" y="190" width="240" height="90" fill="#a87a44" stroke="#222" stroke-width="1"/>
+  <text class="storey" x="55" y="240">EG</text>
+  <text class="key" x="180" y="240">cladding_warm_wood (wrong)</text>
+  <!-- gable triangle -->
+  <polygon points="60,120 300,120 180,80" fill="#7d3424" stroke="#222" stroke-width="1"/>
+
+  <text class="key" x="180" y="310">driver hardcoded render_light_grey;</text>
+  <text class="key" x="180" y="326">renderer fell back to one finish across both</text>
+
+  <!-- After panel -->
+  <text class="panelok" x="540" y="50">After — per-level fact's materialKey honoured</text>
+
+  <line x1="400" y1="280" x2="680" y2="280" stroke="#333" stroke-width="1"/>
+  <!-- DG (wood) -->
+  <rect x="420" y="120" width="240" height="70" fill="#a87a44" stroke="#222" stroke-width="1"/>
+  <text class="storey" x="415" y="160">DG</text>
+  <text class="key" x="540" y="158">cladding_warm_wood (Holzschalung)</text>
+  <!-- EG (render-grey) -->
+  <rect x="420" y="190" width="240" height="90" fill="#cfd0cd" stroke="#222" stroke-width="1"/>
+  <text class="storey" x="415" y="240">EG</text>
+  <text class="key" x="540" y="240">render_light_grey (Putz)</text>
+  <!-- gable triangle -->
+  <polygon points="420,120 660,120 540,80" fill="#7d3424" stroke="#222" stroke-width="1"/>
+
+  <text class="key" x="540" y="310">fact.materialKey per level -> per-storey createWall;</text>
+  <text class="key" x="540" y="326">legacy exteriorWallChainEG.materialKey kept as fallback</text>
+
+  <!-- Diagnostic line -->
+  <text class="title" x="360" y="380">Fix site: _exterior_walls_bundle in scripts/testhouse_drive.py</text>
+  <text class="key" x="360" y="402">materialKey = fact.get("materialKey")</text>
+  <text class="key" x="360" y="418">or ir["exteriorWallChainEG"].get("materialKey") or "render_light_grey"</text>
+</svg>
