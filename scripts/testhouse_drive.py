@@ -980,6 +980,51 @@ def _facts_by_kind(facts: list[dict], kind: str) -> list[dict]:
     return [f for f in facts if f.get("kind") == kind]
 
 
+def _level_short_from_id(level_id: str) -> str:
+    """Return the slot suffix of a stable level id.
+
+    ``level-KG`` -> ``KG``, ``level-OG`` -> ``OG``, ``level-SB`` -> ``SB``.
+    Falls back to the full id if it doesn't follow the ``level-<slot>``
+    convention, so the caller still has something usable for downstream
+    string interpolation.
+    """
+
+    if not isinstance(level_id, str):
+        return ""
+    # Stable ids look like 'level-XX'. Strip everything up to the LAST
+    # '-' so reader IRs that prefix with 'th-{house}-' still work.
+    return level_id.rsplit("-", 1)[-1] if "-" in level_id else level_id
+
+
+def _levels_to_process(ir: dict) -> list[dict]:
+    """Discover every level the driver should author phases for.
+
+    Returns the raw ``ir["levels"]`` entries (filtered to those that
+    actually carry the required ``id`` + ``name`` fields the
+    ``_IRSchema`` validator enforces). This is the MF-driver-5 fix
+    (#15) — the floor command previously dispatched off a hard-coded
+    ``KG|EG|DG`` slot list, so 4-/5-level houses (KG/EG/OG/DG/SB)
+    silently dropped every room on OG and Spitzboden because no
+    ``--floor OG`` value existed.
+
+    Order is preserved from the IR so per-floor authoring runs in the
+    same KG -> EG -> OG -> DG -> SB sequence the reader emitted them.
+    """
+
+    out: list[dict] = []
+    for lvl in ir.get("levels") or []:
+        if not isinstance(lvl, dict):
+            continue
+        lid = lvl.get("id")
+        lname = lvl.get("name")
+        if not isinstance(lid, str) or not lid:
+            continue
+        if not isinstance(lname, str) or not lname:
+            continue
+        out.append(lvl)
+    return out
+
+
 def _source_evidence_from_facts(facts: list[dict]) -> list[dict]:
     """Distinct (docId, page) pairs across the consumed facts."""
 
@@ -2573,6 +2618,215 @@ def _point_in_polygon(x: float, y: float, polygon: list) -> bool:
     return inside
 
 
+def _author_level_inside_out(
+    *,
+    house: str,
+    iter_n: int,
+    floor_short: str,
+    ir: dict,
+    api_base: str,
+    model_id: str,
+) -> None:
+    """Run the inside-out per-level authoring sequence for a single level.
+
+    Extracted from ``_cmd_floor`` so the ``--floor ALL`` mode can call
+    it once per level discovered by ``_levels_to_process(ir)`` instead
+    of dispatching off a hard-coded ``KG|EG|DG`` slot list. See
+    MF-driver-5 (#15) — 5-level houses (KG/EG/OG/DG/Spitzboden) used
+    to silently drop OG + SB rooms because no ``--floor OG`` value
+    existed.
+
+    Phases authored, in order:
+
+      <floor>-rooms
+      <floor>-partitions
+      <floor>-exterior-walls
+      <floor>-openings
+
+    Each bundle is no-op skipped if the IR has no facts for that
+    phase on this level, matching the prior behaviour.
+    """
+
+    floor = floor_short.upper()
+
+    # rooms
+    rev = _current_revision(api_base=api_base, model_id=model_id)
+    rooms_pair = _rooms_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
+    if rooms_pair is not None:
+        bundle, consumed = rooms_pair
+        bundle.pop("__metaEgHeight", None)
+        evidence = _source_evidence_from_facts(
+            _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
+        )
+        for ev in evidence:
+            ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+        room_names = [
+            str(f.get("text") or "?")
+            for f in _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
+        ]
+        _apply_slice_v2(
+            house=house,
+            iter_n=iter_n,
+            phase=f"{floor.lower()}-rooms",
+            bundle=bundle,
+            api_base=api_base,
+            submitter="testhouse_drive.floor",
+            consumed_fact_ids=consumed,
+            source_evidence=evidence,
+            narrative_input=(
+                f"{len(room_names)} room_outline fact(s) for level-{floor} from the iter-1 "
+                f"reader pass on the {floor} floor plan: {', '.join(room_names) or '(none)'}"
+            ),
+            narrative_reasoning=(
+                "Inside-out: place room outlines FIRST so partitions can later derive from "
+                "shared edges and openings have hosts. Each createRoomOutline takes the "
+                f"polygon vertices the reader extracted from the {floor} plan and tags the "
+                "room with its source-named function (Wohnzimmer, Küche, ...). No walls are "
+                "authored at this step — just the topology."
+            ),
+            narrative_outcome=(
+                f"{len(consumed)} room outlines committed at level-{floor}. Rooms will be "
+                "flagged room_unenclosed by Advisor until partitions + exterior walls land."
+            ),
+        )
+
+    # interior partitions — between rooms, before exterior walls
+    # so the inside-out order holds and interior doors have hosts.
+    rev = _current_revision(api_base=api_base, model_id=model_id)
+    part_pair = _partitions_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
+    if part_pair is not None:
+        bundle, consumed = part_pair
+        evidence = _source_evidence_from_facts(
+            _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "interior_partition")
+        )
+        for ev in evidence:
+            ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+        _apply_slice_v2(
+            house=house,
+            iter_n=iter_n,
+            phase=f"{floor.lower()}-partitions",
+            bundle=bundle,
+            api_base=api_base,
+            submitter="testhouse_drive.floor",
+            consumed_fact_ids=consumed,
+            source_evidence=evidence,
+            narrative_input=(
+                f"{len(consumed)} interior_partition fact(s) for level-{floor} — line "
+                "segments between adjacent rooms identified by the reader."
+            ),
+            narrative_reasoning=(
+                "One createWall per partition fact at 175 mm thickness (typical interior "
+                "Trockenwand). These walls give interior doors something to host on in the "
+                "openings sub-phase that follows exterior walls."
+            ),
+            narrative_outcome=(f"{len(consumed)} partition walls committed at level-{floor}."),
+        )
+
+    # exterior walls + slab
+    rev = _current_revision(api_base=api_base, model_id=model_id)
+    ext_pair = _exterior_walls_bundle(
+        ir=ir, parent_revision=rev, house=house, level_short=floor
+    )
+    if ext_pair is not None:
+        bundle, consumed = ext_pair
+        evidence = _source_evidence_from_facts(
+            _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "exterior_wall_chain")
+        )
+        for ev in evidence:
+            ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+        _apply_slice_v2(
+            house=house,
+            iter_n=iter_n,
+            phase=f"{floor.lower()}-exterior-walls",
+            bundle=bundle,
+            api_base=api_base,
+            submitter="testhouse_drive.floor",
+            consumed_fact_ids=consumed,
+            source_evidence=evidence,
+            narrative_input=(
+                f"The exterior_wall_chain fact for level-{floor} — the closed polygon that "
+                "defines the floor's perimeter."
+            ),
+            narrative_reasoning=(
+                "One createWall per polygon edge at 365 mm thickness (typical exterior "
+                "Außenwand), plus one createFloor whose boundary follows the same polygon "
+                "as the floor slab. The trailing-duplicate vertex of the closed-loop "
+                "polygon is trimmed so the last wall isn't zero-length."
+            ),
+            narrative_outcome=(
+                "4 exterior wall segments + 1 slab committed; the floor now has an enclosed "
+                "perimeter the openings phase can host windows against."
+            ),
+        )
+
+    # openings: doors + windows hosted on the exterior walls we just
+    # placed. Re-snapshot first so we see the live wall ids.
+    snap_after_ext = _snapshot(api_base=api_base, model_id=model_id)
+    rev = int(snap_after_ext.get("revision") or 1)
+    op_triple = _openings_bundle(
+        ir=ir,
+        parent_revision=rev,
+        house=house,
+        level_short=floor,
+        snapshot=snap_after_ext,
+    )
+    if op_triple is not None:
+        bundle, consumed, skipped = op_triple
+        evidence = _source_evidence_from_facts(
+            _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
+            + _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
+        )
+        for ev in evidence:
+            ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
+        door_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
+        window_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
+        placed_doors = sum(
+            1 for c in bundle.get("commands") or [] if c.get("type") == "insertDoorOnWall"
+        )
+        placed_windows = sum(
+            1 for c in bundle.get("commands") or [] if c.get("type") == "insertWindowOnWall"
+        )
+        _apply_slice_v2(
+            house=house,
+            iter_n=iter_n,
+            phase=f"{floor.lower()}-openings",
+            bundle=bundle,
+            api_base=api_base,
+            submitter="testhouse_drive.floor",
+            consumed_fact_ids=consumed,
+            source_evidence=evidence,
+            narrative_input=(
+                f"{len(door_facts)} door fact(s) + {len(window_facts)} window fact(s) for "
+                f"level-{floor}. Each fact carries a vertexMm position the reader extracted "
+                "from the floor plan."
+            ),
+            narrative_reasoning=(
+                "For every opening fact: find the nearest live wall on the floor "
+                "(exterior chain + interior partitions both qualify), compute the parameter "
+                "alongT clamped so the opening fits with 100 mm endpoint margin, skip if "
+                "the host is too short or too far away. Doors default 800 mm wide; windows "
+                "1200 mm wide with sill 900 mm. Window height capped to wall_height − "
+                "200 mm header reserve so the constructability lintel rule passes."
+            ),
+            narrative_outcome=(
+                f"{placed_doors} door(s) + {placed_windows} window(s) hosted; "
+                f"{len(skipped)} opening(s) skipped (typically interior doors whose nearest "
+                "wall is beyond the 1000 mm hosting threshold)."
+            ),
+        )
+        if skipped:
+            logger.info(
+                "testhouse_iter.openings_skipped",
+                extra={
+                    "house": house,
+                    "iter": iter_n,
+                    "phase": f"{floor.lower()}-openings",
+                    "skipped_count": len(skipped),
+                    "skipped": skipped,
+                },
+            )
+
+
 def _cmd_floor(args: argparse.Namespace) -> int:
     """v2 per-floor inside-out authoring loop for one floor of one house.
 
@@ -2595,7 +2849,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
 
     house = args.house
     iter_n = int(args.iter)
-    floor = args.floor.upper()  # TOPOLOGY | KG | EG | DG | ROOF
+    floor = args.floor.upper()  # TOPOLOGY | ALL | KG | EG | DG | ROOF
     ir = _load_and_validate_ir(_ir_path(house))
     api_base = args.api_base
 
@@ -2695,184 +2949,36 @@ def _cmd_floor(args: argparse.Namespace) -> int:
                     submitter="testhouse_drive.floor",
                 )
 
-    # Per-floor sub-phases (skip ROOF — handled separately below).
-    if floor in {"KG", "EG", "DG"}:
-        # rooms
-        rev = _current_revision(api_base=api_base, model_id=model_id)
-        rooms_pair = _rooms_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
-        if rooms_pair is not None:
-            bundle, consumed = rooms_pair
-            bundle.pop("__metaEgHeight", None)
-            evidence = _source_evidence_from_facts(
-                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
-            )
-            for ev in evidence:
-                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
-            room_names = [
-                str(f.get("text") or "?")
-                for f in _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "room_outline")
-            ]
-            _apply_slice_v2(
+    # Per-floor sub-phases (skip ROOF / TOPOLOGY — handled separately).
+    #
+    # MF-driver-5 (#15): ``ALL`` discovers every level in ``ir["levels"]``
+    # and authors them in source order — the right path for 4-/5-level
+    # houses (KG/EG/OG/DG/Spitzboden) whose OG + SB rooms used to drop
+    # silently because no ``--floor OG`` value existed. The named-slot
+    # values (KG/EG/DG) remain for backwards compatibility and just
+    # delegate to the same per-level helper for that single slot.
+    if floor == "ALL":
+        for lvl in _levels_to_process(ir):
+            slot = _level_short_from_id(lvl["id"])
+            if not slot:
+                continue
+            _author_level_inside_out(
                 house=house,
                 iter_n=iter_n,
-                phase=f"{floor.lower()}-rooms",
-                bundle=bundle,
+                floor_short=slot,
+                ir=ir,
                 api_base=api_base,
-                submitter="testhouse_drive.floor",
-                consumed_fact_ids=consumed,
-                source_evidence=evidence,
-                narrative_input=(
-                    f"{len(room_names)} room_outline fact(s) for level-{floor} from the iter-1 "
-                    f"reader pass on the {floor} floor plan: {', '.join(room_names) or '(none)'}"
-                ),
-                narrative_reasoning=(
-                    "Inside-out: place room outlines FIRST so partitions can later derive from "
-                    "shared edges and openings have hosts. Each createRoomOutline takes the "
-                    f"polygon vertices the reader extracted from the {floor} plan and tags the "
-                    "room with its source-named function (Wohnzimmer, Küche, ...). No walls are "
-                    "authored at this step — just the topology."
-                ),
-                narrative_outcome=(
-                    f"{len(consumed)} room outlines committed at level-{floor}. Rooms will be "
-                    "flagged room_unenclosed by Advisor until partitions + exterior walls land."
-                ),
+                model_id=model_id,
             )
-
-        # interior partitions — between rooms, before exterior walls
-        # so the inside-out order holds and interior doors have hosts.
-        rev = _current_revision(api_base=api_base, model_id=model_id)
-        part_pair = _partitions_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
-        if part_pair is not None:
-            bundle, consumed = part_pair
-            evidence = _source_evidence_from_facts(
-                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "interior_partition")
-            )
-            for ev in evidence:
-                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
-            _apply_slice_v2(
-                house=house,
-                iter_n=iter_n,
-                phase=f"{floor.lower()}-partitions",
-                bundle=bundle,
-                api_base=api_base,
-                submitter="testhouse_drive.floor",
-                consumed_fact_ids=consumed,
-                source_evidence=evidence,
-                narrative_input=(
-                    f"{len(consumed)} interior_partition fact(s) for level-{floor} — line "
-                    "segments between adjacent rooms identified by the reader."
-                ),
-                narrative_reasoning=(
-                    "One createWall per partition fact at 175 mm thickness (typical interior "
-                    "Trockenwand). These walls give interior doors something to host on in the "
-                    "openings sub-phase that follows exterior walls."
-                ),
-                narrative_outcome=(f"{len(consumed)} partition walls committed at level-{floor}."),
-            )
-
-        # exterior walls + slab
-        rev = _current_revision(api_base=api_base, model_id=model_id)
-        ext_pair = _exterior_walls_bundle(
-            ir=ir, parent_revision=rev, house=house, level_short=floor
-        )
-        if ext_pair is not None:
-            bundle, consumed = ext_pair
-            evidence = _source_evidence_from_facts(
-                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "exterior_wall_chain")
-            )
-            for ev in evidence:
-                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
-            _apply_slice_v2(
-                house=house,
-                iter_n=iter_n,
-                phase=f"{floor.lower()}-exterior-walls",
-                bundle=bundle,
-                api_base=api_base,
-                submitter="testhouse_drive.floor",
-                consumed_fact_ids=consumed,
-                source_evidence=evidence,
-                narrative_input=(
-                    f"The exterior_wall_chain fact for level-{floor} — the closed polygon that "
-                    "defines the floor's perimeter."
-                ),
-                narrative_reasoning=(
-                    "One createWall per polygon edge at 365 mm thickness (typical exterior "
-                    "Außenwand), plus one createFloor whose boundary follows the same polygon "
-                    "as the floor slab. The trailing-duplicate vertex of the closed-loop "
-                    "polygon is trimmed so the last wall isn't zero-length."
-                ),
-                narrative_outcome=(
-                    "4 exterior wall segments + 1 slab committed; the floor now has an enclosed "
-                    "perimeter the openings phase can host windows against."
-                ),
-            )
-
-        # openings: doors + windows hosted on the exterior walls we just
-        # placed. Re-snapshot first so we see the live wall ids.
-        snap_after_ext = _snapshot(api_base=api_base, model_id=model_id)
-        rev = int(snap_after_ext.get("revision") or 1)
-        op_triple = _openings_bundle(
-            ir=ir,
-            parent_revision=rev,
+    elif floor in {"KG", "EG", "DG"}:
+        _author_level_inside_out(
             house=house,
-            level_short=floor,
-            snapshot=snap_after_ext,
+            iter_n=iter_n,
+            floor_short=floor,
+            ir=ir,
+            api_base=api_base,
+            model_id=model_id,
         )
-        if op_triple is not None:
-            bundle, consumed, skipped = op_triple
-            evidence = _source_evidence_from_facts(
-                _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
-                + _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
-            )
-            for ev in evidence:
-                ev["renderedPath"] = ev["renderedPath"].replace("house-/", f"house-{house}/")
-            door_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "door")
-            window_facts = _facts_by_kind(_facts_for_level(ir, f"level-{floor}"), "window")
-            placed_doors = sum(
-                1 for c in bundle.get("commands") or [] if c.get("type") == "insertDoorOnWall"
-            )
-            placed_windows = sum(
-                1 for c in bundle.get("commands") or [] if c.get("type") == "insertWindowOnWall"
-            )
-            _apply_slice_v2(
-                house=house,
-                iter_n=iter_n,
-                phase=f"{floor.lower()}-openings",
-                bundle=bundle,
-                api_base=api_base,
-                submitter="testhouse_drive.floor",
-                consumed_fact_ids=consumed,
-                source_evidence=evidence,
-                narrative_input=(
-                    f"{len(door_facts)} door fact(s) + {len(window_facts)} window fact(s) for "
-                    f"level-{floor}. Each fact carries a vertexMm position the reader extracted "
-                    "from the floor plan."
-                ),
-                narrative_reasoning=(
-                    "For every opening fact: find the nearest live wall on the floor "
-                    "(exterior chain + interior partitions both qualify), compute the parameter "
-                    "alongT clamped so the opening fits with 100 mm endpoint margin, skip if "
-                    "the host is too short or too far away. Doors default 800 mm wide; windows "
-                    "1200 mm wide with sill 900 mm. Window height capped to wall_height − "
-                    "200 mm header reserve so the constructability lintel rule passes."
-                ),
-                narrative_outcome=(
-                    f"{placed_doors} door(s) + {placed_windows} window(s) hosted; "
-                    f"{len(skipped)} opening(s) skipped (typically interior doors whose nearest "
-                    "wall is beyond the 1000 mm hosting threshold)."
-                ),
-            )
-            if skipped:
-                logger.info(
-                    "testhouse_iter.openings_skipped",
-                    extra={
-                        "house": house,
-                        "iter": iter_n,
-                        "phase": f"{floor.lower()}-openings",
-                        "skipped_count": len(skipped),
-                        "skipped": skipped,
-                    },
-                )
 
     # ROOF: single roof slice on top of existing DG extent.
     if floor == "ROOF":
@@ -3924,7 +4030,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     fl.add_argument("--house", required=True, choices=HOUSES)
     fl.add_argument("--iter", type=int, required=True)
-    fl.add_argument("--floor", required=True, choices=("TOPOLOGY", "KG", "EG", "DG", "ROOF"))
+    fl.add_argument(
+        "--floor",
+        required=True,
+        choices=("TOPOLOGY", "ALL", "KG", "EG", "DG", "ROOF"),
+        help=(
+            "Phase scope: TOPOLOGY (levels + site), ALL (every level in "
+            "ir['levels'] — preferred for 4-/5-level houses, see #15), "
+            "KG|EG|DG (single-slot legacy entry points), ROOF "
+            "(roof + dormers + stairs + chimneys + balconies)."
+        ),
+    )
     fl.add_argument(
         "--skip-per-iter-capture",
         action="store_true",
