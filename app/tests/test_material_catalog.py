@@ -48,6 +48,9 @@ REQUIRED_KEYS = (
     "metal_standing_seam_dark_grey",
     "metal_standing_seam_zinc",
     "metal_standing_seam_copper",
+    # Log-course (Blockhaus / log construction) — issue #42
+    "log_round_natural",
+    "log_square_natural",
 )
 
 
@@ -115,3 +118,21 @@ def test_material_display_name_lookup() -> None:
     assert material_display_name("metal_standing_seam_copper") == "Standing-seam metal — copper"
     assert material_display_name("nonexistent") == ""
     assert material_display_name(None) == ""
+
+
+def test_log_course_blockhaus_variants() -> None:
+    """MF-mat-1 / issue #42 — Blockhaus log-course materials are dedicated
+    timber entries distinct from `timber_cladding` (which is a vertical
+    Stülpschalung default and doesn't capture horizontal log courses).
+    """
+    round_log = resolve_material("log_round_natural")
+    assert round_log is not None
+    assert round_log.base_color == "#8a6a45"
+    assert round_log.category == "timber"
+    assert round_log.display_name == "Round log (natural)"
+
+    square_log = resolve_material("log_square_natural")
+    assert square_log is not None
+    assert square_log.base_color == "#7c5b3b"
+    assert square_log.category == "timber"
+    assert square_log.display_name == "Square log (natural)"

@@ -357,6 +357,23 @@ _MATERIALS: tuple[MaterialPbrSpec, ...] = (
         category="metal_roof",
         display_name="Standing-seam metal — copper",
     ),
+    # ── MAT-01 log-course (Blockhaus / log construction) variants ────
+    MaterialPbrSpec(
+        key="log_round_natural",
+        base_color="#8a6a45",
+        roughness=0.95,
+        metalness=0.0,
+        category="timber",
+        display_name="Round log (natural)",
+    ),
+    MaterialPbrSpec(
+        key="log_square_natural",
+        base_color="#7c5b3b",
+        roughness=0.92,
+        metalness=0.0,
+        category="timber",
+        display_name="Square log (natural)",
+    ),
     # ── KRN-09 placeholder ───────────────────────────────────────────
     MaterialPbrSpec(
         key="placeholder_unloaded",
