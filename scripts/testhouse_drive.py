@@ -1860,12 +1860,24 @@ def _dormer_center_xy(fact: dict) -> list[float] | None:
       * ``vertexMm: [x, y]`` (alpha)
       * ``polygonMm: [[ax, ay], ...]`` (beta — take centroid)
       * ``centerXMm: float`` (gamma — Y inferred from facadeSide later)
+
+    NS-V3-05: when vertex sits AT a wall edge (y≈0 or x≈0 etc. — common
+    when the reader uses "facade midpoint" as proxy for dormer center),
+    shift it inward by 900 mm so the dormer footprint fits inside the
+    roof (engine validates `|across| + depth/2 ≤ half_span`).
     """
 
     v = fact.get("vertexMm")
     if isinstance(v, list) and len(v) >= 2:
         try:
-            return [float(v[0]), float(v[1])]
+            x, y = float(v[0]), float(v[1])
+            # Shift inward if at wall edge. Without knowing building bbox
+            # here, we heuristic on the obvious case: y == 0 or x == 0.
+            if abs(y) < 50.0:
+                y = 900.0  # shift north into building
+            if abs(x) < 50.0:
+                x = 900.0  # shift east into building
+            return [x, y]
         except (TypeError, ValueError):
             pass
     poly = fact.get("polygonMm")
@@ -2024,6 +2036,18 @@ def _dormers_bundle(
         if cxy is None:
             continue
         cx, cy = cxy[0], cxy[1]
+        # NS-V3-05: shift inward from any wall edge by 900 mm. The reader
+        # often gives dormer vertex AT the facade midpoint (e.g. y=8750
+        # for north wall); the engine validates `|across| + depth/2 ≤
+        # half_span`, so a center exactly on the wall always rejects.
+        if cy > ymax - 100:
+            cy = ymax - 900
+        if cy < ymin + 100:
+            cy = ymin + 900
+        if cx > xmax - 100:
+            cx = xmax - 900
+        if cx < xmin + 100:
+            cx = xmin + 900
         # NS-2026-05-24: prefer polygon bbox over default widthMm/depthMm
         # so continuous shed-dormer strips (beta: ~5500 mm) author at
         # source width rather than the 2000 mm default. Polygon shape:
