@@ -796,9 +796,18 @@ def _ensure_model(*, house: str, api_base: str) -> str:
 def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dict:
     """Build a CMD-V3-01 bundle for iter-3's exterior shell.
 
-    Authors the three storey levels, a closed EG wall loop, an EG slab
-    floor, and a main gable roof — enough to satisfy iter-3's
+    Authors one ``createLevel`` per entry in ``ir["levels"]`` (KG/EG/DG
+    for alpha 3-level houses, KG/EG/OG/DG for 4-level houses, and
+    KG/EG/OG/DG/SB for 5-level houses like h23), a closed EG wall loop,
+    an EG slab floor, and a main gable roof — enough to satisfy iter-3's
     ≥ 4/10 exterior bar while keeping the command list short.
+
+    MF-driver-15 (#79): the per-level emission previously dispatched off
+    a hard-coded ``{KG, EG, DG}`` dict, so any IR carrying an ``OG`` /
+    ``SB`` level (h22, h23 — legal per the PR #35 normalizer) crashed
+    with ``KeyError`` and blocked the driver from authoring beyond EG.
+    This mirrors the dynamic ``_levels_to_process`` discovery that PR
+    #34 introduced for the per-level rooms phase.
     """
 
     house = ir["house"]
@@ -806,16 +815,32 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     thickness = float(ir["exteriorWallChainEG"]["wallThicknessMM"])
     eg_height = next((_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"] == "level-EG"), 2700)
 
-    level_kg = f"th-{house}-i{iter_n}-level-KG"
-    level_eg = f"th-{house}-i{iter_n}-level-EG"
-    level_dg = f"th-{house}-i{iter_n}-level-DG"
+    # Dynamic id construction: one stable id per level the IR declares,
+    # keyed by the canonical short slot (``level-OG`` -> ``OG``).
+    levels = _levels_to_process(ir)
+    level_id_by_short: dict[str, str] = {
+        _level_short_from_id(
+            lvl["id"]
+        ): f"th-{house}-i{iter_n}-level-{_level_short_from_id(lvl['id'])}"
+        for lvl in levels
+    }
+    level_eg = level_id_by_short.get("EG", f"th-{house}-i{iter_n}-level-EG")
+    # Roof anchors at DG when the IR has one (the alpha 3-level + 4-level
+    # KG/EG/OG/DG layouts). For h22 (KG/EG/OG-under-pitched-roof) and
+    # similar layouts without DG, fall back to the topmost authored level
+    # in IR order so the roof still anchors against a real level instead
+    # of a stub id.
+    roof_ref_level = level_id_by_short.get("DG") or (
+        level_id_by_short[_level_short_from_id(levels[-1]["id"])] if levels else level_eg
+    )
 
     commands: list[dict] = []
-    for lvl in ir["levels"]:
+    for lvl in levels:
+        short = _level_short_from_id(lvl["id"])
         commands.append(
             {
                 "type": "createLevel",
-                "id": {"KG": level_kg, "EG": level_eg, "DG": level_dg}[lvl["id"].split("-")[-1]],
+                "id": level_id_by_short[short],
                 "name": lvl["name"],
                 "elevationMm": _lvl_elevation_mm(lvl),
             }
@@ -853,7 +878,7 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
             "type": "createRoof",
             "id": f"th-{house}-i{iter_n}-main-roof",
             "name": "Main gable roof",
-            "referenceLevelId": level_dg,
+            "referenceLevelId": roof_ref_level,
             "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
             "overhangMm": 400,
             "slopeDeg": 35,
@@ -906,9 +931,7 @@ def _filter_existing_ids(*, bundle: dict, model_id: str, api_base: str) -> dict:
     default size/shape of an already-authored element kind.
     """
     try:
-        snap = httpx.get(
-            f"{api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0
-        ).json()
+        snap = httpx.get(f"{api_base.rstrip('/')}/models/{model_id}/snapshot", timeout=30.0).json()
     except Exception:  # noqa: BLE001
         return bundle
     existing: set[str] = {
@@ -919,9 +942,7 @@ def _filter_existing_ids(*, bundle: dict, model_id: str, api_base: str) -> dict:
     if not existing:
         return bundle
     force_rebuild = {
-        s.strip()
-        for s in os.environ.get("BIM_AI_FORCE_REBUILD_TYPES", "").split(",")
-        if s.strip()
+        s.strip() for s in os.environ.get("BIM_AI_FORCE_REBUILD_TYPES", "").split(",") if s.strip()
     }
     cmds = bundle.get("commands") or []
     filtered: list[dict] = []
@@ -996,9 +1017,14 @@ def _apply_slice(
                 extra={"house": house, "iter": iter_n, "phase": phase, "category": "skip"},
             )
             return {
-                "house": house, "iter": iter_n, "phase": phase,
-                "model_id": model_id, "ok": True, "skipped": True,
-                "executionState": "skipped_all_existing", "elapsed_ms": 0,
+                "house": house,
+                "iter": iter_n,
+                "phase": phase,
+                "model_id": model_id,
+                "ok": True,
+                "skipped": True,
+                "executionState": "skipped_all_existing",
+                "elapsed_ms": 0,
             }
         payload = {
             "phase": {"phaseId": phase},
@@ -1403,9 +1429,9 @@ def _topology_bundle(
     # Per-house slope direction + magnitude:
     slope_specs = {
         # (direction_dx, direction_dy, peak_mm) — building center is at z=0
-        "alpha": (0.0, 0.0, 0.0),   # alpha source roughly flat; minor variation
-        "beta":  (-1.0, 0.5, 3800), # hillside: high east, low west; source shows steep drop
-        "gamma": (0.0, -1.0, 1000), # gamma source shows modest north→south slope
+        "alpha": (0.0, 0.0, 0.0),  # alpha source roughly flat; minor variation
+        "beta": (-1.0, 0.5, 3800),  # hillside: high east, low west; source shows steep drop
+        "gamma": (0.0, -1.0, 1000),  # gamma source shows modest north→south slope
     }
     sdx, sdy, peak_mm = slope_specs.get(house, (0.0, 0.0, 0.0))
     height_samples: list[dict] = []
@@ -1415,9 +1441,15 @@ def _topology_bundle(
         cy = (ymin + ymax) / 2
         # Length along slope direction at parcel extent
         for px, py in [
-            (xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax),  # corners
-            (cx, cy),                                                # center
-            (0, 0), (xmax - margin, 0), (xmax - margin, ymax - margin), (0, ymax - margin),  # building corners
+            (xmin, ymin),
+            (xmax, ymin),
+            (xmax, ymax),
+            (xmin, ymax),  # corners
+            (cx, cy),  # center
+            (0, 0),
+            (xmax - margin, 0),
+            (xmax - margin, ymax - margin),
+            (0, ymax - margin),  # building corners
         ]:
             # Project (px-cx, py-cy) onto slope direction unit vector
             slope_norm = (sdx * sdx + sdy * sdy) ** 0.5 or 1.0
@@ -1472,7 +1504,7 @@ def _topology_bundle(
     if len(sample_zs) >= 2:
         mean_z = sum(sample_zs) / len(sample_zs)
         var_z = sum((z - mean_z) ** 2 for z in sample_zs) / len(sample_zs)
-        stddev_z = var_z ** 0.5
+        stddev_z = var_z**0.5
     else:
         stddev_z = 0.0
     is_hillside = stddev_z > HILLSIDE_HEIGHT_SAMPLE_STDDEV_MM
@@ -1490,11 +1522,7 @@ def _topology_bundle(
     # explicit override so the engine's nearest-sampling of the host's
     # heightSamples drives the tilted top face.
     eg_elevation_mm = next(
-        (
-            _lvl_elevation_mm(lvl)
-            for lvl in (ir.get("levels") or [])
-            if lvl.get("id") == "level-EG"
-        ),
+        (_lvl_elevation_mm(lvl) for lvl in (ir.get("levels") or []) if lvl.get("id") == "level-EG"),
         0.0,
     )
     below_grade_count = 0
@@ -1564,8 +1592,7 @@ def _topology_bundle(
                     "contestable": True,
                     "evidence": (
                         "iter-1 EG exterior_wall_chain expanded by 5 m on every side; "
-                        "surface at grade (0 mm), solid extends 1500 mm down."
-                        + excavation_note
+                        "surface at grade (0 mm), solid extends 1500 mm down." + excavation_note
                     ),
                 }
             ],
@@ -2029,9 +2056,7 @@ def _host_on_nearest_wall(
     ``max_distance_mm``.
     """
 
-    wall, _t, _d, _reason = _resolve_opening_host(
-        vertex, walls, threshold_mm=max_distance_mm
-    )
+    wall, _t, _d, _reason = _resolve_opening_host(vertex, walls, threshold_mm=max_distance_mm)
     if wall is None:
         return (None, 0.0)
     return (wall, _t)
@@ -2084,10 +2109,7 @@ def _resolve_opening_host(
     if wall is None:
         return (None, 0.0, float("inf"), "no_walls_at_level")
     if d > threshold_mm:
-        reason = (
-            f"nearest_wall_distance_{int(round(d))}mm > "
-            f"threshold_{int(round(threshold_mm))}mm"
-        )
+        reason = f"nearest_wall_distance_{int(round(d))}mm > threshold_{int(round(threshold_mm))}mm"
         return (None, 0.0, d, reason)
     return (wall, t, d, None)
 
@@ -2116,7 +2138,9 @@ def _openings_bundle(
     # NS-10: opening sill/height should size against the AUTHORED wall
     # height (which NS-8 may have shrunk for Kniestock), not the level's
     # floor-to-floor. Pull the actual ext-wall height from the snapshot.
-    ext_wall_heights = [float(w.get("heightMm") or 0) for w in walls if "ext-wall" in (w.get("id","") or "")]
+    ext_wall_heights = [
+        float(w.get("heightMm") or 0) for w in walls if "ext-wall" in (w.get("id", "") or "")
+    ]
     actual_wall_h = min(ext_wall_heights) if ext_wall_heights else None
 
     facts = _facts_for_level(ir, f"level-{level_short}")
@@ -2182,9 +2206,7 @@ def _openings_bundle(
             # wall is offset by thicknessMm/2.
             nearest_id: str | None = None
             if walls:
-                _w, _t, _d, _r = _resolve_opening_host(
-                    vertex, walls, threshold_mm=float("inf")
-                )
+                _w, _t, _d, _r = _resolve_opening_host(vertex, walls, threshold_mm=float("inf"))
                 if _w is not None:
                     nearest_id = str(_w.get("id"))
             skipped.append(
@@ -2319,7 +2341,7 @@ def _openings_bundle(
             synth = {
                 **ew,
                 "levelId": "level-DG",
-                "factId": f"{ew.get('factId','')}-mirror-dg",
+                "factId": f"{ew.get('factId', '')}-mirror-dg",
             }
             before = len(commands)
             _try_host(
@@ -2530,7 +2552,12 @@ def _stairs_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict,
             {
                 "type": "createStair",
                 "id": f"th-{house}-stair-{_slugify(f.get('factId'))}",
-                "name": (str(f.get("text") or f"Stair {from_lvl_id.split('-')[-1]}↔{to_lvl_id.split('-')[-1]}"))[:80],
+                "name": (
+                    str(
+                        f.get("text")
+                        or f"Stair {from_lvl_id.split('-')[-1]}↔{to_lvl_id.split('-')[-1]}"
+                    )
+                )[:80],
                 "baseLevelId": base_level_id,
                 "topLevelId": top_level_id,
                 "runStartMm": {"xMm": float(sp[0]), "yMm": float(sp[1])},
@@ -2788,8 +2815,14 @@ def _dormers_bundle(
         poly_w, poly_d = None, None
         poly = f.get("polygonMm") or f.get("polygonMM")
         if isinstance(poly, list) and len(poly) >= 3:
-            pxs = [float(p[0]) if isinstance(p, list) else float((p or {}).get("xMm") or 0) for p in poly]
-            pys = [float(p[1]) if isinstance(p, list) else float((p or {}).get("yMm") or 0) for p in poly]
+            pxs = [
+                float(p[0]) if isinstance(p, list) else float((p or {}).get("xMm") or 0)
+                for p in poly
+            ]
+            pys = [
+                float(p[1]) if isinstance(p, list) else float((p or {}).get("yMm") or 0)
+                for p in poly
+            ]
             if pxs and pys:
                 poly_w = max(pxs) - min(pxs)
                 poly_d = max(pys) - min(pys)
@@ -2855,9 +2888,9 @@ def _dormers_bundle(
             pitch_deg = float(f.get("dormerRoofPitchDeg") or 35.0)
             # ridgeHeightMm required when gable: wall + ~half-width × tan(pitch)
             import math as _math
+
             ridge_h = float(
-                f.get("ridgeHeightMm")
-                or wall_h + (width / 2) * _math.tan(_math.radians(pitch_deg))
+                f.get("ridgeHeightMm") or wall_h + (width / 2) * _math.tan(_math.radians(pitch_deg))
             )
         else:
             dormer_kind = str(f.get("dormerRoofKind") or "shed")
@@ -2943,9 +2976,7 @@ def _roof_bundle(*, ir: dict, parent_revision: int, house: str) -> tuple[dict, l
     # void of the inner corner). Falls back to the historical bbox
     # rectify path for anything else >4 vertices.
     roof_geometry_mode = "gable_pitched_rectangle"
-    if len(poly) == 6 and footprint_is_valid_l_shape_mm(
-        [(float(p[0]), float(p[1])) for p in poly]
-    ):
+    if len(poly) == 6 and footprint_is_valid_l_shape_mm([(float(p[0]), float(p[1])) for p in poly]):
         roof_geometry_mode = "gable_pitched_l_shape"
     elif len(poly) > 4:
         # NS-V3-06: rectify >4-vertex footprint to its bounding box for
@@ -3265,9 +3296,7 @@ def _author_level_inside_out(
 
     # exterior walls + slab
     rev = _current_revision(api_base=api_base, model_id=model_id)
-    ext_pair = _exterior_walls_bundle(
-        ir=ir, parent_revision=rev, house=house, level_short=floor
-    )
+    ext_pair = _exterior_walls_bundle(ir=ir, parent_revision=rev, house=house, level_short=floor)
     if ext_pair is not None:
         bundle, consumed = ext_pair
         evidence = _source_evidence_from_facts(
@@ -3668,9 +3697,7 @@ def _cmd_floor(args: argparse.Namespace) -> int:
         # NS-V3-03 balconies — author after chimneys; needs DG ext walls.
         rev = _current_revision(api_base=api_base, model_id=model_id)
         snap_now = _snapshot(api_base=api_base, model_id=model_id)
-        balcony_pair = _balconies_bundle(
-            ir=ir, parent_revision=rev, house=house, snapshot=snap_now
-        )
+        balcony_pair = _balconies_bundle(ir=ir, parent_revision=rev, house=house, snapshot=snap_now)
         if balcony_pair is not None:
             bundle, consumed = balcony_pair
             try:
@@ -3881,9 +3908,14 @@ def _apply_slice_v2(
                 extra={"house": house, "iter": iter_n, "phase": phase, "category": "skip"},
             )
             return {
-                "house": house, "iter": iter_n, "phase": phase,
-                "model_id": model_id, "ok": True, "skipped": True,
-                "executionState": "skipped_all_existing", "elapsed_ms": 0,
+                "house": house,
+                "iter": iter_n,
+                "phase": phase,
+                "model_id": model_id,
+                "ok": True,
+                "skipped": True,
+                "executionState": "skipped_all_existing",
+                "elapsed_ms": 0,
             }
         payload = {
             "phase": {"phaseId": phase},
