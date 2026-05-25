@@ -39,6 +39,42 @@ make verify
 [`AGENTS.md`](./AGENTS.md) lists the exact CI commands and pinned tool
 versions (Node, pnpm, Python, `uv`).
 
+## MCP server
+
+bim-ai ships a stdio MCP server at [`mcp_server.py`](./mcp_server.py). At
+startup it enumerates the full ToolDescriptor catalog (~141 entries —
+`apply-bundle`, `compare-snapshots`, `author.stair_by_runs`, and the rest
+of the registry defined under `app/bim_ai/api/`) and registers one MCP
+tool per descriptor. Each invocation proxies to the matching REST
+endpoint on bim-ai's `:28500` surface, so the MCP server is a transport
+shim and not a re-implementation — the REST API stays canonical and any
+new descriptor automatically shows up as an MCP tool.
+
+The server requires bim-ai's REST stack to be running. Start it with
+`make dev-forwarded` (API on `:28500`) before connecting any MCP client.
+
+To register in Claude Code, add to the MCP config:
+
+```json
+{
+  "mcpServers": {
+    "bim-ai": {
+      "command": "uv",
+      "args": ["run", "--project", "/home/jhoetter/repos/bim-ai/app", "python", "/home/jhoetter/repos/bim-ai/mcp_server.py"]
+    }
+  }
+}
+```
+
+Useful env vars: `BIM_AI_URL` overrides the proxy target (default
+`http://127.0.0.1:28500`); `BIM_AI_MCP_TIMEOUT` sets the per-request
+httpx timeout in seconds (default `600`).
+
+For standalone debugging the [`Makefile`](./Makefile) exposes a `make
+mcp` target that runs the server over stdio against the same `uv`
+project, useful for piping `tools/list` / `tools/call` JSON-RPC frames
+by hand.
+
 ## Where to look
 
 - [`AGENTS.md`](./AGENTS.md) — operational guide for any agent or contributor.
