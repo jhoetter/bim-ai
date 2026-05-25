@@ -1,5 +1,5 @@
 {
-  "digest": "5b974a00ab37773987740e90f5496d7762d280e74867d22fa28d264dcb51bef0",
+  "digest": "8c079a99ad2222cdcb357dc84e2479c6a1cc9a752904be9bf9de3b5b7256e93d",
   "shape": {
     "paths": {
       "/api/bootstrap": {
@@ -86,12 +86,6 @@
       "/api/models/{model_id}/activity/{row_id}/restore": {
         "post": {
           "operationId": "restore_activity_row_api_models__model_id__activity__row_id__restore_post"
-        }
-      },
-      "/api/models/{model_id}/agent-iterate": {
-        "post": {
-          "operationId": "agent_iterate_api_models__model_id__agent_iterate_post",
-          "requestModel": "AgentIterateRequest"
         }
       },
       "/api/models/{model_id}/architecture/query": {
@@ -333,6 +327,12 @@
         "post": {
           "operationId": "import_bcf_topics_json_api_models__model_id__imports_bcf_topics_json_post",
           "requestModel": "BcfTopicsImportEnvelope"
+        }
+      },
+      "/api/models/{model_id}/iterate": {
+        "post": {
+          "operationId": "agent_iterate_api_models__model_id__iterate_post",
+          "requestModel": "AgentIterateRequest"
         }
       },
       "/api/models/{model_id}/markups": {
@@ -824,6 +824,11 @@
         "post": {
           "operationId": "invariant_smoke_route_api_v3_invariants_smoke_post",
           "requestModel": "InvariantSmokeRequest"
+        }
+      },
+      "/api/v3/models/delete": {
+        "post": {
+          "operationId": "v3_delete_models_api_v3_models_delete_post"
         }
       },
       "/api/v3/models/{model_id}/concept-seeds": {

@@ -7,7 +7,7 @@ from uuid import UUID
 
 import pytest
 
-from bim_ai.agent_evidence_review_loop import bcf_topics_index_v1
+from bim_ai.evidence_review_loop import bcf_topics_index_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     BcfElem,

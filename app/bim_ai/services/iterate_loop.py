@@ -1,7 +1,7 @@
 """AGT-01 — closed iterative-correction agent loop.
 
 This module hosts the *server-side* patch generator used by the
-``POST /api/models/:id/agent-iterate`` endpoint and the ``bim-ai
+``POST /api/models/:id/iterate`` endpoint and the ``bim-ai
 agent-loop`` CLI subcommand.
 
 A single backend abstraction — ``generate_patch(request) -> response`` —

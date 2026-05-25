@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
+from bim_ai.evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     AgentAssumptionElem,

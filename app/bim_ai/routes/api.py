@@ -25,13 +25,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai._io.log import get_logger as _ws_log_factory
 from bim_ai.activity import emit_activity_row
-from bim_ai.agent_brief_acceptance_readout import agent_brief_acceptance_readout_v1
-from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
-from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
-from bim_ai.agent_generated_bundle_qa_checklist import (
+from bim_ai.brief_acceptance_readout import agent_brief_acceptance_readout_v1
+from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
+from bim_ai.evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
+from bim_ai.bundle_qa_checklist import (
     agent_generated_bundle_qa_checklist_v1,
 )
-from bim_ai.agent_review_readout_consistency_closure import (
+from bim_ai.review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
@@ -150,7 +150,7 @@ from bim_ai.routes.v3_meta import v3_meta_router
 from bim_ai.routes.ws_bootstrap import ws_bootstrap_router
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.seed_library import is_seed_library_project_id
-from bim_ai.services.agent_loop import (
+from bim_ai.services.iterate_loop import (
     AgentIterateRequest,
     AgentIterateResponse,
     generate_patch,
@@ -1567,7 +1567,7 @@ async def energy_handoff_route(
 # ---------------------------------------------------------------------------
 
 
-@api_router.post("/models/{model_id}/agent-iterate")
+@api_router.post("/models/{model_id}/iterate")
 async def agent_iterate(
     model_id: UUID,
     body: AgentIterateRequest,

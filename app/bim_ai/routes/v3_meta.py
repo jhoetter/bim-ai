@@ -133,3 +133,93 @@ async def v3_api_version() -> dict[str, str]:
     except Exception:
         build_ref = "unknown"
     return {"schemaVersion": "api-v3.0", "buildRef": build_ref}
+
+
+@v3_meta_router.post("/v3/models/delete")
+async def v3_delete_models(body: dict) -> dict[str, Any]:
+    """Cascade-delete every bim_models row matching `slug_like` (SQL LIKE pattern).
+
+    Replaces the agent's direct asyncpg purge (testhouse_purge.py) with a
+    REST endpoint. The MCP server exposes this as the `delete-models` tool.
+
+    Body: `{slug_like: str, dry_run: bool = false}` — `slug_like` accepts
+    SQL `%` wildcards. With `dry_run=true` reports targets without
+    touching the DB.
+
+    Cascade order (same as the old purge script):
+      1. NULL parent_commit_id on bim_model_commits (self-FK)
+      2. NULL snapshot_id on bim_model_commits (commits ↔ snapshots cycle)
+      3. DELETE from bim_undo_stack, bim_redo_stack, bim_comments
+      4. DELETE from bim_model_snapshots
+      5. DELETE from activity_rows, milestones, role_assignments, public_links
+      6. DELETE from bim_model_commits
+      7. DELETE from bim_models WHERE slug LIKE :pat
+
+    Returns `{removed: int, remaining: int, step_counts: {table: rows_affected}, target_count, dry_run}`.
+    """
+    from bim_ai.db import SessionMaker
+    from sqlalchemy import text
+
+    slug_like = body.get("slug_like")
+    if not isinstance(slug_like, str) or not slug_like.strip():
+        raise HTTPException(status_code=422, detail="slug_like is required")
+    dry_run = bool(body.get("dry_run", False))
+
+    counts: dict[str, int] = {}
+    async with SessionMaker() as session:
+        rs = await session.execute(
+            text("SELECT id FROM bim_models WHERE slug LIKE :pat"), {"pat": slug_like}
+        )
+        targets = [str(r[0]) for r in rs.fetchall()]
+        target_count = len(targets)
+
+        if dry_run or not targets:
+            return {
+                "ok": True,
+                "dry_run": dry_run,
+                "target_count": target_count,
+                "removed": 0,
+                "remaining": target_count,
+                "step_counts": {},
+            }
+
+        cascade = [
+            ("bim_undo_stack",
+             "DELETE FROM bim_undo_stack WHERE commit_id IN "
+             "(SELECT id FROM bim_model_commits WHERE model_id = ANY(:ids))"),
+            ("bim_redo_stack",
+             "DELETE FROM bim_redo_stack WHERE commit_id IN "
+             "(SELECT id FROM bim_model_commits WHERE model_id = ANY(:ids))"),
+            ("bim_comments", "DELETE FROM bim_comments WHERE model_id = ANY(:ids)"),
+            ("bim_model_commits.snapshot_id",
+             "UPDATE bim_model_commits SET snapshot_id = NULL WHERE model_id = ANY(:ids)"),
+            ("bim_model_commits.parent_commit_id",
+             "UPDATE bim_model_commits SET parent_commit_id = NULL WHERE model_id = ANY(:ids)"),
+            ("bim_model_snapshots", "DELETE FROM bim_model_snapshots WHERE model_id = ANY(:ids)"),
+            ("activity_rows", "DELETE FROM activity_rows WHERE model_id = ANY(:ids)"),
+            ("milestones", "DELETE FROM milestones WHERE model_id = ANY(:ids)"),
+            ("role_assignments", "DELETE FROM role_assignments WHERE model_id = ANY(:ids)"),
+            ("public_links", "DELETE FROM public_links WHERE model_id = ANY(:ids)"),
+            ("bim_model_commits", "DELETE FROM bim_model_commits WHERE model_id = ANY(:ids)"),
+            ("bim_models", "DELETE FROM bim_models WHERE id = ANY(:ids)"),
+        ]
+        for label, stmt in cascade:
+            try:
+                r = await session.execute(text(stmt), {"ids": targets})
+                counts[label] = r.rowcount or 0
+            except Exception as exc:  # noqa: BLE001
+                counts[label] = -1
+                counts[f"{label}__error"] = str(exc)[:200]
+        await session.commit()
+
+        rs = await session.execute(text("SELECT count(*) FROM bim_models"))
+        remaining = int(rs.scalar() or 0)
+
+    return {
+        "ok": True,
+        "dry_run": False,
+        "target_count": target_count,
+        "remaining": remaining,
+        "removed": target_count - remaining,
+        "step_counts": counts,
+    }

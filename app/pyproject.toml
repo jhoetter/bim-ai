@@ -20,6 +20,7 @@ dependencies = [
     "bcrypt>=4.0,<5",
     "idna>=3.15",
     "scikit-image>=0.22,<1",
+    "mcp[cli]>=1.0",  # MCP transport for the bim-ai tool catalog (Phase A of mcp-native-bim-agent-tracker)
 ]
 
 [project.optional-dependencies]

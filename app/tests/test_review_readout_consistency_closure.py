@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bim_ai.agent_review_readout_consistency_closure import (
+from bim_ai.review_readout_consistency_closure import (
     ADVISORY_BUNDLE_ID_DRIFT,
     ADVISORY_DIGEST_DRIFT,
     ADVISORY_MISSING_FIELDS,

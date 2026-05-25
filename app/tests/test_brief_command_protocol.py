@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
+from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     AgentAssumptionElem,

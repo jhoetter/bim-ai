@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from bim_ai.services.agent_loop import (
+from bim_ai.services.iterate_loop import (
     AGENT_BACKEND_ENV_VAR,
     AgentIterateRequest,
     AgentIterateResponse,
@@ -151,11 +151,11 @@ def test_progress_score_rewards_keyword_overlap_and_penalises_blocking() -> None
 
 def _build_endpoint_app() -> FastAPI:
     """Endpoint test that bypasses the DB by mounting the route on a stub app."""
-    from bim_ai.services.agent_loop import generate_patch as gp
+    from bim_ai.services.iterate_loop import generate_patch as gp
 
     app = FastAPI()
 
-    @app.post("/api/models/{model_id}/agent-iterate")
+    @app.post("/api/models/{model_id}/iterate")
     async def agent_iterate_route(model_id: str, body: AgentIterateRequest) -> dict[str, object]:
         # Match the production handler shape: backend is honored, model id is
         # echoed back via the response payload (so the test can assert it
@@ -179,7 +179,7 @@ def test_endpoint_returns_patch_payload(monkeypatch: pytest.MonkeyPatch) -> None
         "iteration": 0,
     }
     res = client.post(
-        "/api/models/00000000-0000-0000-0000-0000000000aa/agent-iterate",
+        "/api/models/00000000-0000-0000-0000-0000000000aa/iterate",
         json=body,
     )
     assert res.status_code == 200
@@ -195,7 +195,7 @@ def test_endpoint_honors_backend_override(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.delenv(AGENT_BACKEND_ENV_VAR, raising=False)
     client = TestClient(_build_endpoint_app())
     res = client.post(
-        "/api/models/00000000-0000-0000-0000-0000000000aa/agent-iterate",
+        "/api/models/00000000-0000-0000-0000-0000000000aa/iterate",
         json={"goal": GOAL_WITH_JSON, "backendOverride": "test"},
     )
     assert res.status_code == 200

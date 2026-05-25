@@ -231,3 +231,8 @@ clean:
 	$(PNPM) -w turbo clean || true
 	rm -rf node_modules **/node_modules **/dist **/.turbo
 	rm -rf $(APP_DIR)/.venv $(APP_DIR)/.pytest_cache
+
+# MCP server (Phase A of mcp-native-bim-agent-tracker)
+.PHONY: mcp
+mcp:
+	cd app && uv run --project . python ../mcp_server.py

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from bim_ai.agent_brief_acceptance_readout import agent_regeneration_guidance_v1
-from bim_ai.agent_evidence_review_loop import (
+from bim_ai.brief_acceptance_readout import agent_regeneration_guidance_v1
+from bim_ai.evidence_review_loop import (
     compute_evidence_diff_metadata_v1,
     ingest_evidence_artifact_manifest_v1,
 )

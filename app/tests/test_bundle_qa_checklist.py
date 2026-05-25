@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from bim_ai.agent_generated_bundle_qa_checklist import (
+from bim_ai.bundle_qa_checklist import (
     ROW_ORDER,
     agent_generated_bundle_qa_checklist_v1,
     validate_checks_wire,

@@ -109,7 +109,7 @@ def _build_handler(state: _CliState) -> type[BaseHTTPRequestHandler]:
         def do_POST(self) -> None:  # noqa: N802
             length = int(self.headers.get("content-length") or "0")
             _ = self.rfile.read(length)
-            if self.path.endswith("/agent-iterate"):
+            if self.path.endswith("/iterate"):
                 state.iterate_calls += 1
                 self._send_json(200, state.patch_response)
                 return
