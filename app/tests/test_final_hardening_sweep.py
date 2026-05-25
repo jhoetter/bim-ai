@@ -12,11 +12,6 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 WAVE_4_TOUCHED_FILES: frozenset[str] = frozenset(
     {
         "app/bim_ai/__init__.py",
-        "app/bim_ai/agent_brief_acceptance_readout.py",
-        "app/bim_ai/agent_brief_command_protocol.py",
-        "app/bim_ai/agent_evidence_review_loop.py",
-        "app/bim_ai/agent_generated_bundle_qa_checklist.py",
-        "app/bim_ai/agent_review_readout_consistency_closure.py",
         "app/bim_ai/bcf_issue_package_export.py",
         "app/bim_ai/ci_gate_runner.py",
         "app/bim_ai/codes.py",
@@ -74,11 +69,6 @@ WAVE_4_TOUCHED_FILES: frozenset[str] = frozenset(
         "app/bim_ai/wall_join_evidence.py",
         "app/bim_ai/wall_opening_cut_fidelity.py",
         "app/tests/test_advisor_blocking_class_expansion.py",
-        "app/tests/test_agent_brief_acceptance_readout.py",
-        "app/tests/test_agent_brief_command_protocol.py",
-        "app/tests/test_agent_evidence_loop_closure.py",
-        "app/tests/test_agent_generated_bundle_qa_checklist.py",
-        "app/tests/test_agent_review_readout_consistency_closure.py",
         "app/tests/test_ci_gate_runner.py",
         "app/tests/test_constraints.py",
         "app/tests/test_constraints_discipline.py",

@@ -1262,9 +1262,7 @@ def build_evidence_package_payload(
     )
     payload["agentEvidenceClosureHints"] = agent_evidence_closure_hints()
     # bcf_topics_index is a derivative summary used internally by the follow-through
-    # rollup. It used to be emitted as payload["bcfTopicsIndex_v1"] alongside the
-    # "agent review" structured fields; both were dropped in final-purification
-    # phase 2 — review/scoring methodology lives in bim-agent, not bim-ai.
+    # rollup; it is not emitted as a top-level payload key.
     bcf_topics_index = bcf_topics_index_v1(doc)
     payload["evidenceAgentFollowThrough_v1"] = evidence_agent_follow_through_v1(
         model_id=model_id,

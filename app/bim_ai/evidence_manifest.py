@@ -2072,11 +2072,9 @@ def _sorted_evidence_ref_models(refs: list[EvidenceRef]) -> list[EvidenceRef]:
 def bcf_topics_index_v1(doc: Document) -> dict[str, Any]:
     """BCF-like topics plus Issue rows used by the evidence follow-through pipeline.
 
-    This is a derivative summary of the Document's BcfElem/IssueElem children; the
-    downstream ``evidence_agent_follow_through_v1`` consumes it to build resolution
-    and roundtrip rows. The function used to live in ``evidence_review_loop.py``
-    alongside the agent-review helpers, which were removed in the final-purification
-    work; the index itself is shared engine infrastructure and remains here.
+    Derivative summary of the Document's BcfElem/IssueElem children; the
+    downstream ``evidence_agent_follow_through_v1`` consumes it to build
+    resolution and roundtrip rows.
     """
 
     topics: list[dict[str, Any]] = []
@@ -2220,7 +2218,8 @@ def sheetProductionEvidenceBaseline_v1(doc: Document) -> dict[str, Any]:
     }
 
 
-# Derivative summaries from ``agent_evidence_review_loop`` — omit so deterministic-row digests stay stable.
+# Derivative-summary keys excluded from deterministic-row digests so the
+# digest stays stable across non-semantic content changes.
 # Public alias so CI gates and tests can enumerate and document the exclusion set.
 DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
     {

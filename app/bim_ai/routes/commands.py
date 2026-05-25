@@ -942,12 +942,6 @@ async def dry_run_command_bundle(
         summary_after=summary_after,
     )
 
-    # The dry-run response previously embedded agent-review structured fields
-    # (agentBriefCommandProtocol_v1, agentGeneratedBundleQaChecklist_v1,
-    # agentBriefAcceptanceReadout_v1, agentReviewReadoutConsistencyClosure_v1).
-    # These were deterministic helpers that computed "how the agent should
-    # review this bundle" — methodology that now lives in bim-agent, not the
-    # bim-ai engine. They were dropped in final-purification phase 2.
     if not ok or new_doc is None:
         return {
             "ok": False,
