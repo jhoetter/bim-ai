@@ -12,6 +12,7 @@ from typing import Any
 from bim_ai.api.registry._shared import (
     _CMD_V3_BUNDLE_OUTPUT_SCHEMA,
     _POINT_2_SCHEMA,
+    _SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
 )
 from bim_ai.api.registry_core import (
     ExitCode,
@@ -185,6 +186,8 @@ for _tool_name, _schema in _STRUCTURE_CONSTRUCTION_SCHEMAS.items():
                 "Generates typed kernel commands only; submit through model.dry_run or "
                 "model.commit_bundle for revision, permission, and advisor checks."
             ),
+            implementationStatus="unsupported",
+            unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
             schemaRefs=[f"input:{_schema['title']}", "output:SemanticAuthoringBundle"],
             exampleRefs=[f"cli:{_group}:{_tool_name.split('.', 1)[1]}"],
             resourceGroups=["semantic-authoring", _group, "kernel-command"],
@@ -233,6 +236,8 @@ register(
             "Generates createStair only; submit through model.dry_run or model.commit_bundle for "
             "transaction safety and advisor validation."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:StairBetweenLevelsInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["cli:author:stair-between-levels"],
         resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
@@ -311,6 +316,8 @@ register(
             "Generates createStair with explicit runs/landings; submit through dry-run and "
             "Advisor before acceptance."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:StairByRunsInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["route:author.stair_by_runs"],
         resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
@@ -393,6 +400,8 @@ register(
             "Generates createStair authoringMode=by_sketch from explicit boundary and tread "
             "lines; dry-run and inspect Advisor before commit."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:StairBySketchInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["route:author.stair_by_sketch"],
         resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
@@ -433,6 +442,8 @@ register(
             "Use only for source-evidenced existing-building nonconformance. It records "
             "explicit tolerated finding codes on the stair and must be backed by source facts."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:StairExistingConditionInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["route:author.stair_existing_condition"],
         resourceGroups=[
@@ -462,6 +473,8 @@ register(
         restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
         sideEffects="mutates-kernel",
         agentSafetyNotes="Host floor id must be resolved before calling; dry-run before commit.",
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:SlabOpeningInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["cli:opening:slab-opening"],
         resourceGroups=["semantic-authoring", "vertical-circulation", "opening", "kernel-command"],
@@ -496,6 +509,8 @@ register(
             "Creates one shaft-marked slab opening on an explicit floor. Multi-floor shaft "
             "propagation still requires one typed opening per host floor."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:ShaftOpeningInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["cli:opening:shaft-opening"],
         resourceGroups=[
@@ -545,6 +560,8 @@ register(
             "Railing path is explicit 2D model geometry. Use hostedStairId when it follows a stair; "
             "dry-run catches invalid baluster/support payloads."
         ),
+        implementationStatus="unsupported",
+        unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
         schemaRefs=["input:RailingInput", "output:SemanticAuthoringBundle"],
         exampleRefs=["cli:author:railing"],
         resourceGroups=["semantic-authoring", "vertical-circulation", "railing", "kernel-command"],

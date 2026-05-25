@@ -10,6 +10,7 @@ from typing import Any
 from bim_ai.api.registry._shared import (
     _CMD_V3_BUNDLE_OUTPUT_SCHEMA,
     _POINT_2_SCHEMA,
+    _SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
 )
 from bim_ai.api.registry_core import (
     ExitCode,
@@ -279,6 +280,8 @@ for _surface in _MEP_TYPED_SURFACES:
                 f"{_surface['notes']} Submit through model.dry_run or model.commit_bundle "
                 "for transaction safety and advisor validation."
             ),
+            implementationStatus="unsupported",
+            unsupportedReason=_SEMANTIC_AUTHORING_UNSUPPORTED_REASON,
             schemaRefs=[_surface["schemaRef"], "output:SemanticAuthoringBundle"],
             exampleRefs=[f"cli:{_surface['name']}"],
             resourceGroups=_surface["groups"],

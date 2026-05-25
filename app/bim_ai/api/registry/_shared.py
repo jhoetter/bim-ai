@@ -48,3 +48,16 @@ _CMD_V3_BUNDLE_OUTPUT_SCHEMA: dict[str, Any] = {
         "metadata": {"type": "object"},
     },
 }
+
+# The `/api/semantic-authoring/{surface_id}` REST route was deleted as part of
+# the bim-ai/bim-agent clean-separation work (2026-05-25) — the semantic→bundle
+# compiler moved to bim-agent. The descriptors still ship so MCP clients can
+# introspect the typed input schemas, but they are marked `unsupported` because
+# there is no backing route in bim-ai. Agents should compile bundles locally
+# (via bim-agent) and POST them to /api/models/{model_id}/bundles instead.
+_SEMANTIC_AUTHORING_UNSUPPORTED_REASON: str = (
+    "The POST /api/semantic-authoring/{surface_id} route was deleted in the "
+    "bim-ai/bim-agent clean-separation (2026-05-25). Compile the typed bundle "
+    "locally via bim-agent and submit it through /api/models/{model_id}/bundles "
+    "(model.commit_bundle) instead."
+)

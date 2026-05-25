@@ -62,7 +62,7 @@ register(
             "List all projects and their models. Read-only enumeration; safe to call any time. "
             "Use this as the first call to discover existing model_ids before applying bundles."
         ),
-        stableId="bootstrap.v1",
+        stableId="bootstrap",
         mutability="read",
         implementationStatus="implemented",
     )
@@ -112,7 +112,7 @@ register(
             "Create a new empty BIM model under the given project. Idempotent on slug — re-use the slug to "
             "find an existing model id via bootstrap instead of calling this twice."
         ),
-        stableId="create-model.v1",
+        stableId="create-model",
         mutability="write",
         implementationStatus="implemented",
     )
@@ -159,7 +159,7 @@ register(
             "Fetch the current state of a model (elements + revision + active violations). "
             "Read-only. Use before applying a bundle to compute the correct parentRevision."
         ),
-        stableId="get-model-snapshot.v1",
+        stableId="get-model-snapshot",
         mutability="read",
         implementationStatus="implemented",
     )

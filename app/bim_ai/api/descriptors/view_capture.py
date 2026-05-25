@@ -141,7 +141,7 @@ register(
             "this for visual grading (defect spotting that element counts miss: stacked "
             "roofs, floating dormers, etc.). Synchronous; ~5–30 seconds per model."
         ),
-        stableId="view-capture-run.v1",
+        stableId="view-capture-run",
         mutability="read",
         requiredPermissions=["read"],
         implementationStatus="implemented",

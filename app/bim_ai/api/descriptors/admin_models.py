@@ -63,7 +63,7 @@ register(
             "role_assignments, public_links). Always run with dry_run=true first to confirm the target "
             "set. The agent typically uses this between iters to start from a clean slate."
         ),
-        stableId="delete-models.v1",
+        stableId="delete-models",
         mutability="write",
         requiredPermissions=["admin"],
         implementationStatus="implemented",
