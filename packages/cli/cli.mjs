@@ -84,14 +84,11 @@ import {
 } from './lib/sketch-phase-workflows.mjs';
 
 import {
-  agentIterate,
-  cmdAgentLoop,
   cmdApiInspect,
   cmdApiListTools,
   cmdApiVersion,
   cmdCheckpoint,
   cmdCompare,
-  readGoalText,
   usage,
 } from './lib/agent-api-commands.mjs';
 
@@ -1654,27 +1651,6 @@ async function main() {
       await cmdDiff(modelId, fromRev, toRev, outArg, asText, summaryOnly);
       return;
     }
-    if (cmd === 'agent-loop') {
-      const rest = argv.slice(1);
-      let goalArg;
-      let maxIter = 5;
-      let evidenceOut;
-      let backendOverride;
-      for (let i = 0; i < rest.length; i++) {
-        const a = rest[i];
-        if (a === '--goal' && rest[i + 1]) goalArg = rest[++i];
-        else if (a === '--max-iter' && rest[i + 1]) maxIter = Number(rest[++i]);
-        else if (a === '--evidence-out' && rest[i + 1]) evidenceOut = rest[++i];
-        else if (a === '--backend' && rest[i + 1]) backendOverride = rest[++i];
-      }
-      if (!goalArg || !evidenceOut || !Number.isFinite(maxIter) || maxIter < 1) {
-        console.error('agent-loop requires --goal <path|-> --max-iter <n> --evidence-out <dir>');
-        process.exit(1);
-      }
-      await cmdAgentLoop(modelId, goalArg, maxIter, evidenceOut, backendOverride);
-      return;
-    }
-
     if (cmd === 'api') {
       const sub = argv[1];
       const rest = argv.slice(2);
