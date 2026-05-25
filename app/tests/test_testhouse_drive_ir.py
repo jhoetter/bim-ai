@@ -127,6 +127,75 @@ def test_extra_top_level_fields_are_allowed(tmp_path: Path) -> None:
     assert out["someNewReaderField"] == {"foo": "bar"}
 
 
+# ---------------------------------------------------------------------------
+# MF-driver-23 (#99): ``levels[*].name`` is optional and defaults to a
+# canonical German label derived from the id. Reader subagents that emit
+# only ``id`` per level should validate successfully.
+# ---------------------------------------------------------------------------
+
+
+def _ir_without_level_names() -> dict:
+    ir = _valid_ir()
+    for lvl in ir["levels"]:
+        lvl.pop("name", None)
+    return ir
+
+
+def test_level_without_name_defaults_to_canonical_german_label(tmp_path: Path) -> None:
+    ir_path = _write_ir(tmp_path, _ir_without_level_names())
+    out = _DRV._load_and_validate_ir(ir_path)
+    # The raw dict is returned, but the validator mutates it in-place to fill
+    # in the derived name so downstream code that does ``lvl.get("name")``
+    # sees a stable human-readable label.
+    by_id = {lvl["id"]: lvl for lvl in out["levels"]}
+    assert by_id["level-KG"]["name"] == "Kellergeschoss"
+    assert by_id["level-EG"]["name"] == "Erdgeschoss"
+    assert by_id["level-DG"]["name"] == "Dachgeschoss"
+
+
+def test_explicit_level_name_is_preserved(tmp_path: Path) -> None:
+    ir = _valid_ir()
+    # Caller-supplied names — including non-canonical ones — must not be
+    # overwritten by the derivation logic.
+    ir["levels"][0]["name"] = "Ground Floor (custom)"
+    ir["levels"][1]["name"] = "Erdgeschoss"
+    ir_path = _write_ir(tmp_path, ir)
+    out = _DRV._load_and_validate_ir(ir_path)
+    by_id = {lvl["id"]: lvl for lvl in out["levels"]}
+    assert by_id["level-KG"]["name"] == "Ground Floor (custom)"
+    assert by_id["level-EG"]["name"] == "Erdgeschoss"
+
+
+def test_level_missing_both_id_and_name_is_rejected(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    ir = _valid_ir()
+    # Strip both id and name from the first level — the validator must
+    # still reject because ``id`` is required for downstream lookups; the
+    # name-derivation cannot manufacture an id.
+    ir["levels"][0].pop("name", None)
+    ir["levels"][0].pop("id", None)
+    ir_path = _write_ir(tmp_path, ir)
+    with pytest.raises(SystemExit) as exc_info:
+        _DRV._load_and_validate_ir(ir_path)
+    assert exc_info.value.code == 2
+    err = capsys.readouterr().err
+    # The error must point at the offending level's id, not silently pass.
+    assert "id" in err
+
+
+def test_unknown_level_id_defaults_name_to_id(tmp_path: Path) -> None:
+    ir = _valid_ir()
+    # Append an unknown-id level (e.g. a future "level-XX") with no name.
+    # The validator should accept it and default name to the id itself,
+    # leaving the rest of the driver to either handle or surface the id.
+    ir["levels"].append({"id": "level-XX", "elevationMM": 5400, "heightMM": 2400})
+    ir_path = _write_ir(tmp_path, ir)
+    out = _DRV._load_and_validate_ir(ir_path)
+    by_id = {lvl["id"]: lvl for lvl in out["levels"]}
+    assert by_id["level-XX"]["name"] == "level-XX"
+
+
 def test_log_line_is_structured(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # The "ir_invalid" event line must include the offending IR path so
     # the operator (or the next bim-agent reader attempt) can find it.
