@@ -840,8 +840,10 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     Authors one ``createLevel`` per entry in ``ir["levels"]`` (KG/EG/DG
     for alpha 3-level houses, KG/EG/OG/DG for 4-level houses, and
     KG/EG/OG/DG/SB for 5-level houses like h23), a closed EG wall loop,
-    an EG slab floor, and a main gable roof — enough to satisfy iter-3's
-    ≥ 4/10 exterior bar while keeping the command list short.
+    and an EG slab floor — enough to satisfy iter-3's ≥ 4/10 exterior
+    bar while keeping the command list short. The roof is authored by
+    its own dedicated phase (``_roof_bundle``) downstream; emitting one
+    here as well stacked two gables at DG (see issue #103, MF-driver-24).
 
     MF-driver-15 (#79): the per-level emission previously dispatched off
     a hard-coded ``{KG, EG, DG}`` dict, so any IR carrying an ``OG`` /
@@ -849,6 +851,14 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     with ``KeyError`` and blocked the driver from authoring beyond EG.
     This mirrors the dynamic ``_levels_to_process`` discovery that PR
     #34 introduced for the per-level rooms phase.
+
+    MF-driver-24 (#103): previously also emitted a ``createRoof`` whose
+    id (``th-{house}-i{iter_n}-main-roof``) did not collide with the
+    ``roof-main`` phase's ``th-{house}-main-roof``, so both committed
+    and the renderer drew two stacked gables at DG. Roof authoring is
+    now exclusively the responsibility of ``_roof_bundle`` — which
+    produces a richer roof anyway (IR-derived pitch + ridge orientation,
+    material, flat-roof extensions over EG-only wings).
     """
 
     house = ir["house"]
@@ -866,14 +876,6 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
         for lvl in levels
     }
     level_eg = level_id_by_short.get("EG", f"th-{house}-i{iter_n}-level-EG")
-    # Roof anchors at DG when the IR has one (the alpha 3-level + 4-level
-    # KG/EG/OG/DG layouts). For h22 (KG/EG/OG-under-pitched-roof) and
-    # similar layouts without DG, fall back to the topmost authored level
-    # in IR order so the roof still anchors against a real level instead
-    # of a stub id.
-    roof_ref_level = level_id_by_short.get("DG") or (
-        level_id_by_short[_level_short_from_id(levels[-1]["id"])] if levels else level_eg
-    )
 
     commands: list[dict] = []
     for lvl in levels:
@@ -914,19 +916,6 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
         }
     )
 
-    commands.append(
-        {
-            "type": "createRoof",
-            "id": f"th-{house}-i{iter_n}-main-roof",
-            "name": "Main gable roof",
-            "referenceLevelId": roof_ref_level,
-            "footprintMm": [{"xMm": float(p[0]), "yMm": float(p[1])} for p in poly],
-            "overhangMm": 400,
-            "slopeDeg": 35,
-            "roofGeometryMode": "gable_pitched_rectangle",
-        }
-    )
-
     return {
         "schemaVersion": "cmd-v3.0",
         "commands": commands,
@@ -934,7 +923,7 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
         "assumptions": [
             {
                 "key": f"testhouse_iter_{iter_n}_{house}_shell",
-                "value": "iter-3 exterior shell: levels KG/EG/DG, closed EG wall loop, slab, main gable roof",
+                "value": "iter-3 exterior shell: dynamic levels (KG/EG/[OG]/[DG]/[SB]), closed EG wall loop, slab — roof emitted by the dedicated roof phase",
                 "confidence": 0.5,
                 "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                 "contestable": True,
