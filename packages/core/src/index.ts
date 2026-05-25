@@ -1577,7 +1577,14 @@ export type Element =
         | 'flat'
         | 'mono_pitch'
         | 'half_gable'
-        | 'mono_pitch_offset';
+        | 'mono_pitch_offset'
+        /**
+         * ISSUE-110: Zeltdach / Pyramidendach — four roof planes meet at a
+         * single apex above the centroid of a square (or near-square
+         * axis-aligned rectangular) footprint. Degenerate hip whose ridge
+         * collapses to a point.
+         */
+        | 'pyramidal_hip';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;

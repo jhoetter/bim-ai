@@ -48,6 +48,7 @@ from bim_ai.engine import (
     assert_valid_hip_footprint_mm,
     assert_valid_l_shape_footprint_mm,
     assert_valid_mono_pitch_footprint_mm,
+    assert_valid_pyramidal_hip_footprint_mm,
     edge_profile_run_path_mm,
     new_id,
     outer_rect_extent,
@@ -148,6 +149,13 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 # ISSUE-105 — Krüppelwalmdach: rectangular footprint, same
                 # predicate as the base gable mode.
                 assert_valid_half_gable_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
+            elif cmd.roof_geometry_mode == "pyramidal_hip":
+                # ISSUE-110 — Zeltdach / Pyramidendach: axis-aligned rectangle
+                # footprint; the renderer/exporter tilt all four planes to
+                # meet at a single apex above the centroid.
+                assert_valid_pyramidal_hip_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
             els[rid] = RoofElem(

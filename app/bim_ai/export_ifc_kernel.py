@@ -813,6 +813,15 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rf.roof_geometry_mode == "mono_pitch_offset"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
+        # ISSUE-110: Zeltdach / Pyramidendach — flag for the dedicated
+        # IfcRoof.PredefinedType = HIP_ROOF tag. The body itself still uses
+        # the flat-slab prism fallback (existing rectangular IfcSlab profile)
+        # so geometric quantity tooling stays unchanged; the pyramid shape is
+        # captured authoritatively via Pset_BimAiKernel + the viewer mesh.
+        use_pyramidal_hip_body = (
+            rf.roof_geometry_mode == "pyramidal_hip"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
 
         if use_gable_body:
             # Eave plate elevation: walls on the reference level give the eave Y.
@@ -1318,6 +1327,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
+        # ISSUE-110: Zeltdach / Pyramidendach maps to IFC4's HIP_ROOF
+        # PredefinedType. IFC4 IfcRoofTypeEnum has no PYRAMIDAL_ROOF literal;
+        # HIP_ROOF is the closest semantic match (a hip with all four planes
+        # meeting at a single point ≡ degenerate hip with zero ridge length).
+        if use_pyramidal_hip_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "HIP_ROOF"
+            except (RuntimeError, ValueError):
+                # Schema rejects the keyword; leave the default.
+                pass
 
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
@@ -1338,7 +1357,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rf.roof_type_id:
             bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
         bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
-        if use_gable_body or use_mono_pitch_body or use_mono_pitch_offset_body:
+        if (
+            use_gable_body
+            or use_mono_pitch_body
+            or use_mono_pitch_offset_body
+            or use_pyramidal_hip_body
+        ):
             bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
                 f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )
