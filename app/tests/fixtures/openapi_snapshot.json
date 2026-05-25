@@ -1,42 +1,7 @@
 {
-  "digest": "f4cd72869bf4f4ff1afb47aeef4d57b91052d28708517dd9a1c622e9f24c1e02",
+  "digest": "8766eaa4e8d9af584d774dbb06e67304f1d3a613d4761af59dc8c5b9a9a81334",
   "shape": {
     "paths": {
-      "/api/agent-runs/houses": {
-        "get": {
-          "operationId": "list_houses_api_agent_runs_houses_get"
-        }
-      },
-      "/api/agent-runs/houses/{house}/dashboard": {
-        "get": {
-          "operationId": "get_house_dashboard_api_agent_runs_houses__house__dashboard_get"
-        }
-      },
-      "/api/agent-runs/houses/{house}/iterations": {
-        "get": {
-          "operationId": "list_house_iterations_api_agent_runs_houses__house__iterations_get"
-        }
-      },
-      "/api/agent-runs/houses/{house}/iterations/{iteration}/captures/{filename}": {
-        "get": {
-          "operationId": "get_iteration_capture_api_agent_runs_houses__house__iterations__iteration__captures__filename__get"
-        }
-      },
-      "/api/agent-runs/houses/{house}/iterations/{iteration}/scoring": {
-        "get": {
-          "operationId": "get_iteration_scoring_api_agent_runs_houses__house__iterations__iteration__scoring_get"
-        }
-      },
-      "/api/agent-runs/sessions": {
-        "get": {
-          "operationId": "list_session_runs_api_agent_runs_sessions_get"
-        }
-      },
-      "/api/agent-runs/sessions/{session_id}": {
-        "get": {
-          "operationId": "get_session_run_api_agent_runs_sessions__session_id__get"
-        }
-      },
       "/api/bootstrap": {
         "get": {
           "operationId": "bootstrap_api_bootstrap_get"
@@ -79,6 +44,11 @@
       "/api/jobs/{job_id}/cancel": {
         "post": {
           "operationId": "cancel_job_api_jobs__job_id__cancel_post"
+        }
+      },
+      "/api/jobs/{job_id}/result": {
+        "get": {
+          "operationId": "get_job_result_api_jobs__job_id__result_get"
         }
       },
       "/api/jobs/{job_id}/retry": {
@@ -809,6 +779,16 @@
       "/api/templates": {
         "get": {
           "operationId": "list_template_catalog_api_templates_get"
+        }
+      },
+      "/api/time-travel/storage-summary": {
+        "get": {
+          "operationId": "get_storage_summary_api_time_travel_storage_summary_get"
+        }
+      },
+      "/api/time-travel/sweep-orphans": {
+        "post": {
+          "operationId": "post_sweep_orphans_api_time_travel_sweep_orphans_post"
         }
       },
       "/api/v3/advisor-rules": {
