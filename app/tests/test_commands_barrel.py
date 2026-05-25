@@ -367,9 +367,11 @@ def test_command_union_member_count_matches_legacy_baseline() -> None:
     """
 
     members = _union_members(Command)
-    # Issue #102 — added CreateFacadeBayCmd (Erker / facade_bay element)
-    # bumping the discriminated union member count by one.
-    assert len(members) == 263
+    # Issue #102 — added CreateFacadeBayCmd (Erker / facade_bay element).
+    # Issue #113 — added CreateStructuralFacadeGridCmd (Huf-Haus
+    # Pfosten-Riegel grid), bumping the discriminated union member count
+    # by one further to 264.
+    assert len(members) == 264
 
 
 def test_barrel_resolves_to_package_init() -> None:

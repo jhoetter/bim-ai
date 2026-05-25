@@ -161,6 +161,7 @@ from .assets import (
 )
 from .floors_roofs import (
     BalconyElem,
+    DiagonalStrutPattern,
     DormerElem,
     DormerPositionOnRoof,
     DormerRoofKind,
@@ -175,6 +176,7 @@ from .floors_roofs import (
     RoofTypeElem,
     SlabOpeningElem,
     SoffitElem,
+    StructuralFacadeGridElem,
 )
 from .metadata import (
     BuildingServicesHandoffElem,
@@ -449,6 +451,7 @@ __all__ = [
     "WindowElem",
     "WindowOutlineKind",
     "BalconyElem",
+    "DiagonalStrutPattern",
     "DormerElem",
     "DormerPositionOnRoof",
     "DormerRoofKind",
@@ -463,6 +466,7 @@ __all__ = [
     "RoofTypeElem",
     "SlabOpeningElem",
     "SoffitElem",
+    "StructuralFacadeGridElem",
     "AreaElem",
     "AreaRuleSet",
     "AreaScheme",
@@ -635,6 +639,7 @@ ElementKind = Literal[
     "property_line",
     "balcony",
     "facade_bay",
+    "structural_facade_grid",
     "sweep",
     "dormer",
     "area",
@@ -695,6 +700,7 @@ Element = Annotated[
     | RailingElem
     | BalconyElem
     | FacadeBayElem
+    | StructuralFacadeGridElem
     | FamilyTypeElem
     | RoomSeparationElem
     | PlanRegionElem

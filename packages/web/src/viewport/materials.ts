@@ -882,6 +882,17 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     displayName: 'Standing-seam metal — copper',
   },
 
+  // Issue #113 — Huf-Haus Pfosten-Riegel timber (dark stained / weathered oak)
+  // for the visible structural-facade grid.
+  dark_oak: {
+    key: 'dark_oak',
+    baseColor: '#2c1d11',
+    roughness: 0.88,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Dark oak (timber framing)',
+  },
+
   // ── MAT-01 log-course (Blockhaus / log construction) variants ───────
   log_round_natural: {
     key: 'log_round_natural',

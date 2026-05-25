@@ -318,6 +318,7 @@ export type ElemKind =
   | 'dormer'
   | 'balcony'
   | 'facade_bay'
+  | 'structural_facade_grid'
   | 'area'
   | 'masking_region'
   | 'spot_elevation'
@@ -1810,6 +1811,50 @@ export type Element =
       chamferAngleDeg?: number | null;
       levelId?: string | null;
       materialKey?: string | null;
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      /**
+       * Issue #113 — Huf-Haus Pfosten-Riegel structural facade grid.
+       *
+       * A dark timber lattice (vertical posts + horizontal beams + optional
+       * diagonal struts) mounted slightly proud of the host wall face. The
+       * wall behind the grid is intended to be glazed (transparent), so the
+       * grid IS the visible facade artifact. v0 supports rectangular wall
+       * faces only — for non-rectangular hosts the renderer falls back to
+       * the wall's bounding rectangle.
+       */
+      kind: 'structural_facade_grid';
+      id: string;
+      name: string;
+      hostWallId: string;
+      /** Horizontal spacing between vertical posts (mm). Default ~1500. */
+      postSpacingMm: number;
+      /**
+       * Y-elevations (mm from wall foot) at which a horizontal beam runs.
+       * The list is sorted + de-duplicated by the dispatcher; the wall foot
+       * (0) and head (wall height) are always drawn, regardless of contents.
+       */
+      beamHeights: number[];
+      /**
+       * Diagonal-strut pattern per bay:
+       *  - "none"   — posts + beams only.
+       *  - "single" — one diagonal per bay (the Huf-Haus signature).
+       *  - "cross"  — two diagonals forming an X per bay.
+       */
+      diagonalStrutPattern: 'none' | 'cross' | 'single';
+      /** Member thickness (mm). Default 80. */
+      memberThicknessMm?: number | null;
+      /** How far the grid sits proud of the wall face (mm). Default 30. */
+      proudOffsetMm?: number | null;
+      /** Material key for the visible timber. Default `dark_oak`. */
+      timberMaterialKey?: string | null;
+      /** Material key for the panel infill behind the grid. Default `glass_clear`. */
+      infillMaterialKey?: string | null;
+      levelId?: string | null;
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;

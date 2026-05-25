@@ -526,6 +526,28 @@ class CreateFacadeBayCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
+class CreateStructuralFacadeGridCmd(BaseModel):
+    """Issue #113 — author a Huf-Haus Pfosten-Riegel structural facade grid
+    hosted on an existing wall. The host wall is expected to be glazed
+    (transparent material) so the timber lattice reads as the facade."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createStructuralFacadeGrid"] = "createStructuralFacadeGrid"
+    id: str | None = None
+    name: str = "Huf-Haus Facade Grid"
+    host_wall_id: str = Field(alias="hostWallId")
+    post_spacing_mm: float = Field(default=1500.0, alias="postSpacingMm", gt=0)
+    beam_heights: list[float] = Field(default_factory=list, alias="beamHeights")
+    diagonal_strut_pattern: Literal["none", "cross", "single"] = Field(
+        default="single", alias="diagonalStrutPattern"
+    )
+    member_thickness_mm: float | None = Field(default=None, alias="memberThicknessMm")
+    proud_offset_mm: float | None = Field(default=None, alias="proudOffsetMm")
+    timber_material_key: str | None = Field(default=None, alias="timberMaterialKey")
+    infill_material_key: str | None = Field(default=None, alias="infillMaterialKey")
+    level_id: str | None = Field(default=None, alias="levelId")
+
+
 class CreateRailingCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createRailing"] = "createRailing"

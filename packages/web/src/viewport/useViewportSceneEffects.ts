@@ -174,6 +174,7 @@ type ViewportSceneEffectsArgs = {
   loadText3dFont: typeof import('./text3dGeometry').loadText3dFont;
   makeBalconyMesh: typeof import('./meshBuilders').makeBalconyMesh;
   makeFacadeBayMesh: typeof import('./meshBuilders').makeFacadeBayMesh;
+  makeStructuralFacadeGridMesh: typeof import('./meshBuilders').makeStructuralFacadeGridMesh;
   makeBeamMesh: typeof import('./meshBuilders').makeBeamMesh;
   makeBeamSystemMesh: typeof import('./meshBuilders.beamSystem').makeBeamSystemMesh;
   makeBraceMesh: typeof import('./meshBuilders.brace').makeBraceMesh;
@@ -351,6 +352,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     loadText3dFont,
     makeBalconyMesh,
     makeFacadeBayMesh,
+    makeStructuralFacadeGridMesh,
     makeBeamMesh,
     makeBeamSystemMesh,
     makeBraceMesh,
@@ -806,6 +808,11 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
         const host = curr[e.hostWallId];
         return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
       }
+      if (e.kind === 'structural_facade_grid') {
+        // Issue #113 — Huf-Haus grid follows its host wall's level visibility.
+        const host = curr[e.hostWallId];
+        return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
+      }
       if (e.kind === 'dormer') {
         const host = curr[e.hostRoofId];
         return host?.kind === 'roof' ? Boolean(levelHidden[host.referenceLevelId]) : false;
@@ -1004,6 +1011,10 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
         case 'facade_bay':
           // Issue #102 — render Erker (bay window) extrusions.
           obj = makeFacadeBayMesh(e, curr, paint);
+          break;
+        case 'structural_facade_grid':
+          // Issue #113 — Huf-Haus Pfosten-Riegel timber grid.
+          obj = makeStructuralFacadeGridMesh(e, curr, paint);
           break;
         case 'column': {
           const elev = elevationMForLevel(e.levelId, curr);
@@ -1380,6 +1391,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     loadText3dFont,
     makeBalconyMesh,
     makeFacadeBayMesh,
+    makeStructuralFacadeGridMesh,
     makeBeamMesh,
     makeBeamSystemMesh,
     makeBraceMesh,

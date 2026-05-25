@@ -689,6 +689,41 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'structural_facade_grid') {
+    // Issue #113 — Huf-Haus Pfosten-Riegel grid. Accept snake_case +
+    // camelCase keys; default unknown strut patterns to 'single' so a
+    // misauthored payload still renders the signature Huf-Haus diagonal.
+    const patternRaw = String(raw.diagonalStrutPattern ?? raw.diagonal_strut_pattern ?? 'single');
+    const diagonalStrutPattern: 'none' | 'cross' | 'single' = (
+      ['none', 'cross', 'single'] as const
+    ).includes(patternRaw as never)
+      ? (patternRaw as 'none' | 'cross' | 'single')
+      : 'single';
+    const rawBeams = raw.beamHeights ?? raw.beam_heights ?? [];
+    const beamHeights: number[] = Array.isArray(rawBeams)
+      ? rawBeams.map((v) => Number(v)).filter((v): v is number => Number.isFinite(v) && v >= 0)
+      : [];
+    const memberThickRaw = raw.memberThicknessMm ?? raw.member_thickness_mm;
+    const proudOffsetRaw = raw.proudOffsetMm ?? raw.proud_offset_mm;
+    const timberRaw = raw.timberMaterialKey ?? raw.timber_material_key;
+    const infillRaw = raw.infillMaterialKey ?? raw.infill_material_key;
+    const levelIdRaw = raw.levelId ?? raw.level_id;
+    return {
+      kind: 'structural_facade_grid',
+      id,
+      name,
+      hostWallId: String(raw.hostWallId ?? raw.host_wall_id ?? ''),
+      postSpacingMm: Number(raw.postSpacingMm ?? raw.post_spacing_mm ?? 1500),
+      beamHeights,
+      diagonalStrutPattern,
+      ...(memberThickRaw != null ? { memberThicknessMm: Number(memberThickRaw) } : {}),
+      ...(proudOffsetRaw != null ? { proudOffsetMm: Number(proudOffsetRaw) } : {}),
+      ...(typeof timberRaw === 'string' ? { timberMaterialKey: timberRaw } : {}),
+      ...(typeof infillRaw === 'string' ? { infillMaterialKey: infillRaw } : {}),
+      ...(typeof levelIdRaw === 'string' ? { levelId: levelIdRaw } : {}),
+    };
+  }
+
   if (kind === 'sweep') {
     const rawPath = (raw.pathMm ?? raw.path_mm) as Record<string, unknown>[] | undefined;
     const rawProfile = (raw.profileMm ?? raw.profile_mm) as Record<string, unknown>[] | undefined;

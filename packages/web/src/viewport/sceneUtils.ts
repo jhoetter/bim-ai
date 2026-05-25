@@ -69,6 +69,9 @@ export function elemViewerCategory(e: Element): ViewerCatKey | null {
     case 'facade_bay':
       // Issue #102 — Erker projection is part of the building envelope.
       return 'wall';
+    case 'structural_facade_grid':
+      // Issue #113 — Huf-Haus Pfosten-Riegel grid is a facade artifact.
+      return 'wall';
     case 'site':
     case 'toposolid':
     case 'toposolid_excavation':
