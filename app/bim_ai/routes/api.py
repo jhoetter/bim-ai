@@ -13,12 +13,11 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
-    Request,
     Response,
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
@@ -153,11 +152,10 @@ from bim_ai.routes.v3_meta import v3_meta_router
 from bim_ai.routes.ws_bootstrap import ws_bootstrap_router
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.seed_library import is_seed_library_project_id
-from bim_ai.services.iterate_loop import (
-    AgentIterateRequest,
-    AgentIterateResponse,
-    generate_patch,
-)
+
+# bim_ai.services.iterate_loop deleted in de-agent phase 3a — the iterate
+# workflow is now a methodology markdown in bim-agent that drives the loop
+# via MCP tool calls. See bim-agent/spec/methodology/iterate-loop.md.
 
 # bim_ai.services.semantic_authoring moved to bim-agent — see
 # spec/trackers/bim-ai-bim-agent-clean-separation-tracker.md phase 3
@@ -1568,41 +1566,12 @@ async def energy_handoff_route(
 
 
 # ---------------------------------------------------------------------------
-# AGT-01 — Agent iterate endpoint
+# AGT-01 — Agent iterate endpoint REMOVED (de-agent phase 3a, 2026-05-25)
+#
+# The server-side iterate loop has been deleted. Iteration is now driven by
+# a Claude Code session reading bim-agent/spec/methodology/iterate-loop.md
+# and calling bim-ai's MCP tools directly. bim-ai is LLM-free at runtime.
 # ---------------------------------------------------------------------------
-
-
-@api_router.post("/models/{model_id}/iterate")
-async def agent_iterate(
-    model_id: UUID,
-    body: AgentIterateRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    """Generate one patch toward ``goal`` given the current snapshot + advisories.
-
-    Backend selection is controlled by the ``BIM_AI_AGENT_BACKEND`` env var
-    (default: shell out to ``claude`` CLI; ``test`` reads code blocks from
-    the goal markdown for deterministic CI).
-    """
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    response: AgentIterateResponse = generate_patch(body)
-    return response.model_dump(by_alias=True)
-
-
-@api_router.post("/models/{model_id}/agent-iterate", include_in_schema=False)
-async def agent_iterate_redirect(model_id: str, request: Request) -> RedirectResponse:
-    """Backward-compat: ``agent-iterate`` was renamed to ``iterate`` on 2026-05-25.
-
-    Returns a 308 (permanent + method-preserving) redirect so existing POST
-    callers forward their request body to the new URL unchanged. Kept for one
-    release cycle; remove once external callers have migrated.
-    """
-    return RedirectResponse(
-        url=str(request.url).replace("/agent-iterate", "/iterate"),
-        status_code=308,
-    )
 
 
 # ---------------------------------------------------------------------------

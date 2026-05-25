@@ -1,5 +1,5 @@
 {
-  "digest": "8c079a99ad2222cdcb357dc84e2479c6a1cc9a752904be9bf9de3b5b7256e93d",
+  "digest": "30980e5f3d367c647e28f8cc045f4797d9005cf6a2cb28fa4313c3a27a376fc5",
   "shape": {
     "paths": {
       "/api/bootstrap": {
@@ -327,12 +327,6 @@
         "post": {
           "operationId": "import_bcf_topics_json_api_models__model_id__imports_bcf_topics_json_post",
           "requestModel": "BcfTopicsImportEnvelope"
-        }
-      },
-      "/api/models/{model_id}/iterate": {
-        "post": {
-          "operationId": "agent_iterate_api_models__model_id__iterate_post",
-          "requestModel": "AgentIterateRequest"
         }
       },
       "/api/models/{model_id}/markups": {
@@ -831,6 +825,11 @@
           "operationId": "v3_delete_models_api_v3_models_delete_post"
         }
       },
+      "/api/v3/models/{model_id}/capture-views": {
+        "post": {
+          "operationId": "capture_views_api_v3_models__model_id__capture_views_post"
+        }
+      },
       "/api/v3/models/{model_id}/concept-seeds": {
         "get": {
           "operationId": "list_concept_seeds_api_v3_models__model_id__concept_seeds_get"
@@ -913,7 +912,6 @@
     },
     "schemas": [
       "AddSketchLineRequest",
-      "AgentIterateRequest",
       "AssumptionEntry",
       "BcfTopicsImportEnvelope",
       "Body_upload_dxf_file_api_models__host_id__upload_dxf_file_post",
