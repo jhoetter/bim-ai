@@ -15,6 +15,7 @@ from bim_ai.bcf_issue_package_export import bcf_issue_package_export_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     BcfElem,
+    EvidenceRef,
     IssueElem,
     PlanViewElem,
     SectionCutElem,
@@ -1346,21 +1347,15 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
         "bcfIssuePackageExportField": "bcfIssuePackageExport_v1",
         "artifactUploadManifestField": "artifactUploadManifest_v1",
-        "agentGeneratedBundleQaChecklistField": "agentGeneratedBundleQaChecklist_v1",
-        "agentBriefAcceptanceReadoutField": "agentBriefAcceptanceReadout_v1",
         "evidenceBaselineLifecycleReadoutField": "evidenceBaselineLifecycleReadout_v1",
         "v1CloseoutReadinessManifestField": "v1CloseoutReadinessManifest_v1",
         "prdAdvisorMatrixField": "prdAdvisorMatrix_v1",
-        "agentReviewReadoutConsistencyClosureField": "agentReviewReadoutConsistencyClosure_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
-            "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
-            "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
-            "evidenceAgentFollowThrough_v1 (including nested bcfIssuePackageExport_v1), "
-            "artifactUploadManifest_v1, "
-            "agentGeneratedBundleQaChecklist_v1, agentBriefAcceptanceReadout_v1, evidenceBaselineLifecycleReadout_v1, "
-            "agentReviewReadoutConsistencyClosure_v1, "
-            "v1CloseoutReadinessManifest_v1, and prdAdvisorMatrix_v1 "
-            "so deterministic row digests stay stable."
+            "semanticDigestSha256 excludes evidenceDiffIngestFixLoop_v1, "
+            "evidenceReviewPerformanceGate_v1, evidenceAgentFollowThrough_v1 (including "
+            "nested bcfIssuePackageExport_v1), artifactUploadManifest_v1, "
+            "evidenceBaselineLifecycleReadout_v1, v1CloseoutReadinessManifest_v1, "
+            "and prdAdvisorMatrix_v1 so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -2060,6 +2055,65 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
     }
 
 
+def _sorted_evidence_ref_models(refs: list[EvidenceRef]) -> list[EvidenceRef]:
+    return sorted(
+        refs,
+        key=lambda r: (
+            r.kind,
+            r.sheet_id or "",
+            r.viewpoint_id or "",
+            r.plan_view_id or "",
+            r.section_cut_id or "",
+            r.png_basename or "",
+        ),
+    )
+
+
+def bcf_topics_index_v1(doc: Document) -> dict[str, Any]:
+    """BCF-like topics plus Issue rows used by the evidence follow-through pipeline.
+
+    This is a derivative summary of the Document's BcfElem/IssueElem children; the
+    downstream ``evidence_agent_follow_through_v1`` consumes it to build resolution
+    and roundtrip rows. The function used to live in ``evidence_review_loop.py``
+    alongside the agent-review helpers, which were removed in the final-purification
+    work; the index itself is shared engine infrastructure and remains here.
+    """
+
+    topics: list[dict[str, Any]] = []
+    for e in doc.elements.values():
+        if isinstance(e, BcfElem):
+            refs = _sorted_evidence_ref_models(list(e.evidence_refs))
+            topics.append(
+                {
+                    "topicKind": "bcf",
+                    "topicId": e.id,
+                    "title": e.title,
+                    "status": e.status,
+                    "viewpointRef": e.viewpoint_ref,
+                    "elementIds": sorted(e.element_ids),
+                    "planViewId": e.plan_view_id,
+                    "sectionCutId": e.section_cut_id,
+                    "evidenceRefs": [r.model_dump(by_alias=True) for r in refs],
+                }
+            )
+        elif isinstance(e, IssueElem):
+            refs = _sorted_evidence_ref_models(list(e.evidence_refs))
+            topics.append(
+                {
+                    "topicKind": "issue",
+                    "topicId": e.id,
+                    "title": e.title,
+                    "status": e.status,
+                    "elementIds": sorted(e.element_ids),
+                    "viewpointId": e.viewpoint_id,
+                    "evidenceRefs": [r.model_dump(by_alias=True) for r in refs],
+                }
+            )
+
+    topics.sort(key=lambda x: (str(x.get("topicKind", "")), str(x.get("topicId", ""))))
+    return {"format": "bcfTopicsIndex_v1", "topics": topics}
+
+
 def evidence_agent_follow_through_v1(
     *,
     model_id: UUID,
@@ -2094,8 +2148,7 @@ def evidence_agent_follow_through_v1(
     return {
         "format": "evidenceAgentFollowThrough_v1",
         "semanticDigestExclusionNote": (
-            "evidenceAgentFollowThrough_v1 is derivative and excluded from semanticDigestSha256 "
-            "alongside bcfTopicsIndex_v1 and agentReviewActions_v1."
+            "evidenceAgentFollowThrough_v1 is derivative and excluded from semanticDigestSha256."
         ),
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
         "stagedArtifactLinks_v1": sal,
@@ -2173,17 +2226,13 @@ DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
     {
         "generatedAt",
         "semanticDigestSha256",
-        "bcfTopicsIndex_v1",
-        "agentReviewActions_v1",
         "evidenceDiffIngestFixLoop_v1",
         "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThrough_v1",
         "artifactUploadManifest_v1",
-        "agentGeneratedBundleQaChecklist_v1",
         "evidenceBaselineLifecycleReadout_v1",
         "v1AcceptanceProofMatrix_v1",
         "v1CloseoutReadinessManifest_v1",
-        "agentBriefAcceptanceReadout_v1",
         "prdAdvisorMatrix_v1",
         "rendererDiagnosticPacket_v1",
         "rendererDiagnosticPacketEmbedding_v1",
@@ -2410,7 +2459,6 @@ DIGEST_INCLUDED_KEYS: frozenset[str] = frozenset(
         "evidenceClosureReview_v1",
         "evidenceLifecycleSignal_v1",
         "agentEvidenceClosureHints",
-        "agentBriefCommandProtocol_v1",
         "roomColorSchemeOverrideEvidence_v1",
         "roomColourSchemeLegendEvidence_v1",
         "sheetProductionBaseline_v1",

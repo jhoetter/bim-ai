@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 
-from bim_ai.evidence_review_loop import bcf_topics_index_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     BcfElem,
@@ -21,6 +20,7 @@ from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
     artifact_upload_manifest_v1,
     bcf_issue_coordination_check_v1,
+    bcf_topics_index_v1,
     collaboration_replay_conflict_hints_v1,
     evidence_agent_follow_through_v1,
     evidence_closure_review_v1,
@@ -240,14 +240,10 @@ def test_agent_evidence_closure_hints_names_follow_through_field() -> None:
     assert h.get("bcfRoundtripEvidenceSummaryField") == "bcfRoundtripEvidenceSummary_v1"
     assert h.get("bcfIssuePackageExportField") == "bcfIssuePackageExport_v1"
     assert h.get("artifactUploadManifestField") == "artifactUploadManifest_v1"
-    assert h.get("agentGeneratedBundleQaChecklistField") == "agentGeneratedBundleQaChecklist_v1"
-    assert h.get("agentBriefAcceptanceReadoutField") == "agentBriefAcceptanceReadout_v1"
     note = str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
     assert "evidenceAgentFollowThrough_v1" in note
     assert "bcfIssuePackageExport_v1" in note
     assert "artifactUploadManifest_v1" in note
-    assert "agentGeneratedBundleQaChecklist_v1" in note
-    assert "agentBriefAcceptanceReadout_v1" in note
 
 
 def test_artifact_upload_manifest_v1_github_actions_hint_without_secrets(

@@ -9,15 +9,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bim_ai.brief_acceptance_readout import agent_brief_acceptance_readout_v1
-from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
-from bim_ai.bundle_qa_checklist import (
-    agent_generated_bundle_qa_checklist_v1,
-    validate_checks_wire,
-)
-from bim_ai.review_readout_consistency_closure import (
-    agent_review_readout_consistency_closure_v1,
-)
 from bim_ai.db import find_idempotent_undo_record, get_session
 from bim_ai.document import Document
 from bim_ai.elements import ExternalLinkElem, LinkDxfElem, LinkModelElem
@@ -35,10 +26,6 @@ from bim_ai.engine import (
 from bim_ai.evidence.level_datum_propagation_evidence import (
     build_level_elevation_propagation_evidence_v0,
 )
-from bim_ai.evidence_manifest import (
-    agent_evidence_closure_hints,
-    export_link_map,
-)
 from bim_ai.hub import Hub
 from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.model_summary import compute_model_summary
@@ -50,7 +37,6 @@ from bim_ai.routes.deps import (
     load_model_row,
     violations_wire,
 )
-from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
 from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
 from bim_ai.transaction_safety import (
@@ -956,42 +942,12 @@ async def dry_run_command_bundle(
         summary_after=summary_after,
     )
 
-    brief_proto = agent_brief_command_protocol_v1(
-        doc=baseline_doc,
-        proposed_commands=list(commands_for_commit),
-        validation_violations=viols_wire,
-    )
-    schedule_rows = [
-        {"id": sid, "name": baseline_doc.elements[sid].name}
-        for sid in list_schedule_ids(baseline_doc)
-    ]
-    qa_checklist = agent_generated_bundle_qa_checklist_v1(
-        brief_protocol=brief_proto,
-        validate=validate_checks_wire(viols_wire),
-        schedule_ids=schedule_rows,
-        export_links=export_link_map(model_id),
-        deterministic_sheet_evidence=None,
-        deterministic_plan_view_evidence=None,
-        evidence_diff_ingest_fix_loop=None,
-        evidence_review_performance_gate=None,
-        evidence_ref_resolution=None,
-    )
-    accept_readout = agent_brief_acceptance_readout_v1(
-        doc=baseline_doc,
-        brief_protocol=brief_proto,
-        qa_checklist=qa_checklist,
-        artifact_upload_manifest=None,
-        validation_violations=viols_wire,
-    )
-    dry_run_closure_hints = agent_evidence_closure_hints()
-    consistency_closure = agent_review_readout_consistency_closure_v1(
-        readout_brief_acceptance=accept_readout,
-        readout_bundle_qa_checklist=qa_checklist,
-        readout_merge_preflight=None,
-        readout_baseline_lifecycle=None,
-        readout_browser_rendering_budget=None,
-        closure_hints=dry_run_closure_hints,
-    )
+    # The dry-run response previously embedded agent-review structured fields
+    # (agentBriefCommandProtocol_v1, agentGeneratedBundleQaChecklist_v1,
+    # agentBriefAcceptanceReadout_v1, agentReviewReadoutConsistencyClosure_v1).
+    # These were deterministic helpers that computed "how the agent should
+    # review this bundle" — methodology that now lives in bim-agent, not the
+    # bim-ai engine. They were dropped in final-purification phase 2.
     if not ok or new_doc is None:
         return {
             "ok": False,
@@ -1007,10 +963,6 @@ async def dry_run_command_bundle(
                 commands_for_commit,
                 outcome_code=code,
             ),
-            "agentBriefCommandProtocol_v1": brief_proto,
-            "agentGeneratedBundleQaChecklist_v1": qa_checklist,
-            "agentBriefAcceptanceReadout_v1": accept_readout,
-            "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
             "dryRunEvidence": dry_run_evidence,
             "transactionSafety": transaction_safety,
             "transactionPreflightAudit": transaction_preflight_audit,
@@ -1026,10 +978,6 @@ async def dry_run_command_bundle(
         "wouldRevision": new_doc.revision,
         "appliedCommandsPreview": commands_for_commit,
         "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
-        "agentBriefCommandProtocol_v1": brief_proto,
-        "agentGeneratedBundleQaChecklist_v1": qa_checklist,
-        "agentBriefAcceptanceReadout_v1": accept_readout,
-        "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
         "dryRunEvidence": dry_run_evidence,
         "transactionSafety": transaction_safety,
         "transactionPreflightAudit": transaction_preflight_audit,

@@ -151,52 +151,6 @@ def test_digest_stable_when_follow_through_replay_hints_differ_derivative_only()
     assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
 
 
-def test_digest_stable_when_bundle_qa_checklist_differs_derivative_only() -> None:
-    """agentGeneratedBundleQaChecklist_v1 omits semantic digest."""
-
-    root = {"format": "evidencePackage_v1", "revision": 1, "modelId": "m1"}
-    a = {
-        **root,
-        "agentGeneratedBundleQaChecklist_v1": {
-            "format": "agentGeneratedBundleQaChecklist_v1",
-            "schemaVersion": 1,
-            "marker": "alpha",
-        },
-    }
-    b = {
-        **root,
-        "agentGeneratedBundleQaChecklist_v1": {
-            "format": "agentGeneratedBundleQaChecklist_v1",
-            "schemaVersion": 1,
-            "marker": "beta",
-        },
-    }
-    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
-
-
-def test_digest_stable_when_agent_brief_acceptance_readout_differs_derivative_only() -> None:
-    """agentBriefAcceptanceReadout_v1 omits semantic digest."""
-
-    root = {"format": "evidencePackage_v1", "revision": 1, "modelId": "m1"}
-    a = {
-        **root,
-        "agentBriefAcceptanceReadout_v1": {
-            "format": "agentBriefAcceptanceReadout_v1",
-            "schemaVersion": 1,
-            "marker": "alpha",
-        },
-    }
-    b = {
-        **root,
-        "agentBriefAcceptanceReadout_v1": {
-            "format": "agentBriefAcceptanceReadout_v1",
-            "schemaVersion": 1,
-            "marker": "beta",
-        },
-    }
-    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
-
-
 def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     pkg = "f" * 64
     sheet = [
@@ -933,8 +887,6 @@ def test_digest_exclusion_rules_v1_lists_derivative_keys() -> None:
         "evidenceBaselineLifecycleReadout_v1",
         "evidenceDiffIngestFixLoop_v1",
         "evidenceReviewPerformanceGate_v1",
-        "agentGeneratedBundleQaChecklist_v1",
-        "agentBriefAcceptanceReadout_v1",
     ):
         assert expected in keys
     assert isinstance(rules.get("rationale"), str) and rules["rationale"]

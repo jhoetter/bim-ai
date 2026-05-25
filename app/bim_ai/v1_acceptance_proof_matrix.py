@@ -49,7 +49,6 @@ _SUBSYSTEM_ROWS: list[dict[str, Any]] = [
             "webHydrate": "partial",
         },
         "evidenceTokens": [
-            "agentBriefCommandProtocol_v1",
             "agentEvidenceClosureHints",
             "evidenceClosureReview_v1",
             "evidenceLifecycleSignal_v1",

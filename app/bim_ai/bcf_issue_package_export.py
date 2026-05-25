@@ -532,7 +532,6 @@ def bcf_issue_package_export_v1(
             {"path": "agentEvidenceClosureHints_v1.evidenceClosureReviewField"},
             {"path": "agentEvidenceClosureHints_v1.evidenceDiffIngestFixLoopField"},
             {"path": "agentEvidenceClosureHints_v1.artifactIngestCorrelationFullPath"},
-            {"path": "agentReviewActions_v1", "hint": "kind=remediateEvidenceDiffIngest"},
         ]
 
     remediation_hint_refs.sort(key=lambda x: (str(x.get("path") or ""), str(x.get("hint") or "")))

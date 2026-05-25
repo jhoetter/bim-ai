@@ -28,11 +28,6 @@ from bim_ai.activity import emit_activity_row
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.assets import search_assets
-from bim_ai.brief_acceptance_readout import agent_brief_acceptance_readout_v1
-from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
-from bim_ai.bundle_qa_checklist import (
-    agent_generated_bundle_qa_checklist_v1,
-)
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
@@ -66,6 +61,7 @@ from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     agent_evidence_closure_hints,
     artifact_upload_manifest_v1,
+    bcf_topics_index_v1,
     deterministic_3d_view_evidence_manifest,
     deterministic_plan_view_evidence_manifest,
     deterministic_section_cut_evidence_manifest,
@@ -85,7 +81,6 @@ from bim_ai.evidence_manifest import (
     plan_view_wire_index,
     sheetProductionEvidenceBaseline_v1,
 )
-from bim_ai.evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.hub import Hub
 from bim_ai.jobs.evidence_package import (
@@ -110,9 +105,6 @@ from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
 from bim_ai.renderer_diagnostic_persistence import (
     latest_renderer_diagnostic_packet_for_evidence,
     renderer_diagnostic_packet_embedding,
-)
-from bim_ai.review_readout_consistency_closure import (
-    agent_review_readout_consistency_closure_v1,
 )
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
@@ -1269,27 +1261,17 @@ def build_evidence_package_payload(
         evidence_closure_review=payload["evidenceClosureReview_v1"],
     )
     payload["agentEvidenceClosureHints"] = agent_evidence_closure_hints()
-    payload["bcfTopicsIndex_v1"] = bcf_topics_index_v1(doc)
-    payload["agentReviewActions_v1"] = agent_review_actions_v1(
-        doc=doc,
-        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
-        deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
-        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
-        deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
-        violations=viols,
-        evidence_closure_review=payload["evidenceClosureReview_v1"],
-    )
-    payload["agentBriefCommandProtocol_v1"] = agent_brief_command_protocol_v1(
-        doc=doc,
-        proposed_commands=[],
-        validation_violations=viols,
-    )
+    # bcf_topics_index is a derivative summary used internally by the follow-through
+    # rollup. It used to be emitted as payload["bcfTopicsIndex_v1"] alongside the
+    # "agent review" structured fields; both were dropped in final-purification
+    # phase 2 — review/scoring methodology lives in bim-agent, not bim-ai.
+    bcf_topics_index = bcf_topics_index_v1(doc)
     payload["evidenceAgentFollowThrough_v1"] = evidence_agent_follow_through_v1(
         model_id=model_id,
         doc=doc,
         package_semantic_digest_sha256=digest,
         suggested_evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
-        bcf_topics_index=payload["bcfTopicsIndex_v1"],
+        bcf_topics_index=bcf_topics_index,
         deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
         deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
         deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
@@ -1304,45 +1286,10 @@ def build_evidence_package_payload(
         package_semantic_digest_sha256=digest,
         evidence_closure_review=payload["evidenceClosureReview_v1"],
     )
-    follow_raw = payload.get("evidenceAgentFollowThrough_v1")
-    ref_res = (
-        follow_raw.get("evidenceRefResolution_v1")
-        if isinstance(follow_raw, dict)
-        and isinstance(follow_raw.get("evidenceRefResolution_v1"), dict)
-        else None
-    )
-    payload["agentGeneratedBundleQaChecklist_v1"] = agent_generated_bundle_qa_checklist_v1(
-        brief_protocol=payload["agentBriefCommandProtocol_v1"],
-        validate=payload["validate"],
-        schedule_ids=payload["scheduleIds"],
-        export_links=payload["exportLinks"],
-        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
-        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
-        evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
-        evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
-        evidence_ref_resolution=ref_res,
-    )
-    payload["agentBriefAcceptanceReadout_v1"] = agent_brief_acceptance_readout_v1(
-        doc=doc,
-        brief_protocol=payload["agentBriefCommandProtocol_v1"],
-        qa_checklist=payload["agentGeneratedBundleQaChecklist_v1"],
-        artifact_upload_manifest=payload.get("artifactUploadManifest_v1"),
-        validation_violations=viols,
-    )
     payload["evidenceBaselineLifecycleReadout_v1"] = evidence_baseline_lifecycle_readout_v1(
         evidence_closure_review=payload["evidenceClosureReview_v1"],
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
-    )
-    payload["agentReviewReadoutConsistencyClosure_v1"] = (
-        agent_review_readout_consistency_closure_v1(
-            readout_brief_acceptance=payload.get("agentBriefAcceptanceReadout_v1"),
-            readout_bundle_qa_checklist=payload.get("agentGeneratedBundleQaChecklist_v1"),
-            readout_merge_preflight=None,
-            readout_baseline_lifecycle=payload.get("evidenceBaselineLifecycleReadout_v1"),
-            readout_browser_rendering_budget=None,
-            closure_hints=payload["agentEvidenceClosureHints"],
-        )
     )
     payload["v1AcceptanceProofMatrix_v1"] = build_v1_acceptance_proof_matrix_v1(doc)
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
