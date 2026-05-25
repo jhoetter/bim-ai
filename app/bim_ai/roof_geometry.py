@@ -26,6 +26,14 @@ RoofGeometryMode = Literal[
     # tessellates the arc into ``barrel_segment_count`` flat strips that
     # approximate the cylindrical surface.
     "barrel",
+    # ISSUE-112: Mansarddach (Mansard / French roof) — two-pitch roof where
+    # the lower slope is near-vertical (steep skirt that encloses the DG) and
+    # the upper slope is shallow (hipped or gabled cap). The two pitches meet
+    # at a horizontal "knee" line at ``mansardKneeHeightMm`` above the eave.
+    # Mansardgauben (dormers) cut into the steep lower slope reuse the
+    # existing dormer renderer. Footprint must be an axis-aligned rectangle
+    # for v0.
+    "mansard",
 ]
 
 RoofGeometrySupportTokenV0 = Literal[
@@ -37,6 +45,7 @@ RoofGeometrySupportTokenV0 = Literal[
     "half_gable_supported",
     "mono_pitch_offset_supported",
     "barrel_supported",
+    "mansard_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
     "missing_slope_or_level",
@@ -231,6 +240,14 @@ def roof_geometry_support_token_v0(
         and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
     ):
         return "mono_pitch_offset_supported"
+
+    # ISSUE-112: Mansarddach — two-pitch (steep lower skirt + shallow upper
+    # cap) restricted to axis-aligned rectangles for v0. The lower slope
+    # encloses the DG; Mansardgauben sit on it.
+    if roof_geometry_mode == "mansard" and footprint_is_valid_axis_aligned_rectangle_mm(
+        footprint_mm
+    ):
+        return "mansard_supported"
 
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
@@ -523,6 +540,149 @@ def half_gable_truncation_height_mm(
 
     f = clamp_half_hip_height_fraction(half_hip_height_fraction)
     return max(0.0, float(full_ridge_rise_mm) * (1.0 - f))
+
+
+def assert_valid_mansard_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-112: mansard (Mansarddach) requires an axis-aligned rectangle for v0.
+
+    A Mansard / French roof has a steep lower slope (near-vertical skirt that
+    encloses the DG and hosts Mansardgauben) and a shallow upper slope (cap).
+    The two slopes meet at a horizontal "knee" line at
+    ``mansardKneeHeightMm`` above the eave. Non-rectangular footprints
+    defer to the slab fallback (same as flat).
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "mansard footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Mansarddach is deferred"
+        )
+
+
+def mansard_default_lower_pitch_deg() -> float:
+    """ISSUE-112: default steep skirt pitch for Mansarddach.
+
+    A typical Mansarddach has a lower skirt that is near-vertical — French
+    practice puts it around 70°. We default to 70° so callers that omit the
+    field get a recognisable Mansard silhouette without needing a magic
+    number.
+    """
+
+    return 70.0
+
+
+def mansard_default_upper_pitch_deg() -> float:
+    """ISSUE-112: default shallow cap pitch for Mansarddach.
+
+    The upper cap is shallow — typical practice is 10–30°. We default to
+    20° so the cap is clearly distinct from the steep skirt without
+    flattening into a pseudo-flat roof.
+    """
+
+    return 20.0
+
+
+def clamp_mansard_pitch_deg(
+    raw: float | None,
+    *,
+    default: float,
+    min_deg: float = 1.0,
+    max_deg: float = 89.0,
+) -> float:
+    """ISSUE-112: clamp a mansard pitch into ``[min_deg, max_deg]``.
+
+    Mansard slopes are bounded: the lower (steep) slope must be below
+    90° (a true vertical would degenerate into a wall, not a roof slope)
+    and the upper (shallow) slope must be above 0° so it still drains.
+    ``None`` / NaN / garbage falls back to ``default``.
+    """
+
+    if raw is None:
+        return float(default)
+    try:
+        f = float(raw)
+    except (TypeError, ValueError):
+        return float(default)
+    if math.isnan(f):
+        return float(default)
+    return max(min_deg, min(max_deg, f))
+
+
+def mansard_knee_height_mm(
+    *,
+    span_x: float,
+    span_z: float,
+    lower_pitch_deg: float,
+    raw_knee_height_mm: float | None,
+    default_fraction: float = 0.6,
+    min_height_mm: float = 100.0,
+) -> float:
+    """ISSUE-112: resolve the knee elevation (above eave) for the mansard.
+
+    The knee height is the elevation at which the steep lower skirt
+    transitions into the shallow upper cap.
+
+    - ``raw_knee_height_mm = None`` defaults to ``default_fraction`` (60%)
+      of the maximum elevation the steep skirt can reach before the
+      upper cap takes over the centre of the rectangle.
+    - Returned value is clamped to ``[min_height_mm, max_skirt_rise]``
+      where ``max_skirt_rise = half_short_span × tan(lower_pitch_deg)``.
+
+    The max-skirt-rise upper bound exists because, geometrically, a steep
+    skirt cannot rise higher than the point where the two opposite skirts
+    meet at the rectangle centerline. Beyond that, there is no room left
+    for the shallow upper cap and the roof degenerates back into a hip /
+    gable. We always leave at least 1 mm of headroom so the cap is
+    representable.
+    """
+
+    half_short_span = min(span_x, span_z) / 2.0
+    lower_rad = math.radians(max(1.0, min(89.0, lower_pitch_deg)))
+    max_skirt_rise = half_short_span * math.tan(lower_rad)
+    if max_skirt_rise <= min_height_mm:
+        # Degenerate rectangle (sub-mm short span / sub-vertical skirt) —
+        # return the safer floor so the renderer/IFC don't crash on zero.
+        return min_height_mm
+    if raw_knee_height_mm is None:
+        target = max_skirt_rise * default_fraction
+    else:
+        try:
+            target = float(raw_knee_height_mm)
+        except (TypeError, ValueError):
+            target = max_skirt_rise * default_fraction
+        if math.isnan(target):
+            target = max_skirt_rise * default_fraction
+    return max(min_height_mm, min(max_skirt_rise - 1.0, target))
+
+
+def mansard_upper_ridge_rise_mm(
+    *,
+    span_x: float,
+    span_z: float,
+    lower_pitch_deg: float,
+    upper_pitch_deg: float,
+    knee_height_mm: float,
+) -> float:
+    """ISSUE-112: vertical rise (mm above eave) at the ridge of the upper cap.
+
+    Geometry:
+    - The lower (steep) skirt eats into the rectangle from each edge by
+      ``inset = knee_height / tan(lower_pitch_deg)`` until it reaches the
+      knee elevation.
+    - The remaining inner rectangle at the knee carries the shallow
+      upper cap (hipped/gabled). Half of the SHORTER inner span × tan
+      of the upper pitch is the ridge rise above the knee.
+    - Total ridge rise above the eave = knee_height + upper-cap rise.
+    """
+
+    lower_rad = math.radians(max(1.0, min(89.0, lower_pitch_deg)))
+    upper_rad = math.radians(max(1.0, min(89.0, upper_pitch_deg)))
+    inset_each_side = knee_height_mm / math.tan(lower_rad) if math.tan(lower_rad) > 1e-9 else 0.0
+    inner_span_x = max(0.0, span_x - 2.0 * inset_each_side)
+    inner_span_z = max(0.0, span_z - 2.0 * inset_each_side)
+    inner_short = min(inner_span_x, inner_span_z)
+    cap_rise = (inner_short / 2.0) * math.tan(upper_rad)
+    return knee_height_mm + cap_rise
 
 
 def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:

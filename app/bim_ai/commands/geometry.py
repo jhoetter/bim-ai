@@ -291,6 +291,14 @@ class CreateRoofCmd(BaseModel):
     half_hip_height_fraction: float | None = Field(
         default=None, alias="halfHipHeightFraction"
     )
+    # ISSUE-112: Mansarddach (Mansard / French roof) parameters. The lower
+    # steep skirt encloses the DG; Mansardgauben sit on it. The knee height
+    # is the elevation above the eave at which the steep skirt transitions
+    # into the shallow upper cap. All three fields are optional; renderer
+    # defaults kick in when they're omitted. Ignored for non-mansard modes.
+    mansard_lower_pitch_deg: float | None = Field(default=None, alias="mansardLowerPitchDeg")
+    mansard_upper_pitch_deg: float | None = Field(default=None, alias="mansardUpperPitchDeg")
+    mansard_knee_height_mm: float | None = Field(default=None, alias="mansardKneeHeightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override. Engine default
@@ -321,6 +329,14 @@ class CreateRoofCmd(BaseModel):
             "clipped_gable",
         ):
             return "half_gable"
+        # ISSUE-112: aliases for the Mansarddach (Mansard / French roof).
+        if value in (
+            "mansard_roof",
+            "mansarddach",
+            "french_roof",
+            "two_pitch",
+        ):
+            return "mansard"
         return value
 
 

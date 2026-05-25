@@ -471,6 +471,7 @@ from bim_ai.roof_geometry import (
     assert_valid_half_gable_footprint_mm,
     assert_valid_hip_footprint_mm,
     assert_valid_l_shape_footprint_mm,
+    assert_valid_mansard_footprint_mm,
     assert_valid_mono_pitch_footprint_mm,
     edge_profile_run_path_mm,
     outer_rect_extent,

@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #109 — Openings on gable-shaped walls (Giebelverglasung)</title>
+  <desc>
+    Gable-end view of a 6000 x 5000 mm rectangular footprint with a 2.8 m
+    eave wall and a roof peak at 5.0 m. Before: the CSG wall-opening path
+    treats the wall as a rectangle of height = wall.heightMm, so any
+    window whose head reaches above the eave is squashed back down — the
+    upper gable triangle renders as solid mass. After: a roof-attached
+    wall ships a per-sample top profile to the CSG worker, which builds
+    a gable-shaped prism (eave + triangle) and lets the existing window
+    cutter subtract a tall Giebelverglasung sash that spans from sill at
+    400 mm all the way up into the gable peak.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="roofTiles" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#b35d4f"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#7d3d33" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#7d3d33" stroke-width="0.6"/>
+    </pattern>
+    <linearGradient id="glass" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cfe6f0"/>
+      <stop offset="1" stop-color="#9fc3d4"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE (opaque gable) ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Solid gable triangle (today)</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      CSG cuts a rectangle of height = wall.heightMm; gable zone unaffected
+    </text>
+
+    <line x1="40" y1="380" x2="520" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- 6m wide x 2.8m eave x peak +2.2m, scale 40 px/m. Wall span 6m = 240 px.
+         Footprint left x=160, right x=400; eave at y=268 (top of wall); peak y=180. -->
+    <!-- Rectangular wall (eave portion) -->
+    <rect x="160" y="268" width="240" height="112" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Gable triangle (also solid wall material — this is the symptom) -->
+    <polygon points="160,268 400,268 280,180" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Roof overhang stripe on top of the gable to identify the shape -->
+    <polygon points="155,270 280,178 405,270 400,272 280,184 160,272" fill="url(#roofTiles)" stroke="#7d3d33" stroke-width="1.2"/>
+
+    <!-- Authored window: sill 400mm, head reaches into peak.
+         x ∈ [220, 340], sill at y=268+ (2.8-0.4)*40 = 268+96 = no wait — sill is
+         from BASE 0.4m → y_window_bottom = 380 - 0.4*40 = 364.
+         head 5.0m → y_window_top = 380 - 5.0*40 = 180. -->
+    <!-- Authored extent (dashed red outline + label) -->
+    <rect x="220" y="180" width="120" height="184" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="280" y="173" text-anchor="middle" font-size="10" fill="#7f1d1d" font-weight="600">authored window extent</text>
+
+    <!-- Rendered window (only the part below eave actually cuts) -->
+    <rect x="220" y="268" width="120" height="96" fill="url(#glass)" stroke="#4b6878" stroke-width="1"/>
+    <line x1="220" y1="316" x2="340" y2="316" stroke="#4b6878" stroke-width="0.8"/>
+    <line x1="280" y1="268" x2="280" y2="364" stroke="#4b6878" stroke-width="0.8"/>
+
+    <!-- Eave dashed reference -->
+    <line x1="50" y1="268" x2="500" y2="268" stroke="#dc2626" stroke-width="0.8" stroke-dasharray="2 3"/>
+    <text x="500" y="265" text-anchor="end" font-size="9" fill="#7f1d1d">eave (= wall.heightMm) — cut ceiling</text>
+
+    <!-- Annotation -->
+    <g transform="translate(40, 405)">
+      <text font-size="10" fill="#991b1b" font-weight="600">x</text>
+      <text x="14" font-size="10" fill="#4b5563">
+        Gable triangle renders opaque — Giebelfenster head clamped to eave.
+      </text>
+    </g>
+
+    <!-- Issue badge -->
+    <g transform="translate(40, 90)">
+      <rect width="170" height="22" rx="11" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+      <text x="85" y="15" text-anchor="middle" font-size="10" fill="#7f1d1d" font-weight="600">renderer cuts rectangle only</text>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER (Giebelverglasung) ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Gable-shaped CSG prism (new)</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      topProfileM samples the roof underside; cutter subtracts the full sash
+    </text>
+
+    <line x1="580" y1="380" x2="1060" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- Wall (eave) -->
+    <rect x="700" y="268" width="240" height="112" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Gable triangle wall mass -->
+    <polygon points="700,268 940,268 820,180" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Roof tile stripe -->
+    <polygon points="695,270 820,178 945,270 940,272 820,184 700,272" fill="url(#roofTiles)" stroke="#7d3d33" stroke-width="1.2"/>
+
+    <!-- Giebelverglasung: full sash hosted on the wall, head clipped to the
+         roof slope. Authored extent ∈ [760, 880] × [180, 364]; clipped at
+         top to the roof slope (the two diagonal edges of the gable).
+         The polygon below is the visible glazing shape — trapezoid+peak. -->
+    <!-- Build the clipped polygon. Left edge of window: x=760, intersects
+         left slope (y = 268 - (x-160)*88/120 mapped to right panel) — the
+         right-panel slopes go from (700,268)→(820,180) and (820,180)→(940,268).
+         left slope: slope = (180-268)/(820-700) = -0.7333, so y = 268 - 0.7333*(x-700).
+         At x=760: y = 268 - 0.7333*60 = 224.
+         right slope: y = 180 + 0.7333*(x-820). At x=880: y = 180 + 0.7333*60 = 224. -->
+    <polygon points="760,364 880,364 880,224 820,180 760,224"
+             fill="url(#glass)" stroke="#4b6878" stroke-width="1.2"/>
+
+    <!-- Mullion: vertical centre -->
+    <line x1="820" y1="364" x2="820" y2="180" stroke="#4b6878" stroke-width="0.9"/>
+    <!-- Transoms -->
+    <line x1="760" y1="316" x2="880" y2="316" stroke="#4b6878" stroke-width="0.8"/>
+    <line x1="760" y1="268" x2="880" y2="268" stroke="#4b6878" stroke-width="0.8"/>
+    <line x1="765" y1="224" x2="875" y2="224" stroke="#4b6878" stroke-width="0.6" stroke-dasharray="3 2"/>
+
+    <!-- Eave reference (now passes THROUGH the window, no longer a ceiling) -->
+    <line x1="590" y1="268" x2="1050" y2="268" stroke="#16a34a" stroke-width="0.8" stroke-dasharray="2 3"/>
+    <text x="1050" y="265" text-anchor="end" font-size="9" fill="#14532d">eave (just a transom now)</text>
+
+    <!-- Peak label -->
+    <circle cx="820" cy="180" r="3" fill="#ffffff" stroke="#3d5a35" stroke-width="1.5"/>
+    <text x="820" y="172" text-anchor="middle" font-size="10" fill="#3d5a35" font-weight="600">peak (sampled)</text>
+
+    <!-- Annotation -->
+    <g transform="translate(580, 405)">
+      <text font-size="10" fill="#15803d" font-weight="600">✓</text>
+      <text x="14" font-size="10" fill="#4b5563">
+        wallBaseGeometryForCsg builds the gable prism; window cuts to peak.
+      </text>
+    </g>
+
+    <!-- Mode badge -->
+    <g transform="translate(580, 90)">
+      <rect width="240" height="22" rx="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="120" y="15" text-anchor="middle" font-size="10" fill="#14532d" font-weight="600">CSG: topProfileM from roof underside</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <text x="550" y="455" text-anchor="middle" font-size="9.5" fill="#6b7280">
+    Issue #109 — closes Giebelverglasung gap. roofAttachmentId + topProfileM rebuilds the wall mass; existing CSG cutters do the rest.
+  </text>
+</svg>

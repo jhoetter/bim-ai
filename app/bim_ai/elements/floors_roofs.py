@@ -165,6 +165,15 @@ class RoofElem(BaseModel):
     # ``roof_geometry_mode == "barrel"``.
     barrel_rise_mm: float | None = Field(default=None, alias="barrelRiseMm")
     barrel_segment_count: int | None = Field(default=None, alias="barrelSegmentCount")
+    # ISSUE-112: Mansarddach (Mansard / French roof) parameters. The lower
+    # (steep) skirt encloses the DG and meets the upper (shallow) cap at the
+    # horizontal "knee" line ``mansard_knee_height_mm`` above the eave.
+    # Mansardgauben (dormers) on the lower slope reuse the existing dormer
+    # renderer. All fields are optional and only consumed when
+    # ``roof_geometry_mode == "mansard"``.
+    mansard_lower_pitch_deg: float | None = Field(default=None, alias="mansardLowerPitchDeg")
+    mansard_upper_pitch_deg: float | None = Field(default=None, alias="mansardUpperPitchDeg")
+    mansard_knee_height_mm: float | None = Field(default=None, alias="mansardKneeHeightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,

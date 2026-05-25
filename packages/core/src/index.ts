@@ -1275,6 +1275,40 @@ export type Element =
       cutBy?: string[];
       /** §3.5.5: per-endpoint join variant overrides. Key = adjacent wall ID, value = join variant. */
       joinOverrides?: Record<string, 'miter' | 'butt' | 'square'> | null;
+      /**
+       * Issue #111 — visible exposed half-timbering raster overlay.
+       *
+       * When set, the renderer draws a dark timber grid (posts, sill,
+       * top-plate, optional mid-rails and diagonals) on the wall's
+       * exterior face, ~10 mm proud of the wall plane. The wall's own
+       * `materialKey` provides the Gefache (panel) infill — typically
+       * `brick_red` for the classic Niedersachsen Fachwerk look or
+       * `plaster` for whitewashed Gefache. Per-Ständer geometric
+       * authoring is deferred (see PR for #111 — v0 is an overlay so the
+       * facade reads correctly without exploding element counts).
+       */
+      fachwerkPattern?: {
+        /** Horizontal Ständer (post) spacing, centre-to-centre. Default 1500 mm. */
+        postSpacingMm?: number;
+        /** Visible Ständer width. Default 140 mm. */
+        postWidthMm?: number;
+        /** Visible Riegel (rail) band height. Default 140 mm. */
+        railHeightMm?: number;
+        /** Schwelle (sill) band height at wall foot. Default 200 mm. */
+        sillHeightMm?: number;
+        /** Rähm (top plate) band height at wall top. Default 200 mm. */
+        topPlateHeightMm?: number;
+        /** Optional mid-rail elevations between sill and top plate (mm). */
+        midRailHeightsMm?: number[];
+        /** Diagonal Strebe direction per Gefach panel. */
+        diagonalsPerPanel?: 'none' | 'left' | 'right' | 'vee' | 'andreas_kreuz';
+        /** Visible Strebe width. Default 120 mm. */
+        diagonalWidthMm?: number;
+        /** Overlay timber material. Default `timber_dark_oak`. */
+        timberMaterialKey?: string;
+        /** How far the overlay sits proud of the wall plane. Default 10 mm. */
+        proudMm?: number;
+      } | null;
     }
   | {
       kind: 'door';
@@ -1577,7 +1611,8 @@ export type Element =
         | 'flat'
         | 'mono_pitch'
         | 'half_gable'
-        | 'mono_pitch_offset';
+        | 'mono_pitch_offset'
+        | 'mansard';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
@@ -1605,6 +1640,25 @@ export type Element =
        * edge to the step (mm). When omitted, defaults to the midpoint.
        */
       stepPositionAlongLongAxisMm?: number | null;
+      /**
+       * ISSUE-112: Mansarddach (Mansard / French roof) lower (steep) skirt
+       * pitch in degrees. Defaults to ~70° (near-vertical skirt that
+       * encloses the DG) when omitted. Ignored for non-`mansard` modes.
+       */
+      mansardLowerPitchDeg?: number | null;
+      /**
+       * ISSUE-112: Mansarddach upper (shallow) cap pitch in degrees.
+       * Defaults to ~20° (shallow hipped/gabled cap) when omitted.
+       * Ignored for non-`mansard` modes.
+       */
+      mansardUpperPitchDeg?: number | null;
+      /**
+       * ISSUE-112: Mansarddach knee height above the eave (mm). The
+       * elevation at which the steep lower skirt transitions into the
+       * shallow upper cap. Defaults to ~60% of the maximum skirt rise
+       * when omitted. Ignored for non-`mansard` modes.
+       */
+      mansardKneeHeightMm?: number | null;
       roofTypeId?: string | null;
       materialKey?: string | null;
       loadBearing?: boolean | null;
