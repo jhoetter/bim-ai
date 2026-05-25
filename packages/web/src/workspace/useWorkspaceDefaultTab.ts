@@ -25,6 +25,15 @@ export interface WorkspaceDefaultTabOptions {
   }) => void;
 }
 
+/** Issue #132 — read once per render; helper exported for unit tests. */
+export function readCaptureModeFromUrl(search?: string): boolean {
+  if (typeof search === 'string') {
+    return new URLSearchParams(search).get('captureMode') === '1';
+  }
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('captureMode') === '1';
+}
+
 /**
  * After a model has hydrated, prune any restored tabs whose targets no
  * longer exist (e.g. a sheet deleted between sessions). If the pruned set
@@ -32,6 +41,14 @@ export interface WorkspaceDefaultTabOptions {
  * id, not app lifetime, because local seed workflows often switch
  * between disposable evidence models and the final seed model in one
  * browser session.
+ *
+ * Issue #132 — MF-render-12: when the URL contains `?captureMode=1` (set
+ * by `packages/web/scripts/view-capture-run.mjs`), force a 3D tab as the
+ * default and ignore any persisted tabs. Without this, MCP-authored
+ * models (which have no `viewpoint` element) fall through to a plan tab,
+ * the CanvasMount renders `<PlanCanvas/>` regardless of `viewerMode`, and
+ * every ortho capture is a screenshot of the 2D plan UI rather than a
+ * 3D render — 7-of-8 byte-identical, none usable for grading.
  */
 export function useWorkspaceDefaultTab(options: WorkspaceDefaultTabOptions): void {
   const {
@@ -57,6 +74,7 @@ export function useWorkspaceDefaultTab(options: WorkspaceDefaultTabOptions): voi
     const elements = Object.values(elementsById) as Element[];
     if (elements.length === 0) return;
     defaultOpenedModelIdRef.current = modelId;
+    const captureMode = readCaptureModeFromUrl();
     const preferredViewpoint =
       elements.find((e): e is Extract<Element, { kind: 'viewpoint' }> => {
         if (e.kind !== 'viewpoint') return false;
@@ -73,22 +91,33 @@ export function useWorkspaceDefaultTab(options: WorkspaceDefaultTabOptions): voi
       .sort((a, b) => a.elevationMm - b.elevationMm);
     const targetLevel =
       levels.find((level) => level.id === activeLevelId) ?? levels[0] ?? undefined;
-    const defaultTab: Omit<ViewTab, 'id'> | null = preferredViewpoint
-      ? { kind: '3d', targetId: preferredViewpoint.id, label: `3D · ${preferredViewpoint.name}` }
-      : preferredPlanView
-        ? {
-            kind: 'plan',
-            targetId: preferredPlanView.id,
-            label: `Plan view · ${preferredPlanView.name}`,
-          }
-        : targetLevel
-          ? { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }
-          : null;
+    // Issue #132 — capture-views: force 3D tab regardless of which view
+    // elements exist in the model. The capture runner sets cardinal
+    // cameras + style via __bimStore after this tab opens; the tab kind
+    // must be '3d' so CanvasMount renders <Viewport/>, not <PlanCanvas/>.
+    const defaultTab: Omit<ViewTab, 'id'> | null = captureMode
+      ? preferredViewpoint
+        ? { kind: '3d', targetId: preferredViewpoint.id, label: `3D · ${preferredViewpoint.name}` }
+        : { kind: '3d', label: '3D · Capture' }
+      : preferredViewpoint
+        ? { kind: '3d', targetId: preferredViewpoint.id, label: `3D · ${preferredViewpoint.name}` }
+        : preferredPlanView
+          ? {
+              kind: 'plan',
+              targetId: preferredPlanView.id,
+              label: `Plan view · ${preferredPlanView.name}`,
+            }
+          : targetLevel
+            ? { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }
+            : null;
     if (!defaultTab) return;
     setTabsState((s) => {
       const pruned = pruneTabsAgainstElements(s, elementsById);
-      if (pruned.tabs.length > 0) return pruned;
-      return openTab(pruned, defaultTab);
+      // In captureMode, ignore any persisted tabs (Playwright always
+      // starts with a fresh context so this is normally a no-op, but
+      // guards against an unwanted plan tab leaking in).
+      if (!captureMode && pruned.tabs.length > 0) return pruned;
+      return openTab(captureMode ? { tabs: [], activeId: null } : pruned, defaultTab);
     });
     if (defaultTab.kind === '3d') {
       setMode('3d' as WorkspaceMode);

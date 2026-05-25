@@ -233,7 +233,15 @@ export async function runViewCapture(opts) {
   await fs.mkdir(outDir, { recursive: true });
 
   const parsedViews = views.map(parseViewToken);
-  const url = `${webUrl}/?modelId=${encodeURIComponent(modelId)}&projection=orthographic`;
+  // Issue #132 — MF-render-12: `&captureMode=1` tells the workspace to
+  // open a 3D tab as the default for this model, even when the model has
+  // no `viewpoint` element (typical for MCP-authored models). Without
+  // this, the default tab is a plan tab → CanvasMount renders
+  // <PlanCanvas/> → every cardinal capture is a 2D-plan UI screenshot
+  // (7-of-8 byte-identical), not a 3D ortho render.
+  const url =
+    `${webUrl}/?modelId=${encodeURIComponent(modelId)}` +
+    `&projection=orthographic&captureMode=1`;
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width, height, deviceScaleFactor: 1 },
