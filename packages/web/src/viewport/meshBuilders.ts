@@ -36,6 +36,7 @@ import { buildProfiledWallMesh } from './meshBuilders.wallProfile';
 import { buildFloorEdgeProfileMesh } from './buildFloorEdgeProfile';
 export { makeRampMesh, buildRampMesh };
 export { makeBalconyMesh } from './meshBuilders.balcony';
+export { makeFacadeBayMesh } from './meshBuilders.facadeBay';
 export { buildSteelConnectionMesh, makeBeamMesh, makeColumnMesh } from './meshBuilders.structural';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
@@ -61,8 +62,10 @@ import {
   _buildHipPolygonGeometry,
   _buildLShapeGeometry,
   _buildMonoPitchGeometry,
+  _buildMonoPitchOffsetGroup,
   _compactnessRatio,
 } from './roofGeometry';
+import { mergeGeometries as _mergeRoofGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Project-authored
  * type elements must win over built-ins so material/type edits render
@@ -870,6 +873,62 @@ export function makeRoofMassMesh(
       const defaultHighEdge: 'n' | 'e' | 's' | 'w' = spanXm >= spanZm ? 'n' : 'e';
       const highEdge = roof.monoPitchHighEdge ?? defaultHighEdge;
       geom = _buildMonoPitchGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, highEdge);
+    } else if (roof.roofGeometryMode === 'mono_pitch_offset') {
+      // ISSUE-101 — Versetztes Pultdach: two mono-pitched slabs at different
+      // eave heights with a horizontal clerestory band between them. Build
+      // the structured Group via the dedicated helper, then merge its mesh
+      // geometries into a single BufferGeometry so the existing single-mesh
+      // dispatch (and CSG/dormer pipeline) keep working byte-for-byte.
+      const longAlongX = spanXm >= spanZm;
+      const frontEaveY =
+        roof.frontEaveHeightMm != null ? refElev + roof.frontEaveHeightMm / 1000 : eaveY;
+      const rearEaveY =
+        roof.rearEaveHeightMm != null ? refElev + roof.rearEaveHeightMm / 1000 : eaveY;
+      const frontPitchRad =
+        (THREE.MathUtils.clamp(Number(roof.frontPitchDeg ?? roof.slopeDeg ?? 25), 5, 70) *
+          Math.PI) /
+        180;
+      const rearPitchRad =
+        (THREE.MathUtils.clamp(Number(roof.rearPitchDeg ?? roof.slopeDeg ?? 25), 5, 70) * Math.PI) /
+        180;
+      const bandM = Math.max(0, (roof.clerestoryBandHeightMm ?? 0) / 1000);
+      const longSpanMm = longAlongX ? b.spanX : b.spanZ;
+      const stepMm = roof.stepPositionAlongLongAxisMm ?? longSpanMm / 2;
+      const stepFrac = Math.min(0.99, Math.max(0.01, stepMm / Math.max(longSpanMm, 1)));
+      const offsetGroup = _buildMonoPitchOffsetGroup(
+        ox0,
+        ox1,
+        oz0,
+        oz1,
+        frontEaveY,
+        rearEaveY,
+        frontPitchRad,
+        rearPitchRad,
+        bandM,
+        stepFrac,
+        longAlongX,
+      );
+      const childGeoms: THREE.BufferGeometry[] = [];
+      offsetGroup.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          let g = (obj as THREE.Mesh).geometry as THREE.BufferGeometry;
+          // mergeGeometries requires every input to either have an index
+          // attribute or none of them to. The slab helpers produce
+          // non-indexed BufferGeometry; THREE.BoxGeometry produces indexed.
+          // Normalise to non-indexed so the merge succeeds across mixes.
+          if (g.index) g = g.toNonIndexed();
+          // Drop unrelated attributes (uv/normal) that would otherwise have
+          // to match across all inputs; the merged mesh recomputes normals
+          // below in addEdges.
+          for (const name of Object.keys(g.attributes)) {
+            if (name !== 'position') g.deleteAttribute(name);
+          }
+          childGeoms.push(g);
+        }
+      });
+      const merged = _mergeRoofGeometries(childGeoms);
+      geom = merged ?? childGeoms[0] ?? new THREE.BufferGeometry();
+      geom.computeVertexNormals();
     } else if (roof.roofGeometryMode === 'hip') {
       // KRN-03: arbitrary convex polygons (≥5 vertices) get a pavilion hip mesh.
       // 4-vertex axis-aligned rectangles fall through to the AABB hip helper.

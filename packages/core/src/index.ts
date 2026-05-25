@@ -317,6 +317,7 @@ export type ElemKind =
   | 'sweep'
   | 'dormer'
   | 'balcony'
+  | 'facade_bay'
   | 'area'
   | 'masking_region'
   | 'spot_elevation'
@@ -1575,7 +1576,8 @@ export type Element =
         | 'hip'
         | 'flat'
         | 'mono_pitch'
-        | 'half_gable';
+        | 'half_gable'
+        | 'mono_pitch_offset';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
@@ -1588,6 +1590,21 @@ export type Element =
        * Ignored for non-`half_gable` modes.
        */
       halfHipHeightFraction?: number | null;
+      /** ISSUE-101: Versetztes Pultdach front-slab pitch (deg). */
+      frontPitchDeg?: number | null;
+      /** ISSUE-101: Versetztes Pultdach rear-slab pitch (deg). */
+      rearPitchDeg?: number | null;
+      /** ISSUE-101: front-slab eave height above the reference level (mm). */
+      frontEaveHeightMm?: number | null;
+      /** ISSUE-101: rear-slab eave height above the reference level (mm). */
+      rearEaveHeightMm?: number | null;
+      /** ISSUE-101: clerestory band height between the two slabs (mm). */
+      clerestoryBandHeightMm?: number | null;
+      /**
+       * ISSUE-101: distance along the long footprint axis from the min-corner
+       * edge to the step (mm). When omitted, defaults to the midpoint.
+       */
+      stepPositionAlongLongAxisMm?: number | null;
       roofTypeId?: string | null;
       materialKey?: string | null;
       loadBearing?: boolean | null;
@@ -1778,6 +1795,24 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      /** Issue #102 — Erker / bay window: extrusion projecting outward from a host wall. */
+      kind: 'facade_bay';
+      id: string;
+      name: string;
+      hostWallId: string;
+      startAlongWallMm: number;
+      endAlongWallMm: number;
+      projectionMm: number;
+      shape: 'rectangular' | 'chamfered' | 'curved';
+      chamferAngleDeg?: number | null;
+      levelId?: string | null;
+      materialKey?: string | null;
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
     }
   | {

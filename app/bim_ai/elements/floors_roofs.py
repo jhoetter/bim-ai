@@ -137,6 +137,24 @@ class RoofElem(BaseModel):
     half_hip_height_fraction: float | None = Field(
         default=None, alias="halfHipHeightFraction"
     )
+    # ISSUE-101: Versetztes Pultdach (offset double mono-pitch) parameters.
+    # The footprint is partitioned along the long axis at
+    # ``step_position_along_long_axis_mm`` into a front and a rear sub-
+    # rectangle. Each sub-rectangle carries its own mono-pitched slab whose
+    # eave sits at ``front_eave_height_mm`` / ``rear_eave_height_mm``. A
+    # horizontal clerestory wall band of ``clerestory_band_height_mm`` sits
+    # between them at the step. All fields are optional and only consumed
+    # when ``roof_geometry_mode == "mono_pitch_offset"``.
+    front_pitch_deg: float | None = Field(default=None, alias="frontPitchDeg")
+    rear_pitch_deg: float | None = Field(default=None, alias="rearPitchDeg")
+    front_eave_height_mm: float | None = Field(default=None, alias="frontEaveHeightMm")
+    rear_eave_height_mm: float | None = Field(default=None, alias="rearEaveHeightMm")
+    clerestory_band_height_mm: float | None = Field(
+        default=None, alias="clerestoryBandHeightMm"
+    )
+    step_position_along_long_axis_mm: float | None = Field(
+        default=None, alias="stepPositionAlongLongAxisMm"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,
@@ -289,6 +307,62 @@ class BalconyElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: DisciplineTag | None = Field(default=None)
+
+
+FacadeBayShape = Literal["rectangular", "chamfered", "curved"]
+
+
+class FacadeBayElem(BaseModel):
+    """Issue #102 — Erker / bay window projection hosted on a wall.
+
+    The bay is a rectangular, chamfered (5-vertex prism with two cut corners),
+    or curved (8-12 segment polygon) extrusion that projects outward from a
+    host wall between two parametric positions along that wall. The bay's
+    outer faces can host windows (the renderer / opening dispatcher exposes
+    the bay's id in the "available host walls" set for openings in v0).
+
+    v0 trade-offs (documented on the PR):
+    - The interior CSG punch through the host wall is deferred — the
+      projection geometry is rendered beside the wall rather than fused.
+    - IFC export is deferred.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["facade_bay"] = "facade_bay"
+    id: str
+    name: str = "Facade Bay"
+    host_wall_id: str = Field(alias="hostWallId")
+    start_along_wall_mm: float = Field(alias="startAlongWallMm")
+    end_along_wall_mm: float = Field(alias="endAlongWallMm")
+    projection_mm: float = Field(alias="projectionMm", gt=0)
+    shape: FacadeBayShape = Field(default="rectangular")
+    chamfer_angle_deg: float | None = Field(default=None, alias="chamferAngleDeg")
+    level_id: str | None = Field(default=None, alias="levelId")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _validate_bay(self) -> FacadeBayElem:
+        if self.end_along_wall_mm <= self.start_along_wall_mm:
+            raise ValueError(
+                "FacadeBayElem.endAlongWallMm must be > startAlongWallMm"
+            )
+        if self.shape == "chamfered":
+            angle = self.chamfer_angle_deg
+            if angle is None:
+                # Default to a sensible 45° if not provided.
+                self.chamfer_angle_deg = 45.0
+            elif not (0 < angle < 90):
+                raise ValueError(
+                    "FacadeBayElem.chamferAngleDeg must be in (0, 90) when shape='chamfered'"
+                )
+        if self.shape != "chamfered" and self.chamfer_angle_deg is not None:
+            # Keep the data clean — the field is only meaningful for chamfered bays.
+            self.chamfer_angle_deg = None
+        return self
 
 
 DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]

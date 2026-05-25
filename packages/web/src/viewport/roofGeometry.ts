@@ -760,6 +760,206 @@ export function _buildMonoPitchGeometry(
   return g;
 }
 
+/**
+ * ISSUE-101 — Versetztes Pultdach (offset double mono-pitch). Build a Group
+ * with two tilted slabs at different elevations + one vertical clerestory
+ * wall band between them.
+ *
+ * Inputs (all metres / radians):
+ * - ox0/ox1/oz0/oz1: rectangle bounds (incl. overhang) in world XZ.
+ * - frontEaveY/rearEaveY: eave plate elevations for the two slabs.
+ * - frontPitchRad/rearPitchRad: independent pitches.
+ * - clerestoryBandM: vertical band height between the slabs.
+ * - stepFracAlongLong: 0..1 partition fraction along the LONG axis.
+ * - longAlongX: when true, the long axis is world-X and the step partitions
+ *   at world-X = ox0 + stepFracAlongLong * (ox1 - ox0). When false, the long
+ *   axis is world-Z.
+ *
+ * Geometry contract: front slab's low eave sits at frontEaveY at the
+ * min-corner edge of the long axis; its top edge at the step is
+ * `frontEaveY + frontRun * tan(frontPitchRad)`. Rear slab's low eave sits at
+ * rearEaveY at the far end of the long axis; its top edge at the step is
+ * `rearEaveY + rearRun * tan(rearPitchRad)`. The clerestory band is a
+ * vertical wall slab spanning the full transverse width, sitting between
+ * the front slab top and the rear slab top at the step (band height is
+ * clamped to at least 0).
+ */
+export function _buildMonoPitchOffsetGroup(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  frontEaveY: number,
+  rearEaveY: number,
+  frontPitchRad: number,
+  rearPitchRad: number,
+  clerestoryBandM: number,
+  stepFracAlongLong: number,
+  longAlongX: boolean,
+): THREE.Group {
+  const group = new THREE.Group();
+
+  const longSpan = longAlongX ? ox1 - ox0 : oz1 - oz0;
+  const stepFrac = Math.min(0.99, Math.max(0.01, stepFracAlongLong));
+  const stepLong = stepFrac * longSpan; // distance from the min-corner edge
+  const frontRun = stepLong;
+  const rearRun = longSpan - stepLong;
+
+  const frontTopAtStep = frontEaveY + frontRun * Math.tan(frontPitchRad);
+  const rearTopAtStep = rearEaveY + rearRun * Math.tan(rearPitchRad);
+
+  const bandH = Math.max(0, clerestoryBandM);
+  const bandLowerY = frontTopAtStep;
+  const bandUpperY = bandLowerY + bandH;
+  // If the rear slab top sits below the band top, lift the rear slab top so
+  // it meets the band top (geometric contract: rear top edge ≥ front top +
+  // band height). This keeps the body watertight.
+  const rearTopY = Math.max(rearTopAtStep, bandUpperY);
+
+  // Build the two slab geometries (each a triangular prism, watertight) and
+  // the clerestory band as a thin vertical slab.
+  const slabThicknessHint = 0.0; // we model the slabs as zero-thickness tilted
+  // top faces with full prism closure (matches mono_pitch helper convention).
+
+  function makeSlabGeom(
+    lowLow: [number, number, number],
+    lowHigh: [number, number, number],
+    highHigh: [number, number, number],
+    highLow: [number, number, number],
+    eaveY: number,
+  ): THREE.BufferGeometry {
+    // Triangular-prism with the top tilted from (lowLow, lowHigh) at eaveY to
+    // (highHigh, highLow) at the higher Y. Bottom closure sits at eaveY.
+    const A = lowLow;
+    const B = lowHigh;
+    const C = highHigh;
+    const D = highLow;
+    const A2: [number, number, number] = [A[0], eaveY, A[2]];
+    const B2: [number, number, number] = [B[0], eaveY, B[2]];
+    const C2: [number, number, number] = [C[0], eaveY, C[2]];
+    const D2: [number, number, number] = [D[0], eaveY, D[2]];
+    const positions = [
+      ...A,
+      ...B,
+      ...C,
+      ...A,
+      ...C,
+      ...D,
+      // Eave wall (low side)
+      ...A2,
+      ...B,
+      ...A,
+      ...A2,
+      ...B2,
+      ...B,
+      // Ridge wall (high side, at step)
+      ...D,
+      ...C,
+      ...C2,
+      ...D,
+      ...C2,
+      ...D2,
+      // Side gable triangles (along the transverse axis)
+      ...A2,
+      ...A,
+      ...D,
+      ...A2,
+      ...D,
+      ...D2,
+      ...B2,
+      ...C2,
+      ...C,
+      ...B2,
+      ...C,
+      ...B,
+      // Bottom closure quad (faces -Y)
+      ...A2,
+      ...D2,
+      ...C2,
+      ...A2,
+      ...C2,
+      ...B2,
+    ];
+    void slabThicknessHint;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  // Geometry layout. The "low" / "high" labels refer to the across-step axis
+  // (long axis). The transverse axis is perpendicular and spans the band.
+  let frontGeom: THREE.BufferGeometry;
+  let rearGeom: THREE.BufferGeometry;
+  let bandGeom: THREE.BufferGeometry;
+  const bandThickness = Math.max(0.05, Math.min(0.4, longSpan / 200));
+
+  if (longAlongX) {
+    const stepX = ox0 + stepLong;
+    // Front slab spans [ox0..stepX], low at ox0 eave, high at stepX.
+    frontGeom = makeSlabGeom(
+      [ox0, frontEaveY, oz0],
+      [ox0, frontEaveY, oz1],
+      [stepX, frontTopAtStep, oz1],
+      [stepX, frontTopAtStep, oz0],
+      frontEaveY,
+    );
+    // Rear slab spans [stepX..ox1], low at ox1 eave, high at stepX.
+    rearGeom = makeSlabGeom(
+      [ox1, rearEaveY, oz0],
+      [ox1, rearEaveY, oz1],
+      [stepX, rearTopY, oz1],
+      [stepX, rearTopY, oz0],
+      rearEaveY,
+    );
+    // Clerestory band: vertical wall slab perpendicular to long axis at
+    // stepX, full transverse span, height = bandH.
+    bandGeom = new THREE.BoxGeometry(bandThickness, Math.max(bandH, 1e-6), oz1 - oz0);
+    bandGeom.translate(stepX, bandLowerY + Math.max(bandH, 1e-6) / 2, (oz0 + oz1) / 2);
+  } else {
+    const stepZ = oz0 + stepLong;
+    frontGeom = makeSlabGeom(
+      [ox0, frontEaveY, oz0],
+      [ox1, frontEaveY, oz0],
+      [ox1, frontTopAtStep, stepZ],
+      [ox0, frontTopAtStep, stepZ],
+      frontEaveY,
+    );
+    rearGeom = makeSlabGeom(
+      [ox0, rearEaveY, oz1],
+      [ox1, rearEaveY, oz1],
+      [ox1, rearTopY, stepZ],
+      [ox0, rearTopY, stepZ],
+      rearEaveY,
+    );
+    bandGeom = new THREE.BoxGeometry(ox1 - ox0, Math.max(bandH, 1e-6), bandThickness);
+    bandGeom.translate((ox0 + ox1) / 2, bandLowerY + Math.max(bandH, 1e-6) / 2, stepZ);
+  }
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#a3a3a3',
+    roughness: 0.85,
+    metalness: 0,
+    side: THREE.DoubleSide,
+  });
+  const bandMat = new THREE.MeshStandardMaterial({
+    color: '#d4d4d4',
+    roughness: 0.7,
+    metalness: 0,
+    side: THREE.DoubleSide,
+  });
+  const front = new THREE.Mesh(frontGeom, mat);
+  front.userData.bimRoofSlot = 'front';
+  const rear = new THREE.Mesh(rearGeom, mat);
+  rear.userData.bimRoofSlot = 'rear';
+  const band = new THREE.Mesh(bandGeom, bandMat);
+  band.userData.bimRoofSlot = 'clerestory_band';
+  group.add(front);
+  group.add(rear);
+  group.add(band);
+  return group;
+}
+
 export function _buildHipGeometry(
   ox0: number,
   ox1: number,

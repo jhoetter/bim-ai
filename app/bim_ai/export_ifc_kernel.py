@@ -59,6 +59,7 @@ from bim_ai.roof_geometry import (
     footprint_is_valid_axis_aligned_rectangle_mm,
     gable_half_run_mm_and_ridge_axis,
     mono_pitch_default_high_edge,
+    mono_pitch_offset_long_axis_token,
 )
 
 
@@ -804,6 +805,14 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rf.roof_geometry_mode == "mono_pitch"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
+        # ISSUE-101: Versetztes Pultdach (offset double mono-pitch). The body
+        # is a step-profile prism — two tilted top faces at different
+        # elevations joined by a horizontal clerestory wall band — extruded
+        # along the short (transverse) axis perpendicular to the partition.
+        use_mono_pitch_offset_body = (
+            rf.roof_geometry_mode == "mono_pitch_offset"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
 
         if use_gable_body:
             # Eave plate elevation: walls on the reference level give the eave Y.
@@ -1073,6 +1082,194 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rmat = np.eye(4, dtype=float)
             rmat[:3, :3] = R
             rmat[:3, 3] = origin_world
+        elif use_mono_pitch_offset_body:
+            # ISSUE-101: Versetztes Pultdach — step cross-section (two tilted
+            # slabs at different eave heights joined by a horizontal clerestory
+            # band) extruded along the short transverse axis. The long axis
+            # carries the partition.
+            walls_at_ref = [
+                w
+                for w in doc.elements.values()
+                if isinstance(w, WallElem) and w.level_id == rf.reference_level_id
+            ]
+            wall_top_m = max(
+                ((w.height_mm or 0) / 1000.0 for w in walls_at_ref),
+                default=0.0,
+            )
+            eave_z_m = elev + wall_top_m
+
+            long_axis = mono_pitch_offset_long_axis_token(span_x_mm, span_z_mm)
+            long_along_x = long_axis == "alongX"
+            long_span_mm = span_x_mm if long_along_x else span_z_mm
+            transverse_span_mm = span_z_mm if long_along_x else span_x_mm
+            long_span_m = long_span_mm / 1000.0
+            transverse_span_m = transverse_span_mm / 1000.0
+
+            front_pitch_deg = float(
+                rf.front_pitch_deg if rf.front_pitch_deg is not None
+                else (rf.slope_deg or 25.0)
+            )
+            rear_pitch_deg = float(
+                rf.rear_pitch_deg if rf.rear_pitch_deg is not None
+                else (rf.slope_deg or 25.0)
+            )
+            front_pitch_rad = math.radians(clamp(front_pitch_deg, 5.0, 70.0))
+            rear_pitch_rad = math.radians(clamp(rear_pitch_deg, 5.0, 70.0))
+
+            front_eave_z_m = (
+                elev + rf.front_eave_height_mm / 1000.0
+                if rf.front_eave_height_mm is not None
+                else eave_z_m
+            )
+            rear_eave_z_m = (
+                elev + rf.rear_eave_height_mm / 1000.0
+                if rf.rear_eave_height_mm is not None
+                else eave_z_m
+            )
+            band_height_m = float(rf.clerestory_band_height_mm or 0.0) / 1000.0
+
+            # Step partition position along the long axis (mm from the
+            # min-corner edge of the rectangle).
+            step_mm = (
+                rf.step_position_along_long_axis_mm
+                if rf.step_position_along_long_axis_mm is not None
+                else long_span_mm / 2.0
+            )
+            step_mm = max(100.0, min(long_span_mm - 100.0, float(step_mm)))
+            step_m = step_mm / 1000.0
+            front_run_m = step_m
+            rear_run_m = long_span_m - step_m
+
+            # Slab top-edge heights (above local base = front eave).
+            front_top_at_step_m = (front_eave_z_m - front_eave_z_m) + front_run_m * math.tan(
+                front_pitch_rad
+            )
+            # Rear slab eave sits at the FAR end (long_span_m); the step end
+            # carries the rear ridge at rear_eave + rear_run * tan(pitch).
+            rear_top_at_step_m = (
+                rear_eave_z_m - front_eave_z_m
+            ) + rear_run_m * math.tan(rear_pitch_rad)
+            rear_eave_top_local_m = rear_eave_z_m - front_eave_z_m
+            front_eave_local_m = 0.0
+
+            # Local base = min of all four eave heights so the profile sits at
+            # local Y ≥ 0 (matches the gable branch convention).
+            base_z_m = min(front_eave_z_m, rear_eave_z_m)
+            local_lift_m = front_eave_z_m - base_z_m  # ≥ 0
+            # Shift all Y values by local_lift_m so local Y=0 is base_z_m.
+            band_lower_at_step_m = local_lift_m + front_top_at_step_m
+            band_upper_at_step_m = band_lower_at_step_m + band_height_m
+            # If rear slab ridge sits above the band top, lift the band so the
+            # rear slab's step-end matches the top of the band; the geometric
+            # contract is "rear top edge at step >= front top edge at step +
+            # band_height".  The renderer mirrors the same clamp.
+            rear_top_local_m = max(
+                band_upper_at_step_m,
+                local_lift_m + rear_top_at_step_m,
+            )
+
+            # Step profile (anti-clockwise viewed from +Z), local X = along
+            # long axis, local Y = vertical. 6 vertices + closure:
+            #   (0, front_eave) → (long, rear_eave_top)
+            #   → (long, rear_top_at_step) backward along rear roof top
+            #   → (step, band_upper) → (step, band_lower)
+            #   → (0, front_top_at_step) along front roof top to (0, front_eave)
+            half_long_m = long_span_m / 2.0
+            # We'll express X relative to the rectangle centre so the placement
+            # below can keep things centred consistently with the other
+            # branches.
+            step_pts = [
+                (-half_long_m, local_lift_m + front_eave_local_m),
+                (half_long_m, local_lift_m + rear_eave_top_local_m),
+                (half_long_m - rear_run_m, rear_top_local_m),
+                (-half_long_m + front_run_m, band_upper_at_step_m),
+                (-half_long_m + front_run_m, band_lower_at_step_m),
+                (-half_long_m, local_lift_m + front_top_at_step_m + 0.0),
+                (-half_long_m, local_lift_m + front_eave_local_m),
+            ]
+            polyline = f.create_entity(
+                "IfcPolyline",
+                Points=[
+                    f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(float(px), float(py)),
+                    )
+                    for px, py in step_pts
+                ],
+            )
+            profile = f.create_entity(
+                "IfcArbitraryClosedProfileDef",
+                ProfileType="AREA",
+                OuterCurve=polyline,
+            )
+            extruded = f.create_entity(
+                "IfcExtrudedAreaSolid",
+                SweptArea=profile,
+                Position=f.create_entity(
+                    "IfcAxis2Placement3D",
+                    Location=f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(0.0, 0.0, 0.0),
+                    ),
+                    Axis=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+                    RefDirection=f.create_entity(
+                        "IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)
+                    ),
+                ),
+                ExtrudedDirection=f.create_entity(
+                    "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
+                ),
+                Depth=transverse_span_m,
+            )
+            rep_rf = f.create_entity(
+                "IfcShapeRepresentation",
+                ContextOfItems=body_ctx,
+                RepresentationIdentifier="Body",
+                RepresentationType="SweptSolid",
+                Items=(extruded,),
+            )
+
+            roof_ent = ifcopenshell.api.root.create_entity(
+                f, ifc_class="IfcRoof", name=rf.name or rid
+            )
+            roof_products[rid] = roof_ent
+            roof_z_center_by_id[rid] = float(base_z_m + rear_top_local_m / 2.0)
+            roof_extrusion_depth_by_id[rid] = float(transverse_span_m)
+
+            # Placement: local Z (extrusion) → world transverse axis.
+            if long_along_x:
+                # local X → world X (along long axis), local Z → world Y
+                # (across), local Y → world Z (up).
+                R = np.array(
+                    [
+                        [1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m, cy_m - transverse_span_m / 2.0, base_z_m],
+                    dtype=float,
+                )
+            else:
+                # long axis is world Z. local X → world Z, local Z → world X
+                # (transverse), local Y → world Y (up).
+                R = np.array(
+                    [
+                        [0.0, 0.0, 1.0],
+                        [1.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m - transverse_span_m / 2.0, cy_m, base_z_m],
+                    dtype=float,
+                )
+            rmat = np.eye(4, dtype=float)
+            rmat[:3, :3] = R
+            rmat[:3, 3] = origin_world
         else:
             r_profile: list[tuple[float, float]] = []
             for px, py in rp_mm:
@@ -1100,8 +1297,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # IfcRoof description in buildingSMART's IFC4 documentation). Other
         # modes leave the predefined type untouched (NOTDEFINED) to avoid
         # back-compat churn with the existing gable export.
-        if use_mono_pitch_body and hasattr(roof_ent, "PredefinedType"):
+        if (use_mono_pitch_body or use_mono_pitch_offset_body) and hasattr(
+            roof_ent, "PredefinedType"
+        ):
             try:
+                # ISSUE-101: mono_pitch_offset (Versetztes Pultdach) is two
+                # mono-pitched planes — the closest IFC4 enum is SHED_ROOF
+                # (same mapping as mono_pitch per PR #71's precedent).
                 roof_ent.PredefinedType = "SHED_ROOF"
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
@@ -1136,7 +1338,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rf.roof_type_id:
             bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
         bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
-        if use_gable_body or use_mono_pitch_body:
+        if use_gable_body or use_mono_pitch_body or use_mono_pitch_offset_body:
             bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
                 f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )
@@ -1156,6 +1358,27 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             # ISSUE-105: round-trip the half-hip fraction so authoritative
             # replay reconstructs the same Krüppelwalm proportions.
             bim_ai_props["BimAiRoofHalfHipHeightFraction"] = float(rf.half_hip_height_fraction)
+        if use_mono_pitch_offset_body:
+            # ISSUE-101: round-trip the Versetztes-Pultdach parameters so the
+            # authoritative replay reconstructs the same offset configuration.
+            if rf.front_pitch_deg is not None:
+                bim_ai_props["BimAiRoofFrontPitchDeg"] = float(rf.front_pitch_deg)
+            if rf.rear_pitch_deg is not None:
+                bim_ai_props["BimAiRoofRearPitchDeg"] = float(rf.rear_pitch_deg)
+            if rf.front_eave_height_mm is not None:
+                bim_ai_props["BimAiRoofFrontEaveHeightMm"] = float(
+                    rf.front_eave_height_mm
+                )
+            if rf.rear_eave_height_mm is not None:
+                bim_ai_props["BimAiRoofRearEaveHeightMm"] = float(rf.rear_eave_height_mm)
+            if rf.clerestory_band_height_mm is not None:
+                bim_ai_props["BimAiRoofClerestoryBandHeightMm"] = float(
+                    rf.clerestory_band_height_mm
+                )
+            if rf.step_position_along_long_axis_mm is not None:
+                bim_ai_props["BimAiRoofStepPositionAlongLongAxisMm"] = float(
+                    rf.step_position_along_long_axis_mm
+                )
         if bim_ai_props:
             attach_kernel_identity_pset(roof_ent, "Pset_BimAiKernel", rid, **bim_ai_props)
         rf_layers = resolved_layers_for_roof(doc, rf)
