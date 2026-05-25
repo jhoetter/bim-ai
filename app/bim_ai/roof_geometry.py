@@ -13,6 +13,11 @@ RoofGeometryMode = Literal[
     "hip",
     "flat",
     "mono_pitch",
+    # ISSUE-101: Versetztes Pultdach (offset double mono-pitch with clerestory
+    # band) — two mono-pitched planes at different heights along the long axis,
+    # joined by a horizontal clerestory wall band. Footprint must be an
+    # axis-aligned rectangle; the step position partitions the long axis.
+    "mono_pitch_offset",
 ]
 
 RoofGeometrySupportTokenV0 = Literal[
@@ -21,6 +26,7 @@ RoofGeometrySupportTokenV0 = Literal[
     "hip_supported",
     "hip_candidate_deferred",
     "mono_pitch_supported",
+    "mono_pitch_offset_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
     "missing_slope_or_level",
@@ -192,6 +198,12 @@ def roof_geometry_support_token_v0(
     ):
         return "mono_pitch_supported"
 
+    if (
+        roof_geometry_mode == "mono_pitch_offset"
+        and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
+    ):
+        return "mono_pitch_offset_supported"
+
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
     if roof_geometry_mode == "hip" and is_convex and len(footprint_mm) >= 4:
@@ -328,6 +340,66 @@ def assert_valid_mono_pitch_footprint_mm(footprint_mm: list[tuple[float, float]]
             "mono_pitch footprintMm must be an axis-aligned rectangle "
             "(4 corner vertices); non-rectangular Pultdach is deferred"
         )
+
+
+def assert_valid_mono_pitch_offset_footprint_mm(
+    footprint_mm: list[tuple[float, float]],
+) -> None:
+    """ISSUE-101: mono_pitch_offset (Versetztes Pultdach) requires an
+    axis-aligned rectangle for v0.
+
+    The renderer/exporter partitions the long axis at
+    ``step_position_along_long_axis_mm`` into a front and a rear sub-rectangle,
+    each carrying its own mono-pitched slab and eave height. Non-rectangular
+    footprints defer to the slab fallback (same as flat).
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "mono_pitch_offset footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Versetztes Pultdach is deferred"
+        )
+
+
+def mono_pitch_offset_long_axis_token(
+    span_x: float, span_z: float
+) -> RidgeAxisPlan:
+    """ISSUE-101: pick the long-axis token along which the two mono-pitched
+    planes are partitioned.
+
+    The step partitioning runs perpendicular to the eave line (i.e. along the
+    long horizontal axis of the footprint). Ties resolve to ``alongX`` for
+    determinism.
+    """
+
+    if span_x >= span_z:
+        return "alongX"
+    return "alongZ"
+
+
+def assert_valid_mono_pitch_offset_step_position_mm(
+    span_along_long_axis_mm: float,
+    step_position_mm: float | None,
+    *,
+    min_segment_mm: float = 100.0,
+) -> float:
+    """ISSUE-101: validate (or default) the step partition position.
+
+    A ``None`` step defaults to the midpoint. A non-None step must sit strictly
+    inside the footprint with at least ``min_segment_mm`` of run on either side
+    so each mono-pitched slab has a meaningful eave-to-band span.
+    """
+
+    if step_position_mm is None:
+        return float(span_along_long_axis_mm) / 2.0
+    sp = float(step_position_mm)
+    if sp <= min_segment_mm or sp >= span_along_long_axis_mm - min_segment_mm:
+        raise ValueError(
+            "mono_pitch_offset stepPositionAlongLongAxisMm must sit strictly "
+            f"inside the footprint with at least {min_segment_mm:.0f} mm of run "
+            "on each side of the clerestory band"
+        )
+    return sp
 
 
 def mono_pitch_default_high_edge(
