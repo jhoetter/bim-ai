@@ -72,28 +72,54 @@ def _discover_houses() -> tuple[str, ...]:
     ``--house house-1`` invocation hard-failed at argparse before
     reaching any code that could discover the real keys.
 
-    Scan ``$BIM_DATABASE_PATH`` (default ``~/repos/bim-database``) for
-    directories named ``house-<N>`` / ``testhouse-<N>`` paired with a
-    sibling ``<dir>.pdf`` (the source brief). Return the sorted tuple of
-    discovered keys. Caller falls back to :data:`_FALLBACK_HOUSES`
-    (alpha/beta/gamma) when discovery returns nothing, so test
-    environments without ``BIM_DATABASE_PATH`` keep working.
+    MF-driver-25 (#125): the ``bim-database`` repo was refactored so
+    catalog houses now live under ``{base}/data/houses/house-<N>/``
+    (no sibling ``<name>.pdf`` brief — each house dir contains its
+    own PDFs). Scan that location *first*; the old layout
+    (``{base}/house-<N>/`` paired with sibling ``{base}/house-<N>.pdf``)
+    is preserved as a back-compat fallback so existing tests + any
+    legacy environments keep resolving.
+
+    Return the sorted, de-duplicated tuple of discovered keys. Caller
+    falls back to :data:`_FALLBACK_HOUSES` (alpha/beta/gamma) when
+    discovery returns nothing, so test environments without
+    ``BIM_DATABASE_PATH`` keep working.
     """
 
     base = _bim_database_base()
-    keys: list[str] = []
+    keys: set[str] = set()
+
+    # New catalog layout: `{base}/data/houses/house-<N>/` — directory
+    # existence is enough; the per-house PDFs live *inside* the folder
+    # now, not as a sibling. This is the path #125 unblocks.
+    new_root = base / "data" / "houses"
     try:
-        entries = list(base.iterdir())
+        new_entries = list(new_root.iterdir())
     except (FileNotFoundError, NotADirectoryError, PermissionError):
-        return ()
-    for p in entries:
+        new_entries = []
+    for p in new_entries:
+        if not p.is_dir():
+            continue
+        name = p.name
+        if name.startswith("house-") or name.startswith("testhouse-"):
+            keys.add(name)
+
+    # Legacy layout: `{base}/house-<N>/` paired with a sibling
+    # `{base}/house-<N>.pdf` brief. Kept for back-compat so existing
+    # environments + the 11+ existing tests keep working unchanged.
+    try:
+        legacy_entries = list(base.iterdir())
+    except (FileNotFoundError, NotADirectoryError, PermissionError):
+        legacy_entries = []
+    for p in legacy_entries:
         if not p.is_dir():
             continue
         name = p.name
         if not (name.startswith("house-") or name.startswith("testhouse-")):
             continue
         if (base / f"{name}.pdf").exists():
-            keys.append(name)
+            keys.add(name)
+
     return tuple(sorted(keys))
 
 
@@ -137,25 +163,39 @@ def _house_root(house: str) -> Path:
     discovery in :func:`_discover_houses` is consistent with the path
     the rest of the driver reads source PDFs from.
 
-    Back-compat branch (for the alpha/beta/gamma fallback flow): if the
-    legacy ``<REPO_ROOT>/testhouses/house-<name>/`` folder still exists,
-    keep returning it so the 11+ existing tests in
+    MF-driver-25 (#125): the canonical bim-database layout was
+    refactored so catalog houses now live one level deeper, under
+    ``<base>/data/houses/<house>/``. Prefer that location when it
+    exists; only fall back to the old top-level path or the
+    ``REPO_ROOT/testhouses/`` legacy layout afterwards.
+
+    Back-compat branches (for the alpha/beta/gamma fallback flow and
+    the pre-refactor catalog layout): if the legacy
+    ``<REPO_ROOT>/testhouses/house-<name>/`` folder still exists, or
+    the old-layout ``<base>/<house>/`` folder still exists, keep
+    returning those so the 11+ existing tests in
     ``app/tests/test_testhouse_drive_*.py`` (and any local-dev houses
-    laid out the old way) keep resolving without surprise. The catalog
-    layout wins when both happen to exist.
+    laid out the old way) keep resolving without surprise. The new
+    ``data/houses/`` layout wins when both happen to exist.
     """
 
     base = _bim_database_base()
+    # New canonical layout (#125): `data/houses/<house>/` wins.
+    new_candidate = base / "data" / "houses" / house
+    if new_candidate.is_dir():
+        return new_candidate
+    # Pre-refactor top-level catalog layout.
     candidate = base / house
     if candidate.is_dir():
         return candidate
+    # In-repo legacy testhouses (alpha/beta/gamma).
     legacy = REPO_ROOT / "testhouses" / f"house-{house}"
     if legacy.is_dir():
         return legacy
-    # Neither path exists — return the catalog path so the caller's
-    # FileNotFoundError mentions the path operators are expected to
-    # populate going forward.
-    return candidate
+    # Nothing matched — return the new canonical path so the caller's
+    # FileNotFoundError surfaces the location operators are expected
+    # to populate going forward.
+    return new_candidate
 
 
 def _house_workdir(house: str) -> Path:

@@ -46,6 +46,22 @@ def _seed_catalog(base: Path, keys: list[str]) -> None:
         (base / f"{k}.pdf").write_bytes(b"%PDF-1.4\n%stub for discovery test\n")
 
 
+def _seed_new_catalog(base: Path, keys: list[str]) -> None:
+    """Lay out ``base`` to mimic the post-refactor bim-database layout (#125).
+
+    Houses now live under ``<base>/data/houses/<key>/`` and the
+    per-house PDFs are *inside* each folder — no sibling brief at
+    the top level anymore. Each key gets its directory plus one
+    stub PDF inside, so discovery can rely on directory existence.
+    """
+
+    houses_root = base / "data" / "houses"
+    houses_root.mkdir(parents=True, exist_ok=True)
+    for k in keys:
+        (houses_root / k).mkdir(parents=True, exist_ok=True)
+        (houses_root / k / "EG.pdf").write_bytes(b"%PDF-1.4\n%stub\n")
+
+
 # ---------------------------------------------------------------------------
 # _discover_houses
 # ---------------------------------------------------------------------------
@@ -157,8 +173,9 @@ def test_house_root_returns_catalog_path_when_neither_exists(
     tmp_path: Path, monkeypatch
 ) -> None:
     """When neither the catalog nor the legacy folder is present, the helper
-    returns the catalog path so the caller's eventual ``FileNotFoundError``
-    surfaces the location operators are supposed to populate."""
+    returns the canonical (post-#125) catalog path so the caller's eventual
+    ``FileNotFoundError`` surfaces the location operators are supposed to
+    populate."""
 
     fake_db = tmp_path / "bim-database-empty"
     fake_db.mkdir()
@@ -168,4 +185,97 @@ def test_house_root_returns_catalog_path_when_neither_exists(
     fake_repo_root.mkdir()
     monkeypatch.setattr(_DRV, "REPO_ROOT", fake_repo_root)
 
-    assert _DRV._house_root("house-99") == fake_db / "house-99"
+    assert _DRV._house_root("house-99") == fake_db / "data" / "houses" / "house-99"
+
+
+# ---------------------------------------------------------------------------
+# MF-driver-25 (#125): new bim-database layout — `data/houses/house-<N>/`
+# ---------------------------------------------------------------------------
+
+
+def test_discover_houses_finds_new_data_houses_layout(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Post-refactor bim-database lays houses out under
+    ``<base>/data/houses/house-<N>/`` (no sibling top-level PDF — the per-house
+    PDFs moved *inside* each folder).
+
+    Discovery must scan that location, accept directory existence as the
+    qualifier, and surface the sorted catalog keys so ``--house house-21``
+    is no longer rejected by argparse.
+    """
+
+    base = tmp_path / "bim-database"
+    _seed_new_catalog(base, ["house-21", "house-1", "house-23", "testhouse-2"])
+    # Junk dir that should be filtered out by the prefix check.
+    (base / "data" / "houses" / "garden-1").mkdir()
+    monkeypatch.setenv("BIM_DATABASE_PATH", str(base))
+
+    assert _DRV._discover_houses() == (
+        "house-1",
+        "house-21",
+        "house-23",
+        "testhouse-2",
+    )
+
+
+def test_discover_houses_merges_legacy_and_new_layouts(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """If a bim-database still has the old top-level layout *and* the new
+    ``data/houses/`` tree (e.g. mid-migration), discovery returns the union,
+    de-duplicated and sorted. This keeps mixed environments from regressing.
+    """
+
+    base = tmp_path / "bim-database"
+    # Legacy top-level layout — needs sibling PDF.
+    _seed_catalog(base, ["house-1"])
+    # New `data/houses/` layout — no sibling PDF required.
+    _seed_new_catalog(base, ["house-1", "house-21"])
+    monkeypatch.setenv("BIM_DATABASE_PATH", str(base))
+
+    assert _DRV._discover_houses() == ("house-1", "house-21")
+
+
+def test_discover_houses_new_layout_does_not_require_sibling_pdf(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The new layout has no top-level ``<key>.pdf``. Discovery must NOT
+    require one for entries under ``data/houses/`` — directory existence is
+    enough. Regression guard against re-introducing the old sibling check."""
+
+    base = tmp_path / "bim-database"
+    (base / "data" / "houses" / "house-42").mkdir(parents=True)
+    monkeypatch.setenv("BIM_DATABASE_PATH", str(base))
+
+    assert _DRV._discover_houses() == ("house-42",)
+
+
+def test_house_root_resolves_new_data_houses_layout(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """``_house_root("house-21")`` returns
+    ``<BIM_DATABASE_PATH>/data/houses/house-21`` when that folder exists —
+    the canonical post-#125 path."""
+
+    base = tmp_path / "bim-database"
+    _seed_new_catalog(base, ["house-21"])
+    monkeypatch.setenv("BIM_DATABASE_PATH", str(base))
+
+    assert _DRV._house_root("house-21") == base / "data" / "houses" / "house-21"
+
+
+def test_house_root_prefers_new_layout_over_legacy_top_level(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """When *both* the new ``data/houses/<key>/`` and the legacy
+    ``<base>/<key>/`` exist (mid-migration), the new layout wins. This
+    matches the discovery precedence so downstream readers don't see a
+    different folder than argparse picked from."""
+
+    base = tmp_path / "bim-database"
+    _seed_catalog(base, ["house-1"])
+    _seed_new_catalog(base, ["house-1"])
+    monkeypatch.setenv("BIM_DATABASE_PATH", str(base))
+
+    assert _DRV._house_root("house-1") == base / "data" / "houses" / "house-1"
