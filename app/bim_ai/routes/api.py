@@ -26,18 +26,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai._io.log import get_logger as _ws_log_factory
 from bim_ai.activity import emit_activity_row
-from bim_ai.brief_acceptance_readout import agent_brief_acceptance_readout_v1
-from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
-from bim_ai.evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
-from bim_ai.bundle_qa_checklist import (
-    agent_generated_bundle_qa_checklist_v1,
-)
-from bim_ai.review_readout_consistency_closure import (
-    agent_review_readout_consistency_closure_v1,
-)
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.assets import search_assets
+from bim_ai.brief_acceptance_readout import agent_brief_acceptance_readout_v1
+from bim_ai.brief_command_protocol import agent_brief_command_protocol_v1
+from bim_ai.bundle_qa_checklist import (
+    agent_generated_bundle_qa_checklist_v1,
+)
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
@@ -90,6 +86,7 @@ from bim_ai.evidence_manifest import (
     plan_view_wire_index,
     sheetProductionEvidenceBaseline_v1,
 )
+from bim_ai.evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.hub import Hub
 from bim_ai.jobs.evidence_package import (
@@ -102,6 +99,7 @@ from bim_ai.jobs.types import CreateJobRequest, Job
 from bim_ai.link_expansion import expand_links
 from bim_ai.mep_lens import build_mep_lens_payload
 from bim_ai.model_summary import compute_model_summary
+
 # SemanticAuthoringRequest model deleted with the semantic-authoring route
 # (moved to bim-agent in the 2026-05-25 clean-separation work).
 from bim_ai.plan_projection_wire import (
@@ -113,6 +111,9 @@ from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
 from bim_ai.renderer_diagnostic_persistence import (
     latest_renderer_diagnostic_packet_for_evidence,
     renderer_diagnostic_packet_embedding,
+)
+from bim_ai.review_readout_consistency_closure import (
+    agent_review_readout_consistency_closure_v1,
 )
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
@@ -147,6 +148,7 @@ from bim_ai.routes.site_import import site_import_router
 from bim_ai.routes.sketch import sketch_router
 from bim_ai.routes.sketch_product import sketch_product_router
 from bim_ai.routes.tokens import tokens_router
+from bim_ai.routes.v3_capture import v3_capture_router
 from bim_ai.routes.v3_meta import v3_meta_router
 from bim_ai.routes.ws_bootstrap import ws_bootstrap_router
 from bim_ai.schedule_derivation import list_schedule_ids
@@ -156,6 +158,7 @@ from bim_ai.services.iterate_loop import (
     AgentIterateResponse,
     generate_patch,
 )
+
 # bim_ai.services.semantic_authoring moved to bim-agent — see
 # spec/trackers/bim-ai-bim-agent-clean-separation-tracker.md phase 3
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
@@ -244,6 +247,7 @@ api_router.include_router(sharing_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
 api_router.include_router(v3_meta_router)
+api_router.include_router(v3_capture_router)
 # BRT-24: route families extracted from this file.
 api_router.include_router(bundles_router)
 api_router.include_router(schedules_router)
