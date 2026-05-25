@@ -141,6 +141,46 @@ def test_six_dormer_facts_produce_six_create_dormer_commands() -> None:
     assert len({c["id"] for c in cmds}) == 6
 
 
+def test_dormers_without_fact_ids_get_unique_ids() -> None:
+    # MF-driver-21 (#95): mirrors PR #86 for openings. When dormer
+    # facts arrive without a ``factId`` (or any slug-able field),
+    # ``_slugify(None)`` collapses to the literal ``"x"`` and every
+    # dormer used to author as ``th-{house}-dormer-x`` — N facts
+    # produced 1 element and the apply call failed with
+    # ``duplicate element id 'th-{house}-dormer-x'``. The fix threads
+    # the enumerate idx into the id template.
+    facts: list[dict] = []
+    for i in range(6):
+        fact = _dormer_fact(
+            factId="",  # noqa — intentionally empty to drive _slugify(None) → "x"
+            facadeSide="south" if i < 3 else "north",
+            vertexMm=[2000 + 2000 * i, 1500 if i < 3 else 7500],
+        )
+        # _dormer_fact always writes factId; strip it so _slugify falls
+        # through to "x" and we exercise the collision path.
+        fact.pop("factId", None)
+        facts.append(fact)
+    pair = _DRV._dormers_bundle(
+        ir=_ir(facts),
+        parent_revision=7,
+        house="h23",
+        snapshot=_main_roof_snapshot("h23"),
+    )
+    assert pair is not None, "expected a bundle, got None"
+    bundle, _ = pair
+    cmds = [c for c in bundle["commands"] if c["type"] == "createDormer"]
+    assert len(cmds) == 6, f"expected 6 createDormer, got {len(cmds)}"
+    ids = [c["id"] for c in cmds]
+    assert len(set(ids)) == 6, f"expected 6 unique ids, got {ids}"
+    # None of the authored ids may match the bare ``th-…-dormer-x``
+    # collapse — that was the exact collision signature on h23 iter-22
+    # (mirrors PR #86's ``-window-x`` guard for openings).
+    assert all(not i.endswith("-dormer-x") for i in ids), (
+        f"no id may end in the literal '-dormer-x' (the slugify-None "
+        f"collapse), got {ids}"
+    )
+
+
 def test_explicit_along_ridge_offsets_are_honoured_verbatim() -> None:
     # Reader pinned each dormer in roof-local coords — _dormers_bundle
     # must NOT recompute from world XY; it must use the pin.
