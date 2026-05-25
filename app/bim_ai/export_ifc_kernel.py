@@ -1340,6 +1340,23 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 # Schema rejects the keyword; leave the default.
                 pass
 
+        # ISSUE-114: Tonnendach (barrel) maps to IFC4's BARREL_ROOF. The
+        # buildingSMART IFC4 IfcRoofTypeEnum enumerates BARREL_ROOF explicitly
+        # for a vault/cylindrical-segment roof. The geometry body for the
+        # barrel mode is deferred (renderer still uses the planar slab
+        # fallback for IFC export in v0); the PredefinedType lets downstream
+        # consumers (Solibri / IDS) identify the Tonnendach intent even when
+        # the body is the fallback prism.
+        if (
+            rf.roof_geometry_mode == "barrel"
+            and hasattr(roof_ent, "PredefinedType")
+        ):
+            try:
+                roof_ent.PredefinedType = "BARREL_ROOF"
+            except (RuntimeError, ValueError):
+                # Schema rejects the keyword; leave the default.
+                pass
+
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
         st_roof = storey_for(rf.reference_level_id)

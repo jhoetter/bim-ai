@@ -19,6 +19,13 @@ RoofGeometryMode = Literal[
     # joined by a horizontal clerestory wall band. Footprint must be an
     # axis-aligned rectangle; the step position partitions the long axis.
     "mono_pitch_offset",
+    # ISSUE-114: Tonnendach (barrel roof) — a curved cylindrical-segment roof
+    # swept along the long footprint axis. The arc sits between two eaves on
+    # the short-axis sides and rises ``barrel_rise_mm`` above the eave at the
+    # crown. Footprint must be an axis-aligned rectangle for v0; the renderer
+    # tessellates the arc into ``barrel_segment_count`` flat strips that
+    # approximate the cylindrical surface.
+    "barrel",
     # ISSUE-112: Mansarddach (Mansard / French roof) — two-pitch roof where
     # the lower slope is near-vertical (steep skirt that encloses the DG) and
     # the upper slope is shallow (hipped or gabled cap). The two pitches meet
@@ -37,6 +44,7 @@ RoofGeometrySupportTokenV0 = Literal[
     "mono_pitch_supported",
     "half_gable_supported",
     "mono_pitch_offset_supported",
+    "barrel_supported",
     "mansard_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
@@ -183,6 +191,16 @@ def roof_geometry_support_token_v0(
     slope_deg: float | None,
 ) -> RoofGeometrySupportTokenV0 | None:
     """Deterministic hip/valley/skip matrix; None for ordinary mass_box axis-aligned rectangles."""
+
+    # ISSUE-114: barrel (Tonnendach) is parametrised by ``barrel_rise_mm``, not
+    # a planar slope, so the slope gate must not gate it out. The reference
+    # level still must resolve, and the footprint must have ≥3 vertices.
+    if roof_geometry_mode == "barrel":
+        if not reference_level_resolves or len(footprint_mm) < 3:
+            return "missing_slope_or_level"
+        if footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+            return "barrel_supported"
+        return "non_rectangular_footprint_deferred"
 
     if not reference_level_resolves or len(footprint_mm) < 3 or slope_deg is None:
         return "missing_slope_or_level"
@@ -751,3 +769,151 @@ def edge_profile_run_path_mm(
             ]
     else:
         raise ValueError(f"edge_profile_run_path_mm: unsupported host_edge '{host_edge}'")
+
+
+# ---------------------------------------------------------------------------
+# ISSUE-114: barrel (Tonnendach) helpers
+# ---------------------------------------------------------------------------
+
+BARREL_SEGMENT_COUNT_DEFAULT = 12
+BARREL_SEGMENT_COUNT_MIN = 3
+BARREL_SEGMENT_COUNT_MAX = 256
+
+
+def assert_valid_barrel_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-114: barrel (Tonnendach) requires an axis-aligned rectangle for v0.
+
+    Non-rectangular footprints defer to the slab fallback (same precedent as
+    mono_pitch and mono_pitch_offset). Sweeping a smooth cylindrical-segment
+    along a non-axis-aligned path is plausible but out of scope for v0.
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "barrel footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Tonnendach is deferred"
+        )
+
+
+def assert_valid_barrel_rise_mm(barrel_rise_mm: float | None) -> float:
+    """ISSUE-114: barrel rise (crown height above the eave plane) must be > 0.
+
+    Returns the validated value as a float so callers can store it back.
+    """
+
+    if barrel_rise_mm is None:
+        raise ValueError("barrel roofs require barrelRiseMm > 0")
+    try:
+        rise = float(barrel_rise_mm)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("barrelRiseMm must be a numeric mm value") from exc
+    if not (rise > 0.0):
+        raise ValueError("barrelRiseMm must be > 0")
+    return rise
+
+
+def clamp_barrel_segment_count(
+    value: int | float | None, *, default: int = BARREL_SEGMENT_COUNT_DEFAULT
+) -> int:
+    """ISSUE-114: clamp the tessellation strip count into the supported range.
+
+    - ``None`` (or junk) → ``default`` (12 strips covers a half-circle smoothly).
+    - Values below ``BARREL_SEGMENT_COUNT_MIN`` are raised to the minimum so the
+      tessellation always produces a closed shell.
+    - Values above ``BARREL_SEGMENT_COUNT_MAX`` are clamped to keep mesh sizes
+      bounded for downstream renderers.
+    """
+
+    if value is None:
+        return int(default)
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return int(default)
+    if n < BARREL_SEGMENT_COUNT_MIN:
+        return BARREL_SEGMENT_COUNT_MIN
+    if n > BARREL_SEGMENT_COUNT_MAX:
+        return BARREL_SEGMENT_COUNT_MAX
+    return n
+
+
+def barrel_sweep_axis_token(span_x: float, span_z: float) -> RidgeAxisPlan:
+    """ISSUE-114: pick the axis along which the cylindrical segment sweeps.
+
+    The arc spans the *short* footprint axis (the chord of the cylinder) and
+    sweeps along the *long* axis. Ties resolve to ``alongX`` for determinism.
+    """
+
+    if span_x >= span_z:
+        return "alongX"
+    return "alongZ"
+
+
+def barrel_arc_radius_from_chord_and_rise_mm(chord_mm: float, rise_mm: float) -> float:
+    """ISSUE-114: circle radius for a circular arc with given chord & sagitta.
+
+    Geometry: a circular arc with chord ``c`` and rise (sagitta) ``h`` lies on
+    a circle of radius ``r = (c^2 + 4 h^2) / (8 h)``. Used by the tessellator
+    to project arc points onto the chord plane.
+    """
+
+    if chord_mm <= 0.0:
+        raise ValueError("barrel chord_mm must be > 0")
+    if rise_mm <= 0.0:
+        raise ValueError("barrel rise_mm must be > 0")
+    c = float(chord_mm)
+    h = float(rise_mm)
+    return (c * c + 4.0 * h * h) / (8.0 * h)
+
+
+def barrel_arc_profile_points_mm(
+    chord_mm: float,
+    rise_mm: float,
+    segment_count: int,
+) -> list[tuple[float, float]]:
+    """ISSUE-114: ``segment_count + 1`` points (u, v) on the arc cross-section.
+
+    The arc is parametrised in the chord plane:
+    - ``u`` runs along the chord from 0 to ``chord_mm`` (the short footprint
+      axis).
+    - ``v`` is the height above the chord (the eave plane), 0 at both eaves
+      and ``rise_mm`` at the crown.
+
+    Even tessellation in arc-angle (not in chord) keeps strip widths roughly
+    equal in arc length, which is the right thing for a smooth Tonnendach.
+    """
+
+    if segment_count < BARREL_SEGMENT_COUNT_MIN:
+        raise ValueError(
+            f"barrel_arc_profile_points_mm requires segment_count ≥ {BARREL_SEGMENT_COUNT_MIN}"
+        )
+    if chord_mm <= 0.0 or rise_mm <= 0.0:
+        raise ValueError("barrel_arc_profile_points_mm requires chord_mm > 0 and rise_mm > 0")
+
+    c = float(chord_mm)
+    h = float(rise_mm)
+    r = barrel_arc_radius_from_chord_and_rise_mm(c, h)
+    # Circle center sits below the chord midpoint at distance (r - h).
+    cx = c / 2.0
+    cy = -(r - h)
+    # Half-angle subtended by the chord at the center: sin(theta) = (c/2) / r.
+    half_chord = c / 2.0
+    sin_theta = max(-1.0, min(1.0, half_chord / r))
+    theta = math.asin(sin_theta)
+    pts: list[tuple[float, float]] = []
+    for i in range(segment_count + 1):
+        # Parameter t in [-1, +1] maps to angle [-theta, +theta] measured from
+        # the vertical axis through the center (so t=0 is the crown).
+        t = -1.0 + 2.0 * (i / segment_count)
+        ang = t * theta
+        # Point on circle (sin for u, cos for v) measured from the center;
+        # ``cy + r * cos(ang)`` is the height above the chord plane (0 at
+        # endpoints, ``rise_mm`` at the crown).
+        u = cx + r * math.sin(ang)
+        v = cy + r * math.cos(ang)
+        # Snap endpoint heights to exactly 0 to absorb float drift so callers
+        # comparing against the eave plane don't fail equality checks.
+        if i == 0 or i == segment_count:
+            v = 0.0
+        pts.append((u, v))
+    return pts
