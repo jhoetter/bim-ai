@@ -161,6 +161,7 @@ from .assets import (
 )
 from .floors_roofs import (
     BalconyElem,
+    DiagonalStrutPattern,
     DormerElem,
     DormerPositionOnRoof,
     DormerRoofKind,
@@ -175,6 +176,7 @@ from .floors_roofs import (
     RoofTypeElem,
     SlabOpeningElem,
     SoffitElem,
+    StructuralFacadeGridElem,
     WintergartenElem,
     WintergartenRoofMode,
 )
@@ -451,6 +453,7 @@ __all__ = [
     "WindowElem",
     "WindowOutlineKind",
     "BalconyElem",
+    "DiagonalStrutPattern",
     "DormerElem",
     "DormerPositionOnRoof",
     "DormerRoofKind",
@@ -465,6 +468,7 @@ __all__ = [
     "RoofTypeElem",
     "SlabOpeningElem",
     "SoffitElem",
+    "StructuralFacadeGridElem",
     "WintergartenElem",
     "WintergartenRoofMode",
     "AreaElem",
@@ -639,6 +643,7 @@ ElementKind = Literal[
     "property_line",
     "balcony",
     "facade_bay",
+    "structural_facade_grid",
     "wintergarten",
     "sweep",
     "dormer",
@@ -700,6 +705,7 @@ Element = Annotated[
     | RailingElem
     | BalconyElem
     | FacadeBayElem
+    | StructuralFacadeGridElem
     | WintergartenElem
     | FamilyTypeElem
     | RoomSeparationElem

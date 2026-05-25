@@ -555,14 +555,29 @@ class CreateFacadeBayCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
-class CreateWintergartenCmd(BaseModel):
-    """Issue #114 — author a WintergartenElem (glazed conservatory) hosted on a wall.
+class CreateStructuralFacadeGridCmd(BaseModel):
+    """Issue #113 — author a Huf-Haus Pfosten-Riegel structural facade grid
+    hosted on an existing wall."""
 
-    The Wintergarten is a fully-glazed extension; its roof geometry mode
-    (``barrel`` / ``mono_pitch`` / ``flat``) controls how the renderer caps the
-    volume. The footprint is given in plan mm and typically shares one edge
-    with the host wall (the back wall of the conservatory).
-    """
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createStructuralFacadeGrid"] = "createStructuralFacadeGrid"
+    id: str | None = None
+    name: str = "Huf-Haus Facade Grid"
+    host_wall_id: str = Field(alias="hostWallId")
+    post_spacing_mm: float = Field(default=1500.0, alias="postSpacingMm", gt=0)
+    beam_heights: list[float] = Field(default_factory=list, alias="beamHeights")
+    diagonal_strut_pattern: Literal["none", "cross", "single"] = Field(
+        default="single", alias="diagonalStrutPattern"
+    )
+    member_thickness_mm: float | None = Field(default=None, alias="memberThicknessMm")
+    proud_offset_mm: float | None = Field(default=None, alias="proudOffsetMm")
+    timber_material_key: str | None = Field(default=None, alias="timberMaterialKey")
+    infill_material_key: str | None = Field(default=None, alias="infillMaterialKey")
+    level_id: str | None = Field(default=None, alias="levelId")
+
+
+class CreateWintergartenCmd(BaseModel):
+    """Issue #114 — author a WintergartenElem (glazed conservatory) hosted on a wall."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createWintergarten"] = "createWintergarten"

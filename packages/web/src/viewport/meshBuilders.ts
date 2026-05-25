@@ -37,6 +37,7 @@ import { buildFloorEdgeProfileMesh } from './buildFloorEdgeProfile';
 export { makeRampMesh, buildRampMesh };
 export { makeBalconyMesh } from './meshBuilders.balcony';
 export { makeFacadeBayMesh } from './meshBuilders.facadeBay';
+export { makeStructuralFacadeGridMesh } from './meshBuilders.structuralFacadeGrid';
 export {
   makeFachwerkOverlayMesh,
   makeFachwerkOverlayMeshLocal,

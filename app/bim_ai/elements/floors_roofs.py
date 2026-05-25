@@ -447,6 +447,74 @@ class FacadeBayElem(BaseModel):
         return self
 
 
+DiagonalStrutPattern = Literal["none", "cross", "single"]
+
+
+class StructuralFacadeGridElem(BaseModel):
+    """Issue #113 — Huf-Haus Pfosten-Riegel-Strukturfassade element.
+
+    A dark timber lattice (vertical posts + horizontal beams + optional
+    diagonal struts) mounted slightly proud of a host wall. The wall behind
+    the grid is intended to be glazed (transparent), so the grid IS the
+    visible facade artifact. The renderer fills the bays with a translucent
+    infill quad and draws each member as a thin box.
+
+    v0 trade-offs (documented on the PR):
+    - Rectangular wall faces only. Curved walls fall back to a straight-line
+      start→end span; the grid still renders but doesn't follow the curve.
+    - IFC export is deferred.
+    - The host wall is not transparency-coerced — projects are expected to
+      author the host wall with a glass material when authoring this grid.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["structural_facade_grid"] = "structural_facade_grid"
+    id: str
+    name: str = "Structural Facade Grid"
+    host_wall_id: str = Field(alias="hostWallId")
+    post_spacing_mm: float = Field(default=1500.0, alias="postSpacingMm", gt=0)
+    beam_heights: list[float] = Field(default_factory=list, alias="beamHeights")
+    diagonal_strut_pattern: DiagonalStrutPattern = Field(
+        default="single", alias="diagonalStrutPattern"
+    )
+    member_thickness_mm: float | None = Field(default=None, alias="memberThicknessMm")
+    proud_offset_mm: float | None = Field(default=None, alias="proudOffsetMm")
+    timber_material_key: str | None = Field(default=None, alias="timberMaterialKey")
+    infill_material_key: str | None = Field(default=None, alias="infillMaterialKey")
+    level_id: str | None = Field(default=None, alias="levelId")
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _validate_grid(self) -> StructuralFacadeGridElem:
+        if self.post_spacing_mm <= 0:
+            raise ValueError(
+                "StructuralFacadeGridElem.postSpacingMm must be > 0"
+            )
+        if self.member_thickness_mm is not None and self.member_thickness_mm <= 0:
+            raise ValueError(
+                "StructuralFacadeGridElem.memberThicknessMm must be > 0 when set"
+            )
+        if self.proud_offset_mm is not None and self.proud_offset_mm < 0:
+            raise ValueError(
+                "StructuralFacadeGridElem.proudOffsetMm must be ≥ 0 when set"
+            )
+        # Drop non-finite / negative entries so the renderer never sees them.
+        cleaned: list[float] = []
+        for h in self.beam_heights:
+            try:
+                value = float(h)
+            except (TypeError, ValueError):
+                continue
+            if not (value >= 0):
+                continue
+            cleaned.append(value)
+        self.beam_heights = sorted(set(cleaned))
+        return self
+
+
 DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]
 
 

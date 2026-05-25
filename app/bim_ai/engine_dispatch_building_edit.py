@@ -16,6 +16,7 @@ from bim_ai.engine import (
     CreateMaskingRegionCmd,
     CreateProjectBasePointCmd,
     CreateRailingCmd,
+    CreateStructuralFacadeGridCmd,
     CreateSunSettingsCmd,
     CreateSurveyPointCmd,
     CreateSweepCmd,
@@ -46,6 +47,7 @@ from bim_ai.engine import (
     SetWallRecessZonesCmd,
     SlabOpeningElem,
     SplitWallAtCmd,
+    StructuralFacadeGridElem,
     SunSettingsElem,
     SunSettingsTimeOfDay,
     SurveyPointElem,
@@ -290,11 +292,46 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("facade_bay", "arch"),
             )
 
+        case CreateStructuralFacadeGridCmd():
+            # Issue #113 — Huf-Haus Pfosten-Riegel structural facade grid.
+            gid = cmd.id or new_id()
+            if gid in els:
+                raise ValueError(f"duplicate element id '{gid}'")
+            host = els.get(cmd.host_wall_id)
+            if not isinstance(host, WallElem):
+                raise ValueError(
+                    "createStructuralFacadeGrid.hostWallId must reference an existing wall"
+                )
+            if cmd.post_spacing_mm <= 0:
+                raise ValueError(
+                    "createStructuralFacadeGrid.postSpacingMm must be > 0"
+                )
+            if cmd.diagonal_strut_pattern not in ("none", "cross", "single"):
+                raise ValueError(
+                    "createStructuralFacadeGrid.diagonalStrutPattern must be "
+                    "'none', 'cross', or 'single'"
+                )
+            level_id = cmd.level_id if cmd.level_id is not None else host.level_id
+            els[gid] = StructuralFacadeGridElem(
+                kind="structural_facade_grid",
+                id=gid,
+                name=cmd.name,
+                host_wall_id=cmd.host_wall_id,
+                post_spacing_mm=cmd.post_spacing_mm,
+                beam_heights=list(cmd.beam_heights),
+                diagonal_strut_pattern=cmd.diagonal_strut_pattern,
+                member_thickness_mm=cmd.member_thickness_mm,
+                proud_offset_mm=cmd.proud_offset_mm,
+                timber_material_key=cmd.timber_material_key,
+                infill_material_key=cmd.infill_material_key,
+                level_id=level_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get(
+                    "structural_facade_grid", "arch"
+                ),
+            )
+
         case CreateWintergartenCmd():
-            # Issue #114 — author a WintergartenElem (glazed conservatory)
-            # hosted on an existing wall. The host wall must exist and be a
-            # WallElem. The footprint must be a closed polygon (≥3 vertices);
-            # for ``barrel`` roofs a non-zero rise is required.
+            # Issue #114 — WintergartenElem (glazed conservatory).
             wid = cmd.id or new_id()
             if wid in els:
                 raise ValueError(f"duplicate element id '{wid}'")
