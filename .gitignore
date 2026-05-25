@@ -37,3 +37,4 @@ seed-artifacts/target-house-*/
 .entire/*
 !.entire/settings.json
 .superset/
+testhouses/
