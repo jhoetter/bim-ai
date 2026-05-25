@@ -12,11 +12,12 @@ emission, and post-commit WS delta broadcast.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai.activity import emit_activity_row
@@ -60,16 +61,54 @@ _BLOCKING_ADVISORY_CLASSES = {
 }
 
 
+_DRY_RUN_REQUIRED_ACTORS: frozenset[ActorKind] = frozenset({"agent", "mcp-client"})
+
+
 class CommandBundleRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     bundle: CommandBundle
-    mode: str = Field(default="dry_run")
+    # Literal (not free-form str) so an unknown mode 422s up front instead of
+    # silently demoting to "dry_run" inside the route — see #134 (MF-mcp-2).
+    mode: Literal["dry_run", "commit"] = Field(default="dry_run")
     user_id: str | None = Field(default="local-dev", alias="userId")
     client_op_id: str | None = Field(default=None, alias="clientOpId")
     submitter: str = Field(default="human")
     actor_kind: ActorKind = Field(default="human", alias="actorKind")
     dry_run_evidence: dict[str, Any] | None = Field(default=None, alias="dryRunEvidence")
+
+    @model_validator(mode="after")
+    def _require_dry_run_evidence_for_agent_commit(self) -> CommandBundleRequest:
+        """Agent/MCP commits MUST carry dryRunEvidence (#134, MF-mcp-2).
+
+        Without this guard the request silently flowed through the
+        transactionSafety gate and the only signal that the commit was
+        rejected was buried at ``transactionPreflightAudit.mode``. We surface
+        the failure as a structured 422 with ``loc=["body", "dryRunEvidence"]``
+        so the caller can fix the request without spelunking the response.
+        """
+        if (
+            self.mode == "commit"
+            and self.actor_kind in _DRY_RUN_REQUIRED_ACTORS
+            and self.dry_run_evidence is None
+        ):
+            raise ValidationError.from_exception_data(
+                title=self.__class__.__name__,
+                line_errors=[
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "missing",
+                            "Required when mode='commit' and actorKind in "
+                            "{'agent', 'mcp-client'}. Run POST "
+                            "/api/models/{id}/commands/bundle/dry-run first and "
+                            "pass the returned dryRunEvidence object here.",
+                        ),
+                        loc=("dryRunEvidence",),
+                        input=None,
+                    )
+                ],
+            )
+        return self
 
 
 @bundles_router.post("/models/{model_id}/bundles")
@@ -105,7 +144,9 @@ async def apply_bundle_route(
             )
 
     doc = Document.model_validate(row.document)
-    mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
+    # body.mode is constrained to Literal["dry_run", "commit"] so the
+    # request would have 422'd by now if it were anything else.
+    mode = body.mode
     uid = body.user_id or "local-dev"
     bundle_digest = command_bundle_digest(
         body.bundle.commands,
