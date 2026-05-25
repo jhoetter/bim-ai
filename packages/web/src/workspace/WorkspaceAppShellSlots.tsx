@@ -153,6 +153,14 @@ export interface WorkspaceCanvasSlotProps {
   };
   seedLoading: boolean;
   seedError: string | null | undefined;
+  /**
+   * Issue #124 — MF-render-11. Set to `true` once the model snapshot has
+   * streamed in and the viewport has geometry to render (or the model is
+   * legitimately empty and the empty-state overlay is showing the CTA, not
+   * the "Loading model…" overlay). Drives `data-bim-model-status`, which the
+   * Playwright capture runner waits on before screenshotting an ortho view.
+   */
+  modelReady: boolean;
   onInsertSeedHouse: () => void | Promise<void>;
   paneRoot: PaneNode;
   renderPaneNode: (node: PaneNode) => JSX.Element;
@@ -166,11 +174,18 @@ export function WorkspaceCanvasSlot({
   emptyHint,
   seedLoading,
   seedError,
+  modelReady,
   onInsertSeedHouse,
   paneRoot,
   renderPaneNode,
   onSemanticCommand,
 }: WorkspaceCanvasSlotProps): JSX.Element {
+  // Issue #124 — emit machine-readable status so the Playwright capture
+  // runner can wait for geometry-stream completion before screenshotting.
+  // `loading` covers both "seed fetch in flight" and "snapshot has not yet
+  // hydrated any geometry"; `ready` is set as soon as the viewport has
+  // something to render.
+  const modelStatus = modelReady ? 'ready' : 'loading';
   return (
     <div
       style={{
@@ -182,6 +197,9 @@ export function WorkspaceCanvasSlot({
       }}
       data-view-type={activeViewKind ?? 'none'}
       data-testid="redesign-canvas-root"
+      data-evidence-capture-root="true"
+      data-bim-model-status={modelStatus}
+      data-bim-loading={modelReady ? undefined : 'true'}
     >
       {showEmptyStateOverlay ? (
         <EmptyStateOverlay
