@@ -1430,7 +1430,41 @@ def _topology_bundle(
     if len(poly) < 3:
         return None
 
-    margin = 5000  # 5 m parcel-context band around the building.
+    # MF-driver-26 (#116): when the IR carries a ``site_topo`` fact, that
+    # fact is the authoritative description of the parcel terrain. The
+    # earlier driver silently dropped its ``heightSamples`` +
+    # ``footprintMargin`` and re-synthesised slope from the hard-coded
+    # ``slope_specs`` table below — so every hillside house whose IR
+    # actually described its grade (e.g. h22 with a 5.4 m N-S drop)
+    # ended up rendering as a flat slab. Plumb the IR fact through
+    # verbatim and fall back to the per-house synthesis only when no
+    # ``site_topo`` fact is present.
+    site_topo = next(
+        (
+            f
+            for f in (ir.get("extractedFacts") or [])
+            if f.get("kind") == "site_topo"
+        ),
+        None,
+    )
+    consumed_fact_ids: list[str] = [str(chain.get("factId"))]
+
+    # IR fact authors ``footprintMargin`` (mm) — fall back to 5 m parcel band.
+    margin_default = 5000
+    if site_topo is not None:
+        margin_raw = site_topo.get("footprintMargin")
+        if margin_raw is not None:
+            try:
+                margin = float(margin_raw)
+            except (TypeError, ValueError):
+                margin = margin_default
+        else:
+            margin = margin_default
+        if site_topo.get("factId") is not None:
+            consumed_fact_ids.append(str(site_topo.get("factId")))
+    else:
+        margin = margin_default
+
     xs = [float(p[0]) for p in poly]
     ys = [float(p[1]) for p in poly]
     xmin, xmax = min(xs) - margin, max(xs) + margin
@@ -1456,39 +1490,69 @@ def _topology_bundle(
     # four parcel corners + the building footprint corners so the
     # toposolid surface tilts realistically. Engine + web viewer both
     # read `heightSamples` and triangulate the surface.
-    # Per-house slope direction + magnitude:
+    # MF-driver-26 (#116): prefer the IR's ``site_topo`` fact when it
+    # carries ``heightSamples`` directly. The fact's samples are stored
+    # under raw ``x``/``y``/``z`` keys (or the ``xMm``/``yMm``/``zMm`` alias);
+    # accept either and normalise to the engine alias the renderer reads.
+    height_samples: list[dict] = []
+    site_topo_height_samples_raw: list = []
+    if site_topo is not None:
+        site_topo_height_samples_raw = list(site_topo.get("heightSamples") or [])
+
+    def _normalise_height_sample(sample: dict) -> dict | None:
+        if not isinstance(sample, dict):
+            return None
+        x = sample.get("xMm", sample.get("x"))
+        y = sample.get("yMm", sample.get("y"))
+        z = sample.get("zMm", sample.get("z"))
+        if x is None or y is None or z is None:
+            return None
+        try:
+            return {"xMm": float(x), "yMm": float(y), "zMm": float(z)}
+        except (TypeError, ValueError):
+            return None
+
+    if site_topo_height_samples_raw:
+        for raw_sample in site_topo_height_samples_raw:
+            normalised = _normalise_height_sample(raw_sample)
+            if normalised is not None:
+                height_samples.append(normalised)
+
+    # Per-house slope direction + magnitude — used only as a back-stop when
+    # the IR does not carry a ``site_topo`` fact (preserves the legacy
+    # behavior for fixtures + tests that pre-date the IR fact).
     slope_specs = {
         # (direction_dx, direction_dy, peak_mm) — building center is at z=0
         "alpha": (0.0, 0.0, 0.0),  # alpha source roughly flat; minor variation
         "beta": (-1.0, 0.5, 3800),  # hillside: high east, low west; source shows steep drop
         "gamma": (0.0, -1.0, 1000),  # gamma source shows modest north→south slope
     }
-    sdx, sdy, peak_mm = slope_specs.get(house, (0.0, 0.0, 0.0))
-    height_samples: list[dict] = []
-    if abs(peak_mm) > 1e-6:
-        # Center of parcel
-        cx = (xmin + xmax) / 2
-        cy = (ymin + ymax) / 2
-        # Length along slope direction at parcel extent
-        for px, py in [
-            (xmin, ymin),
-            (xmax, ymin),
-            (xmax, ymax),
-            (xmin, ymax),  # corners
-            (cx, cy),  # center
-            (0, 0),
-            (xmax - margin, 0),
-            (xmax - margin, ymax - margin),
-            (0, ymax - margin),  # building corners
-        ]:
-            # Project (px-cx, py-cy) onto slope direction unit vector
-            slope_norm = (sdx * sdx + sdy * sdy) ** 0.5 or 1.0
-            proj = ((px - cx) * sdx + (py - cy) * sdy) / slope_norm
-            # Normalize to [-1..+1] range based on parcel half-diagonal
-            half_diag = ((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5 / 2
-            t = max(-1.0, min(1.0, proj / half_diag))
-            z = round(t * peak_mm / 2, 1)  # z range = [-peak/2 .. +peak/2]
-            height_samples.append({"xMm": round(px, 1), "yMm": round(py, 1), "zMm": z})
+    if not height_samples:
+        sdx, sdy, peak_mm = slope_specs.get(house, (0.0, 0.0, 0.0))
+        if abs(peak_mm) > 1e-6:
+            # Center of parcel
+            cx = (xmin + xmax) / 2
+            cy = (ymin + ymax) / 2
+            # Length along slope direction at parcel extent
+            for px, py in [
+                (xmin, ymin),
+                (xmax, ymin),
+                (xmax, ymax),
+                (xmin, ymax),  # corners
+                (cx, cy),  # center
+                (0, 0),
+                (xmax - margin, 0),
+                (xmax - margin, ymax - margin),
+                (0, ymax - margin),  # building corners
+            ]:
+                # Project (px-cx, py-cy) onto slope direction unit vector
+                slope_norm = (sdx * sdx + sdy * sdy) ** 0.5 or 1.0
+                proj = ((px - cx) * sdx + (py - cy) * sdy) / slope_norm
+                # Normalize to [-1..+1] range based on parcel half-diagonal
+                half_diag = ((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5 / 2
+                t = max(-1.0, min(1.0, proj / half_diag))
+                z = round(t * peak_mm / 2, 1)  # z range = [-peak/2 .. +peak/2]
+                height_samples.append({"xMm": round(px, 1), "yMm": round(py, 1), "zMm": z})
     # MF-driver-8 (#37): for every level whose top sits below grade
     # (``elevationMm < 0`` — typically a Keller), carve an excavation
     # out of the toposolid so the KG walls + windows aren't left
@@ -1627,7 +1691,7 @@ def _topology_bundle(
                 }
             ],
         },
-        [str(chain.get("factId"))],
+        consumed_fact_ids,
     )
 
 
