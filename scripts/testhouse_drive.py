@@ -3201,18 +3201,64 @@ def _balconies_bundle(
     )
 
 
+def _dormer_explicit_position(fact: dict) -> tuple[float, float] | None:
+    """Return ``(alongRidgeMm, acrossRidgeMm)`` if the IR fact pins the
+    dormer in roof-local coords. Tolerant of two shapes:
+
+      * ``positionOnRoof: {"alongRidgeMm": ..., "acrossRidgeMm": ...}``
+      * top-level ``alongRidgeMm`` / ``acrossRidgeMm`` on the fact
+
+    Returns ``None`` when neither shape carries a numeric ``along``
+    value (across defaults to 0 so a partial pin still works).
+    """
+
+    pos = fact.get("positionOnRoof") if isinstance(fact.get("positionOnRoof"), dict) else None
+    along: float | None = None
+    across: float | None = None
+    if pos is not None:
+        v = pos.get("alongRidgeMm")
+        if isinstance(v, (int, float)):
+            along = float(v)
+        v = pos.get("acrossRidgeMm")
+        if isinstance(v, (int, float)):
+            across = float(v)
+    if along is None:
+        v = fact.get("alongRidgeMm")
+        if isinstance(v, (int, float)):
+            along = float(v)
+    if across is None:
+        v = fact.get("acrossRidgeMm")
+        if isinstance(v, (int, float)):
+            across = float(v)
+    if along is None:
+        return None
+    return (along, 0.0 if across is None else across)
+
+
 def _dormers_bundle(
     *, ir: dict, parent_revision: int, house: str, snapshot: dict
 ) -> tuple[dict, list[str]] | None:
     """Author createDormer commands hosting on the main roof.
 
-    Reads IR dormer facts + the live roof footprint (from the snapshot)
-    and emits one createDormer per fact. Position is in roof-local
-    ``(alongRidgeMm, acrossRidgeMm)`` coords derived from the world
-    XY + the IR's ridge orientation.
+    Reads IR ``extractedFacts[kind=dormer]`` + the live roof footprint
+    (from the snapshot) and emits one createDormer per fact.
 
-    All authored dormers default to ``dormerRoofKind = "shed"``
-    (Schleppgaube) since that's what every IR's facts call them.
+    Position resolution priority (per fact):
+      1. Explicit roof-local pin (``positionOnRoof.alongRidgeMm`` or
+         top-level ``alongRidgeMm``) — honoured verbatim.
+      2. World-XY hint (``vertexMm`` / ``polygonMm`` / ``centerXMm``)
+         projected into roof-local coords via the IR's ridge orientation.
+      3. Auto-distribute: when N≥2 facts on this roof give no position
+         hints at all, spread them evenly along the ridge so a 4-dormer
+         IR doesn't collapse into one stack at the roof center
+         (mirrors PR #90's openings autodistribute).
+
+    Default ``dormerRoofKind = "shed"`` (Schleppgaube) matches the
+    overwhelming majority of IR facts; ``roofKind`` and
+    ``dormerRoofKind`` are both honoured as aliases.
+
+    Returns ``None`` (with a warning log when the IR HAS dormers) if
+    the main roof was never authored — the ROOF phase must run first.
     """
 
     dormers = [f for f in (ir.get("extractedFacts") or []) if f.get("kind") == "dormer"]
@@ -3229,6 +3275,17 @@ def _dormers_bundle(
         None,
     )
     if roof is None:
+        logger.warning(
+            "testhouse_iter.dormers_skipped_no_roof",
+            extra={
+                "house": house,
+                "dormer_fact_count": len(dormers),
+                "reason": (
+                    "Main roof not found in snapshot — ROOF phase must run before "
+                    "roof-dormers. Dormer facts will not be authored this iter."
+                ),
+            },
+        )
         return None
     roof_id = str(roof.get("id"))
     footprint = roof.get("footprintMm") or []
@@ -3256,14 +3313,48 @@ def _dormers_bundle(
         elif "n-s" in txt or "north-south" in txt or "along y" in txt or "+y" in txt:
             ridge_ew = False
 
+    # Auto-distribute pre-pass: when ZERO dormer facts carry a
+    # position hint (no explicit alongRidgeMm, no vertexMm/polygonMm/
+    # centerXMm, no facadeSide), spread the N facts evenly along the
+    # ridge centerline. Pre-fix, every fact resolved to the same roof
+    # midpoint and only the first survived (the renderer's overlap-
+    # merge ate the rest). Mirrors PR #90's openings autodistribute.
+    def _has_any_position_hint(fact: dict) -> bool:
+        if _dormer_explicit_position(fact) is not None:
+            return True
+        if _dormer_center_xy(fact) is not None:
+            return True
+        if _dormer_facade_side(fact) is not None:
+            return True
+        return False
+
+    autodistribute = len(dormers) >= 2 and not any(_has_any_position_hint(f) for f in dormers)
+    along_default_by_fact_id: dict[int, float] = {}
+    if autodistribute:
+        ridge_span = dx if ridge_ew else dy
+        # Spread N dormers evenly across the inner ~80% of the ridge so
+        # each one keeps clear of the gable end (engine clamps
+        # ``|along| + width/2 ≤ span/2 − margin``).
+        usable = max(0.0, ridge_span * 0.8)
+        n = len(dormers)
+        if n == 1:
+            along_default_by_fact_id[id(dormers[0])] = 0.0
+        else:
+            step = usable / (n - 1)
+            start = -usable / 2
+            for i, f in enumerate(dormers):
+                along_default_by_fact_id[id(f)] = start + i * step
+
     commands: list[dict] = []
     consumed: list[str] = []
     for f in dormers:
         side = _dormer_facade_side(f) or "north"
-        cxy = _dormer_center_xy(f)
-        if cxy is None:
+        # Priority 1: explicit roof-local pin from IR.
+        explicit_pos = _dormer_explicit_position(f)
+        cxy = None if explicit_pos is not None else _dormer_center_xy(f)
+        if explicit_pos is None and cxy is None and id(f) not in along_default_by_fact_id:
             continue
-        cx, cy = cxy[0], cxy[1]
+        cx, cy = (cxy or [float("nan"), float("nan")])[0], (cxy or [float("nan"), float("nan")])[1]
         # NS-V3-05: shift inward from any wall edge by 900 mm. The reader
         # often gives dormer vertex AT the facade midpoint (e.g. y=8750
         # for north wall); the engine validates `|across| + depth/2 ≤
@@ -3312,7 +3403,14 @@ def _dormers_bundle(
         # for acrossRidgeMm.
         center_x = (xmin + xmax) / 2
         center_y = (ymin + ymax) / 2
-        if ridge_ew:
+        if explicit_pos is not None:
+            # Honour the IR-pinned roof-local coords; skip the world-XY math.
+            along, across = explicit_pos
+            half_along = (dx if ridge_ew else dy) / 2
+            margin = 200.0
+            if abs(along) + width / 2 > half_along - margin:
+                width = max(800.0, 2 * (half_along - abs(along) - margin))
+        elif ridge_ew:
             # Ridge runs along x. alongRidgeMm = x offset from center
             # (signed), acrossRidgeMm = y offset from ridge centerline.
             if cx != cx:  # NaN — gamma's centerXMm-only fallback
@@ -3323,6 +3421,12 @@ def _dormers_bundle(
                 cy = center_y + (-0.6 * dy / 2 if side == "south" else 0.6 * dy / 2)
             along = cx - center_x
             across = cy - center_y
+            # Autodistribute override: when the whole batch had no
+            # position hints, replace the (NaN-derived) center collapse
+            # with the pre-computed even spread along the ridge.
+            if id(f) in along_default_by_fact_id:
+                along = along_default_by_fact_id[id(f)]
+                across = (-0.6 * dy / 2 if side == "south" else 0.6 * dy / 2)
             # Clamp width so the dormer fits: width/2 + |along| ≤ span/2 − 200
             half_along = dx / 2
             margin = 200.0
@@ -3336,6 +3440,9 @@ def _dormers_bundle(
                 cx = center_x + (-0.6 * dx / 2 if side == "west" else 0.6 * dx / 2)
             along = cy - center_y
             across = cx - center_x
+            if id(f) in along_default_by_fact_id:
+                along = along_default_by_fact_id[id(f)]
+                across = (-0.6 * dx / 2 if side == "west" else 0.6 * dx / 2)
             half_along = dy / 2
             margin = 200.0
             if abs(along) + width / 2 > half_along - margin:
@@ -3362,10 +3469,28 @@ def _dormers_bundle(
                 f.get("ridgeHeightMm") or wall_h + (width / 2) * _math.tan(_math.radians(pitch_deg))
             )
         else:
-            dormer_kind = str(f.get("dormerRoofKind") or "shed")
+            # MF-driver-20 (#93): accept both ``dormerRoofKind`` (engine
+            # alias) and the reader's ``roofKind`` ("flat"|"shed"|"gable"
+            # |"hipped"). Anything outside the literal set falls back to
+            # shed so the engine never rejects on enum.
+            raw_kind = str(
+                f.get("dormerRoofKind") or f.get("roofKind") or "shed"
+            ).lower()
+            dormer_kind = raw_kind if raw_kind in ("flat", "shed", "gable", "hipped") else "shed"
             wall_h = min(1500.0, max(800.0, height))
             pitch_deg = float(f.get("dormerRoofPitchDeg") or 10.0)
             ridge_h = None
+            # gable / hipped require a ridgeHeightMm per DormerElem
+            # validator; derive it from wall_h + half-width × tan(pitch)
+            # when the reader didn't carry it.
+            if dormer_kind in ("gable", "hipped"):
+                import math as _math
+
+                pitch_deg = float(f.get("dormerRoofPitchDeg") or 35.0)
+                ridge_h = float(
+                    f.get("ridgeHeightMm")
+                    or wall_h + (width / 2) * _math.tan(_math.radians(pitch_deg))
+                )
         dormer_cmd: dict = {
             "type": "createDormer",
             "id": f"th-{house}-dormer-{_slugify(f.get('factId'))}",

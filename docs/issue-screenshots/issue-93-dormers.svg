@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #93 — IR dormer facts reach the bundle, before vs after</title>
+  <desc>
+    South elevation of h23 (historicist Doppelhaushälfte, DG with 6 Schleppgauben in the
+    reader IR). Before: the driver had no _dormers_bundle phase wiring, so all 6
+    dormer facts were silently dropped — the attic reads as a blank pitched roof.
+    After: _dormers_bundle consumes extractedFacts[kind=dormer] after the ROOF phase,
+    honours explicit (alongRidgeMm, acrossRidgeMm) pins when the reader provides them,
+    auto-distributes evenly along the ridge when it doesn't, and emits one createDormer
+    per fact hosted on the live main roof.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="tile" patternUnits="userSpaceOnUse" width="14" height="10">
+      <rect width="14" height="10" fill="#b85e44"/>
+      <path d="M0 0 L14 0 M0 5 L14 5 M7 0 L7 10" stroke="#8a4633" stroke-width="0.6"/>
+    </pattern>
+    <pattern id="render" patternUnits="userSpaceOnUse" width="6" height="6">
+      <rect width="6" height="6" fill="#efe5cf"/>
+      <circle cx="2" cy="3" r="0.4" fill="#c6b78a"/>
+    </pattern>
+  </defs>
+
+  <!-- background panels -->
+  <rect x="0" y="0" width="550" height="460" fill="url(#sky)"/>
+  <rect x="550" y="0" width="550" height="460" fill="url(#sky)"/>
+  <line x1="550" y1="0" x2="550" y2="460" stroke="#aaa" stroke-dasharray="4 4"/>
+
+  <!-- BEFORE label -->
+  <text x="20" y="34" font-size="18" font-weight="700" fill="#7a1f1f">Before — windowless attic</text>
+  <text x="20" y="54" font-size="11" fill="#444">IR carries 6 dormer facts. Driver has no phase that consumes them → 0 dormer elements in snapshot.</text>
+
+  <!-- AFTER label -->
+  <text x="570" y="34" font-size="18" font-weight="700" fill="#0f5132">After — 6 Schleppgauben on the DG roof</text>
+  <text x="570" y="54" font-size="11" fill="#444">_dormers_bundle authors one createDormer per fact, evenly spaced along the ridge.</text>
+
+  <!-- ground line -->
+  <line x1="20" y1="420" x2="530" y2="420" stroke="#444" stroke-width="1"/>
+  <line x1="570" y1="420" x2="1080" y2="420" stroke="#444" stroke-width="1"/>
+
+  <!-- ===== BEFORE: bare facade + bare roof (no dormers) ===== -->
+  <!-- EG / OG wall mass -->
+  <rect x="80" y="260" width="400" height="160" fill="url(#render)" stroke="#7a6a3a" stroke-width="1.2"/>
+  <!-- EG windows (street facade) -->
+  <g stroke="#3a3a3a" stroke-width="1" fill="#bcd6e2">
+    <rect x="110" y="320" width="60" height="60"/>
+    <rect x="200" y="320" width="60" height="60"/>
+    <rect x="290" y="320" width="60" height="60"/>
+    <rect x="380" y="320" width="60" height="60"/>
+    <rect x="110" y="270" width="60" height="40"/>
+    <rect x="200" y="270" width="60" height="40"/>
+    <rect x="290" y="270" width="60" height="40"/>
+    <rect x="380" y="270" width="60" height="40"/>
+  </g>
+  <!-- gable roof — bare, no dormer cuts -->
+  <polygon points="60,260 500,260 280,140" fill="url(#tile)" stroke="#5a3225" stroke-width="1.2"/>
+  <!-- eave -->
+  <line x1="60" y1="260" x2="500" y2="260" stroke="#3a3a3a" stroke-width="1.2"/>
+  <!-- ridge marker -->
+  <line x1="120" y1="195" x2="440" y2="195" stroke="#5a3225" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.5"/>
+  <text x="280" y="190" font-size="9" fill="#5a3225" text-anchor="middle">(ridge — no dormers populating it)</text>
+
+  <!-- Annotation: dropped facts -->
+  <g font-size="10" fill="#7a1f1f">
+    <text x="80" y="445">extractedFacts[kind=dormer] = 6  /  snapshot dormer count = 0</text>
+  </g>
+
+  <!-- ===== AFTER: same facade + 6 dormers on the roof ===== -->
+  <rect x="630" y="260" width="400" height="160" fill="url(#render)" stroke="#7a6a3a" stroke-width="1.2"/>
+  <g stroke="#3a3a3a" stroke-width="1" fill="#bcd6e2">
+    <rect x="660" y="320" width="60" height="60"/>
+    <rect x="750" y="320" width="60" height="60"/>
+    <rect x="840" y="320" width="60" height="60"/>
+    <rect x="930" y="320" width="60" height="60"/>
+    <rect x="660" y="270" width="60" height="40"/>
+    <rect x="750" y="270" width="60" height="40"/>
+    <rect x="840" y="270" width="60" height="40"/>
+    <rect x="930" y="270" width="60" height="40"/>
+  </g>
+  <polygon points="610,260 1050,260 830,140" fill="url(#tile)" stroke="#5a3225" stroke-width="1.2"/>
+  <line x1="610" y1="260" x2="1050" y2="260" stroke="#3a3a3a" stroke-width="1.2"/>
+
+  <!-- Six Schleppgauben evenly spaced along the south pitch.
+       Each is a shed-roof box poking out: rectangular front + glazing + sloped top. -->
+  <g>
+    <!-- dormer at along=-2700 -->
+    <rect x="635" y="218" width="46" height="38" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="641" y="226" width="34" height="22" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="633,222 683,222 683,218 635,218" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+    <!-- dormer at along=-1700 -->
+    <rect x="700" y="212" width="46" height="44" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="706" y="220" width="34" height="26" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="698,216 748,216 748,212 700,212" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+    <!-- dormer at along=-700 -->
+    <rect x="770" y="208" width="46" height="48" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="776" y="217" width="34" height="28" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="768,212 818,212 818,208 770,208" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+    <!-- dormer at along=+700 -->
+    <rect x="840" y="208" width="46" height="48" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="846" y="217" width="34" height="28" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="838,212 888,212 888,208 840,208" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+    <!-- dormer at along=+1700 -->
+    <rect x="910" y="212" width="46" height="44" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="916" y="220" width="34" height="26" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="908,216 958,216 958,212 910,212" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+    <!-- dormer at along=+2700 -->
+    <rect x="980" y="218" width="46" height="38" fill="#f6efe0" stroke="#5a3225"/>
+    <rect x="986" y="226" width="34" height="22" fill="#bcd6e2" stroke="#3a3a3a" stroke-width="0.6"/>
+    <polygon points="978,222 1028,222 1028,218 980,218" fill="#9a5039" stroke="#5a3225" stroke-width="0.6"/>
+  </g>
+
+  <!-- Annotation: 6 dormers landed -->
+  <g font-size="10" fill="#0f5132">
+    <text x="630" y="445">extractedFacts[kind=dormer] = 6  /  snapshot dormer count = 6  (hosted on th-h23-main-roof)</text>
+  </g>
+</svg>
