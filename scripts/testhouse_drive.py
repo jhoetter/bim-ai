@@ -45,7 +45,12 @@ if str(APP_DIR) not in sys.path:
 import httpx  # noqa: E402
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator  # noqa: E402
 
-from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
+from bim_ai._io.log import (  # noqa: E402
+    JSONFormatter,
+    get_correlation_id,
+    get_logger,
+    set_correlation_id,
+)
 from bim_ai.roof_geometry import footprint_is_valid_l_shape_mm  # noqa: E402
 
 _FALLBACK_HOUSES: tuple[str, ...] = ("alpha", "beta", "gamma")
@@ -152,6 +157,176 @@ def _attach_house_run_log_sink(house: str) -> None:
     handler.setFormatter(JSONFormatter())
     setattr(handler, sink_attr, True)
     logger.addHandler(handler)
+
+
+# ---------------------------------------------------------------------------
+# MF-driver-26 (#130): optional bim-agent HTTP shim
+#
+# When ``BIM_AGENT_URL`` is set in the environment AND an iter_id is
+# resolvable (either from the env var ``BIM_AGENT_ITER_ID`` or a
+# ``--bim-agent-iter-id`` CLI arg), the driver POSTs every
+# ``testhouse_iter.*`` log record to bim-agent's ``/api/events``
+# endpoint, the reader IR snapshot to ``/api/irs`` after
+# :func:`_load_and_validate_ir`, and the preflight classification
+# manifest to ``/api/source-docs``. Failures are swallowed — the
+# build must never block on observability.
+#
+# When ``BIM_AGENT_URL`` is unset, every helper below is a no-op so
+# the existing driver code path is unchanged.
+# ---------------------------------------------------------------------------
+
+
+def _resolve_bim_agent_iter_id(explicit: int | None = None) -> int | None:
+    """Return the bim-agent iter_id from arg/env, or ``None`` when unset.
+
+    Precedence: ``explicit`` CLI arg > ``BIM_AGENT_ITER_ID`` env var.
+    """
+
+    if explicit is not None:
+        return int(explicit)
+    raw = os.getenv("BIM_AGENT_ITER_ID")
+    if raw is None or raw == "":
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_testhouse_iter_record(record: Any) -> tuple[bool, str]:
+    """Decide whether a log record represents a ``testhouse_iter.*`` event.
+
+    The driver emits log records two ways:
+
+    1. ``logger.info("testhouse_iter.start", extra={...})`` — ``record.msg``
+       carries the kind directly.
+    2. ``logger.error("ir_invalid", extra={"event": "testhouse_iter.ir_invalid", ...})``
+       — kind lives in the ``event`` extra.
+
+    Returns ``(True, kind)`` when the record looks like a
+    ``testhouse_iter.*`` event, else ``(False, "")``.
+    """
+
+    msg = record.msg if isinstance(record.msg, str) else str(record.msg or "")
+    if msg.startswith("testhouse_iter."):
+        return True, msg
+    event = record.__dict__.get("event")
+    if isinstance(event, str) and event.startswith("testhouse_iter."):
+        return True, event
+    return False, ""
+
+
+def _attach_bim_agent_handler(*, iter_id: int | None, url: str | None = None) -> None:
+    """Optional: POST every ``testhouse_iter.*`` record to bim-agent.
+
+    Triggered when ``BIM_AGENT_URL`` is set in env AND ``iter_id`` is
+    not ``None`` (resolved from ``BIM_AGENT_ITER_ID`` or
+    ``--bim-agent-iter-id``). When either is missing this is a no-op
+    so the existing driver flow is unchanged.
+
+    The handler swallows every exception — observability must never
+    block the build. The HTTP call is bounded by a 3s timeout for the
+    same reason.
+    """
+
+    import logging
+
+    if url is None:
+        url = os.getenv("BIM_AGENT_URL")
+    if not url or iter_id is None:
+        return
+
+    # De-dupe: only attach once per logger so repeated invocations from
+    # the same process (e.g. tests, or driver subcommands chained
+    # together) don't POST each event N times.
+    sink_attr = "_bim_ai_bim_agent_handler"
+    for h in logger.handlers:
+        if getattr(h, sink_attr, False):
+            return
+
+    base_url = url.rstrip("/")
+    pinned_iter_id = int(iter_id)
+
+    class _BimAgentHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            ok, kind = _is_testhouse_iter_record(record)
+            if not ok:
+                return
+            payload: dict[str, Any] = {}
+            for key, value in record.__dict__.items():
+                if key in JSONFormatter._RESERVED or key.startswith("_"):
+                    continue
+                payload[key] = value
+            body = {
+                "iter_id": pinned_iter_id,
+                "kind": kind,
+                "phase": payload.get("phase"),
+                "correlation_id": payload.get("correlation_id") or get_correlation_id(),
+                "status": payload.get("status"),
+                "elapsed_ms": payload.get("elapsed_ms"),
+                "bim_ai_commit_id": payload.get("commit_id"),
+                "bim_ai_model_id": payload.get("model_id"),
+                "payload_json": payload,
+            }
+            try:
+                httpx.post(f"{base_url}/api/events", json=body, timeout=3.0)
+            except Exception:
+                # Never block the build on observability — eat every
+                # exception (timeouts, connection refused, JSON encode
+                # errors on exotic extras, etc.).
+                pass
+
+    handler = _BimAgentHandler()
+    setattr(handler, sink_attr, True)
+    logger.addHandler(handler)
+
+
+def _post_bim_agent_ir(*, iter_id: int | None, ir: dict, url: str | None = None) -> None:
+    """Optional: POST a reader IR snapshot to bim-agent's ``/api/irs``.
+
+    Called from :func:`_load_and_validate_ir` (gated on env + iter_id).
+    No-op when either ``BIM_AGENT_URL`` or ``iter_id`` is unset. Every
+    exception is swallowed — same reasoning as
+    :func:`_attach_bim_agent_handler`.
+    """
+
+    if url is None:
+        url = os.getenv("BIM_AGENT_URL")
+    if not url or iter_id is None:
+        return
+    try:
+        httpx.post(
+            f"{url.rstrip('/')}/api/irs",
+            json={"iter_id": int(iter_id), "ir_json": ir},
+            timeout=3.0,
+        )
+    except Exception:
+        pass
+
+
+def _post_bim_agent_source_docs(
+    *, iter_id: int | None, docs: list[dict] | dict, url: str | None = None
+) -> None:
+    """Optional: POST the preflight classification to ``/api/source-docs``.
+
+    Called after :func:`_run_preflight` builds the classification
+    manifest. ``docs`` can be either the list of classified document
+    entries or the full preflight result dict — bim-agent decides how
+    to unpack. No-op when env/iter_id are unset; exceptions swallowed.
+    """
+
+    if url is None:
+        url = os.getenv("BIM_AGENT_URL")
+    if not url or iter_id is None:
+        return
+    try:
+        httpx.post(
+            f"{url.rstrip('/')}/api/source-docs",
+            json={"iter_id": int(iter_id), "docs": docs},
+            timeout=3.0,
+        )
+    except Exception:
+        pass
 
 
 def _house_root(house: str) -> Path:
@@ -393,6 +568,12 @@ def _run_preflight(*, house: str, api_base: str, dpi: int) -> dict:
     rendered_short = _house_workdir(house) / "rendered-pages"
     if rendered_under_preflight.is_dir() and not rendered_short.exists():
         rendered_short.symlink_to(rendered_under_preflight.relative_to(rendered_short.parent))
+    # MF-driver-26 (#130): publish the classification manifest to
+    # bim-agent so the agent-runs UI can render the source-docs
+    # provenance card. No-op when BIM_AGENT_URL is unset.
+    artifacts = (result or {}).get("artifacts") or {}
+    docs = artifacts.get("classifiedDocuments") or artifacts.get("documents") or result
+    _post_bim_agent_source_docs(iter_id=_resolve_bim_agent_iter_id(), docs=docs)
     return result
 
 
@@ -778,6 +959,11 @@ def _load_and_validate_ir(ir_path: Path) -> dict:
             f"  full problems: {json.dumps(problems)}\n"
         )
         sys.exit(2)
+    # MF-driver-26 (#130): when bim-agent observability is wired up,
+    # ship the validated IR snapshot to /api/irs so the agent-runs UI
+    # has the same provenance the driver does. No-op when env/iter_id
+    # are unset.
+    _post_bim_agent_ir(iter_id=_resolve_bim_agent_iter_id(), ir=data)
     return data
 
 
@@ -5411,6 +5597,23 @@ def _build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_API_BASE,
         help=f"API base URL (default: {DEFAULT_API_BASE}).",
     )
+    # MF-driver-26 (#130): optional bim-agent observability hook. When
+    # both ``BIM_AGENT_URL`` and an iter_id are present, the driver
+    # POSTs every ``testhouse_iter.*`` log + IR + source-doc to
+    # bim-agent's API. The arg is a parity surface for the env var so
+    # operators can pin it inline without exporting.
+    parser.add_argument(
+        "--bim-agent-iter-id",
+        type=int,
+        default=None,
+        help=(
+            "When set together with BIM_AGENT_URL, POST every "
+            "testhouse_iter.* event + reader IR + preflight "
+            "classification to bim-agent's /api/events, /api/irs, "
+            "/api/source-docs endpoints. Falls back to BIM_AGENT_ITER_ID "
+            "env when omitted; no-op when BIM_AGENT_URL is unset."
+        ),
+    )
 
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -5498,6 +5701,11 @@ def main(argv: list[str] | None = None) -> int:
     house = getattr(args, "house", None)
     if isinstance(house, str) and house in HOUSES:
         _attach_house_run_log_sink(house)
+    # MF-driver-26 (#130): attach the bim-agent HTTP shim when both
+    # the URL env var and an iter_id are present. No-op otherwise.
+    _attach_bim_agent_handler(
+        iter_id=_resolve_bim_agent_iter_id(getattr(args, "bim_agent_iter_id", None)),
+    )
     return int(args.func(args))
 
 
