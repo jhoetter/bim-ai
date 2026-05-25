@@ -113,7 +113,19 @@ _NAME_MAP: dict[str, str] = {}
 
 
 def _build_tool_list() -> list[types.Tool]:
-    """Enumerate ToolDescriptors and return one MCP Tool per descriptor."""
+    """Enumerate ToolDescriptors and return one MCP Tool per descriptor.
+
+    Each descriptor's inputSchema describes the REST body — but our generic
+    proxy also uses the same args dict for URL path-parameter substitution
+    (e.g. `{model_id}` in `/api/models/{model_id}/bundles`). So before
+    exposing the schema as an MCP tool inputSchema, we:
+
+      1. Add each `{param}` from `restEndpoint.path` to `properties` as a
+         required string field (if not already declared).
+      2. Strip `additionalProperties: False` so per-tool extras (e.g.
+         legacy fields the REST route accepts but the descriptor doesn't
+         enumerate) pass MCP validation.
+    """
     catalog = get_catalog()
     tools: list[types.Tool] = []
     for desc in catalog.tools:
@@ -130,10 +142,20 @@ def _build_tool_list() -> list[types.Tool]:
             f"category: {desc.category} | mutability: {desc.mutability or 'unspecified'} | "
             f"side_effects: {desc.sideEffects} | REST: {desc.restEndpoint.method} {desc.restEndpoint.path}"
         )
-        # Ensure inputSchema is a valid JSON schema object.
-        schema = desc.inputSchema or {"type": "object", "properties": {}}
+        schema = dict(desc.inputSchema or {"type": "object", "properties": {}})
         if "type" not in schema:
-            schema = {**schema, "type": "object"}
+            schema["type"] = "object"
+        # Merge path params into the schema as string properties.
+        path_params = _path_params(desc.restEndpoint.path)
+        if path_params:
+            props = dict(schema.get("properties") or {})
+            for p in path_params:
+                if p not in props:
+                    props[p] = {"type": "string", "description": f"Path parameter (URL `{{{p}}}`)."}
+            schema["properties"] = props
+        # Drop strict-extras flag so the proxy can pass through path params
+        # + occasional legacy body fields without MCP-layer validation errors.
+        schema.pop("additionalProperties", None)
         tools.append(types.Tool(name=mcp_name, description=description, inputSchema=schema))
     return tools
 
