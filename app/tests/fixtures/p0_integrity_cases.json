@@ -64,10 +64,10 @@
       "auditable": true,
       "ownerTrackerItems": ["BIR-O04", "BIR-W01"],
       "canonicalEvidencePaths": [
-        "spec/methodology/sketch-to-bim-agent-workflow-templates.md",
-        "scripts/target-house-final-package.test.mjs"
+        "spec/methodology/seed-artifacts.md",
+        "scripts/create-seed-artifact.test.mjs"
       ],
-      "proofHooks": ["node --test scripts/target-house-final-package.test.mjs"]
+      "proofHooks": ["node --test scripts/create-seed-artifact.test.mjs"]
     },
     "user_realistic_sketch": {
       "description": "Sketch-derived cases that preserve realistic customer ambiguity while declaring expected rule outcomes.",
@@ -75,9 +75,9 @@
       "ownerTrackerItems": ["BIR-M06", "BIR-W01"],
       "canonicalEvidencePaths": [
         "spec/target-house/target-house-1-acceptance-checklist.md",
-        "scripts/target-house-closeout-report.test.mjs"
+        "packages/cli/sketchAcceptanceProvenance.test.mjs"
       ],
-      "proofHooks": ["node --test scripts/target-house-closeout-report.test.mjs"]
+      "proofHooks": ["node --test packages/cli/sketchAcceptanceProvenance.test.mjs"]
     }
   },
   "cases": [
