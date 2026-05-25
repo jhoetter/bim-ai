@@ -2163,6 +2163,82 @@ def _resolve_opening_host(
     return (wall, t, d, None)
 
 
+def _wall_segment_from_fact(
+    fact: dict,
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    """Return ``((sx, sy), (ex, ey))`` for the host-wall endpoint pair on ``fact``.
+
+    Tolerates the same shape variants ``_try_host`` does:
+
+    * ``wallStartMm`` / ``wallEndMm`` as ``{xMm, yMm}`` dicts (gamma)
+      or ``[x, y]`` lists.
+    * ``startMm`` / ``endMm`` as the same shapes (beta-ish alt).
+
+    Returns ``None`` when neither pair is present. Introduced for
+    MF-driver-18 (#89): when a reader emits N opening facts sharing
+    these endpoints, we need to lift positions along the segment.
+    """
+
+    for ks, ke in (("wallStartMm", "wallEndMm"), ("startMm", "endMm")):
+        s, e = fact.get(ks), fact.get(ke)
+        try:
+            if isinstance(s, dict) and isinstance(e, dict):
+                return (
+                    (float(s.get("xMm") or 0), float(s.get("yMm") or 0)),
+                    (float(e.get("xMm") or 0), float(e.get("yMm") or 0)),
+                )
+            if isinstance(s, list) and isinstance(e, list) and len(s) >= 2 and len(e) >= 2:
+                return (
+                    (float(s[0]), float(s[1])),
+                    (float(e[0]), float(e[1])),
+                )
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _fact_has_explicit_position(fact: dict) -> bool:
+    """True when ``fact`` carries a per-opening position hint.
+
+    Used by MF-driver-18 (#89) to decide whether a fact should be
+    treated as "already positioned" (vertexMm / polygonMm / centerXMm /
+    explicit offset) or as "needs even-spacing within its shared-wall
+    group". A reader emitting six windows that all share the same
+    ``wallStartMm`` / ``wallEndMm`` and no per-fact position triggers
+    the group-distribution path.
+    """
+
+    if _coerce_vertex_mm(fact.get("vertexMm")) is not None:
+        return True
+    if isinstance(fact.get("offsetAlongWallMm"), (int, float)):
+        return True
+    if isinstance(fact.get("centerXMm"), (int, float)):
+        return True
+    poly = fact.get("polygonMm")
+    if isinstance(poly, list) and len(poly) >= 2:
+        return True
+    return False
+
+
+def _wall_endpoint_key(fact: dict) -> tuple | None:
+    """Stable key for grouping facts that share the same host wall endpoints.
+
+    Returns ``None`` when ``fact`` has no endpoint pair (so the caller
+    can skip group-distribution for it). Rounded to 1 mm — readers
+    sometimes emit float noise on otherwise-equal endpoints.
+    """
+
+    seg = _wall_segment_from_fact(fact)
+    if seg is None:
+        return None
+    (sx, sy), (ex, ey) = seg
+    # Normalise direction so a wall described start→end and end→start
+    # collapses into the same group.
+    a = (round(sx, 0), round(sy, 0))
+    b = (round(ex, 0), round(ey, 0))
+    return (a, b) if a <= b else (b, a)
+
+
 def _openings_bundle(
     *, ir: dict, parent_revision: int, house: str, level_short: str, snapshot: dict
 ) -> tuple[dict, list[str], list[dict]] | None:
@@ -2228,6 +2304,13 @@ def _openings_bundle(
     # rule rejects the bundle even if total load fits the wall.
     wall_intervals: dict[str, list[tuple[float, float]]] = {}
 
+    # MF-driver-18 (#89): per-fact precomputed vertex overrides the
+    # vertex derivation inside ``_try_host`` when a pre-pass has
+    # auto-distributed multiple openings sharing the same host wall.
+    # Indexed by ``id(fact)`` so we can attach a position to facts the
+    # group-distributor decided about, without mutating the IR.
+    precomputed_vertex_by_fact_id: dict[int, list[float]] = {}
+
     def _try_host(
         *,
         fact: dict,
@@ -2237,13 +2320,35 @@ def _openings_bundle(
         extra_cmd_fields: dict,
         idx: str,
     ) -> None:
-        # Reader IRs use one of three shapes for opening position:
-        #   1. ``vertexMm: [x, y]`` (alpha) or ``vertexMm: {xMm, yMm}``
-        #      (beta/gamma) — the door/window center.
-        #   2. ``wallStartMm + wallEndMm`` (gamma) — the host wall
-        #      segment; we take its midpoint as the vertex.
-        #   3. ``startMm + endMm`` (beta-ish alt) — same idea.
-        vertex = _coerce_vertex_mm(fact.get("vertexMm"))
+        # MF-driver-18 (#89): honour an explicit ``offsetAlongWallMm``
+        # field for readers that DO know per-window positions (e.g.
+        # "south facade window 2 is 3 m from the SW corner"). When
+        # present, project it back to a vertex on the wall segment.
+        vertex: list[float] | None = None
+        explicit_offset = fact.get("offsetAlongWallMm")
+        if isinstance(explicit_offset, (int, float)):
+            wseg = _wall_segment_from_fact(fact)
+            if wseg is not None:
+                (sx, sy), (ex, ey) = wseg
+                wlen = math.hypot(ex - sx, ey - sy)
+                if wlen > 0:
+                    f = max(0.0, min(1.0, float(explicit_offset) / wlen))
+                    vertex = [sx + f * (ex - sx), sy + f * (ey - sy)]
+        # MF-driver-18 (#89): if the group-distribution pre-pass
+        # decided this fact's position (multiple openings sharing a
+        # wall with no per-fact offsets), prefer that vertex.
+        if vertex is None:
+            pre = precomputed_vertex_by_fact_id.get(id(fact))
+            if pre is not None:
+                vertex = list(pre)
+        if vertex is None:
+            # Reader IRs use one of three shapes for opening position:
+            #   1. ``vertexMm: [x, y]`` (alpha) or ``vertexMm: {xMm, yMm}``
+            #      (beta/gamma) — the door/window center.
+            #   2. ``wallStartMm + wallEndMm`` (gamma) — the host wall
+            #      segment; we take its midpoint as the vertex.
+            #   3. ``startMm + endMm`` (beta-ish alt) — same idea.
+            vertex = _coerce_vertex_mm(fact.get("vertexMm"))
         if vertex is None:
             for ks, ke in (("wallStartMm", "wallEndMm"), ("startMm", "endMm")):
                 s, e = fact.get(ks), fact.get(ke)
@@ -2359,8 +2464,199 @@ def _openings_bundle(
         )
         consumed.append(str(fact.get("factId")))
 
+    # MF-driver-18 (#89): group facts by shared host-wall endpoint key
+    # and auto-distribute positions when N>=2 facts share a wall AND
+    # none of them carry per-fact position hints. Pre-fix, each fact
+    # in such a group resolved to the same wall midpoint and only the
+    # first committed (the other N-1 were silently dropped with
+    # ``overlaps_existing_opening_on_wall`` — a 6-window facade rendered
+    # as 1). We bucket doors and windows together because they share
+    # the same wall span. Each fact's effective width includes its
+    # 200 mm clearance; openings that don't fit are surfaced in
+    # ``skipped[]`` with a ``wall_too_short_for_N_openings`` reason so
+    # the operator can see the wall was over-subscribed.
+    #
+    # Mixed groups (some explicit + some not): the explicit positions
+    # are honoured as-is; the un-positioned facts are evenly spaced
+    # into the remaining gaps between (and at the ends of) the
+    # explicit positions.
+    def _opening_width(kind: str) -> float:
+        return 800.0 if kind == "door" else 1200.0
+
+    grouped: dict[tuple, list[tuple[dict, str]]] = {}
+    for f in doors:
+        key = _wall_endpoint_key(f)
+        if key is None:
+            continue
+        grouped.setdefault(key, []).append((f, "door"))
+    for f in windows:
+        key = _wall_endpoint_key(f)
+        if key is None:
+            continue
+        grouped.setdefault(key, []).append((f, "window"))
+
+    skipped_factids: set[str] = set()
+    for key, members in grouped.items():
+        if len(members) < 2:
+            continue
+        # Some members may already carry explicit positions — only
+        # the un-positioned ones need help.
+        unpositioned = [(f, k) for (f, k) in members if not _fact_has_explicit_position(f)]
+        if not unpositioned:
+            continue
+        positioned = [(f, k) for (f, k) in members if _fact_has_explicit_position(f)]
+        (sx, sy), (ex, ey) = key
+        # Reconstruct floats from the rounded grouping key — the 1-mm
+        # rounding is tight enough that lifting positions from the key
+        # itself reproduces the wall segment for geometry purposes.
+        wlen = math.hypot(ex - sx, ey - sy)
+        if wlen <= 0:
+            continue
+        # Fit budget: each opening needs width + 200 mm clearance.
+        # If the sum exceeds wall length, drop overflow tail and log.
+        explicit_extent = sum(_opening_width(k) + 200.0 for (_f, k) in positioned)
+        remaining_length = wlen - explicit_extent
+        fitting: list[tuple[dict, str]] = []
+        running = 0.0
+        for f, k in unpositioned:
+            need = _opening_width(k) + 200.0
+            if running + need <= remaining_length:
+                fitting.append((f, k))
+                running += need
+            else:
+                skipped.append(
+                    {
+                        "factId": f.get("factId"),
+                        "kind": k,
+                        "reason": "wall_too_short_for_N_openings",
+                        "nearestWallId": None,
+                        "vertexMm": [(sx + ex) / 2.0, (sy + ey) / 2.0],
+                    }
+                )
+                if f.get("factId") is not None:
+                    skipped_factids.add(str(f.get("factId")))
+        n_fit = len(fitting)
+        if n_fit == 0:
+            continue
+        # Distribute the fitting unpositioned facts evenly along the
+        # wall, treating any explicit positions as fixed anchors and
+        # filling gaps between (and at the ends of) those anchors.
+        if positioned:
+            # Compute the alongT for each explicit position (project
+            # vertex / offset / centerX back to the segment t).
+            def _anchor_t(fact: dict, kind: str) -> float | None:
+                offset = fact.get("offsetAlongWallMm")
+                if isinstance(offset, (int, float)):
+                    return max(0.0, min(1.0, float(offset) / wlen))
+                v = _coerce_vertex_mm(fact.get("vertexMm"))
+                if v is None:
+                    cx = fact.get("centerXMm")
+                    if isinstance(cx, (int, float)):
+                        # Project x-only onto the segment; useful when
+                        # the wall is axis-aligned in X (typical).
+                        if abs(ex - sx) > abs(ey - sy):
+                            return max(0.0, min(1.0, (float(cx) - sx) / (ex - sx))) if ex != sx else None
+                    return None
+                # Project vertex onto the segment.
+                dx, dy = ex - sx, ey - sy
+                ll = dx * dx + dy * dy
+                if ll <= 0:
+                    return None
+                t = ((v[0] - sx) * dx + (v[1] - sy) * dy) / ll
+                return max(0.0, min(1.0, t))
+
+            anchors = sorted(
+                a for a in (_anchor_t(f, k) for (f, k) in positioned) if a is not None
+            )
+            # Build gap list as (lo, hi) parametric intervals between
+            # 0 / anchors / 1. Distribute n_fit facts proportionally
+            # across the gaps by size, evenly within each gap.
+            bounds = [0.0, *anchors, 1.0]
+            gaps = [(bounds[i], bounds[i + 1]) for i in range(len(bounds) - 1)]
+            total_gap = sum(hi - lo for lo, hi in gaps)
+            if total_gap <= 0:
+                continue
+            # Assign per-gap count by proportional rounding.
+            raw = [(hi - lo) / total_gap * n_fit for lo, hi in gaps]
+            counts = [int(round(r)) for r in raw]
+            # Correct rounding drift so counts sum to n_fit exactly.
+            while sum(counts) > n_fit:
+                # remove from the gap with largest negative residual
+                residuals = [counts[i] - raw[i] for i in range(len(counts))]
+                i = max(range(len(counts)), key=lambda j: residuals[j])
+                if counts[i] > 0:
+                    counts[i] -= 1
+                else:
+                    break
+            while sum(counts) < n_fit:
+                residuals = [raw[i] - counts[i] for i in range(len(counts))]
+                i = max(range(len(counts)), key=lambda j: residuals[j])
+                counts[i] += 1
+            placed_iter = iter(fitting)
+            for (lo, hi), c in zip(gaps, counts, strict=False):
+                if c <= 0:
+                    continue
+                # Even-space c openings inside (lo, hi): positions at
+                # lo + (hi-lo)*(i+1)/(c+1).
+                gap_span = hi - lo
+                for i in range(c):
+                    f, _k = next(placed_iter)
+                    t_along = lo + gap_span * (i + 1) / (c + 1)
+                    precomputed_vertex_by_fact_id[id(f)] = [
+                        sx + t_along * (ex - sx),
+                        sy + t_along * (ey - sy),
+                    ]
+        else:
+            # Pure unpositioned group: even spacing along [0, wlen].
+            #
+            # Two strategies, chosen by wall slack:
+            #
+            #   (a) ``x_i = (wall_length / (N+1)) * (i+1)`` — the
+            #       "simple" formula the issue cites. Used when the
+            #       wall has enough slack that consecutive openings
+            #       at those positions don't overlap (a 12 m wall
+            #       hosting 6 1200 mm windows: midpoint pitch 1714 mm
+            #       > 1400 mm extent ⇒ clean spacing).
+            #   (b) ``gap + extent/2 + i*(extent + gap)`` with
+            #       ``gap = (wall_length - total_extent) / (N+1)`` —
+            #       extent-aware fallback that packs tightly when the
+            #       wall is just barely big enough. Used when (a)
+            #       would produce overlaps. This is the case for the
+            #       overflow tail of MF-driver-18: the 4 m wall fits
+            #       2 of 1400 mm extent, but only when the pitch
+            #       respects the extents.
+            extents = [_opening_width(k) + 200.0 for (_f, k) in fitting]
+            total_extent = sum(extents)
+            max_extent = max(extents) if extents else 0.0
+            simple_pitch = wlen / (n_fit + 1)
+            if simple_pitch >= max_extent:
+                for i, (f, _k) in enumerate(fitting):
+                    t_along = (i + 1) / (n_fit + 1)
+                    precomputed_vertex_by_fact_id[id(f)] = [
+                        sx + t_along * (ex - sx),
+                        sy + t_along * (ey - sy),
+                    ]
+            else:
+                gap = (wlen - total_extent) / (n_fit + 1)
+                if gap < 0:
+                    # Defensive: the fit-loop above should already have
+                    # truncated. Skip rather than author overlaps.
+                    continue
+                cursor = 0.0
+                for i, (f, _k) in enumerate(fitting):
+                    cursor += gap
+                    center_mm = cursor + extents[i] / 2.0
+                    cursor += extents[i]
+                    t_along = center_mm / wlen
+                    precomputed_vertex_by_fact_id[id(f)] = [
+                        sx + t_along * (ex - sx),
+                        sy + t_along * (ey - sy),
+                    ]
+
     for d_idx, d in enumerate(doors):
         # 800 mm typical interior door fits a 1300 mm partition with margin.
+        if str(d.get("factId")) in skipped_factids:
+            continue
         _try_host(
             fact=d,
             opening_kind="door",
@@ -2381,6 +2677,13 @@ def _openings_bundle(
     win_h_floor = 400 if is_kniestock else 800
     win_h = int(min(win_h_cap, max(win_h_floor, sizing_h - win_sill - 200)))
     for w_idx, w in enumerate(windows):
+        # MF-driver-18 (#89): overflow facts that the group-distribution
+        # pre-pass already logged with ``wall_too_short_for_N_openings``
+        # don't re-enter ``_try_host`` — they would otherwise resolve to
+        # the wall midpoint and get re-skipped with a less informative
+        # ``overlaps_existing_opening_on_wall`` reason.
+        if str(w.get("factId")) in skipped_factids:
+            continue
         _try_host(
             fact=w,
             opening_kind="window",

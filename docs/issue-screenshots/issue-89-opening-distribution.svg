@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #89 — auto-distribute openings sharing a host wall (before / after)</title>
+  <desc>
+    Reader IR emits N opening facts all carrying the same
+    wallStartMm / wallEndMm and no per-fact position. Pre-fix,
+    _openings_bundle snapped each fact to the wall midpoint; the first
+    one committed, the other N-1 were silently dropped with
+    overlaps_existing_opening_on_wall (a 6-window facade rendered as 1).
+    Post-fix, a group-distribution pre-pass detects the shared-wall
+    group and even-spaces the openings along the wall using
+    x_i = wall_length * (i+1) / (N+1), or extent-aware packing when
+    the wall is tight. Explicit offsetAlongWallMm hints from
+    position-aware readers are still honoured exactly.
+  </desc>
+
+  <defs>
+    <marker id="redArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b91c1c"/>
+    </marker>
+    <marker id="greenArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#14532d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before — all 6 windows stacked at midpoint</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">Same wallStartMm / wallEndMm → same vertex → only 1 commits, 5 overlap-dropped</text>
+
+    <!-- Ground line -->
+    <line x1="60" y1="360" x2="500" y2="360" stroke="#4b5563" stroke-width="1.4"/>
+    <text x="60" y="375" font-size="9" fill="#6b7280">grade</text>
+
+    <!-- Wall outline (south elevation, 10.8 m long, 2.7 m high) -->
+    <rect x="80" y="180" width="400" height="180" fill="#fef3c7" stroke="#92400e" stroke-width="1.6"/>
+    <text x="280" y="200" text-anchor="middle" font-size="10" fill="#92400e" font-weight="700">south facade — 10.8 m wall, 2.7 m tall</text>
+
+    <!-- The single committed window at midpoint, drawn at the wall center -->
+    <rect x="263" y="245" width="34" height="60" fill="#bae6fd" stroke="#0c4a6e" stroke-width="1.4"/>
+    <text x="280" y="240" text-anchor="middle" font-size="9" fill="#0c4a6e" font-weight="700">window-0</text>
+
+    <!-- 5 ghost windows showing the silently dropped overlaps -->
+    <g opacity="0.45" stroke-dasharray="3 2">
+      <rect x="263" y="245" width="34" height="60" fill="none" stroke="#b91c1c" stroke-width="1.2"/>
+      <rect x="263" y="245" width="34" height="60" fill="none" stroke="#b91c1c" stroke-width="1.2" transform="translate(2 2)"/>
+      <rect x="263" y="245" width="34" height="60" fill="none" stroke="#b91c1c" stroke-width="1.2" transform="translate(4 4)"/>
+      <rect x="263" y="245" width="34" height="60" fill="none" stroke="#b91c1c" stroke-width="1.2" transform="translate(-2 2)"/>
+      <rect x="263" y="245" width="34" height="60" fill="none" stroke="#b91c1c" stroke-width="1.2" transform="translate(-4 4)"/>
+    </g>
+
+    <!-- Arrow + annotation pointing at the stacked windows -->
+    <path d="M 380 270 L 310 275" stroke="#b91c1c" stroke-width="1.5" fill="none" marker-end="url(#redArrow)"/>
+    <text x="385" y="265" font-size="10" fill="#b91c1c" font-weight="700">windows 1..5 stacked here</text>
+    <text x="385" y="277" font-size="9" fill="#7f1d1d">dropped: overlaps_existing_opening_on_wall</text>
+
+    <!-- Skipped-log annotation -->
+    <g font-size="9" fill="#7f1d1d" font-family="ui-monospace, monospace">
+      <text x="90" y="330">skipped = [</text>
+      <text x="105" y="342">{factId: window-1, reason: overlaps_existing_opening_on_wall},</text>
+      <text x="105" y="352">... × 5 silent drops</text>
+    </g>
+
+    <!-- Badge -->
+    <rect x="40" y="408" width="480" height="22" rx="4" fill="#ffffff" stroke="#b91c1c"/>
+    <text x="280" y="423" text-anchor="middle" font-size="10" fill="#7f1d1d" font-weight="700">1 / 6 windows committed (17%) — h21 facade reads as a single porthole</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f9fafb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After — 6 evenly spaced along the wall</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">Group pre-pass detects shared-wall facts, distributes at x_i = L·(i+1)/(N+1)</text>
+
+    <!-- Ground line -->
+    <line x1="600" y1="360" x2="1040" y2="360" stroke="#4b5563" stroke-width="1.4"/>
+    <text x="600" y="375" font-size="9" fill="#6b7280">grade</text>
+
+    <!-- Wall outline -->
+    <rect x="620" y="180" width="400" height="180" fill="#fef3c7" stroke="#92400e" stroke-width="1.6"/>
+    <text x="820" y="200" text-anchor="middle" font-size="10" fill="#92400e" font-weight="700">south facade — 10.8 m wall, 2.7 m tall</text>
+
+    <!-- Six windows: x = 620 + 400 * (i+1)/7, width 34 -->
+    <!-- i=0: 620 + 57.14 = 677.14, centered → x=660 -->
+    <!-- i=1: 620 + 114.28 = 734.28, x=717 -->
+    <!-- i=2: 620 + 171.43 = 791.43, x=774 -->
+    <!-- i=3: 620 + 228.57 = 848.57, x=832 -->
+    <!-- i=4: 620 + 285.71 = 905.71, x=889 -->
+    <!-- i=5: 620 + 342.86 = 962.86, x=946 -->
+    <g fill="#bae6fd" stroke="#0c4a6e" stroke-width="1.4">
+      <rect x="660" y="245" width="34" height="60"/>
+      <rect x="717" y="245" width="34" height="60"/>
+      <rect x="774" y="245" width="34" height="60"/>
+      <rect x="832" y="245" width="34" height="60"/>
+      <rect x="889" y="245" width="34" height="60"/>
+      <rect x="946" y="245" width="34" height="60"/>
+    </g>
+
+    <!-- Labels under each window -->
+    <g font-size="8" fill="#0c4a6e" text-anchor="middle">
+      <text x="677" y="320">w-0</text>
+      <text x="734" y="320">w-1</text>
+      <text x="791" y="320">w-2</text>
+      <text x="849" y="320">w-3</text>
+      <text x="906" y="320">w-4</text>
+      <text x="963" y="320">w-5</text>
+    </g>
+
+    <!-- Spacing tick marks below wall (i/(N+1) intervals) -->
+    <g stroke="#14532d" stroke-width="0.8">
+      <line x1="677" y1="365" x2="677" y2="370"/>
+      <line x1="734" y1="365" x2="734" y2="370"/>
+      <line x1="791" y1="365" x2="791" y2="370"/>
+      <line x1="849" y1="365" x2="849" y2="370"/>
+      <line x1="906" y1="365" x2="906" y2="370"/>
+      <line x1="963" y1="365" x2="963" y2="370"/>
+    </g>
+    <line x1="677" y1="367" x2="963" y2="367" stroke="#14532d" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <text x="820" y="383" text-anchor="middle" font-size="9" fill="#14532d">pitch ≈ 1543 mm  (= 10800 / 7)</text>
+
+    <!-- Annotation arrow -->
+    <path d="M 880 218 L 800 235" stroke="#14532d" stroke-width="1.5" fill="none" marker-end="url(#greenArrow)"/>
+    <text x="885" y="215" font-size="10" fill="#14532d" font-weight="700">x_i = L · (i+1)/(N+1)</text>
+    <text x="885" y="227" font-size="9" fill="#166534">extent-aware packing if wall too tight</text>
+
+    <!-- Badge -->
+    <rect x="580" y="408" width="480" height="22" rx="4" fill="#ffffff" stroke="#16a34a"/>
+    <text x="820" y="423" text-anchor="middle" font-size="10" fill="#14532d" font-weight="700">6 / 6 windows committed (100%) — h21 south facade reads as a real elevation</text>
+  </g>
+
+</svg>
