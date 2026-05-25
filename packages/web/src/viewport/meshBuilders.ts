@@ -61,6 +61,7 @@ import {
   _buildHipGeometry,
   _buildHipPolygonGeometry,
   _buildLShapeGeometry,
+  _buildMansardGeometry,
   _buildMonoPitchGeometry,
   _buildMonoPitchOffsetGroup,
   _compactnessRatio,
@@ -962,6 +963,33 @@ export function makeRoofMassMesh(
       const fraction =
         typeof rawFraction === 'number' && Number.isFinite(rawFraction) ? rawFraction : 0.33;
       geom = _buildHalfGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX, fraction);
+    } else if (roof.roofGeometryMode === 'mansard') {
+      // ISSUE-112 — Mansarddach: two-pitch roof with a steep lower skirt
+      // (encloses DG, hosts Mansardgauben) + a shallow hipped upper cap.
+      // Pitch + knee defaults match the Python helpers in roof_geometry.py
+      // so the renderer silhouette matches the kernel's Pset round-trip.
+      const lowerPitchDegRaw = roof.mansardLowerPitchDeg;
+      const upperPitchDegRaw = roof.mansardUpperPitchDeg;
+      const lowerPitchDeg =
+        typeof lowerPitchDegRaw === 'number' && Number.isFinite(lowerPitchDegRaw)
+          ? Math.max(1, Math.min(89, lowerPitchDegRaw))
+          : 70;
+      const upperPitchDeg =
+        typeof upperPitchDegRaw === 'number' && Number.isFinite(upperPitchDegRaw)
+          ? Math.max(1, Math.min(89, upperPitchDegRaw))
+          : 20;
+      const lowerPitchRad = (lowerPitchDeg * Math.PI) / 180;
+      const upperPitchRad = (upperPitchDeg * Math.PI) / 180;
+      const shortSpanM = Math.min(ox1 - ox0, oz1 - oz0);
+      const maxSkirtRiseM = (shortSpanM / 2) * Math.tan(lowerPitchRad);
+      const kneeRaw = roof.mansardKneeHeightMm;
+      const kneeFromField =
+        typeof kneeRaw === 'number' && Number.isFinite(kneeRaw) ? kneeRaw / 1000 : null;
+      const kneeM =
+        kneeFromField != null
+          ? Math.max(0.001, Math.min(maxSkirtRiseM - 0.001, kneeFromField))
+          : Math.max(0.001, maxSkirtRiseM * 0.6);
+      geom = _buildMansardGeometry(ox0, ox1, oz0, oz1, eaveY, lowerPitchRad, upperPitchRad, kneeM);
     } else {
       geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
     }

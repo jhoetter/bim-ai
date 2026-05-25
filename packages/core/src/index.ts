@@ -1577,7 +1577,8 @@ export type Element =
         | 'flat'
         | 'mono_pitch'
         | 'half_gable'
-        | 'mono_pitch_offset';
+        | 'mono_pitch_offset'
+        | 'mansard';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
@@ -1605,6 +1606,25 @@ export type Element =
        * edge to the step (mm). When omitted, defaults to the midpoint.
        */
       stepPositionAlongLongAxisMm?: number | null;
+      /**
+       * ISSUE-112: Mansarddach (Mansard / French roof) lower (steep) skirt
+       * pitch in degrees. Defaults to ~70° (near-vertical skirt that
+       * encloses the DG) when omitted. Ignored for non-`mansard` modes.
+       */
+      mansardLowerPitchDeg?: number | null;
+      /**
+       * ISSUE-112: Mansarddach upper (shallow) cap pitch in degrees.
+       * Defaults to ~20° (shallow hipped/gabled cap) when omitted.
+       * Ignored for non-`mansard` modes.
+       */
+      mansardUpperPitchDeg?: number | null;
+      /**
+       * ISSUE-112: Mansarddach knee height above the eave (mm). The
+       * elevation at which the steep lower skirt transitions into the
+       * shallow upper cap. Defaults to ~60% of the maximum skirt rise
+       * when omitted. Ignored for non-`mansard` modes.
+       */
+      mansardKneeHeightMm?: number | null;
       roofTypeId?: string | null;
       materialKey?: string | null;
       loadBearing?: boolean | null;
