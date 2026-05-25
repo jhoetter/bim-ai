@@ -813,6 +813,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rf.roof_geometry_mode == "mono_pitch_offset"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
+        # ISSUE-110: Zeltdach / Pyramidendach — flag for IfcRoof.PredefinedType = HIP_ROOF.
+        use_pyramidal_hip_body = (
+            rf.roof_geometry_mode == "pyramidal_hip"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
+        # ISSUE-112: Mansarddach — IFC4 MANSARD_ROOF.
+        use_mansard_body = (
+            rf.roof_geometry_mode == "mansard"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
 
         if use_gable_body:
             # Eave plate elevation: walls on the reference level give the eave Y.
@@ -1318,6 +1328,30 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
+        # ISSUE-110: Zeltdach maps to IFC4 HIP_ROOF.
+        if use_pyramidal_hip_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "HIP_ROOF"
+            except (RuntimeError, ValueError):
+                pass
+
+        # ISSUE-112: Mansarddach maps to IFC4 MANSARD_ROOF.
+        if use_mansard_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "MANSARD_ROOF"
+            except (RuntimeError, ValueError):
+                pass
+
+        # ISSUE-114: Tonnendach maps to IFC4 BARREL_ROOF.
+        if (
+            rf.roof_geometry_mode == "barrel"
+            and hasattr(roof_ent, "PredefinedType")
+        ):
+            try:
+                roof_ent.PredefinedType = "BARREL_ROOF"
+            except (RuntimeError, ValueError):
+                # Schema rejects the keyword; leave the default.
+                pass
 
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
@@ -1338,7 +1372,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rf.roof_type_id:
             bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
         bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
-        if use_gable_body or use_mono_pitch_body or use_mono_pitch_offset_body:
+        if (
+            use_gable_body
+            or use_mono_pitch_body
+            or use_mono_pitch_offset_body
+            or use_pyramidal_hip_body
+        ):
             bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
                 f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )
@@ -1358,6 +1397,27 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             # ISSUE-105: round-trip the half-hip fraction so authoritative
             # replay reconstructs the same Krüppelwalm proportions.
             bim_ai_props["BimAiRoofHalfHipHeightFraction"] = float(rf.half_hip_height_fraction)
+        if use_mansard_body:
+            # ISSUE-112: round-trip the Mansarddach parameters so the
+            # authoritative replay reconstructs the same two-pitch silhouette.
+            # Also persist the plan footprint so the rectangle predicate
+            # survives the round-trip (the flat-slab fallback body strips
+            # the original outline).
+            bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
+                f"{px:.3f},{py:.3f}" for px, py in rp_mm
+            )
+            if rf.mansard_lower_pitch_deg is not None:
+                bim_ai_props["BimAiRoofMansardLowerPitchDeg"] = float(
+                    rf.mansard_lower_pitch_deg
+                )
+            if rf.mansard_upper_pitch_deg is not None:
+                bim_ai_props["BimAiRoofMansardUpperPitchDeg"] = float(
+                    rf.mansard_upper_pitch_deg
+                )
+            if rf.mansard_knee_height_mm is not None:
+                bim_ai_props["BimAiRoofMansardKneeHeightMm"] = float(
+                    rf.mansard_knee_height_mm
+                )
         if use_mono_pitch_offset_body:
             # ISSUE-101: round-trip the Versetztes-Pultdach parameters so the
             # authoritative replay reconstructs the same offset configuration.

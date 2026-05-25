@@ -51,6 +51,8 @@ REQUIRED_KEYS = (
     # Log-course (Blockhaus / log construction) — issue #42
     "log_round_natural",
     "log_square_natural",
+    # Fachwerk overlay timber — issue #111
+    "timber_dark_oak",
 )
 
 
@@ -136,3 +138,17 @@ def test_log_course_blockhaus_variants() -> None:
     assert square_log.base_color == "#7c5b3b"
     assert square_log.category == "timber"
     assert square_log.display_name == "Square log (natural)"
+
+
+def test_fachwerk_dark_oak_overlay_timber() -> None:
+    """Issue #111 — dark oak timber for visible Fachwerk overlays.
+
+    Distinct from `timber_cladding` (lighter Stülpschalung default) and from
+    the log-course variants — the Fachwerk Ständer/Riegel raster needs a
+    near-black dark oak to read against brick / plaster Gefache infill.
+    """
+    spec = resolve_material("timber_dark_oak")
+    assert spec is not None
+    assert spec.base_color == "#3a2418"
+    assert spec.category == "timber"
+    assert "Fachwerk" in spec.display_name

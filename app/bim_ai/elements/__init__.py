@@ -177,6 +177,8 @@ from .floors_roofs import (
     SlabOpeningElem,
     SoffitElem,
     StructuralFacadeGridElem,
+    WintergartenElem,
+    WintergartenRoofMode,
 )
 from .metadata import (
     BuildingServicesHandoffElem,
@@ -467,6 +469,8 @@ __all__ = [
     "SlabOpeningElem",
     "SoffitElem",
     "StructuralFacadeGridElem",
+    "WintergartenElem",
+    "WintergartenRoofMode",
     "AreaElem",
     "AreaRuleSet",
     "AreaScheme",
@@ -640,6 +644,7 @@ ElementKind = Literal[
     "balcony",
     "facade_bay",
     "structural_facade_grid",
+    "wintergarten",
     "sweep",
     "dormer",
     "area",
@@ -701,6 +706,7 @@ Element = Annotated[
     | BalconyElem
     | FacadeBayElem
     | StructuralFacadeGridElem
+    | WintergartenElem
     | FamilyTypeElem
     | RoomSeparationElem
     | PlanRegionElem

@@ -215,6 +215,94 @@ export function _buildGableGeometry(
 }
 
 /**
+ * ISSUE-110 — Zeltdach / Pyramidendach. Four triangular roof planes meet at
+ * a single apex above the centroid of the footprint rectangle (degenerate
+ * hip whose ridge collapses to a point — zero ridge length).
+ *
+ * Topology: 5 unique vertices (4 eave corners + 1 apex) and exactly 4
+ * triangular faces. Each face is constructed from one footprint edge up to
+ * the apex; winding chosen so outward normals point away from the centroid.
+ *
+ * Apex height: derived from the SHORT half-span so the steeper of the two
+ * possible faces still hits `slopeRad` exactly. For a perfect square all
+ * four faces share the same pitch; for a non-square rectangle the two
+ * long-side faces end up shallower because the apex is fixed above the
+ * centroid (this matches Stadtvilla-style real-world pyramid hips).
+ */
+export function _buildPyramidalHipGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  // Apex sits above the centroid; rise derived from the short half-span so
+  // the steeper pair of faces matches `slopeRad` exactly. Long-side faces
+  // pitch is implicit (shallower for non-square rectangles).
+  const halfSpanX = (ox1 - ox0) / 2;
+  const halfSpanZ = (oz1 - oz0) / 2;
+  const shortHalfSpan = Math.min(halfSpanX, halfSpanZ);
+  const apexY = eaveY + shortHalfSpan * Math.tan(slopeRad);
+  const apexX = (ox0 + ox1) / 2;
+  const apexZ = (oz0 + oz1) / 2;
+
+  // 4 eave corners (clockwise when viewed from +Y) + 1 apex. Triangles wound
+  // so the outward normal points away from the centroid for each face.
+  const positions: number[] = [
+    // South face (eave edge along z = oz0, looking outward toward -Z):
+    // vertices SW -> SE -> apex.
+    ox0,
+    eaveY,
+    oz0,
+    ox1,
+    eaveY,
+    oz0,
+    apexX,
+    apexY,
+    apexZ,
+    // East face (eave edge along x = ox1, looking outward toward +X):
+    // SE -> NE -> apex.
+    ox1,
+    eaveY,
+    oz0,
+    ox1,
+    eaveY,
+    oz1,
+    apexX,
+    apexY,
+    apexZ,
+    // North face (eave edge along z = oz1, looking outward toward +Z):
+    // NE -> NW -> apex.
+    ox1,
+    eaveY,
+    oz1,
+    ox0,
+    eaveY,
+    oz1,
+    apexX,
+    apexY,
+    apexZ,
+    // West face (eave edge along x = ox0, looking outward toward -X):
+    // NW -> SW -> apex.
+    ox0,
+    eaveY,
+    oz1,
+    ox0,
+    eaveY,
+    oz0,
+    apexX,
+    apexY,
+    apexZ,
+  ];
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
  * ISSUE-105 — Krüppelwalmdach (half-hipped roof). Hybrid of a gable and a hip:
  * the full gable triangle is built first, then the TOP fraction of each gable
  * end is trimmed and replaced by a small hip face sloping back to the ridge.
@@ -377,6 +465,290 @@ export function _buildHalfGableGeometry(
     // North hip cap.
     positions.push(...nT0, ...nT1, ...wR1);
   }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * ISSUE-112 — Mansarddach (Mansard / French roof). Two-pitch silhouette:
+ * a steep lower skirt that encloses the DG (Mansardgauben sit on it) plus a
+ * shallow upper cap (hipped) that closes the roof at the top.
+ *
+ * Inputs:
+ *   - `(ox0, ox1, oz0, oz1)` outer rectangle bounds in world meters.
+ *   - `eaveY`               elevation of the lower skirt's bottom edge.
+ *   - `lowerPitchRad`       pitch of the steep skirt (≈ 70° default).
+ *   - `upperPitchRad`       pitch of the shallow cap (≈ 20° default).
+ *   - `kneeHeightM`         elevation (above `eaveY`) where the skirt
+ *                           transitions into the cap. Must be < the height
+ *                           at which the four skirts meet at the centre
+ *                           (renderer clamps to that headroom).
+ *
+ * Geometry:
+ *   - Lower skirt: 4 quadrilateral panels (trapezoids) sloping inward from
+ *     the outer rectangle at `eaveY` to an inner rectangle at
+ *     `eaveY + kneeHeightM`. The inward inset on each side equals
+ *     `kneeHeightM / tan(lowerPitchRad)`.
+ *   - Upper cap: hipped pyramid on the inner rectangle, sloping at
+ *     `upperPitchRad`. Ridge runs along the longer inner span. If the
+ *     inner rectangle degenerates (zero-width along an axis) the cap
+ *     collapses to a single ridge line — handled gracefully.
+ *   - Bottom closure: a flat quad spanning the outer rectangle at the
+ *     eave so three-bvh-csg's SUBTRACTION can cleanly carve the
+ *     Mansardgauben out of the steep skirt.
+ */
+export function _buildMansardGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  lowerPitchRad: number,
+  upperPitchRad: number,
+  kneeHeightM: number,
+): THREE.BufferGeometry {
+  const spanX = Math.max(0, ox1 - ox0);
+  const spanZ = Math.max(0, oz1 - oz0);
+  const shortSpan = Math.min(spanX, spanZ);
+  const lowerTan = Math.tan(lowerPitchRad);
+  // Headroom: the steep skirts of opposite edges meet when the inset
+  // reaches half the SHORT span. Leave at least 1 mm of headroom for
+  // the upper cap so the geometry stays representable.
+  const maxKnee = (shortSpan / 2) * lowerTan - 1e-3;
+  const knee = Math.max(0.001, Math.min(maxKnee, kneeHeightM));
+  // Lateral inset of the inner rectangle from each outer edge.
+  const inset = lowerTan > 1e-9 ? knee / lowerTan : 0;
+  const ix0 = ox0 + inset;
+  const ix1 = ox1 - inset;
+  const iz0 = oz0 + inset;
+  const iz1 = oz1 - inset;
+  const kneeY = eaveY + knee;
+
+  // Inner rectangle spans for the upper hipped cap.
+  const innerSpanX = Math.max(0, ix1 - ix0);
+  const innerSpanZ = Math.max(0, iz1 - iz0);
+  const ridgeAlongInnerX = innerSpanX >= innerSpanZ;
+  const upperHalfSpan = (ridgeAlongInnerX ? innerSpanZ : innerSpanX) / 2;
+  const capRise = upperHalfSpan * Math.tan(upperPitchRad);
+  const ridgeY = kneeY + capRise;
+
+  const positions: number[] = [];
+
+  // ------- Lower skirt: 4 trapezoidal panels (sloping inward) -------
+  // Each panel is a quad → 2 triangles. Winding chosen so outward normals
+  // point away from the centre.
+
+  // South skirt (oz = oz0): outer corners at (ox0,eaveY,oz0)–(ox1,eaveY,oz0)
+  // → inner corners at (ix0,kneeY,iz0)–(ix1,kneeY,iz0).
+  positions.push(
+    ox0,
+    eaveY,
+    oz0,
+    ix1,
+    kneeY,
+    iz0,
+    ox1,
+    eaveY,
+    oz0,
+    ox0,
+    eaveY,
+    oz0,
+    ix0,
+    kneeY,
+    iz0,
+    ix1,
+    kneeY,
+    iz0,
+  );
+
+  // North skirt (oz = oz1).
+  positions.push(
+    ox0,
+    eaveY,
+    oz1,
+    ox1,
+    eaveY,
+    oz1,
+    ix1,
+    kneeY,
+    iz1,
+    ox0,
+    eaveY,
+    oz1,
+    ix1,
+    kneeY,
+    iz1,
+    ix0,
+    kneeY,
+    iz1,
+  );
+
+  // West skirt (ox = ox0).
+  positions.push(
+    ox0,
+    eaveY,
+    oz0,
+    ox0,
+    eaveY,
+    oz1,
+    ix0,
+    kneeY,
+    iz1,
+    ox0,
+    eaveY,
+    oz0,
+    ix0,
+    kneeY,
+    iz1,
+    ix0,
+    kneeY,
+    iz0,
+  );
+
+  // East skirt (ox = ox1).
+  positions.push(
+    ox1,
+    eaveY,
+    oz0,
+    ix1,
+    kneeY,
+    iz0,
+    ix1,
+    kneeY,
+    iz1,
+    ox1,
+    eaveY,
+    oz0,
+    ix1,
+    kneeY,
+    iz1,
+    ox1,
+    eaveY,
+    oz1,
+  );
+
+  // ------- Upper cap: hipped pyramid on the inner rectangle -------
+  // The cap has a ridge along the longer inner span. When the inner
+  // rectangle is square the ridge collapses to a point (pure pyramid).
+  if (innerSpanX > 1e-6 && innerSpanZ > 1e-6) {
+    if (ridgeAlongInnerX) {
+      // Ridge runs along X at z = (iz0+iz1)/2, y = ridgeY.
+      const ridgeShorten = upperHalfSpan; // = innerSpanZ / 2
+      const rz = (iz0 + iz1) / 2;
+      const ridgeX0 = ix0 + ridgeShorten;
+      const ridgeX1 = ix1 - ridgeShorten;
+
+      // South slope: trapezoid eave iz0..iz0, ridge at rz.
+      positions.push(
+        ix0,
+        kneeY,
+        iz0,
+        ix1,
+        kneeY,
+        iz0,
+        ridgeX1,
+        ridgeY,
+        rz,
+        ix0,
+        kneeY,
+        iz0,
+        ridgeX1,
+        ridgeY,
+        rz,
+        ridgeX0,
+        ridgeY,
+        rz,
+      );
+      // North slope.
+      positions.push(
+        ridgeX0,
+        ridgeY,
+        rz,
+        ridgeX1,
+        ridgeY,
+        rz,
+        ix1,
+        kneeY,
+        iz1,
+        ridgeX0,
+        ridgeY,
+        rz,
+        ix1,
+        kneeY,
+        iz1,
+        ix0,
+        kneeY,
+        iz1,
+      );
+      // West hip triangle.
+      positions.push(ix0, kneeY, iz0, ridgeX0, ridgeY, rz, ix0, kneeY, iz1);
+      // East hip triangle.
+      positions.push(ix1, kneeY, iz0, ix1, kneeY, iz1, ridgeX1, ridgeY, rz);
+    } else {
+      // Ridge runs along Z.
+      const ridgeShorten = upperHalfSpan; // = innerSpanX / 2
+      const rx = (ix0 + ix1) / 2;
+      const ridgeZ0 = iz0 + ridgeShorten;
+      const ridgeZ1 = iz1 - ridgeShorten;
+
+      // West slope.
+      positions.push(
+        ix0,
+        kneeY,
+        iz0,
+        ix0,
+        kneeY,
+        iz1,
+        rx,
+        ridgeY,
+        ridgeZ1,
+        ix0,
+        kneeY,
+        iz0,
+        rx,
+        ridgeY,
+        ridgeZ1,
+        rx,
+        ridgeY,
+        ridgeZ0,
+      );
+      // East slope.
+      positions.push(
+        rx,
+        ridgeY,
+        ridgeZ0,
+        rx,
+        ridgeY,
+        ridgeZ1,
+        ix1,
+        kneeY,
+        iz1,
+        rx,
+        ridgeY,
+        ridgeZ0,
+        ix1,
+        kneeY,
+        iz1,
+        ix1,
+        kneeY,
+        iz0,
+      );
+      // South hip triangle.
+      positions.push(ix0, kneeY, iz0, rx, ridgeY, ridgeZ0, ix1, kneeY, iz0);
+      // North hip triangle.
+      positions.push(ix0, kneeY, iz1, ix1, kneeY, iz1, rx, ridgeY, ridgeZ1);
+    }
+  }
+
+  // ------- Bottom closure (eave plane) -------
+  // Two triangles spanning the outer rectangle at eaveY. Faces -Y so
+  // three-bvh-csg's SUBTRACTION cleanly cuts Mansardgauben through the
+  // steep skirt above without leaving a sliver.
+  positions.push(ox0, eaveY, oz0, ox1, eaveY, oz1, ox1, eaveY, oz0);
+  positions.push(ox0, eaveY, oz0, ox0, eaveY, oz1, ox1, eaveY, oz1);
 
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));

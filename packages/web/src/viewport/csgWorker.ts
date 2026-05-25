@@ -36,6 +36,15 @@ export type CsgRequest = {
   thick: number;
   /** Optional cleaned wall footprint(s) in wall-local metres. */
   baseFootprints?: CsgBaseFootprintPoint[][];
+  /**
+   * Issue #109 — optional sloped-top profile (Giebelverglasung). Per-sample
+   * absolute wall heights in metres (relative to the wall base), evenly
+   * distributed across the wall's length. When supplied and at least one
+   * sample exceeds ``height`` by a visible margin, the worker builds a
+   * gable-shaped prism instead of a box so window/door cuts above the
+   * eave host correctly inside the upper triangular zone.
+   */
+  topProfileM?: number[];
   /** World pose echoed back so the main thread can position the mesh. */
   wcx: number;
   wcy: number;
@@ -80,6 +89,7 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
     height,
     thick,
     baseFootprints,
+    topProfileM,
     wcx,
     wcy,
     wcz,
@@ -90,7 +100,9 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
   } = evt.data;
 
   try {
-    let wallBrush = new Brush(wallBaseGeometryForCsg(len, height, thick, baseFootprints));
+    let wallBrush = new Brush(
+      wallBaseGeometryForCsg(len, height, thick, baseFootprints, topProfileM),
+    );
     wallBrush.updateMatrixWorld();
 
     for (const door of doors) {

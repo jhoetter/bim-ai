@@ -114,6 +114,7 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "balcony": "arch",
     "facade_bay": "arch",
     "structural_facade_grid": "arch",
+    "wintergarten": "arch",
     "sweep": "arch",
     "dormer": "arch",
     "soffit": "arch",

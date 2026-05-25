@@ -83,6 +83,7 @@ from bim_ai.commands.geometry import (
     CreateWallCmd,
     CreateWallOpeningCmd,
     CreateWallTypeCmd,
+    CreateWintergartenCmd,
     DetachWallTopCmd,
     ExtendFloorInsulationCmd,
     MoveBeamEndpointsCmd,
@@ -392,6 +393,7 @@ __all__ = [
     "CreateWallCmd",
     "CreateWallOpeningCmd",
     "CreateWallTypeCmd",
+    "CreateWintergartenCmd",
     "DetachWallTopCmd",
     "ExtendFloorInsulationCmd",
     "MoveBeamEndpointsCmd",
@@ -668,6 +670,7 @@ Command = Annotated[
     | CreateBalconyCmd
     | CreateFacadeBayCmd
     | CreateStructuralFacadeGridCmd
+    | CreateWintergartenCmd
     | UpsertFamilyTypeCmd
     | AssignOpeningFamilyCmd
     | UpdateOpeningCleanroomCmd
