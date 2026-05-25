@@ -304,13 +304,31 @@ async function captureOneView(page, capture, timeoutMs) {
   }
 }
 
+// Issue #124 — MF-render-11. The first cardinal capture in a batch used to
+// race the geometry stream and PNGs landed showing the "Loading model…"
+// overlay over a blank canvas. The viewport now emits
+// `data-bim-model-status="ready"` on the capture root as soon as the
+// snapshot finishes streaming, and `data-bim-loading="true"` while the
+// stream is in flight. Wait for either:
+//   - an explicit `ready` marker on the capture root, OR
+//   - absence of `data-bim-loading="true"` plus a non-empty capture root
+//     (fallback for older builds without the marker).
+// We deliberately exclude `aria-busy="true"` from the busy-set — many
+// transient UI buttons (Save, Promote option, etc.) set that during normal
+// interactions and would otherwise stall the runner.
 async function waitForModelIdle(page, timeoutMs) {
   await page
     .waitForFunction(
       () => {
         const root = document.querySelector('[data-evidence-capture-root]');
-        const busy = document.querySelector('[aria-busy="true"], [data-bim-loading="true"]');
-        return Boolean(root || document.body) && !busy;
+        if (!root) return false;
+        const status = root.getAttribute('data-bim-model-status');
+        if (status === 'ready') return true;
+        if (status === 'loading') return false;
+        // Older builds without the marker: fall back to the absence of the
+        // explicit loading flag.
+        const busy = document.querySelector('[data-bim-loading="true"]');
+        return !busy;
       },
       null,
       { timeout: Math.min(timeoutMs, 10_000) },

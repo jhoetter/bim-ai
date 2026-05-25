@@ -2004,6 +2004,13 @@ export function Workspace(): JSX.Element {
   // unrelated delta.
   const showEmptyState = modelWalls.length === 0;
   const showEmptyStateOverlay = showEmptyState && planTool === 'select';
+  // Issue #124 — MF-render-11. The capture runner needs a machine-readable
+  // "snapshot has streamed in" signal so the first cardinal ortho doesn't
+  // catch the "Loading model…" overlay. Geometry is considered ready once
+  // the seed fetch is no longer pending AND the model has at least one
+  // structural element (walls or levels — covers both house seeds and
+  // empty-but-loaded sandbox sessions where the user will draw manually).
+  const modelReady = !seedLoading && (modelWalls.length > 0 || modelLevels.length > 0);
 
   /* ── CHR-V3-10: canvas hint (select/tool idle) ────────────────────── */
   const showCanvasHint = !selectedId && planTool === 'select';
@@ -3106,6 +3113,7 @@ export function Workspace(): JSX.Element {
             emptyHint={emptyHint}
             seedLoading={seedLoading}
             seedError={seedError}
+            modelReady={modelReady}
             onInsertSeedHouse={insertSeedHouse}
             paneRoot={paneLayout.root}
             renderPaneNode={renderPaneNode}
