@@ -291,6 +291,14 @@ class CreateRoofCmd(BaseModel):
     half_hip_height_fraction: float | None = Field(
         default=None, alias="halfHipHeightFraction"
     )
+    # ISSUE-112: Mansarddach (Mansard / French roof) parameters. The lower
+    # steep skirt encloses the DG; Mansardgauben sit on it. The knee height
+    # is the elevation above the eave at which the steep skirt transitions
+    # into the shallow upper cap. All three fields are optional; renderer
+    # defaults kick in when they're omitted. Ignored for non-mansard modes.
+    mansard_lower_pitch_deg: float | None = Field(default=None, alias="mansardLowerPitchDeg")
+    mansard_upper_pitch_deg: float | None = Field(default=None, alias="mansardUpperPitchDeg")
+    mansard_knee_height_mm: float | None = Field(default=None, alias="mansardKneeHeightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override. Engine default
@@ -334,6 +342,14 @@ class CreateRoofCmd(BaseModel):
             "tent_roof",
         ):
             return "pyramidal_hip"
+        # ISSUE-112: aliases for the Mansarddach (Mansard / French roof).
+        if value in (
+            "mansard_roof",
+            "mansarddach",
+            "french_roof",
+            "two_pitch",
+        ):
+            return "mansard"
         return value
 
 
@@ -537,6 +553,33 @@ class CreateFacadeBayCmd(BaseModel):
     chamfer_angle_deg: float | None = Field(default=None, alias="chamferAngleDeg")
     level_id: str | None = Field(default=None, alias="levelId")
     material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class CreateWintergartenCmd(BaseModel):
+    """Issue #114 — author a WintergartenElem (glazed conservatory) hosted on a wall.
+
+    The Wintergarten is a fully-glazed extension; its roof geometry mode
+    (``barrel`` / ``mono_pitch`` / ``flat``) controls how the renderer caps the
+    volume. The footprint is given in plan mm and typically shares one edge
+    with the host wall (the back wall of the conservatory).
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createWintergarten"] = "createWintergarten"
+    id: str | None = None
+    name: str = "Wintergarten"
+    host_wall_id: str = Field(alias="hostWallId")
+    footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
+    level_id: str | None = Field(default=None, alias="levelId")
+    wall_height_mm: float = Field(default=2400.0, alias="wallHeightMm", gt=0)
+    roof_geometry_mode: Literal["barrel", "mono_pitch", "flat"] = Field(
+        default="barrel", alias="roofGeometryMode"
+    )
+    roof_slope_deg: float | None = Field(default=None, alias="roofSlopeDeg")
+    barrel_rise_mm: float | None = Field(default=None, alias="barrelRiseMm")
+    barrel_segment_count: int | None = Field(default=None, alias="barrelSegmentCount")
+    material_key: str = Field(default="glass_clear", alias="materialKey")
+    floor_material_key: str | None = Field(default=None, alias="floorMaterialKey")
 
 
 class CreateRailingCmd(BaseModel):

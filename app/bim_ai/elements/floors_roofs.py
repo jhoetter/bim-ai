@@ -155,6 +155,25 @@ class RoofElem(BaseModel):
     step_position_along_long_axis_mm: float | None = Field(
         default=None, alias="stepPositionAlongLongAxisMm"
     )
+    # ISSUE-114: Tonnendach (barrel) parameters.
+    # ``barrel_rise_mm`` is the crown height above the eave plane (the sagitta
+    # of the cylindrical-segment cross-section). The arc spans the short
+    # footprint axis and sweeps along the long axis.
+    # ``barrel_segment_count`` is the number of flat rectangular strips the
+    # renderer tessellates the arc into (default 12 — covers a half-circle
+    # smoothly without bloating the mesh). Only consumed when
+    # ``roof_geometry_mode == "barrel"``.
+    barrel_rise_mm: float | None = Field(default=None, alias="barrelRiseMm")
+    barrel_segment_count: int | None = Field(default=None, alias="barrelSegmentCount")
+    # ISSUE-112: Mansarddach (Mansard / French roof) parameters. The lower
+    # (steep) skirt encloses the DG and meets the upper (shallow) cap at the
+    # horizontal "knee" line ``mansard_knee_height_mm`` above the eave.
+    # Mansardgauben (dormers) on the lower slope reuse the existing dormer
+    # renderer. All fields are optional and only consumed when
+    # ``roof_geometry_mode == "mansard"``.
+    mansard_lower_pitch_deg: float | None = Field(default=None, alias="mansardLowerPitchDeg")
+    mansard_upper_pitch_deg: float | None = Field(default=None, alias="mansardUpperPitchDeg")
+    mansard_knee_height_mm: float | None = Field(default=None, alias="mansardKneeHeightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,
@@ -288,6 +307,69 @@ class SoffitElem(BaseModel):
     def _validate_boundary(self) -> SoffitElem:
         if len(self.boundary_mm) < 3:
             raise ValueError("SoffitElem.boundaryMm must have ≥ 3 vertices")
+        return self
+
+
+WintergartenRoofMode = Literal["barrel", "mono_pitch", "flat"]
+
+
+class WintergartenElem(BaseModel):
+    """Issue #114 — Wintergarten (glazed conservatory) hosted on an exterior wall.
+
+    The Wintergarten is a fully-glazed extension attached to a host wall (the
+    "back wall" of the conservatory). Its footprint is a closed polygon in
+    plan coordinates (typically a rectangle that shares one edge with the host
+    wall). The volume comprises:
+
+    - An extruded floor slab at the host wall's level.
+    - Glazed walls on every exterior face (the host-wall edge of the footprint
+      is left open / unglazed because the back is the host wall itself).
+    - A glazed roof above whose geometry is selected by
+      ``roof_geometry_mode`` (typically ``barrel`` for the BioSolarHaus
+      Tonnendach-Wintergarten signature, or ``mono_pitch`` / ``flat``).
+
+    v0 trade-offs (documented on PR #114):
+    - Interior CSG fusion with the host wall is deferred — the Wintergarten
+      volume is rendered alongside the wall rather than carved into it.
+    - IFC export is deferred (no IfcSpace/IfcCovering classification yet —
+      defer until the CSG fusion ships so the geometry is unambiguous).
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["wintergarten"] = "wintergarten"
+    id: str
+    name: str = "Wintergarten"
+    host_wall_id: str = Field(alias="hostWallId")
+    footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
+    level_id: str | None = Field(default=None, alias="levelId")
+    wall_height_mm: float = Field(default=2400.0, alias="wallHeightMm", gt=0)
+    roof_geometry_mode: WintergartenRoofMode = Field(
+        default="barrel", alias="roofGeometryMode"
+    )
+    roof_slope_deg: float | None = Field(default=None, alias="roofSlopeDeg")
+    # ISSUE-114: barrel-specific parameters (consumed when the roof mode is
+    # ``barrel``). Mirrors the new fields on RoofElem so the Wintergarten can
+    # self-describe its curved-glass roof without a separate RoofElem.
+    barrel_rise_mm: float | None = Field(default=None, alias="barrelRiseMm")
+    barrel_segment_count: int | None = Field(default=None, alias="barrelSegmentCount")
+    material_key: str = Field(default="glass_clear", alias="materialKey")
+    floor_material_key: str | None = Field(default=None, alias="floorMaterialKey")
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _validate_wintergarten(self) -> WintergartenElem:
+        if len(self.footprint_mm) < 3:
+            raise ValueError(
+                "WintergartenElem.footprintMm must have ≥ 3 vertices (closed polygon)"
+            )
+        if self.roof_geometry_mode == "barrel":
+            if self.barrel_rise_mm is None or self.barrel_rise_mm <= 0:
+                raise ValueError(
+                    "WintergartenElem.barrelRiseMm must be > 0 when roofGeometryMode='barrel'"
+                )
         return self
 
 

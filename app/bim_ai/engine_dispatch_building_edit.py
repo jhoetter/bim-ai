@@ -19,6 +19,7 @@ from bim_ai.engine import (
     CreateSunSettingsCmd,
     CreateSurveyPointCmd,
     CreateSweepCmd,
+    CreateWintergartenCmd,
     DEFAULT_DISCIPLINE_BY_KIND,
     DeleteAreaCmd,
     DeleteMaskingRegionCmd,
@@ -58,6 +59,7 @@ from bim_ai.engine import (
     WallElem,
     WallOpeningElem,
     WindowElem,
+    WintergartenElem,
     _dormer_footprint_polygon_mm,
     _resolve_dormer_host_floor,
     _validate_baluster_pattern,
@@ -286,6 +288,66 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 level_id=level_id,
                 material_key=cmd.material_key,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("facade_bay", "arch"),
+            )
+
+        case CreateWintergartenCmd():
+            # Issue #114 — author a WintergartenElem (glazed conservatory)
+            # hosted on an existing wall. The host wall must exist and be a
+            # WallElem. The footprint must be a closed polygon (≥3 vertices);
+            # for ``barrel`` roofs a non-zero rise is required.
+            wid = cmd.id or new_id()
+            if wid in els:
+                raise ValueError(f"duplicate element id '{wid}'")
+            host_wall = els.get(cmd.host_wall_id)
+            if not isinstance(host_wall, WallElem):
+                raise ValueError(
+                    "createWintergarten.hostWallId must reference an existing wall"
+                )
+            if len(cmd.footprint_mm) < 3:
+                raise ValueError(
+                    "createWintergarten.footprintMm must have ≥ 3 vertices"
+                )
+            if cmd.wall_height_mm <= 0:
+                raise ValueError("createWintergarten.wallHeightMm must be > 0")
+            if cmd.roof_geometry_mode not in ("barrel", "mono_pitch", "flat"):
+                raise ValueError(
+                    "createWintergarten.roofGeometryMode must be 'barrel', "
+                    "'mono_pitch', or 'flat'"
+                )
+            if cmd.roof_geometry_mode == "barrel":
+                if cmd.barrel_rise_mm is None or cmd.barrel_rise_mm <= 0:
+                    raise ValueError(
+                        "createWintergarten.barrelRiseMm must be > 0 when "
+                        "roofGeometryMode='barrel'"
+                    )
+            if resolve_material(cmd.material_key) is None:
+                raise ValueError(
+                    f"createWintergarten.materialKey '{cmd.material_key}' is not "
+                    "in the material catalog"
+                )
+            if cmd.floor_material_key is not None and resolve_material(
+                cmd.floor_material_key
+            ) is None:
+                raise ValueError(
+                    f"createWintergarten.floorMaterialKey '{cmd.floor_material_key}' "
+                    "is not in the material catalog"
+                )
+            wg_level_id = cmd.level_id if cmd.level_id is not None else host_wall.level_id
+            els[wid] = WintergartenElem(
+                kind="wintergarten",
+                id=wid,
+                name=cmd.name,
+                host_wall_id=cmd.host_wall_id,
+                footprint_mm=list(cmd.footprint_mm),
+                level_id=wg_level_id,
+                wall_height_mm=cmd.wall_height_mm,
+                roof_geometry_mode=cmd.roof_geometry_mode,
+                roof_slope_deg=cmd.roof_slope_deg,
+                barrel_rise_mm=cmd.barrel_rise_mm,
+                barrel_segment_count=cmd.barrel_segment_count,
+                material_key=cmd.material_key,
+                floor_material_key=cmd.floor_material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wintergarten", "arch"),
             )
 
         case CreateSweepCmd():

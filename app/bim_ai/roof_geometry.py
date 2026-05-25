@@ -24,6 +24,12 @@ RoofGeometryMode = Literal[
     # footprint. Degenerate hip whose ridge collapses to a point (zero ridge
     # length). Common on Stadtvillas and kubische Villen.
     "pyramidal_hip",
+    # ISSUE-114: Tonnendach (barrel roof) — a curved cylindrical-segment roof
+    # swept along the long footprint axis.
+    "barrel",
+    # ISSUE-112: Mansarddach (Mansard / French roof) — two-pitch roof; lower
+    # skirt encloses the DG, upper cap is shallow; meet at the knee line.
+    "mansard",
 ]
 
 RoofGeometrySupportTokenV0 = Literal[
@@ -34,10 +40,9 @@ RoofGeometrySupportTokenV0 = Literal[
     "mono_pitch_supported",
     "half_gable_supported",
     "mono_pitch_offset_supported",
-    # ISSUE-110: square-ish axis-aligned rectangle authored with
-    # roofGeometryMode="pyramidal_hip" — supported by the dedicated pyramid
-    # mesh path and IFC HIP_ROOF PredefinedType.
     "pyramidal_hip_supported",
+    "barrel_supported",
+    "mansard_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
     "missing_slope_or_level",
@@ -184,6 +189,16 @@ def roof_geometry_support_token_v0(
 ) -> RoofGeometrySupportTokenV0 | None:
     """Deterministic hip/valley/skip matrix; None for ordinary mass_box axis-aligned rectangles."""
 
+    # ISSUE-114: barrel (Tonnendach) is parametrised by ``barrel_rise_mm``, not
+    # a planar slope, so the slope gate must not gate it out. The reference
+    # level still must resolve, and the footprint must have ≥3 vertices.
+    if roof_geometry_mode == "barrel":
+        if not reference_level_resolves or len(footprint_mm) < 3:
+            return "missing_slope_or_level"
+        if footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+            return "barrel_supported"
+        return "non_rectangular_footprint_deferred"
+
     if not reference_level_resolves or len(footprint_mm) < 3 or slope_deg is None:
         return "missing_slope_or_level"
 
@@ -223,14 +238,19 @@ def roof_geometry_support_token_v0(
     ):
         return "mono_pitch_offset_supported"
 
-    # ISSUE-110: Zeltdach / Pyramidendach — accept any axis-aligned rectangle
-    # (the renderer pyramid mesh degrades smoothly for non-square aspect ratios
-    # while the predicate's square-ish gate guards the reader-side promotion).
+    # ISSUE-110: Zeltdach / Pyramidendach — accept any axis-aligned rectangle.
     if (
         roof_geometry_mode == "pyramidal_hip"
         and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
     ):
         return "pyramidal_hip_supported"
+
+    # ISSUE-112: Mansarddach — two-pitch (steep lower skirt + shallow upper
+    # cap) restricted to axis-aligned rectangles for v0.
+    if roof_geometry_mode == "mansard" and footprint_is_valid_axis_aligned_rectangle_mm(
+        footprint_mm
+    ):
+        return "mansard_supported"
 
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
@@ -525,6 +545,149 @@ def half_gable_truncation_height_mm(
     return max(0.0, float(full_ridge_rise_mm) * (1.0 - f))
 
 
+def assert_valid_mansard_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-112: mansard (Mansarddach) requires an axis-aligned rectangle for v0.
+
+    A Mansard / French roof has a steep lower slope (near-vertical skirt that
+    encloses the DG and hosts Mansardgauben) and a shallow upper slope (cap).
+    The two slopes meet at a horizontal "knee" line at
+    ``mansardKneeHeightMm`` above the eave. Non-rectangular footprints
+    defer to the slab fallback (same as flat).
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "mansard footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Mansarddach is deferred"
+        )
+
+
+def mansard_default_lower_pitch_deg() -> float:
+    """ISSUE-112: default steep skirt pitch for Mansarddach.
+
+    A typical Mansarddach has a lower skirt that is near-vertical — French
+    practice puts it around 70°. We default to 70° so callers that omit the
+    field get a recognisable Mansard silhouette without needing a magic
+    number.
+    """
+
+    return 70.0
+
+
+def mansard_default_upper_pitch_deg() -> float:
+    """ISSUE-112: default shallow cap pitch for Mansarddach.
+
+    The upper cap is shallow — typical practice is 10–30°. We default to
+    20° so the cap is clearly distinct from the steep skirt without
+    flattening into a pseudo-flat roof.
+    """
+
+    return 20.0
+
+
+def clamp_mansard_pitch_deg(
+    raw: float | None,
+    *,
+    default: float,
+    min_deg: float = 1.0,
+    max_deg: float = 89.0,
+) -> float:
+    """ISSUE-112: clamp a mansard pitch into ``[min_deg, max_deg]``.
+
+    Mansard slopes are bounded: the lower (steep) slope must be below
+    90° (a true vertical would degenerate into a wall, not a roof slope)
+    and the upper (shallow) slope must be above 0° so it still drains.
+    ``None`` / NaN / garbage falls back to ``default``.
+    """
+
+    if raw is None:
+        return float(default)
+    try:
+        f = float(raw)
+    except (TypeError, ValueError):
+        return float(default)
+    if math.isnan(f):
+        return float(default)
+    return max(min_deg, min(max_deg, f))
+
+
+def mansard_knee_height_mm(
+    *,
+    span_x: float,
+    span_z: float,
+    lower_pitch_deg: float,
+    raw_knee_height_mm: float | None,
+    default_fraction: float = 0.6,
+    min_height_mm: float = 100.0,
+) -> float:
+    """ISSUE-112: resolve the knee elevation (above eave) for the mansard.
+
+    The knee height is the elevation at which the steep lower skirt
+    transitions into the shallow upper cap.
+
+    - ``raw_knee_height_mm = None`` defaults to ``default_fraction`` (60%)
+      of the maximum elevation the steep skirt can reach before the
+      upper cap takes over the centre of the rectangle.
+    - Returned value is clamped to ``[min_height_mm, max_skirt_rise]``
+      where ``max_skirt_rise = half_short_span × tan(lower_pitch_deg)``.
+
+    The max-skirt-rise upper bound exists because, geometrically, a steep
+    skirt cannot rise higher than the point where the two opposite skirts
+    meet at the rectangle centerline. Beyond that, there is no room left
+    for the shallow upper cap and the roof degenerates back into a hip /
+    gable. We always leave at least 1 mm of headroom so the cap is
+    representable.
+    """
+
+    half_short_span = min(span_x, span_z) / 2.0
+    lower_rad = math.radians(max(1.0, min(89.0, lower_pitch_deg)))
+    max_skirt_rise = half_short_span * math.tan(lower_rad)
+    if max_skirt_rise <= min_height_mm:
+        # Degenerate rectangle (sub-mm short span / sub-vertical skirt) —
+        # return the safer floor so the renderer/IFC don't crash on zero.
+        return min_height_mm
+    if raw_knee_height_mm is None:
+        target = max_skirt_rise * default_fraction
+    else:
+        try:
+            target = float(raw_knee_height_mm)
+        except (TypeError, ValueError):
+            target = max_skirt_rise * default_fraction
+        if math.isnan(target):
+            target = max_skirt_rise * default_fraction
+    return max(min_height_mm, min(max_skirt_rise - 1.0, target))
+
+
+def mansard_upper_ridge_rise_mm(
+    *,
+    span_x: float,
+    span_z: float,
+    lower_pitch_deg: float,
+    upper_pitch_deg: float,
+    knee_height_mm: float,
+) -> float:
+    """ISSUE-112: vertical rise (mm above eave) at the ridge of the upper cap.
+
+    Geometry:
+    - The lower (steep) skirt eats into the rectangle from each edge by
+      ``inset = knee_height / tan(lower_pitch_deg)`` until it reaches the
+      knee elevation.
+    - The remaining inner rectangle at the knee carries the shallow
+      upper cap (hipped/gabled). Half of the SHORTER inner span × tan
+      of the upper pitch is the ridge rise above the knee.
+    - Total ridge rise above the eave = knee_height + upper-cap rise.
+    """
+
+    lower_rad = math.radians(max(1.0, min(89.0, lower_pitch_deg)))
+    upper_rad = math.radians(max(1.0, min(89.0, upper_pitch_deg)))
+    inset_each_side = knee_height_mm / math.tan(lower_rad) if math.tan(lower_rad) > 1e-9 else 0.0
+    inner_span_x = max(0.0, span_x - 2.0 * inset_each_side)
+    inner_span_z = max(0.0, span_z - 2.0 * inset_each_side)
+    inner_short = min(inner_span_x, inner_span_z)
+    cap_rise = (inner_short / 2.0) * math.tan(upper_rad)
+    return knee_height_mm + cap_rise
+
+
 def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
     """KRN-03: hip mode requires a convex polygon with ≥ 4 vertices."""
 
@@ -678,3 +841,151 @@ def edge_profile_run_path_mm(
             ]
     else:
         raise ValueError(f"edge_profile_run_path_mm: unsupported host_edge '{host_edge}'")
+
+
+# ---------------------------------------------------------------------------
+# ISSUE-114: barrel (Tonnendach) helpers
+# ---------------------------------------------------------------------------
+
+BARREL_SEGMENT_COUNT_DEFAULT = 12
+BARREL_SEGMENT_COUNT_MIN = 3
+BARREL_SEGMENT_COUNT_MAX = 256
+
+
+def assert_valid_barrel_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-114: barrel (Tonnendach) requires an axis-aligned rectangle for v0.
+
+    Non-rectangular footprints defer to the slab fallback (same precedent as
+    mono_pitch and mono_pitch_offset). Sweeping a smooth cylindrical-segment
+    along a non-axis-aligned path is plausible but out of scope for v0.
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "barrel footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Tonnendach is deferred"
+        )
+
+
+def assert_valid_barrel_rise_mm(barrel_rise_mm: float | None) -> float:
+    """ISSUE-114: barrel rise (crown height above the eave plane) must be > 0.
+
+    Returns the validated value as a float so callers can store it back.
+    """
+
+    if barrel_rise_mm is None:
+        raise ValueError("barrel roofs require barrelRiseMm > 0")
+    try:
+        rise = float(barrel_rise_mm)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("barrelRiseMm must be a numeric mm value") from exc
+    if not (rise > 0.0):
+        raise ValueError("barrelRiseMm must be > 0")
+    return rise
+
+
+def clamp_barrel_segment_count(
+    value: int | float | None, *, default: int = BARREL_SEGMENT_COUNT_DEFAULT
+) -> int:
+    """ISSUE-114: clamp the tessellation strip count into the supported range.
+
+    - ``None`` (or junk) → ``default`` (12 strips covers a half-circle smoothly).
+    - Values below ``BARREL_SEGMENT_COUNT_MIN`` are raised to the minimum so the
+      tessellation always produces a closed shell.
+    - Values above ``BARREL_SEGMENT_COUNT_MAX`` are clamped to keep mesh sizes
+      bounded for downstream renderers.
+    """
+
+    if value is None:
+        return int(default)
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return int(default)
+    if n < BARREL_SEGMENT_COUNT_MIN:
+        return BARREL_SEGMENT_COUNT_MIN
+    if n > BARREL_SEGMENT_COUNT_MAX:
+        return BARREL_SEGMENT_COUNT_MAX
+    return n
+
+
+def barrel_sweep_axis_token(span_x: float, span_z: float) -> RidgeAxisPlan:
+    """ISSUE-114: pick the axis along which the cylindrical segment sweeps.
+
+    The arc spans the *short* footprint axis (the chord of the cylinder) and
+    sweeps along the *long* axis. Ties resolve to ``alongX`` for determinism.
+    """
+
+    if span_x >= span_z:
+        return "alongX"
+    return "alongZ"
+
+
+def barrel_arc_radius_from_chord_and_rise_mm(chord_mm: float, rise_mm: float) -> float:
+    """ISSUE-114: circle radius for a circular arc with given chord & sagitta.
+
+    Geometry: a circular arc with chord ``c`` and rise (sagitta) ``h`` lies on
+    a circle of radius ``r = (c^2 + 4 h^2) / (8 h)``. Used by the tessellator
+    to project arc points onto the chord plane.
+    """
+
+    if chord_mm <= 0.0:
+        raise ValueError("barrel chord_mm must be > 0")
+    if rise_mm <= 0.0:
+        raise ValueError("barrel rise_mm must be > 0")
+    c = float(chord_mm)
+    h = float(rise_mm)
+    return (c * c + 4.0 * h * h) / (8.0 * h)
+
+
+def barrel_arc_profile_points_mm(
+    chord_mm: float,
+    rise_mm: float,
+    segment_count: int,
+) -> list[tuple[float, float]]:
+    """ISSUE-114: ``segment_count + 1`` points (u, v) on the arc cross-section.
+
+    The arc is parametrised in the chord plane:
+    - ``u`` runs along the chord from 0 to ``chord_mm`` (the short footprint
+      axis).
+    - ``v`` is the height above the chord (the eave plane), 0 at both eaves
+      and ``rise_mm`` at the crown.
+
+    Even tessellation in arc-angle (not in chord) keeps strip widths roughly
+    equal in arc length, which is the right thing for a smooth Tonnendach.
+    """
+
+    if segment_count < BARREL_SEGMENT_COUNT_MIN:
+        raise ValueError(
+            f"barrel_arc_profile_points_mm requires segment_count ≥ {BARREL_SEGMENT_COUNT_MIN}"
+        )
+    if chord_mm <= 0.0 or rise_mm <= 0.0:
+        raise ValueError("barrel_arc_profile_points_mm requires chord_mm > 0 and rise_mm > 0")
+
+    c = float(chord_mm)
+    h = float(rise_mm)
+    r = barrel_arc_radius_from_chord_and_rise_mm(c, h)
+    # Circle center sits below the chord midpoint at distance (r - h).
+    cx = c / 2.0
+    cy = -(r - h)
+    # Half-angle subtended by the chord at the center: sin(theta) = (c/2) / r.
+    half_chord = c / 2.0
+    sin_theta = max(-1.0, min(1.0, half_chord / r))
+    theta = math.asin(sin_theta)
+    pts: list[tuple[float, float]] = []
+    for i in range(segment_count + 1):
+        # Parameter t in [-1, +1] maps to angle [-theta, +theta] measured from
+        # the vertical axis through the center (so t=0 is the crown).
+        t = -1.0 + 2.0 * (i / segment_count)
+        ang = t * theta
+        # Point on circle (sin for u, cos for v) measured from the center;
+        # ``cy + r * cos(ang)`` is the height above the chord plane (0 at
+        # endpoints, ``rise_mm`` at the crown).
+        u = cx + r * math.sin(ang)
+        v = cy + r * math.cos(ang)
+        # Snap endpoint heights to exactly 0 to absorb float drift so callers
+        # comparing against the eave plane don't fail equality checks.
+        if i == 0 or i == segment_count:
+            v = 0.0
+        pts.append((u, v))
+    return pts

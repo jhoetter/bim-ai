@@ -105,6 +105,75 @@ class WallStack(BaseModel):
     components: list[WallStackComponent] = Field(default_factory=list)
 
 
+FachwerkDiagonalDirection = Literal["none", "left", "right", "vee", "andreas_kreuz"]
+
+
+class FachwerkPattern(BaseModel):
+    """Issue #111 — visible half-timbering raster overlay for a wall.
+
+    Authoring shorthand: instead of authoring every Ständer (post), Riegel
+    (rail/beam) and Strebe (diagonal brace) as separate geometry, a wall
+    declares the timber raster *parametrically*. The renderer draws a thin
+    overlay of dark timber rectangles on the wall's exterior face so the
+    Fachwerk reads clearly without exploding the element count.
+
+    Geometry is built in the renderer (see
+    ``packages/web/src/viewport/meshBuilders.fachwerkOverlay.ts``); this
+    model only carries authoring intent. The infill (Gefache) is assumed to
+    be the wall's own ``materialKey`` — usually ``brick_red`` for the classic
+    Niedersachsen / Westfalen look or ``plaster`` for whitewashed Gefache.
+
+    Fields:
+      - ``post_spacing_mm`` — horizontal Ständer spacing (centre-to-centre).
+        4-bay Fachwerk on a 6 m wall typically lands at ~1500 mm.
+      - ``post_width_mm`` — visible post width (default 140 mm — squared
+        timber Eichenholz).
+      - ``rail_height_mm`` — visible Riegel band height (default 140 mm).
+      - ``sill_height_mm`` — Schwelle band at wall foot (default 200 mm).
+      - ``top_plate_height_mm`` — Rähm band at wall top (default 200 mm).
+      - ``mid_rail_heights_mm`` — optional list of mid-rail elevations
+        between sill and top plate (e.g. floor-line Geschossriegel).
+      - ``diagonals_per_panel`` — direction of Streben drawn inside each
+        Gefach panel (none / left / right / vee / Andreaskreuz).
+      - ``diagonal_width_mm`` — visible brace width (default 120 mm).
+      - ``timber_material_key`` — overlay timber material (default
+        ``timber_dark_oak``). Falls back to a dark colour if unknown.
+      - ``proud_mm`` — how far the overlay sits proud of the wall face so it
+        reads as relief without Z-fighting (default 10 mm).
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    post_spacing_mm: float = Field(default=1500.0, alias="postSpacingMm", gt=0)
+    post_width_mm: float = Field(default=140.0, alias="postWidthMm", gt=0)
+    rail_height_mm: float = Field(default=140.0, alias="railHeightMm", gt=0)
+    sill_height_mm: float = Field(default=200.0, alias="sillHeightMm", ge=0)
+    top_plate_height_mm: float = Field(default=200.0, alias="topPlateHeightMm", ge=0)
+    mid_rail_heights_mm: list[float] = Field(
+        default_factory=list, alias="midRailHeightsMm"
+    )
+    diagonals_per_panel: FachwerkDiagonalDirection = Field(
+        default="none", alias="diagonalsPerPanel"
+    )
+    diagonal_width_mm: float = Field(default=120.0, alias="diagonalWidthMm", gt=0)
+    timber_material_key: str = Field(
+        default="timber_dark_oak", alias="timberMaterialKey"
+    )
+    proud_mm: float = Field(default=10.0, alias="proudMm", ge=0)
+
+    @model_validator(mode="after")
+    def _validate_mid_rails(self) -> FachwerkPattern:
+        for h in self.mid_rail_heights_mm:
+            if h < 0:
+                raise ValueError(
+                    "fachwerkPattern.midRailHeightsMm entries must be non-negative"
+                )
+        # Sorted, deduplicated is friendlier to the renderer.
+        ordered = sorted({round(h, 3) for h in self.mid_rail_heights_mm})
+        # Replace in-place (avoid Pydantic re-validation).
+        object.__setattr__(self, "mid_rail_heights_mm", ordered)
+        return self
+
+
 class WallElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall"] = "wall"
@@ -184,6 +253,12 @@ class WallElem(BaseModel):
     # F-040: per-endpoint Allow/Disallow join flag (mirrors Revit right-click → Allow/Disallow Join).
     join_disallow_start: bool = Field(default=False, alias="joinDisallowStart")
     join_disallow_end: bool = Field(default=False, alias="joinDisallowEnd")
+    # Issue #111 — visible exposed half-timbering authored as a parametric
+    # overlay. When set, the renderer draws a dark timber raster on the wall's
+    # exterior face; the host wall's `material_key` provides the Gefache infill.
+    fachwerk_pattern: FachwerkPattern | None = Field(
+        default=None, alias="fachwerkPattern"
+    )
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:

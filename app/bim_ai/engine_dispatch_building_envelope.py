@@ -47,6 +47,7 @@ from bim_ai.engine import (
     assert_valid_half_gable_footprint_mm,
     assert_valid_hip_footprint_mm,
     assert_valid_l_shape_footprint_mm,
+    assert_valid_mansard_footprint_mm,
     assert_valid_mono_pitch_footprint_mm,
     assert_valid_pyramidal_hip_footprint_mm,
     edge_profile_run_path_mm,
@@ -152,10 +153,13 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
             elif cmd.roof_geometry_mode == "pyramidal_hip":
-                # ISSUE-110 — Zeltdach / Pyramidendach: axis-aligned rectangle
-                # footprint; the renderer/exporter tilt all four planes to
-                # meet at a single apex above the centroid.
+                # ISSUE-110 — Zeltdach / Pyramidendach.
                 assert_valid_pyramidal_hip_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
+            elif cmd.roof_geometry_mode == "mansard":
+                # ISSUE-112 — Mansarddach.
+                assert_valid_mansard_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
             els[rid] = RoofElem(
@@ -172,6 +176,9 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 eave_height_right_mm=cmd.eave_height_right_mm,
                 mono_pitch_high_edge=cmd.mono_pitch_high_edge,
                 half_hip_height_fraction=cmd.half_hip_height_fraction,
+                mansard_lower_pitch_deg=cmd.mansard_lower_pitch_deg,
+                mansard_upper_pitch_deg=cmd.mansard_upper_pitch_deg,
+                mansard_knee_height_mm=cmd.mansard_knee_height_mm,
                 roof_type_id=rtid,
                 material_key=cmd.material_key,
                 ridge_along_x=cmd.ridge_along_x,

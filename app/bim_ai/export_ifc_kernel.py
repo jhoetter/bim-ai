@@ -813,13 +813,14 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rf.roof_geometry_mode == "mono_pitch_offset"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
-        # ISSUE-110: Zeltdach / Pyramidendach — flag for the dedicated
-        # IfcRoof.PredefinedType = HIP_ROOF tag. The body itself still uses
-        # the flat-slab prism fallback (existing rectangular IfcSlab profile)
-        # so geometric quantity tooling stays unchanged; the pyramid shape is
-        # captured authoritatively via Pset_BimAiKernel + the viewer mesh.
+        # ISSUE-110: Zeltdach / Pyramidendach — flag for IfcRoof.PredefinedType = HIP_ROOF.
         use_pyramidal_hip_body = (
             rf.roof_geometry_mode == "pyramidal_hip"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
+        # ISSUE-112: Mansarddach — IFC4 MANSARD_ROOF.
+        use_mansard_body = (
+            rf.roof_geometry_mode == "mansard"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
 
@@ -1327,13 +1328,27 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
-        # ISSUE-110: Zeltdach / Pyramidendach maps to IFC4's HIP_ROOF
-        # PredefinedType. IFC4 IfcRoofTypeEnum has no PYRAMIDAL_ROOF literal;
-        # HIP_ROOF is the closest semantic match (a hip with all four planes
-        # meeting at a single point ≡ degenerate hip with zero ridge length).
+        # ISSUE-110: Zeltdach maps to IFC4 HIP_ROOF.
         if use_pyramidal_hip_body and hasattr(roof_ent, "PredefinedType"):
             try:
                 roof_ent.PredefinedType = "HIP_ROOF"
+            except (RuntimeError, ValueError):
+                pass
+
+        # ISSUE-112: Mansarddach maps to IFC4 MANSARD_ROOF.
+        if use_mansard_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "MANSARD_ROOF"
+            except (RuntimeError, ValueError):
+                pass
+
+        # ISSUE-114: Tonnendach maps to IFC4 BARREL_ROOF.
+        if (
+            rf.roof_geometry_mode == "barrel"
+            and hasattr(roof_ent, "PredefinedType")
+        ):
+            try:
+                roof_ent.PredefinedType = "BARREL_ROOF"
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
@@ -1382,6 +1397,27 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             # ISSUE-105: round-trip the half-hip fraction so authoritative
             # replay reconstructs the same Krüppelwalm proportions.
             bim_ai_props["BimAiRoofHalfHipHeightFraction"] = float(rf.half_hip_height_fraction)
+        if use_mansard_body:
+            # ISSUE-112: round-trip the Mansarddach parameters so the
+            # authoritative replay reconstructs the same two-pitch silhouette.
+            # Also persist the plan footprint so the rectangle predicate
+            # survives the round-trip (the flat-slab fallback body strips
+            # the original outline).
+            bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
+                f"{px:.3f},{py:.3f}" for px, py in rp_mm
+            )
+            if rf.mansard_lower_pitch_deg is not None:
+                bim_ai_props["BimAiRoofMansardLowerPitchDeg"] = float(
+                    rf.mansard_lower_pitch_deg
+                )
+            if rf.mansard_upper_pitch_deg is not None:
+                bim_ai_props["BimAiRoofMansardUpperPitchDeg"] = float(
+                    rf.mansard_upper_pitch_deg
+                )
+            if rf.mansard_knee_height_mm is not None:
+                bim_ai_props["BimAiRoofMansardKneeHeightMm"] = float(
+                    rf.mansard_knee_height_mm
+                )
         if use_mono_pitch_offset_body:
             # ISSUE-101: round-trip the Versetztes-Pultdach parameters so the
             # authoritative replay reconstructs the same offset configuration.

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #114 — barrel (Tonnendach) RoofGeometryMode + WintergartenElem</title>
+  <desc>
+    Cross-section through a BioSolarHaus south facade. The host building (left)
+    carries the conventional gable roof. A glazed Wintergarten extension (right)
+    is attached to the south wall: an extruded glass-walled volume capped by a
+    barrel (Tonnendach) roof. The barrel cross-section is a circular arc with
+    chord = footprint short span and sagitta = barrelRiseMm; the renderer
+    tessellates the arc into barrelSegmentCount flat strips (default 12).
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cfe6f5" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#a4cce6" stop-opacity="0.65"/>
+    </linearGradient>
+    <pattern id="wall-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#efe5d6"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#c9b896" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="520" fill="url(#sky)"/>
+
+  <!-- ground line -->
+  <line x1="40" y1="440" x2="1160" y2="440" stroke="#7a8694" stroke-width="2"/>
+  <line x1="40" y1="440" x2="1160" y2="440" stroke="#3a4654" stroke-dasharray="2 4" stroke-width="1"/>
+
+  <!-- ============== Host building (left) ============== -->
+  <!-- gable -->
+  <polygon points="120,260 380,180 640,260" fill="#d6b994" stroke="#7a6240" stroke-width="2"/>
+  <!-- walls -->
+  <rect x="120" y="260" width="520" height="180" fill="url(#wall-hatch)" stroke="#7a6240" stroke-width="2"/>
+  <!-- south wall outline (this is the "host wall" for the Wintergarten) -->
+  <line x1="640" y1="260" x2="640" y2="440" stroke="#1f6f3f" stroke-width="4"/>
+  <text x="378" y="240" text-anchor="middle" font-size="14" fill="#3a4654">BioSolarHaus (Gable host)</text>
+  <text x="660" y="260" font-size="11" fill="#1f6f3f">hostWallId →</text>
+  <text x="660" y="274" font-size="11" fill="#1f6f3f">south wall</text>
+
+  <!-- ============== Wintergarten extension (right) ============== -->
+  <!-- glazed walls (front + rear silhouette as cross-section) -->
+  <rect x="640" y="320" width="380" height="120" fill="url(#glass)" stroke="#3a8db8" stroke-width="2"/>
+
+  <!-- floor slab top edge -->
+  <line x1="640" y1="440" x2="1020" y2="440" stroke="#7a8694" stroke-width="2"/>
+
+  <!-- Tonnendach arc (the curved barrel cross-section).
+       Parametrized as a circular arc from (640, 320) eave to (1020, 320) eave,
+       crown rises ~120 px above eave. Renderer tessellates this into N strips. -->
+  <path d="M 640 320 Q 830 80 1020 320"
+        fill="url(#glass)" stroke="#2e6280" stroke-width="2.5"/>
+
+  <!-- Tessellation strips (12 segments) for the renderer-side visualization -->
+  <g stroke="#2e6280" stroke-width="1" stroke-dasharray="3 3" fill="none" opacity="0.65">
+    <!-- A few representative chord lines suggesting flat-strip tessellation -->
+    <line x1="640" y1="320" x2="680" y2="262"/>
+    <line x1="680" y1="262" x2="730" y2="210"/>
+    <line x1="730" y1="210" x2="780" y2="172"/>
+    <line x1="780" y1="172" x2="830" y2="156"/>
+    <line x1="830" y1="156" x2="880" y2="172"/>
+    <line x1="880" y1="172" x2="930" y2="210"/>
+    <line x1="930" y1="210" x2="980" y2="262"/>
+    <line x1="980" y1="262" x2="1020" y2="320"/>
+  </g>
+
+  <!-- crown marker -->
+  <line x1="830" y1="156" x2="830" y2="320" stroke="#3a4654" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="640" y1="320" x2="1020" y2="320" stroke="#3a4654" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- arrows / annotations -->
+  <text x="836" y="148" font-size="12" fill="#3a4654">crown</text>
+
+  <!-- barrelRiseMm -->
+  <text x="744" y="240" font-size="12" fill="#1d4f6a" text-anchor="middle">barrelRiseMm</text>
+  <line x1="830" y1="156" x2="830" y2="320" stroke="#1d4f6a" stroke-width="1.2" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+
+  <!-- chord -->
+  <text x="830" y="338" font-size="12" fill="#1d4f6a" text-anchor="middle">chord = short footprint span</text>
+
+  <!-- floor / level -->
+  <text x="830" y="458" font-size="12" fill="#3a4654" text-anchor="middle">FloorElem (glass_clear panels)</text>
+
+  <!-- WintergartenElem label -->
+  <text x="830" y="500" text-anchor="middle" font-size="14" fill="#1d4f6a" font-weight="600">
+    WintergartenElem (kind="wintergarten", roofGeometryMode="barrel")
+  </text>
+
+  <!-- legend block -->
+  <g transform="translate(40, 40)">
+    <rect width="380" height="120" fill="#ffffff" stroke="#cfd6df" rx="6" ry="6" opacity="0.92"/>
+    <text x="14" y="22" font-size="13" fill="#1d4f6a" font-weight="600">Issue #114 — Tonnendach + Wintergarten</text>
+    <text x="14" y="44" font-size="12" fill="#3a4654">RoofGeometryMode adds "barrel" (curved arc cross-section,</text>
+    <text x="14" y="60" font-size="12" fill="#3a4654">swept along long axis). Fields: barrelRiseMm, barrelSegmentCount.</text>
+    <text x="14" y="80" font-size="12" fill="#3a4654">WintergartenElem: glazed conservatory hosted on a wall, with</text>
+    <text x="14" y="96" font-size="12" fill="#3a4654">roof_geometry_mode ∈ {barrel, mono_pitch, flat}, materialKey</text>
+    <text x="14" y="112" font-size="12" fill="#3a4654">defaults to glass_clear. IFC: BARREL_ROOF predefined-type tag.</text>
+  </g>
+
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4f6a"/>
+    </marker>
+  </defs>
+</svg>

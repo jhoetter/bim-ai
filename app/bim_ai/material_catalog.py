@@ -374,6 +374,15 @@ _MATERIALS: tuple[MaterialPbrSpec, ...] = (
         category="timber",
         display_name="Square log (natural)",
     ),
+    # ── Issue #111 — exposed Fachwerk timber raster overlay ──────────
+    MaterialPbrSpec(
+        key="timber_dark_oak",
+        base_color="#3a2418",
+        roughness=0.85,
+        metalness=0.0,
+        category="timber",
+        display_name="Dark oak timber (Fachwerk)",
+    ),
     # ── KRN-09 placeholder ───────────────────────────────────────────
     MaterialPbrSpec(
         key="placeholder_unloaded",
