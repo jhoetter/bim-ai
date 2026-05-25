@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #112 — mansard (Mansarddach + Mansardgauben) RoofGeometryMode, gable-end view</title>
+  <desc>
+    Gable-end view of a 12000 x 9000 mm rectangular footprint. Before: the only
+    rectangle-pitched literals are gable_pitched_rectangle / hip / half_gable,
+    so the silhouette has a single pitch from eave to ridge. Approximating the
+    Mansard as a steep hip loses the upper pitch break that is the visual
+    signature. After: roofGeometryMode = mansard builds a two-pitch silhouette
+    where the lower (steep, ~70 degrees) skirt encloses the DG and hosts
+    Mansardgauben, and the shallow (~20 degrees) upper cap closes the roof at
+    the top via a hipped pyramid.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="hipTiles" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#b35d4f"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#7d3d33" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#7d3d33" stroke-width="0.6"/>
+    </pattern>
+    <pattern id="skirtTiles" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#6e3a2f"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#3d2018" stroke-width="0.8"/>
+      <line x1="0" y1="3" x2="6" y2="3" stroke="#3d2018" stroke-width="0.6"/>
+    </pattern>
+    <pattern id="capTiles" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#9a5b4c"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#5e2f24" stroke-width="0.7"/>
+      <line x1="0" y1="3" x2="6" y2="3" stroke="#5e2f24" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE (steep hip approximation) ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Steep hip approximation (loses the pitch break)</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "hip" — single pitch from eave to ridge
+    </text>
+
+    <line x1="40" y1="380" x2="520" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- Walls: 9 m wide x 3 m tall, scale ~30 px/m. -->
+    <rect x="125" y="290" width="270" height="90" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+
+    <!-- Single-pitch hip silhouette: eave at y=290, apex at ~y=120. -->
+    <polygon points="125,290 395,290 260,120" fill="url(#hipTiles)" stroke="#7d3d33" stroke-width="1.5"/>
+
+    <!-- Apex marker -->
+    <circle cx="260" cy="120" r="3" fill="#ffffff" stroke="#7d3d33" stroke-width="1.5"/>
+    <text x="260" y="113" text-anchor="middle" font-size="10" fill="#7d3d33" font-weight="600">apex</text>
+
+    <text x="120" y="305" text-anchor="end" font-size="9" fill="#4b5563">eave</text>
+    <text x="400" y="305" text-anchor="start" font-size="9" fill="#4b5563">eave</text>
+
+    <!-- Slope label -->
+    <text x="280" y="220" text-anchor="middle" font-size="11" fill="#7d3d33" font-weight="600">single pitch ≈ 60°</text>
+
+    <!-- Defect callout -->
+    <g transform="translate(60, 410)">
+      <rect width="430" height="20" fill="#fff4f4" stroke="#d6a8a8" stroke-width="1" rx="3"/>
+      <text x="10" y="14" font-size="11" fill="#9a3030">No pitch break — Mansarddach silhouette is lost; DG-light cue absent.</text>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER (mansard two-pitch) ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Mansarddach two-pitch (new)</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "mansard" — steep skirt + shallow cap + Mansardgauben
+    </text>
+
+    <line x1="580" y1="380" x2="1080" y2="380" stroke="#6b7280" stroke-width="1.5"/>
+
+    <!-- Walls: same 9 m × 3 m. Right panel uses 270 px wide footprint. -->
+    <rect x="685" y="290" width="270" height="90" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+
+    <!-- Lower steep skirt (trapezoid). Knee at y=180, inset ~40 px each side. -->
+    <polygon points="685,290 955,290 915,180 725,180" fill="url(#skirtTiles)" stroke="#3d2018" stroke-width="1.5"/>
+
+    <!-- Upper shallow cap (trapezoid + ridge line at y=140). -->
+    <polygon points="725,180 915,180 870,140 770,140" fill="url(#capTiles)" stroke="#5e2f24" stroke-width="1.5"/>
+
+    <!-- Ridge marker -->
+    <line x1="770" y1="140" x2="870" y2="140" stroke="#5e2f24" stroke-width="2"/>
+    <circle cx="820" cy="140" r="3" fill="#ffffff" stroke="#5e2f24" stroke-width="1.5"/>
+    <text x="820" y="133" text-anchor="middle" font-size="10" fill="#5e2f24" font-weight="600">ridge</text>
+
+    <!-- Knee line marker -->
+    <line x1="725" y1="180" x2="915" y2="180" stroke="#3d2018" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="820" y="194" text-anchor="middle" font-size="10" fill="#3d2018" font-weight="600">knee — mansardKneeHeightMm</text>
+
+    <!-- Mansardgauben on the lower steep skirt: 2 dormers cut into the skirt. -->
+    <g id="dormers">
+      <!-- Left dormer: window opening + flat roof cap. -->
+      <rect x="745" y="215" width="40" height="50" fill="#e5edf7" stroke="#34536c" stroke-width="1.3"/>
+      <rect x="743" y="210" width="44" height="6" fill="#3d2018"/>
+      <line x1="765" y1="215" x2="765" y2="265" stroke="#34536c" stroke-width="0.6"/>
+      <line x1="745" y1="240" x2="785" y2="240" stroke="#34536c" stroke-width="0.6"/>
+      <!-- Right dormer mirrors. -->
+      <rect x="855" y="215" width="40" height="50" fill="#e5edf7" stroke="#34536c" stroke-width="1.3"/>
+      <rect x="853" y="210" width="44" height="6" fill="#3d2018"/>
+      <line x1="875" y1="215" x2="875" y2="265" stroke="#34536c" stroke-width="0.6"/>
+      <line x1="855" y1="240" x2="895" y2="240" stroke="#34536c" stroke-width="0.6"/>
+    </g>
+
+    <!-- Pitch labels -->
+    <text x="700" y="240" text-anchor="middle" font-size="10" fill="#3d2018" font-weight="600">steep ≈ 70°</text>
+    <text x="700" y="252" text-anchor="middle" font-size="9" fill="#3d2018">(lower)</text>
+
+    <text x="940" y="160" text-anchor="middle" font-size="10" fill="#5e2f24" font-weight="600">shallow ≈ 20°</text>
+    <text x="940" y="172" text-anchor="middle" font-size="9" fill="#5e2f24">(upper)</text>
+
+    <text x="680" y="305" text-anchor="end" font-size="9" fill="#4b5563">eave</text>
+    <text x="960" y="305" text-anchor="start" font-size="9" fill="#4b5563">eave</text>
+
+    <text x="780" y="240" text-anchor="middle" font-size="10" fill="#1f2937">Mansardgaube</text>
+    <text x="870" y="285" text-anchor="middle" font-size="10" fill="#1f2937">(dormer in lower slope)</text>
+
+    <!-- Acceptance callout -->
+    <g transform="translate(600, 410)">
+      <rect width="430" height="20" fill="#f4fff4" stroke="#a8d6a8" stroke-width="1" rx="3"/>
+      <text x="10" y="14" font-size="11" fill="#306030">Two-pitch silhouette — DG enclosed in steep skirt + Mansardgauben.</text>
+    </g>
+  </g>
+
+  <!-- Footer note. -->
+  <text x="550" y="455" text-anchor="middle" font-size="10" fill="#4b5563">
+    IFC4 mapping: IfcRoof.PredefinedType = MANSARD_ROOF; mansard pitches + knee round-trip via Pset_BimAiKernel.
+  </text>
+</svg>
