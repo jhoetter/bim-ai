@@ -12,6 +12,7 @@ from bim_ai.engine import (
     CreateAreaCmd,
     CreateBalconyCmd,
     CreateDormerCmd,
+    CreateFacadeBayCmd,
     CreateMaskingRegionCmd,
     CreateProjectBasePointCmd,
     CreateRailingCmd,
@@ -24,6 +25,7 @@ from bim_ai.engine import (
     DoorElem,
     DormerElem,
     Element,
+    FacadeBayElem,
     FloorElem,
     JoinGeometryElem,
     LevelElem,
@@ -247,6 +249,43 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 slab_thickness_mm=cmd.slab_thickness_mm,
                 balustrade_height_mm=cmd.balustrade_height_mm,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("balcony", "arch"),
+            )
+
+        case CreateFacadeBayCmd():
+            # Issue #102 — author a FacadeBayElem (Erker) hosted on an
+            # existing wall. The host wall must exist and be a WallElem.
+            fbid = cmd.id or new_id()
+            if fbid in els:
+                raise ValueError(f"duplicate element id '{fbid}'")
+            host = els.get(cmd.host_wall_id)
+            if not isinstance(host, WallElem):
+                raise ValueError(
+                    "createFacadeBay.hostWallId must reference an existing wall"
+                )
+            if cmd.end_along_wall_mm <= cmd.start_along_wall_mm:
+                raise ValueError(
+                    "createFacadeBay.endAlongWallMm must be > startAlongWallMm"
+                )
+            if cmd.projection_mm <= 0:
+                raise ValueError("createFacadeBay.projectionMm must be > 0")
+            if cmd.shape not in ("rectangular", "chamfered", "curved"):
+                raise ValueError(
+                    "createFacadeBay.shape must be 'rectangular', 'chamfered', or 'curved'"
+                )
+            level_id = cmd.level_id if cmd.level_id is not None else host.level_id
+            els[fbid] = FacadeBayElem(
+                kind="facade_bay",
+                id=fbid,
+                name=cmd.name,
+                host_wall_id=cmd.host_wall_id,
+                start_along_wall_mm=cmd.start_along_wall_mm,
+                end_along_wall_mm=cmd.end_along_wall_mm,
+                projection_mm=cmd.projection_mm,
+                shape=cmd.shape,
+                chamfer_angle_deg=cmd.chamfer_angle_deg,
+                level_id=level_id,
+                material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("facade_bay", "arch"),
             )
 
         case CreateSweepCmd():

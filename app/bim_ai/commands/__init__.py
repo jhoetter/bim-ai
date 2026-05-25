@@ -66,6 +66,7 @@ from bim_ai.commands.geometry import (
     CreateBalconyCmd,
     CreateDormerCmd,
     CreateEdgeProfileRunCmd,
+    CreateFacadeBayCmd,
     CreateFloorCmd,
     CreateGridLineCmd,
     CreateLevelCmd,
@@ -373,6 +374,7 @@ __all__ = [
     "CreateBalconyCmd",
     "CreateDormerCmd",
     "CreateEdgeProfileRunCmd",
+    "CreateFacadeBayCmd",
     "CreateFloorCmd",
     "CreateGridLineCmd",
     "CreateLevelCmd",
@@ -662,6 +664,7 @@ Command = Annotated[
     | UpdateWallOpeningCmd
     | CreateRailingCmd
     | CreateBalconyCmd
+    | CreateFacadeBayCmd
     | UpsertFamilyTypeCmd
     | AssignOpeningFamilyCmd
     | UpdateOpeningCleanroomCmd

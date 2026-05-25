@@ -480,6 +480,7 @@ export function auditElementMaterialCoverage(
 
       case 'ceiling':
       case 'balcony':
+      case 'facade_bay':
       case 'soffit':
       case 'edge_profile_run':
       case 'dormer':

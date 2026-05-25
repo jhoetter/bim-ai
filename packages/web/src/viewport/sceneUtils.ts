@@ -66,6 +66,9 @@ export function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'dormer';
     case 'balcony':
       return 'floor';
+    case 'facade_bay':
+      // Issue #102 — Erker projection is part of the building envelope.
+      return 'wall';
     case 'site':
     case 'toposolid':
     case 'toposolid_excavation':

@@ -12,7 +12,7 @@ from bim_ai.command_schemas import (
 )
 from bim_ai.main import app
 
-EXPECTED_COMMAND_COUNT = 262
+EXPECTED_COMMAND_COUNT = 263
 
 
 def test_command_schema_export_lists_all_command_discriminators() -> None:
