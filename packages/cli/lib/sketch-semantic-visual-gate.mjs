@@ -231,10 +231,10 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function rowsFromTargetHouseAcceptance(targetHouseEvidenceAcceptance) {
+function rowsFromEvidenceAcceptance(evidenceAcceptance) {
   return {
-    visualRows: asArray(targetHouseEvidenceAcceptance?.visualRows).filter(isObject),
-    dataQualityRows: asArray(targetHouseEvidenceAcceptance?.dataQualityRows).filter(isObject),
+    visualRows: asArray(evidenceAcceptance?.visualRows).filter(isObject),
+    dataQualityRows: asArray(evidenceAcceptance?.dataQualityRows).filter(isObject),
   };
 }
 
@@ -309,8 +309,8 @@ function featureTraceFrom(feature, viewId, acceptanceStatus) {
   };
 }
 
-function targetHouseVisualEvidenceForView(evidence, viewId) {
-  const { visualRows } = rowsFromTargetHouseAcceptance(evidence?.targetHouseEvidenceAcceptance);
+function visualEvidenceForView(evidence, viewId) {
+  const { visualRows } = rowsFromEvidenceAcceptance(evidence?.evidenceAcceptance);
   if (!viewId) return visualRows;
   return visualRows.filter((row) => asString(row.viewId) === viewId);
 }
@@ -337,15 +337,15 @@ function cleanAdvisorEvidencePasses(evidence) {
 
 function dataQualityEvidencePasses(evidence) {
   if (evidence?.bimDataQualityReport?.ok === true) return true;
-  const { dataQualityRows } = rowsFromTargetHouseAcceptance(evidence?.targetHouseEvidenceAcceptance);
+  const { dataQualityRows } = rowsFromEvidenceAcceptance(evidence?.evidenceAcceptance);
   return allRowsPass(dataQualityRows);
 }
 
-function targetHouseAcceptancePasses(evidence) {
-  const targetHouse = evidence?.targetHouseEvidenceAcceptance;
-  if (!targetHouse) return false;
-  if (targetHouse.ok === false) return false;
-  const { visualRows, dataQualityRows } = rowsFromTargetHouseAcceptance(targetHouse);
+function evidenceAcceptancePasses(evidence) {
+  const acceptance = evidence?.evidenceAcceptance;
+  if (!acceptance) return false;
+  if (acceptance.ok === false) return false;
+  const { visualRows, dataQualityRows } = rowsFromEvidenceAcceptance(acceptance);
   return allRowsPass(visualRows) && (dataQualityRows.length === 0 || allRowsPass(dataQualityRows));
 }
 
@@ -356,11 +356,11 @@ function deterministicEvidenceForRequirement({ item, check, category, evidence }
   const viewId = firstString(item?.viewId);
   const featureId = firstString(check?.featureId, item?.featureId);
   const feature = findRequiredFeature(evidence, featureId);
-  const visualRows = targetHouseVisualEvidenceForView(evidence, viewId);
+  const visualRows = visualEvidenceForView(evidence, viewId);
   const screenshots = screenshotEvidenceForView(evidence, viewId);
-  const visualPass = viewId ? allRowsPass(visualRows) : targetHouseAcceptancePasses(evidence);
+  const visualPass = viewId ? allRowsPass(visualRows) : evidenceAcceptancePasses(evidence);
   const evidencePaths = uniqueStrings(
-    evidencePathsFrom(evidence?.targetHouseEvidenceAcceptance),
+    evidencePathsFrom(evidence?.evidenceAcceptance),
     evidencePathsFrom(evidence?.cleanPassGate),
     evidencePathsFrom(evidence?.bimDataQualityReport),
     visualRows.flatMap(rowEvidencePaths),
@@ -393,12 +393,12 @@ function deterministicEvidenceForRequirement({ item, check, category, evidence }
   }
 
   if (itemId === 'global:silhouette' || itemId === 'global:artifacts') {
-    if (!targetHouseAcceptancePasses(evidence) && !visualPass) return null;
+    if (!evidenceAcceptancePasses(evidence) && !visualPass) return null;
     return {
       result: 'pass',
       status: 'evidence_pass',
       evidencePaths,
-      notes: ['Deterministic target-house view evidence covers the global semantic visual requirement.'],
+      notes: ['Deterministic view evidence covers the global semantic visual requirement.'],
       disposition: 'deterministic_evidence',
       featureTrace: null,
     };
@@ -414,20 +414,20 @@ function deterministicEvidenceForRequirement({ item, check, category, evidence }
       evidencePaths,
       notes: [
         feature
-          ? 'Deterministic target-house view evidence and required-feature trace cover this semantic visual row.'
-          : 'Deterministic target-house view evidence covers this semantic visual row.',
+          ? 'Deterministic view evidence and required-feature trace cover this semantic visual row.'
+          : 'Deterministic view evidence covers this semantic visual row.',
       ],
       disposition: 'deterministic_evidence',
       featureTrace: featureTraceFrom(feature, viewId, 'pass'),
     };
   }
 
-  if (visualPass || targetHouseAcceptancePasses(evidence)) {
+  if (visualPass || evidenceAcceptancePasses(evidence)) {
     return {
       result: 'pass',
       status: 'evidence_pass',
       evidencePaths,
-      notes: ['Deterministic target-house evidence covers this semantic visual row.'],
+      notes: ['Deterministic evidence covers this semantic visual row.'],
       disposition: 'deterministic_evidence',
       featureTrace: null,
     };

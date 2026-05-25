@@ -2643,6 +2643,5 @@ export function reduceSpireRoof(
 export * from './toolGrammarFamily';
 export * from './toolGrammarSiteDetail';
 
-
 // Re-export annotation/array/scale/roof/cloud/decal reducers extracted to toolGrammarAnnotation.
-export * from "./toolGrammarAnnotation";
+export * from './toolGrammarAnnotation';

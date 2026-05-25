@@ -96,7 +96,10 @@ export function activeFamilyId(ctx: PaletteContext): string | undefined {
   return (ctx as FamilyPaletteContext).activeFamilyId;
 }
 
-export function isShaftSelection(element: { id?: string; kind?: string }): element is ShaftSelection {
+export function isShaftSelection(element: {
+  id?: string;
+  kind?: string;
+}): element is ShaftSelection {
   return element.kind === 'shaft';
 }
 
@@ -2073,7 +2076,6 @@ registerCommand({
   isAvailable: hasSelection,
   invoke: (ctx) => ctx.toggleElementSidebar?.(),
 });
-
 
 // Display settings and beyond extracted into defaultCommandsDisplayAndExtras.ts
 import './defaultCommandsDisplayAndExtras';

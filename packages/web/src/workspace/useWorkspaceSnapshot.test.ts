@@ -18,16 +18,16 @@ describe('seedModelsFromBootstrap', () => {
           title: 'Seed Library',
           seedLibrary: true,
           kind: 'seed-library',
-          models: [{ id: 'seed-target-house-1', slug: 'target-house-1', revision: 42 }],
+          models: [{ id: 'seed-sample-1', slug: 'sample-1', revision: 42 }],
         },
       ],
     });
 
     expect(rows).toEqual([
       {
-        id: 'seed-target-house-1',
-        slug: 'target-house-1',
-        label: 'Seed Library / target-house-1',
+        id: 'seed-sample-1',
+        slug: 'sample-1',
+        label: 'Seed Library / sample-1',
         projectTitle: 'Seed Library',
         revision: 42,
       },

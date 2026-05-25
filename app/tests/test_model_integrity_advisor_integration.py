@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-import pytest
-
-from bim_ai.cmd.types import CommandBundle
 from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, Vec2Mm, WallElem
-from bim_ai.engine import try_commit_bundle
 from bim_ai.routes.deps import violations_wire
 
 
@@ -17,7 +10,7 @@ def _pt(x: float, y: float) -> Vec2Mm:
     return Vec2Mm(xMm=x, yMm=y)
 
 
-def _target_house_access_proxy_doc() -> Document:
+def _access_proxy_doc() -> Document:
     floor = FloorElem(
         id="ground-base-floor",
         levelId="hf-lvl-ground",
@@ -56,7 +49,7 @@ def _target_house_access_proxy_doc() -> Document:
 
 
 def test_snapshot_advisor_includes_hosted_opening_integrity_findings() -> None:
-    doc = _target_house_access_proxy_doc()
+    doc = _access_proxy_doc()
 
     rows = violations_wire(doc.elements)
     rule_ids = {row["ruleId"] for row in rows}
@@ -72,7 +65,7 @@ def test_snapshot_advisor_includes_hosted_opening_integrity_findings() -> None:
 
 
 def test_constructability_report_includes_model_integrity_findings() -> None:
-    doc = _target_house_access_proxy_doc()
+    doc = _access_proxy_doc()
 
     report = build_constructability_report(
         doc.elements,
@@ -86,39 +79,6 @@ def test_constructability_report_includes_model_integrity_findings() -> None:
     assert report["summary"]["severityCounts"]["error"] >= 1
 
 
-def test_target_house_ground_service_rooms_are_floor_contained() -> None:
-    repo_root = Path(__file__).resolve().parents[2]
-    bundle_path = repo_root / "seed-artifacts" / "target-house-1" / "bundle.json"
-    if not bundle_path.is_file():
-        pytest.skip("target-house-1 seed artifact not present")
-    bundle_payload = json.loads(bundle_path.read_text(encoding="utf-8"))
-    bundle = CommandBundle.model_validate({**bundle_payload, "parentRevision": 1})
-
-    ok, doc, _commands, violations, code = try_commit_bundle(
-        Document(revision=1, elements={}),  # type: ignore[arg-type]
-        bundle.commands,
-    )
-
-    assert ok, f"target-house-1 bundle replay failed: {code} {violations}"
-    assert doc is not None
-
-    report = build_constructability_report(
-        doc.elements,
-        revision=doc.revision,
-        profile="construction_readiness",
-    )
-    target_room_ids = {"hf-room-gf-bath-laundry", "hf-room-utility"}
-    target_findings = [
-        finding
-        for finding in report["findings"]
-        if finding.get("code") == "BIR-D06-FLOOR"
-        and target_room_ids.intersection(finding.get("elementIds") or [])
-    ]
-    containment_findings = [
-        finding
-        for finding in report["findings"]
-        if str(finding.get("ruleId") or "").startswith("room_containment")
-    ]
-
-    assert target_findings == []
-    assert containment_findings == []
+# The previous seed-artifact replay test was removed
+# 2026-05-25 along with that artifact; the engine-fidelity assertions it carried
+# live in the two unit tests above.

@@ -124,7 +124,7 @@ export type EvidenceArtifactSummary = {
       status: string;
     }[];
   } | null;
-  targetHouseFeatureCoverage: {
+  featureCoverage: {
     requiredFeatureCount: number;
     explicitElementCoverageCount: number;
     resolvedElementCoverageCount: number;
@@ -211,7 +211,7 @@ export function parseEvidenceArtifact(
     consistencyClosure: null,
     prdCloseoutCrossCorrelation: null,
     evidenceFreshness: null,
-    targetHouseFeatureCoverage: null,
+    featureCoverage: null,
     methodologyDashboard: null,
     regenerationGuidance: null,
   });
@@ -845,16 +845,16 @@ export function parseEvidenceArtifact(
       };
     }
 
-    let targetHouseFeatureCoverage: EvidenceArtifactSummary['targetHouseFeatureCoverage'] = null;
+    let featureCoverage: EvidenceArtifactSummary['featureCoverage'] = null;
     const thRaw =
-      payload.schemaVersion === 'target-house-feature-coverage-dashboard.v1'
+      payload.schemaVersion === 'feature-coverage-dashboard.v1'
         ? payload
-        : (payload.targetHouseFeatureCoverageDashboard_v1 ??
+        : (payload.featureCoverageDashboard_v1 ??
           payload.featureCoverageDashboard ??
-          payload.targetHouseFeatureCoverageDashboard);
+          payload.featureCoverageDashboard);
     if (thRaw && typeof thRaw === 'object') {
       const dashboard = thRaw as Record<string, unknown>;
-      if (dashboard.schemaVersion === 'target-house-feature-coverage-dashboard.v1') {
+      if (dashboard.schemaVersion === 'feature-coverage-dashboard.v1') {
         const rowsRaw = Array.isArray(dashboard.rows) ? dashboard.rows : [];
         const rows = rowsRaw
           .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
@@ -882,7 +882,7 @@ export function parseEvidenceArtifact(
             };
           })
           .filter((row) => row.featureId);
-        targetHouseFeatureCoverage = {
+        featureCoverage = {
           requiredFeatureCount:
             typeof dashboard.requiredFeatureCount === 'number' &&
             Number.isFinite(dashboard.requiredFeatureCount)
@@ -929,14 +929,14 @@ export function parseEvidenceArtifact(
 
     let methodologyDashboard: EvidenceArtifactSummary['methodologyDashboard'] = null;
     const methodologyRaw =
-      payload.schemaVersion === 'target-house-methodology-dashboard.v1'
+      payload.schemaVersion === 'methodology-dashboard.v1'
         ? payload
-        : (payload.targetHouseMethodologyDashboard_v1 ??
+        : (payload.methodologyDashboard_v1 ??
           payload.methodologyDashboard ??
-          payload.targetHouseMethodologyDashboard);
+          payload.methodologyDashboard);
     if (methodologyRaw && typeof methodologyRaw === 'object') {
       const dashboard = methodologyRaw as Record<string, unknown>;
-      if (dashboard.schemaVersion === 'target-house-methodology-dashboard.v1') {
+      if (dashboard.schemaVersion === 'methodology-dashboard.v1') {
         const summary =
           dashboard.summary && typeof dashboard.summary === 'object'
             ? (dashboard.summary as Record<string, unknown>)
@@ -1032,7 +1032,7 @@ export function parseEvidenceArtifact(
       consistencyClosure,
       prdCloseoutCrossCorrelation,
       evidenceFreshness,
-      targetHouseFeatureCoverage,
+      featureCoverage,
       methodologyDashboard,
       regenerationGuidance,
     };
@@ -1061,7 +1061,7 @@ export function parseEvidenceArtifact(
       consistencyClosure: null,
       prdCloseoutCrossCorrelation: null,
       evidenceFreshness: null,
-      targetHouseFeatureCoverage: null,
+      featureCoverage: null,
       methodologyDashboard: null,
       regenerationGuidance: null,
     };

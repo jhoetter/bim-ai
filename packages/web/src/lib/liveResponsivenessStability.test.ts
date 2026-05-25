@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  TARGET_HOUSE_LIVE_INTERACTION_CONTRACT,
-  TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION,
+  LIVE_INTERACTION_CONTRACT,
+  LIVE_RESPONSIVENESS_SCHEMA_VERSION,
   classifyLiveResponsivenessChurnEvent,
-  classifyTargetHouseLiveResponsiveness,
-  targetHouseLiveResponsivenessContract,
-  type TargetHouseLiveInteractionId,
+  classifyLiveResponsiveness,
+  liveResponsivenessContract,
+  type LiveInteractionId,
 } from './liveResponsivenessStability';
 
-function passingInteraction(id: TargetHouseLiveInteractionId) {
+function passingInteraction(id: LiveInteractionId) {
   return {
     id,
     completed: true,
@@ -19,11 +19,11 @@ function passingInteraction(id: TargetHouseLiveInteractionId) {
   };
 }
 
-describe('targetHouseLiveResponsivenessContract', () => {
-  it('defines deterministic target-house interaction and websocket churn acceptance', () => {
-    const contract = targetHouseLiveResponsivenessContract();
+describe('liveResponsivenessContract', () => {
+  it('defines deterministic interaction and websocket churn acceptance', () => {
+    const contract = liveResponsivenessContract();
 
-    expect(TARGET_HOUSE_LIVE_INTERACTION_CONTRACT.map((row) => row.id)).toEqual([
+    expect(LIVE_INTERACTION_CONTRACT.map((row) => row.id)).toEqual([
       'orbit',
       'select',
       'lens-switch',
@@ -41,11 +41,11 @@ describe('targetHouseLiveResponsivenessContract', () => {
   });
 });
 
-describe('classifyTargetHouseLiveResponsiveness', () => {
+describe('classifyLiveResponsiveness', () => {
   it('passes complete live-browser metrics and keeps benign Vite reconnect noise separate', () => {
-    const report = classifyTargetHouseLiveResponsiveness({
-      targetId: 'target-house-1',
-      interactions: TARGET_HOUSE_LIVE_INTERACTION_CONTRACT.map((row) => passingInteraction(row.id)),
+    const report = classifyLiveResponsiveness({
+      targetId: 'sample-1',
+      interactions: LIVE_INTERACTION_CONTRACT.map((row) => passingInteraction(row.id)),
       websocketChurn: [
         { kind: 'vite-proxy-error', code: 'EPIPE', count: 3 },
         { kind: 'vite-proxy-error', code: 'ECONNRESET', count: 2 },
@@ -53,7 +53,7 @@ describe('classifyTargetHouseLiveResponsiveness', () => {
       ],
     });
 
-    expect(report.schemaVersion).toBe(TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION);
+    expect(report.schemaVersion).toBe(LIVE_RESPONSIVENESS_SCHEMA_VERSION);
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({
       requiredInteractionCount: 5,
@@ -72,7 +72,7 @@ describe('classifyTargetHouseLiveResponsiveness', () => {
   });
 
   it('fails missing or over-budget interaction metrics with stable issue codes', () => {
-    const report = classifyTargetHouseLiveResponsiveness({
+    const report = classifyLiveResponsiveness({
       interactions: [
         {
           id: 'orbit',
@@ -111,8 +111,8 @@ describe('classifyTargetHouseLiveResponsiveness', () => {
   });
 
   it('blocks actionable websocket churn while leaving EPIPE and ECONNRESET non-blocking', () => {
-    const report = classifyTargetHouseLiveResponsiveness({
-      interactions: TARGET_HOUSE_LIVE_INTERACTION_CONTRACT.map((row) => passingInteraction(row.id)),
+    const report = classifyLiveResponsiveness({
+      interactions: LIVE_INTERACTION_CONTRACT.map((row) => passingInteraction(row.id)),
       websocketChurn: [
         { kind: 'vite-proxy-error', code: 'EPIPE', count: 10 },
         { kind: 'vite-proxy-error', code: 'ECONNRESET', count: 4 },

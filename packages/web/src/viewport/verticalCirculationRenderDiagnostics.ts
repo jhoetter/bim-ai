@@ -18,15 +18,14 @@ export type VerticalCirculationRenderDiagnosticsOptions = {
   viewId?: string | null;
   requireRailingHostedEdges?: boolean;
   guardHeightThresholdMm?: number;
-  targetHouseTerraceGuardrails?: boolean;
+  terraceGuardrails?: boolean;
 };
 
 const DEFAULT_GUARD_HEIGHT_THRESHOLD_MM = 760;
 const TRACKER_SLAB = ['BIR-I02', 'BIR-I03', 'BIR-J03', 'BIR-E01'];
 const TRACKER_STAIR = ['BIR-I02', 'BIR-I03', 'BIR-J03', 'BIR-J04', 'BIR-E01'];
 const TRACKER_RAILING = ['BIR-I02', 'BIR-I03', 'BIR-J04', 'BIR-E03'];
-const TARGET_HOUSE_TERRACE_RE =
-  /(?:target-house|terrace|loggia|roof[-_\s]?court|balcony|guardrail)/i;
+const TERRACE_RE = /(?:terrace|loggia|roof[-_\s]?court|balcony|guardrail)/i;
 
 export function diagnoseVerticalCirculationRendering(
   elementsById: Record<string, Element | undefined>,
@@ -62,8 +61,8 @@ export function diagnoseVerticalCirculationRendering(
     diagnostics.push(...diagnoseRailingRendering(railing, elementsById, options));
   }
 
-  if (options.targetHouseTerraceGuardrails !== false) {
-    diagnostics.push(...diagnoseTargetHouseGuardrailRisks(floors, elements, levelsById, options));
+  if (options.terraceGuardrails !== false) {
+    diagnostics.push(...diagnoseTerraceGuardrailRisks(floors, elements, levelsById, options));
   }
 
   return diagnostics.sort((a, b) => {
@@ -289,7 +288,7 @@ function diagnoseRailingRendering(
   return diagnostics;
 }
 
-function diagnoseTargetHouseGuardrailRisks(
+function diagnoseTerraceGuardrailRisks(
   floors: FloorElement[],
   elements: Element[],
   levelsById: Map<string, LevelElement>,
@@ -302,7 +301,7 @@ function diagnoseTargetHouseGuardrailRisks(
   const diagnostics: RendererDiagnostic[] = [];
 
   for (const floor of floors) {
-    if (!isTargetHouseTerraceFloor(floor)) continue;
+    if (!isTerraceFloor(floor)) continue;
     const levelElev = levelsById.get(floor.levelId)?.elevationMm ?? 0;
     const requiresGuard =
       levelElev >= threshold ||
@@ -316,11 +315,11 @@ function diagnoseTargetHouseGuardrailRisks(
     if (guardCoverage <= 0) {
       diagnostics.push(
         diagnostic({
-          code: 'renderer.railing_geometry.target_house_guardrail_missing',
-          ruleId: 'renderer_target_house_guardrail_missing',
+          code: 'renderer.railing_geometry.terrace_guardrail_missing',
+          ruleId: 'renderer_terrace_guardrail_missing',
           severity: 'error',
           message:
-            'Target-house terrace/loggia floor has no nearby guardrail path, so evidence can render an unsafe exposed edge.',
+            'Terrace/loggia floor has no nearby guardrail path, so evidence can render an unsafe exposed edge.',
           elementIds: [floor.id],
           trackerItems: TRACKER_RAILING,
           options,
@@ -329,11 +328,11 @@ function diagnoseTargetHouseGuardrailRisks(
     } else if (guardCoverage < 0.35) {
       diagnostics.push(
         diagnostic({
-          code: 'renderer.railing_geometry.target_house_guardrail_partial',
-          ruleId: 'renderer_target_house_guardrail_partial',
+          code: 'renderer.railing_geometry.terrace_guardrail_partial',
+          ruleId: 'renderer_terrace_guardrail_partial',
           severity: 'warning',
           message:
-            'Target-house terrace/loggia guardrail path covers too little of the exposed boundary for reliable evidence.',
+            'Terrace/loggia guardrail path covers too little of the exposed boundary for reliable evidence.',
           elementIds: [floor.id],
           trackerItems: TRACKER_RAILING,
           options,
@@ -526,8 +525,8 @@ function booleanProp(element: Element, propName: string): boolean {
   return props[propName] === true;
 }
 
-function isTargetHouseTerraceFloor(floor: FloorElement): boolean {
-  return TARGET_HOUSE_TERRACE_RE.test(`${floor.id} ${floor.name}`);
+function isTerraceFloor(floor: FloorElement): boolean {
+  return TERRACE_RE.test(`${floor.id} ${floor.name}`);
 }
 
 function railingCoverageForFloorBoundary(floor: FloorElement, railings: RailingElement[]): number {

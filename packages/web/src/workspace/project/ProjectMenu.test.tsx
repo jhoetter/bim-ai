@@ -75,16 +75,16 @@ describe('<ProjectMenu /> — T-03', () => {
         open={true}
         onOpenChange={onOpenChange}
         seedModels={[
-          { id: 'm1', slug: 'target-house-1', label: 'Seed Library / target-house-1', revision: 1 },
+          { id: 'm1', slug: 'sample-1', label: 'Seed Library / sample-1', revision: 1 },
           { id: 'm2', slug: 'villa-2', label: 'Seed Library / villa-2', revision: 4 },
         ]}
         activeSeedModelId="m2"
         onPickSeedModel={onPickSeedModel}
       />,
     );
-    expect(getByTestId('project-menu-seed-target-house-1')).toBeTruthy();
+    expect(getByTestId('project-menu-seed-sample-1')).toBeTruthy();
     expect(getByText('active')).toBeTruthy();
-    fireEvent.click(getByTestId('project-menu-seed-target-house-1'));
+    fireEvent.click(getByTestId('project-menu-seed-sample-1'));
     expect(onPickSeedModel).toHaveBeenCalledWith('m1');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

@@ -115,7 +115,7 @@ describe('roof opening viewport cut wiring', () => {
     expect(sawRoofOpening).toBe(true);
   });
 
-  it('renders the target-house east-slope cutout without relying on CSG', () => {
+  it('renders the east-slope cutout without relying on CSG', () => {
     const elementsById: Record<string, Element> = {
       'lvl-0': level0,
       'wall-1': wall3m,

@@ -217,8 +217,6 @@ async function buildSketchPhaseAcceptance({
   ]);
   const requiredFeaturePack = await loadJsonEvidenceFromDirs(evidenceDir, defaultEvidenceDir, [
     'required-features.json',
-    'target-house-required-features.json',
-    'target-house-1-required-features.json',
   ]);
   const visualDriftEvidence = await loadJsonEvidenceFromDirs(evidenceDir, defaultEvidenceDir, [
     'visual-drift.json',

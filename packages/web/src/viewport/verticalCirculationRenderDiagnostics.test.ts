@@ -215,11 +215,11 @@ describe('diagnoseVerticalCirculationRendering', () => {
     expect(codes(diagnostics)).not.toContain('renderer.railing_geometry.missing_host_edge');
   });
 
-  it('flags target-house terrace and loggia floors without enough guardrail evidence', () => {
+  it('flags terrace and loggia floors without enough guardrail evidence', () => {
     const terrace: FloorElem = {
       ...upperFloor,
       id: 'hf-roof-court-floor',
-      name: 'Target-house roof court terrace',
+      name: 'Roof court terrace',
     };
     const shortGuard: RailingElem = {
       kind: 'railing',
@@ -241,15 +241,15 @@ describe('diagnoseVerticalCirculationRendering', () => {
       [shortGuard.id]: shortGuard,
     });
 
-    expect(codes(missing)).toContain('renderer.railing_geometry.target_house_guardrail_missing');
-    expect(codes(partial)).toContain('renderer.railing_geometry.target_house_guardrail_partial');
+    expect(codes(missing)).toContain('renderer.railing_geometry.terrace_guardrail_missing');
+    expect(codes(partial)).toContain('renderer.railing_geometry.terrace_guardrail_partial');
   });
 
-  it('accepts target-house terrace guardIds with hosted-edge railing evidence', () => {
+  it('accepts terrace guardIds with hosted-edge railing evidence', () => {
     const terrace: FloorElem = {
       ...upperFloor,
       id: 'hf-roof-court-floor',
-      name: 'Target-house roof court terrace',
+      name: 'Roof court terrace',
       props: { guardIds: ['rail-roof-court'] },
     };
     const guard: RailingElem = {
@@ -271,12 +271,8 @@ describe('diagnoseVerticalCirculationRendering', () => {
       [guard.id]: guard,
     });
 
-    expect(codes(diagnostics)).not.toContain(
-      'renderer.railing_geometry.target_house_guardrail_partial',
-    );
-    expect(codes(diagnostics)).not.toContain(
-      'renderer.railing_geometry.target_house_guardrail_missing',
-    );
+    expect(codes(diagnostics)).not.toContain('renderer.railing_geometry.terrace_guardrail_partial');
+    expect(codes(diagnostics)).not.toContain('renderer.railing_geometry.terrace_guardrail_missing');
   });
 });
 

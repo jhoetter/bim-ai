@@ -9,11 +9,11 @@ import {
   RENDERER_WORKLOAD_KINDS,
 } from './rendererCostProfile';
 
-const TARGET_HOUSE_SNAPSHOT_PATH = path.join(
+const SEED_SNAPSHOT_PATH = path.join(
   path.resolve(__dirname, '../../../..'),
-  'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+  'seed-artifacts/sample-1/evidence/live-run-current/snapshot.json',
 );
-const targetHouseIt = fs.existsSync(TARGET_HOUSE_SNAPSHOT_PATH) ? it : it.skip;
+const seededIt = fs.existsSync(SEED_SNAPSHOT_PATH) ? it : it.skip;
 
 function wall(id: string): Element {
   return {
@@ -190,10 +190,10 @@ describe('renderer cost profile — BIR-L02/BIR-J10', () => {
     expect(fullScene.workloads.update.dominantFactors).toContain('full-scene elements:81');
   });
 
-  targetHouseIt(
-    'accepts target-house orbit/select/lens-switch/advisor-open budgets deterministically — BIR-N07',
+  seededIt(
+    'accepts orbit/select/lens-switch/advisor-open budgets deterministically — BIR-N07',
     () => {
-      const snapshot = JSON.parse(fs.readFileSync(TARGET_HOUSE_SNAPSHOT_PATH, 'utf8')) as {
+      const snapshot = JSON.parse(fs.readFileSync(SEED_SNAPSHOT_PATH, 'utf8')) as {
         elements: Record<string, Element>;
       };
       const elements = Object.values(snapshot.elements);

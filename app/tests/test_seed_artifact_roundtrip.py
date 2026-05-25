@@ -3,17 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
-import pytest
-
-from bim_ai.constraints_evaluation import evaluate
 from bim_ai.elements import LevelElem, ProjectBasePointElem
-from bim_ai.room_access_integrity import check_room_access_integrity
 from scripts import seed
 from scripts.seed import (
     EMPTY_SEED_MODEL_ID,
@@ -25,8 +20,6 @@ from scripts.seed import (
     _purge_disposable_projects,
     seed_async,
 )
-
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def test_seed_artifact_bundle_commits_minimal_model(tmp_path: Path) -> None:
@@ -77,14 +70,14 @@ def test_seed_artifact_bundle_commits_minimal_model(tmp_path: Path) -> None:
 
 
 def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> None:
-    artifact_dir = tmp_path / "target-house-3"
+    artifact_dir = tmp_path / "sample-house-3"
     artifact_dir.mkdir()
     (artifact_dir / "manifest.json").write_text(
         json.dumps(
             {
                 "schemaVersion": "bim-ai.seed-artifact.v1",
-                "name": "target-house-3",
-                "title": "Target House 3",
+                "name": "sample-house-3",
+                "title": "Sample House 3",
                 "bundle": "bundle.json",
             }
         ),
@@ -159,7 +152,7 @@ def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> Non
     monkeypatch.setattr(seed, "_delete_model_records", delete_model_records_stub)
     monkeypatch.setattr(seed, "SessionMaker", lambda: FakeSession())
 
-    asyncio.run(seed_async(name="target-house-3", root=tmp_path, clear_only=False))
+    asyncio.run(seed_async(name="sample-house-3", root=tmp_path, clear_only=False))
 
     assert ("clear_project", SEED_PROJECT_ID) in calls
     assert ("purge_disposable", SEED_PROJECT_ID) in calls
@@ -272,95 +265,10 @@ def test_seed_purge_removes_disposable_local_evidence_projects(monkeypatch) -> N
     assert cleared == [disposable_id]
 
 
-def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> None:
-    artifact_dir = REPO_ROOT / "seed-artifacts" / "target-house-1"
-    if not (artifact_dir / "manifest.json").is_file():
-        pytest.skip("target-house-1 seed artifact not present")
-    manifest_text = (artifact_dir / "manifest.json").read_text(encoding="utf8")
-    assert "/Users/" not in manifest_text
-    assert str(REPO_ROOT) not in manifest_text
-
-    artifact = _load_artifact(artifact_dir)
-    manifest = artifact.manifest
-
-    assert manifest["name"] == "target-house-1"
-    assert manifest["sourceRoot"] == "source"
-    assert manifest["bundle"] == "bundle.json"
-    assert (artifact_dir / "source" / "target-house-seed.md").is_file()
-
-    bundle = json.loads((artifact_dir / "bundle.json").read_text(encoding="utf8"))
-    commands = bundle["commands"]
-    command_types = {command["type"] for command in commands}
-    command_ids = {
-        str(command.get("id") or command.get("elementId") or command.get("wallId") or "")
-        for command in commands
-    }
-    assert "createMass" not in command_types
-    assert "deleteElement" not in command_types
-    assert "createRoofOpening" in command_types
-    assert manifest["commandCount"] == len(commands)
-    assert (
-        manifest["bundleSha256"]
-        == hashlib.sha256((artifact_dir / "bundle.json").read_bytes()).hexdigest()
-    )
-    main_stair = next(
-        command
-        for command in commands
-        if command.get("type") == "createStair" and command.get("id") == "main-stair"
-    )
-    assert main_stair["runEndMm"] == {"xMm": 6500, "yMm": 2000}
-    assert main_stair["boundaryMm"] == [
-        {"xMm": 1300, "yMm": 1100},
-        {"xMm": 2300, "yMm": 1100},
-        {"xMm": 2300, "yMm": 3200},
-        {"xMm": 1300, "yMm": 3200},
-    ]
-    assert "front-loggia-wide-opening" not in command_ids
-    assert not any(
-        command_id.startswith(("access-wall-", "access-door-")) for command_id in command_ids
-    )
-
-    front_left = next(
-        command
-        for command in commands
-        if command.get("type") == "createWall"
-        and command.get("id") == "hf-upper-wrapper-shell-wall-01"
-    )
-    assert front_left["start"] == {"xMm": 0, "yMm": -450}
-    assert front_left["end"] == {"xMm": 1200, "yMm": -450}
-    assert any(command.get("id") == "hf-upper-wrapper-shell-wall-01-right" for command in commands)
-    assert (artifact_dir / "evidence" / "target-house-1.recipe.json").is_file()
-    assert (artifact_dir / "evidence" / "sketch-ir.json").is_file()
-
-    doc, wire = _materialize(artifact)
-
-    assert manifest["commandCount"] > 0
-    assert doc.revision >= 1
-    assert isinstance(doc.elements.get("hf-pbp"), ProjectBasePointElem)
-    assert isinstance(doc.elements.get("hf-lvl-ground"), LevelElem)
-    assert "hf-roof-main" in wire["elements"]
-    assert "hf-roof-court-opening" in wire["elements"]
-    assert not [
-        finding for finding in check_room_access_integrity(wire) if finding.code == "BIR-D05-EGRESS"
-    ]
-
-    target_warning_rules = {
-        "constructability_proxy_unsupported",
-        "door_operation_clearance_conflict",
-        "floor_overlap",
-        "room_boundary_open",
-        "room_unenclosed",
-        "room_without_door_access",
-        "schedule_not_placed_on_sheet",
-        "schedule_opening_family_type_incomplete",
-        "schedule_opening_host_wall_type_incomplete",
-    }
-    target_warnings = [
-        violation.rule_id
-        for violation in evaluate(doc.elements, constructability_profile="residential")
-        if violation.severity == "warning" and violation.rule_id in target_warning_rules
-    ]
-    assert target_warnings == []
+# The previous seed-artifact portability test was removed
+# 2026-05-25 along with that artifact. The portability surface it covered
+# (manifest schema, bundle hash, materialization) is exercised by the
+# tmp-path roundtrip above.
 
 
 def test_delete_model_records_cascades_in_fk_safe_order() -> None:

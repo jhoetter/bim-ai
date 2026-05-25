@@ -1562,4 +1562,3 @@ registerCommand({
     // Start screen is shown at app launch; templates and recent projects are in ProjectSetupDialog
   },
 });
-

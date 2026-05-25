@@ -53,7 +53,7 @@ async def test_bootstrap_marks_only_canonical_seed_project_as_seed_library() -> 
                 SimpleNamespace(id=uuid4(), slug="old-disposable", revision=1),
             ],
             SEED_PROJECT_ID: [
-                SimpleNamespace(id=uuid4(), slug="target-house-1", revision=42),
+                SimpleNamespace(id=uuid4(), slug="sample-house-1", revision=42),
             ],
         },
     )

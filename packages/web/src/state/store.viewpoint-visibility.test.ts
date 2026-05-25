@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('coerceElement — viewpoint visibility / coordination', () => {
-  it('preserves asymmetric target-house roof fields and hosted roof openings', () => {
+  it('preserves asymmetric roof fields and hosted roof openings', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({
       modelId: 'm1',

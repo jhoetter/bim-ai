@@ -1830,12 +1830,9 @@ function semanticVisualEvidenceFromRun({
     return null;
   }
   return {
-    targetHouseEvidenceAcceptance:
-      evidenceRun?.targetHouseEvidenceAcceptance ??
-      evidenceRun?.targetHouseAcceptanceReport ??
-      evidenceRun?.targetHouseEvidenceReport ??
-      null,
-    cleanPassGate: evidenceRun?.cleanPassGate ?? evidenceRun?.targetHouseCleanPassGate ?? null,
+    evidenceAcceptance:
+      evidenceRun?.evidenceAcceptance ?? evidenceRun?.acceptanceReport ?? null,
+    cleanPassGate: evidenceRun?.cleanPassGate ?? null,
     screenshotManifest: screenshotManifest ?? evidenceRun?.screenshotManifest ?? null,
     visualGateReport: visualGateReport ?? evidenceRun?.visualGateReport ?? null,
     bimDataQualityReport:
@@ -1932,7 +1929,7 @@ function evidenceSidecarDirs(evidenceRun, outDir) {
   for (const filePath of [
     evidenceRun?.visualChecklist?.sourcePath,
     evidenceRun?.evidenceFreshness?.sourcePath,
-    evidenceRun?.targetHouseEvidenceAcceptance?.sourcePath,
+    evidenceRun?.evidenceAcceptance?.sourcePath,
     evidenceRun?.cleanPassGate?.sourcePath,
   ]) {
     if (typeof filePath === 'string' && filePath.trim()) dirs.add(path.dirname(filePath));
@@ -1949,14 +1946,14 @@ async function withSemanticVisualSidecarEvidence(evidenceRun, outDir) {
   const dirs = evidenceSidecarDirs(evidenceRun, outDir);
   if (dirs.length === 0) return evidenceRun;
   const [
-    targetHouseEvidenceAcceptance,
+    evidenceAcceptance,
     cleanPassGate,
     screenshotManifest,
     visualGateReport,
   ] = await Promise.all([
-    evidenceRun.targetHouseEvidenceAcceptance
-      ? Promise.resolve(evidenceRun.targetHouseEvidenceAcceptance)
-      : readFirstJsonArtifact(dirs, ['target-house-evidence-acceptance.json']),
+    evidenceRun.evidenceAcceptance
+      ? Promise.resolve(evidenceRun.evidenceAcceptance)
+      : readFirstJsonArtifact(dirs, ['evidence-acceptance.json']),
     evidenceRun.cleanPassGate
       ? Promise.resolve(evidenceRun.cleanPassGate)
       : readFirstJsonArtifact(dirs, ['clean-pass-gate.json']),
@@ -1969,7 +1966,7 @@ async function withSemanticVisualSidecarEvidence(evidenceRun, outDir) {
   ]);
   return {
     ...evidenceRun,
-    targetHouseEvidenceAcceptance,
+    evidenceAcceptance,
     cleanPassGate,
     screenshotManifest,
     visualGateReport,

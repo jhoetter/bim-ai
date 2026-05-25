@@ -128,7 +128,7 @@ test('unchecked checklist item can pass from deterministic acceptance evidence a
     checklist: checklistWithCheck({ status: 'unchecked' }),
     evidence: {
       // Field name is the legacy engine contract (see sketch-semantic-visual-gate.mjs).
-      targetHouseEvidenceAcceptance: {
+      evidenceAcceptance: {
         ok: true,
         visualRows: [
           {

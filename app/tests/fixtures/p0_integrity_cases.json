@@ -14,12 +14,10 @@
       ]
     },
     "geometry_integrity_regression": {
-      "description": "Reduced geometry-integrity symptoms (rooms / openings / roof cuts) that must continue to fail until the modeled defect is fixed. Cases originated as observations during the retired target-house-1 methodology; the assertions are engine-fidelity, not methodology-specific.",
+      "description": "Reduced geometry-integrity symptoms (rooms / openings / roof cuts) that must continue to fail until the modeled defect is fixed. The assertions are engine-fidelity, not methodology-specific.",
       "auditable": true,
       "ownerTrackerItems": ["BIR-O02", "BIR-W01"],
-      "canonicalEvidencePaths": [
-        "app/tests/fixtures/p0_integrity_cases.json"
-      ],
+      "canonicalEvidencePaths": ["app/tests/fixtures/p0_integrity_cases.json"],
       "proofHooks": [
         "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q"
       ]
@@ -70,9 +68,7 @@
       "description": "Sketch-derived cases that preserve realistic customer ambiguity while declaring expected rule outcomes.",
       "auditable": true,
       "ownerTrackerItems": ["BIR-M06", "BIR-W01"],
-      "canonicalEvidencePaths": [
-        "packages/cli/sketchAcceptanceProvenance.test.mjs"
-      ],
+      "canonicalEvidencePaths": ["packages/cli/sketchAcceptanceProvenance.test.mjs"],
       "proofHooks": ["node --test packages/cli/sketchAcceptanceProvenance.test.mjs"]
     }
   },

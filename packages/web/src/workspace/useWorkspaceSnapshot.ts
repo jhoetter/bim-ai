@@ -379,9 +379,7 @@ export function useWorkspaceSnapshot(historicalCommitId?: string | null): {
         setActiveSeedLabel(`Historical · ${commitId.slice(0, 8)}…`);
       } catch (err) {
         if (!mountedRef.current) return;
-        setSeedError(
-          err instanceof Error ? err.message : 'Failed to load historical snapshot',
-        );
+        setSeedError(err instanceof Error ? err.message : 'Failed to load historical snapshot');
       } finally {
         if (mountedRef.current) setSeedLoading(false);
       }

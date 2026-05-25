@@ -24,7 +24,7 @@ export type RoofOpeningRenderDiagnostic = {
 export type RoofOpeningRenderDiagnosticOptions = {
   /** Distance used by the current analytic asymmetric-gable path to snap authored opening edges. */
   analyticEdgeToleranceMm?: number;
-  /** Target-house-critical openings close to, but not aligned with, an edge should block evidence. */
+  /** Critical-evidence openings close to, but not aligned with, an edge should block evidence. */
   criticalEdgeBandMm?: number;
   /** Large occupied roof courts/terraces need explicit render-support metadata. */
   largeOccupiedOpeningAreaMm2?: number;
@@ -132,7 +132,7 @@ export function diagnoseRoofOpeningRendering(
     if (analyticUnsupported) {
       diagnostics.push({
         ruleId: 'roof_opening_render_analytic_cut_unsupported',
-        severity: isTargetHouseCritical(opening) ? 'error' : 'warning',
+        severity: isCriticalEvidenceFeature(opening) ? 'error' : 'warning',
         elementIds: [opening.id, host.id],
         message:
           `Roof opening "${opening.id}" is likely unsupported by the current analytic roof-cut path: ` +
@@ -143,7 +143,7 @@ export function diagnoseRoofOpeningRendering(
 
     const edgeDistanceMm = minDistanceToPolygonEdges(boundary, footprint);
     if (
-      isTargetHouseCritical(opening) &&
+      isCriticalEvidenceFeature(opening) &&
       edgeDistanceMm > analyticEdgeToleranceMm &&
       edgeDistanceMm < criticalEdgeBandMm
     ) {
@@ -152,7 +152,7 @@ export function diagnoseRoofOpeningRendering(
         severity: 'error',
         elementIds: [opening.id, host.id],
         message:
-          `Target-house-critical roof opening "${opening.id}" is close to a roof edge ` +
+          `Critical-evidence roof opening "${opening.id}" is close to a roof edge ` +
           'but not aligned closely enough for reliable evidence rendering.',
         details: {
           minDistanceToRoofEdgeMm: edgeDistanceMm,
@@ -269,12 +269,12 @@ function isOccupiedRoofVoid(opening: RoofOpeningElement): boolean {
   return /\b(terrace|court|roof[-_\s]?terrace|loggia|occupied)\b/.test(lowerTokens(opening));
 }
 
-function isTargetHouseCritical(opening: RoofOpeningElement): boolean {
+function isCriticalEvidenceFeature(opening: RoofOpeningElement): boolean {
   const props = readProps(opening);
-  if (booleanProp(props, 'targetHouseCritical') || booleanProp(props, 'criticalEvidenceFeature')) {
+  if (booleanProp(props, 'criticalEvidenceFeature')) {
     return true;
   }
-  return /\b(target[-_\s]?house|terrace|court|roof[-_\s]?terrace)\b/.test(lowerTokens(opening));
+  return /\b(terrace|court|roof[-_\s]?terrace)\b/.test(lowerTokens(opening));
 }
 
 function readProps(opening: RoofOpeningElement): Record<string, unknown> {

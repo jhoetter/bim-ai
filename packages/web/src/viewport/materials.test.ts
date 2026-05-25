@@ -168,8 +168,8 @@ describe('resolveViewportPaintBundle', () => {
 });
 
 describe('MAT-01 — material registry', () => {
-  // Every key listed in target-house-seed.md §1.7 (Material + Colour Summary)
-  // plus the legacy keys that authoring code already references must resolve.
+  // Every key listed in the material/colour summary plus the legacy keys
+  // that authoring code already references must resolve.
   const REQUIRED_KEYS = [
     // Cladding
     'timber_cladding',

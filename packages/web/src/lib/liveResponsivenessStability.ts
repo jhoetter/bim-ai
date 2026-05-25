@@ -5,10 +5,9 @@ import {
   classifyViteProxySocketError,
 } from './wsStability';
 
-export const TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION =
-  'target-house-live-responsiveness.v1';
+export const LIVE_RESPONSIVENESS_SCHEMA_VERSION = 'live-responsiveness.v1';
 
-export type TargetHouseLiveInteractionId =
+export type LiveInteractionId =
   | 'orbit'
   | 'select'
   | 'lens-switch'
@@ -26,7 +25,7 @@ export interface LiveInteractionBudget {
 }
 
 export interface LiveInteractionContract {
-  id: TargetHouseLiveInteractionId;
+  id: LiveInteractionId;
   trackerRefs: readonly ('BIR-L02' | 'BIR-N11')[];
   description: string;
   budget: LiveInteractionBudget;
@@ -78,7 +77,7 @@ export interface LiveResponsivenessEvidenceInput {
 
 export interface LiveInteractionAcceptanceRow {
   trackerRefs: readonly ('BIR-L02' | 'BIR-N11')[];
-  interaction: TargetHouseLiveInteractionId;
+  interaction: LiveInteractionId;
   status: LiveResponsivenessStatus;
   issues: string[];
   budget: LiveInteractionBudget;
@@ -104,8 +103,8 @@ export interface LiveResponsivenessChurnRow {
   reason: string;
 }
 
-export interface TargetHouseLiveResponsivenessReport {
-  schemaVersion: typeof TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION;
+export interface LiveResponsivenessReport {
+  schemaVersion: typeof LIVE_RESPONSIVENESS_SCHEMA_VERSION;
   targetId: string;
   ok: boolean;
   summary: {
@@ -130,11 +129,11 @@ export interface TargetHouseLiveResponsivenessReport {
   websocketChurnRows: LiveResponsivenessChurnRow[];
 }
 
-export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionContract[] = [
+export const LIVE_INTERACTION_CONTRACT: readonly LiveInteractionContract[] = [
   {
     id: 'orbit',
     trackerRefs: ['BIR-L02', 'BIR-N11'],
-    description: 'Orbit the target-house primary 3D view without visible main-thread stalls.',
+    description: 'Orbit the primary 3D view without visible main-thread stalls.',
     budget: {
       maxLatencyMs: 150,
       p95LatencyMs: 80,
@@ -145,8 +144,7 @@ export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionCon
   {
     id: 'select',
     trackerRefs: ['BIR-L02', 'BIR-N11'],
-    description:
-      'Select a target-house door/window or envelope element and render inspector state.',
+    description: 'Select a door/window or envelope element and render inspector state.',
     budget: {
       maxLatencyMs: 250,
       p95LatencyMs: 160,
@@ -157,7 +155,7 @@ export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionCon
   {
     id: 'lens-switch',
     trackerRefs: ['BIR-L02', 'BIR-N11'],
-    description: 'Switch from architecture to coordination lens on target-house-1.',
+    description: 'Switch from architecture to coordination lens on the active model.',
     budget: {
       maxLatencyMs: 500,
       p95LatencyMs: 300,
@@ -168,7 +166,7 @@ export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionCon
   {
     id: 'advisor-open',
     trackerRefs: ['BIR-L02', 'BIR-N11'],
-    description: 'Open Advisor with target-house findings loaded.',
+    description: 'Open Advisor with findings loaded.',
     budget: {
       maxLatencyMs: 500,
       p95LatencyMs: 300,
@@ -179,7 +177,7 @@ export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionCon
   {
     id: 'advisor-close',
     trackerRefs: ['BIR-L02', 'BIR-N11'],
-    description: 'Close Advisor and return focus to the target-house viewport.',
+    description: 'Close Advisor and return focus to the viewport.',
     budget: {
       maxLatencyMs: 350,
       p95LatencyMs: 220,
@@ -189,9 +187,9 @@ export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT: readonly LiveInteractionCon
   },
 ];
 
-export function targetHouseLiveResponsivenessContract(): TargetHouseLiveResponsivenessReport['contract'] {
+export function liveResponsivenessContract(): LiveResponsivenessReport['contract'] {
   return {
-    interactions: TARGET_HOUSE_LIVE_INTERACTION_CONTRACT,
+    interactions: LIVE_INTERACTION_CONTRACT,
     websocketChurnPolicy: {
       benignViteProxySocketCodes: ['EPIPE', 'ECONNRESET'],
       actionableAppCloseCodes: [4403, 4404],
@@ -201,16 +199,16 @@ export function targetHouseLiveResponsivenessContract(): TargetHouseLiveResponsi
   };
 }
 
-export function classifyTargetHouseLiveResponsiveness(
+export function classifyLiveResponsiveness(
   evidence: LiveResponsivenessEvidenceInput,
-): TargetHouseLiveResponsivenessReport {
+): LiveResponsivenessReport {
   const interactions = new Map(
     (Array.isArray(evidence.interactions) ? evidence.interactions : []).map((entry) => [
       entry.id,
       entry,
     ]),
   );
-  const interactionRows = TARGET_HOUSE_LIVE_INTERACTION_CONTRACT.map((contract) =>
+  const interactionRows = LIVE_INTERACTION_CONTRACT.map((contract) =>
     classifyInteraction(contract, interactions.get(contract.id)),
   );
   const websocketChurnRows = (
@@ -220,11 +218,9 @@ export function classifyTargetHouseLiveResponsiveness(
   const websocketChurnOk = websocketChurnRows.every((row) => row.classification === 'benign');
 
   return {
-    schemaVersion: TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION,
+    schemaVersion: LIVE_RESPONSIVENESS_SCHEMA_VERSION,
     targetId:
-      typeof evidence.targetId === 'string' && evidence.targetId
-        ? evidence.targetId
-        : 'target-house-1',
+      typeof evidence.targetId === 'string' && evidence.targetId ? evidence.targetId : 'sample-1',
     ok: interactionOk && websocketChurnOk,
     summary: {
       requiredInteractionCount: interactionRows.length,
@@ -239,7 +235,7 @@ export function classifyTargetHouseLiveResponsiveness(
       interactionOk,
       websocketChurnOk,
     },
-    contract: targetHouseLiveResponsivenessContract(),
+    contract: liveResponsivenessContract(),
     interactionRows,
     websocketChurnRows,
   };

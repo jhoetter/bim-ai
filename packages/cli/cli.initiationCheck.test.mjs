@@ -591,8 +591,8 @@ test('acceptance can resolve stale unchecked semantic visual rows from determini
     visualGateReport,
     visualChecklist: { schemaVersion: 'sketch-to-bim-visual-checklist.v0', items: [] },
     evidenceRun: {
-      // targetHouseEvidenceAcceptance is the legacy engine contract field.
-      targetHouseEvidenceAcceptance: {
+      // evidenceAcceptance is the engine contract field.
+      evidenceAcceptance: {
         ok: true,
         visualRows: ir.requiredViews.map((view) => ({
           trackerRef: 'BIR-N05',
@@ -1582,7 +1582,7 @@ test('seed-dsl compile rejects invalid site grading definitions', async () => {
 });
 
 test.skip(
-  'initiation-golden runs the preflight golden suite (manifest spec/data/sketch-to-bim-golden-seeds.json retired with target-house 2026-05-25)',
+  'initiation-golden runs the preflight golden suite (manifest spec/data/sketch-to-bim-golden-seeds.json retired 2026-05-25)',
   async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-golden-'));
     const manifestPath = path.resolve(__dirname, '../../spec/data/sketch-to-bim-golden-seeds.json');

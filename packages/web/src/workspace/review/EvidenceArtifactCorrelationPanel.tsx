@@ -488,10 +488,10 @@ export function EvidenceArtifactCorrelationPanel({
       {evidenceArtifactSummary.methodologyDashboard ? (
         <div
           className="mt-2 rounded border border-border/60 bg-background/30 p-2"
-          data-testid="target-house-methodology-dashboard"
+          data-testid="methodology-dashboard"
         >
           <div className="text-[10px] font-semibold text-muted">
-            Target-house methodology dashboard (target-house-methodology-dashboard.v1)
+            Methodology dashboard (methodology-dashboard.v1)
           </div>
           <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
             <li>
@@ -516,7 +516,7 @@ export function EvidenceArtifactCorrelationPanel({
           {evidenceArtifactSummary.methodologyDashboard.rows.length > 0 ? (
             <ul
               className="mt-2 list-disc space-y-0.5 ps-4 text-[10px] text-muted"
-              data-testid="target-house-methodology-dashboard-rows"
+              data-testid="methodology-dashboard-rows"
             >
               {evidenceArtifactSummary.methodologyDashboard.rows.slice(0, 8).map((row) => (
                 <li key={row.trackerId}>
@@ -538,51 +538,44 @@ export function EvidenceArtifactCorrelationPanel({
           ) : null}
         </div>
       ) : null}
-      {evidenceArtifactSummary.targetHouseFeatureCoverage ? (
+      {evidenceArtifactSummary.featureCoverage ? (
         <div
           className="mt-2 rounded border border-border/60 bg-background/30 p-2"
-          data-testid="target-house-feature-coverage-dashboard"
+          data-testid="feature-coverage-dashboard"
         >
           <div className="text-[10px] font-semibold text-muted">
-            Target-house feature coverage (target-house-feature-coverage-dashboard.v1)
+            Feature coverage (feature-coverage-dashboard.v1)
           </div>
           <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
             <li>
               required:{' '}
-              <strong>
-                {evidenceArtifactSummary.targetHouseFeatureCoverage.requiredFeatureCount}
-              </strong>
+              <strong>{evidenceArtifactSummary.featureCoverage.requiredFeatureCount}</strong>
               {' / '}resolved:{' '}
               <strong>
-                {evidenceArtifactSummary.targetHouseFeatureCoverage.explicitElementCoverageCount +
-                  evidenceArtifactSummary.targetHouseFeatureCoverage.resolvedElementCoverageCount}
+                {evidenceArtifactSummary.featureCoverage.explicitElementCoverageCount +
+                  evidenceArtifactSummary.featureCoverage.resolvedElementCoverageCount}
               </strong>
               {' / '}semantic-only:{' '}
               <strong>
-                {evidenceArtifactSummary.targetHouseFeatureCoverage.semanticSelectorCoverageCount}
+                {evidenceArtifactSummary.featureCoverage.semanticSelectorCoverageCount}
               </strong>
               {' / '}missing:{' '}
-              <strong>
-                {evidenceArtifactSummary.targetHouseFeatureCoverage.missingElementCoverageCount}
-              </strong>
+              <strong>{evidenceArtifactSummary.featureCoverage.missingElementCoverageCount}</strong>
             </li>
             <li>
-              blockers:{' '}
-              <strong>{evidenceArtifactSummary.targetHouseFeatureCoverage.blockerCount}</strong>
+              blockers: <strong>{evidenceArtifactSummary.featureCoverage.blockerCount}</strong>
               {' / '}open findings:{' '}
-              <strong>{evidenceArtifactSummary.targetHouseFeatureCoverage.openFindingCount}</strong>
+              <strong>{evidenceArtifactSummary.featureCoverage.openFindingCount}</strong>
               {' / '}missing screenshots:{' '}
-              <strong>
-                {evidenceArtifactSummary.targetHouseFeatureCoverage.screenshotMissingCount}
-              </strong>
+              <strong>{evidenceArtifactSummary.featureCoverage.screenshotMissingCount}</strong>
             </li>
           </ul>
-          {evidenceArtifactSummary.targetHouseFeatureCoverage.rows.length > 0 ? (
+          {evidenceArtifactSummary.featureCoverage.rows.length > 0 ? (
             <ul
               className="mt-2 list-disc space-y-0.5 ps-4 text-[10px] text-muted"
-              data-testid="target-house-feature-coverage-rows"
+              data-testid="feature-coverage-rows"
             >
-              {evidenceArtifactSummary.targetHouseFeatureCoverage.rows.slice(0, 6).map((row) => (
+              {evidenceArtifactSummary.featureCoverage.rows.slice(0, 6).map((row) => (
                 <li key={row.featureId}>
                   <code className="font-mono text-[9px]">{row.featureId}</code>
                   {' — '}

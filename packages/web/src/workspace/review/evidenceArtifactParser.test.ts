@@ -501,10 +501,10 @@ describe('parseEvidenceArtifact — regenerationGuidance', () => {
   });
 });
 
-describe('parseEvidenceArtifact — target-house feature coverage dashboard', () => {
-  it('parses direct target-house feature coverage dashboard artifacts', () => {
+describe('parseEvidenceArtifact — feature coverage dashboard', () => {
+  it('parses direct feature coverage dashboard artifacts', () => {
     const payload = {
-      schemaVersion: 'target-house-feature-coverage-dashboard.v1',
+      schemaVersion: 'feature-coverage-dashboard.v1',
       requiredFeatureCount: 2,
       explicitElementCoverageCount: 1,
       resolvedElementCoverageCount: 0,
@@ -536,7 +536,7 @@ describe('parseEvidenceArtifact — target-house feature coverage dashboard', ()
 
     const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
 
-    expect(r.targetHouseFeatureCoverage).toMatchObject({
+    expect(r.featureCoverage).toMatchObject({
       requiredFeatureCount: 2,
       explicitElementCoverageCount: 1,
       semanticSelectorCoverageCount: 1,
@@ -545,7 +545,7 @@ describe('parseEvidenceArtifact — target-house feature coverage dashboard', ()
       blockerCount: 1,
       evidenceAcceptanceOk: false,
     });
-    expect(r.targetHouseFeatureCoverage?.rows[0]).toMatchObject({
+    expect(r.featureCoverage?.rows[0]).toMatchObject({
       featureId: 'roof_terrace_cutout',
       elementCoverageStatus: 'semantic_selectors_only',
       blockerCount: 1,
@@ -553,10 +553,10 @@ describe('parseEvidenceArtifact — target-house feature coverage dashboard', ()
     });
   });
 
-  it('parses target-house dashboard from closeout lineage payloads', () => {
+  it('parses feature coverage dashboard from closeout lineage payloads', () => {
     const payload = {
       featureCoverageDashboard: {
-        schemaVersion: 'target-house-feature-coverage-dashboard.v1',
+        schemaVersion: 'feature-coverage-dashboard.v1',
         rows: [
           {
             featureId: 'main_mass',
@@ -571,15 +571,15 @@ describe('parseEvidenceArtifact — target-house feature coverage dashboard', ()
 
     const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
 
-    expect(r.targetHouseFeatureCoverage?.requiredFeatureCount).toBe(1);
-    expect(r.targetHouseFeatureCoverage?.resolvedElementCoverageCount).toBe(1);
+    expect(r.featureCoverage?.requiredFeatureCount).toBe(1);
+    expect(r.featureCoverage?.resolvedElementCoverageCount).toBe(1);
   });
 });
 
-describe('parseEvidenceArtifact — target-house methodology dashboard', () => {
+describe('parseEvidenceArtifact — methodology dashboard', () => {
   it('parses methodology rows while preserving sketch acceptance boundary', () => {
     const payload = {
-      schemaVersion: 'target-house-methodology-dashboard.v1',
+      schemaVersion: 'methodology-dashboard.v1',
       ok: false,
       acceptanceLayer: 'sketch_methodology_not_normal_advisor',
       normalAdvisorBoundary:
@@ -597,7 +597,7 @@ describe('parseEvidenceArtifact — target-house methodology dashboard', () => {
           trackerId: 'BIR-O04',
           title: 'end-to-end acceptance rehearsal',
           ok: true,
-          evidence: ['target-house-1-final-closeout-manifest.json'],
+          evidence: ['sample-1-final-closeout-manifest.json'],
         },
       ],
     };

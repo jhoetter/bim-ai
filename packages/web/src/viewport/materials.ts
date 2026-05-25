@@ -648,7 +648,7 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     displayName: 'Air gap',
   },
 
-  // ── MAT-01 cladding variants (target-house §1.7) ──────────────────────
+  // ── MAT-01 cladding variants ──────────────────────────────────────────
   cladding_beige_grey: {
     key: 'cladding_beige_grey',
     baseColor: '#c4b59a',

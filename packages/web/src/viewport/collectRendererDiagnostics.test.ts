@@ -9,11 +9,11 @@ import {
   collectRendererDiagnostics,
 } from './collectRendererDiagnostics';
 
-const TARGET_HOUSE_SNAPSHOT_PATH = resolve(
+const SEED_SNAPSHOT_PATH = resolve(
   process.cwd(),
-  '../../seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+  '../../seed-artifacts/sample-1/evidence/live-run-current/snapshot.json',
 );
-const targetHouseIt = existsSync(TARGET_HOUSE_SNAPSHOT_PATH) ? it : it.skip;
+const seededIt = existsSync(SEED_SNAPSHOT_PATH) ? it : it.skip;
 
 function wall(
   overrides: Partial<Extract<Element, { kind: 'wall' }>> = {},
@@ -77,7 +77,7 @@ describe('collectRendererDiagnostics', () => {
     const roofOpening = {
       kind: 'roof_opening',
       id: 'hf-roof-court-opening',
-      name: 'target-house terrace court cutout',
+      name: 'terrace court cutout',
       hostRoofId: roof.id,
       boundaryMm: [
         { xMm: 6000, yMm: 1000 },
@@ -124,7 +124,7 @@ describe('collectRendererDiagnostics', () => {
         stair,
       ],
       csgEnabled: false,
-      viewId: 'target-house-evidence',
+      viewId: 'sample-evidence',
       evidence: { gitHead: 'abc123', rendererBuild: 'test-renderer' },
     });
 
@@ -136,7 +136,7 @@ describe('collectRendererDiagnostics', () => {
           issueClass: 'renderer-unsupported',
           feature: 'roof-opening',
           elementIds: ['hf-roof-court-opening', 'hf-roof-main'],
-          viewId: 'target-house-evidence',
+          viewId: 'sample-evidence',
         }),
         expect.objectContaining({
           code: 'renderer.wall_cut.wall.opening.csg.disabled',
@@ -532,7 +532,7 @@ describe('collectRendererDiagnostics', () => {
     } satisfies Extract<Element, { kind: 'family_instance' }>;
     const placedAsset = {
       kind: 'placed_asset',
-      id: 'target-house-missing-asset',
+      id: 'missing-asset',
       name: 'Target-house missing furniture marker',
       assetId: 'missing-asset',
       levelId: 'level-1',
@@ -545,7 +545,7 @@ describe('collectRendererDiagnostics', () => {
 
     const diagnostics = collectRendererDiagnostics({
       elements: [familyInstance, placedAsset, wallWithUnknownMaterial],
-      viewId: 'target-house-render-status-golden',
+      viewId: 'render-status-golden',
       evidence: { source: 'test' },
     });
     const byCode = Object.fromEntries(
@@ -563,7 +563,7 @@ describe('collectRendererDiagnostics', () => {
       severity: 'error',
       issueClass: 'renderer-unsupported',
       feature: 'asset-instance',
-      elementIds: ['target-house-missing-asset'],
+      elementIds: ['missing-asset'],
     });
     expect(byCode['renderer.material.unresolved']).toMatchObject({
       severity: 'error',
@@ -655,10 +655,10 @@ describe('collectRendererDiagnostics', () => {
     });
   });
 
-  targetHouseIt(
-    'goldens target-house rooms, room separations, slab openings, and hosted-cut fallback diagnostics',
+  seededIt(
+    'goldens rooms, room separations, slab openings, and hosted-cut fallback diagnostics',
     () => {
-      const snapshot = JSON.parse(readFileSync(TARGET_HOUSE_SNAPSHOT_PATH, 'utf8')) as {
+      const snapshot = JSON.parse(readFileSync(SEED_SNAPSHOT_PATH, 'utf8')) as {
         elements: Record<string, Element>;
       };
       const elements = Object.values(snapshot.elements);
@@ -675,8 +675,8 @@ describe('collectRendererDiagnostics', () => {
 
       const diagnostics = collectRendererDiagnostics({
         elements,
-        viewId: 'target-house-renderer-golden',
-        evidence: { source: 'test', artifactPath: TARGET_HOUSE_SNAPSHOT_PATH },
+        viewId: 'renderer-golden',
+        evidence: { source: 'test', artifactPath: SEED_SNAPSHOT_PATH },
         csgEnabled: true,
       });
       const roomAndSlabCodes = diagnostics
@@ -713,149 +713,146 @@ describe('collectRendererDiagnostics', () => {
     },
   );
 
-  targetHouseIt(
-    'goldens W25-B roof/floor/stair/room render statuses and stress packet proof',
-    () => {
-      const snapshot = JSON.parse(readFileSync(TARGET_HOUSE_SNAPSHOT_PATH, 'utf8')) as {
-        elements: Record<string, Element>;
-      };
-      const elements = Object.values(snapshot.elements);
-      const kindCounts = elements.reduce<Record<string, number>>((acc, element) => {
-        acc[element.kind] = (acc[element.kind] ?? 0) + 1;
-        return acc;
-      }, {});
+  seededIt('goldens W25-B roof/floor/stair/room render statuses and stress packet proof', () => {
+    const snapshot = JSON.parse(readFileSync(SEED_SNAPSHOT_PATH, 'utf8')) as {
+      elements: Record<string, Element>;
+    };
+    const elements = Object.values(snapshot.elements);
+    const kindCounts = elements.reduce<Record<string, number>>((acc, element) => {
+      acc[element.kind] = (acc[element.kind] ?? 0) + 1;
+      return acc;
+    }, {});
 
-      expect(kindCounts).toMatchObject({
-        roof: 1,
-        floor: 4,
-        slab_opening: 1,
-        stair: 1,
-        railing: 3,
-        room: 13,
-        room_separation: 52,
-      });
+    expect(kindCounts).toMatchObject({
+      roof: 1,
+      floor: 4,
+      slab_opening: 1,
+      stair: 1,
+      railing: 3,
+      room: 13,
+      room_separation: 52,
+    });
 
-      const packet = collectRendererDiagnosticPacket({
-        elements,
-        generatedAtIso: '2026-05-19T00:00:00.000Z',
-        modelRevision: 'target-house-w25-b',
-        gitHead: 'wave-25-b',
-        rendererBuild: 'viewport-test',
-        viewId: 'w25-b-renderer-element-stress-golden',
-        evidence: { source: 'test', agentWave: 'W25-B', artifactPath: TARGET_HOUSE_SNAPSHOT_PATH },
-        csgEnabled: true,
-        lensMode: 'architecture',
-        previousLensMode: 'structure',
-        selectedElementIds: ['main-stair'],
-        changedElementIds: ['main-stair', 'main-stair-upper-opening'],
-        budgetsMs: { orbit: 1, update: 1 },
-        stressBudgets: {
-          warningElementCount: 100,
-          errorElementCount: 1000,
-          warningOpeningCount: 20,
-          errorOpeningCount: 1000,
-          warningEvidenceViewCount: 8,
-          errorEvidenceViewCount: 100,
-          workloadWarningBudgetRatio: 0.1,
-        },
-      });
-      const statusById = Object.fromEntries(
-        (packet.elementRenderStatuses ?? []).map((status) => [status.elementId, status]),
-      );
+    const packet = collectRendererDiagnosticPacket({
+      elements,
+      generatedAtIso: '2026-05-19T00:00:00.000Z',
+      modelRevision: 'sample-w25-b',
+      gitHead: 'wave-25-b',
+      rendererBuild: 'viewport-test',
+      viewId: 'w25-b-renderer-element-stress-golden',
+      evidence: { source: 'test', agentWave: 'W25-B', artifactPath: SEED_SNAPSHOT_PATH },
+      csgEnabled: true,
+      lensMode: 'architecture',
+      previousLensMode: 'structure',
+      selectedElementIds: ['main-stair'],
+      changedElementIds: ['main-stair', 'main-stair-upper-opening'],
+      budgetsMs: { orbit: 1, update: 1 },
+      stressBudgets: {
+        warningElementCount: 100,
+        errorElementCount: 1000,
+        warningOpeningCount: 20,
+        errorOpeningCount: 1000,
+        warningEvidenceViewCount: 8,
+        errorEvidenceViewCount: 100,
+        workloadWarningBudgetRatio: 0.1,
+      },
+    });
+    const statusById = Object.fromEntries(
+      (packet.elementRenderStatuses ?? []).map((status) => [status.elementId, status]),
+    );
 
-      expect(statusById['hf-roof-main']).toMatchObject({
-        geometry: {
-          feature: 'roof-geometry',
-          state: 'partial',
-          implementation: 'native',
-          diagnosticCodes: [],
-          blocking: false,
-        },
-      });
-      expect(statusById['upper-wrapper-floor']).toMatchObject({
-        geometry: {
-          feature: 'native-geometry',
-          state: 'supported',
-          implementation: 'native',
-          diagnosticCodes: [],
-        },
-      });
-      expect(statusById['main-stair-upper-opening']).toMatchObject({
-        geometry: {
-          feature: 'slab-opening-cut',
-          state: 'partial',
-          implementation: 'analytic-cut',
-          diagnosticCodes: [],
-        },
-      });
-      expect(statusById['main-stair']).toMatchObject({
-        geometry: {
-          feature: 'stair-geometry',
-          state: 'partial',
-          implementation: 'native',
-          diagnosticCodes: [],
-        },
-      });
-      expect(statusById['hf-roof-court-railing']).toMatchObject({
-        geometry: {
-          feature: 'railing-geometry',
-          state: 'partial',
-          diagnosticCodes: [],
-          blocking: false,
-        },
-      });
-      expect(statusById['room_gf_living']).toMatchObject({
-        geometry: {
-          feature: 'room-visualization',
-          state: 'supported',
-          implementation: 'diagnostic-overlay',
-          diagnosticCodes: [],
-        },
-      });
-      expect(statusById['sep-room-living-1']).toMatchObject({
-        geometry: {
-          feature: 'diagnostic-helper',
-          state: 'supported',
-          implementation: 'diagnostic-overlay',
-        },
-      });
+    expect(statusById['hf-roof-main']).toMatchObject({
+      geometry: {
+        feature: 'roof-geometry',
+        state: 'partial',
+        implementation: 'native',
+        diagnosticCodes: [],
+        blocking: false,
+      },
+    });
+    expect(statusById['upper-wrapper-floor']).toMatchObject({
+      geometry: {
+        feature: 'native-geometry',
+        state: 'supported',
+        implementation: 'native',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['main-stair-upper-opening']).toMatchObject({
+      geometry: {
+        feature: 'slab-opening-cut',
+        state: 'partial',
+        implementation: 'analytic-cut',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['main-stair']).toMatchObject({
+      geometry: {
+        feature: 'stair-geometry',
+        state: 'partial',
+        implementation: 'native',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['hf-roof-court-railing']).toMatchObject({
+      geometry: {
+        feature: 'railing-geometry',
+        state: 'partial',
+        diagnosticCodes: [],
+        blocking: false,
+      },
+    });
+    expect(statusById['room_gf_living']).toMatchObject({
+      geometry: {
+        feature: 'room-visualization',
+        state: 'supported',
+        implementation: 'diagnostic-overlay',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['sep-room-living-1']).toMatchObject({
+      geometry: {
+        feature: 'diagnostic-helper',
+        state: 'supported',
+        implementation: 'diagnostic-overlay',
+      },
+    });
 
-      const w25BlockingCodes = packet.diagnostics
-        .filter((diagnostic) =>
-          [
-            'renderer.roof_geometry.',
-            'renderer.roof_opening.',
-            'renderer.slab_opening.',
-            'renderer.stair_geometry.',
-            'renderer.railing_geometry.',
-            'renderer.room_visualization.',
-            'renderer.room_separation.',
-          ].some((prefix) => diagnostic.code.startsWith(prefix)),
-        )
-        .map((diagnostic) => diagnostic.code);
-      expect(w25BlockingCodes).toEqual([]);
-      expect(packet.diagnostics).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            code: 'renderer.stress.element_count.near_limit',
-            feature: 'renderer-performance',
-            trackerItems: ['BIR-J10', 'BIR-L02'],
-            evidence: expect.objectContaining({
-              source: 'test',
-              agentWave: 'W25-B',
-              details: expect.objectContaining({
-                count: elements.length,
-                warningThreshold: 100,
-              }),
+    const w25BlockingCodes = packet.diagnostics
+      .filter((diagnostic) =>
+        [
+          'renderer.roof_geometry.',
+          'renderer.roof_opening.',
+          'renderer.slab_opening.',
+          'renderer.stair_geometry.',
+          'renderer.railing_geometry.',
+          'renderer.room_visualization.',
+          'renderer.room_separation.',
+        ].some((prefix) => diagnostic.code.startsWith(prefix)),
+      )
+      .map((diagnostic) => diagnostic.code);
+    expect(w25BlockingCodes).toEqual([]);
+    expect(packet.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'renderer.stress.element_count.near_limit',
+          feature: 'renderer-performance',
+          trackerItems: ['BIR-J10', 'BIR-L02'],
+          evidence: expect.objectContaining({
+            source: 'test',
+            agentWave: 'W25-B',
+            details: expect.objectContaining({
+              count: elements.length,
+              warningThreshold: 100,
             }),
           }),
-          expect.objectContaining({
-            code: 'renderer.profile.orbit.budget_exceeded',
-            feature: 'renderer-performance',
-            viewId: 'w25-b-renderer-element-stress-golden',
-          }),
-        ]),
-      );
-    },
-  );
+        }),
+        expect.objectContaining({
+          code: 'renderer.profile.orbit.budget_exceeded',
+          feature: 'renderer-performance',
+          viewId: 'w25-b-renderer-element-stress-golden',
+        }),
+      ]),
+    );
+  });
 });

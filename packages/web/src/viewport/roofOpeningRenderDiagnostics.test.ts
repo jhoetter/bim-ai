@@ -31,10 +31,10 @@ const flatRoof: RoofElem = {
   ],
 };
 
-const asymmetricTargetHouseRoof: RoofElem = {
+const asymmetricRoof: RoofElem = {
   kind: 'roof',
   id: 'hf-roof-main',
-  name: 'Target-house folded asymmetric shell',
+  name: 'Folded asymmetric shell',
   referenceLevelId: 'lvl-0',
   roofGeometryMode: 'asymmetric_gable',
   ridgeAxis: 'z',
@@ -118,7 +118,7 @@ describe('roof opening render diagnostics', () => {
       hostRoofId: flatRoof.id,
       props: {
         occupiedRoofVoid: true,
-        targetHouseCritical: true,
+        criticalEvidenceFeature: true,
       },
       boundaryMm: [
         { xMm: 1000, yMm: 1000 },
@@ -163,13 +163,13 @@ describe('roof opening render diagnostics', () => {
     ).not.toContain('roof_opening_render_occupied_void_metadata_missing');
   });
 
-  it('catches target-house asymmetric roof cutouts that stop short of the east edge', () => {
+  it('catches asymmetric roof cutouts that stop short of the east edge', () => {
     const roofCut = opening({
       id: 'hf-roof-court-opening',
-      name: 'Target-house roof court / terrace opening',
-      hostRoofId: asymmetricTargetHouseRoof.id,
+      name: 'Roof court / terrace opening',
+      hostRoofId: asymmetricRoof.id,
       props: {
-        targetHouseCritical: true,
+        criticalEvidenceFeature: true,
         occupiedRoofVoid: true,
       },
       boundaryMm: [
@@ -182,7 +182,7 @@ describe('roof opening render diagnostics', () => {
 
     const diagnostics = diagnoseRoofOpeningRendering({
       [level0.id]: level0,
-      [asymmetricTargetHouseRoof.id]: asymmetricTargetHouseRoof,
+      [asymmetricRoof.id]: asymmetricRoof,
       [roofCut.id]: roofCut,
     });
 
@@ -207,10 +207,10 @@ describe('roof opening render diagnostics', () => {
   it('does not flag the current asymmetric analytic path when the opening aligns to the edge', () => {
     const roofCut = opening({
       id: 'hf-roof-court-opening',
-      name: 'Target-house roof court / terrace opening',
-      hostRoofId: asymmetricTargetHouseRoof.id,
+      name: 'Roof court / terrace opening',
+      hostRoofId: asymmetricRoof.id,
       props: {
-        targetHouseCritical: true,
+        criticalEvidenceFeature: true,
         occupiedRoofVoid: true,
         renderSupport: {
           cut: true,
@@ -232,7 +232,7 @@ describe('roof opening render diagnostics', () => {
 
     const ruleIds = rules({
       [level0.id]: level0,
-      [asymmetricTargetHouseRoof.id]: asymmetricTargetHouseRoof,
+      [asymmetricRoof.id]: asymmetricRoof,
       [roofCut.id]: roofCut,
     });
 
