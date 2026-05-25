@@ -329,6 +329,19 @@ class CreateRoofCmd(BaseModel):
             "clipped_gable",
         ):
             return "half_gable"
+        # ISSUE-110: accept common aliases for the Zeltdach / Pyramidendach.
+        if value in (
+            "pyramid",
+            "pyramidal",
+            "pyramid_roof",
+            "pyramidal_roof",
+            "zelt",
+            "zeltdach",
+            "pyramidendach",
+            "pavilion_roof",
+            "tent_roof",
+        ):
+            return "pyramidal_hip"
         # ISSUE-112: aliases for the Mansarddach (Mansard / French roof).
         if value in (
             "mansard_roof",

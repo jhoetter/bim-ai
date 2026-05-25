@@ -813,12 +813,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             rf.roof_geometry_mode == "mono_pitch_offset"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
         )
-        # ISSUE-112: Mansarddach — IFC4's IfcRoofTypeEnum has an explicit
-        # MANSARD_ROOF token (see buildingSMART IFC4 documentation). The
-        # body extrusion in v0 reuses the flat-slab fallback (the mansard
-        # silhouette lives in the renderer + Pset round-trip below); the
-        # round-trip Pset records the lower/upper pitches and the knee
-        # height so authoritative replay reconstructs the same Mansard.
+        # ISSUE-110: Zeltdach / Pyramidendach — flag for IfcRoof.PredefinedType = HIP_ROOF.
+        use_pyramidal_hip_body = (
+            rf.roof_geometry_mode == "pyramidal_hip"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
+        # ISSUE-112: Mansarddach — IFC4 MANSARD_ROOF.
         use_mansard_body = (
             rf.roof_geometry_mode == "mansard"
             and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
@@ -1328,25 +1328,21 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
-        # ISSUE-112: Mansarddach maps to IFC4's MANSARD_ROOF (explicit enum
-        # in IfcRoofTypeEnum — see buildingSMART IFC4 documentation for
-        # IfcRoof). The body extrusion in v0 reuses the flat-slab fallback;
-        # the renderer + Pset round-trip drive the steep-skirt / shallow-cap
-        # silhouette and Mansardgauben.
+        # ISSUE-110: Zeltdach maps to IFC4 HIP_ROOF.
+        if use_pyramidal_hip_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "HIP_ROOF"
+            except (RuntimeError, ValueError):
+                pass
+
+        # ISSUE-112: Mansarddach maps to IFC4 MANSARD_ROOF.
         if use_mansard_body and hasattr(roof_ent, "PredefinedType"):
             try:
                 roof_ent.PredefinedType = "MANSARD_ROOF"
             except (RuntimeError, ValueError):
-                # Schema rejects the keyword; leave the default.
                 pass
 
-        # ISSUE-114: Tonnendach (barrel) maps to IFC4's BARREL_ROOF. The
-        # buildingSMART IFC4 IfcRoofTypeEnum enumerates BARREL_ROOF explicitly
-        # for a vault/cylindrical-segment roof. The geometry body for the
-        # barrel mode is deferred (renderer still uses the planar slab
-        # fallback for IFC export in v0); the PredefinedType lets downstream
-        # consumers (Solibri / IDS) identify the Tonnendach intent even when
-        # the body is the fallback prism.
+        # ISSUE-114: Tonnendach maps to IFC4 BARREL_ROOF.
         if (
             rf.roof_geometry_mode == "barrel"
             and hasattr(roof_ent, "PredefinedType")
@@ -1376,7 +1372,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rf.roof_type_id:
             bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
         bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
-        if use_gable_body or use_mono_pitch_body or use_mono_pitch_offset_body:
+        if (
+            use_gable_body
+            or use_mono_pitch_body
+            or use_mono_pitch_offset_body
+            or use_pyramidal_hip_body
+        ):
             bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
                 f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )

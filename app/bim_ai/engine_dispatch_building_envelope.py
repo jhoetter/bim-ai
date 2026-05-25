@@ -49,6 +49,7 @@ from bim_ai.engine import (
     assert_valid_l_shape_footprint_mm,
     assert_valid_mansard_footprint_mm,
     assert_valid_mono_pitch_footprint_mm,
+    assert_valid_pyramidal_hip_footprint_mm,
     edge_profile_run_path_mm,
     new_id,
     outer_rect_extent,
@@ -151,10 +152,13 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 assert_valid_half_gable_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
+            elif cmd.roof_geometry_mode == "pyramidal_hip":
+                # ISSUE-110 — Zeltdach / Pyramidendach.
+                assert_valid_pyramidal_hip_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
             elif cmd.roof_geometry_mode == "mansard":
-                # ISSUE-112 — Mansarddach: rectangular footprint, steep
-                # lower skirt + shallow upper cap. Mansardgauben sit on the
-                # lower slope.
+                # ISSUE-112 — Mansarddach.
                 assert_valid_mansard_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )

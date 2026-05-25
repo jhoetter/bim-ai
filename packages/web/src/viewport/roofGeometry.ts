@@ -215,6 +215,94 @@ export function _buildGableGeometry(
 }
 
 /**
+ * ISSUE-110 — Zeltdach / Pyramidendach. Four triangular roof planes meet at
+ * a single apex above the centroid of the footprint rectangle (degenerate
+ * hip whose ridge collapses to a point — zero ridge length).
+ *
+ * Topology: 5 unique vertices (4 eave corners + 1 apex) and exactly 4
+ * triangular faces. Each face is constructed from one footprint edge up to
+ * the apex; winding chosen so outward normals point away from the centroid.
+ *
+ * Apex height: derived from the SHORT half-span so the steeper of the two
+ * possible faces still hits `slopeRad` exactly. For a perfect square all
+ * four faces share the same pitch; for a non-square rectangle the two
+ * long-side faces end up shallower because the apex is fixed above the
+ * centroid (this matches Stadtvilla-style real-world pyramid hips).
+ */
+export function _buildPyramidalHipGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  // Apex sits above the centroid; rise derived from the short half-span so
+  // the steeper pair of faces matches `slopeRad` exactly. Long-side faces
+  // pitch is implicit (shallower for non-square rectangles).
+  const halfSpanX = (ox1 - ox0) / 2;
+  const halfSpanZ = (oz1 - oz0) / 2;
+  const shortHalfSpan = Math.min(halfSpanX, halfSpanZ);
+  const apexY = eaveY + shortHalfSpan * Math.tan(slopeRad);
+  const apexX = (ox0 + ox1) / 2;
+  const apexZ = (oz0 + oz1) / 2;
+
+  // 4 eave corners (clockwise when viewed from +Y) + 1 apex. Triangles wound
+  // so the outward normal points away from the centroid for each face.
+  const positions: number[] = [
+    // South face (eave edge along z = oz0, looking outward toward -Z):
+    // vertices SW -> SE -> apex.
+    ox0,
+    eaveY,
+    oz0,
+    ox1,
+    eaveY,
+    oz0,
+    apexX,
+    apexY,
+    apexZ,
+    // East face (eave edge along x = ox1, looking outward toward +X):
+    // SE -> NE -> apex.
+    ox1,
+    eaveY,
+    oz0,
+    ox1,
+    eaveY,
+    oz1,
+    apexX,
+    apexY,
+    apexZ,
+    // North face (eave edge along z = oz1, looking outward toward +Z):
+    // NE -> NW -> apex.
+    ox1,
+    eaveY,
+    oz1,
+    ox0,
+    eaveY,
+    oz1,
+    apexX,
+    apexY,
+    apexZ,
+    // West face (eave edge along x = ox0, looking outward toward -X):
+    // NW -> SW -> apex.
+    ox0,
+    eaveY,
+    oz1,
+    ox0,
+    eaveY,
+    oz0,
+    apexX,
+    apexY,
+    apexZ,
+  ];
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
  * ISSUE-105 — Krüppelwalmdach (half-hipped roof). Hybrid of a gable and a hip:
  * the full gable triangle is built first, then the TOP fraction of each gable
  * end is trimmed and replaced by a small hip face sloping back to the ridge.

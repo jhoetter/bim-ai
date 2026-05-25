@@ -19,20 +19,16 @@ RoofGeometryMode = Literal[
     # joined by a horizontal clerestory wall band. Footprint must be an
     # axis-aligned rectangle; the step position partitions the long axis.
     "mono_pitch_offset",
+    # ISSUE-110: Zeltdach / Pyramidendach — four roof planes meeting at a
+    # single apex above the centroid of a square-ish axis-aligned rectangular
+    # footprint. Degenerate hip whose ridge collapses to a point (zero ridge
+    # length). Common on Stadtvillas and kubische Villen.
+    "pyramidal_hip",
     # ISSUE-114: Tonnendach (barrel roof) — a curved cylindrical-segment roof
-    # swept along the long footprint axis. The arc sits between two eaves on
-    # the short-axis sides and rises ``barrel_rise_mm`` above the eave at the
-    # crown. Footprint must be an axis-aligned rectangle for v0; the renderer
-    # tessellates the arc into ``barrel_segment_count`` flat strips that
-    # approximate the cylindrical surface.
+    # swept along the long footprint axis.
     "barrel",
-    # ISSUE-112: Mansarddach (Mansard / French roof) — two-pitch roof where
-    # the lower slope is near-vertical (steep skirt that encloses the DG) and
-    # the upper slope is shallow (hipped or gabled cap). The two pitches meet
-    # at a horizontal "knee" line at ``mansardKneeHeightMm`` above the eave.
-    # Mansardgauben (dormers) cut into the steep lower slope reuse the
-    # existing dormer renderer. Footprint must be an axis-aligned rectangle
-    # for v0.
+    # ISSUE-112: Mansarddach (Mansard / French roof) — two-pitch roof; lower
+    # skirt encloses the DG, upper cap is shallow; meet at the knee line.
     "mansard",
 ]
 
@@ -44,6 +40,7 @@ RoofGeometrySupportTokenV0 = Literal[
     "mono_pitch_supported",
     "half_gable_supported",
     "mono_pitch_offset_supported",
+    "pyramidal_hip_supported",
     "barrel_supported",
     "mansard_supported",
     "valley_candidate_deferred",
@@ -241,9 +238,15 @@ def roof_geometry_support_token_v0(
     ):
         return "mono_pitch_offset_supported"
 
+    # ISSUE-110: Zeltdach / Pyramidendach — accept any axis-aligned rectangle.
+    if (
+        roof_geometry_mode == "pyramidal_hip"
+        and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
+    ):
+        return "pyramidal_hip_supported"
+
     # ISSUE-112: Mansarddach — two-pitch (steep lower skirt + shallow upper
-    # cap) restricted to axis-aligned rectangles for v0. The lower slope
-    # encloses the DG; Mansardgauben sit on it.
+    # cap) restricted to axis-aligned rectangles for v0.
     if roof_geometry_mode == "mansard" and footprint_is_valid_axis_aligned_rectangle_mm(
         footprint_mm
     ):
@@ -692,6 +695,75 @@ def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> No
         raise ValueError("hip footprintMm requires at least 4 vertices (convex polygon)")
     if not plan_simple_polygon_is_convex_mm(footprint_mm):
         raise ValueError("hip footprintMm must be a convex polygon")
+
+
+def footprint_is_square_ish_mm(
+    footprint_mm: list[tuple[float, float]],
+    *,
+    aspect_tol: float = 0.15,
+) -> bool:
+    """ISSUE-110: True for an axis-aligned rectangle whose long/short side ratio
+    sits within ``aspect_tol`` of 1.0 (i.e. ≤ 1 + aspect_tol).
+
+    A square has aspect 1.0. The Zeltdach / Pyramidendach degrades gracefully
+    on slightly non-square rectangles (a Stadtvilla with a 5.4 × 5.6 m main
+    block is still authored as pyramidal_hip), so we allow a 15 % default
+    tolerance on the long/short side ratio. The renderer + IFC export accept
+    any axis-aligned rectangle and simply tilt the four planes to meet at a
+    single apex above the centroid; this predicate is the *reader*-side gate
+    that promotes "hip + square" to "pyramidal_hip".
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        return False
+    x0, x1, z0, z1 = outer_rect_extent(footprint_mm)
+    span_x = x1 - x0
+    span_z = z1 - z0
+    if span_x <= 0 or span_z <= 0:
+        return False
+    long_side = max(span_x, span_z)
+    short_side = min(span_x, span_z)
+    if short_side <= 0:
+        return False
+    return (long_side / short_side) <= (1.0 + float(aspect_tol))
+
+
+def assert_valid_pyramidal_hip_footprint_mm(
+    footprint_mm: list[tuple[float, float]],
+) -> None:
+    """ISSUE-110: Zeltdach / Pyramidendach — axis-aligned rectangle footprint.
+
+    The pyramid mesh is built on top of an axis-aligned rectangle (4 corners);
+    a square is the canonical case, but the renderer/exporter accept any
+    rectangle and simply tilt the four planes to meet at a single apex above
+    the centroid (the short-side slope steepens to keep the apex centered).
+    Non-rectangular footprints defer to the slab fallback (same as flat) since
+    arbitrary convex pavilion-hip polygons are handled by the existing `hip`
+    mode + `_buildHipPolygonGeometry` path.
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "pyramidal_hip footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Zeltdach is deferred"
+        )
+
+
+def pyramidal_hip_apex_rise_mm(
+    span_x: float, span_z: float, slope_deg: float
+) -> float:
+    """ISSUE-110: vertical rise (mm) from eave to apex for a pyramidal-hip roof.
+
+    The apex sits above the centroid of the rectangular footprint. Each of the
+    four slopes is constructed with the requested pitch on the short half-span
+    so the (short-side) eave-to-apex angle equals ``slope_deg`` exactly. For a
+    perfect square this is identical for all four faces; for a non-square
+    rectangle the long-side faces end up shallower because the apex is fixed
+    above the centroid.
+    """
+
+    short_half_span_mm = min(span_x, span_z) / 2.0
+    return short_half_span_mm * math.tan(math.radians(slope_deg))
 
 
 def _bisector_trim_length(

@@ -1612,6 +1612,11 @@ export type Element =
         | 'mono_pitch'
         | 'half_gable'
         | 'mono_pitch_offset'
+        /** ISSUE-110: Zeltdach — four planes meeting at a single apex. */
+        | 'pyramidal_hip'
+        /** ISSUE-114: Tonnendach — barrel/curved roof. */
+        | 'barrel'
+        /** ISSUE-112: Mansarddach — two-pitch with steep skirt + shallow cap. */
         | 'mansard';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;

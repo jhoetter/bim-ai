@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 480" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #110 — pyramidal_hip (Zeltdach / Pyramidendach) RoofGeometryMode, before vs after</title>
+  <desc>
+    Three-quarter aerial view of a 6 x 6 m Stadtvilla main block (e.g. house-15,
+    KBS Bau Illner). Before: the only square-hip path is hip mode, which
+    requires a non-degenerate ridge — the renderer either emits a sliver
+    ridge (artefact) or falls back to the slab proxy. After: roofGeometryMode
+    = "pyramidal_hip" produces four triangular roof planes meeting at a
+    single apex above the centroid (zero ridge length), matching the source
+    Zeltdach / Pyramidendach exactly.
+  </desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dbe7f3"/>
+      <stop offset="1" stop-color="#f4f7fa"/>
+    </linearGradient>
+    <pattern id="roofTilesBefore" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#b35d4f"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#7d3d33" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#7d3d33" stroke-width="0.6"/>
+    </pattern>
+    <pattern id="roofTilesAfter" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#3d6e4b"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#244531" stroke-width="0.8"/>
+      <line x1="0" y1="4" x2="8" y2="4" stroke="#244531" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="480" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="440" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before — hip with sliver ridge</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "hip" on a square — degenerate ridge artefact / slab fallback
+    </text>
+
+    <!-- Three-quarter footprint projection (axonometric, 30 deg) -->
+    <!-- 6 x 6 m square, scale 30 px/m -->
+    <!-- Footprint corners in plan: SW (200, 360), SE (380, 360), NE (440, 300), NW (260, 300) -->
+
+    <!-- Ground shadow -->
+    <polygon points="200,360 380,360 440,300 260,300" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1" opacity="0.6"/>
+
+    <!-- Wall faces (cube body, 3 m tall = 90 px) -->
+    <!-- Front (south) face -->
+    <polygon points="200,360 380,360 380,270 200,270" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Right (east) face -->
+    <polygon points="380,360 440,300 440,210 380,270" fill="#d8c8a9" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Top (eave) plate -->
+    <polygon points="200,270 380,270 440,210 260,210" fill="#cfd5dc" stroke="#5b4633" stroke-width="1"/>
+
+    <!-- "Hip with tiny ridge" — sliver, ~6 px long. Tries to draw a hip whose
+         ridge has zero length and ends up as a degenerate sliver. -->
+    <!-- Eave corners on top plate: SW=(200,270) SE=(380,270) NE=(440,210) NW=(260,210)
+         Apex would be centroid (320,240). The hip helper builds a sliver
+         ridge between two near-coincident points: (319,240) and (321,240). -->
+    <polygon points="200,270 380,270 321,240 319,240" fill="url(#roofTilesBefore)" stroke="#7d3d33" stroke-width="1.5"/>
+    <polygon points="380,270 440,210 321,240" fill="url(#roofTilesBefore)" stroke="#7d3d33" stroke-width="1.5"/>
+    <polygon points="440,210 260,210 319,240 321,240" fill="url(#roofTilesBefore)" stroke="#7d3d33" stroke-width="1.5"/>
+    <polygon points="260,210 200,270 319,240" fill="url(#roofTilesBefore)" stroke="#7d3d33" stroke-width="1.5"/>
+
+    <!-- Sliver ridge: 2 px between two coincident points (highlighted) -->
+    <line x1="319" y1="240" x2="321" y2="240" stroke="#ef4444" stroke-width="3"/>
+    <circle cx="319" cy="240" r="3" fill="#ef4444"/>
+    <circle cx="321" cy="240" r="3" fill="#ef4444"/>
+    <text x="380" y="232" font-size="10" fill="#b91c1c" font-style="italic">degenerate
+      ridge</text>
+    <line x1="370" y1="232" x2="324" y2="238" stroke="#b91c1c" stroke-width="0.8"/>
+
+    <!-- Footprint label -->
+    <text x="290" y="395" font-size="11" fill="#374151">footprint: 6.0 m x 6.0 m (square)</text>
+    <text x="280" y="412" text-anchor="middle" font-size="11" fill="#7d3d33">⚠ ridge length = 0 → mesh artefact</text>
+    <text x="280" y="430" text-anchor="middle" font-size="10" fill="#9ca3af">house-15 KBS Bau Illner: source roof is a clean four-sided pyramid</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="440" fill="url(#sky)" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After — pyramidal_hip (Zeltdach)</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      roofGeometryMode: "pyramidal_hip" — four planes meet at a single apex
+    </text>
+
+    <!-- Same footprint, shifted by +540 -->
+    <!-- Corners: SW (740, 360), SE (920, 360), NE (980, 300), NW (800, 300) -->
+
+    <!-- Ground shadow -->
+    <polygon points="740,360 920,360 980,300 800,300" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1" opacity="0.6"/>
+
+    <!-- Wall faces -->
+    <polygon points="740,360 920,360 920,270 740,270" fill="#f4ead8" stroke="#5b4633" stroke-width="1.5"/>
+    <polygon points="920,360 980,300 980,210 920,270" fill="#d8c8a9" stroke="#5b4633" stroke-width="1.5"/>
+    <!-- Top (eave) plate -->
+    <polygon points="740,270 920,270 980,210 800,210" fill="#cfd5dc" stroke="#5b4633" stroke-width="1"/>
+
+    <!-- Single apex above centroid. Apex world Y = eaveY + 3m * tan(35deg) ≈ +2.10 m,
+         in axonometric → 63 px up. Centroid of eave plate: x = (740+920+980+800)/4 = 860,
+         y = (270+270+210+210)/4 = 240. Apex above = (860, 240-63) = (860, 177). -->
+
+    <!-- South face (front) -->
+    <polygon points="740,270 920,270 860,177" fill="url(#roofTilesAfter)" stroke="#244531" stroke-width="1.5"/>
+    <!-- East face -->
+    <polygon points="920,270 980,210 860,177" fill="url(#roofTilesAfter)" stroke="#244531" stroke-width="1.5"/>
+    <!-- North face (back) -->
+    <polygon points="980,210 800,210 860,177" fill="url(#roofTilesAfter)" stroke="#244531" stroke-width="1.5"/>
+    <!-- West face -->
+    <polygon points="800,210 740,270 860,177" fill="url(#roofTilesAfter)" stroke="#244531" stroke-width="1.5"/>
+
+    <!-- Apex marker -->
+    <circle cx="860" cy="177" r="4" fill="#ffffff" stroke="#244531" stroke-width="1.8"/>
+    <text x="868" y="172" font-size="10" fill="#1f2937" font-weight="600">single apex</text>
+    <text x="868" y="184" font-size="9" fill="#4b5563">y = eave + halfSpan · tan(slope)</text>
+
+    <!-- Hip edges from each eave corner up to the apex (dashed for clarity) -->
+    <line x1="740" y1="270" x2="860" y2="177" stroke="#244531" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <line x1="920" y1="270" x2="860" y2="177" stroke="#244531" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <line x1="980" y1="210" x2="860" y2="177" stroke="#244531" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <line x1="800" y1="210" x2="860" y2="177" stroke="#244531" stroke-width="0.8" stroke-dasharray="3 2"/>
+
+    <!-- Vertices legend -->
+    <text x="600" y="395" font-size="11" fill="#374151">5 vertices total: 4 eave corners + 1 apex</text>
+    <text x="600" y="412" font-size="11" fill="#374151">4 triangular faces, each with one footprint edge as base</text>
+    <text x="600" y="429" font-size="11" fill="#374151">IFC: IfcRoof.PredefinedType = HIP_ROOF (IFC4)</text>
+  </g>
+
+  <!-- ==================== FOOTER ==================== -->
+  <text x="550" y="475" text-anchor="middle" font-size="10" fill="#6b7280" font-style="italic">
+    Issue #110 — Engine: Zeltdach / Pyramidendach (square hip → single apex). Blocks house-15 (KBS Bau Illner).
+  </text>
+</svg>

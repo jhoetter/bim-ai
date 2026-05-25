@@ -70,6 +70,7 @@ import {
   _buildMansardGeometry,
   _buildMonoPitchGeometry,
   _buildMonoPitchOffsetGroup,
+  _buildPyramidalHipGeometry,
   _compactnessRatio,
 } from './roofGeometry';
 import { mergeGeometries as _mergeRoofGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -944,6 +945,12 @@ export function makeRoofMassMesh(
       } else {
         geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
       }
+    } else if (roof.roofGeometryMode === 'pyramidal_hip') {
+      // ISSUE-110 — Zeltdach / Pyramidendach: four roof planes meet at a
+      // single apex above the centroid (degenerate hip with zero ridge).
+      // The dedicated pyramid builder ignores the ridge axis (the ridge has
+      // collapsed to a point) and tilts all four planes inward.
+      geom = _buildPyramidalHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad);
     } else if (roof.roofGeometryMode === 'asymmetric_gable') {
       const ridgeOffsetM = (roof.ridgeOffsetTransverseMm ?? 0) / 1000;
       const eaveLeftY =
