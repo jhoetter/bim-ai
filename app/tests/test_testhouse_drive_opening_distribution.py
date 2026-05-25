@@ -368,3 +368,102 @@ def test_fact_has_explicit_position_false_for_endpoint_only() -> None:
         "wallEndMm": {"xMm": 10000, "yMm": 0},
     }
     assert _DRV._fact_has_explicit_position(f) is False
+
+
+# ---- MF-driver-19 (#91): ``wallStartMm``-only group auto-distribution --
+#
+# When a reader emits N opening facts that each carry ONLY ``wallStartMm``
+# (no ``wallEndMm``) and they all anchor to the same host wall, the
+# autodistribute pre-pass from PR #90 must still kick in — pre-fix the
+# first commits and the rest are dropped with
+# ``overlaps_existing_opening_on_wall`` (h23 hit this with 14 facts → 1
+# commit, 13 dropped). Post-fix all 14 commit, evenly spaced along the
+# wall the resolver snapped them to.
+
+
+def _window_fact_wall_start_only(fact_id: str, anchor: list[float] | dict) -> dict:
+    """A window fact whose only position info is ``wallStartMm`` (no end)."""
+
+    return {
+        "factId": fact_id,
+        "kind": "window",
+        "levelId": f"level-{LEVEL}",
+        "wallStartMm": anchor,
+    }
+
+
+def test_fourteen_wall_start_only_windows_same_wall_autodistribute() -> None:
+    # The h23 case from issue #91: 14 anchor-only window facts that all
+    # snap to the same south wall. Pre-fix: 1 commits, 13 dropped with
+    # ``overlaps_existing_opening_on_wall``. Post-fix: all 14 commit, at
+    # evenly-spaced positions along the wall (alongT = i/(N+1) for i in
+    # 1..14). The south wall here is 10.8 m, plenty of room for 14
+    # windows of 1400 mm extent (14 * 1400 = 19.6 m) — wait, that's TOO
+    # tight. Make the wall long enough: 25 m fits 14 windows comfortably.
+    global _IR_FACTS
+    wall_len = 25000.0
+    snapshot = _snapshot()
+    snapshot["elements"]["th-h21-ext-wall-south"]["end"] = {"xMm": wall_len, "yMm": 0.0}
+    snapshot["elements"]["th-h21-ext-wall-north"]["end"] = {
+        "xMm": wall_len,
+        "yMm": 8000.0,
+    }
+    # 14 facts, each carrying only an anchor near the south wall. The
+    # anchors differ slightly in x so a reader-style sweep along the
+    # facade is faithfully represented; what matters for the test is
+    # that they all snap to the SAME wall and so share one bucket.
+    facts = [
+        _window_fact_wall_start_only(
+            f"win-anchor-{i}",
+            {"xMm": 500.0 + i * 100.0, "yMm": 0.0},
+        )
+        for i in range(14)
+    ]
+    ir = _ir(facts)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=HOUSE,
+        level_short=LEVEL,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    bundle, consumed, skipped = result
+    cmds = bundle["commands"]
+    assert len(cmds) == 14, (
+        f"all 14 wallStartMm-only facts must commit (h23 regression); got {len(cmds)}, "
+        f"skipped={skipped}"
+    )
+    assert all(c["wallId"] == "th-h21-ext-wall-south" for c in cmds)
+    assert skipped == [], f"no overflow expected on a 25 m wall, got {skipped}"
+    assert sorted(consumed) == sorted(f"win-anchor-{i}" for i in range(14))
+
+    # Distribution check: positions should be the even-spaced
+    # ``i/(N+1)`` set, not clustered at the resolver's snapped anchor.
+    expected_t = sorted(round((i + 1) / 15.0, 4) for i in range(14))
+    actual_t = sorted(round(c["alongT"], 4) for c in cmds)
+    for got, want in zip(actual_t, expected_t, strict=True):
+        assert abs(got - want) < 5e-3, (
+            f"alongT {got} not within tolerance of even-spaced {want} — "
+            "auto-distribute pre-pass must run on anchor-only groups too"
+        )
+
+
+def test_single_wall_start_only_window_per_wall_unchanged() -> None:
+    # The N=1 anchor-only case: a single fact carrying only wallStartMm
+    # must host where the resolver snaps it (no autodistribute needed).
+    # Guards against the new wall-id bucketing leaking into single-fact
+    # IRs.
+    global _IR_FACTS
+    _IR_FACTS = [
+        _window_fact_wall_start_only("only-anchor", [3000.0, 0.0]),
+    ]
+    bundle, consumed, skipped = _run()
+    cmds = bundle["commands"]
+    assert len(cmds) == 1
+    assert cmds[0]["wallId"] == "th-h21-ext-wall-south"
+    # x=3000 on a 10800 mm wall → t ≈ 0.2778.
+    assert abs(cmds[0]["alongT"] - 3000.0 / SOUTH_WALL_LEN_MM) < 1e-3
+    assert consumed == ["only-anchor"]
+    assert skipped == []

@@ -2366,6 +2366,21 @@ def _openings_bundle(
                         (float(s[1]) + float(e[1])) / 2,
                     ]
                     break
+        if vertex is None:
+            # MF-driver-19 (#91): readers sometimes emit ``wallStartMm``
+            # ONLY (no ``wallEndMm``) as a single anchor point on the
+            # host wall — they know roughly where on the facade the
+            # opening sits but don't carry the segment endpoints. Treat
+            # this point as the opening's anchor vertex and let the
+            # nearest-wall resolver (``_resolve_opening_host``, PR #32)
+            # snap it onto an authored wall. Same fallback covers the
+            # ``startMm``-only alt shape. Accepts both ``[x, y]`` lists
+            # and ``{xMm, yMm}`` dicts via ``_coerce_vertex_mm`` (PR #28).
+            for k in ("wallStartMm", "startMm"):
+                v = _coerce_vertex_mm(fact.get(k))
+                if v is not None:
+                    vertex = v
+                    break
         if not (isinstance(vertex, list) and len(vertex) >= 2):
             return
         # MF-driver-4 (#13): use the richer host resolver so we can log
@@ -2494,6 +2509,75 @@ def _openings_bundle(
         if key is None:
             continue
         grouped.setdefault(key, []).append((f, "window"))
+
+    # MF-driver-19 (#91): the gamma reader sometimes emits N opening
+    # facts that each carry ONLY ``wallStartMm`` as an anchor point on
+    # the host wall (no ``wallEndMm``). ``_wall_endpoint_key`` returns
+    # None for these, so the endpoint-key grouping above misses them
+    # and every fact resolves to the same anchor — the first commits,
+    # the rest are dropped with ``overlaps_existing_opening_on_wall``
+    # (h23 hit 14 → 0 commits pre-fix). Bucket the anchor-only facts
+    # by RESOLVED host wall id and feed them into the same
+    # auto-distribute pre-pass: ``_resolve_opening_host`` snaps each
+    # anchor to the nearest authored wall, and N≥2 facts sharing that
+    # wall are then evenly spaced along its actual snapshot segment.
+    def _anchor_only_vertex(fact: dict) -> list[float] | None:
+        # Anchor-only means: no full endpoint pair (so the endpoint-key
+        # path above skipped it) AND no explicit position hint (vertex,
+        # offset, centerX, polygon). One of the ``wallStartMm`` /
+        # ``startMm`` keys must coerce to a vertex.
+        if _wall_segment_from_fact(fact) is not None:
+            return None
+        if _fact_has_explicit_position(fact):
+            return None
+        for k in ("wallStartMm", "startMm"):
+            v = _coerce_vertex_mm(fact.get(k))
+            if v is not None:
+                return v
+        return None
+
+    anchor_grouped_by_wall_id: dict[str, list[tuple[dict, str]]] = {}
+    for f in doors:
+        v = _anchor_only_vertex(f)
+        if v is None:
+            continue
+        w, _t, _d, _r = _resolve_opening_host(v, walls, threshold_mm=DEFAULT_HOST_DISTANCE_MM)
+        if w is None:
+            continue
+        anchor_grouped_by_wall_id.setdefault(str(w.get("id")), []).append((f, "door"))
+    for f in windows:
+        v = _anchor_only_vertex(f)
+        if v is None:
+            continue
+        w, _t, _d, _r = _resolve_opening_host(v, walls, threshold_mm=DEFAULT_HOST_DISTANCE_MM)
+        if w is None:
+            continue
+        anchor_grouped_by_wall_id.setdefault(str(w.get("id")), []).append((f, "window"))
+
+    # Fold the wall-id groups into the same ``grouped`` dict using the
+    # actual wall's start/end (rounded to mm) as the key — that way the
+    # existing distribution logic below treats them identically to the
+    # gamma endpoint-pair groups.
+    walls_by_id = {str(w.get("id")): w for w in walls}
+    for wid, members in anchor_grouped_by_wall_id.items():
+        if len(members) < 2:
+            continue
+        w = walls_by_id.get(wid)
+        if w is None:
+            continue
+        s, e = w.get("start") or {}, w.get("end") or {}
+        try:
+            sx, sy = float(s.get("xMm") or 0), float(s.get("yMm") or 0)
+            ex, ey = float(e.get("xMm") or 0), float(e.get("yMm") or 0)
+        except (TypeError, ValueError):
+            continue
+        a = (round(sx, 0), round(sy, 0))
+        b = (round(ex, 0), round(ey, 0))
+        synth_key = (a, b) if a <= b else (b, a)
+        # If the gamma endpoint-pair path already created a bucket for
+        # this same wall (mixed-shape IR), extend it rather than
+        # clobbering — both shapes should share one distribution pass.
+        grouped.setdefault(synth_key, []).extend(members)
 
     skipped_factids: set[str] = set()
     for key, members in grouped.items():
