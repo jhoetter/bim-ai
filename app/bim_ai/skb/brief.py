@@ -182,17 +182,6 @@ SAMPLE_BRIEF: dict[str, Any] = {
             "description": "Roof ridge significantly off-center east, low west wall, high east wall.",
         },
     ],
-    "referenceImages": [
-        {
-            "path": "spec/target-house/target-house-1.png",
-            "panelLabel": "SSW iso colour study",
-            "presetId": "vp-main-iso",
-        },
-        {
-            "path": "spec/target-house/target-house-2.png",
-            "panelLabel": "SSW iso line sketch",
-            "presetId": "vp-main-iso",
-        },
-    ],
-    "notes": "See spec/target-house/target-house-seed.md for the architectural ground truth.",
+    "referenceImages": [],
+    "notes": "Reference imagery + ground-truth seed docs are supplied by the caller — bim-ai keeps no shipped sample beyond this brief shape.",
 }
