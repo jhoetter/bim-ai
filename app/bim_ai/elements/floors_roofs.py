@@ -129,6 +129,14 @@ class RoofElem(BaseModel):
     mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
         default=None, alias="monoPitchHighEdge"
     )
+    # ISSUE-105: fraction of the gable rise that is replaced by a small hip
+    # cap for `half_gable` (Krüppelwalmdach). 0..1 (clamped); 0 falls back to
+    # full gable behavior, 1 is functionally equivalent to a hip. None defers
+    # to the renderer default (typically 0.33 — hip covers the top third).
+    # Ignored for non-half_gable modes.
+    half_hip_height_fraction: float | None = Field(
+        default=None, alias="halfHipHeightFraction"
+    )
     # ISSUE-101: Versetztes Pultdach (offset double mono-pitch) parameters.
     # The footprint is partitioned along the long axis at
     # ``step_position_along_long_axis_mm`` into a front and a rear sub-

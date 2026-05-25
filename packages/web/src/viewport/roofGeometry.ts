@@ -214,6 +214,176 @@ export function _buildGableGeometry(
   return g;
 }
 
+/**
+ * ISSUE-105 — Krüppelwalmdach (half-hipped roof). Hybrid of a gable and a hip:
+ * the full gable triangle is built first, then the TOP fraction of each gable
+ * end is trimmed and replaced by a small hip face sloping back to the ridge.
+ *
+ * `halfHipHeightFraction ∈ [0, 1]`:
+ *   - 0 ⇒ pure gable triangle (no hip cap; identical to `_buildGableGeometry`).
+ *   - 1 ⇒ full hip (ridge collapses to a point at the centerline; the gable
+ *     ends are fully replaced by hip faces).
+ *   - 0.33 (typical) ⇒ hip cap covers the top third of the gable end.
+ *
+ * Geometry preserves the eave plate and the two main slopes of the gable; the
+ * gable end face becomes a trapezoid (clipped triangle) and a new hip face
+ * triangle is inserted between the trapezoid's top edge and the (shortened)
+ * ridge endpoint.
+ */
+export function _buildHalfGableGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+  halfHipHeightFraction: number,
+): THREE.BufferGeometry {
+  // Clamp into [0, 1]; NaN / null callers degrade gracefully to full gable.
+  let f = halfHipHeightFraction;
+  if (!Number.isFinite(f)) f = 0;
+  f = Math.max(0, Math.min(1, f));
+
+  // Full-gable fallback: identical mesh to _buildGableGeometry. Keeps the
+  // misconfigured-input contract from the spec (fraction == 0 ⇒ pure gable).
+  if (f <= 1e-9) {
+    return _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+  }
+
+  const halfSpan = ridgeAlongX ? (oz1 - oz0) / 2 : (ox1 - ox0) / 2;
+  const fullRise = halfSpan * Math.tan(slopeRad);
+  // truncationY is the elevation at which the gable triangle is clipped.
+  // At fraction = 1 we trim down to the eave (full hip); at fraction = 0 we
+  // do not trim at all (handled above). For intermediate fractions, the hip
+  // cap covers the top `fraction` of the gable rise.
+  const truncationY = eaveY + fullRise * (1 - f);
+  const ridgeY = eaveY + fullRise;
+  // Across-the-ridge half-width where the truncation line crosses the slope.
+  // Similar triangles: at truncationY, the slope-side X (relative to center)
+  // moves inward proportionally to (1 - fraction) is the *vertical* fraction;
+  // for the across direction we scale by f (the trimmed amount) because the
+  // slope eats half_span × f across to reach the truncation line.
+  // Concretely: y(x) = eaveY + (halfSpan - |x|) * tan(slope)
+  //   → at y = truncationY = eaveY + halfSpan * (1-f) * tan(slope),
+  //     halfSpan - |x| = halfSpan * (1-f), so |x| = halfSpan * f.
+  // That's the lateral inset where the gable triangle is clipped.
+  const lateralInset = halfSpan * f;
+  // Along the ridge axis, the hip cap pulls the ridge endpoints inward by
+  // the same lateral inset (so the hip face has the same slope as the eaves;
+  // this matches a true Krüppelwalmdach where the hip pitch equals the
+  // gable-side pitch).
+  const ridgeShortenEachEnd = lateralInset;
+
+  const positions: number[] = [];
+  if (ridgeAlongX) {
+    const rz = (oz0 + oz1) / 2;
+    const ridgeX0 = ox0 + ridgeShortenEachEnd;
+    const ridgeX1 = ox1 - ridgeShortenEachEnd;
+
+    // South main slope — split at the ridge truncation. The slope panel is
+    // now a hexagon (eave at the bottom, ridge in the middle, two hip-cap
+    // notches at the top corners that fold up to the hip apex). We split it
+    // into 4 triangles: 2 for the central trapezoid, 1 for each end triangle.
+    // South: eaveZ = oz0, ridgeZ = rz.
+    // Vertices on south slope (in world coords):
+    //   sE0 = (ox0, eaveY, oz0), sE1 = (ox1, eaveY, oz0)      (eave corners)
+    //   sR0 = (ridgeX0, ridgeY, rz), sR1 = (ridgeX1, ridgeY, rz) (ridge endpoints)
+    //   sT0 = (ox0, truncationY, rz - halfSpan * (1-f))         (south-west truncation)
+    //   sT1 = (ox1, truncationY, rz - halfSpan * (1-f))         (south-east truncation)
+    // Wait — for ridgeAlongX, the slope runs across Z (south↔ridge). The
+    // truncation in elevation removes the top of the gable end, which is
+    // the gable-end *face* (the EW faces, NOT the slope panels). So the
+    // slope panels (south + north) are TRAPEZOIDS not hexagons.
+    // South slope trapezoid: eave edge sE0→sE1 (full length), ridge edge
+    // sR0→sR1 (shortened by lateralInset on each end), connected by sloped
+    // edges sE0→sR0 and sE1→sR1.
+    const sE0: [number, number, number] = [ox0, eaveY, oz0];
+    const sE1: [number, number, number] = [ox1, eaveY, oz0];
+    const sR0: [number, number, number] = [ridgeX0, ridgeY, rz];
+    const sR1: [number, number, number] = [ridgeX1, ridgeY, rz];
+    // Two triangles for the south slope trapezoid.
+    positions.push(...sE0, ...sE1, ...sR1, ...sE0, ...sR1, ...sR0);
+
+    // North slope trapezoid (mirrors south).
+    const nE0: [number, number, number] = [ox0, eaveY, oz1];
+    const nE1: [number, number, number] = [ox1, eaveY, oz1];
+    const nR0: [number, number, number] = [ridgeX0, ridgeY, rz];
+    const nR1: [number, number, number] = [ridgeX1, ridgeY, rz];
+    // Winding flipped vs south so the outward normal points +Z.
+    positions.push(...nR0, ...nR1, ...nE1, ...nR0, ...nE1, ...nE0);
+
+    // Gable end face on the west (ox0 plane): a trapezoid clipped at
+    // truncationY (was a triangle for a full gable). Corners (in the
+    // ox0 plane):
+    //   wE0 = (ox0, eaveY, oz0)   (south eave)
+    //   wE1 = (ox0, eaveY, oz1)   (north eave)
+    //   wT0 = (ox0, truncationY, rz - halfSpan * (1 - f)) — south truncation
+    //   wT1 = (ox0, truncationY, rz + halfSpan * (1 - f)) — north truncation
+    const wE0: [number, number, number] = [ox0, eaveY, oz0];
+    const wE1: [number, number, number] = [ox0, eaveY, oz1];
+    const wT0: [number, number, number] = [ox0, truncationY, rz - halfSpan * (1 - f)];
+    const wT1: [number, number, number] = [ox0, truncationY, rz + halfSpan * (1 - f)];
+    positions.push(...wE0, ...wT0, ...wT1, ...wE0, ...wT1, ...wE1);
+    // West hip cap: a triangle from wT0–wT1 up to the (shortened) west ridge
+    // end (ridgeX0, ridgeY, rz). This is the new face that replaces the
+    // top of the gable triangle.
+    positions.push(...wT0, ...sR0, ...wT1);
+
+    // Gable end face on the east (ox1 plane): mirror of west.
+    const eE0: [number, number, number] = [ox1, eaveY, oz0];
+    const eE1: [number, number, number] = [ox1, eaveY, oz1];
+    const eT0: [number, number, number] = [ox1, truncationY, rz - halfSpan * (1 - f)];
+    const eT1: [number, number, number] = [ox1, truncationY, rz + halfSpan * (1 - f)];
+    // Winding flipped so outward normal points +X.
+    positions.push(...eE0, ...eE1, ...eT1, ...eE0, ...eT1, ...eT0);
+    // East hip cap.
+    positions.push(...eT0, ...eT1, ...sR1);
+  } else {
+    // Ridge runs along Z; slopes face ±X. Mirror of the above with X↔Z swapped.
+    const rx = (ox0 + ox1) / 2;
+    const ridgeZ0 = oz0 + ridgeShortenEachEnd;
+    const ridgeZ1 = oz1 - ridgeShortenEachEnd;
+
+    // West slope trapezoid (eave at ox0, ridge along rx).
+    const wE0: [number, number, number] = [ox0, eaveY, oz0];
+    const wE1: [number, number, number] = [ox0, eaveY, oz1];
+    const wR0: [number, number, number] = [rx, ridgeY, ridgeZ0];
+    const wR1: [number, number, number] = [rx, ridgeY, ridgeZ1];
+    positions.push(...wE0, ...wE1, ...wR1, ...wE0, ...wR1, ...wR0);
+
+    // East slope trapezoid (eave at ox1, ridge along rx).
+    const eE0: [number, number, number] = [ox1, eaveY, oz0];
+    const eE1: [number, number, number] = [ox1, eaveY, oz1];
+    const eR0: [number, number, number] = [rx, ridgeY, ridgeZ0];
+    const eR1: [number, number, number] = [rx, ridgeY, ridgeZ1];
+    positions.push(...eR0, ...eR1, ...eE1, ...eR0, ...eE1, ...eE0);
+
+    // South gable end face (oz0 plane): trapezoid + hip-cap triangle.
+    const sE0: [number, number, number] = [ox0, eaveY, oz0];
+    const sE1: [number, number, number] = [ox1, eaveY, oz0];
+    const sT0: [number, number, number] = [rx - halfSpan * (1 - f), truncationY, oz0];
+    const sT1: [number, number, number] = [rx + halfSpan * (1 - f), truncationY, oz0];
+    positions.push(...sE0, ...sT0, ...sT1, ...sE0, ...sT1, ...sE1);
+    // South hip cap: from sT0–sT1 up to the (shortened) south ridge end.
+    positions.push(...sT0, ...wR0, ...sT1);
+
+    // North gable end face (oz1 plane).
+    const nE0: [number, number, number] = [ox0, eaveY, oz1];
+    const nE1: [number, number, number] = [ox1, eaveY, oz1];
+    const nT0: [number, number, number] = [rx - halfSpan * (1 - f), truncationY, oz1];
+    const nT1: [number, number, number] = [rx + halfSpan * (1 - f), truncationY, oz1];
+    positions.push(...nE0, ...nE1, ...nT1, ...nE0, ...nT1, ...nT0);
+    // North hip cap.
+    positions.push(...nT0, ...nT1, ...wR1);
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
 // Asymmetric gable: ridge offset transversely from the rectangle center, with
 // optional independent eave heights on each side. Ridge height is derived from
 // the LEFT slope: `ridgeY = eaveLeftY + (halfSpan + offset) * tan(slopeRad)`.

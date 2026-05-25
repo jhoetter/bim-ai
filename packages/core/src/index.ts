@@ -1576,12 +1576,20 @@ export type Element =
         | 'hip'
         | 'flat'
         | 'mono_pitch'
+        | 'half_gable'
         | 'mono_pitch_offset';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
       /** ISSUE-53: compass quadrant of the high (ridge) edge for `mono_pitch` (Pultdach). */
       monoPitchHighEdge?: 'n' | 'e' | 's' | 'w' | null;
+      /**
+       * ISSUE-105: fraction of the gable rise replaced by a small hip cap
+       * for `half_gable` (Krüppelwalmdach). 0..1; 0 ≡ full gable,
+       * 1 ≡ full hip. Renderer default ≈ 0.33 (hip covers the top third).
+       * Ignored for non-`half_gable` modes.
+       */
+      halfHipHeightFraction?: number | null;
       /** ISSUE-101: Versetztes Pultdach front-slab pitch (deg). */
       frontPitchDeg?: number | null;
       /** ISSUE-101: Versetztes Pultdach rear-slab pitch (deg). */

@@ -466,6 +466,7 @@ from bim_ai.plan_category_graphics import (
 from bim_ai.roof_geometry import (
     RoofGeometryMode,
     assert_valid_gable_pitched_rectangle_footprint_mm,
+    assert_valid_half_gable_footprint_mm,
     assert_valid_hip_footprint_mm,
     assert_valid_l_shape_footprint_mm,
     assert_valid_mono_pitch_footprint_mm,

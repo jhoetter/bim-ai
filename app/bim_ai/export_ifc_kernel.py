@@ -783,7 +783,20 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         use_gable_body = rf.roof_geometry_mode in (
             "gable_pitched_rectangle",
             "asymmetric_gable",
+            # ISSUE-105: Krüppelwalmdach shares the gable-rectangle extrusion
+            # body in IFC (a triangular prism along the ridge). The hip cap
+            # is captured in the PredefinedType (HIPPED_GABLE_ROOF) plus a
+            # round-trip Pset that records the half-hip fraction, so kernel
+            # replay reconstructs the same Krüppelwalm. The viewer's mesh
+            # builder uses the fraction to draw the truncated gable + hip cap.
+            "half_gable",
         ) and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        # ISSUE-105: separate flag for the half-hipped tag so we don't
+        # confuse the PredefinedType selector with a plain gable.
+        use_half_gable_body = (
+            rf.roof_geometry_mode == "half_gable"
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
         # ISSUE-53: mono_pitch (Pultdach) gets a right-triangle prism whose
         # hypotenuse becomes the single tilted top face. Restricted to
         # axis-aligned rectangles for v0; non-rectangular Pultdach falls back
@@ -1295,6 +1308,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             except (RuntimeError, ValueError):
                 # Schema rejects the keyword; leave the default.
                 pass
+        # ISSUE-105: Krüppelwalmdach maps to IFC4's HIPPED_GABLE_ROOF. The
+        # buildingSMART IFC4 IfcRoofTypeEnum enumerates HIPPED_GABLE_ROOF
+        # explicitly (a gable roof with a small hip section at the top of
+        # each gable end — exactly the Krüppelwalm).
+        if use_half_gable_body and hasattr(roof_ent, "PredefinedType"):
+            try:
+                roof_ent.PredefinedType = "HIPPED_GABLE_ROOF"
+            except (RuntimeError, ValueError):
+                # Schema rejects the keyword; leave the default.
+                pass
 
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
@@ -1331,6 +1354,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             # ISSUE-53: round-trip the explicit high-edge so authoritative
             # replay reconstructs the same Pultdach orientation.
             bim_ai_props["BimAiRoofMonoPitchHighEdge"] = str(rf.mono_pitch_high_edge)
+        if use_half_gable_body and rf.half_hip_height_fraction is not None:
+            # ISSUE-105: round-trip the half-hip fraction so authoritative
+            # replay reconstructs the same Krüppelwalm proportions.
+            bim_ai_props["BimAiRoofHalfHipHeightFraction"] = float(rf.half_hip_height_fraction)
         if use_mono_pitch_offset_body:
             # ISSUE-101: round-trip the Versetztes-Pultdach parameters so the
             # authoritative replay reconstructs the same offset configuration.
