@@ -8,6 +8,8 @@ import type { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { CsgRequest } from './csgWorker';
 import { recordViewportRebuild } from './viewportRebuildStats';
+import { roofHeightAtPoint } from './roofHeightSampler';
+import { sampleWallGableProfile } from './wallGableProfile';
 import type { Element, LensMode } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import type { StoreState } from '../state/storeTypes';
@@ -896,11 +898,44 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
             const dx = displayWall.end.xMm / 1000 - sx;
             const dz = displayWall.end.yMm / 1000 - sz;
             const len = Math.max(0.001, Math.hypot(dx, dz));
-            const { yBase, height } = wallVerticalSpanM(displayWall, elev, curr);
+            const { yBase, height: rectHeight } = wallVerticalSpanM(displayWall, elev, curr);
             const thick = THREE.MathUtils.clamp(displayWall.thicknessMm / 1000, 0.05, 2);
             const wallOffset = wallPlanOffsetM(displayWall);
             const wcx = sx + dx / 2 + wallOffset.xM;
             const wcz = sz + dz / 2 + wallOffset.zM;
+
+            // Issue #109 — Giebelverglasung: when the wall is attached to a
+            // non-flat roof, sample the underside of the roof along the wall
+            // and use the resulting profile as the CSG wall geometry so
+            // openings hosted in the upper gable triangle cut visible
+            // apertures. Effective wall height for cutter clamps grows to
+            // the peak; the box-CSG fast path stays in place for plain
+            // rectangular walls.
+            let topProfileM: number[] | undefined;
+            let height = rectHeight;
+            const attachedRoof = displayWall.roofAttachmentId
+              ? curr[displayWall.roofAttachmentId]
+              : undefined;
+            if (attachedRoof?.kind === 'roof' && attachedRoof.roofGeometryMode !== 'flat') {
+              const profile = sampleWallGableProfile({
+                startMm: displayWall.start,
+                endMm: displayWall.end,
+                rectangularHeightM: rectHeight,
+                yBaseM: yBase,
+                sampleRoofTopYM: (xMm, yMm) =>
+                  roofHeightAtPoint(
+                    attachedRoof as Extract<Element, { kind: 'roof' }>,
+                    curr,
+                    xMm,
+                    yMm,
+                  ),
+              });
+              if (profile.hasGable) {
+                topProfileM = profile.topProfileM;
+                height = profile.peakHeightM;
+              }
+            }
+
             const wallHeightMm = height * 1000;
             const retainExisting = retainPendingCsgWallIds.has(id);
             const nonce = ++csgNonceRef.current;
@@ -920,6 +955,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
               height,
               thick,
               baseFootprints: csgBaseFootprintsForWall(displayWall, curr, wcx, wcz, dx, dz, len),
+              ...(topProfileM ? { topProfileM } : {}),
               wcx,
               wcy: yBase + height / 2,
               wcz,

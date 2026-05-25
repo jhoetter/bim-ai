@@ -384,12 +384,21 @@ export function diagnoseWallHostedCutRenderRisks(
       validRows.push({ opening, hostWallId: host.id, interval });
     }
 
+    // Issue #109 — Giebelverglasung: when the host wall is attached to a
+    // non-flat roof, its addressable vertical extent reaches above the
+    // rectangular ``host.heightMm`` into the upper gable triangle. We
+    // can't recover the exact peak height from the wall alone here, so
+    // we relax the upper bound for any roof-attached wall and let the
+    // renderer's gable-aware CSG path (csgWorker + wallGableProfile)
+    // host the opening. Plain rectangular walls keep the strict bound.
+    const hasGableHost = Boolean(host.roofAttachmentId);
+    const headExceedsHost = interval.headMm > host.heightMm;
     if (
       !Number.isFinite(interval.sillMm) ||
       !Number.isFinite(interval.headMm) ||
       interval.sillMm < 0 ||
       interval.headMm <= interval.sillMm ||
-      interval.headMm > host.heightMm
+      (headExceedsHost && !hasGableHost)
     ) {
       pushDiagnostic(diagnostics, {
         code: 'hosted_cut_vertical_extent_outside_host',
