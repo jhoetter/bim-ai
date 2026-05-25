@@ -385,3 +385,231 @@ def test_default_host_distance_constant_is_1000mm() -> None:
     # Pin the constant explicitly: the #13 fix is "bump 500 → 1000". If
     # someone reverts to 500 mm, this test names the regression.
     assert _DRV.DEFAULT_HOST_DISTANCE_MM == 1000.0
+
+
+# ---- MF-driver-19 (#91): ``wallStartMm``-only fact shape ----------------
+#
+# Reader IRs sometimes emit opening facts that carry ONLY ``wallStartMm``
+# (no ``wallEndMm``) as a single anchor point on the host wall — they
+# know roughly where on the facade the opening sits but don't carry the
+# segment endpoints. Pre-fix, ``_openings_bundle._try_host`` only
+# handled the ``wallStartMm + wallEndMm`` pair and the anchor-only fact
+# was dropped (h23 hit 0/14 → 14/14 after manually patching the IR to
+# include both endpoints). Post-fix: ``wallStartMm`` alone is coerced
+# into an anchor vertex and the existing nearest-wall resolver from
+# PR #32 snaps it onto an authored wall, the same way ``vertexMm`` does.
+
+
+def _ir_with_one_window_anchor_only(
+    house: str, level_short: str, wall_start_mm: object
+) -> dict:
+    """Minimal IR: single window fact carrying only ``wallStartMm`` (no end)."""
+
+    return {
+        "house": house,
+        "levels": [
+            {
+                "id": f"level-{level_short}",
+                "name": "Erdgeschoss",
+                "elevationMM": 0,
+                "heightMM": 2700,
+            },
+        ],
+        "exteriorWallChainEG": {
+            "polygonMM": [[0, 0], [10000, 0], [10000, 8000], [0, 8000]],
+            "wallThicknessMM": 365,
+        },
+        "extractedFacts": [
+            {
+                "factId": "win-anchor-1",
+                "kind": "window",
+                "levelId": f"level-{level_short}",
+                # No vertexMm, no wallEndMm — only this anchor.
+                "wallStartMm": wall_start_mm,
+            },
+        ],
+    }
+
+
+def test_openings_bundle_authors_window_with_wall_start_only_list_shape() -> None:
+    # The regression #91 was fixing: a wallStartMm-only fact (list shape)
+    # used to be silently dropped because ``_try_host`` only checked for
+    # the wallStartMm + wallEndMm pair. Post-fix the resolver should snap
+    # the anchor onto the south wall.
+    house, level_short = "alpha", "EG"
+    ir = _ir_with_one_window_anchor_only(house, level_short, [2000.0, 0.0])
+    snapshot = _wall_snapshot(house, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None, "wallStartMm-only (list shape) must not drop the only window"
+    bundle, consumed, skipped = result
+    assert len(bundle["commands"]) == 1
+    cmd = bundle["commands"][0]
+    assert cmd["wallId"] == "th-h-ext-wall-south"
+    # x=2000 on a 10000 mm wall projects to t ≈ 0.2.
+    assert abs(cmd["alongT"] - 0.2) < 1e-3
+    assert "win-anchor-1" in consumed
+    assert skipped == []
+
+
+def test_openings_bundle_authors_window_with_wall_start_only_dict_shape() -> None:
+    # Same regression but the dict shape ``{xMm, yMm}`` — exercises the
+    # interaction with ``_coerce_vertex_mm`` (PR #28). Pre-#91 the dict
+    # wallStartMm was silently dropped; post-fix it must coerce + host.
+    house, level_short = "alpha", "EG"
+    ir = _ir_with_one_window_anchor_only(
+        house, level_short, {"xMm": 2000.0, "yMm": 0.0}
+    )
+    snapshot = _wall_snapshot(house, level_short)
+
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None, "wallStartMm-only (dict shape) must not drop the only window"
+    bundle, consumed, skipped = result
+    assert len(bundle["commands"]) == 1
+    cmd = bundle["commands"][0]
+    assert cmd["wallId"] == "th-h-ext-wall-south"
+    assert abs(cmd["alongT"] - 0.2) < 1e-3
+    assert "win-anchor-1" in consumed
+    assert skipped == []
+
+
+def test_openings_bundle_wall_start_only_list_and_dict_produce_same_geometry() -> None:
+    # The two shapes are reader-side cosmetic differences; the authored
+    # command must be identical (same wall, same alongT, same width).
+    house, level_short = "alpha", "EG"
+    snapshot = _wall_snapshot(house, level_short)
+    list_ir = _ir_with_one_window_anchor_only(house, level_short, [2000.0, 0.0])
+    dict_ir = _ir_with_one_window_anchor_only(
+        house, level_short, {"xMm": 2000.0, "yMm": 0.0}
+    )
+
+    list_result = _DRV._openings_bundle(
+        ir=list_ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    dict_result = _DRV._openings_bundle(
+        ir=dict_ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert list_result is not None and dict_result is not None
+    list_cmd = list_result[0]["commands"][0]
+    dict_cmd = dict_result[0]["commands"][0]
+    for key in ("type", "wallId", "alongT", "widthMm"):
+        assert list_cmd.get(key) == dict_cmd.get(key), (
+            f"{key} differs between list-shape and dict-shape wallStartMm"
+        )
+
+
+def test_openings_bundle_wall_start_plus_wall_end_pair_unchanged() -> None:
+    # Back-compat: a fact carrying BOTH ``wallStartMm`` and ``wallEndMm``
+    # (the gamma reader's segment shape) must still resolve to the wall
+    # midpoint via the existing path — the #91 anchor-only fallback only
+    # triggers when ``wallEndMm`` is absent.
+    house, level_short = "alpha", "EG"
+    ir = {
+        "house": house,
+        "levels": [
+            {
+                "id": f"level-{level_short}",
+                "name": "Erdgeschoss",
+                "elevationMM": 0,
+                "heightMM": 2700,
+            },
+        ],
+        "exteriorWallChainEG": {
+            "polygonMM": [[0, 0], [10000, 0], [10000, 8000], [0, 8000]],
+            "wallThicknessMM": 365,
+        },
+        "extractedFacts": [
+            {
+                "factId": "win-pair-1",
+                "kind": "window",
+                "levelId": f"level-{level_short}",
+                "wallStartMm": {"xMm": 0.0, "yMm": 0.0},
+                "wallEndMm": {"xMm": 10000.0, "yMm": 0.0},
+            }
+        ],
+    }
+    snapshot = _wall_snapshot(house, level_short)
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    bundle, consumed, skipped = result
+    assert len(bundle["commands"]) == 1
+    cmd = bundle["commands"][0]
+    assert cmd["wallId"] == "th-h-ext-wall-south"
+    # The pair path takes the segment midpoint → t = 0.5 on a wall
+    # whose authored end == fact wallEndMm.
+    assert abs(cmd["alongT"] - 0.5) < 1e-3
+    assert "win-pair-1" in consumed
+    assert skipped == []
+
+
+def test_openings_bundle_wall_start_only_too_far_skips_with_structured_log() -> None:
+    # An anchor-only fact whose nearest wall is beyond the 1000 mm
+    # threshold must still be skipped — and the skip-log entry shape
+    # (PR #13) must be preserved: factId / kind / reason carrying both
+    # the actual miss distance and the threshold / nearestWallId /
+    # vertexMm carrying the anchor point.
+    house, level_short = "alpha", "EG"
+    # Include one hostable door so the bundle returns a non-None tuple
+    # (the path that surfaces skipped[] to the caller).
+    ir = _ir_with_one_door(house, level_short, {"xMm": 5000.0, "yMm": 100.0})
+    # 4000 mm into the room is 4000 mm off the south wall and 4000 mm
+    # off the north wall — both beyond the 1000 mm threshold.
+    ir["extractedFacts"].append(
+        {
+            "factId": "win-far-anchor",
+            "kind": "window",
+            "levelId": f"level-{level_short}",
+            "wallStartMm": [5000.0, 4000.0],
+        }
+    )
+    snapshot = _wall_snapshot(house, level_short)
+    result = _DRV._openings_bundle(
+        ir=ir,
+        parent_revision=1,
+        house=house,
+        level_short=level_short,
+        snapshot=snapshot,
+    )
+    assert result is not None
+    _bundle, consumed, skipped = result
+    assert "door-1" in consumed
+    assert len(skipped) == 1
+    entry = skipped[0]
+    assert entry["factId"] == "win-far-anchor"
+    assert entry["kind"] == "window"
+    assert entry["vertexMm"] == [5000.0, 4000.0]
+    assert "reason" in entry
+    # Existing PR #13 skip-log shape: reason encodes miss distance +
+    # threshold; nearestWallId is surfaced even on a miss.
+    assert "nearest_wall_distance_" in entry["reason"]
+    assert "threshold_1000mm" in entry["reason"]
+    assert entry.get("nearestWallId") in {
+        "th-h-ext-wall-south",
+        "th-h-ext-wall-north",
+    }
