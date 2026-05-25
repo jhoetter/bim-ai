@@ -45,8 +45,13 @@ def test_command_schema_export_has_json_schema_and_todo_metadata() -> None:
     }
     assert create_wall_metadata["exampleStatus"] == "generated-minimal"
     assert create_wall_metadata["exampleError"] is None
-    assert create_wall_metadata["mappingStatus"] == "mapped"
-    assert create_wall_metadata["rawSemanticMapping"]["agentSurface"] == "semantic-authoring"
+    # The `source.create_arch_wall` descriptor that mapped `createWall` to a
+    # semantic-authoring surface moved to bim-agent in the 2026-05-25 clean
+    # separation work (split phase 3). `createWall` is now reachable only
+    # through the raw command bundle route, so the mapping status surfaces
+    # as `explicit-raw-expert` / `agentSurface == raw-expert`.
+    assert create_wall_metadata["mappingStatus"] == "explicit-raw-expert"
+    assert create_wall_metadata["rawSemanticMapping"]["agentSurface"] == "raw-expert"
     assert create_wall_metadata["rawSemanticMapping"]["rawExecution"] == {
         "available": True,
         "transport": "POST /api/models/{model_id}/bundles",
