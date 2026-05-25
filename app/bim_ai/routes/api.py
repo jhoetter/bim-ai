@@ -13,11 +13,12 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
+    Request,
     Response,
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
@@ -1586,6 +1587,18 @@ async def agent_iterate(
     return response.model_dump(by_alias=True)
 
 
+@api_router.post("/models/{model_id}/agent-iterate", include_in_schema=False)
+async def agent_iterate_redirect(model_id: str, request: Request) -> RedirectResponse:
+    """Backward-compat: ``agent-iterate`` was renamed to ``iterate`` on 2026-05-25.
+
+    Returns a 308 (permanent + method-preserving) redirect so existing POST
+    callers forward their request body to the new URL unchanged. Kept for one
+    release cycle; remove once external callers have migrated.
+    """
+    return RedirectResponse(
+        url=str(request.url).replace("/agent-iterate", "/iterate"),
+        status_code=308,
+    )
 
 
 # ---------------------------------------------------------------------------

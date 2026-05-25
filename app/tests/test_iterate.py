@@ -206,3 +206,28 @@ def test_env_var_constant_is_documented() -> None:
     assert AGENT_BACKEND_ENV_VAR == "BIM_AI_AGENT_BACKEND"
     # Sanity: should also be the env var the implementation actually reads.
     os.environ.pop(AGENT_BACKEND_ENV_VAR, None)
+
+
+# --- backward-compat redirect ------------------------------------------------
+
+
+def test_agent_iterate_redirect_to_iterate_308() -> None:
+    """``POST /agent-iterate`` must 308-redirect to ``/iterate``.
+
+    308 is method-preserving so a POST body forwards unchanged. Mounts the
+    production ``api_router`` so the real decorator is exercised.
+    """
+    from bim_ai.routes.api import api_router
+
+    app = FastAPI()
+    app.include_router(api_router)
+    client = TestClient(app, follow_redirects=False)
+
+    res = client.post(
+        "/api/models/00000000-0000-0000-0000-0000000000aa/agent-iterate",
+        json={"goal": "anything"},
+    )
+    assert res.status_code == 308
+    location = res.headers["location"]
+    assert location.endswith("/api/models/00000000-0000-0000-0000-0000000000aa/iterate")
+    assert "/agent-iterate" not in location
