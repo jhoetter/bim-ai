@@ -900,6 +900,16 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     displayName: 'Square log (natural)',
   },
 
+  // Issue #111 — exposed dark timber for Fachwerk overlays.
+  timber_dark_oak: {
+    key: 'timber_dark_oak',
+    baseColor: '#3a2418',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Dark oak timber (Fachwerk)',
+  },
+
   // Placeholder for unloaded / unresolved family instances (KRN-09 forward dep).
   placeholder_unloaded: {
     key: 'placeholder_unloaded',

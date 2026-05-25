@@ -18,6 +18,9 @@ import type { WalkController } from './walkMode';
 import type { ViewportPaintBundle } from './materials';
 import type { GripMeshHandle } from './grip3dRenderer';
 import type { WallElem } from './meshBuilders';
+// Issue #111 — fachwerk overlay is statically imported because it's an
+// internal pass attached to the wall mesh, not a top-level element kind.
+import { makeFachwerkOverlayMeshLocal } from './meshBuilders.fachwerkOverlay';
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
 type WindowElem = Extract<Element, { kind: 'window' }>;
@@ -968,6 +971,35 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
           // Always produce a placeholder (solid wall); the worker will swap it
           // with the CSG result when ready, or it stays if CSG is disabled.
           obj = makeWallMesh(e, elev, paint, curr);
+          // Issue #111 — when a wall declares a `fachwerkPattern`, attach a
+          // dark-timber raster overlay (posts + rails + diagonals) ~10 mm
+          // proud of the wall's exterior face. The infill (Gefache) comes
+          // from the wall's own materialKey (brick / plaster).
+          if (e.fachwerkPattern) {
+            const overlay = makeFachwerkOverlayMeshLocal(e, paint);
+            if (overlay.children.length > 0) {
+              // Apply the wall's plan transform to the overlay so it sits on
+              // the exterior face in world space. We mirror the same yaw +
+              // midpoint translation as the host wall mesh.
+              const dxMm = e.end.xMm - e.start.xMm;
+              const dzMm = e.end.yMm - e.start.yMm;
+              const wallYaw = yawForPlanSegment(dxMm, dzMm);
+              const wallCxM = (e.start.xMm + e.end.xMm) / 2 / 1000;
+              const wallCzM = (e.start.yMm + e.end.yMm) / 2 / 1000;
+              overlay.position.set(wallCxM, elev, wallCzM);
+              overlay.rotation.y = wallYaw;
+              // Wrap wall + overlay into a group so the overlay survives the
+              // CSG worker swap (the worker replaces `cache.get(id)`, but we
+              // want the overlay to come back along with the new wall mesh).
+              const wrapped = new THREE.Group();
+              wrapped.name = `wall-with-fachwerk:${e.id}`;
+              wrapped.userData.bimPickId = e.id;
+              wrapped.userData.hasFachwerkOverlay = true;
+              wrapped.add(obj);
+              wrapped.add(overlay);
+              obj = wrapped;
+            }
+          }
           break;
         }
         case 'door': {
