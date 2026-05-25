@@ -1,8 +1,7 @@
 """Pydantic request bodies for ``routes_query_resolve`` (BRT-03).
 
 Each model corresponds to exactly one FastAPI handler in
-``app/bim_ai/routes_query_resolve.py``. The ground rules match
-``reverse_bim_requests.py``:
+``app/bim_ai/routes_query_resolve.py``. Ground rules:
 
 1. ``model_config = ConfigDict(extra="allow", populate_by_name=True,
    protected_namespaces=())`` on every model. ``extra="allow"`` preserves the

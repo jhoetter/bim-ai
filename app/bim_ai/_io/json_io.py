@@ -12,13 +12,9 @@ from typing import Any
 def read_json(path: Path, *, default: Any = None) -> Any:
     """Read JSON from *path*. Return *default* on any failure.
 
-    Mirrors the dominant existing behavior in
-    `reverse_bim_reader_dispatch._read_json` and
-    `reverse_bim_source_revision_persistence._load_json`: missing
-    files and parse errors collapse to a safe sentinel rather than
-    propagating, because callers want a structured result not a
-    crash. The previous helpers hard-coded `{}` as that sentinel;
-    pass `default={}` to match.
+    Missing files and parse errors collapse to a safe sentinel rather
+    than propagating, because callers want a structured result not a
+    crash. Pass `default={}` for the common dict-shape sentinel.
     """
     if not path.exists():
         return default
@@ -31,12 +27,10 @@ def read_json(path: Path, *, default: Any = None) -> Any:
 def read_json_dict(path: Path) -> dict[str, Any]:
     """Variant of `read_json` that also enforces a dict shape.
 
-    Matches the previous `_read_json` / `_load_json` impls in
-    `reverse_bim_reader_dispatch` and
-    `reverse_bim_source_revision_persistence`: returns `{}` for
-    missing files, parse errors, AND non-dict payloads (e.g. a JSON
-    list at the top level). Several callers chain `.get(...)`
-    on the result, so the guard is load-bearing.
+    Returns `{}` for missing files, parse errors, AND non-dict
+    payloads (e.g. a JSON list at the top level). Several callers
+    chain `.get(...)` on the result, so the dict-shape guard is
+    load-bearing.
     """
     payload = read_json(path, default=None)
     if isinstance(payload, dict):

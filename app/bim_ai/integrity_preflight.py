@@ -23,10 +23,6 @@ from pydantic import BaseModel, ConfigDict
 class IntegrityPreflightResponse(BaseModel):
     """Response of `build_integrity_preflight_report`.
 
-    Inlined here from the (now-deleted) `models/reverse_bim_responses.py`
-    per Phase 6 of the bim-ai/bim-agent clean-separation tracker — bim-ai
-    no longer ships a reverse_bim_responses module.
-
     The dict-style subscript bridge (``__getitem__`` / ``get`` /
     ``__contains__``) preserves the BRT-05 transition contract: many
     callers (tests + internal services like routes/integrity.py) still

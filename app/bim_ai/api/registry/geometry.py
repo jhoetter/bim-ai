@@ -449,7 +449,6 @@ register(
         resourceGroups=[
             "semantic-authoring",
             "vertical-circulation",
-            "reverse-bim",
             "kernel-command",
         ],
         uiFeatures=["advisor-panel", "tool:stair"],

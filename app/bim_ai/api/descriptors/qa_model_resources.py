@@ -241,7 +241,7 @@ register(
             "output:ValidateRoofDormerSourceAlignmentResult",
         ],
         exampleRefs=["route:validate-roof-dormer-source-alignment"],
-        resourceGroups=["validate", "roofs", "dormers", "source", "reverse-bim", "mcp-resource"],
+        resourceGroups=["validate", "roofs", "dormers", "source", "mcp-resource"],
     )
 )
 
@@ -352,7 +352,7 @@ register(
         requiredPermissions=["model:read"],
         schemaRefs=["input:QaAreaReconciliationInput", "output:QaAreaReconciliationResult"],
         exampleRefs=["route:qa-area-reconciliation"],
-        resourceGroups=["qa", "areas", "rooms", "reverse-bim", "mcp-resource"],
+        resourceGroups=["qa", "areas", "rooms", "mcp-resource"],
         uiFeatures=["advisor-panel", "schedule-view"],
     )
 )
@@ -1179,7 +1179,7 @@ register(
         requiredPermissions=["model:read"],
         schemaRefs=["input:QueryRoomAccessGraphInput", "output:RoomAccessGraphResult"],
         exampleRefs=["route:query-room-access-graph"],
-        resourceGroups=["query", "rooms", "access", "reverse-bim", "mcp-resource"],
+        resourceGroups=["query", "rooms", "access", "mcp-resource"],
         uiFeatures=["advisor-panel", "room-tool"],
     )
 )
@@ -1436,7 +1436,7 @@ register(
         requiredPermissions=["model:read"],
         schemaRefs=["input:ResolveFloorSupportsInput", "output:ResolveFloorSupportsResult"],
         exampleRefs=["route:resolve-floor-supports"],
-        resourceGroups=["resolve", "floors", "structure", "mcp-resource", "reverse-bim"],
+        resourceGroups=["resolve", "floors", "structure", "mcp-resource"],
         uiFeatures=["floor-tool", "advisor-panel"],
     )
 )
@@ -1488,7 +1488,7 @@ register(
             "output:ResolveOpeningSourceMatchResult",
         ],
         exampleRefs=["route:resolve-opening-source-match"],
-        resourceGroups=["resolve", "openings", "source", "reverse-bim", "mcp-resource"],
+        resourceGroups=["resolve", "openings", "source", "mcp-resource"],
     )
 )
 
@@ -1548,7 +1548,7 @@ register(
         requiredPermissions=["model:read"],
         schemaRefs=["input:ResolveWallOpeningHostInput", "output:ResolveWallOpeningHostResult"],
         exampleRefs=["route:resolve-wall-opening-host"],
-        resourceGroups=["resolve", "openings", "walls", "reverse-bim", "mcp-resource"],
+        resourceGroups=["resolve", "openings", "walls", "mcp-resource"],
         uiFeatures=["wall-tool", "advisor-panel"],
     )
 )
@@ -1599,7 +1599,7 @@ register(
         requiredPermissions=["model:read"],
         schemaRefs=["input:ResolveDormerOpeningHostInput", "output:ResolveDormerOpeningHostResult"],
         exampleRefs=["route:resolve-dormer-opening-host"],
-        resourceGroups=["resolve", "openings", "dormers", "roofs", "reverse-bim", "mcp-resource"],
+        resourceGroups=["resolve", "openings", "dormers", "roofs", "mcp-resource"],
     )
 )
 
@@ -1653,7 +1653,7 @@ register(
             "output:ResolveRoofPositionFromSourcePointResult",
         ],
         exampleRefs=["route:resolve-roof-position-from-source-point"],
-        resourceGroups=["resolve", "roofs", "dormers", "openings", "reverse-bim", "mcp-resource"],
+        resourceGroups=["resolve", "roofs", "dormers", "openings", "mcp-resource"],
     )
 )
 
@@ -1706,7 +1706,7 @@ register(
             "output:ResolveRoomBoundaryEdgesResult",
         ],
         exampleRefs=["route:resolve-room-boundary-edges"],
-        resourceGroups=["resolve", "rooms", "topology", "reverse-bim", "mcp-resource"],
+        resourceGroups=["resolve", "rooms", "topology", "mcp-resource"],
         uiFeatures=["advisor-panel", "room-tool"],
     )
 )

@@ -1,17 +1,13 @@
 """Shared digest helpers (BRT-11).
 
-Sixteen modules in the package each define their own `_digest` or
-`_sha256_json`. They differ on two axes:
+Engine-wide canonical SHA-256 helpers. `digest()` and `sha256_json()`
+expose two axes via keyword args:
 
-1. `ensure_ascii`: most use the json-module default (`True`); two
-   (`folder_output._sha256_json`, `reverse_bim_reader_dispatch
-   ._sha256_json`) use `False`.
-2. Output prefix: `bim_requirement_validation_pack._digest`
-   returns `"sha256:" + hex`; all others return raw hex.
-
-`digest()` and `sha256_json()` expose both axes via keyword args so
-each call site can migrate without changing the bytes it produces
-into persisted evidence packs.
+1. `ensure_ascii` — toggle JSON ASCII escaping; both behaviors are
+   in use across the package and must be preservable to keep
+   persisted evidence-pack bytes stable.
+2. `prefix=True` — return `"sha256:<hex>"` instead of bare hex
+   (used by `bim_requirement_validation_pack._digest`).
 """
 
 from __future__ import annotations
@@ -46,11 +42,11 @@ def sha256_bytes(blob: bytes) -> str:
 def digest(payload: Any, *, ensure_ascii: bool = True, prefix: bool = False) -> str:
     """Canonical SHA-256 hex of *payload*.
 
-    Defaults match the most common existing implementation
-    (`reverse_bim._digest`). Set `ensure_ascii=False` for
-    parity with `folder_output._sha256_json` /
-    `reverse_bim_reader_dispatch._sha256_json`. Set `prefix=True`
-    for parity with `bim_requirement_validation_pack._digest`.
+    `ensure_ascii=True` (default) matches the most common existing
+    callsite; `ensure_ascii=False` matches the `folder_output`
+    variant. `prefix=True` matches the
+    `bim_requirement_validation_pack` variant which prepends
+    `"sha256:"`.
     """
     hex_digest = sha256_bytes(canonical_json_bytes(payload, ensure_ascii=ensure_ascii))
     return f"sha256:{hex_digest}" if prefix else hex_digest

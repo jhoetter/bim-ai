@@ -535,7 +535,7 @@ async def post_sweep_orphans(
     """Close-or-abort commits stuck in ``state='open'``.
 
     Idempotent; safe to schedule on a cron. Default age threshold is one
-    hour (the longest realistic slice runtime under hybrid-reverse-bim).
+    hour — chosen to cover the longest realistic interactive commit chain.
     """
 
     return await sweep_orphaned_open_commits(

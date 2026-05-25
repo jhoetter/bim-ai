@@ -1,13 +1,5 @@
 """Subprocess hygiene helper (BRT-70/71).
 
-The 7 `subprocess.run` / `check_output` sites in app/bim_ai/ today
-vary on whether they wrap `FileNotFoundError` and `TimeoutExpired`
-explicitly — `reverse_bim_reader_dispatch._call_reader_command` and
-`source_agent_loop._call_reader_command` get it right; the four
-sites in `source_ingestion.py` only catch `FileNotFoundError`, and
-the `routes_v3_meta` `git rev-parse` swallows everything with a bare
-`except Exception`.
-
 `run_subprocess` is a small, typed wrapper that:
 - Always passes an explicit `timeout` (mandatory keyword arg — no
   unbounded waits)

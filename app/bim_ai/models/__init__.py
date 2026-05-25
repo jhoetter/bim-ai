@@ -2,8 +2,7 @@
 
 Per the BRT-30/BRT-31 plan in `spec/trackers/backend-rework-tracker.md`, this
 subpackage is where Pydantic request bodies and response shapes that
-back the FastAPI routes live. BRT-01 seeds it with the request models
-behind `routes_reverse_bim.py`.
+back the FastAPI routes live.
 
 Route handlers historically accepted an untyped JSON body and called
 ``body.get(KEY)`` for each field. Models in this subpackage declare
