@@ -8,7 +8,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Literal, cast
 
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from bim_ai.clash_engine import run_clash_test
 from bim_ai.commands import (
@@ -846,8 +846,58 @@ def _room_programme_field_updates(
     return out
 
 
+def _format_command_validation_error(exc: ValidationError) -> str:
+    """Render a discriminated-union ValidationError without the giant variant list.
+
+    Pydantic's default ``str(exc)`` for ``Command`` (a discriminated union of
+    280+ variants) begins with a multi-thousand-character
+    ``tagged-union[CreateLevelCmd,CreateWallCmd,...]`` preamble that pushes the
+    actually useful fields (``loc=``/``input_value=``/``input_type=``) past the
+    response truncation point. See #134 (MF-mcp-2). We render from
+    ``exc.errors()`` instead so the structured fields come first.
+    """
+
+    structured = exc.errors(include_url=False)
+    if not structured:
+        return "Bundle command failed validation."
+    lines: list[str] = [
+        f"Bundle command failed validation ({len(structured)} error"
+        f"{'s' if len(structured) != 1 else ''}):"
+    ]
+    for err in structured:
+        err_type = err.get("type", "unknown")
+        loc_parts = [str(part) for part in err.get("loc") or ()]
+        loc = ".".join(loc_parts) if loc_parts else "<root>"
+        msg = err.get("msg", "").strip()
+        ctx = err.get("ctx") or {}
+        tag = ctx.get("tag")
+        # Pydantic stuffs the union variant list into ``msg`` for
+        # ``union_tag_invalid`` — replace it with the short form.
+        if err_type == "union_tag_invalid" and tag is not None:
+            msg = (
+                f"Unknown command type {tag!r}; not a registered CMD-V3 verb. "
+                "See /api/v3/tools for the registry."
+            )
+        input_value = err.get("input")
+        input_repr = repr(input_value)
+        if len(input_repr) > 200:
+            input_repr = input_repr[:197] + "..."
+        lines.append(
+            f"  - type={err_type} loc={loc} input_value={input_repr} "
+            f"input_type={type(input_value).__name__}: {msg}"
+        )
+    return "\n".join(lines)
+
+
 def coerce_command(data: dict[str, Any]) -> Command:
-    return command_adapter.validate_python(data)
+    try:
+        return command_adapter.validate_python(data)
+    except ValidationError as exc:
+        # Re-raise as a plain ValueError so callers that string-format the
+        # exception (e.g. ``try_commit_bundle`` → ``bundle_apply_failed.message``)
+        # get the front-loaded structured rendering instead of the
+        # multi-thousand-char union preamble. See #134 (MF-mcp-2).
+        raise ValueError(_format_command_validation_error(exc)) from exc
 
 
 def _validate_wall_edge_profile_run(
