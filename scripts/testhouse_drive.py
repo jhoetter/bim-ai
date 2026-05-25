@@ -3347,7 +3347,7 @@ def _dormers_bundle(
 
     commands: list[dict] = []
     consumed: list[str] = []
-    for f in dormers:
+    for idx, f in enumerate(dormers):
         side = _dormer_facade_side(f) or "north"
         # Priority 1: explicit roof-local pin from IR.
         explicit_pos = _dormer_explicit_position(f)
@@ -3493,7 +3493,13 @@ def _dormers_bundle(
                 )
         dormer_cmd: dict = {
             "type": "createDormer",
-            "id": f"th-{house}-dormer-{_slugify(f.get('factId'))}",
+            # MF-driver-21 (#95): include the enumerate idx so ids stay
+            # unique even when factIds are missing — ``_slugify(None)``
+            # collapses to the literal ``"x"``, which used to produce N
+            # collisions on a multi-dormer roof (same pattern as PR #86
+            # for openings; h23 iter-22 hit ``duplicate element id
+            # 'th-h23-dormer-x'`` with 6 dormer facts).
+            "id": f"th-{house}-dormer-{idx}-{_slugify(f.get('factId'))}",
             "name": (str(f.get("text") or "Schleppgaube"))[:80],
             "hostRoofId": roof_id,
             "positionOnRoof": {
