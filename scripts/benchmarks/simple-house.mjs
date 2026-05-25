@@ -848,9 +848,6 @@ function normalizeLiveBundleEvidence({
     advisor: {
       status: violations.length ? 'live-validation-output' : 'live-validation-empty',
       findings: violations,
-      agentBriefCommandProtocol_v1: body.agentBriefCommandProtocol_v1 ?? null,
-      agentGeneratedBundleQaChecklist_v1: body.agentGeneratedBundleQaChecklist_v1 ?? null,
-      agentBriefAcceptanceReadout_v1: body.agentBriefAcceptanceReadout_v1 ?? null,
     },
   };
 }

@@ -10,7 +10,6 @@ describe('parseEvidenceArtifact — null / empty input', () => {
     expect(r.semanticDigestPrefix16).toBeNull();
     expect(r.sheetRows).toEqual([]);
     expect(r.mismatchNotes).toEqual([]);
-    expect(r.reviewActions).toEqual([]);
   });
 
   it('returns empty summary for empty string', () => {

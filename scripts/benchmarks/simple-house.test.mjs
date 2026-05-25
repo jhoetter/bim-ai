@@ -364,7 +364,6 @@ test('simple-house live mode posts cmd-v3 dry-run evidence to public bundle API'
         wouldRevision: 2,
         violations: [],
         replayDiagnostics: { commandCount: captured.body.bundle.commands.length },
-        agentGeneratedBundleQaChecklist_v1: { status: 'mocked' },
       }),
     );
   });

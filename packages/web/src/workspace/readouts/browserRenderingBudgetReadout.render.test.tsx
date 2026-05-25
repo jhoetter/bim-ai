@@ -2,9 +2,9 @@
  * Component rendering tests for the browser rendering budget display surfaces.
  *
  * These tests verify that the formatted budget lines — which are exactly what
- * Agent Review (AgentReviewPane) and Workspace render — contain the correct
- * progressive state tokens, reason codes, and large-model proof summary text
- * for over-budget, deferred, stale, and in-budget scenarios.
+ * Workspace renders — contain the correct progressive state tokens, reason
+ * codes, and large-model proof summary text for over-budget, deferred, stale,
+ * and in-budget scenarios.
  */
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -53,7 +53,7 @@ function renderBudgetLines(lines: string[]): HTMLDivElement {
   return container;
 }
 
-/** Render budget lines as a list (mimics AgentReviewPane). */
+/** Render budget lines as a list. */
 function renderBudgetLinesList(lines: string[]): HTMLDivElement {
   const container = document.createElement('div');
   container.setAttribute('data-testid', 'agent-review-browser-rendering-budget');

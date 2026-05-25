@@ -155,7 +155,7 @@ function buildInspectionReadout(params: {
   return { primary, secondary };
 }
 
-/** Stable workspace/agent-review lines from POST bundle mergePreflight_v1 / 409 detail. */
+/** Stable workspace lines from POST bundle mergePreflight_v1 / 409 detail. */
 export function formatMergePreflightV1Readout(mp: Record<string, unknown>): {
   primary: string;
   secondary: string | null;

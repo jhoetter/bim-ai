@@ -1,13 +1,8 @@
-import { parseAgentReviewActionsV1, type AgentReviewActionRow } from '../agent';
 import {
   summarizeArtifactUploadManifestV1,
   parseEvidenceBaselineLifecycleReadoutV1,
   type EvidenceBaselineLifecycleReadoutWire,
 } from '../evidence';
-import {
-  parseAgentReviewReadoutConsistencyClosureV1,
-  type AgentReviewReadoutConsistencyClosureV1,
-} from '../agent';
 import {
   parsePrdCloseoutCrossCorrelationManifestV1,
   type PrdCloseoutCrossCorrelationManifestWire,
@@ -107,10 +102,8 @@ export type EvidenceArtifactSummary = {
     packageGenerationBudgetMs?: number;
     packageGenerationOverBudget?: boolean;
   } | null;
-  reviewActions: AgentReviewActionRow[];
   artifactUploadManifestReadout: string[] | null;
   baselineLifecycleReadout: EvidenceBaselineLifecycleReadoutWire | null;
-  consistencyClosure: AgentReviewReadoutConsistencyClosureV1 | null;
   prdCloseoutCrossCorrelation: PrdCloseoutCrossCorrelationManifestWire | null;
   evidenceFreshness: {
     freshCount: number;
@@ -205,10 +198,8 @@ export function parseEvidenceArtifact(
     mismatchNotes: [],
     diffFixLoop: null,
     performanceGate: null,
-    reviewActions: [],
     artifactUploadManifestReadout: null,
     baselineLifecycleReadout: null,
-    consistencyClosure: null,
     prdCloseoutCrossCorrelation: null,
     evidenceFreshness: null,
     featureCoverage: null,
@@ -270,10 +261,6 @@ export function parseEvidenceArtifact(
     let baselineLifecycleReadout: EvidenceArtifactSummary['baselineLifecycleReadout'] = null;
     const lifecycleRoRaw = payload.evidenceBaselineLifecycleReadout_v1;
     baselineLifecycleReadout = parseEvidenceBaselineLifecycleReadoutV1(lifecycleRoRaw);
-
-    const consistencyClosure = parseAgentReviewReadoutConsistencyClosureV1(
-      payload.agentReviewReadoutConsistencyClosure_v1,
-    );
 
     let prdCloseoutCrossCorrelation: EvidenceArtifactSummary['prdCloseoutCrossCorrelation'] = null;
     const closeoutManifestRaw = payload.v1CloseoutReadinessManifest_v1;
@@ -655,14 +642,6 @@ export function parseEvidenceArtifact(
       };
     });
 
-    const reviewActionsParsed = parseAgentReviewActionsV1(
-      payload.agentReviewActions_v1 ?? payload.agent_review_actions_v1,
-    );
-    const reviewActions = [
-      ...reviewActionsParsed.filter((a) => a.kind === 'remediateEvidenceDiffIngest'),
-      ...reviewActionsParsed.filter((a) => a.kind !== 'remediateEvidenceDiffIngest'),
-    ];
-
     const mismatchNotes: string[] = [];
 
     const noteCorrelationDigest = (corr: Record<string, unknown>, label: string, id: string) => {
@@ -1026,10 +1005,8 @@ export function parseEvidenceArtifact(
       mismatchNotes,
       diffFixLoop,
       performanceGate,
-      reviewActions,
       artifactUploadManifestReadout,
       baselineLifecycleReadout,
-      consistencyClosure,
       prdCloseoutCrossCorrelation,
       evidenceFreshness,
       featureCoverage,
@@ -1055,10 +1032,8 @@ export function parseEvidenceArtifact(
       mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
       diffFixLoop: null,
       performanceGate: null,
-      reviewActions: [],
       artifactUploadManifestReadout: null,
       baselineLifecycleReadout: null,
-      consistencyClosure: null,
       prdCloseoutCrossCorrelation: null,
       evidenceFreshness: null,
       featureCoverage: null,

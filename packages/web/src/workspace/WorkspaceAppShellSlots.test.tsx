@@ -3,9 +3,8 @@
  * `data-bim-model-status` / `data-bim-loading` attributes on the canvas root
  * to know when the geometry stream has settled and an ortho screenshot will
  * not catch the "Loading model…" overlay. These tests pin those attributes
- * to the value of the `modelReady` prop so the contract with
- * `packages/web/scripts/reverse-bim-view-capture-runner.mjs` cannot regress
- * silently.
+ * to the value of the `modelReady` prop so the contract with external view
+ * capture runners cannot regress silently.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
