@@ -1354,6 +1354,6 @@ _load_descriptor_module("bim_ai.api.descriptors.material_pbr")
 
 _load_descriptor_module("bim_ai.api.descriptors.sketch")
 
-_load_descriptor_module("bim_ai.api.descriptors.source_reverse_bim")
+# source_reverse_bim descriptor moved to bim-agent — clean-separation phase 3
 
 _load_descriptor_module("bim_ai.api.descriptors.output_export")

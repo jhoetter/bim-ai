@@ -140,7 +140,6 @@ from bim_ai.routes.presentation import presentation_router
 from bim_ai.routes.query_resolve import query_resolve_router
 from bim_ai.routes.render_export import render_export_router
 from bim_ai.routes.renderer_diagnostics import renderer_diagnostics_router
-from bim_ai.routes.reverse_bim import reverse_bim_router
 from bim_ai.routes.schedules import schedules_router
 from bim_ai.routes.sharing import sharing_router
 from bim_ai.routes.site_import import site_import_router
@@ -156,10 +155,8 @@ from bim_ai.services.agent_loop import (
     AgentIterateResponse,
     generate_patch,
 )
-from bim_ai.services.semantic_authoring import (
-    UnsupportedSemanticOperationError,
-    build_semantic_authoring_bundle,
-)
+# bim_ai.services.semantic_authoring moved to bim-agent — see
+# spec/trackers/bim-ai-bim-agent-clean-separation-tracker.md phase 3
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.structure_lens import structure_analysis_export
 from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
@@ -242,7 +239,6 @@ api_router.include_router(markups_router)
 api_router.include_router(imports_router)
 api_router.include_router(query_resolve_router)
 api_router.include_router(presentation_router)
-api_router.include_router(reverse_bim_router)
 api_router.include_router(sharing_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
@@ -1524,29 +1520,10 @@ _SEMANTIC_SURFACE_ALIASES = {
 }
 
 
-@api_router.post("/semantic-authoring/{surface_id}")
-async def semantic_authoring_route(
-    surface_id: str,
-    body: SemanticAuthoringRequest,
-) -> Any:
-    operation = _SEMANTIC_SURFACE_ALIASES.get(surface_id, surface_id)
-    try:
-        bundle = build_semantic_authoring_bundle(operation, body.model_dump(by_alias=True))
-    except UnsupportedSemanticOperationError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "unsupported_semantic_operation",
-                "operation": exc.operation,
-                "message": exc.reason,
-            },
-        ) from exc
-    except ValidationError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={"code": "invalid_semantic_payload", "message": str(exc)},
-        ) from exc
-    return bundle.model_dump(by_alias=True)
+# semantic-authoring route deleted; the build_semantic_authoring_bundle
+# logic moved to bim-agent in clean-separation phase 3. Agents that want
+# semantic→bundle construction should run it locally in bim-agent and
+# POST the resulting CommandBundle to the slice-execute route.
 
 
 
