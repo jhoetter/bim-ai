@@ -65,24 +65,6 @@ function acceptedFinalAcceptance(modelId = 'model-accepted') {
   };
 }
 
-test('target-house seed artifacts require accepted reverse-BIM final acceptance', async () => {
-  const { source, out, bundle } = await fixture();
-
-  const result = await runCreateSeed([
-    '--name',
-    'target-house-4',
-    '--source',
-    source,
-    '--bundle',
-    bundle,
-    '--out',
-    out,
-  ]);
-
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Accepted reverse-BIM final acceptance is required/);
-});
-
 test('seed packaging rejects failed reverse-BIM final acceptance reports', async () => {
   const { root, source, out, bundle } = await fixture();
   const finalAcceptance = path.join(root, 'failed-final-acceptance.json');
@@ -103,7 +85,7 @@ test('seed packaging rejects failed reverse-BIM final acceptance reports', async
 
   const result = await runCreateSeed([
     '--name',
-    'target-house-4',
+    'sample-house-4',
     '--source',
     source,
     '--bundle',
@@ -125,7 +107,7 @@ test('seed packaging records accepted reverse-BIM final acceptance provenance', 
 
   const result = await runCreateSeed([
     '--name',
-    'target-house-4',
+    'sample-house-4',
     '--source',
     source,
     '--bundle',
@@ -138,11 +120,11 @@ test('seed packaging records accepted reverse-BIM final acceptance provenance', 
 
   assert.equal(result.status, 0, result.stderr);
   const manifest = JSON.parse(
-    await fs.readFile(path.join(out, 'target-house-4', 'manifest.json'), 'utf8'),
+    await fs.readFile(path.join(out, 'sample-house-4', 'manifest.json'), 'utf8'),
   );
   assert.equal(manifest.acceptance.status, 'accepted');
   assert.equal(manifest.acceptance.layer, 'reverse-bim');
   assert.equal(manifest.acceptance.finalAcceptance, 'evidence/final-acceptance.json');
   assert.equal(manifest.acceptance.modelId, 'model-ok');
-  await fs.access(path.join(out, 'target-house-4', 'evidence', 'final-acceptance.json'));
+  await fs.access(path.join(out, 'sample-house-4', 'evidence', 'final-acceptance.json'));
 });

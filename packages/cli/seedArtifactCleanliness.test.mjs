@@ -22,7 +22,7 @@ async function writeJson(file, payload) {
   await fs.writeFile(file, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-async function makeSeedArtifact(root, name = 'target-house-1') {
+async function makeSeedArtifact(root, name = 'sample-house-1') {
   const artifactDir = path.join(root, name);
   await fs.mkdir(path.join(artifactDir, 'source'), { recursive: true });
   await fs.mkdir(path.join(artifactDir, 'evidence'), { recursive: true });
@@ -30,13 +30,13 @@ async function makeSeedArtifact(root, name = 'target-house-1') {
     schemaVersion: 'cmd-v3.0',
     commands: [],
   });
-  await fs.writeFile(path.join(artifactDir, 'source', 'target-house-seed.md'), '# Seed\n', 'utf8');
+  await fs.writeFile(path.join(artifactDir, 'source', 'seed.md'), '# Seed\n', 'utf8');
   await fs.writeFile(path.join(artifactDir, 'evidence', 'README.md'), '# Evidence\n', 'utf8');
   await writeJson(path.join(artifactDir, 'manifest.json'), {
     schemaVersion: 'bim-ai.seed-artifact.v1',
     name,
     slug: name,
-    title: 'Target House 1',
+    title: 'Sample House 1',
     bundle: 'bundle.json',
     sourceRoot: 'source',
     evidenceRoot: 'evidence',
@@ -71,13 +71,13 @@ test('seed artifact cleanliness audit accepts a clean packaged library', async (
   assert.equal(result.ok, true);
   assert.equal(result.findings.length, 0);
   assert.equal(result.approved.length, 1);
-  assert.equal(result.approved[0].name, 'target-house-1');
+  assert.equal(result.approved[0].name, 'sample-house-1');
 });
 
 test('seed artifact cleanliness audit rejects disposable wave artifacts in check mode', async () => {
   const root = await makeTempRoot();
   await makeSeedArtifact(root);
-  await writeJson(path.join(root, 'target-house-1', 'evidence', 'wave3-worker-e.json'), {
+  await writeJson(path.join(root, 'sample-house-1', 'evidence', 'wave3-worker-e.json'), {
     disposable: true,
     wave: 'wave3',
   });

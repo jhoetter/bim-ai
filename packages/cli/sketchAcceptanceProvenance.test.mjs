@@ -15,7 +15,7 @@ import {
 function validManifest(overrides = {}) {
   return buildSketchAcceptanceProvenanceManifest({
     gitHead: 'abc123',
-    modelId: 'target-house-1',
+    modelId: 'sample-house-1',
     modelRevision: '42',
     phaseId: 'phase-03-envelope-openings',
     irHash: 'sha256:ir-v1',
@@ -31,7 +31,7 @@ function validManifest(overrides = {}) {
         featureId: 'roof_terrace_cutout',
         title: 'Roof terrace cutout',
         phase: 'phase-03-envelope-openings',
-        sourceRefs: ['spec/target-house/target-house-1.png#roof-terrace'],
+        sourceRefs: ['spec/samples/sample-house-1.png#roof-terrace'],
         requiredElementIds: ['hf-roof-main', 'hf-roof-court-opening'],
         mappedElementIds: ['hf-roof-main', 'hf-roof-court-opening'],
         evidencePaths: [{ path: 'evidence/roof-terrace.png', viewId: 'roof_court_evidence' }],

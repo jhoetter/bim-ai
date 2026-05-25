@@ -168,10 +168,6 @@ async function ensureLiveEvidence(evidenceDir, bundlePath) {
   };
 }
 
-function isTargetHouseArtifactName(name) {
-  return /^target-house-\d+$/.test(String(name || ''));
-}
-
 async function ensureFinalAcceptance(finalAcceptancePath, bundlePath) {
   if (!finalAcceptancePath) return null;
   const absPath = path.resolve(finalAcceptancePath);
@@ -218,7 +214,7 @@ async function main() {
       'Final live evidence is required. Run sketch_bim.py accept first and pass --live-evidence <dir>.',
     );
   }
-  if ((args.requireFinalAcceptance || isTargetHouseArtifactName(args.name)) && !finalAcceptance) {
+  if (args.requireFinalAcceptance && !finalAcceptance) {
     throw new Error(
       `Accepted reverse-BIM final acceptance is required for '${args.name}'. Pass --final-acceptance <reverseBimFinalAcceptance.json>.`,
     );

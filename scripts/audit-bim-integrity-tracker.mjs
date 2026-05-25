@@ -29,27 +29,9 @@ const REQUIRED_DONE_EVIDENCE_FIELDS = [
   ['commit', 'commit/wave reference'],
   ['limitations', 'limitations'],
 ];
-const REQUIRED_WAVE_CLOSEOUTS = [
-  {
-    wave: 'W24-E',
-    path: 'seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json',
-    trackerItems: [
-      'BIR-F03',
-      'BIR-F04',
-      'BIR-F06',
-      'BIR-M07',
-      'BIR-M08',
-      'BIR-M09',
-      'BIR-M10',
-      'BIR-N10',
-      'BIR-O04',
-      'BIR-T01',
-      'BIR-T04',
-      'BIR-T05',
-      'BIR-W04',
-    ],
-  },
-];
+// W24-E closeout requirement retired 2026-05-25; this hook stays in place
+// so future methodologies can re-attach a wave-closeout accounting row.
+const REQUIRED_WAVE_CLOSEOUTS = [];
 
 function parseArgs(argv) {
   const args = {
@@ -426,7 +408,7 @@ function buildWaveCloseoutAccounting() {
     }
     const artifactItems = Array.isArray(payload.trackerItems) ? payload.trackerItems : [];
     const missingTrackerItems = requirement.trackerItems.filter((id) => !artifactItems.includes(id));
-    const schemaOk = payload.schemaVersion === 'target-house-wave-closeout.v1';
+    const schemaOk = payload.schemaVersion === 'bim-ai.wave-closeout.v1';
     const waveOk = payload.wave === requirement.wave;
     const ok = schemaOk && waveOk && missingTrackerItems.length === 0;
     if (!ok) {

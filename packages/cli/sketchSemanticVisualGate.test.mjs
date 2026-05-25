@@ -123,10 +123,11 @@ test('tolerated checklist item passes only with matching complete ledger row', (
   assert.deepEqual(result.checklist[0].tolerance.missing, []);
 });
 
-test('unchecked checklist item can pass from deterministic target-house evidence and feature trace', () => {
+test('unchecked checklist item can pass from deterministic acceptance evidence and feature trace', () => {
   const result = evaluateSketchSemanticVisualGate({
     checklist: checklistWithCheck({ status: 'unchecked' }),
     evidence: {
+      // Field name is the legacy engine contract (see sketch-semantic-visual-gate.mjs).
       targetHouseEvidenceAcceptance: {
         ok: true,
         visualRows: [
@@ -144,7 +145,7 @@ test('unchecked checklist item can pass from deterministic target-house evidence
           phaseId: 'P4',
           requiredViewIds: ['front'],
           requiredElementIds: ['front-window-1'],
-          sourceRefs: ['spec/target-house/target-house-1-sketch-ir.draft.json#features'],
+          sourceRefs: ['spec/samples/sample-house-sketch-ir.draft.json#features'],
         },
       ],
     },
@@ -162,7 +163,7 @@ test('invalid checklist row disposition passes only with reason and evidence', (
   const result = evaluateSketchSemanticVisualGate({
     checklist: checklistWithCheck({
       status: 'invalid_checklist_row',
-      notes: 'Generated row is stale for this target-house feature/view contract.',
+      notes: 'Generated row is stale for this feature/view contract.',
       evidencePath: 'evidence/semantic-disposition.json',
     }),
     generatedAt: GENERATED_AT,
@@ -179,7 +180,7 @@ test('invalid checklist row disposition blocks when incomplete', () => {
     checklist: checklistWithCheck(
       {
         status: 'invalid_checklist_row',
-        notes: 'Generated row is stale for this target-house feature/view contract.',
+        notes: 'Generated row is stale for this feature/view contract.',
       },
       { evidencePaths: [] },
     ),

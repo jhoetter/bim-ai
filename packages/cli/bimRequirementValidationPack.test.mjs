@@ -137,11 +137,11 @@ function idsEvidenceRow(overrides = {}) {
 }
 
 test('compiles BIM information requirements into deterministic validation checks', () => {
-  const first = compileBimRequirementValidationPack(sampleIr(), { packId: 'target-house' });
-  const second = compileBimRequirementValidationPack(sampleIr(), { packId: 'target-house' });
+  const first = compileBimRequirementValidationPack(sampleIr(), { packId: 'sample-pack' });
+  const second = compileBimRequirementValidationPack(sampleIr(), { packId: 'sample-pack' });
 
   assert.equal(first.schemaVersion, BIM_REQUIREMENT_VALIDATION_PACK_SCHEMA_VERSION);
-  assert.equal(first.packId, 'target-house');
+  assert.equal(first.packId, 'sample-pack');
   assert.equal(first.sourceDigestSha256, second.sourceDigestSha256);
   assert.deepEqual(
     first.checks.map((check) => check.id),
