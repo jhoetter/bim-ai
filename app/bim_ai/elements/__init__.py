@@ -165,6 +165,8 @@ from .floors_roofs import (
     DormerPositionOnRoof,
     DormerRoofKind,
     EdgeProfileRunElem,
+    FacadeBayElem,
+    FacadeBayShape,
     FloorElem,
     FloorTypeElem,
     RoofElem,
@@ -451,6 +453,8 @@ __all__ = [
     "DormerPositionOnRoof",
     "DormerRoofKind",
     "EdgeProfileRunElem",
+    "FacadeBayElem",
+    "FacadeBayShape",
     "FloorElem",
     "FloorTypeElem",
     "RoofElem",
@@ -630,6 +634,7 @@ ElementKind = Literal[
     "reference_plane",
     "property_line",
     "balcony",
+    "facade_bay",
     "sweep",
     "dormer",
     "area",
@@ -689,6 +694,7 @@ Element = Annotated[
     | RoofOpeningElem
     | RailingElem
     | BalconyElem
+    | FacadeBayElem
     | FamilyTypeElem
     | RoomSeparationElem
     | PlanRegionElem

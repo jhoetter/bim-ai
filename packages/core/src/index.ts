@@ -317,6 +317,7 @@ export type ElemKind =
   | 'sweep'
   | 'dormer'
   | 'balcony'
+  | 'facade_bay'
   | 'area'
   | 'masking_region'
   | 'spot_elevation'
@@ -1770,6 +1771,24 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      /** Issue #102 — Erker / bay window: extrusion projecting outward from a host wall. */
+      kind: 'facade_bay';
+      id: string;
+      name: string;
+      hostWallId: string;
+      startAlongWallMm: number;
+      endAlongWallMm: number;
+      projectionMm: number;
+      shape: 'rectangular' | 'chamfered' | 'curved';
+      chamferAngleDeg?: number | null;
+      levelId?: string | null;
+      materialKey?: string | null;
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
     }
   | {

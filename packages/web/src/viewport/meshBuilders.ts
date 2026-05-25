@@ -36,6 +36,7 @@ import { buildProfiledWallMesh } from './meshBuilders.wallProfile';
 import { buildFloorEdgeProfileMesh } from './buildFloorEdgeProfile';
 export { makeRampMesh, buildRampMesh };
 export { makeBalconyMesh } from './meshBuilders.balcony';
+export { makeFacadeBayMesh } from './meshBuilders.facadeBay';
 export { buildSteelConnectionMesh, makeBeamMesh, makeColumnMesh } from './meshBuilders.structural';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>Issue #102 — FacadeBayElem (Erker) — plan view, before vs after</title>
+  <desc>
+    Plan view of a house south facade. Before: the south wall is a plain
+    rectangular footprint with one centred window — no Erker. After: a
+    createFacadeBay command (chamfered, 45°) adds a bay projecting 1 m south
+    of the wall between the 1.5 m and 4.5 m marks; the projection's three
+    outer faces host one window each, demonstrating the v0 host-resolver
+    extension that lets openings be authored on the bay's wall id.
+  </desc>
+
+  <defs>
+    <pattern id="wallHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#7a5a3a" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="460" fill="#ffffff"/>
+
+  <!-- ==================== LEFT PANEL: BEFORE ==================== -->
+  <g id="before">
+    <rect x="20" y="20" width="520" height="420" fill="#f7f9fb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="280" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">Before</text>
+    <text x="280" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      rectangular footprint — no Erker on south facade
+    </text>
+
+    <!-- Compass -->
+    <text x="40" y="100" font-size="10" fill="#6b7280">N ↑</text>
+    <text x="40" y="115" font-size="10" fill="#6b7280">S ↓</text>
+
+    <!-- House footprint (plan view, N at top). South wall is the bottom edge. -->
+    <rect x="120" y="140" width="320" height="190" fill="#f1ece4" stroke="#1f2937" stroke-width="2"/>
+    <text x="280" y="240" text-anchor="middle" font-size="12" fill="#1f2937">EG (Erdgeschoss)</text>
+
+    <!-- South wall hatch -->
+    <rect x="120" y="325" width="320" height="8" fill="url(#wallHatch)" stroke="#1f2937" stroke-width="1.5"/>
+    <text x="280" y="358" text-anchor="middle" font-size="10" fill="#6b7280">south wall (6 m)</text>
+
+    <!-- Single centred south-facing window -->
+    <rect x="265" y="325" width="50" height="8" fill="#dde9f3" stroke="#1f2937" stroke-width="1.5"/>
+    <text x="290" y="380" text-anchor="middle" font-size="9" fill="#4b5563">window-s-01</text>
+
+    <!-- Dimension line -->
+    <line x1="120" y1="400" x2="440" y2="400" stroke="#6b7280" stroke-width="1"/>
+    <line x1="120" y1="395" x2="120" y2="405" stroke="#6b7280"/>
+    <line x1="440" y1="395" x2="440" y2="405" stroke="#6b7280"/>
+    <text x="280" y="415" text-anchor="middle" font-size="10" fill="#6b7280">6000 mm</text>
+  </g>
+
+  <!-- ==================== RIGHT PANEL: AFTER ==================== -->
+  <g id="after">
+    <rect x="560" y="20" width="520" height="420" fill="#f7f9fb" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="820" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2937">After</text>
+    <text x="820" y="64" text-anchor="middle" font-size="11" fill="#4b5563">
+      createFacadeBay: chamfered, projection 1000 mm, between 1500–4500 mm along the south wall
+    </text>
+
+    <!-- Compass -->
+    <text x="580" y="100" font-size="10" fill="#6b7280">N ↑</text>
+    <text x="580" y="115" font-size="10" fill="#6b7280">S ↓</text>
+
+    <!-- House footprint, unchanged -->
+    <rect x="660" y="140" width="320" height="190" fill="#f1ece4" stroke="#1f2937" stroke-width="2"/>
+    <text x="820" y="240" text-anchor="middle" font-size="12" fill="#1f2937">EG (Erdgeschoss)</text>
+
+    <!-- South wall hatch (full length) -->
+    <rect x="660" y="325" width="320" height="8" fill="url(#wallHatch)" stroke="#1f2937" stroke-width="1.5"/>
+
+    <!--
+      Chamfered Erker footprint, projecting 1 m south.
+      Wall spans 6 m (x: 660 → 980 in screen coords).
+      Bay starts at 1500 mm = 1500/6000 * 320 = 80 px → screen x 660+80 = 740.
+      Bay ends at 4500 mm → screen x 660+240 = 900.
+      Projection 1 m → 1/6 * 320 = ~53 px south of the wall.
+      Chamfer cut: 45° → 53 px wide on each side.
+    -->
+    <path d="M 740 333 L 793 386 L 847 386 L 900 333 Z"
+          fill="#f1ece4" stroke="#1f2937" stroke-width="2"/>
+    <text x="820" y="372" text-anchor="middle" font-size="10" fill="#1f2937">Erker (chamfered)</text>
+
+    <!-- Three windows on the bay's outer faces (front + 2 chamfered sides) -->
+    <!-- Front (south) face -->
+    <rect x="797" y="382" width="46" height="8" fill="#dde9f3" stroke="#1e40af" stroke-width="1.5"/>
+    <!-- Left chamfer face: draw as a diagonal line segment -->
+    <line x1="755" y1="348" x2="785" y2="378" stroke="#1e40af" stroke-width="3"/>
+    <!-- Right chamfer face -->
+    <line x1="855" y1="378" x2="885" y2="348" stroke="#1e40af" stroke-width="3"/>
+
+    <!-- Window labels -->
+    <text x="820" y="408" text-anchor="middle" font-size="9" fill="#1e40af">window-erker-s</text>
+    <text x="715" y="350" text-anchor="middle" font-size="9" fill="#1e40af">w-erker-sw</text>
+    <text x="925" y="350" text-anchor="middle" font-size="9" fill="#1e40af">w-erker-se</text>
+
+    <!-- Projection dimension -->
+    <line x1="930" y1="333" x2="930" y2="386" stroke="#6b7280" stroke-width="1"/>
+    <line x1="925" y1="333" x2="935" y2="333" stroke="#6b7280"/>
+    <line x1="925" y1="386" x2="935" y2="386" stroke="#6b7280"/>
+    <text x="945" y="362" font-size="10" fill="#6b7280">1000 mm</text>
+
+    <!-- Span dimension -->
+    <line x1="740" y1="318" x2="900" y2="318" stroke="#6b7280" stroke-width="1"/>
+    <line x1="740" y1="313" x2="740" y2="323" stroke="#6b7280"/>
+    <line x1="900" y1="313" x2="900" y2="323" stroke="#6b7280"/>
+    <text x="820" y="312" text-anchor="middle" font-size="10" fill="#6b7280">3000 mm bay span (1500 → 4500 along wall)</text>
+  </g>
+
+  <!-- Footer caption -->
+  <text x="550" y="450" text-anchor="middle" font-size="10" fill="#6b7280">
+    v0: bay rendered beside the host wall (CSG interior fusion deferred). IFC export deferred. Openings allowed on bay outer faces.
+  </text>
+</svg>

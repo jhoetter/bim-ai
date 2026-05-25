@@ -662,6 +662,33 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'facade_bay') {
+    // Issue #102 — accept snake_case and camelCase keys; default unknown
+    // shape values to 'rectangular' so an out-of-band payload still renders.
+    const shapeRaw = String(raw.shape ?? 'rectangular');
+    const shape: 'rectangular' | 'chamfered' | 'curved' = (
+      ['rectangular', 'chamfered', 'curved'] as const
+    ).includes(shapeRaw as never)
+      ? (shapeRaw as 'rectangular' | 'chamfered' | 'curved')
+      : 'rectangular';
+    const chamferAngleRaw = raw.chamferAngleDeg ?? raw.chamfer_angle_deg;
+    const levelIdRaw = raw.levelId ?? raw.level_id;
+    const materialKeyRaw = raw.materialKey ?? raw.material_key;
+    return {
+      kind: 'facade_bay',
+      id,
+      name,
+      hostWallId: String(raw.hostWallId ?? raw.host_wall_id ?? ''),
+      startAlongWallMm: Number(raw.startAlongWallMm ?? raw.start_along_wall_mm ?? 0),
+      endAlongWallMm: Number(raw.endAlongWallMm ?? raw.end_along_wall_mm ?? 0),
+      projectionMm: Number(raw.projectionMm ?? raw.projection_mm ?? 0),
+      shape,
+      ...(chamferAngleRaw != null ? { chamferAngleDeg: Number(chamferAngleRaw) } : {}),
+      ...(typeof levelIdRaw === 'string' ? { levelId: levelIdRaw } : {}),
+      ...(typeof materialKeyRaw === 'string' ? { materialKey: materialKeyRaw } : {}),
+    };
+  }
+
   if (kind === 'sweep') {
     const rawPath = (raw.pathMm ?? raw.path_mm) as Record<string, unknown>[] | undefined;
     const rawProfile = (raw.profileMm ?? raw.profile_mm) as Record<string, unknown>[] | undefined;

@@ -491,6 +491,23 @@ class CreateBalconyCmd(BaseModel):
     balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
 
 
+class CreateFacadeBayCmd(BaseModel):
+    """Issue #102 — author a FacadeBayElem (Erker) hosted on an existing wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createFacadeBay"] = "createFacadeBay"
+    id: str | None = None
+    name: str = "Facade Bay"
+    host_wall_id: str = Field(alias="hostWallId")
+    start_along_wall_mm: float = Field(alias="startAlongWallMm")
+    end_along_wall_mm: float = Field(alias="endAlongWallMm")
+    projection_mm: float = Field(alias="projectionMm", gt=0)
+    shape: Literal["rectangular", "chamfered", "curved"] = Field(default="rectangular")
+    chamfer_angle_deg: float | None = Field(default=None, alias="chamferAngleDeg")
+    level_id: str | None = Field(default=None, alias="levelId")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
 class CreateRailingCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createRailing"] = "createRailing"
