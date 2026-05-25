@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <!-- Issue #132 — MF-render-12: view-capture-run returns identical UI
+       screenshots instead of 3D ortho renders.
+       Root cause: useWorkspaceDefaultTab opens a PLAN tab when the model
+       has no `viewpoint` element. CanvasMount keys off the active tab's
+       `kind` (not the store's `viewerMode`), so even though the runner
+       sets viewerMode='orbit_3d', <PlanCanvas/> still renders.
+       Fix: capture runner adds `&captureMode=1`; the hook honors the flag
+       by forcing a `kind: '3d'` tab regardless of which views exist. -->
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1200" height="64" fill="#0f172a"/>
+  <text x="20" y="38" fill="#f8fafc" font-size="22" font-weight="700">
+    Issue #132 — MF-render-12: capture-views returned 2D UI screenshots, not 3D ortho renders
+  </text>
+  <text x="20" y="58" fill="#94a3b8" font-size="12">
+    7-of-8 byte-identical PNGs; all were full-window screenshots of the bim-ai web UI sitting on the default KG-Plan tab
+  </text>
+
+  <!-- LEFT panel: BEFORE -->
+  <rect x="20" y="86" width="560" height="650" fill="#fef2f2" stroke="#fca5a5" stroke-width="2" rx="8"/>
+  <text x="300" y="116" text-anchor="middle" fill="#991b1b" font-size="18" font-weight="700">BEFORE — broken capture path</text>
+
+  <!-- BEFORE flow -->
+  <rect x="50" y="140" width="500" height="36" fill="#ffffff" stroke="#94a3b8" rx="4"/>
+  <text x="60" y="163" fill="#0f172a" font-size="13">
+    1. view-capture-run.mjs opens <tspan font-family="monospace">/?modelId=…&amp;projection=orthographic</tspan>
+  </text>
+
+  <rect x="50" y="186" width="500" height="36" fill="#ffffff" stroke="#94a3b8" rx="4"/>
+  <text x="60" y="209" fill="#0f172a" font-size="13">
+    2. Workspace mounts; MCP-authored model has NO viewpoint element
+  </text>
+
+  <rect x="50" y="232" width="500" height="60" fill="#fee2e2" stroke="#dc2626" rx="4"/>
+  <text x="60" y="252" fill="#7f1d1d" font-size="13" font-weight="600">
+    3. useWorkspaceDefaultTab falls through to plan_view → plan tab
+  </text>
+  <text x="60" y="270" fill="#7f1d1d" font-family="monospace" font-size="11">
+    setTabsState(openTab({kind:'plan', target: 'KG-Plan'}))
+  </text>
+  <text x="60" y="284" fill="#7f1d1d" font-family="monospace" font-size="11">
+    setMode('plan'); setViewerMode('plan_canvas')
+  </text>
+
+  <rect x="50" y="302" width="500" height="60" fill="#ffffff" stroke="#94a3b8" rx="4"/>
+  <text x="60" y="322" fill="#0f172a" font-size="13">
+    4. Script loops 8 views; for each, calls store API:
+  </text>
+  <text x="60" y="340" fill="#475569" font-family="monospace" font-size="11">
+    state.setViewerMode('orbit_3d');   ← updates store, but…
+  </text>
+  <text x="60" y="354" fill="#475569" font-family="monospace" font-size="11">
+    state.setOrbitCameraFromViewpointMm({position, target, up});
+  </text>
+
+  <rect x="50" y="372" width="500" height="76" fill="#fee2e2" stroke="#dc2626" rx="4"/>
+  <text x="60" y="392" fill="#7f1d1d" font-size="13" font-weight="600">
+    5. CanvasMount keys off active TAB's kind, not viewerMode:
+  </text>
+  <text x="60" y="410" fill="#7f1d1d" font-family="monospace" font-size="11">
+    if (mode === 'plan') return &lt;PlanCanvas/&gt;;
+  </text>
+  <text x="60" y="424" fill="#7f1d1d" font-family="monospace" font-size="11">
+    // ↑ mode = activeTab.kind = 'plan' — 3D camera setters are no-ops
+  </text>
+  <text x="60" y="440" fill="#7f1d1d" font-family="monospace" font-size="11">
+    // for the rendered view
+  </text>
+
+  <rect x="50" y="458" width="500" height="60" fill="#fee2e2" stroke="#dc2626" stroke-width="2" rx="4"/>
+  <text x="60" y="478" fill="#7f1d1d" font-size="13" font-weight="700">
+    6. page.screenshot() captures the 2D plan canvas + chrome
+  </text>
+  <text x="60" y="496" fill="#7f1d1d" font-family="monospace" font-size="11">
+    md5(east-shaded.png) == md5(east-wireframe.png) == md5(south-…) …
+  </text>
+  <text x="60" y="510" fill="#7f1d1d" font-family="monospace" font-size="11">
+    (camera+style toggles don't affect plan canvas → all identical)
+  </text>
+
+  <!-- mock screenshot -->
+  <rect x="50" y="536" width="500" height="180" fill="#f3f4f6" stroke="#94a3b8" rx="4"/>
+  <text x="300" y="555" text-anchor="middle" fill="#475569" font-size="11">8 × identical screenshots:</text>
+  <rect x="60" y="565" width="160" height="20" fill="#cbd5e1"/>
+  <text x="65" y="580" fill="#0f172a" font-size="9" font-family="monospace">Seed Library / house-21 — KG-Plan</text>
+  <rect x="60" y="590" width="140" height="120" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="130" y="650" text-anchor="middle" fill="#94a3b8" font-size="11">2D plan</text>
+  <text x="130" y="664" text-anchor="middle" fill="#94a3b8" font-size="11">canvas</text>
+  <rect x="220" y="590" width="320" height="120" fill="#ffffff" stroke="#94a3b8"/>
+  <rect x="380" y="640" width="80" height="40" fill="#e7d8c1" stroke="#92400e"/>
+  <text x="380" y="700" fill="#475569" font-size="10">(model not rendered — no 3D viewport)</text>
+
+  <!-- RIGHT panel: AFTER -->
+  <rect x="620" y="86" width="560" height="650" fill="#f0fdf4" stroke="#86efac" stroke-width="2" rx="8"/>
+  <text x="900" y="116" text-anchor="middle" fill="#166534" font-size="18" font-weight="700">AFTER — fix</text>
+
+  <rect x="650" y="140" width="500" height="60" fill="#dcfce7" stroke="#16a34a" rx="4"/>
+  <text x="660" y="160" fill="#14532d" font-size="13" font-weight="600">
+    1. Runner appends &amp;captureMode=1 to the URL
+  </text>
+  <text x="660" y="178" fill="#14532d" font-family="monospace" font-size="11">
+    /?modelId=…&amp;projection=orthographic&amp;captureMode=1
+  </text>
+  <text x="660" y="192" fill="#475569" font-size="11">
+    → packages/web/scripts/view-capture-run.mjs
+  </text>
+
+  <rect x="650" y="210" width="500" height="36" fill="#ffffff" stroke="#94a3b8" rx="4"/>
+  <text x="660" y="233" fill="#0f172a" font-size="13">
+    2. Workspace mounts; URL flag is read once at hydration time
+  </text>
+
+  <rect x="650" y="256" width="500" height="76" fill="#dcfce7" stroke="#16a34a" rx="4"/>
+  <text x="660" y="276" fill="#14532d" font-size="13" font-weight="600">
+    3. useWorkspaceDefaultTab: when captureMode is on, force 3D tab
+  </text>
+  <text x="660" y="294" fill="#14532d" font-family="monospace" font-size="11">
+    captureMode
+  </text>
+  <text x="660" y="308" fill="#14532d" font-family="monospace" font-size="11">
+      ? {kind:'3d', label:'3D · Capture'}   ← bypass plan-view fallback
+  </text>
+  <text x="660" y="322" fill="#14532d" font-family="monospace" font-size="11">
+      : preferredViewpoint ? … : preferredPlanView ? … : level
+  </text>
+
+  <rect x="650" y="342" width="500" height="36" fill="#ffffff" stroke="#94a3b8" rx="4"/>
+  <text x="660" y="365" fill="#0f172a" font-size="13">
+    4. setMode('3d') + setViewerMode('orbit_3d') applied on mount
+  </text>
+
+  <rect x="650" y="388" width="500" height="60" fill="#dcfce7" stroke="#16a34a" rx="4"/>
+  <text x="660" y="408" fill="#14532d" font-size="13" font-weight="600">
+    5. Script loops 8 views; camera+style now drive 3D Viewport:
+  </text>
+  <text x="660" y="426" fill="#14532d" font-family="monospace" font-size="11">
+    CanvasMount: mode === '3d' → &lt;Viewport/&gt; (three.js, orthographic)
+  </text>
+  <text x="660" y="440" fill="#14532d" font-family="monospace" font-size="11">
+    setOrbitCameraFromViewpointMm rotates the orbit camera per view
+  </text>
+
+  <rect x="650" y="458" width="500" height="60" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="4"/>
+  <text x="660" y="478" fill="#14532d" font-size="13" font-weight="700">
+    6. page.screenshot() captures distinct N/S/E/W × shaded/wireframe
+  </text>
+  <text x="660" y="496" fill="#14532d" font-family="monospace" font-size="11">
+    md5(east-shaded.png) ≠ md5(east-wireframe.png) ≠ md5(south-…) …
+  </text>
+  <text x="660" y="510" fill="#475569" font-family="monospace" font-size="11">
+    8 distinct, useful 3D ortho renders for grading subagent
+  </text>
+
+  <!-- mock screenshots -->
+  <rect x="650" y="536" width="500" height="180" fill="#f3f4f6" stroke="#94a3b8" rx="4"/>
+  <text x="900" y="555" text-anchor="middle" fill="#475569" font-size="11">8 × distinct 3D ortho renders:</text>
+
+  <!-- N -->
+  <rect x="660" y="565" width="115" height="70" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="700,615 740,615 720,585" fill="#92400e" stroke="#451a03"/>
+  <rect x="700" y="610" width="40" height="20" fill="#a8a29e" stroke="#451a03"/>
+  <text x="717" y="650" text-anchor="middle" fill="#475569" font-size="10">north-shaded</text>
+
+  <!-- S -->
+  <rect x="780" y="565" width="115" height="70" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="820,615 860,615 840,585" fill="#92400e" stroke="#451a03"/>
+  <rect x="820" y="610" width="40" height="20" fill="#a8a29e" stroke="#451a03"/>
+  <rect x="828" y="618" width="6" height="8" fill="#0ea5e9"/>
+  <text x="837" y="650" text-anchor="middle" fill="#475569" font-size="10">south-shaded</text>
+
+  <!-- E -->
+  <rect x="900" y="565" width="115" height="70" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="920,615 960,615 940,590" fill="#92400e" stroke="#451a03"/>
+  <rect x="920" y="612" width="40" height="18" fill="#a8a29e" stroke="#451a03"/>
+  <text x="957" y="650" text-anchor="middle" fill="#475569" font-size="10">east-shaded</text>
+
+  <!-- W -->
+  <rect x="1020" y="565" width="115" height="70" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="1040,615 1080,615 1060,590" fill="#92400e" stroke="#451a03"/>
+  <rect x="1040" y="612" width="40" height="18" fill="#a8a29e" stroke="#451a03"/>
+  <text x="1077" y="650" text-anchor="middle" fill="#475569" font-size="10">west-shaded</text>
+
+  <!-- wireframe row -->
+  <rect x="660" y="645" width="115" height="60" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="700,690 740,690 720,665" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <rect x="700" y="685" width="40" height="15" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <text x="717" y="713" text-anchor="middle" fill="#475569" font-size="10">north-wireframe</text>
+
+  <rect x="780" y="645" width="115" height="60" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="820,690 860,690 840,665" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <rect x="820" y="685" width="40" height="15" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <text x="837" y="713" text-anchor="middle" fill="#475569" font-size="10">south-wireframe</text>
+
+  <rect x="900" y="645" width="115" height="60" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="920,690 960,690 940,668" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <rect x="920" y="687" width="40" height="13" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <text x="957" y="713" text-anchor="middle" fill="#475569" font-size="10">east-wireframe</text>
+
+  <rect x="1020" y="645" width="115" height="60" fill="#ffffff" stroke="#94a3b8"/>
+  <polygon points="1040,690 1080,690 1060,668" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <rect x="1040" y="687" width="40" height="13" fill="none" stroke="#0f172a" stroke-width="0.8"/>
+  <text x="1077" y="713" text-anchor="middle" fill="#475569" font-size="10">west-wireframe</text>
+
+  <!-- arrow -->
+  <line x1="585" y1="408" x2="615" y2="408" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Footnote -->
+  <text x="20" y="754" fill="#475569" font-size="10">
+    Touched: packages/web/src/workspace/useWorkspaceDefaultTab.ts · packages/web/scripts/view-capture-run.mjs · useWorkspaceDefaultTab.test.ts (new)
+  </text>
+</svg>
