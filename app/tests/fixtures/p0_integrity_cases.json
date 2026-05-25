@@ -13,18 +13,15 @@
         "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q"
       ]
     },
-    "target_house_regression": {
-      "description": "Reduced target-house-1 symptoms that must continue to fail until the modeled defect is fixed.",
+    "geometry_integrity_regression": {
+      "description": "Reduced geometry-integrity symptoms (rooms / openings / roof cuts) that must continue to fail until the modeled defect is fixed. Cases originated as observations during the retired target-house-1 methodology; the assertions are engine-fidelity, not methodology-specific.",
       "auditable": true,
       "ownerTrackerItems": ["BIR-O02", "BIR-W01"],
       "canonicalEvidencePaths": [
-        "app/tests/fixtures/p0_integrity_cases.json",
-        "packages/cli/targetHouseGeometryDiagnostics.test.mjs",
-        "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json"
+        "app/tests/fixtures/p0_integrity_cases.json"
       ],
       "proofHooks": [
-        "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q",
-        "node --test packages/cli/targetHouseGeometryDiagnostics.test.mjs"
+        "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q"
       ]
     },
     "benchmark_seed": {
@@ -74,7 +71,6 @@
       "auditable": true,
       "ownerTrackerItems": ["BIR-M06", "BIR-W01"],
       "canonicalEvidencePaths": [
-        "spec/target-house/target-house-1-acceptance-checklist.md",
         "packages/cli/sketchAcceptanceProvenance.test.mjs"
       ],
       "proofHooks": ["node --test packages/cli/sketchAcceptanceProvenance.test.mjs"]
@@ -447,9 +443,9 @@
       }
     },
     {
-      "id": "target_house_detached_access_wall",
-      "fixtureClass": "target_house_regression",
-      "description": "Reduced target-house detached access-wall/access-door symptom.",
+      "id": "detached_access_wall_regression",
+      "fixtureClass": "geometry_integrity_regression",
+      "description": "Reduced detached access-wall/access-door symptom.",
       "trackerItems": ["BIR-C01", "BIR-C02", "BIR-C05", "BIR-O02"],
       "rulesUnderTest": [
         "hosted_opening_helper_host",
@@ -529,9 +525,9 @@
       }
     },
     {
-      "id": "target_house_valid_real_access_door",
-      "fixtureClass": "target_house_regression",
-      "description": "Reduced target-house remediation case: access door is hosted by a real wall inside the level floor envelope.",
+      "id": "valid_real_access_door_regression",
+      "fixtureClass": "geometry_integrity_regression",
+      "description": "Reduced remediation case: access door is hosted by a real wall inside the level floor envelope.",
       "trackerItems": ["BIR-C01", "BIR-C02", "BIR-C05", "BIR-O02"],
       "rulesUnderTest": [
         "hosted_opening_helper_host",
@@ -840,8 +836,8 @@
       }
     },
     {
-      "id": "target_house_roof_cut_outside_host",
-      "fixtureClass": "target_house_regression",
+      "id": "roof_cut_outside_host_regression",
+      "fixtureClass": "geometry_integrity_regression",
       "description": "Reduced roof court cut footprint extends beyond the host roof footprint.",
       "trackerItems": ["BIR-F01", "BIR-O02"],
       "rulesUnderTest": ["bir_f01_roof_opening_outside_host_footprint"],
@@ -880,8 +876,8 @@
       }
     },
     {
-      "id": "target_house_roof_cut_inside_host",
-      "fixtureClass": "target_house_regression",
+      "id": "roof_cut_inside_host_regression",
+      "fixtureClass": "geometry_integrity_regression",
       "description": "Reduced roof court cut footprint remains inside the host roof footprint.",
       "trackerItems": ["BIR-F01", "BIR-O02"],
       "rulesUnderTest": ["bir_f01_roof_opening_outside_host_footprint"],
@@ -1537,7 +1533,7 @@
     },
     {
       "id": "vertical_stair_bedroom_and_furniture_overlap",
-      "fixtureClass": "target_house_regression",
+      "fixtureClass": "geometry_integrity_regression",
       "description": "Reduced bedroom/stair regression with a sleeping room and placed furniture occupying stair footprint.",
       "trackerItems": ["BIR-E05", "BIR-O02"],
       "rulesUnderTest": ["BIR-E05"],

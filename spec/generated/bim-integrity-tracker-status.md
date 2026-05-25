@@ -102,7 +102,6 @@ Generated closeout artifacts are required for parent-wave rows before the wave c
 
 | Wave | Status | Artifact | Required tracker items |
 | ---- | ------ | -------- | ---------------------- |
-| W24-E | attached | `seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json` | 13 |
 
 ## Implementation Evidence Accounting
 

@@ -21,17 +21,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _ELEMENT_ADAPTER = TypeAdapter(Element)
 _REQUIRED_FIXTURE_CLASSES = {
     "minimal_synthetic",
-    "target_house_regression",
+    "geometry_integrity_regression",
     "benchmark_seed",
     "import_export_roundtrip",
     "performance_stress",
     "disposable_local_evidence_rehearsal",
     "user_realistic_sketch",
 }
-
-
-def _target_house_seed_artifact_present() -> bool:
-    return (_REPO_ROOT / "seed-artifacts" / "target-house-1" / "manifest.json").is_file()
 
 
 def _load_corpus() -> dict[str, Any]:
@@ -116,20 +112,14 @@ def test_p0_integrity_fixture_corpus_classes_are_explicit_and_auditable() -> Non
         assert fixture_class["canonicalEvidencePaths"], name
         assert fixture_class["proofHooks"], name
         for relative_path in fixture_class["canonicalEvidencePaths"]:
-            if (
-                name == "target_house_regression"
-                and str(relative_path).startswith("seed-artifacts/target-house-1/")
-                and not _target_house_seed_artifact_present()
-            ):
-                continue
             assert (_REPO_ROOT / relative_path).exists(), f"{name}: {relative_path}"
     assert {case["fixtureClass"] for case in corpus["cases"]} <= set(fixture_classes)
-    assert {"minimal_synthetic", "target_house_regression"} <= {
+    assert {"minimal_synthetic", "geometry_integrity_regression"} <= {
         case["fixtureClass"] for case in corpus["cases"]
     }
 
 
-def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() -> None:
+def test_p0_integrity_fixture_corpus_covers_geometry_integrity_regressions() -> None:
     corpus = _load_corpus()
     cases_by_id = {case["id"]: case for case in corpus["cases"]}
 
@@ -141,23 +131,23 @@ def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() 
         "room_egress_unresolved_path",
         "room_wall_topology_gap",
         "room_schedule_metadata_missing",
-        "target_house_detached_access_wall",
-        "target_house_valid_real_access_door",
-        "target_house_roof_cut_outside_host",
-        "target_house_roof_cut_inside_host",
+        "detached_access_wall_regression",
+        "valid_real_access_door_regression",
+        "roof_cut_outside_host_regression",
+        "roof_cut_inside_host_regression",
     } <= set(cases_by_id)
     assert "room_containment_outside_floor_slab" in cases_by_id[
         "room_overlap_outside_slab"
     ]["rulesUnderTest"]
-    assert cases_by_id["target_house_detached_access_wall"]["fixtureClass"] == (
-        "target_house_regression"
+    assert cases_by_id["detached_access_wall_regression"]["fixtureClass"] == (
+        "geometry_integrity_regression"
     )
-    assert cases_by_id["target_house_valid_real_access_door"]["expectedFindings"] == []
+    assert cases_by_id["valid_real_access_door_regression"]["expectedFindings"] == []
     assert {
         "hosted_opening_helper_host",
         "hosted_opening_host_outside_floor_envelope",
         "physical_access_proxy_leakage",
-    } <= set(cases_by_id["target_house_valid_real_access_door"]["absentRuleIds"])
+    } <= set(cases_by_id["valid_real_access_door_regression"]["absentRuleIds"])
 
 
 def test_p0_integrity_fixture_corpus_covers_vertical_circulation_closure() -> None:
@@ -192,7 +182,7 @@ def test_p0_integrity_fixture_corpus_covers_wave24b_authoring_content_closure() 
         "hosted_door_missing_semantic_cut",
         "overlapping_hosted_openings",
         "hosted_opening_spacing_capacity_and_lintel",
-        "target_house_detached_access_wall",
+        "detached_access_wall_regression",
         "hosted_family_support_mismatch",
         "face_hosted_family_off_wall_face",
         "floating_asset_and_detached_stair",

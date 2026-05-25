@@ -33,7 +33,9 @@ def test_bim_integrity_tracker_audit_report_has_core_accounting_sections() -> No
     assert "## Wave 7 Feature Coverage Dashboard Data" in report
     assert "## Wave Closeout Automation" in report
     assert "## Implementation Evidence Accounting" in report
-    assert "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json" in report
+    # The previous target-house-1 wave-closeout reference was retired 2026-05-25
+    # along with seed-artifacts/target-house-1/ (dead methodology — see
+    # bim-agent/spec/trackers/target-house-dead-methodology-cleanup-tracker.md).
     assert "Done quality gate passed" in report
     assert "| BIR-T through BIR-W |" in report
     assert "Duplicate ids: 0" in report
