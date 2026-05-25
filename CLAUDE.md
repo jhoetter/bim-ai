@@ -1,5 +1,16 @@
 # bim-ai — Claude Code instructions
 
+## NON-NEGOTIABLE: open the screenshots before you grade
+
+After every iter / build that produces ortho captures, you MUST use the Read tool to open the actual PNGs and look at them, not just the structured element counts. Pattern-matching "looks like a house" from the silhouette has repeatedly missed real defects (duplicate stacked roofs, dormers in wrong location, sub-grade walls, materials swapped per level, etc.).
+
+Minimum eye-pass per house:
+- North + south + east + west cardinal shaded captures (4 PNGs)
+- At least one wireframe (`-wireframe.png`) for a view where the shaded version looks "off" — wireframe exposes interior geometry the shaded view hides
+- For multi-level houses: confirm exactly ONE main roof. Element-count `roofs=2` is always a bug.
+
+If a defect is visible in the screenshot but not in the element counts, file it as a `from: bim-agent` GH issue and embed the screenshot via a `raw.githubusercontent.com/jhoetter/bim-ai/main/evidence/...` URL.
+
 ## CI-parity checks
 
 Before pushing, follow the relevant checklist in `AGENTS.md`. It records the
