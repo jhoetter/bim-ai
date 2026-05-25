@@ -877,20 +877,19 @@ def _ensure_model(*, house: str, api_base: str) -> str:
 def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dict:
     """Build a CMD-V3-01 bundle for iter-3's exterior shell.
 
-    Authors one ``createLevel`` per entry in ``ir["levels"]`` (KG/EG/DG
-    for alpha 3-level houses, KG/EG/OG/DG for 4-level houses, and
-    KG/EG/OG/DG/SB for 5-level houses like h23), a closed EG wall loop,
-    and an EG slab floor — enough to satisfy iter-3's ≥ 4/10 exterior
-    bar while keeping the command list short. The roof is authored by
-    its own dedicated phase (``_roof_bundle``) downstream; emitting one
-    here as well stacked two gables at DG (see issue #103, MF-driver-24).
+    Authors a closed EG exterior wall loop and the EG slab floor — both
+    bound to the canonical ``th-{house}-level-EG`` level id seeded by
+    the ``topology-project-setup`` phase (``_project_setup_bundle``).
+    Levels themselves are emitted by that phase exclusively; the roof
+    is owned by ``_roof_bundle`` downstream.
 
     MF-driver-15 (#79): the per-level emission previously dispatched off
     a hard-coded ``{KG, EG, DG}`` dict, so any IR carrying an ``OG`` /
     ``SB`` level (h22, h23 — legal per the PR #35 normalizer) crashed
     with ``KeyError`` and blocked the driver from authoring beyond EG.
-    This mirrors the dynamic ``_levels_to_process`` discovery that PR
-    #34 introduced for the per-level rooms phase.
+    Once the shell stopped owning level emission (issue #115, below) the
+    failure mode went away, but the discovery helper remains the right
+    way to reason about which level ids the topology phase will seed.
 
     MF-driver-24 (#103): previously also emitted a ``createRoof`` whose
     id (``th-{house}-i{iter_n}-main-roof``) did not collide with the
@@ -899,6 +898,18 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     now exclusively the responsibility of ``_roof_bundle`` — which
     produces a richer roof anyway (IR-derived pitch + ridge orientation,
     material, flat-roof extensions over EG-only wings).
+
+    MF-driver-25 (#115): previously also emitted ``createLevel`` for
+    every IR level under iter-prefixed ids (``th-{house}-i{iter_n}-
+    level-{short}``) while the topology phase (``_project_setup_bundle``)
+    authored the SAME storeys under the canonical, iter-independent
+    ``th-{house}-level-{short}``. IDs don't collide, so both commit and
+    the renderer ends up with two parallel level namespaces: walls/slab
+    on the shell ids, every later phase (rooms, roof, dormers …) on the
+    canonical ids. Result: doubled level element counts in every house
+    snapshot and the visual oddities tracked in issue #115. Levels are
+    now emitted exclusively by the topology phase; the shell binds its
+    walls + slab to the canonical EG level id directly.
     """
 
     house = ir["house"]
@@ -906,29 +917,14 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
     thickness = float(ir["exteriorWallChainEG"]["wallThicknessMM"])
     eg_height = next((_lvl_height_mm(lvl) for lvl in ir["levels"] if lvl["id"] == "level-EG"), 2700)
 
-    # Dynamic id construction: one stable id per level the IR declares,
-    # keyed by the canonical short slot (``level-OG`` -> ``OG``).
-    levels = _levels_to_process(ir)
-    level_id_by_short: dict[str, str] = {
-        _level_short_from_id(
-            lvl["id"]
-        ): f"th-{house}-i{iter_n}-level-{_level_short_from_id(lvl['id'])}"
-        for lvl in levels
-    }
-    level_eg = level_id_by_short.get("EG", f"th-{house}-i{iter_n}-level-EG")
+    # Reference the canonical level id seeded by ``_project_setup_bundle``
+    # (``topology-project-setup`` phase). Iter-prefixed shell-local ids
+    # were the root cause of issue #115 — two parallel namespaces, one
+    # per phase — so this is the SINGLE authority for the EG storey id
+    # the shell binds its walls and slab to.
+    level_eg = f"th-{house}-level-EG"
 
     commands: list[dict] = []
-    for lvl in levels:
-        short = _level_short_from_id(lvl["id"])
-        commands.append(
-            {
-                "type": "createLevel",
-                "id": level_id_by_short[short],
-                "name": lvl["name"],
-                "elevationMm": _lvl_elevation_mm(lvl),
-            }
-        )
-
     for i in range(len(poly)):
         a = poly[i]
         b = poly[(i + 1) % len(poly)]
@@ -963,7 +959,7 @@ def _shell_bundle_from_ir(*, ir: dict, parent_revision: int, iter_n: int) -> dic
         "assumptions": [
             {
                 "key": f"testhouse_iter_{iter_n}_{house}_shell",
-                "value": "iter-3 exterior shell: dynamic levels (KG/EG/[OG]/[DG]/[SB]), closed EG wall loop, slab — roof emitted by the dedicated roof phase",
+                "value": "iter-3 exterior shell: closed EG wall loop + slab on the canonical EG level; levels owned by the topology phase, roof by the dedicated roof phase",
                 "confidence": 0.5,
                 "source": f"tmp/reverse-bim/house-{house}/understanding/existing-building-ir.json",
                 "contestable": True,
