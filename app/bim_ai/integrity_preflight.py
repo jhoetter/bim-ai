@@ -26,6 +26,13 @@ class IntegrityPreflightResponse(BaseModel):
     Inlined here from the (now-deleted) `models/reverse_bim_responses.py`
     per Phase 6 of the bim-ai/bim-agent clean-separation tracker — bim-ai
     no longer ships a reverse_bim_responses module.
+
+    The dict-style subscript bridge (``__getitem__`` / ``get`` /
+    ``__contains__``) preserves the BRT-05 transition contract: many
+    callers (tests + internal services like routes/integrity.py) still
+    use ``report["findings"]`` etc. The bridge delegates to
+    ``model_dump(by_alias=True)`` so legacy access keeps working while
+    the function signature advertises the Pydantic type.
     """
 
     model_config = ConfigDict(extra="allow", populate_by_name=True, protected_namespaces=())
@@ -33,6 +40,23 @@ class IntegrityPreflightResponse(BaseModel):
     format: str
     summary: dict[str, Any] | None = None
     findings: list[dict[str, Any]] | None = None
+
+    def __getitem__(self, key: str) -> Any:
+        dumped = self.model_dump(by_alias=True)
+        if key in dumped:
+            return dumped[key]
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        return key in self.model_dump(by_alias=True)
 
 
 from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
