@@ -5,11 +5,10 @@ dispatching off a hard-coded ``{KG, EG, DG}`` map. Any IR carrying an
 ``OG`` or ``SB`` level (legal post-PR #35) crashed with ``KeyError`` and
 blocked the driver from authoring beyond EG on h22 / h23.
 
-These tests pin the dynamic discovery: one ``createLevel`` per
-``ir["levels"]`` entry, in source order, with the elevation pulled from
-the IR entry (not a hard-coded fallback). Back-compat with the 3-level
-KG/EG/DG alpha layout is asserted explicitly so the refactor is a
-strict superset.
+These tests pin the dynamic discovery: the shell bundle handles every
+level shape the IR may carry (3-, 4-, 5-level) without crashing, and
+the walls/slab it emits bind to the canonical EG level id seeded by
+the topology phase.
 
 MF-driver-24 (#103): the shell bundle MUST NOT emit ``createRoof``.
 That phase used to author a redundant ``th-{house}-i{iter_n}-main-roof``
@@ -18,6 +17,18 @@ in addition to the dedicated ``_roof_bundle`` phase's
 the renderer drew two stacked gables. Tests below pin: zero createRoof
 in the shell bundle, exactly one in the roof bundle, exactly one total
 across the full author chain.
+
+MF-driver-25 (#115): the shell bundle MUST NOT emit ``createLevel``
+either — same exact pattern as the duplicate-roof bug above. The shell
+phase previously authored ``th-{house}-i{iter_n}-level-{KG|EG|…}`` while
+``_project_setup_bundle`` (the topology phase) authored the canonical
+``th-{house}-level-{KG|EG|…}`` for the same storeys. The ids don't
+collide → both commit → snapshots show doubled level element counts and
+walls / roofs end up split across two parallel level namespaces. Tests
+below pin: zero createLevel in the shell bundle (the topology phase is
+the sole authority), walls + slab bind to the canonical EG level id,
+and the union of topology + shell commands produces exactly one
+createLevel per IR storey.
 """
 
 from __future__ import annotations
@@ -71,10 +82,10 @@ def _create_levels(bundle: dict) -> list[dict]:
 # ---------- 3-level back-compat (alpha) -------------------------------------
 
 
-def test_shell_bundle_3_level_kg_eg_dg_unchanged() -> None:
-    # The original alpha shape: KG/EG/DG. Pre-fix this worked; assert
-    # the refactor preserves the exact id format + ordering so existing
-    # houses keep authoring identically.
+def test_shell_bundle_3_level_kg_eg_dg_emits_zero_create_level() -> None:
+    # Post-#115: the shell bundle no longer owns level emission. The
+    # topology phase (``_project_setup_bundle``) is the sole authority.
+    # Walls + slab bind to the canonical EG level id ``th-{house}-level-EG``.
     ir = _ir(
         "alpha",
         [
@@ -85,37 +96,30 @@ def test_shell_bundle_3_level_kg_eg_dg_unchanged() -> None:
     )
     bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
 
-    levels = _create_levels(bundle)
-    assert [lvl["id"] for lvl in levels] == [
-        "th-alpha-i3-level-KG",
-        "th-alpha-i3-level-EG",
-        "th-alpha-i3-level-DG",
-    ]
-    assert [lvl["name"] for lvl in levels] == [
-        "Kellergeschoss",
-        "Erdgeschoss",
-        "Dachgeschoss",
-    ]
-    assert [lvl["elevationMm"] for lvl in levels] == [-2500.0, 0.0, 2700.0]
+    assert _create_levels(bundle) == [], (
+        "shell bundle must not emit createLevel — that belongs to _project_setup_bundle"
+    )
 
     # MF-driver-24 (#103): roof is the dedicated phase's job; shell must
     # not emit one even on the legacy 3-level shape where it used to.
     roofs = [c for c in bundle["commands"] if c.get("type") == "createRoof"]
     assert roofs == []
 
-    # EG slab + walls reference the EG level id.
+    # EG slab + walls reference the canonical (iter-independent) EG level id.
     floors = [c for c in bundle["commands"] if c.get("type") == "createFloor"]
     walls = [c for c in bundle["commands"] if c.get("type") == "createWall"]
-    assert floors[0]["levelId"] == "th-alpha-i3-level-EG"
-    assert all(w["levelId"] == "th-alpha-i3-level-EG" for w in walls)
+    assert floors[0]["levelId"] == "th-alpha-level-EG"
+    assert all(w["levelId"] == "th-alpha-level-EG" for w in walls)
 
 
 # ---------- 4-level (h22 / h23 partial) — no KeyError ------------------------
 
 
-def test_shell_bundle_4_level_kg_eg_og_dg_emits_four_createlevel() -> None:
-    # Pre-fix this raised ``KeyError: 'OG'`` because the dispatch dict
-    # only knew {KG, EG, DG}.
+def test_shell_bundle_4_level_kg_eg_og_dg_emits_zero_create_level() -> None:
+    # Pre-#79 this raised ``KeyError: 'OG'`` because the dispatch dict
+    # only knew {KG, EG, DG}. Post-#115 the shell emits no levels at all,
+    # regardless of how many the IR declares — the topology phase covers
+    # every shape uniformly.
     ir = _ir(
         "h-four",
         [
@@ -127,24 +131,22 @@ def test_shell_bundle_4_level_kg_eg_og_dg_emits_four_createlevel() -> None:
     )
     bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
 
-    levels = _create_levels(bundle)
-    assert len(levels) == 4
-    assert [lvl["id"] for lvl in levels] == [
-        "th-h-four-i3-level-KG",
-        "th-h-four-i3-level-EG",
-        "th-h-four-i3-level-OG",
-        "th-h-four-i3-level-DG",
-    ]
+    assert _create_levels(bundle) == []
     # MF-driver-24 (#103): no roof in the shell bundle, regardless of
     # whether the IR carries a DG (the prior anchor target).
     roofs = [c for c in bundle["commands"] if c.get("type") == "createRoof"]
     assert roofs == []
+    # Walls + slab still bind to the canonical EG storey.
+    floors = [c for c in bundle["commands"] if c.get("type") == "createFloor"]
+    walls = [c for c in bundle["commands"] if c.get("type") == "createWall"]
+    assert floors[0]["levelId"] == "th-h-four-level-EG"
+    assert all(w["levelId"] == "th-h-four-level-EG" for w in walls)
 
 
 # ---------- 5-level (h23) — no KeyError -------------------------------------
 
 
-def test_shell_bundle_5_level_kg_eg_og_dg_sb_emits_five_createlevel() -> None:
+def test_shell_bundle_5_level_kg_eg_og_dg_sb_emits_zero_create_level() -> None:
     # h23 layout: KG / EG / OG / DG / Spitzboden.
     ir = _ir(
         "h-five",
@@ -158,15 +160,7 @@ def test_shell_bundle_5_level_kg_eg_og_dg_sb_emits_five_createlevel() -> None:
     )
     bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
 
-    levels = _create_levels(bundle)
-    assert len(levels) == 5
-    assert [lvl["id"] for lvl in levels] == [
-        "th-h-five-i3-level-KG",
-        "th-h-five-i3-level-EG",
-        "th-h-five-i3-level-OG",
-        "th-h-five-i3-level-DG",
-        "th-h-five-i3-level-SB",
-    ]
+    assert _create_levels(bundle) == []
     # MF-driver-24 (#103): roof is owned by ``_roof_bundle``. Shell
     # never emits one, regardless of how tall the level stack is.
     roofs = [c for c in bundle["commands"] if c.get("type") == "createRoof"]
@@ -176,12 +170,9 @@ def test_shell_bundle_5_level_kg_eg_og_dg_sb_emits_five_createlevel() -> None:
 # ---------- 3-level without DG (h22 — KG/EG/OG-under-pitched-roof) ----------
 
 
-def test_shell_bundle_three_level_kg_eg_og_emits_three_levels_no_roof() -> None:
+def test_shell_bundle_three_level_kg_eg_og_emits_zero_create_level_no_roof() -> None:
     # h22-style: pitched roof sits over OG, no separate DG level.
-    # Pre-fix this crashed on KeyError. Post-fix the bundle emits three
-    # createLevel commands. MF-driver-24 (#103): the roof is no longer
-    # emitted here either — ``_roof_bundle`` owns it — so we just
-    # confirm no createRoof leaks out of the shell.
+    # Post-#115 the shell bundle authors no levels at all here either.
     ir = _ir(
         "h22",
         [
@@ -192,67 +183,9 @@ def test_shell_bundle_three_level_kg_eg_og_emits_three_levels_no_roof() -> None:
     )
     bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
 
-    levels = _create_levels(bundle)
-    assert [lvl["id"] for lvl in levels] == [
-        "th-h22-i3-level-KG",
-        "th-h22-i3-level-EG",
-        "th-h22-i3-level-OG",
-    ]
+    assert _create_levels(bundle) == []
     roofs = [c for c in bundle["commands"] if c.get("type") == "createRoof"]
     assert roofs == []
-
-
-# ---------- elevations come from the IR, not a hardcoded fallback -----------
-
-
-def test_shell_bundle_uses_ir_elevation_for_every_level() -> None:
-    # Distinctive elevations on each level — assert they reach the
-    # bundle verbatim. If the dispatch ever silently overwrote one
-    # with a hardcoded fallback, this test would catch it.
-    ir = _ir(
-        "h-elev",
-        [
-            _level("level-KG", "Kellergeschoss", elevation_mm=-2750),
-            _level("level-EG", "Erdgeschoss", elevation_mm=125),
-            _level("level-OG", "Obergeschoss", elevation_mm=2825),
-            _level("level-DG", "Dachgeschoss", elevation_mm=5550),
-            _level("level-SB", "Spitzboden", elevation_mm=8350),
-        ],
-    )
-    bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
-
-    elev_by_short = {c["id"].rsplit("-", 1)[-1]: c["elevationMm"] for c in _create_levels(bundle)}
-    assert elev_by_short == {
-        "KG": -2750.0,
-        "EG": 125.0,
-        "OG": 2825.0,
-        "DG": 5550.0,
-        "SB": 8350.0,
-    }
-
-
-# ---------- ``elevationMM`` (uppercase) IR shape is also honoured -----------
-
-
-def test_shell_bundle_reads_uppercase_elevationMM_key() -> None:
-    # Alpha-style IR exports use ``elevationMM`` (uppercase MM); the
-    # ``_lvl_elevation_mm`` helper already tolerates this — pin that
-    # the shell bundle keeps going through that helper rather than
-    # reading the key directly.
-    ir = {
-        "house": "alpha",
-        "levels": [
-            {"id": "level-KG", "name": "Kellergeschoss", "elevationMM": -2500, "heightMM": 2500},
-            {"id": "level-EG", "name": "Erdgeschoss", "elevationMM": 0, "heightMM": 2700},
-            {"id": "level-OG", "name": "Obergeschoss", "elevationMM": 2700, "heightMM": 2700},
-            {"id": "level-DG", "name": "Dachgeschoss", "elevationMM": 5400, "heightMM": 2700},
-        ],
-        "exteriorWallChainEG": {"polygonMM": _EG_POLY, "wallThicknessMM": 240},
-    }
-    bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
-
-    elev_by_short = {c["id"].rsplit("-", 1)[-1]: c["elevationMm"] for c in _create_levels(bundle)}
-    assert elev_by_short == {"KG": -2500.0, "EG": 0.0, "OG": 2700.0, "DG": 5400.0}
 
 
 # ---------- MF-driver-24 (#103): no double-roof emission --------------------
@@ -355,3 +288,89 @@ def test_full_shell_plus_roof_chain_produces_exactly_one_roof_element() -> None:
     # And the legacy shell id must NOT appear anywhere in the merged
     # command stream.
     assert not any(c.get("id") == "th-alpha-i3-main-roof" for c in all_cmds)
+
+
+# ---------- MF-driver-25 (#115): no double-level emission -------------------
+
+
+def test_shell_bundle_emits_zero_create_level_commands() -> None:
+    """Issue #115: ``_shell_bundle_from_ir`` must not emit ANY createLevel.
+
+    Pre-fix it emitted one ``th-{house}-i{iter_n}-level-{short}`` per IR
+    storey in addition to the topology phase's canonical
+    ``th-{house}-level-{short}``. The ids don't collide so both commit
+    and every house snapshot showed double the expected level count
+    (h22: 6 levels instead of 3, h23: 10 instead of 5), with walls
+    landing on one namespace and roofs/rooms on the other.
+    """
+
+    ir = _ir_with_dg_for_roof_phase("alpha")
+    bundle = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=1, iter_n=3)
+
+    level_cmds = [c for c in bundle["commands"] if c.get("type") == "createLevel"]
+    assert level_cmds == [], (
+        "shell bundle must not emit createLevel — that belongs to _project_setup_bundle"
+    )
+    # And specifically: no command whose id matches the historical
+    # iter-prefixed level id pattern.
+    shell_level_ids = [
+        c.get("id") for c in bundle["commands"] if "-i3-level-" in str(c.get("id", ""))
+    ]
+    assert shell_level_ids == []
+
+
+def test_project_setup_bundle_emits_exactly_one_level_per_ir_storey() -> None:
+    """Issue #115: the dedicated topology phase emits exactly one canonical
+    ``th-{house}-level-{short}`` createLevel per IR storey — the fix
+    removes shell duplication, not the topology phase itself."""
+
+    ir = _ir_with_dg_for_roof_phase("alpha")
+    bundle = _DRV._project_setup_bundle(ir=ir, parent_revision=1, house="alpha")
+    assert bundle is not None, "_project_setup_bundle should author levels for any valid IR"
+
+    levels = [c for c in bundle["commands"] if c.get("type") == "createLevel"]
+    assert [lvl["id"] for lvl in levels] == [
+        "th-alpha-level-KG",
+        "th-alpha-level-EG",
+        "th-alpha-level-DG",
+    ]
+    assert all(not str(lvl["id"]).startswith("th-alpha-i") for lvl in levels), (
+        "topology levels must use the canonical (iter-independent) id scheme"
+    )
+
+
+def test_full_topology_plus_shell_chain_produces_exactly_one_level_per_storey() -> None:
+    """Issue #115: end-to-end, the union of topology + shell bundle
+    commands contains EXACTLY one createLevel per IR storey, all under
+    the canonical ``th-{house}-level-{short}`` id (no iter prefix).
+
+    This is the property the renderer actually cares about: walls / floors
+    / roofs / rooms all bind to the same level namespace and the
+    snapshot ``LEVELS (N):`` count matches ``len(ir.levels)`` exactly.
+    """
+
+    ir = _ir_with_dg_for_roof_phase("alpha")
+
+    ps = _DRV._project_setup_bundle(ir=ir, parent_revision=1, house="alpha")
+    assert ps is not None
+    shell = _DRV._shell_bundle_from_ir(ir=ir, parent_revision=2, iter_n=3)
+
+    all_cmds = list(ps["commands"]) + list(shell["commands"])
+    level_ids = [c.get("id") for c in all_cmds if c.get("type") == "createLevel"]
+    assert level_ids == [
+        "th-alpha-level-KG",
+        "th-alpha-level-EG",
+        "th-alpha-level-DG",
+    ], "exactly one createLevel per IR storey, all on the canonical namespace"
+    # And the legacy iter-prefixed shell ids must NOT appear anywhere
+    # in the merged command stream.
+    assert not any(
+        "-i3-level-" in str(c.get("id", "")) for c in all_cmds if c.get("type") == "createLevel"
+    )
+    # The shell's walls + slab must bind to the canonical EG id (same
+    # one the topology phase authored), not some shell-local variant.
+    eg_id = "th-alpha-level-EG"
+    walls = [c for c in shell["commands"] if c.get("type") == "createWall"]
+    floors = [c for c in shell["commands"] if c.get("type") == "createFloor"]
+    assert all(w["levelId"] == eg_id for w in walls)
+    assert all(f["levelId"] == eg_id for f in floors)
