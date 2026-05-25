@@ -13,6 +13,7 @@ RoofGeometryMode = Literal[
     "hip",
     "flat",
     "mono_pitch",
+    "half_gable",
 ]
 
 RoofGeometrySupportTokenV0 = Literal[
@@ -21,6 +22,7 @@ RoofGeometrySupportTokenV0 = Literal[
     "hip_supported",
     "hip_candidate_deferred",
     "mono_pitch_supported",
+    "half_gable_supported",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
     "missing_slope_or_level",
@@ -191,6 +193,14 @@ def roof_geometry_support_token_v0(
         footprint_mm
     ):
         return "mono_pitch_supported"
+
+    # ISSUE-105: Krüppelwalmdach (half-hipped) — gable footprint plus a hip
+    # cap at the top fraction of the ridge. Same axis-aligned rectangle
+    # predicate as gable_pitched_rectangle.
+    if roof_geometry_mode == "half_gable" and footprint_is_valid_axis_aligned_rectangle_mm(
+        footprint_mm
+    ):
+        return "half_gable_supported"
 
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
@@ -366,6 +376,63 @@ def mono_pitch_ridge_rise_mm(
         return span_z * math.tan(slope_rad), "alongX"
     # high_edge in ("e", "w") — ridge runs along Z; pitch along X.
     return span_x * math.tan(slope_rad), "alongZ"
+
+
+def assert_valid_half_gable_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """ISSUE-105: Krüppelwalmdach requires an axis-aligned rectangle (4 corners).
+
+    A half-hipped roof is a gable whose top fraction of the triangular gable
+    end is trimmed and replaced by a small hip face sloping back to the ridge.
+    Geometrically, the footprint is still a rectangle (same predicate as the
+    gable_pitched_rectangle mode) — the half-hip lives in elevation only, so
+    we reuse the rectangle predicate here. Non-rectangular footprints defer
+    to the slab fallback.
+    """
+
+    if not footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
+        raise ValueError(
+            "half_gable footprintMm must be an axis-aligned rectangle "
+            "(4 corner vertices); non-rectangular Krüppelwalmdach is deferred"
+        )
+
+
+def clamp_half_hip_height_fraction(
+    fraction: float | None, *, default: float = 0.33
+) -> float:
+    """ISSUE-105: clamp the half-hip height fraction into [0, 1].
+
+    - ``None`` returns ``default`` (typical Krüppelwalm covers the top third).
+    - Values outside [0, 1] are clamped instead of raising so a misconfigured
+      input degrades gracefully to a full gable (0) or full hip (1) rather
+      than crashing the renderer / IFC export.
+    """
+
+    if fraction is None:
+        return default
+    try:
+        f = float(fraction)
+    except (TypeError, ValueError):
+        return default
+    if math.isnan(f):
+        return default
+    return max(0.0, min(1.0, f))
+
+
+def half_gable_truncation_height_mm(
+    full_ridge_rise_mm: float, half_hip_height_fraction: float | None
+) -> float:
+    """ISSUE-105: vertical height (mm above eave) at which the gable triangle
+    is truncated and the hip cap begins.
+
+    - ``fraction = 0`` ⇒ truncation height == full ridge ⇒ no hip cap (pure gable).
+    - ``fraction = 1`` ⇒ truncation height == eave ⇒ full hip.
+    - ``fraction = 0.33`` ⇒ hip occupies the top third (Krüppelwalm default).
+
+    Returns max(0, ridge_rise * (1 - fraction)).
+    """
+
+    f = clamp_half_hip_height_fraction(half_hip_height_fraction)
+    return max(0.0, float(full_ridge_rise_mm) * (1.0 - f))
 
 
 def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:

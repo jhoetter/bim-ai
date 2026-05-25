@@ -129,6 +129,14 @@ class RoofElem(BaseModel):
     mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
         default=None, alias="monoPitchHighEdge"
     )
+    # ISSUE-105: fraction of the gable rise that is replaced by a small hip
+    # cap for `half_gable` (Krüppelwalmdach). 0..1 (clamped); 0 falls back to
+    # full gable behavior, 1 is functionally equivalent to a hip. None defers
+    # to the renderer default (typically 0.33 — hip covers the top third).
+    # Ignored for non-half_gable modes.
+    half_hip_height_fraction: float | None = Field(
+        default=None, alias="halfHipHeightFraction"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,

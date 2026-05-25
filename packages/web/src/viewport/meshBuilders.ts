@@ -56,6 +56,7 @@ import {
   _buildAsymmetricGableGeometry,
   _buildAsymmetricGableGeometryWithRoofOpenings,
   _buildGableGeometry,
+  _buildHalfGableGeometry,
   _buildHipGeometry,
   _buildHipPolygonGeometry,
   _buildLShapeGeometry,
@@ -894,6 +895,14 @@ export function makeRoofMassMesh(
         ridgeAlongX,
         ridgeOffsetM,
       );
+    } else if (roof.roofGeometryMode === 'half_gable') {
+      // ISSUE-105 — Krüppelwalmdach: gable rectangle with the top fraction
+      // of each gable end replaced by a small hip cap. Default to 0.33
+      // (hip covers the top third) when the field is null/undefined.
+      const rawFraction = roof.halfHipHeightFraction;
+      const fraction =
+        typeof rawFraction === 'number' && Number.isFinite(rawFraction) ? rawFraction : 0.33;
+      geom = _buildHalfGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX, fraction);
     } else {
       geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
     }

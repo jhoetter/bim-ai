@@ -285,6 +285,12 @@ class CreateRoofCmd(BaseModel):
     mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
         default=None, alias="monoPitchHighEdge"
     )
+    # ISSUE-105: fraction of the gable rise replaced by a hip cap for
+    # `half_gable` (Krüppelwalmdach). 0..1; 0 ≡ full gable, 1 ≡ full hip.
+    # Ignored for non-half_gable modes.
+    half_hip_height_fraction: float | None = Field(
+        default=None, alias="halfHipHeightFraction"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override. Engine default
@@ -303,6 +309,18 @@ class CreateRoofCmd(BaseModel):
         # callers don't have to know the kernel literal verbatim.
         if value in ("mono_slope", "shed", "pultdach", "lean_to"):
             return "mono_pitch"
+        # ISSUE-105: aliases for the Krüppelwalmdach (half-hipped) mode.
+        if value in (
+            "kruppelwalm",
+            "krueppelwalm",
+            "kruppelwalmdach",
+            "krueppelwalmdach",
+            "half_hipped",
+            "halfhipped",
+            "jerkin_head",
+            "clipped_gable",
+        ):
+            return "half_gable"
         return value
 
 
