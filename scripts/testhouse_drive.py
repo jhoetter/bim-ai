@@ -43,7 +43,7 @@ if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
 import httpx  # noqa: E402
-from pydantic import BaseModel, ConfigDict, Field, ValidationError  # noqa: E402
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator  # noqa: E402
 
 from bim_ai._io.log import JSONFormatter, get_logger, set_correlation_id  # noqa: E402
 from bim_ai.roof_geometry import footprint_is_valid_l_shape_mm  # noqa: E402
@@ -522,15 +522,56 @@ def _ir_path(house: str) -> Path:
     return _house_workdir(house) / "understanding" / "existing-building-ir.json"
 
 
+# MF-driver-23 (#99): canonical-id → default human-readable German storey
+# label, used to fill in ``_IRLevel.name`` when a reader-pass omits it.
+# Sibling of :data:`_GERMAN_LEVEL_NORMALIZATION` (the German→canonical map
+# applied earlier in the pipeline); together they let the driver round-trip
+# between the two representations without requiring reader subagents to
+# echo back the cosmetic ``name`` field — only ``id`` is used for lookup
+# anywhere downstream.
+_CANONICAL_LEVEL_NAMES: dict[str, str] = {
+    "level-KG": "Kellergeschoss",
+    "level-EG": "Erdgeschoss",
+    "level-OG": "Obergeschoss",
+    "level-DG": "Dachgeschoss",
+    "level-SB": "Spitzboden",
+}
+
+
 class _IRLevel(BaseModel):
     """One level entry. Lenient on height/elevation key naming to match the
     several reader-IR variants in the wild — see ``_lvl_height_mm`` /
-    ``_lvl_elevation_mm`` for the supported aliases."""
+    ``_lvl_elevation_mm`` for the supported aliases.
+
+    MF-driver-23 (#99): ``name`` is optional and defaults to the canonical
+    German label for known ids (``level-KG`` → ``Kellergeschoss`` etc.) via
+    :data:`_CANONICAL_LEVEL_NAMES`, falling back to the id itself for
+    unknown ids. Reader subagents only need to emit ``id``.
+    """
 
     model_config = ConfigDict(extra="allow")
 
     id: str = Field(description="Stable level id, e.g. 'level-KG'.")
-    name: str = Field(description="Human-readable level name.")
+    name: str = Field(default="", description="Human-readable level name.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_name_from_id(cls, data: Any) -> Any:
+        # Only act on dict-shaped input — pydantic also calls this with the
+        # already-constructed model on revalidation paths.
+        if not isinstance(data, dict):
+            return data
+        name = data.get("name")
+        if isinstance(name, str) and name.strip():
+            return data  # caller supplied a non-empty name; preserve it.
+        level_id = data.get("id")
+        if not isinstance(level_id, str) or not level_id.strip():
+            # No id either — let the required-field validator fail loudly so
+            # the operator sees a "missing id" error (not a derived name on
+            # an otherwise-broken level entry).
+            return data
+        data["name"] = _CANONICAL_LEVEL_NAMES.get(level_id, level_id)
+        return data
 
 
 class _IRExteriorWallChainEG(BaseModel):
