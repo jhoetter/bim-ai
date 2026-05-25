@@ -1574,12 +1574,28 @@ export type Element =
         | 'gable_pitched_l_shape'
         | 'hip'
         | 'flat'
-        | 'mono_pitch';
+        | 'mono_pitch'
+        | 'mono_pitch_offset';
       ridgeOffsetTransverseMm?: number;
       eaveHeightLeftMm?: number;
       eaveHeightRightMm?: number;
       /** ISSUE-53: compass quadrant of the high (ridge) edge for `mono_pitch` (Pultdach). */
       monoPitchHighEdge?: 'n' | 'e' | 's' | 'w' | null;
+      /** ISSUE-101: Versetztes Pultdach front-slab pitch (deg). */
+      frontPitchDeg?: number | null;
+      /** ISSUE-101: Versetztes Pultdach rear-slab pitch (deg). */
+      rearPitchDeg?: number | null;
+      /** ISSUE-101: front-slab eave height above the reference level (mm). */
+      frontEaveHeightMm?: number | null;
+      /** ISSUE-101: rear-slab eave height above the reference level (mm). */
+      rearEaveHeightMm?: number | null;
+      /** ISSUE-101: clerestory band height between the two slabs (mm). */
+      clerestoryBandHeightMm?: number | null;
+      /**
+       * ISSUE-101: distance along the long footprint axis from the min-corner
+       * edge to the step (mm). When omitted, defaults to the midpoint.
+       */
+      stepPositionAlongLongAxisMm?: number | null;
       roofTypeId?: string | null;
       materialKey?: string | null;
       loadBearing?: boolean | null;

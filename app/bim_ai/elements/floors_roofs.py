@@ -129,6 +129,24 @@ class RoofElem(BaseModel):
     mono_pitch_high_edge: MonoPitchHighEdge | None = Field(
         default=None, alias="monoPitchHighEdge"
     )
+    # ISSUE-101: Versetztes Pultdach (offset double mono-pitch) parameters.
+    # The footprint is partitioned along the long axis at
+    # ``step_position_along_long_axis_mm`` into a front and a rear sub-
+    # rectangle. Each sub-rectangle carries its own mono-pitched slab whose
+    # eave sits at ``front_eave_height_mm`` / ``rear_eave_height_mm``. A
+    # horizontal clerestory wall band of ``clerestory_band_height_mm`` sits
+    # between them at the step. All fields are optional and only consumed
+    # when ``roof_geometry_mode == "mono_pitch_offset"``.
+    front_pitch_deg: float | None = Field(default=None, alias="frontPitchDeg")
+    rear_pitch_deg: float | None = Field(default=None, alias="rearPitchDeg")
+    front_eave_height_mm: float | None = Field(default=None, alias="frontEaveHeightMm")
+    rear_eave_height_mm: float | None = Field(default=None, alias="rearEaveHeightMm")
+    clerestory_band_height_mm: float | None = Field(
+        default=None, alias="clerestoryBandHeightMm"
+    )
+    step_position_along_long_axis_mm: float | None = Field(
+        default=None, alias="stepPositionAlongLongAxisMm"
+    )
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
     # NS-2026-05-24: explicit ridge orientation override; when None,
