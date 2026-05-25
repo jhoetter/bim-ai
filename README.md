@@ -1,8 +1,18 @@
 # BIM AI
 
-Browser-first BIM authoring with continuous server-authoritative collaboration —
-no central file to synchronize. Semantic walls / doors / rooms, realtime
-WebSocket snapshots, constraint checks, issues, AI propose flow.
+**Browser-first BIM authoring engine.** Semantic walls / doors / rooms / roofs
+on a continuous server-authoritative model — no central file to synchronize.
+Realtime WebSocket snapshots, constraint checks, issue threads, an `apply_bundle`
+MCP entry point that takes a CMD-V3 bundle and commits it transactionally.
+
+This repo is **only** the modeling software. It owns: the geometry kernel,
+the CMD-V3 schema + executor, the viewer, IFC export, materials, constraint
+preflight, the Postgres-backed `bim_models` store, and the WebSocket sync.
+
+Everything that **decides what to model** — reading source PDFs, classifying
+pages, constructing IRs, building CMD-V3 bundles from semantic intent, running
+graders — lives in the sibling [`bim-agent`](https://github.com/jhoetter/bim-agent)
+repo and talks to bim-ai over its REST + MCP surface.
 
 Collaboration model: [`docs/collaboration-model.md`](./docs/collaboration-model.md).
 

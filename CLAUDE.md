@@ -1,5 +1,19 @@
 # bim-ai — Claude Code instructions
 
+## Scope: this is the modeling software, period
+
+bim-ai is the engine — MCP surface, geometry kernel, viewer, IFC, constraint
+checks, the Postgres `bim_models` store. **Reverse-BIM ingestion, reader
+subagents, IR construction, bundle building from semantic intent, grading
+loops, testhouse driver scripts — none of that lives here anymore.** It all
+moved to [`bim-agent`](https://github.com/jhoetter/bim-agent) in the
+2026-05-25 clean-separation work (see `bim-agent/spec/trackers/
+bim-ai-bim-agent-clean-separation-tracker.md`).
+
+If a task involves reading a house's PDFs, computing source facts, choosing
+which CMD-V3 commands to emit, or scoring a rendered model against source
+elevations — you're in the wrong repo. Switch your session to bim-agent.
+
 ## NON-NEGOTIABLE: open the screenshots before you grade
 
 After every iter / build that produces ortho captures, you MUST use the Read tool to open the actual PNGs and look at them, not just the structured element counts. Pattern-matching "looks like a house" from the silhouette has repeatedly missed real defects (duplicate stacked roofs, dormers in wrong location, sub-grade walls, materials swapped per level, etc.).
@@ -25,12 +39,10 @@ The git pre-commit hook also re-formats staged files as a safety net. CI fails o
 
 ## Skills (claude-skills/)
 
-Project-level skills live at `claude-skills/<name>/SKILL.md`. They encode methodology + tool catalogs for recurring complex tasks. Read the skill's frontmatter `description:` field to decide whether it applies.
+Project-level skills live at `claude-skills/<name>/SKILL.md`. Read the skill's frontmatter `description:` field to decide whether it applies.
 
 **Currently shipped:**
 
-- **`claude-skills/sketch-to-bim/SKILL.md`** — load this skill whenever a task asks you to author or extend a bim-ai BIM model from a customer sketch (line drawing, render, photo, hand sketch) plus a brief. Trigger phrases include "build a BIM model from this sketch", "seed the house from this sketch / from `spec/target-house-seed*.{md,png}`", "generate a BIM model that matches this drawing". The skill defines the phased architect's workflow — massing → skeleton → envelope → openings → interior → detail → documentation — with per-phase visual checkpoints, soundness validation, an iteration loop, and the anti-patterns that caused the 2026-05-07 seed-fidelity failure.
-
 - **`claude-skills/watch-yt/SKILL.md`** — load this skill whenever the user shares a YouTube URL and asks you to watch, summarise, or reason about the video content. Run `python3 claude-skills/watch-yt/watch_yt.py "<URL>"` from the repo root; Gemini watches the full video and returns a granular timestamped log you can reason over.
 
-When a task matches a skill's trigger description, **read the SKILL.md end-to-end before authoring anything**.
+The previous `sketch-to-bim` and `hybrid-reverse-bim` skills were methodology-heavy (architect's workflow, multi-pass reverse-BIM ingestion) and moved to bim-agent in the 2026-05-25 clean-separation work.

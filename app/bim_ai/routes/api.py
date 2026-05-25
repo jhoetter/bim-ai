@@ -101,7 +101,8 @@ from bim_ai.jobs.types import CreateJobRequest, Job
 from bim_ai.link_expansion import expand_links
 from bim_ai.mep_lens import build_mep_lens_payload
 from bim_ai.model_summary import compute_model_summary
-from bim_ai.models.api_requests import SemanticAuthoringRequest
+# SemanticAuthoringRequest model deleted with the semantic-authoring route
+# (moved to bim-agent in the 2026-05-25 clean-separation work).
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
     resolve_plan_projection_wire,
@@ -130,7 +131,6 @@ from bim_ai.routes.deps import (
     violations_wire,
 )
 from bim_ai.routes.exports import exports_router
-from bim_ai.routes.hybrid_reverse_bim_execute import hybrid_reverse_bim_execute_router
 from bim_ai.routes.imports import imports_router
 from bim_ai.routes.integrity import integrity_router
 from bim_ai.routes.markups import markups_router
@@ -245,7 +245,6 @@ api_router.include_router(sketch_product_router)
 api_router.include_router(v3_meta_router)
 # BRT-24: route families extracted from this file.
 api_router.include_router(bundles_router)
-api_router.include_router(hybrid_reverse_bim_execute_router)
 api_router.include_router(schedules_router)
 api_router.include_router(tokens_router)
 api_router.include_router(milestones_router)

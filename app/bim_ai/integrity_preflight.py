@@ -16,7 +16,25 @@ from bim_ai.model_integrity_hosting import (
     hosted_opening_integrity_violations,
     physical_support_context_violations,
 )
-from bim_ai.models.reverse_bim_responses import IntegrityPreflightResponse
+from typing import Any
+from pydantic import BaseModel, ConfigDict
+
+
+class IntegrityPreflightResponse(BaseModel):
+    """Response of `build_integrity_preflight_report`.
+
+    Inlined here from the (now-deleted) `models/reverse_bim_responses.py`
+    per Phase 6 of the bim-ai/bim-agent clean-separation tracker — bim-ai
+    no longer ships a reverse_bim_responses module.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True, protected_namespaces=())
+
+    format: str
+    summary: dict[str, Any] | None = None
+    findings: list[dict[str, Any]] | None = None
+
+
 from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 

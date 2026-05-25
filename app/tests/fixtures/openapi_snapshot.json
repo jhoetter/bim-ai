@@ -1,5 +1,5 @@
 {
-  "digest": "c66509d295dd96c816893515f4c842af79113e7031cd7ec6f099a937d35b993e",
+  "digest": "5b974a00ab37773987740e90f5496d7762d280e74867d22fa28d264dcb51bef0",
   "shape": {
     "paths": {
       "/api/bootstrap": {
@@ -851,18 +851,6 @@
           "operationId": "export_presentation_canvas_api_v3_models__model_id__presentation_canvases__canvas_id__export_get"
         }
       },
-      "/api/v3/models/{model_id}/reverse-bim/hybrid-run-execute": {
-        "post": {
-          "operationId": "reverse_bim_hybrid_run_execute_route_api_v3_models__model_id__reverse_bim_hybrid_run_execute_post",
-          "requestModel": "ReverseBimHybridRunExecuteRequest"
-        }
-      },
-      "/api/v3/models/{model_id}/reverse-bim/hybrid-slice-execute": {
-        "post": {
-          "operationId": "reverse_bim_hybrid_slice_execute_route_api_v3_models__model_id__reverse_bim_hybrid_slice_execute_post",
-          "requestModel": "ReverseBimHybridSliceExecuteRequest"
-        }
-      },
       "/api/v3/models/{model_id}/schedules/{schedule_id}/rows": {
         "get": {
           "operationId": "schedule_view_rows_api_v3_models__model_id__schedules__schedule_id__rows_get"
@@ -973,8 +961,6 @@
       "ResolveRoomBoundaryRequest",
       "ResolveWallByLineRequest",
       "ResolveWallOpeningHostRequest",
-      "ReverseBimHybridRunExecuteRequest",
-      "ReverseBimHybridSliceExecuteRequest",
       "SetPickWallsOffsetModeRequest",
       "SketchIrValidateRequest",
       "SketchPhaseAcceptRequest",
