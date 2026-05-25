@@ -3088,6 +3088,12 @@ def _dormer_center_xy(fact: dict) -> list[float] | None:
       * ``vertexMm: [x, y]`` (alpha)
       * ``polygonMm: [[ax, ay], ...]`` (beta — take centroid)
       * ``centerXMm: float`` (gamma — Y inferred from facadeSide later)
+      * ``wallStartMm: [x, y]`` or ``{xMm, yMm}`` (MF-driver-22 / #97 —
+        single-point host hint, mirrors PR #92's nearest-wall fallback
+        for openings; without this a lone dormer carrying only
+        ``wallStartMm`` falls through the priority chain in
+        ``_dormers_bundle`` and is silently dropped, since the
+        ``>= 2`` autodistribute floor doesn't catch the N=1 case).
 
     NS-V3-05: when vertex sits AT a wall edge (y≈0 or x≈0 etc. — common
     when the reader uses "facade midpoint" as proxy for dormer center),
@@ -3119,6 +3125,19 @@ def _dormer_center_xy(fact: dict) -> list[float] | None:
     cx = fact.get("centerXMm")
     if isinstance(cx, (int, float)):
         return [float(cx), float("nan")]
+    # MF-driver-22 (#97): single-point host hint via ``wallStartMm``.
+    # Reader sometimes pins a lone dormer only by its host-wall start,
+    # which `_coerce_vertex_mm` (PR #28) already normalises across the
+    # list and ``{xMm, yMm}`` dict shapes. Same wall-edge inward shift
+    # as the vertexMm branch so the footprint fits inside the roof.
+    ws = _coerce_vertex_mm(fact.get("wallStartMm"))
+    if ws is not None:
+        x, y = ws[0], ws[1]
+        if abs(y) < 50.0:
+            y = 900.0
+        if abs(x) < 50.0:
+            x = 900.0
+        return [x, y]
     return None
 
 

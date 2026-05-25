@@ -367,3 +367,85 @@ def test_world_xy_vertex_projects_to_signed_along_across() -> None:
     # NOT within 100 mm of the y=0 wall, so it stays put → across
     # ≈ 1500 - 4492 = -2992.
     assert abs(pos["acrossRidgeMm"] - (-2992.0)) < 1.0, pos
+
+
+# ---------- MF-driver-22 (#97): single-dormer wallStartMm hint --------------
+
+
+def test_single_dormer_with_wall_start_list_resolves_to_one_command() -> None:
+    # Pre-fix: a lone dormer fact carrying ONLY ``wallStartMm`` (list
+    # shape) — no vertexMm / polygonMm / centerXMm / explicit pin —
+    # fell through ``_dormer_center_xy`` (returns None) and the
+    # ``>= 2`` autodistribute floor never engaged for N=1, so the
+    # bundle silently dropped the fact and returned None.
+    fact = _dormer_fact(
+        factId="f-ws-list",
+        facadeSide=None,
+        vertexMm=None,
+    )
+    fact["wallStartMm"] = [5000, 0]  # list shape (alpha)
+    pair = _DRV._dormers_bundle(
+        ir=_ir([fact]),
+        parent_revision=7,
+        house="h23",
+        snapshot=_main_roof_snapshot("h23"),
+    )
+    assert pair is not None, (
+        "expected wallStartMm-list to resolve into 1 createDormer (was None)"
+    )
+    bundle, consumed = pair
+    cmds = [c for c in bundle["commands"] if c["type"] == "createDormer"]
+    assert len(cmds) == 1, f"expected 1 createDormer, got {len(cmds)}"
+    assert len(consumed) == 1
+
+
+def test_single_dormer_with_wall_start_dict_resolves_to_one_command() -> None:
+    # Same as above but PR #28's dict shape: ``{xMm, yMm}`` instead of
+    # the list pair. ``_coerce_vertex_mm`` normalises both into the
+    # same ``[x, y]`` float list before the wall-edge inward shift.
+    fact = _dormer_fact(
+        factId="f-ws-dict",
+        facadeSide=None,
+        vertexMm=None,
+    )
+    fact["wallStartMm"] = {"xMm": 5000, "yMm": 0}  # dict shape (beta/gamma)
+    pair = _DRV._dormers_bundle(
+        ir=_ir([fact]),
+        parent_revision=7,
+        house="h23",
+        snapshot=_main_roof_snapshot("h23"),
+    )
+    assert pair is not None, (
+        "expected wallStartMm-dict to resolve into 1 createDormer (was None)"
+    )
+    bundle, consumed = pair
+    cmds = [c for c in bundle["commands"] if c["type"] == "createDormer"]
+    assert len(cmds) == 1, f"expected 1 createDormer, got {len(cmds)}"
+    assert len(consumed) == 1
+
+
+def test_single_dormer_with_no_position_hint_at_all_is_still_skipped() -> None:
+    # Guardrail: the issue explicitly says NOT to lower the ``>= 2``
+    # autodistribute floor. A lone dormer with no position hint
+    # whatsoever (no vertexMm / polygonMm / centerXMm / wallStartMm /
+    # facadeSide / explicit pin) must still be skipped — we only added
+    # ``wallStartMm`` as an additional resolution path, not a default
+    # "drop it in the middle" fallback for N=1.
+    fact = _dormer_fact(
+        factId="f-nohint",
+        facadeSide=None,
+        vertexMm=None,
+    )
+    pair = _DRV._dormers_bundle(
+        ir=_ir([fact]),
+        parent_revision=7,
+        house="h23",
+        snapshot=_main_roof_snapshot("h23"),
+    )
+    # With no hint at all and N=1, autodistribute floor (>= 2) does
+    # not engage and _dormer_center_xy returns None → fact dropped,
+    # commands list empty, bundle returns None.
+    assert pair is None, (
+        "single dormer with no position hint must still be skipped — "
+        "we did NOT lower the >= 2 autodistribute floor"
+    )
