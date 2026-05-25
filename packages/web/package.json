@@ -14,7 +14,6 @@
     "test:e2e:ci": "playwright test e2e/cockpit-smoke.spec.ts",
     "test:e2e:real-backend": "playwright test --config playwright.real-backend.config.ts",
     "test:e2e:install": "playwright install chromium",
-    "reverse-bim:capture": "node scripts/reverse-bim-view-capture-runner.mjs",
     "performance:plan-pointermove": "node scripts/plan-pointermove-perf.mjs"
   },
   "dependencies": {
