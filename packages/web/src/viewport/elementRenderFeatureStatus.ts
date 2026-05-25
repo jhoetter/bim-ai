@@ -1050,6 +1050,8 @@ function knownRoofGeometryMode(mode: string): boolean {
     'mono_slope',
     'terrace',
     'sketch',
+    // ISSUE-114: barrel (Tonnendach) — curved cylindrical-segment roof.
+    'barrel',
   ].includes(mode);
 }
 

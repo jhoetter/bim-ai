@@ -132,6 +132,7 @@ from bim_ai.commands import (
     CreateWallOpeningCmd,
     CreateWallTypeCmd,
     CreateWindowLegendViewCmd,
+    CreateWintergartenCmd,
     DeleteAreaCmd,
     DeleteBrandTemplateCmd,
     DeleteElementCmd,
@@ -452,6 +453,7 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
     WindowLegendViewElem,
+    WintergartenElem,
 )
 from bim_ai.engine_mirror import (
     _mirror_one as _mirror_one,

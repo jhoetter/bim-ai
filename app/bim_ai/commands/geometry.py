@@ -526,6 +526,33 @@ class CreateFacadeBayCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
+class CreateWintergartenCmd(BaseModel):
+    """Issue #114 — author a WintergartenElem (glazed conservatory) hosted on a wall.
+
+    The Wintergarten is a fully-glazed extension; its roof geometry mode
+    (``barrel`` / ``mono_pitch`` / ``flat``) controls how the renderer caps the
+    volume. The footprint is given in plan mm and typically shares one edge
+    with the host wall (the back wall of the conservatory).
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createWintergarten"] = "createWintergarten"
+    id: str | None = None
+    name: str = "Wintergarten"
+    host_wall_id: str = Field(alias="hostWallId")
+    footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
+    level_id: str | None = Field(default=None, alias="levelId")
+    wall_height_mm: float = Field(default=2400.0, alias="wallHeightMm", gt=0)
+    roof_geometry_mode: Literal["barrel", "mono_pitch", "flat"] = Field(
+        default="barrel", alias="roofGeometryMode"
+    )
+    roof_slope_deg: float | None = Field(default=None, alias="roofSlopeDeg")
+    barrel_rise_mm: float | None = Field(default=None, alias="barrelRiseMm")
+    barrel_segment_count: int | None = Field(default=None, alias="barrelSegmentCount")
+    material_key: str = Field(default="glass_clear", alias="materialKey")
+    floor_material_key: str | None = Field(default=None, alias="floorMaterialKey")
+
+
 class CreateRailingCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createRailing"] = "createRailing"
