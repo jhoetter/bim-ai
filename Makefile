@@ -27,7 +27,7 @@ SEED_NAME ?= $(name)
 SEED_ROOT ?= $(seed_root)
 SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
-.PHONY: help install dev dev-forwarded dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
+.PHONY: help install dev dev-forwarded dev-api dev-web kill-ports seed seed-clear seed-artifact \
 	db-up db-down db-reset db-logs \
 test test-py test-py-full test-py-focused test-py-real-path test-web-real-path test-js format format-check python-format-check lint lint-js lint-py architecture \
 	quality-waivers maintainability-budgets js-lint-budget ui-quality-budgets security-hygiene test-env-policy code-quality-report typecheck verify build clean lockfile-check verify-refinement-reliability
@@ -40,8 +40,6 @@ help:
 	@echo "              tunnel: ssh -L $(FORWARDED_WEB_PORT):127.0.0.1:$(WEB_PORT) -L $(FORWARDED_API_PORT):127.0.0.1:$(API_PORT) <host>"
 	@echo "  seed      — load seed-artifacts/* or an empty dev model; pass name=<seed-name> to load one"
 	@echo "  seed-clear — delete all seed-managed local models"
-	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
-	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
 	@echo "  test-py-focused — focused backend tests without coverage; pass PYTEST_ARGS=tests/path.py"
 	@echo "  test-py-real-path — marked backend real-path smoke tests without coverage"
 	@echo "  test-web-real-path — Playwright browser smoke through Vite proxy to real FastAPI health route"
@@ -126,12 +124,6 @@ seed-clear:
 
 seed-artifact:
 	node scripts/create-seed-artifact.mjs --name "$(NAME)" --source "$(SOURCE)" --bundle "$(BUNDLE)" $(if $(TITLE),--title "$(TITLE)",) $(if $(DESCRIPTION),--description "$(DESCRIPTION)",) $(if $(LIVE_EVIDENCE),--live-evidence "$(LIVE_EVIDENCE)",) $(if $(REQUIRE_LIVE_EVIDENCE),--require-live-evidence,) $(if $(OUT),--out "$(OUT)",) $(if $(FORCE),--force,)
-
-verify-sketch-seeds:
-	node scripts/verify-sketch-seed-artifacts.mjs $(if $(name),--seed "$(name)",)
-
-verify-sketch-seeds-live:
-	node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence --require-phase-packets --require-material-check --live $(if $(name),--seed "$(name)",)
 
 test: test-py test-js
 
