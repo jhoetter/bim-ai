@@ -64,31 +64,6 @@ importers:
         specifier: '>=9.0.0'
         version: 9.39.4(jiti@1.21.7)
 
-  packages/hofos-ui:
-    dependencies:
-      '@bim-ai/design-tokens':
-        specifier: workspace:*
-        version: link:../design-tokens
-      '@bim-ai/ui':
-        specifier: workspace:*
-        version: link:../ui
-      react:
-        specifier: ^19.0.0
-        version: 19.2.5
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.5(react@19.2.5)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/icons:
     dependencies:
       bim-icons:

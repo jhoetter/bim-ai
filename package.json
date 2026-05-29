@@ -35,7 +35,7 @@
     "verify:m4-parity": "node scripts/verify-m4-parity.mjs",
     "verify": "pnpm format:check && pnpm quality:waivers && pnpm architecture && pnpm test",
     "verify:strict": "pnpm format:check && pnpm quality:waivers && pnpm maintainability:budgets && pnpm lint && pnpm security:hygiene && pnpm test-env:policy && pnpm architecture && pnpm contract:parity && pnpm typecheck && pnpm test && pnpm build && pnpm ui:quality-budgets",
-    "build:dist": "pnpm --filter @bim-ai/hofos-ui build",
+    "build:dist": "pnpm --filter @bim-ai/ui build",
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
