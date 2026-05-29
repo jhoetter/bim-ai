@@ -7,7 +7,7 @@ import {
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
   MAX_CHECKPOINT_RETENTION_LIMIT,
   MIN_CHECKPOINT_RETENTION_LIMIT,
-} from '../../state/backupRetention';
+} from '@bim-ai/web-state';
 import { FieldRow } from './inspectorRows';
 
 const INPUT_CLS =

@@ -4,7 +4,7 @@ import {
   coerceCheckpointRetentionLimit,
   MAX_CHECKPOINT_RETENTION_LIMIT,
   MIN_CHECKPOINT_RETENTION_LIMIT,
-} from '../../state/backupRetention';
+} from '@bim-ai/web-state';
 import type { DxfImportOptions } from '../../lib/api';
 
 const DXF_DEFAULT_CUSTOM_COLOR = ['#', '7f', '7f', '7f'].join('');

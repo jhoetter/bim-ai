@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
-import { useTheme } from './useTheme';
+import { useTheme } from '@bim-ai/web-state';
 
 afterEach(() => {
   cleanup();

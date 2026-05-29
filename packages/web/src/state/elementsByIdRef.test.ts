@@ -21,7 +21,7 @@ import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from './store';
 import { useElementsByIdRef } from './elementsByIdRef';
-import { readRenderCountProbe, resetRenderCountProbe, useRenderCount } from './renderCountProbe';
+import { readRenderCountProbe, resetRenderCountProbe, useRenderCount } from '@bim-ai/web-state';
 
 type ElementsMap = Record<string, Element>;
 

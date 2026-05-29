@@ -2,6 +2,14 @@
   "schemaVersion": 1,
   "rules": [
     {
+      "id": "web-state-self-contained",
+      "owner": "ARCH-CQ-05-a",
+      "source": ["packages/web-state/src/**"],
+      "disallow": ["packages/web/src/**"],
+      "allow": [],
+      "reason": "`@bim-ai/web-state` is the lowest layer of the ARCH-CQ-05 4-way split. It must not reach back into `packages/web/src/**` — every consumer goes the other direction (web depends on web-state, never the reverse)."
+    },
+    {
       "id": "web-state-no-workspace-shell",
       "owner": "CQ-2026-15",
       "source": ["packages/web/src/state/**"],

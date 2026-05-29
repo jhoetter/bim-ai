@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UI_STATE_PATTERNS, patternFor, type UiStateKind } from './uiStates';
+import { UI_STATE_PATTERNS, patternFor, type UiStateKind } from '@bim-ai/web-state';
 
 const ALL: UiStateKind[] = [
   'canvas-empty',

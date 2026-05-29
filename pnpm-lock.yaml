@@ -125,6 +125,9 @@ importers:
       '@bim-ai/ui':
         specifier: workspace:*
         version: link:../ui
+      '@bim-ai/web-state':
+        specifier: workspace:*
+        version: link:../web-state
       '@types/leaflet':
         specifier: ^1.9.21
         version: 1.9.21
@@ -225,6 +228,25 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@25.6.0)(jiti@1.21.7)(jsdom@25.0.1)
+
+  packages/web-state:
+    dependencies:
+      '@bim-ai/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      zustand:
+        specifier: ^5.0.12
+        version: 5.0.12(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
 
 packages:
 

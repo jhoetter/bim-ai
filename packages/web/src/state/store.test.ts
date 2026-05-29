@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useBimStore } from './store';
-import { EMPTY_MODEL_INDICES } from './modelIndices';
+import { EMPTY_MODEL_INDICES } from '@bim-ai/web-state';
 
 // Reset store to initial revision=0 / empty before each test
 beforeEach(() => {

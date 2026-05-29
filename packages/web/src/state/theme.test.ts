@@ -6,7 +6,7 @@ import {
   prefersReducedMotion,
   readPreferredTheme,
   toggleTheme,
-} from './theme';
+} from '@bim-ai/web-state';
 
 describe('theme controller — spec §23', () => {
   beforeEach(() => {

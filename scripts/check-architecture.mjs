@@ -46,7 +46,19 @@ const ALLOWED = {
   '@bim-ai/icons': new Set(),
   '@bim-ai/core': new Set(),
   '@bim-ai/ui': new Set(['@bim-ai/design-tokens', '@bim-ai/icons']),
-  '@bim-ai/web': new Set(['@bim-ai/design-tokens', '@bim-ai/ui', '@bim-ai/core', '@bim-ai/icons']),
+  // ARCH-CQ-05-a: `web-state` is the lowest layer of the planned 4-way split
+  // of `packages/web` (state / viewport / plan / shell). It depends only on
+  // `core` and reacts/zustand peer deps; it MUST NOT import anything from
+  // packages/web (the `web-state-self-contained` rule in
+  // architecture-boundaries.json mechanises this).
+  '@bim-ai/web-state': new Set(['@bim-ai/core']),
+  '@bim-ai/web': new Set([
+    '@bim-ai/design-tokens',
+    '@bim-ai/ui',
+    '@bim-ai/core',
+    '@bim-ai/icons',
+    '@bim-ai/web-state',
+  ]),
   // CLI is a delivery artifact; it may import any sibling package.
   '@bim-ai/cli': new Set(),
 };
@@ -153,6 +165,14 @@ function checkFeatureBoundaries() {
   const files = [
     ...walkFiles(
       join(REPO_ROOT, 'packages', 'web', 'src'),
+      (file) => /\.(ts|tsx|js|jsx|mjs)$/.test(file) && !isJsTestFile(file),
+    ),
+    // ARCH-CQ-05-a: include extracted layer packages so their boundary
+    // rules (e.g. `web-state-self-contained`) are evaluated. Sibling
+    // ARCH-CQ-05-b/-c/-d will add `web-viewport`, `web-plan`, `web-shell`
+    // here when those packages land.
+    ...walkFiles(
+      join(REPO_ROOT, 'packages', 'web-state', 'src'),
       (file) => /\.(ts|tsx|js|jsx|mjs)$/.test(file) && !isJsTestFile(file),
     ),
     ...walkFiles(join(REPO_ROOT, 'app', 'bim_ai'), (file) => /\.py$/.test(file)),

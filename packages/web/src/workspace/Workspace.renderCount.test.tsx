@@ -27,7 +27,7 @@ import type { Element } from '@bim-ai/core';
 
 import i18n from '../i18n';
 import { useBimStore } from '../state/store';
-import { readRenderCountProbe, resetRenderCountProbe } from '../state/renderCountProbe';
+import { readRenderCountProbe, resetRenderCountProbe } from '@bim-ai/web-state';
 
 vi.mock('../Viewport', () => ({
   Viewport: () => <div data-testid="stub-viewport" />,

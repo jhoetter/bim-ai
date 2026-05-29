@@ -11,7 +11,7 @@ import type { Snapshot } from '@bim-ai/core';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
-} from '../../state/backupRetention';
+} from '@bim-ai/web-state';
 
 const STORAGE_KEY = 'bim-ai:recent-projects-v1';
 const ROLLING_BACKUP_STORAGE_KEY = 'bim-ai:rolling-snapshot-backups-v1';

@@ -15,8 +15,7 @@ import { parseDimensionInput, type Element, type LensMode, type SavedViewElem } 
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
-import { useRenderCount } from './state/renderCountProbe';
-import { useTheme } from './state/useTheme';
+import { useRenderCount, useTheme } from '@bim-ai/web-state';
 import type { SnapSettings } from './plan/snapSettings';
 import {
   CameraRig,

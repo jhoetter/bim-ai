@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
-} from './backupRetention';
+} from '@bim-ai/web-state';
 
 describe('backup retention settings', () => {
   it('defaults invalid values and clamps the project checkpoint retention range', () => {
