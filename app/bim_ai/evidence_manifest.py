@@ -11,6 +11,12 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
+from bim_ai._manifest_builder import (
+    DeterministicEvidenceRowBuilder,
+    EvidenceManifestBuilder,
+    sheet_export_artifact_manifest_v1,
+    sheet_print_raster_ingest_v1,
+)
 from bim_ai.bcf_issue_package_export import bcf_issue_package_export_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -208,116 +214,82 @@ def deterministic_sheet_evidence_manifest(
         listing_blob = "\n".join(sheet_viewport_export_listing_lines(doc, sh)).encode("utf-8")
         export_listing_digest = hashlib.sha256(listing_blob).hexdigest()
 
-        sheet_export_artifact_manifest: dict[str, Any] = {
-            "format": "sheetExportArtifactManifest_v1",
-            "sheetId": sh.id,
-            "artifacts": [
-                {
-                    "artifactName": "sheet-preview.svg",
-                    "mimeType": SHEET_EXPORT_SVG_MIME_TYPE,
-                    "relativeArtifactPath": "exports/sheet-preview.svg",
-                    "digestSha256": svg_sha,
-                },
-                {
-                    "artifactName": "sheet-preview.pdf",
-                    "mimeType": SHEET_EXPORT_PDF_MIME_TYPE,
-                    "relativeArtifactPath": "exports/sheet-preview.pdf",
-                    "digestSha256": None,
-                    "note": "PDF bytes not deterministically available server-side; correlate via exportListingDigestSha256.",
-                },
-                {
-                    "artifactName": "sheet-print-raster.png",
-                    "mimeType": SHEET_EXPORT_PNG_MIME_TYPE,
-                    "relativeArtifactPath": "exports/sheet-print-raster.png",
-                    "digestSha256": placeholder_png_sha,
-                    "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
-                    "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
-                },
-            ],
-            "exportListingParityToken": SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
-            "svgListingDigestSha256": export_listing_digest,
-            "pdfListingDigestSha256": export_listing_digest,
-            "exportListingParityDigestMatch": True,
-            "ciBaselineCorrelation": {
-                "format": "sheetExportCiBaselineCorrelation_v1",
-                "sheetId": sh.id,
-                "sheetName": sh.name,
-                "svgArtifactName": "sheet-preview.svg",
-                "pngArtifactName": "sheet-print-raster.png",
-                "svgDigestSha256": svg_sha,
-                "pngDigestSha256": placeholder_png_sha,
-                "exportListingDigestSha256": export_listing_digest,
-                "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
-                "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
-            },
-        }
+        sheet_export_artifact_manifest = sheet_export_artifact_manifest_v1(
+            sheet_id=sh.id,
+            sheet_name=sh.name,
+            svg_mime_type=SHEET_EXPORT_SVG_MIME_TYPE,
+            pdf_mime_type=SHEET_EXPORT_PDF_MIME_TYPE,
+            png_mime_type=SHEET_EXPORT_PNG_MIME_TYPE,
+            svg_digest_sha256=svg_sha,
+            placeholder_png_sha256=placeholder_png_sha,
+            export_listing_digest_sha256=export_listing_digest,
+            surrogate_contract=SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+            full_raster_renderer_status=FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+            export_listing_parity_token=SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
+        )
 
+        viewports = list(sh.viewports_mm or [])
         rows.append(
-            {
-                "sheetId": sh.id,
-                "sheetName": sh.name,
-                "svgHref": f"{api_base}/sheet-preview.svg?sheetId={qid}",
-                "pdfHref": f"{api_base}/sheet-preview.pdf?sheetId={qid}",
-                "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
-                "sheetPrintRasterIngest_v1": {
-                    "format": "sheetPrintRasterIngest_v1",
-                    "contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
-                    "svgContentSha256": svg_sha,
-                    "placeholderPngSha256": placeholder_png_sha,
-                    "diffCorrelation": {
-                        "format": "sheetPrintRasterDiffCorrelation_v1",
-                        "playwrightBaselineSlot": "pngFullSheet",
-                        "notes": (
-                            "Server print-surrogate PNG (128×112) stacks a 128×96 viewport layout stamp with SVG "
-                            "UTF-8 salt and a 16px deterministic titleblock metadata band; it does not pixel-match "
-                            "Playwright captures or fully render the SVG. Use for CI artifact/hash correlation and "
-                            "layout/titleblock evidence; baseline visual diff remains client-side on pngFullSheet / "
-                            "pngViewport."
-                        ),
-                    },
-                },
-                "sheetPrintRasterPrintContract_v3": build_sheet_print_raster_print_contract_v3(
-                    doc, sh, svg_body, placeholder_png
-                ),
-                "playwrightSuggestedFilenames": {
-                    "svgProbe": f"{stem}.svg.probe.txt",
-                    "pdfProbe": f"{stem}.pdf.probe.bin",
-                    "pngViewport": f"{stem}-viewport.png",
-                    "pngFullSheet": f"{stem}-full.png",
-                    "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
-                },
-                "viewportEvidenceHints_v0": viewport_evidence_hints_v1(
-                    doc, list(sh.viewports_mm or [])
-                ),
-                "planSheetViewportPlacementEvidence_v1": plan_sheet_viewport_placement_evidence_v1(
-                    doc, list(sh.viewports_mm or [])
-                ),
-                "detailCalloutReadout_v0": detail_callout_readout_rows_v0(doc, sh),
-                "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
-                    doc, list(sh.viewports_mm or [])
-                ),
-                "roomColorSchemeLegendPlacementEvidence_v1": room_color_scheme_legend_placement_evidence_v1(
-                    doc, list(sh.viewports_mm or [])
-                ),
-                "sheetTitleblockRevisionIssueManifest_v1": build_sheet_titleblock_revision_issue_manifest_v1(
-                    sh
-                ),
-                "sectionOnSheetIntegrationEvidence_v1": build_section_on_sheet_integration_evidence_v1(
-                    doc, sh
-                ),
-                "scheduleSheetExportParityEvidence_v1": (
-                    build_schedule_sheet_export_parity_evidence_v1_for_sheet(doc, sh)
-                ),
-                "sheetExportArtifactManifest_v1": sheet_export_artifact_manifest,
-                "correlation": {
-                    "format": "evidenceSheetCorrelation_v1",
-                    "semanticDigestSha256": semantic_digest_sha256,
-                    "semanticDigestPrefix16": semantic_digest_prefix16,
-                    "modelRevision": doc.revision,
-                    "modelId": mid,
-                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
-                },
-            }
+            DeterministicEvidenceRowBuilder("sheetId", sh.id)
+            .update(
+                {
+                    "sheetName": sh.name,
+                    "svgHref": f"{api_base}/sheet-preview.svg?sheetId={qid}",
+                    "pdfHref": f"{api_base}/sheet-preview.pdf?sheetId={qid}",
+                    "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
+                    "sheetPrintRasterIngest_v1": sheet_print_raster_ingest_v1(
+                        contract=SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+                        svg_content_sha256=svg_sha,
+                        placeholder_png_sha256=placeholder_png_sha,
+                    ),
+                    "sheetPrintRasterPrintContract_v3": (
+                        build_sheet_print_raster_print_contract_v3(
+                            doc, sh, svg_body, placeholder_png
+                        )
+                    ),
+                }
+            )
+            .add_playwright_filenames(
+                svgProbe=f"{stem}.svg.probe.txt",
+                pdfProbe=f"{stem}.pdf.probe.bin",
+                pngViewport=f"{stem}-viewport.png",
+                pngFullSheet=f"{stem}-full.png",
+                rasterPlaceholderProbe=f"{stem}.raster-placeholder.png",
+            )
+            .update(
+                {
+                    "viewportEvidenceHints_v0": viewport_evidence_hints_v1(doc, viewports),
+                    "planSheetViewportPlacementEvidence_v1": (
+                        plan_sheet_viewport_placement_evidence_v1(doc, viewports)
+                    ),
+                    "detailCalloutReadout_v0": detail_callout_readout_rows_v0(doc, sh),
+                    "planRoomProgrammeLegendHints_v0": (
+                        plan_room_programme_legend_hints_v0(doc, viewports)
+                    ),
+                    "roomColorSchemeLegendPlacementEvidence_v1": (
+                        room_color_scheme_legend_placement_evidence_v1(doc, viewports)
+                    ),
+                    "sheetTitleblockRevisionIssueManifest_v1": (
+                        build_sheet_titleblock_revision_issue_manifest_v1(sh)
+                    ),
+                    "sectionOnSheetIntegrationEvidence_v1": (
+                        build_section_on_sheet_integration_evidence_v1(doc, sh)
+                    ),
+                    "scheduleSheetExportParityEvidence_v1": (
+                        build_schedule_sheet_export_parity_evidence_v1_for_sheet(doc, sh)
+                    ),
+                    "sheetExportArtifactManifest_v1": sheet_export_artifact_manifest,
+                }
+            )
+            .add_correlation(
+                format_id="evidenceSheetCorrelation_v1",
+                semantic_digest_sha256=semantic_digest_sha256,
+                semantic_digest_prefix16=semantic_digest_prefix16,
+                model_revision=doc.revision,
+                model_id=mid,
+                suggested_evidence_bundle_evidence_package_json=bundle_json,
+            )
+            .build()
         )
 
     return rows
@@ -344,48 +316,44 @@ def deterministic_3d_view_evidence_manifest(
         safe = "".join(ch for ch in vp.id if ch.isalnum() or ch in ("-", "_")) or "vp"
         stem = f"{evidence_artifact_basename}-3d-{safe}"
 
-        row: dict[str, Any] = {
-            "viewpointId": vp.id,
-            "viewpointName": vp.name,
-            "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
-            "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
-            "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
-            "hiddenCategoryCount": len(vp.hidden_semantic_kinds_3d or []),
-            "cutawayStyle": vp.cutaway_style,
-            "sectionBoxEnabled": vp.section_box_enabled,
-            "planOverlayEnabled": vp.plan_overlay_enabled,
-            "planOverlaySourcePlanViewId": vp.plan_overlay_source_plan_view_id,
-            "planOverlayOffsetMm": vp.plan_overlay_offset_mm,
-            "planOverlayOpacity": vp.plan_overlay_opacity,
-            "planOverlayLineOpacity": vp.plan_overlay_line_opacity,
-            "planOverlayFillOpacity": vp.plan_overlay_fill_opacity,
-            "planOverlayAnnotationsVisible": vp.plan_overlay_annotations_visible,
-            "planOverlayWitnessLinesVisible": vp.plan_overlay_witness_lines_visible,
-            "playwrightSuggestedFilenames": {
-                "pngViewport": f"{stem}.png",
-            },
-            "correlation": {
-                "format": "evidence3dViewCorrelation_v1",
-                "semanticDigestSha256": semantic_digest_sha256,
-                "semanticDigestPrefix16": semantic_digest_prefix16,
-                "modelRevision": doc.revision,
-                "modelId": mid,
-                "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
-            },
-        }
-        if vp.section_box_min_mm is not None:
-            row["sectionBoxMinMm"] = {
-                "xMm": vp.section_box_min_mm.x_mm,
-                "yMm": vp.section_box_min_mm.y_mm,
-                "zMm": vp.section_box_min_mm.z_mm,
-            }
-        if vp.section_box_max_mm is not None:
-            row["sectionBoxMaxMm"] = {
-                "xMm": vp.section_box_max_mm.x_mm,
-                "yMm": vp.section_box_max_mm.y_mm,
-                "zMm": vp.section_box_max_mm.z_mm,
-            }
-        rows.append(row)
+        builder = (
+            DeterministicEvidenceRowBuilder("viewpointId", vp.id)
+            .update(
+                {
+                    "viewpointName": vp.name,
+                    "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
+                    "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
+                    "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
+                    "hiddenCategoryCount": len(vp.hidden_semantic_kinds_3d or []),
+                    "cutawayStyle": vp.cutaway_style,
+                    "sectionBoxEnabled": vp.section_box_enabled,
+                    "planOverlayEnabled": vp.plan_overlay_enabled,
+                    "planOverlaySourcePlanViewId": vp.plan_overlay_source_plan_view_id,
+                    "planOverlayOffsetMm": vp.plan_overlay_offset_mm,
+                    "planOverlayOpacity": vp.plan_overlay_opacity,
+                    "planOverlayLineOpacity": vp.plan_overlay_line_opacity,
+                    "planOverlayFillOpacity": vp.plan_overlay_fill_opacity,
+                    "planOverlayAnnotationsVisible": vp.plan_overlay_annotations_visible,
+                    "planOverlayWitnessLinesVisible": vp.plan_overlay_witness_lines_visible,
+                }
+            )
+            .add_playwright_filenames(pngViewport=f"{stem}.png")
+            .add_correlation(
+                format_id="evidence3dViewCorrelation_v1",
+                semantic_digest_sha256=semantic_digest_sha256,
+                semantic_digest_prefix16=semantic_digest_prefix16,
+                model_revision=doc.revision,
+                model_id=mid,
+                suggested_evidence_bundle_evidence_package_json=bundle_json,
+            )
+        )
+        for slot_key, point in (
+            ("sectionBoxMinMm", vp.section_box_min_mm),
+            ("sectionBoxMaxMm", vp.section_box_max_mm),
+        ):
+            if point is not None:
+                builder.set(slot_key, {"xMm": point.x_mm, "yMm": point.y_mm, "zMm": point.z_mm})
+        rows.append(builder.build())
 
     return rows
 
@@ -409,23 +377,20 @@ def deterministic_plan_view_evidence_manifest(
         safe = "".join(ch for ch in pv.id if ch.isalnum() or ch in ("-", "_")) or "plan"
         stem = f"{evidence_artifact_basename}-plan-{safe}"
         rows.append(
-            {
-                "planViewId": pv.id,
-                "name": pv.name,
-                "levelId": pv.level_id,
-                "planPresentation": pv.plan_presentation,
-                "playwrightSuggestedFilenames": {
-                    "pngPlanCanvas": f"{stem}.png",
-                },
-                "correlation": {
-                    "format": "evidencePlanViewCorrelation_v1",
-                    "semanticDigestSha256": semantic_digest_sha256,
-                    "semanticDigestPrefix16": semantic_digest_prefix16,
-                    "modelRevision": doc.revision,
-                    "modelId": mid,
-                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
-                },
-            }
+            DeterministicEvidenceRowBuilder("planViewId", pv.id)
+            .set("name", pv.name)
+            .set("levelId", pv.level_id)
+            .set("planPresentation", pv.plan_presentation)
+            .add_playwright_filenames(pngPlanCanvas=f"{stem}.png")
+            .add_correlation(
+                format_id="evidencePlanViewCorrelation_v1",
+                semantic_digest_sha256=semantic_digest_sha256,
+                semantic_digest_prefix16=semantic_digest_prefix16,
+                model_revision=doc.revision,
+                model_id=mid,
+                suggested_evidence_bundle_evidence_package_json=bundle_json,
+            )
+            .build()
         )
 
     return rows
@@ -451,22 +416,19 @@ def deterministic_section_cut_evidence_manifest(
         stem = f"{evidence_artifact_basename}-section-{safe}"
         qid = quote(sc.id, safe="")
         rows.append(
-            {
-                "sectionCutId": sc.id,
-                "name": sc.name,
-                "projectionWireHref": f"/api/models/{mid}/projection/section/{qid}",
-                "playwrightSuggestedFilenames": {
-                    "pngSectionViewport": f"{stem}.png",
-                },
-                "correlation": {
-                    "format": "evidenceSectionCutCorrelation_v1",
-                    "semanticDigestSha256": semantic_digest_sha256,
-                    "semanticDigestPrefix16": semantic_digest_prefix16,
-                    "modelRevision": doc.revision,
-                    "modelId": mid,
-                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
-                },
-            }
+            DeterministicEvidenceRowBuilder("sectionCutId", sc.id)
+            .set("name", sc.name)
+            .set("projectionWireHref", f"/api/models/{mid}/projection/section/{qid}")
+            .add_playwright_filenames(pngSectionViewport=f"{stem}.png")
+            .add_correlation(
+                format_id="evidenceSectionCutCorrelation_v1",
+                semantic_digest_sha256=semantic_digest_sha256,
+                semantic_digest_prefix16=semantic_digest_prefix16,
+                model_revision=doc.revision,
+                model_id=mid,
+                suggested_evidence_bundle_evidence_package_json=bundle_json,
+            )
+            .build()
         )
 
     return rows
@@ -584,6 +546,55 @@ def parse_png_dimensions_v1(png_bytes: bytes) -> tuple[int, int]:
     raise ValueError("png_missing_ihdr")
 
 
+_SERVER_PNG_BYTE_INGEST_DERIVATIVE_NOTE = (
+    "This ingest path does not distinguish derivative raster bytes from "
+    "canonical file bytes; only png_file_sha256 is emitted."
+)
+_SERVER_PNG_BYTE_INGEST_PROBE_NOTE = (
+    "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
+    "does not imply Playwright committed baseline bytes were read server-side."
+)
+
+
+def _png_byte_digest_comparison_v1(
+    *,
+    result: str,
+    expected_baseline_sha256: str | None,
+    skipped_reason: str | None,
+) -> dict[str, Any]:
+    """Compose a ``pngByteDigestComparison_v1`` block."""
+    return {
+        "format": "pngByteDigestComparison_v1",
+        "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+        "result": result,
+        "skippedReason": skipped_reason,
+        "expectedBaselineSha256": expected_baseline_sha256,
+    }
+
+
+def _server_png_byte_ingest_envelope(
+    *,
+    canonical_digest_sha256: str | None,
+    width: int | None,
+    height: int | None,
+    byte_length: int,
+    comparison: dict[str, Any],
+) -> dict[str, Any]:
+    """Compose the ``serverPngByteIngest_v1`` envelope."""
+    return {
+        "format": "serverPngByteIngest_v1",
+        "canonicalDigestKind": "png_file_sha256",
+        "canonicalDigestSha256": canonical_digest_sha256,
+        "derivativeDigestSha256": None,
+        "derivativeDigestNote": _SERVER_PNG_BYTE_INGEST_DERIVATIVE_NOTE,
+        "width": width,
+        "height": height,
+        "byteLength": byte_length,
+        "comparison": comparison,
+        "probeNote": _SERVER_PNG_BYTE_INGEST_PROBE_NOTE,
+    }
+
+
 def server_png_byte_ingest_report_v1(
     png_bytes: bytes,
     *,
@@ -596,89 +607,36 @@ def server_png_byte_ingest_report_v1(
     byte_len = len(png_bytes)
 
     if expected_canonical_sha256_baseline is None:
-        comparison: dict[str, Any] = {
-            "format": "pngByteDigestComparison_v1",
-            "comparisonKind": "canonical_png_bytes_to_expected_sha256",
-            "result": "skipped_no_baseline",
-            "skippedReason": (
+        comparison = _png_byte_digest_comparison_v1(
+            result="skipped_no_baseline",
+            expected_baseline_sha256=None,
+            skipped_reason=(
                 "expected_canonical_sha256_baseline was omitted; ingested dimensions "
                 "and canonical png_file_sha256 only."
             ),
-            "expectedBaselineSha256": None,
-        }
-        return {
-            "format": "serverPngByteIngest_v1",
-            "canonicalDigestKind": "png_file_sha256",
-            "canonicalDigestSha256": canonical,
-            "derivativeDigestSha256": None,
-            "derivativeDigestNote": (
-                "This ingest path does not distinguish derivative raster bytes from "
-                "canonical file bytes; only png_file_sha256 is emitted."
-            ),
-            "width": width,
-            "height": height,
-            "byteLength": byte_len,
-            "comparison": comparison,
-            "probeNote": (
-                "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
-                "does not imply Playwright committed baseline bytes were read server-side."
-            ),
-        }
+        )
+    else:
+        exp_norm = str(expected_canonical_sha256_baseline).strip().lower()
+        if len(exp_norm) != 64 or any(c not in "0123456789abcdef" for c in exp_norm):
+            comparison = _png_byte_digest_comparison_v1(
+                result="skipped_no_baseline",
+                expected_baseline_sha256=expected_canonical_sha256_baseline,
+                skipped_reason="expected_canonical_sha256_baseline is not a 64-char hex sha256",
+            )
+        else:
+            comparison = _png_byte_digest_comparison_v1(
+                result="match" if canonical == exp_norm else "mismatch",
+                expected_baseline_sha256=exp_norm,
+                skipped_reason=None,
+            )
 
-    exp_norm = str(expected_canonical_sha256_baseline).strip().lower()
-    if len(exp_norm) != 64 or any(c not in "0123456789abcdef" for c in exp_norm):
-        comparison = {
-            "format": "pngByteDigestComparison_v1",
-            "comparisonKind": "canonical_png_bytes_to_expected_sha256",
-            "result": "skipped_no_baseline",
-            "skippedReason": "expected_canonical_sha256_baseline is not a 64-char hex sha256",
-            "expectedBaselineSha256": expected_canonical_sha256_baseline,
-        }
-        return {
-            "format": "serverPngByteIngest_v1",
-            "canonicalDigestKind": "png_file_sha256",
-            "canonicalDigestSha256": canonical,
-            "derivativeDigestSha256": None,
-            "derivativeDigestNote": (
-                "This ingest path does not distinguish derivative raster bytes from "
-                "canonical file bytes; only png_file_sha256 is emitted."
-            ),
-            "width": width,
-            "height": height,
-            "byteLength": byte_len,
-            "comparison": comparison,
-            "probeNote": (
-                "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
-                "does not imply Playwright committed baseline bytes were read server-side."
-            ),
-        }
-
-    matched = canonical == exp_norm
-    comparison = {
-        "format": "pngByteDigestComparison_v1",
-        "comparisonKind": "canonical_png_bytes_to_expected_sha256",
-        "result": "match" if matched else "mismatch",
-        "skippedReason": None,
-        "expectedBaselineSha256": exp_norm,
-    }
-    return {
-        "format": "serverPngByteIngest_v1",
-        "canonicalDigestKind": "png_file_sha256",
-        "canonicalDigestSha256": canonical,
-        "derivativeDigestSha256": None,
-        "derivativeDigestNote": (
-            "This ingest path does not distinguish derivative raster bytes from "
-            "canonical file bytes; only png_file_sha256 is emitted."
-        ),
-        "width": width,
-        "height": height,
-        "byteLength": byte_len,
-        "comparison": comparison,
-        "probeNote": (
-            "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
-            "does not imply Playwright committed baseline bytes were read server-side."
-        ),
-    }
+    return _server_png_byte_ingest_envelope(
+        canonical_digest_sha256=canonical,
+        width=width,
+        height=height,
+        byte_length=byte_len,
+        comparison=comparison,
+    )
 
 
 def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
@@ -699,12 +657,10 @@ def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
     linked_bn: str | None = None
     if isinstance(ingest_raw, dict):
         tgts = ingest_raw.get("targets")
-        if isinstance(tgts, list) and tgts:
-            t0 = tgts[0]
-            if isinstance(t0, dict):
-                bn = t0.get("baselinePngBasename")
-                if isinstance(bn, str) and bn:
-                    linked_bn = bn
+        if isinstance(tgts, list) and tgts and isinstance(tgts[0], dict):
+            bn = tgts[0].get("baselinePngBasename")
+            if isinstance(bn, str) and bn:
+                linked_bn = bn
 
     try:
         ingest_report = server_png_byte_ingest_report_v1(
@@ -712,27 +668,18 @@ def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
             expected_canonical_sha256_baseline=expected_canonical_sha256_baseline,
         )
     except ValueError as exc:
-        ingest_report = {
-            "format": "serverPngByteIngest_v1",
-            "canonicalDigestKind": "png_file_sha256",
-            "canonicalDigestSha256": None,
-            "derivativeDigestSha256": None,
-            "derivativeDigestNote": (
-                "This ingest path does not distinguish derivative raster bytes from "
-                "canonical file bytes; only png_file_sha256 is emitted."
+        ingest_report = _server_png_byte_ingest_envelope(
+            canonical_digest_sha256=None,
+            width=None,
+            height=None,
+            byte_length=len(png_bytes),
+            comparison=_png_byte_digest_comparison_v1(
+                result="skipped_no_baseline",
+                expected_baseline_sha256=expected_canonical_sha256_baseline,
+                skipped_reason=f"png_parse_failed:{exc}",
             ),
-            "width": None,
-            "height": None,
-            "byteLength": len(png_bytes),
-            "comparison": {
-                "format": "pngByteDigestComparison_v1",
-                "comparisonKind": "canonical_png_bytes_to_expected_sha256",
-                "result": "skipped_no_baseline",
-                "skippedReason": f"png_parse_failed:{exc}",
-                "expectedBaselineSha256": expected_canonical_sha256_baseline,
-            },
-            "probeNote": "PNG bytes failed IHDR parse; no canonical digest recorded.",
-        }
+        )
+        ingest_report["probeNote"] = "PNG bytes failed IHDR parse; no canonical digest recorded."
 
     if linked_bn is not None:
         ingest_report = dict(ingest_report)
@@ -742,14 +689,7 @@ def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
     comp = ingest_report.get("comparison") if isinstance(ingest_report, dict) else None
     result = comp.get("result") if isinstance(comp, dict) else None
 
-    if result == "match":
-        pix["status"] = "compared"
-    elif result == "mismatch":
-        pix["status"] = "mismatch"
-    elif result == "skipped_no_baseline":
-        pix["status"] = "ingested"
-    else:
-        pix["status"] = "ingested"
+    pix["status"] = {"match": "compared", "mismatch": "mismatch"}.get(str(result), "ingested")
 
     out["pixelDiffExpectation"] = pix
     return out
@@ -831,32 +771,22 @@ def merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
                 expected_canonical_sha256_baseline=expected_sha,
             )
         except ValueError as exc:
-            rep = {
-                "format": "serverPngByteIngest_v1",
-                "canonicalDigestKind": "png_file_sha256",
-                "canonicalDigestSha256": None,
-                "derivativeDigestSha256": None,
-                "derivativeDigestNote": (
-                    "This ingest path does not distinguish derivative raster bytes from "
-                    "canonical file bytes; only png_file_sha256 is emitted."
+            rep = _server_png_byte_ingest_envelope(
+                canonical_digest_sha256=None,
+                width=None,
+                height=None,
+                byte_length=len(raw_png),
+                comparison=_png_byte_digest_comparison_v1(
+                    result="skipped_no_baseline",
+                    expected_baseline_sha256=expected_sha,
+                    skipped_reason=f"png_parse_failed:{exc}",
                 ),
-                "width": None,
-                "height": None,
-                "byteLength": len(raw_png),
-                "comparison": {
-                    "format": "pngByteDigestComparison_v1",
-                    "comparisonKind": "canonical_png_bytes_to_expected_sha256",
-                    "result": "skipped_no_baseline",
-                    "skippedReason": f"png_parse_failed:{exc}",
-                    "expectedBaselineSha256": expected_sha,
-                },
-                "probeNote": "PNG bytes failed IHDR parse; no canonical digest recorded.",
-                "ingestSourceKind": "committed_repository_fixture",
-            }
+            )
+            rep["probeNote"] = "PNG bytes failed IHDR parse; no canonical digest recorded."
         else:
             rep = dict(rep)
             rep["probeNote"] = _COMMITTED_FIXTURE_PROBE_NOTE_V1
-            rep["ingestSourceKind"] = "committed_repository_fixture"
+        rep["ingestSourceKind"] = "committed_repository_fixture"
 
         entries.append({"baselinePngBasename": bn_raw, "serverPngByteIngest_v1": rep})
 
@@ -973,7 +903,8 @@ def evidence_lifecycle_signal_v1(
     """Single programmatic bundle: digest, staging basename, consistency, gaps, diff-ingest cardinality."""
 
     pix = evidence_closure_review.get("pixelDiffExpectation")
-    ingest = pix.get("ingestChecklist_v1") if isinstance(pix, dict) else None
+    pix_dict = pix if isinstance(pix, dict) else {}
+    ingest = pix_dict.get("ingestChecklist_v1")
     t_count = (
         len(ingest["targets"])
         if isinstance(ingest, dict) and isinstance(ingest.get("targets"), list)
@@ -983,20 +914,17 @@ def evidence_lifecycle_signal_v1(
     gap_list = gaps_obj.get("gaps") if isinstance(gaps_obj, dict) else None
     gap_n = len(gap_list) if isinstance(gap_list, list) else 0
     cons = evidence_closure_review.get("correlationDigestConsistency")
-    if isinstance(cons, dict) and isinstance(cons.get("isFullyConsistent"), bool):
-        consistent: bool | None = bool(cons["isFullyConsistent"])
-    else:
-        consistent = None
+    consistent: bool | None = (
+        bool(cons["isFullyConsistent"])
+        if isinstance(cons, dict) and isinstance(cons.get("isFullyConsistent"), bool)
+        else None
+    )
     basenames = evidence_closure_review.get("expectedDeterministicPngBasenames")
     bn_n = len(basenames) if isinstance(basenames, list) else 0
 
-    ingest_digest: str | None = None
-    if isinstance(pix, dict):
-        ac = pix.get("artifactIngestCorrelation_v1")
-        if isinstance(ac, dict):
-            d = ac.get("ingestManifestDigestSha256")
-            if isinstance(d, str) and len(d) == 64:
-                ingest_digest = d
+    ac = pix_dict.get("artifactIngestCorrelation_v1")
+    d = ac.get("ingestManifestDigestSha256") if isinstance(ac, dict) else None
+    ingest_digest: str | None = d if isinstance(d, str) and len(d) == 64 else None
 
     out: dict[str, Any] = {
         "format": "evidenceLifecycleSignal_v1",
@@ -1022,13 +950,10 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
         blockers.append("correlation_digest_stale_or_missing")
 
     gaps_raw = evidence_closure_review.get("screenshotHintGaps_v1")
-    gap_has = False
-    if isinstance(gaps_raw, dict):
-        if gaps_raw.get("hasGaps") is True:
-            gap_has = True
-        n = gaps_raw.get("gapRowCount")
-        if isinstance(n, int) and n > 0:
-            gap_has = True
+    gap_has = isinstance(gaps_raw, dict) and (
+        gaps_raw.get("hasGaps") is True
+        or (isinstance(gaps_raw.get("gapRowCount"), int) and gaps_raw["gapRowCount"] > 0)
+    )
     if gap_has:
         blockers.append("screenshot_filename_slots_incomplete")
 
@@ -1039,21 +964,23 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
         if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
             ingest_targets = ing["targets"]
             ac_corr = pix.get("artifactIngestCorrelation_v1")
-            if isinstance(ac_corr, dict):
-                actual_digest = ac_corr.get("ingestManifestDigestSha256")
-                if isinstance(actual_digest, str) and len(actual_digest) == 64:
-                    expected_digest = artifact_ingest_correlation_v1(ingest_targets)[
-                        "ingestManifestDigestSha256"
-                    ]
-                    if expected_digest != actual_digest:
-                        blockers.append("artifact_ingest_correlation_digest_mismatch")
+            actual_digest = ac_corr.get("ingestManifestDigestSha256") if isinstance(ac_corr, dict) else None
+            if isinstance(actual_digest, str) and len(actual_digest) == 64:
+                expected_digest = artifact_ingest_correlation_v1(ingest_targets)[
+                    "ingestManifestDigestSha256"
+                ]
+                if expected_digest != actual_digest:
+                    blockers.append("artifact_ingest_correlation_digest_mismatch")
 
     correlation_ok = isinstance(cons, dict) and cons.get("isFullyConsistent") is True
-    if correlation_ok and not gap_has:
-        if isinstance(pix, dict):
-            status_ok = pix.get("status") == "not_run"
-            if status_ok and len(ingest_targets) > 0:
-                blockers.append("pixel_diff_ingest_pending")
+    if (
+        correlation_ok
+        and not gap_has
+        and isinstance(pix, dict)
+        and pix.get("status") == "not_run"
+        and len(ingest_targets) > 0
+    ):
+        blockers.append("pixel_diff_ingest_pending")
 
     codes = sorted(set(blockers))
     return {
@@ -1075,11 +1002,11 @@ def evidence_review_performance_gate_v1(fix_loop: dict[str, Any]) -> dict[str, A
     """Advisory mock gate derived from fix-loop blockers (no wall-clock probes; digest-excluded)."""
 
     raw_codes = fix_loop.get("blockerCodes")
-    codes: list[str]
-    if isinstance(raw_codes, list):
-        codes = sorted(str(x) for x in raw_codes if isinstance(x, str))
-    else:
-        codes = []
+    codes: list[str] = (
+        sorted(str(x) for x in raw_codes if isinstance(x, str))
+        if isinstance(raw_codes, list)
+        else []
+    )
     needs_fix = bool(fix_loop.get("needsFixLoop"))
     return {
         "format": "evidenceReviewPerformanceGate_v1",
@@ -1106,25 +1033,25 @@ def evidence_baseline_lifecycle_readout_v1(
 ) -> dict[str, Any]:
     """Derivative lifecycle table: baseline ids, fixture/digest status, next actions, CI gate hints."""
 
-    raw_codes = evidence_diff_ingest_fix_loop.get("blockerCodes")
-    rc_list = raw_codes if isinstance(raw_codes, list) else []
-    fix_codes: list[str] = sorted(str(x) for x in rc_list if isinstance(x, str))
-    gate_closed = bool(evidence_review_performance_gate.get("gateClosed"))
+    def _str_list(raw: Any) -> list[str]:
+        return sorted(str(x) for x in (raw if isinstance(raw, list) else []) if isinstance(x, str))
 
-    echo_raw = evidence_review_performance_gate.get("blockerCodesEcho")
-    echo_list = echo_raw if isinstance(echo_raw, list) else []
-    echo_codes: list[str] = sorted(str(x) for x in echo_list if isinstance(x, str))
+    fix_codes = _str_list(evidence_diff_ingest_fix_loop.get("blockerCodes"))
+    gate_closed = bool(evidence_review_performance_gate.get("gateClosed"))
+    echo_codes = _str_list(evidence_review_performance_gate.get("blockerCodesEcho"))
     rollup_ci = (
         f"performance_gate_gateClosed={str(gate_closed).lower()};"
         f"blocker_codes_echo={' '.join(echo_codes) if echo_codes else 'none'}"
     )
 
     pix = evidence_closure_review.get("pixelDiffExpectation")
-    ingest_targets: list[Any] = []
-    if isinstance(pix, dict):
-        ing = pix.get("ingestChecklist_v1")
-        if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
-            ingest_targets = list(ing["targets"])
+    pix_dict = pix if isinstance(pix, dict) else {}
+    ing = pix_dict.get("ingestChecklist_v1")
+    ingest_targets: list[Any] = (
+        list(ing["targets"])
+        if isinstance(ing, dict) and isinstance(ing.get("targets"), list)
+        else []
+    )
 
     norm_rows: list[dict[str, str]] = []
     for raw in ingest_targets:
@@ -1139,26 +1066,19 @@ def evidence_baseline_lifecycle_readout_v1(
     expected_ids = sorted({r["baselinePngBasename"] for r in norm_rows})
 
     committed_bn: set[str] = set()
-    if isinstance(pix, dict):
-        cpi = pix.get("committedPngBaselineIngests_v1")
-        if isinstance(cpi, dict):
-            ent = cpi.get("entries")
-            if isinstance(ent, list):
-                for e in ent:
-                    if isinstance(e, dict):
-                        bn = e.get("baselinePngBasename")
-                        if isinstance(bn, str):
-                            committed_bn.add(bn)
+    cpi = pix_dict.get("committedPngBaselineIngests_v1")
+    if isinstance(cpi, dict) and isinstance(cpi.get("entries"), list):
+        for e in cpi["entries"]:
+            if isinstance(e, dict) and isinstance(e.get("baselinePngBasename"), str):
+                committed_bn.add(e["baselinePngBasename"])
 
     actual_digest: str | None = None
-    if isinstance(pix, dict):
-        ac_corr = pix.get("artifactIngestCorrelation_v1")
-        if isinstance(ac_corr, dict):
-            ad = ac_corr.get("ingestManifestDigestSha256")
-            if isinstance(ad, str) and len(ad) == 64:
-                actual_digest = ad
+    ac_corr = pix_dict.get("artifactIngestCorrelation_v1")
+    if isinstance(ac_corr, dict):
+        ad = ac_corr.get("ingestManifestDigestSha256")
+        if isinstance(ad, str) and len(ad) == 64:
+            actual_digest = ad
 
-    digestrollup: str
     if ingest_count == 0:
         digestrollup = "not_applicable"
     elif actual_digest is None:
@@ -1169,41 +1089,25 @@ def evidence_baseline_lifecycle_readout_v1(
         )
         digestrollup = "aligned" if expected_dig == actual_digest else "mismatch"
 
+    def _next_action(missing_for_row: bool) -> str:
+        if ingest_count == 0:
+            return "noop_no_baseline_targets"
+        if "artifact_ingest_correlation_digest_mismatch" in fix_codes:
+            return "investigate_diff"
+        if "correlation_digest_stale_or_missing" in fix_codes:
+            return "investigate_diff"
+        if "screenshot_filename_slots_incomplete" in fix_codes:
+            return "missing_artifact"
+        if missing_for_row:
+            return "missing_artifact"
+        if "pixel_diff_ingest_pending" in fix_codes:
+            return "run_pixel_diff_ingest"
+        return "accept_baseline"
+
     missing_committed_any = bool(expected_ids) and any(
         bn not in committed_bn for bn in expected_ids
     )
-
-    def rollup_next_action() -> str:
-        if ingest_count == 0:
-            return "noop_no_baseline_targets"
-        if "artifact_ingest_correlation_digest_mismatch" in fix_codes:
-            return "investigate_diff"
-        if "correlation_digest_stale_or_missing" in fix_codes:
-            return "investigate_diff"
-        if "screenshot_filename_slots_incomplete" in fix_codes:
-            return "missing_artifact"
-        if missing_committed_any:
-            return "missing_artifact"
-        if "pixel_diff_ingest_pending" in fix_codes:
-            return "run_pixel_diff_ingest"
-        return "accept_baseline"
-
-    rollup_action = rollup_next_action()
-
-    def row_next_action(baseline_bn: str) -> str:
-        if ingest_count == 0:
-            return "noop_no_baseline_targets"
-        if "artifact_ingest_correlation_digest_mismatch" in fix_codes:
-            return "investigate_diff"
-        if "correlation_digest_stale_or_missing" in fix_codes:
-            return "investigate_diff"
-        if "screenshot_filename_slots_incomplete" in fix_codes:
-            return "missing_artifact"
-        if baseline_bn not in committed_bn:
-            return "missing_artifact"
-        if "pixel_diff_ingest_pending" in fix_codes:
-            return "run_pixel_diff_ingest"
-        return "accept_baseline"
+    rollup_action = _next_action(missing_committed_any)
 
     _staged_upload_note = (
         "Staged upload is not performed by this API. "
@@ -1211,22 +1115,21 @@ def evidence_baseline_lifecycle_readout_v1(
         "no baselines are committed or mutated automatically."
     )
 
-    row_objs: list[dict[str, Any]] = []
     digest_cell = digestrollup if ingest_count else "not_applicable"
-    for r in norm_rows:
-        bn = r["baselinePngBasename"]
-        com_status = "present" if bn in committed_bn else "missing"
-        row_objs.append(
-            {
-                "baselinePngBasename": bn,
-                "expectedDiffBasename": r["expectedDiffBasename"],
-                "committedFixtureStatus": com_status,
-                "digestCorrelationStatus": digest_cell,
-                "suggestedNextAction": row_next_action(bn),
-                "ciGateHint": rollup_ci,
-                "stagedUploadEligibilityNote": _staged_upload_note,
-            }
-        )
+    row_objs: list[dict[str, Any]] = [
+        {
+            "baselinePngBasename": r["baselinePngBasename"],
+            "expectedDiffBasename": r["expectedDiffBasename"],
+            "committedFixtureStatus": (
+                "present" if r["baselinePngBasename"] in committed_bn else "missing"
+            ),
+            "digestCorrelationStatus": digest_cell,
+            "suggestedNextAction": _next_action(r["baselinePngBasename"] not in committed_bn),
+            "ciGateHint": rollup_ci,
+            "stagedUploadEligibilityNote": _staged_upload_note,
+        }
+        for r in norm_rows
+    ]
 
     return {
         "format": "evidenceBaselineLifecycleReadout_v1",
@@ -1260,67 +1163,15 @@ def evidence_closure_review_v1(
 ) -> dict[str, Any]:
     """Flatten deterministic PNG inventory + correlation digest hygiene for Agent Review / CI."""
 
-    stale_rows: list[dict[str, Any]] = []
-    missing_digest_rows: list[dict[str, Any]] = []
-    png_basenames: list[str] = []
-
-    def note_pngs(playwright_suggested: dict[str, Any]) -> None:
-        for key in ("pngViewport", "pngFullSheet", "pngPlanCanvas", "pngSectionViewport"):
-            val = playwright_suggested.get(key)
-            if isinstance(val, str) and val.endswith(".png"):
-                png_basenames.append(val)
-
-    def scan_rows(kind: str, id_key: str, rows: list[dict[str, Any]]) -> None:
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            row_id = str(row.get(id_key, "") or "")
-            corr_raw = row.get("correlation")
-            corr = corr_raw if isinstance(corr_raw, dict) else {}
-            row_sha = corr.get("semanticDigestSha256")
-            if row_sha is None:
-                if row_id:
-                    missing_digest_rows.append({"kind": kind, "id": row_id})
-            elif isinstance(row_sha, str) and row_sha != package_semantic_digest_sha256:
-                stale_rows.append(
-                    {
-                        "kind": kind,
-                        "id": row_id,
-                        "correlationSemanticDigestSha256": row_sha,
-                        "packageSemanticDigestSha256": package_semantic_digest_sha256,
-                    }
-                )
-            pw_raw = row.get("playwrightSuggestedFilenames")
-            if isinstance(pw_raw, dict):
-                note_pngs(pw_raw)
-
-    scan_rows("sheet", "sheetId", deterministic_sheet_evidence)
-    scan_rows("viewpoint", "viewpointId", deterministic_3d_view_evidence)
-    scan_rows("plan_view", "planViewId", deterministic_plan_view_evidence)
-    scan_rows("section_cut", "sectionCutId", deterministic_section_cut_evidence)
-
-    basenames_sorted = sorted(set(png_basenames))
-    shot_gaps = screenshot_hint_gaps_v1(
+    return EvidenceManifestBuilder().build_closure_review(
+        package_semantic_digest_sha256=package_semantic_digest_sha256,
         deterministic_sheet_evidence=deterministic_sheet_evidence,
         deterministic_3d_view_evidence=deterministic_3d_view_evidence,
         deterministic_plan_view_evidence=deterministic_plan_view_evidence,
         deterministic_section_cut_evidence=deterministic_section_cut_evidence,
+        screenshot_hint_gaps=screenshot_hint_gaps_v1,
+        pixel_diff_expectation_factory=pixel_diff_expectation_v1_with_ingest,
     )
-
-    return {
-        "format": "evidenceClosureReview_v1",
-        "packageSemanticDigestSha256": package_semantic_digest_sha256,
-        "expectedDeterministicPngBasenames": basenames_sorted,
-        "primaryScreenshotArtifactCount": len(basenames_sorted),
-        "screenshotHintGaps_v1": shot_gaps,
-        "correlationDigestConsistency": {
-            "format": "correlationDigestConsistency_v1",
-            "staleRowsRelativeToPackageDigest": stale_rows,
-            "rowsMissingCorrelationDigest": missing_digest_rows,
-            "isFullyConsistent": len(stale_rows) == 0 and len(missing_digest_rows) == 0,
-        },
-        "pixelDiffExpectation": pixel_diff_expectation_v1_with_ingest(basenames_sorted),
-    }
 
 
 def agent_evidence_closure_hints() -> dict[str, Any]:
@@ -1389,33 +1240,43 @@ def evidence_ref_resolution_v1(
 ) -> dict[str, Any]:
     """List BCF/issue evidenceRefs that do not resolve to a deterministic evidence row."""
 
-    sheet_by_id: dict[str, dict[str, Any]] = {}
-    for row in deterministic_sheet_evidence:
-        if isinstance(row, dict):
-            sid = str(row.get("sheetId") or "")
-            if sid:
-                sheet_by_id[sid] = row
+    def _index(rows: list[dict[str, Any]], id_key: str) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            if isinstance(row, dict):
+                k = str(row.get(id_key) or "")
+                if k:
+                    out[k] = row
+        return out
 
-    vp_by_id: dict[str, dict[str, Any]] = {}
-    for row in deterministic_3d_view_evidence:
-        if isinstance(row, dict):
-            vid = str(row.get("viewpointId") or "")
-            if vid:
-                vp_by_id[vid] = row
+    sheet_by_id = _index(deterministic_sheet_evidence, "sheetId")
+    vp_by_id = _index(deterministic_3d_view_evidence, "viewpointId")
+    plan_by_id = _index(deterministic_plan_view_evidence, "planViewId")
+    sec_by_id = _index(deterministic_section_cut_evidence, "sectionCutId")
 
-    plan_by_id: dict[str, dict[str, Any]] = {}
-    for row in deterministic_plan_view_evidence:
-        if isinstance(row, dict):
-            pid = str(row.get("planViewId") or "")
-            if pid:
-                plan_by_id[pid] = row
-
-    sec_by_id: dict[str, dict[str, Any]] = {}
-    for row in deterministic_section_cut_evidence:
-        if isinstance(row, dict):
-            cid = str(row.get("sectionCutId") or "")
-            if cid:
-                sec_by_id[cid] = row
+    def _ref_entry(
+        tk: str,
+        tid: str,
+        *,
+        kind: str | None,
+        sheet_id: str | None = None,
+        viewpoint_id: str | None = None,
+        plan_view_id: str | None = None,
+        section_cut_id: str | None = None,
+        png_basename: str | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "topicKind": tk,
+            "topicId": tid,
+            "evidenceRef": {
+                "kind": kind,
+                "sheetId": sheet_id,
+                "viewpointId": viewpoint_id,
+                "planViewId": plan_view_id,
+                "sectionCutId": section_cut_id,
+                "pngBasename": png_basename,
+            },
+        }
 
     unresolved: list[dict[str, Any]] = []
     topics = bcf_topics_index.get("topics") if isinstance(bcf_topics_index, dict) else None
@@ -1451,85 +1312,39 @@ def evidence_ref_resolution_v1(
             if ok:
                 continue
             unresolved.append(
-                {
-                    "topicKind": tk,
-                    "topicId": tid,
-                    "evidenceRef": {
-                        "kind": kind,
-                        "sheetId": ref.get("sheetId"),
-                        "viewpointId": ref.get("viewpointId"),
-                        "planViewId": ref.get("planViewId"),
-                        "sectionCutId": ref.get("sectionCutId"),
-                        "pngBasename": ref.get("pngBasename"),
-                    },
-                }
+                _ref_entry(
+                    tk,
+                    tid,
+                    kind=kind,
+                    sheet_id=ref.get("sheetId"),
+                    viewpoint_id=ref.get("viewpointId"),
+                    plan_view_id=ref.get("planViewId"),
+                    section_cut_id=ref.get("sectionCutId"),
+                    png_basename=ref.get("pngBasename"),
+                )
             )
 
         if tk == "bcf":
             vpref = t.get("viewpointRef")
             if isinstance(vpref, str) and vpref.strip() and vpref not in vp_by_id:
                 unresolved.append(
-                    {
-                        "topicKind": tk,
-                        "topicId": tid,
-                        "evidenceRef": {
-                            "kind": "bcf_viewpoint_ref",
-                            "sheetId": None,
-                            "viewpointId": vpref,
-                            "planViewId": None,
-                            "sectionCutId": None,
-                            "pngBasename": None,
-                        },
-                    }
+                    _ref_entry(tk, tid, kind="bcf_viewpoint_ref", viewpoint_id=vpref)
                 )
             pvid = t.get("planViewId")
             if isinstance(pvid, str) and pvid.strip() and pvid not in plan_by_id:
                 unresolved.append(
-                    {
-                        "topicKind": tk,
-                        "topicId": tid,
-                        "evidenceRef": {
-                            "kind": "bcf_plan_view",
-                            "sheetId": None,
-                            "viewpointId": None,
-                            "planViewId": pvid,
-                            "sectionCutId": None,
-                            "pngBasename": None,
-                        },
-                    }
+                    _ref_entry(tk, tid, kind="bcf_plan_view", plan_view_id=pvid)
                 )
             scid = t.get("sectionCutId")
             if isinstance(scid, str) and scid.strip() and scid not in sec_by_id:
                 unresolved.append(
-                    {
-                        "topicKind": tk,
-                        "topicId": tid,
-                        "evidenceRef": {
-                            "kind": "bcf_section_cut",
-                            "sheetId": None,
-                            "viewpointId": None,
-                            "planViewId": None,
-                            "sectionCutId": scid,
-                            "pngBasename": None,
-                        },
-                    }
+                    _ref_entry(tk, tid, kind="bcf_section_cut", section_cut_id=scid)
                 )
         elif tk == "issue":
             ivp = t.get("viewpointId")
             if isinstance(ivp, str) and ivp.strip() and ivp not in vp_by_id:
                 unresolved.append(
-                    {
-                        "topicKind": tk,
-                        "topicId": tid,
-                        "evidenceRef": {
-                            "kind": "issue_viewpoint",
-                            "sheetId": None,
-                            "viewpointId": ivp,
-                            "planViewId": None,
-                            "sectionCutId": None,
-                            "pngBasename": None,
-                        },
-                    }
+                    _ref_entry(tk, tid, kind="issue_viewpoint", viewpoint_id=ivp)
                 )
 
     unresolved.sort(
@@ -1596,37 +1411,23 @@ def staged_artifact_links_v1(
         github_actions_resolution = None
         run_artifacts_web_url = None
 
+    def _anchor(row_id: str, **extra: Any) -> dict[str, Any]:
+        return {"id": row_id, "kind": "api_relative_anchor", **extra}
+
     staged_link_rows: list[dict[str, Any]] = [
-        {
-            "id": "bcf_topics_json_export_anchor",
-            "kind": "api_relative_anchor",
-            "bcfTopicsJsonExportHref": links["bcfTopicsJsonExport"],
-        },
-        {
-            "id": "bcf_topics_json_import_anchor",
-            "kind": "api_relative_anchor",
-            "bcfTopicsJsonImportHref": links["bcfTopicsJsonImport"],
-        },
-        {
-            "id": "evidence_package_json_anchor",
-            "kind": "api_relative_anchor",
-            "evidencePackageJsonBasename": bundle_json,
-            "evidencePackageHref": links["evidencePackage"],
-            "notes": (
+        _anchor("bcf_topics_json_export_anchor", bcfTopicsJsonExportHref=links["bcfTopicsJsonExport"]),
+        _anchor("bcf_topics_json_import_anchor", bcfTopicsJsonImportHref=links["bcfTopicsJsonImport"]),
+        _anchor(
+            "evidence_package_json_anchor",
+            evidencePackageJsonBasename=bundle_json,
+            evidencePackageHref=links["evidencePackage"],
+            notes=(
                 "Reference only: save JSON as evidencePackageJsonBasename; fetch via evidencePackageHref "
                 "without mutating repositories."
             ),
-        },
-        {
-            "id": "model_snapshot_anchor",
-            "kind": "api_relative_anchor",
-            "snapshotHref": links["snapshot"],
-        },
-        {
-            "id": "model_validate_anchor",
-            "kind": "api_relative_anchor",
-            "validateHref": links["validate"],
-        },
+        ),
+        _anchor("model_snapshot_anchor", snapshotHref=links["snapshot"]),
+        _anchor("model_validate_anchor", validateHref=links["validate"]),
     ]
 
     playwright_row: dict[str, Any] = {
@@ -1697,49 +1498,39 @@ def artifact_upload_manifest_v1(
     gh_res = sal.get("githubActionsResolution")
     gh_ok = isinstance(gh_res, dict) and bool(gh_res)
 
-    if side_effects_enabled:
-        side_effects_reason = (
+    side_effects_reason = (
+        (
             "BIM_AI_STAGED_ARTIFACT_LINKS=1 enables non-secret GitHub Actions correlation hints only; "
             "the API still performs no artifact uploads."
         )
-    else:
-        side_effects_reason = (
+        if side_effects_enabled
+        else (
             "Staged CI correlation hints are disabled by default "
             "(set BIM_AI_STAGED_ARTIFACT_LINKS=1 together with GITHUB_REPOSITORY and GITHUB_RUN_ID)."
         )
+    )
 
-    ci_hint: dict[str, Any]
+    ci_hint: dict[str, Any] = {"format": "ciProviderHint_v1", "provider": "github_actions"}
     if gh_ok:
-        repo = str(gh_res.get("repository") or "")
-        run_id = str(gh_res.get("runId") or "")
-        ci_hint = {
-            "format": "ciProviderHint_v1",
-            "provider": "github_actions",
-            "repository": repo,
-            "runId": run_id,
-            "runArtifactsWebUrl": str(gh_res.get("runArtifactsWebUrl") or ""),
-        }
+        ci_hint["repository"] = str(gh_res.get("repository") or "")
+        ci_hint["runId"] = str(gh_res.get("runId") or "")
+        ci_hint["runArtifactsWebUrl"] = str(gh_res.get("runArtifactsWebUrl") or "")
         cs = gh_res.get("commitSha")
         if isinstance(cs, str) and cs.strip():
             ci_hint["commitSha"] = cs.strip()
     else:
         if resolution_mode == "github_actions":
-            omitted = (
+            ci_hint["omittedReason"] = (
                 "GitHub Actions resolution inactive despite github_actions mode label; "
                 "check GITHUB_REPOSITORY and GITHUB_RUN_ID."
             )
         elif not side_effects_enabled:
-            omitted = (
+            ci_hint["omittedReason"] = (
                 "Non-secret GitHub Actions correlation omitted: BIM_AI_STAGED_ARTIFACT_LINKS is not 1 "
                 "or GITHUB_REPOSITORY/GITHUB_RUN_ID are unset."
             )
         else:
-            omitted = "GITHUB_REPOSITORY or GITHUB_RUN_ID missing."
-        ci_hint = {
-            "format": "ciProviderHint_v1",
-            "provider": "github_actions",
-            "omittedReason": omitted,
-        }
+            ci_hint["omittedReason"] = "GITHUB_REPOSITORY or GITHUB_RUN_ID missing."
 
     bundle_hints = sal.get("bundleFilenameHints")
     bundle_json = (
@@ -1799,46 +1590,24 @@ def artifact_upload_manifest_v1(
             entry.update(extra)
         return entry
 
-    expected_artifacts: list[dict[str, Any]] = [
-        _build_artifact(
-            "bcf_topics_json_export",
-            "local_api_relative_json_export",
-            None,
-            str(erp.get("bcfTopicsJsonExport") or ""),
-        ),
-        _build_artifact(
-            "bcf_topics_json_import",
-            "local_api_relative_json_import",
-            None,
-            str(erp.get("bcfTopicsJsonImport") or ""),
-        ),
-        _build_artifact(
-            "evidence_package_json",
-            "bundle_evidence_package_json",
-            bundle_json,
-            str(erp.get("evidencePackage") or ""),
-        ),
-        _build_artifact(
+    _artifact_specs: list[tuple[str, str, str | None, str | None, dict[str, Any] | None]] = [
+        ("bcf_topics_json_export", "local_api_relative_json_export", None, str(erp.get("bcfTopicsJsonExport") or ""), None),
+        ("bcf_topics_json_import", "local_api_relative_json_import", None, str(erp.get("bcfTopicsJsonImport") or ""), None),
+        ("evidence_package_json", "bundle_evidence_package_json", bundle_json, str(erp.get("evidencePackage") or ""), None),
+        (
             "playwright_ci_evidence_bundle",
             "ci_playwright_named_bundle",
             pw_expected,
             None,
-            extra={"artifactNamePattern": pw_pattern} if pw_pattern else None,
+            {"artifactNamePattern": pw_pattern} if pw_pattern else None,
         ),
-        _build_artifact(
-            "snapshot_json",
-            "local_api_relative_snapshot",
-            None,
-            str(erp.get("snapshot") or ""),
-        ),
-        _build_artifact(
-            "validate_json",
-            "local_api_relative_validate",
-            None,
-            str(erp.get("validate") or ""),
-        ),
+        ("snapshot_json", "local_api_relative_snapshot", None, str(erp.get("snapshot") or ""), None),
+        ("validate_json", "local_api_relative_validate", None, str(erp.get("validate") or ""), None),
     ]
-    expected_artifacts.sort(key=lambda x: str(x.get("id") or ""))
+    expected_artifacts: list[dict[str, Any]] = sorted(
+        (_build_artifact(*spec) for spec in _artifact_specs),
+        key=lambda x: str(x.get("id") or ""),
+    )
 
     # Deterministic signature rows manifest digest — covers all per-artifact signature rows.
     sig_rows_payload = json.dumps(
@@ -2336,24 +2105,17 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
         if isinstance(cands, list):
             shallow = dict(shallow)
             rdc2 = dict(rdc)
-
             normed: list[dict[str, Any]] = []
-
             for c_raw in sorted(cands, key=lambda x: str(x.get("candidateId", ""))):
                 if not isinstance(c_raw, dict):
                     continue
-
                 cx = dict(c_raw)
-
                 comp = cx.get("comparisonToAuthoredRooms")
-
                 if isinstance(comp, list):
                     cx["comparisonToAuthoredRooms"] = sorted(
                         comp, key=lambda x: str(x.get("roomId", ""))
                     )
-
                 wrn = cx.get("warnings")
-
                 if isinstance(wrn, list):
                     cx["warnings"] = sorted(
                         wrn,
@@ -2363,14 +2125,10 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
                             str(x.get("severity", "")),
                         ),
                     )
-
                 sh = cx.get("separationHintGridLineIds")
-
                 if isinstance(sh, list):
                     cx["separationHintGridLineIds"] = sorted(str(x) for x in sh)
-
                 normed.append(cx)
-
             rdc2["candidates"] = normed
             shallow["roomDerivationCandidates"] = rdc2
 
@@ -2381,18 +2139,10 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
             shallow = dict(shallow)
             tmr2 = dict(tmr)
             doc2 = dict(docp)
-            fts = doc2.get("familyTypes")
-            if isinstance(fts, list):
-                doc2["familyTypes"] = sorted(fts, key=lambda x: str(x.get("id", "")))
-            wts = doc2.get("wallTypes")
-            if isinstance(wts, list):
-                doc2["wallTypes"] = sorted(wts, key=lambda x: str(x.get("id", "")))
-            fts = doc2.get("floorTypes")
-            if isinstance(fts, list):
-                doc2["floorTypes"] = sorted(fts, key=lambda x: str(x.get("id", "")))
-            rtts = doc2.get("roofTypes")
-            if isinstance(rtts, list):
-                doc2["roofTypes"] = sorted(rtts, key=lambda x: str(x.get("id", "")))
+            for type_key in ("familyTypes", "wallTypes", "floorTypes", "roofTypes"):
+                arr = doc2.get(type_key)
+                if isinstance(arr, list):
+                    doc2[type_key] = sorted(arr, key=lambda x: str(x.get("id", "")))
             tmr2["document"] = doc2
             shallow["typeMaterialRegistry"] = tmr2
 
