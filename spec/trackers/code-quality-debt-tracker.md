@@ -14,8 +14,8 @@ This tracker is the orchestration layer. Existing trackers retain their
 own scope:
 
 - `performance-quality-tracker.md` — owns the BE-1..7 / FE-1..5 findings
-  catalog. PERF-CQ-* items here are concrete WPs that close those findings.
-- `sub-3000-loc-tracker.md` — owns LoC budget enforcement. REF-CQ-* items
+  catalog. PERF-CQ-\* items here are concrete WPs that close those findings.
+- `sub-3000-loc-tracker.md` — owns LoC budget enforcement. REF-CQ-\* items
   here are extractions that incidentally help LoC, not pure size cuts.
 - `revit-material-parity-tracker.md`, `model-time-travel-tracker.md`,
   `ui-mcp-parity-tracker.md` — orthogonal feature trackers. This tracker
@@ -24,18 +24,18 @@ own scope:
 
 ## Status Dashboard
 
-| Section                              | Count | Done | Open P0 | Open P1 | Open P2 | Open P3 |
-| ------------------------------------ | ----- | ---- | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 8    | 0       | 0       | 3       | 1       |
-| 2. Backend Performance (PERF-CQ-*)   | 4     | 3    | 0       | 0       | 1       | 0       |
-| 3. Frontend Performance (FE-CQ-*)    | 4     | 1    | 0       | 1*      | 2       | 0       |
-| 4. Refactoring (REF-CQ-*)            | 7     | 6    | 0       | 0       | 1       | 0       |
-| 5. Architecture (ARCH-CQ-*)          | 6     | 2    | 0       | 0       | 3       | 1       |
-| 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 2    | 0       | 0       | 2       | 0       |
-| 7. Documentation Polish (DOC-CQ-*)   | 3     | 0    | 0       | 0       | 3       | 0       |
-| **Total**                            | **40**| **22**| **0**  | **1**   | **15**  | **2**   |
+| Section                             | Count  | Done   | Open P0 | Open P1 | Open P2 | Open P3 |
+| ----------------------------------- | ------ | ------ | ------- | ------- | ------- | ------- |
+| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 8      | 0       | 0       | 3       | 1       |
+| 2. Backend Performance (PERF-CQ-\*) | 4      | 4      | 0       | 0       | 0       | 0       |
+| 3. Frontend Performance (FE-CQ-\*)  | 4      | 2      | 0       | 1\*     | 1       | 0       |
+| 4. Refactoring (REF-CQ-\*)          | 7      | 6      | 0       | 0       | 1       | 0       |
+| 5. Architecture (ARCH-CQ-\*)        | 6      | 2      | 0       | 0       | 3       | 1       |
+| 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 2      | 0       | 0       | 2       | 0       |
+| 7. Documentation Polish (DOC-CQ-\*) | 3      | 0      | 0       | 0       | 3       | 0       |
+| **Total**                           | **40** | **24** | **0**   | **1**   | **13**  | **2**   |
 
-22/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.* narrow selectors
+24/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.\* narrow selectors
 shipped, broad `elementsById` subscription audit deferred to follow-up).
 P1 cohort down to that one partial item.
 
@@ -55,9 +55,10 @@ DEP-CQ-01, DEP-CQ-02
 
 ### P2 (by 2026-07-31)
 
-TEST-CQ-05, TEST-CQ-07, TEST-CQ-10, TEST-CQ-11, PERF-CQ-04, FE-CQ-03,
-FE-CQ-04, REF-CQ-03, REF-CQ-05, REF-CQ-06, ARCH-CQ-02, ARCH-CQ-03,
-ARCH-CQ-06, DEP-CQ-03, DEP-CQ-04, DOC-CQ-01, DOC-CQ-02, DOC-CQ-03
+TEST-CQ-05, TEST-CQ-07, TEST-CQ-10, TEST-CQ-11, FE-CQ-03, REF-CQ-03,
+REF-CQ-05, REF-CQ-06, ARCH-CQ-02, ARCH-CQ-03, ARCH-CQ-06, DEP-CQ-03,
+DEP-CQ-04, DOC-CQ-01, DOC-CQ-02, DOC-CQ-03 (PERF-CQ-04 + FE-CQ-04 done
+2026-05-29)
 
 ### P3 (opportunistic)
 
@@ -81,16 +82,16 @@ TEST-CQ-12, REF-CQ-07, ARCH-CQ-05
 | P2       | Meaningful but can wait; ship within a quarter                |
 | P3       | Quality-of-life; ship when adjacent work makes it cheap       |
 
-| Effort | Meaning                              |
-| ------ | ------------------------------------ |
-| S      | < 1 day                              |
-| M      | 1-3 days                             |
-| L      | 1+ week                              |
-| XL     | 2+ weeks (consider splitting first)  |
+| Effort | Meaning                             |
+| ------ | ----------------------------------- |
+| S      | < 1 day                             |
+| M      | 1-3 days                            |
+| L      | 1+ week                             |
+| XL     | 2+ weeks (consider splitting first) |
 
 ---
 
-## Section 1 — Test Coverage Gaps (TEST-CQ-*)
+## Section 1 — Test Coverage Gaps (TEST-CQ-\*)
 
 **Theme:** the 79% global coverage hides genuinely-untested critical
 paths. Three specific files (versioning, skb/calibrator, tkn/diff) and
@@ -429,7 +430,7 @@ incrementally as features ship rather than as a bulk effort.
 
 ---
 
-## Section 2 — Backend Performance (PERF-CQ-*)
+## Section 2 — Backend Performance (PERF-CQ-\*)
 
 **Theme:** The 3 CI perf-budget failures I bumped in PR #145 are not
 just runner variance — they reflect real algorithmic gaps. Three concrete
@@ -538,7 +539,7 @@ evidence assembly. Closes BE-3.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (2026-05-29 — `spec/trackers/performance-quality-tracker.md` gained a `## Findings Status (2026-Q3 reconciliation)` section mapping all 12 BE/FE findings to SHIPPED (PR links: #150, #151, #156, plus shipped PERF-E03/F01-F06/I02) or OWNED-BY (WP IDs in this tracker + performance-quality-tracker) or DEFERRED with rationale)
 
 **Why:** The performance-quality-tracker has 12 findings (BE-1..7,
 FE-1..5) but no work-package table or ownership. PERF-CQ-01..03 close
@@ -549,7 +550,7 @@ STALE in the deep-dive — confirm and close.
 **Acceptance criteria:**
 
 1. `spec/trackers/performance-quality-tracker.md` gets a new "Findings
-   Status (2026-Q3 reconciliation)" section that maps each BE-*/FE-*
+   Status (2026-Q3 reconciliation)" section that maps each BE-_/FE-_
    finding to: shipped, owned-by-WP, or still-open.
 2. Closed findings linked to the PRs that closed them.
 3. Open findings get either a WP ID in this tracker or are explicitly
@@ -557,7 +558,7 @@ STALE in the deep-dive — confirm and close.
 
 ---
 
-## Section 3 — Frontend Performance (FE-CQ-*)
+## Section 3 — Frontend Performance (FE-CQ-\*)
 
 ### FE-CQ-01 — Narrow Workspace.tsx subscriptions
 
@@ -642,7 +643,7 @@ low-frequency (sheet/schedule export only).
 - **Effort:** M
 - **Owner:** frontend-workspace
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (2026-05-29 — Workspace.tsx now passes `pnpm exec eslint src/workspace/Workspace.tsx --max-warnings 0` cleanly. The audit covered all 77 hook calls in the file (41 `useCallback`, 20 `useMemo`, 16 `useEffect`); 76 already had complete dep arrays after REF-CQ-01/02 narrowed the scope. The one remaining `// eslint-disable-next-line react-hooks/exhaustive-deps` suppression — the DEV-only mount-once presence-bootstrap effect — now carries a multi-line justification block + an inline reason on the disable comment explaining why re-running on `userId` / `userDisplayName` / `presenceParticipants.length` changes would clobber the live websocket participant list with a stale single-user seed.)
 - **Dependencies:** Best done after REF-CQ-01 + REF-CQ-02 land so the
   audit scope is smaller.
 
@@ -666,7 +667,7 @@ a re-render storm or a stale closure. The recent eslint cleanup (PR
 
 ---
 
-## Section 4 — Refactoring (REF-CQ-*)
+## Section 4 — Refactoring (REF-CQ-\*)
 
 **Theme:** the LoC over-budget list is mostly real domain breadth, not
 debt. Five specific extractions would meaningfully cut size AND improve
@@ -690,8 +691,8 @@ reuse in `WorkspaceRightRail.tsx` inspector sections.
 
 1. New file `packages/web/src/workspace/useMaterialBrowserState.ts`
    exports a hook returning `{ openMaterialBrowser,
-   assignMaterialToTarget, activeMaterialKey, materialEditableTarget,
-   ... }`.
+assignMaterialToTarget, activeMaterialKey, materialEditableTarget,
+... }`.
 2. Workspace.tsx LoC drops by ≥ 130.
 3. WorkspaceRightRail.tsx can adopt the same hook for inspector
    material rows (do not require this in the PR; just confirm the
@@ -823,7 +824,7 @@ dispatch table cuts ~80 LoC and centralises the rule catalog.
 **Acceptance criteria:**
 
 1. Introduce `ROLE_VIOLATIONS: dict[tuple[str, str],
-   tuple[str, IntegritySeverity, str]]` near `ROLE_BY_KIND`.
+tuple[str, IntegritySeverity, str]]` near `ROLE_BY_KIND`.
 2. `_role_findings` shrinks to a table lookup + finding construction
    (≤ 20 LoC).
 3. model_integrity.py LoC drops by ≥ 70.
@@ -859,7 +860,7 @@ attention.
 
 ---
 
-## Section 5 — Architecture (ARCH-CQ-*)
+## Section 5 — Architecture (ARCH-CQ-\*)
 
 ### ARCH-CQ-01 — Add `web-cmd-palette-no-state-import` rule
 
@@ -871,7 +872,7 @@ attention.
 - **Dependencies:** REF-CQ-07 must land first (otherwise the new rule
   flags existing code). Bundled into the same PR.
 
-**Why:** cmdPalette/* currently imports `useBimStore` directly. Once
+**Why:** cmdPalette/\* currently imports `useBimStore` directly. Once
 REF-CQ-07 moves runtime store access to a workspace wrapper, lock the
 boundary.
 
@@ -888,6 +889,7 @@ boundary.
      "allow": []
    }
    ```
+
 2. `pnpm architecture` continues to pass.
 3. Manually verify the rule by adding a temporary forbidden import,
    running the check, confirming it fails, removing the import.
@@ -1020,7 +1022,7 @@ are hand-mirrored as TypeScript interfaces in
 
 ---
 
-## Section 6 — Dependency Hygiene (DEP-CQ-*)
+## Section 6 — Dependency Hygiene (DEP-CQ-\*)
 
 ### DEP-CQ-01 — Pin Python critical-dep minor ranges
 
@@ -1114,7 +1116,7 @@ it's a non-blocking warning; eventually it will become an error.
 
 ---
 
-## Section 7 — Documentation Polish (DOC-CQ-*)
+## Section 7 — Documentation Polish (DOC-CQ-\*)
 
 ### DOC-CQ-01 — Audit `ScheduleView.tsx` eslint hook-deps suppression
 
@@ -1191,16 +1193,16 @@ inline justifications.
 
 For context — the prior session's CI green loop already shipped:
 
-| PR     | Topic                                                            |
-| ------ | ---------------------------------------------------------------- |
-| #138   | Aggressive `spec/` cleanup, deleted 148 archived/dead files      |
-| #139   | ENOENT regression fix, ruff drift, source-budget peak bump       |
-| #140   | 6 lens content-spec status callouts updated                      |
-| #141   | 50 unused-vars cleared in 2 heavy files                          |
-| #142   | 27 unused-vars cleared in 4 medium files                         |
-| #143   | Architecture violation (viewport → workspace) fix + 11 lint      |
-| #144   | security-hygiene regex + **cmdPalette circular import refactor** + bim-integrity audit infra removal + uxAudit cleanup |
-| #145   | starlette 1.0.0 → 1.2.0 (PYSEC-2026-161); 3 perf budgets bumped to CI runner speed |
+| PR   | Topic                                                                                                                  |
+| ---- | ---------------------------------------------------------------------------------------------------------------------- |
+| #138 | Aggressive `spec/` cleanup, deleted 148 archived/dead files                                                            |
+| #139 | ENOENT regression fix, ruff drift, source-budget peak bump                                                             |
+| #140 | 6 lens content-spec status callouts updated                                                                            |
+| #141 | 50 unused-vars cleared in 2 heavy files                                                                                |
+| #142 | 27 unused-vars cleared in 4 medium files                                                                               |
+| #143 | Architecture violation (viewport → workspace) fix + 11 lint                                                            |
+| #144 | security-hygiene regex + **cmdPalette circular import refactor** + bim-integrity audit infra removal + uxAudit cleanup |
+| #145 | starlette 1.0.0 → 1.2.0 (PYSEC-2026-161); 3 perf budgets bumped to CI runner speed                                     |
 
 These took CI from "red since 2026-05-25" to green and form the baseline
 this tracker builds on. None of them are work packages in this tracker;
