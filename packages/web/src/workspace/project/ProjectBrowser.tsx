@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { JSX, DragEvent } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import type { DisciplineTag, Element } from '@bim-ai/core';
 import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
-import { LinkedModelHifi, PhaseHifi, PlanViewHifi, ScheduleViewHifi } from '@bim-ai/icons';
 
 import { applyCommand } from '../../lib/api';
 import { useViewTemplateStore } from '../../collab/viewTemplateStore';
@@ -14,7 +13,6 @@ import {
   ProjectBrowserFamiliesGroup,
   type ProjectBrowserFamilyTypeElement,
 } from './ProjectBrowserFamiliesGroup';
-import { PbCollapsibleSection, PbContextMenu, PbGroup } from './ProjectBrowserSections';
 
 import {
   planViewBrowserHierarchyState,

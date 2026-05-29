@@ -13,7 +13,6 @@ import { roomAreaM2, roomNetAreaM2 } from '../../plan/roomArea';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
-import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 import { FamilyInspectorSection } from './familyInspectorSections';
 import {
   FaceMaterialOverridesSection,
@@ -24,7 +23,6 @@ import {
   type OpenMaterialBrowser,
 } from './materialInspectorSections';
 import { ShaftSideWallsButton } from './shaftInspectorSections';
-import { StairAssemblySection } from './stairAssemblyInspector';
 import { FieldRow, fmtMm } from './inspectorRows';
 import { LinkDxfInspectorSection } from './linkInspectorSections';
 import { MepInspectorSection, fmtMepRecord } from './mepInspectorSections';
@@ -34,26 +32,8 @@ import { ProjectBasePointInspectorSection } from './projectBasePointInspectorSec
 import { SiteTerrainInspectorSection } from './siteTerrainInspectorSections';
 import { AnnotationTagInspectorSection } from './annotationTagInspectorSections';
 
-const DEFAULT_GRAPHICS_OVERRIDE_COLOR = `#${'000000'}`;
 const DEFAULT_MASKING_REGION_FILL = `#${'ffffff'}`;
 
-type StairEditRunDraft = {
-  runIndex: number;
-  riserCount?: number;
-  runWidthMm?: number;
-};
-type StairEditInspectorElement = Extract<Element, { kind: 'stair' }> & {
-  editStairActive?: boolean;
-  runs?: StairEditRunDraft[];
-  riserCount?: number;
-  runWidthMm?: number;
-};
-type ColumnInspectorElement = Extract<Element, { kind: 'column' }> & {
-  isNonStructural?: boolean;
-};
-type CuttableInspectorElement = Element & {
-  cutBy?: string[];
-};
 type ShaftInspectorElement = Extract<Element, { kind: 'shaft' }> & {
   cutFloorIds?: string[];
 };

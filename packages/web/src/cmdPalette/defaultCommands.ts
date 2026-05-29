@@ -2,13 +2,10 @@ import { useBimStore, type PlanTool } from '../state/store';
 import type { Element } from '@bim-ai/core';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
-import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { buildBoundaryWallPlan, type BoundaryWallSource } from '../geometry/boundaryWallGeneration';
 import { roofParamsFromWallLoop } from '../plan/roofByFootprint';
 import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
-import { autoTagElements } from '../plan/autoTags';
-import { buildShaftSideWalls } from '../plan/buildShaftSideWalls';
 
 export function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
