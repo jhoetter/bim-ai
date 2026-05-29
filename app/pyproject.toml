@@ -7,12 +7,14 @@ name = "bim-ai-app"
 version = "0.1.0"
 description = "BIM AI FastAPI backend (browser-first BIM v1)."
 requires-python = ">=3.12"
+# DEP-CQ-01: critical deps are pinned to known-tested minor ranges.
+# Cadence: review for a minor bump every quarter (next: 2026-08-29).
 dependencies = [
-    "fastapi>=0.115,<1",
+    "fastapi>=0.115.1,<0.137",
     "uvicorn[standard]>=0.32,<1",
-    "sqlalchemy[asyncio]>=2.0,<3",
-    "asyncpg>=0.30,<1",
-    "pydantic>=2.9,<3",
+    "sqlalchemy[asyncio]>=2.0.25,<2.1",
+    "asyncpg>=0.30.0,<0.32",
+    "pydantic>=2.9,<2.14",
     "pydantic-settings>=2.6,<3",
     "python-multipart>=0.0.12,<1",
     "reportlab>=4.2,<5",
