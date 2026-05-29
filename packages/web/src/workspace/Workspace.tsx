@@ -1,7 +1,6 @@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
-import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
@@ -46,18 +45,14 @@ import {
   type ToggleableSnapKind,
 } from '../plan/snapSettings';
 import { patternFor } from '../state/uiStates';
-import { AppShell, RibbonBar, ViewContextStatusPanel, type WorkspaceMode } from './shell';
-import { LensDropdown } from './shell/LensDropdown';
-import { OptionsBar, ToolModifierBar } from './authoring';
+import { AppShell, type WorkspaceMode } from './shell';
 import { getToolRegistry, type ToolId } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
   activateTab,
   closeInactiveTabs,
-  closeTab,
   snapshotViewport,
-  TAB_KIND_LABEL,
   tabFromElement,
   tabIdFor,
   type TabKind,
@@ -70,11 +65,9 @@ import {
   assignTabToPane,
   createPaneLayout,
   focusPane,
-  findPaneForTab,
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
-  removePaneLeaf,
   splitPaneWithTab,
   type PaneLayoutState,
   type PaneNode,
@@ -108,9 +101,7 @@ import type {
   FamilyLibraryArrayFormulaUpdate,
   FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
-import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import { parseViewerProjectionParam, parseViewerRenderStyleParam } from '../viewport/renderStyles';
-import type { MaterialBrowserTargetRequest } from './inspector';
 import {
   planCatalogFamilyLoad,
   type FamilyReloadOverwriteOption,
@@ -118,12 +109,7 @@ import {
 import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
-import { CanvasMount } from './viewport';
-import {
-  defaultTabFallbackForKind,
-  hifiIconForTabKind,
-  resolvePlanTabTarget,
-} from './WorkspaceHelpers';
+import { defaultTabFallbackForKind } from './WorkspaceHelpers';
 import {
   assetPreviewElementFromEntry,
   indexAssetCommandFromEntry,
@@ -131,7 +117,6 @@ import {
 } from './catalogPlacementHelpers';
 import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './hideInView';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
-import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
 import { useWorkspaceComments } from './useWorkspaceComments';
 import { useWorkspaceCompositionActions } from './useWorkspaceCompositionActions';
@@ -146,21 +131,12 @@ import {
   WorkspaceHeaderSlot,
 } from './WorkspaceAppShellSlots';
 import { WorkspaceOverlays } from './WorkspaceOverlays';
-import { canonicalPlanToolForMode, planToolToToolId } from './workspaceUtils';
-import {
-  materialEditableTargetLabel,
-  materialKeyForInstanceTarget,
-  materialSlotTargetLabel,
-  resolveMaterialEditableTarget,
-  type ActiveMaterialBrowserTarget,
-} from './materialTargets';
+import { canonicalPlanToolForMode } from './workspaceUtils';
 import {
   disciplineScopeNote,
   EMPTY_JOBS_COUNTS,
   firstMmVector,
-  formatStatusMm,
   libraryDisciplineFromLens,
-  splitViewTabLabel,
   summarizeJobsCounts,
 } from './workspacePresentation';
 import { materializeOptimisticHostedOpening } from './semanticCommands/optimisticHostedOpening';
@@ -177,6 +153,8 @@ import { runUndoRedo } from './runUndoRedo';
 import { updateArrayFormula } from './updateArrayFormula';
 import { useWorkspaceDefaultTab } from './useWorkspaceDefaultTab';
 import { useWorkspaceHotkeys } from './useWorkspaceHotkeys';
+import { useMaterialBrowserState } from './useMaterialBrowserState';
+import { WorkspacePaneNode, type WorkspacePaneNodeContext } from './WorkspacePaneNode';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -420,10 +398,6 @@ export function Workspace(): JSX.Element {
   const [rightRailOverride, setRightRailOverride] = useState<RailOverride>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
-  const [materialBrowserOpen, setMaterialBrowserOpen] = useState(false);
-  const [appearanceAssetBrowserOpen, setAppearanceAssetBrowserOpen] = useState(false);
-  const [activeMaterialBrowserTarget, setActiveMaterialBrowserTarget] =
-    useState<ActiveMaterialBrowserTarget | null>(null);
   const [sheetReviewMode, setSheetReviewMode] = useState<SheetReviewMode>('cm');
   const [sheetMarkupShape, setSheetMarkupShape] = useState<SheetMarkupShape>('freehand');
   const [_pendingPlacement, setPendingPlacement] = useState<{
@@ -1238,125 +1212,28 @@ export function Workspace(): JSX.Element {
     [effectiveMode, handleModeChange, setFocusedPanePlanTool, toolRegistry],
   );
 
-  const selectedElement = useMemo(
-    () => (selectedId ? (elementsById[selectedId] as Element | undefined) : undefined),
-    [elementsById, selectedId],
-  );
-  const materialEditableTarget = useMemo(
-    () => resolveMaterialEditableTarget(selectedElement, elementsById),
-    [selectedElement, elementsById],
-  );
-  const selectedMaterialKey =
-    materialEditableTarget?.kind === 'instance'
-      ? materialKeyForInstanceTarget(materialEditableTarget)
-      : materialEditableTarget
-        ? (materialEditableTarget.element.layers[
-            materialTargetLayerIndex(materialEditableTarget.element)
-          ]?.materialKey ?? null)
-        : null;
-  const activeMaterialKey =
-    activeMaterialBrowserTarget?.kind === 'material-slot'
-      ? (activeMaterialBrowserTarget.currentKey ?? null)
-      : (activeMaterialBrowserTarget?.currentKey ?? selectedMaterialKey);
-  const activeMaterialTargetLabel =
-    activeMaterialBrowserTarget?.kind === 'material-slot'
-      ? materialSlotTargetLabel(activeMaterialBrowserTarget, elementsById)
-      : (activeMaterialBrowserTarget?.label ??
-        (materialEditableTarget ? materialEditableTargetLabel(materialEditableTarget) : null));
-
-  const openMaterialBrowser = useCallback(
-    (target?: MaterialBrowserTargetRequest) => {
-      if (target) {
-        setActiveMaterialBrowserTarget(target);
-      } else if (materialEditableTarget) {
-        setActiveMaterialBrowserTarget({
-          kind: 'editable',
-          target: materialEditableTarget,
-          label: materialEditableTargetLabel(materialEditableTarget),
-          currentKey: selectedMaterialKey,
-        });
-      } else {
-        setActiveMaterialBrowserTarget(null);
-      }
-      setMaterialBrowserOpen(true);
-    },
-    [materialEditableTarget, selectedMaterialKey],
-  );
-
-  const openAppearanceAssetBrowser = useCallback(
-    (target?: MaterialBrowserTargetRequest) => {
-      if (target) {
-        setActiveMaterialBrowserTarget(target);
-      } else if (materialEditableTarget) {
-        setActiveMaterialBrowserTarget({
-          kind: 'editable',
-          target: materialEditableTarget,
-          label: materialEditableTargetLabel(materialEditableTarget),
-          currentKey: selectedMaterialKey,
-        });
-      } else {
-        setActiveMaterialBrowserTarget(null);
-      }
-      setAppearanceAssetBrowserOpen(true);
-    },
-    [materialEditableTarget, selectedMaterialKey],
-  );
-
-  const assignMaterialToTarget = useCallback(
-    (materialKey: string) => {
-      const target =
-        activeMaterialBrowserTarget ??
-        (materialEditableTarget
-          ? ({
-              kind: 'editable',
-              target: materialEditableTarget,
-              label: materialEditableTargetLabel(materialEditableTarget),
-              currentKey: selectedMaterialKey,
-            } satisfies ActiveMaterialBrowserTarget)
-          : null);
-      if (!target) return;
-      if (target.kind === 'material-slot') {
-        const element = elementsById[target.elementId];
-        if (!element || !('materialSlots' in element)) return;
-        const currentSlots =
-          (element.materialSlots as Record<string, string | null> | null | undefined) ?? {};
-        void onSemanticCommand({
-          type: 'updateElementProperty',
-          elementId: element.id,
-          key: 'materialSlots',
-          value: { ...currentSlots, [target.slot]: materialKey },
-        });
-        return;
-      }
-      if (target.target.kind === 'instance') {
-        void onSemanticCommand({
-          type: 'updateElementProperty',
-          elementId: target.target.element.id,
-          key: target.target.property,
-          value: materialKey,
-        });
-        return;
-      }
-      const targetLayer = materialTargetLayerIndex(target.target.element);
-      const nextLayers = target.target.element.layers.map((layer, index) =>
-        index === targetLayer ? { ...layer, materialKey } : { ...layer },
-      );
-      if (!nextLayers.length) return;
-      void onSemanticCommand({
-        type: 'updateElementProperty',
-        elementId: target.target.element.id,
-        key: 'layers',
-        value: nextLayers,
-      });
-    },
-    [
-      activeMaterialBrowserTarget,
-      elementsById,
-      materialEditableTarget,
-      onSemanticCommand,
-      selectedMaterialKey,
-    ],
-  );
+  // REF-CQ-01: material-browser state extracted to a hook. Owns the
+  // open/closed flags, the active-target selection, and the dispatchers
+  // (open*, assignMaterialToTarget) the ribbon / inspector / palette
+  // call into. The hook also owns the `selectedElement` memo because
+  // every consumer of it currently feeds it back into the material
+  // resolver. See useMaterialBrowserState.ts.
+  const {
+    activeMaterialKey,
+    activeMaterialTargetLabel,
+    materialBrowserOpen,
+    setMaterialBrowserOpen,
+    appearanceAssetBrowserOpen,
+    setAppearanceAssetBrowserOpen,
+    openMaterialBrowser,
+    openAppearanceAssetBrowser,
+    assignMaterialToTarget,
+    clearActiveMaterialBrowserTarget,
+  } = useMaterialBrowserState({
+    selectedId,
+    elementsById,
+    onSemanticCommand,
+  });
 
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
   const replayOnboardingTour = useCallback(() => {
@@ -2024,655 +1901,6 @@ export function Workspace(): JSX.Element {
       ? PANE_SECONDARY_SIDEBAR_WIDTH
       : undefined;
 
-  function renderPaneNode(node: PaneNode): JSX.Element {
-    if (node.kind === 'split') {
-      return (
-        <div
-          key={node.id}
-          className="grid h-full w-full min-h-0 min-w-0"
-          style={
-            node.axis === 'horizontal'
-              ? { gridTemplateColumns: '1fr 1fr' }
-              : { gridTemplateRows: '1fr 1fr' }
-          }
-        >
-          <div
-            className={[
-              'min-h-0 min-w-0 overflow-hidden',
-              node.axis === 'horizontal'
-                ? 'border-r border-border/60'
-                : 'border-b border-border/60',
-            ].join(' ')}
-          >
-            {renderPaneNode(node.first)}
-          </div>
-          <div className="min-h-0 min-w-0 overflow-hidden">{renderPaneNode(node.second)}</div>
-        </div>
-      );
-    }
-    const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
-    const paneLensMode = paneTab?.lensMode ?? lensMode;
-    const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
-    const paneIsPlan = paneTab?.kind === 'plan';
-    const panePlanTarget = paneIsPlan
-      ? resolvePlanTabTarget(elementsById, paneTab?.targetId, activeLevelId)
-      : { activeLevelId: activeLevelId ?? '' };
-    const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
-    const focused = focusedPaneLeafId === node.id;
-    const panePlanTool = panePlanToolsById[node.id] ?? 'select';
-    const paneLabel = paneTab?.label ?? 'Empty pane';
-    const paneLabelParts = splitViewTabLabel(
-      paneLabel,
-      paneTab ? TAB_KIND_LABEL[paneTab.kind] : undefined,
-    );
-    const paneCanAcceptDrop = Boolean(draggingViewElementId);
-    const paneIconName: IconName =
-      paneTab?.kind === '3d'
-        ? 'orbitView'
-        : paneTab?.kind === 'section'
-          ? 'section'
-          : paneTab?.kind === 'sheet'
-            ? 'sheet'
-            : paneTab?.kind === 'schedule'
-              ? 'schedule'
-              : paneTab?.kind === 'elevation'
-                ? 'elevationView'
-                : 'planView';
-    const PaneIcon = Icons[paneIconName] ?? Icons.planView;
-    const PaneHifiIcon = hifiIconForTabKind(paneTab?.kind);
-    const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
-    const paneSecondarySidebarOpen =
-      Boolean(paneTab) && (paneSecondarySidebarOpenByKey[paneSidebarKey] ?? true);
-    const paneElementSidebarOpen =
-      Boolean(paneTab && selectedId) && (paneElementSidebarOpenByKey[paneSidebarKey] ?? true);
-    const selectedElementKind = selectedId
-      ? (elementsById[selectedId] as Element | undefined)?.kind
-      : null;
-    const paneStatusViewDetails = (() => {
-      const selected = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
-      const selectedDetail = selected
-        ? `Selected ${selected.kind.replaceAll('_', ' ')}`
-        : selectedId
-          ? 'Selection'
-          : null;
-      if (paneMode === '3d') {
-        return [
-          viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective',
-          viewerWalkModeActive ? 'Walk' : 'Orbit',
-          viewerSectionBoxActive ? 'Section box' : null,
-          viewerClipElevMm != null ? `Cap ${formatStatusMm(viewerClipElevMm)}` : null,
-          viewerClipFloorElevMm != null ? `Floor ${formatStatusMm(viewerClipFloorElevMm)}` : null,
-          paneTab?.targetId ? `Viewpoint ${paneTab.targetId}` : null,
-          selectedDetail,
-        ].filter((detail): detail is string => Boolean(detail));
-      }
-      if (paneMode === 'sheet') return [selectedDetail ?? 'Paper space'];
-      if (paneMode === 'schedule') return [selectedDetail ?? 'Rows'];
-      if (paneMode === 'elevation') return [selectedDetail ?? 'Elevation'];
-      return selectedDetail ? [selectedDetail] : [];
-    })();
-    const paneTemporaryVisibility =
-      temporaryVisibility &&
-      (!temporaryVisibility.viewId || temporaryVisibility.viewId === paneTab?.targetId)
-        ? temporaryVisibility
-        : null;
-    const activatePaneForControls = (): void => {
-      setMode(paneMode);
-      if (paneTab?.kind === '3d') setViewerMode('orbit_3d');
-      else if (paneTab?.kind) setViewerMode('plan_canvas');
-      setPaneLayout((layout) => focusPane(layout, node.id));
-      if (paneTab?.id && paneTab.id !== tabsState.activeId) {
-        handleTabActivate(paneTab.id);
-      }
-    };
-    const handlePaneModeChange = (next: WorkspaceMode): void => {
-      activatePaneForControls();
-      setMode(next);
-      if (next === 'plan') setViewerMode('plan_canvas');
-      else if (next === '3d') setViewerMode('orbit_3d');
-
-      const fallback = defaultTabFallbackForKind(next, elementsById, activeLevelId);
-      if (!fallback) return;
-      const tabId = tabIdFor(next as TabKind, fallback.targetId);
-      setTabsState((state) => activateOrOpenKind(state, next as TabKind, fallback));
-      setPaneLayout((layout) => focusPane(assignTabToPane(layout, node.id, tabId), node.id));
-    };
-    const handlePaneToolSelect = (id: ToolId): void => {
-      const tool = canonicalPlanToolForMode(id, paneMode);
-      if (!tool) return;
-      setPlanTool(tool);
-      activatePaneForControls();
-      const def = toolRegistry[id];
-      if (def && !def.modes.includes(paneMode) && def.modes.includes('plan')) {
-        handlePaneModeChange('plan');
-      }
-      setPanePlanTool(node.id, tool);
-    };
-    const runInPaneContext =
-      (handler: (() => void) | undefined): (() => void) =>
-      () => {
-        activatePaneForControls();
-        handler?.();
-      };
-    const togglePaneViewSettings = (): void => {
-      activatePaneForControls();
-      if (!paneTab) return;
-      setPaneSecondarySidebarOpenByKey((state) => ({
-        ...state,
-        [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
-      }));
-    };
-    const closePaneTab = (): void => {
-      if (!paneTab) return;
-      const nextLayout = removePaneLeaf(paneLayout, node.id);
-      setPaneLayout(nextLayout);
-      if (!findPaneForTab(nextLayout.root, paneTab.id)) {
-        setTabsState((state) => closeTab(state, paneTab.id));
-      }
-    };
-    const handlePaneLensChange = (nextLensMode: LensMode): void => {
-      activatePaneForControls();
-      if (!paneTab) return;
-      setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
-    };
-    const isPlanPane = paneTab?.kind === 'plan';
-    const paneTrailingControls = paneTab ? (
-      <>
-        {paneCanAcceptDrop ? (
-          <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
-            Drop view
-          </span>
-        ) : null}
-        {(() => {
-          const pvId =
-            paneIsPlan && 'activePlanViewId' in panePlanTarget
-              ? (panePlanTarget.activePlanViewId ?? null)
-              : null;
-          const pv = pvId ? elementsById[pvId] : null;
-          if (!pv || pv.kind !== 'plan_view' || !pv.phaseId) return null;
-          const currentMode = (pv.phaseFilterMode ?? '') as string;
-          return (
-            <select
-              data-testid="phase-filter-mode-select"
-              value={currentMode}
-              title="Phase filter display mode"
-              onChange={(e) => {
-                const v = e.currentTarget.value;
-                void onSemanticCommand({
-                  type: 'updateElementProperty',
-                  elementId: pvId,
-                  key: 'phaseFilterMode',
-                  value: v || null,
-                });
-              }}
-              className={`h-6 rounded-md border px-1 text-[10px] font-medium ${
-                currentMode
-                  ? 'border-accent bg-accent text-white'
-                  : 'border-border bg-surface text-muted'
-              }`}
-            >
-              <option value="">Phase: All</option>
-              <option value="new_construction">New Construction</option>
-              <option value="demolition">Demolition Plan</option>
-              <option value="existing">Existing Only</option>
-              <option value="as_built">As-Built</option>
-            </select>
-          );
-        })()}
-        {isPlanPane && projectNorthAngleDeg !== 0 ? (
-          <button
-            type="button"
-            data-testid="true-north-toggle"
-            aria-pressed={trueNorthActive}
-            title={
-              trueNorthActive
-                ? `True North active (${projectNorthAngleDeg}°) — click to disable`
-                : `Rotate to True North (${projectNorthAngleDeg}°)`
-            }
-            onClick={() => setTrueNorthActive((v) => !v)}
-            className={`inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium ${
-              trueNorthActive
-                ? 'border-accent bg-accent text-white'
-                : 'border-border text-muted hover:bg-surface-strong hover:text-foreground'
-            }`}
-          >
-            N↑
-          </button>
-        ) : null}
-        <button
-          type="button"
-          data-testid={`canvas-pane-close-tab-${node.id}`}
-          title={`Close ${paneLabel}`}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-          aria-label={`Close ${paneLabel}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            closePaneTab();
-          }}
-        >
-          <Icons.close size={12} aria-hidden="true" />
-        </button>
-      </>
-    ) : null;
-    const paneIdentityCell = paneTab ? (
-      <div
-        data-testid={`canvas-pane-view-header-${node.id}`}
-        className="relative z-40 flex h-[84px] min-w-0 flex-col overflow-visible border-r border-b border-border bg-surface-2"
-      >
-        {paneSecondarySidebarOpen ? (
-          <>
-            <div className="flex h-8 min-w-0 items-end gap-1.5 px-2.5 pb-1">
-              <div
-                className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground"
-                title={paneLabel}
-              >
-                {paneLabelParts.viewName || paneLabel}
-              </div>
-            </div>
-            <div className="flex min-h-0 min-w-0 flex-1 items-center gap-2 bg-background/55 px-2">
-              <button
-                type="button"
-                data-testid="ribbon-mode-identity"
-                aria-label={`Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`}
-                aria-pressed={paneSecondarySidebarOpen}
-                title={`Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`}
-                onClick={togglePaneViewSettings}
-                className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-accent/45 bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
-              >
-                <PaneHifiIcon size={30} aria-hidden="true" />
-                <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
-              </button>
-              <div
-                data-testid="ribbon-lens-dropdown"
-                className="relative z-50 h-7 min-w-0 rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-              >
-                <LensDropdown
-                  currentLens={paneLensMode}
-                  onLensChange={handlePaneLensChange}
-                  enableHotkey={false}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="h-8" />
-            <div className="flex min-h-0 flex-1 items-center justify-center bg-background/55 px-1">
-              <div
-                title={`${paneLabelParts.viewType} view settings hidden`}
-                className="relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-muted"
-              >
-                <PaneHifiIcon size={30} aria-hidden="true" />
-                <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent"
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    ) : null;
-    const paneRibbon = paneTab ? (
-      <div data-testid={`canvas-pane-ribbon-${node.id}`}>
-        <RibbonBar
-          activeToolId={planToolToToolId(panePlanTool)}
-          activeMode={paneMode}
-          selectedElementKind={selectedElementKind}
-          lensMode={paneLensMode}
-          inlineViewTitle={{
-            icon: paneIconName,
-            viewType: paneLabelParts.viewType,
-            viewName: paneLabelParts.viewName,
-            title: paneLabel,
-            viewIconTestId: `canvas-pane-view-icon-${node.id}`,
-          }}
-          showViewControls={!paneSecondarySidebarOpen}
-          trailingControls={paneTrailingControls}
-          onLensChange={handlePaneLensChange}
-          onToolSelect={handlePaneToolSelect}
-          onModeChange={handlePaneModeChange}
-          viewSettingsOpen={paneSecondarySidebarOpen}
-          onToggleViewSettings={togglePaneViewSettings}
-          viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
-          onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
-          onOpenManageLinks={runInPaneContext(() => setManageLinksOpen(true))}
-          onOpenAdvisor={runInPaneContext(() => setAdvisorOpen(true))}
-          onCreateSectionView={runInPaneContext(createSectionView)}
-          onToggleElementSidebar={runInPaneContext(() =>
-            setPaneElementSidebarOpenByKey((state) => ({
-              ...state,
-              [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
-            })),
-          )}
-          onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
-          onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
-          onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
-          onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
-          onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
-          onInsertDoorOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('door'))}
-          onInsertWindowOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('window'))}
-          onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
-            runSelectedWall3dInsert('opening'),
-          )}
-          onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
-          onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
-          onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
-            adjustActiveSectionCropDepth(500),
-          )}
-          onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
-            adjustActiveSectionCropDepth(-500),
-          )}
-          onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
-            placeRecommendedViewsOnActiveSheet,
-          )}
-          onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
-            const first = paletteSheetPlaceableViews[0];
-            if (first) placeViewOnActiveSheet(first.id);
-          })}
-          onOpenSheetViewportEditor={runInPaneContext(() =>
-            openActiveSheetAnchor('sheet-viewport-editor'),
-          )}
-          onOpenSheetTitleblockEditor={runInPaneContext(() =>
-            openActiveSheetAnchor('sheet-titleblock-editor'),
-          )}
-          onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
-          onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
-          onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
-          onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
-          onOpenScheduleControls={runInPaneContext(openScheduleControls)}
-          onRepairDuplicateWall={
-            firstDuplicateWallFix
-              ? runInPaneContext(() => void onSemanticCommand(firstDuplicateWallFix))
-              : undefined
-          }
-          onRepairOrphan={
-            firstOrphanFix
-              ? runInPaneContext(() => void onSemanticCommand(firstOrphanFix))
-              : undefined
-          }
-          onOpenManagePhases={() => setManagePhasesOpen(true)}
-          onOpenManageGlobalParams={() => setManageGlobalParamsOpen(true)}
-          onOpenDimensionStyle={() => setDimStyleOpen(true)}
-          onOpenViewRange={() => setViewRangeOpen(true)}
-          onOpenVisibilityGraphics={() => setVgOpen(true)}
-          sheetReviewMode={sheetReviewMode}
-          onSheetReviewModeChange={setSheetReviewMode}
-          sheetMarkupShape={sheetMarkupShape}
-          onSheetMarkupShapeChange={setSheetMarkupShape}
-        />
-        {paneMode === 'plan' || paneMode === 'section' ? (
-          <>
-            <ToolModifierBar activeTool={planToolToToolId(panePlanTool)} />
-            <OptionsBar activeTool={panePlanTool} />
-          </>
-        ) : null}
-      </div>
-    ) : null;
-    const paneSecondarySidebar = paneSecondarySidebarOpen ? (
-      <aside
-        aria-label={`View settings for ${paneLabel}`}
-        data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
-        className="flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
-        style={{ gridColumn: 1, gridRow: 2 }}
-      >
-        <ViewContextStatusPanel
-          mode={paneMode}
-          viewLabel={paneLabel}
-          viewDetails={paneStatusViewDetails}
-          level={activeLevel}
-          levels={levels}
-          onLevelChange={setActiveLevelId}
-          toolLabel={
-            loopMode && (planTool === 'wall' || planTool === 'beam')
-              ? 'Loop mode on — L to toggle, Esc to exit'
-              : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
-          }
-          gridOn={draftGridVisible}
-          onGridToggle={toggleDraftGridVisible}
-          cursorMm={cursorMm}
-          snapModes={snapModes}
-          onSnapToggle={handleSnapToggle}
-          temporaryVisibility={paneTemporaryVisibility}
-          onClearTemporaryVisibility={clearTemporaryVisibility}
-        />
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <WorkspaceRightRail
-            mode={paneMode}
-            onSemanticCommand={onSemanticCommand}
-            onModeChange={handlePaneModeChange}
-            onNavigateToElement={openElementById}
-            activeViewTargetId={paneTab?.targetId}
-            lensMode={paneLensMode}
-            surface="view-context"
-            onOpenMaterialBrowser={openMaterialBrowser}
-            onOpenAppearanceAssetBrowser={openAppearanceAssetBrowser}
-          />
-        </div>
-      </aside>
-    ) : null;
-    const canvasRotationDeg = trueNorthActive && isPlanPane ? -projectNorthAngleDeg : 0;
-    const paneCanvas = (
-      <div
-        className="min-h-0 min-w-0 flex-1"
-        style={{
-          background: ['plan', 'section', 'elevation'].includes(paneTab?.kind ?? '')
-            ? 'var(--color-canvas-paper)'
-            : 'var(--color-background)',
-          transform: canvasRotationDeg !== 0 ? `rotate(${canvasRotationDeg}deg)` : undefined,
-          transition: 'transform 0.2s ease',
-        }}
-      >
-        {paneTab ? (
-          <CanvasMount
-            mode={paneMode}
-            activeTabId={paneTab.id}
-            viewerMode={paneViewerMode}
-            activeLevelId={panePlanTarget.activeLevelId}
-            activePlanViewId={panePlanTarget.activePlanViewId ?? null}
-            elementsById={elementsById}
-            onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-            cameraHandleRef={planCameraHandleRef}
-            initialCamera={paneTab.viewportState?.planCamera}
-            activeSectionId={
-              paneTab.kind === 'section' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            preferredSheetId={
-              paneTab.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            preferredScheduleId={
-              paneTab.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            preferredElevationId={
-              paneTab.kind === 'elevation' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            modelId={modelId ?? undefined}
-            wsOn={wsOn}
-            onPersistViewpointField={persistViewpointField}
-            lensMode={paneLensMode}
-            activePlanTool={panePlanTool}
-            onActivePlanToolChange={(nextTool) => {
-              setPanePlanTool(node.id, nextTool);
-              if (focused) setPlanTool(nextTool);
-            }}
-            onNavigateToElement={openElementById}
-            snapSettings={snapSettings}
-            viewOverlayRightInset={paneElementSidebarOpen ? 'min(340px, 45%)' : undefined}
-            sheetReviewMode={sheetReviewMode}
-            sheetMarkupShape={sheetMarkupShape}
-            onOpenSectionSourcePlan={openActiveSectionSourcePlan}
-            onOpenSection3dContext={openActiveSection3dContext}
-          />
-        ) : (
-          <div
-            data-testid={`canvas-pane-empty-${node.id}`}
-            className="flex h-full w-full items-center justify-center bg-background/80"
-          >
-            <div className="rounded border border-border/70 bg-surface px-3 py-2 text-center text-xs text-muted">
-              <div>No view open in this pane</div>
-              <div className="mt-1 text-[11px]">
-                Drag a view from the primary sidebar to start this composition.
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-    const paneElementSidebar = paneElementSidebarOpen ? (
-      <aside
-        aria-label={`Element properties for ${paneLabel}`}
-        data-testid={`canvas-pane-element-sidebar-${node.id}`}
-        className="absolute inset-y-0 right-0 z-30 min-h-0 overflow-hidden border-l border-border bg-surface shadow-elev-2"
-        style={{ width: 'min(340px, 45%)' }}
-      >
-        <WorkspaceRightRail
-          mode={paneMode}
-          onSemanticCommand={onSemanticCommand}
-          onModeChange={handlePaneModeChange}
-          onNavigateToElement={openElementById}
-          lensMode={paneLensMode}
-          surface="element"
-          onOpenMaterialBrowser={openMaterialBrowser}
-          onOpenAppearanceAssetBrowser={openAppearanceAssetBrowser}
-        />
-      </aside>
-    ) : null;
-    return (
-      <div
-        key={node.id}
-        data-testid={`canvas-pane-${node.id}`}
-        data-focused={focused ? 'true' : 'false'}
-        className={[
-          'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden',
-          focused ? 'ring-1 ring-accent/70 ring-inset' : '',
-        ].join(' ')}
-        onPointerDown={() => {
-          setPaneLayout((layout) => focusPane(layout, node.id));
-          if (paneTab?.id && paneTab.id !== tabsState.activeId) {
-            handleTabActivate(paneTab.id);
-          }
-        }}
-      >
-        {paneTab ? (
-          <div
-            data-testid={`canvas-pane-tabstrip-${node.id}`}
-            className={[
-              'grid min-h-0 min-w-0 flex-1 bg-surface',
-              paneCanAcceptDrop ? 'border border-accent/80 bg-accent/10' : '',
-            ].join(' ')}
-            style={{
-              gridTemplateColumns: paneSecondarySidebarOpen
-                ? `${PANE_SECONDARY_SIDEBAR_WIDTH} minmax(0, 1fr)`
-                : '64px minmax(0, 1fr)',
-              gridTemplateRows: 'auto minmax(0, 1fr)',
-            }}
-            onDragOver={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'copy';
-            }}
-            onDrop={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              const elementId =
-                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
-              placeViewElementInPane(elementId, node.id);
-            }}
-          >
-            {paneIdentityCell}
-            <div className="min-w-0" style={{ gridColumn: 2, gridRow: 1 }}>
-              {paneRibbon}
-            </div>
-            {paneSecondarySidebar}
-            <div
-              className="relative flex min-h-0 min-w-0 overflow-hidden"
-              style={{
-                gridColumn: paneSecondarySidebarOpen ? 2 : '1 / 3',
-                gridRow: 2,
-              }}
-            >
-              {paneCanvas}
-              {paneElementSidebar}
-            </div>
-          </div>
-        ) : (
-          <div
-            data-testid={`canvas-pane-tabstrip-${node.id}`}
-            className={[
-              'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
-              paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
-            ].join(' ')}
-            onDragOver={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'copy';
-            }}
-            onDrop={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              const elementId =
-                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
-              placeViewElementInPane(elementId, node.id);
-            }}
-          >
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span
-                data-testid={`canvas-pane-view-icon-${node.id}`}
-                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted"
-                title={paneLabel}
-              >
-                <PaneIcon size={12} aria-hidden="true" />
-              </span>
-              <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
-                {paneLabel}
-              </div>
-            </div>
-            {paneCanAcceptDrop ? (
-              <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
-                Drop view
-              </span>
-            ) : null}
-          </div>
-        )}
-        {!paneTab ? <div className="flex min-h-0 min-w-0 flex-1">{paneCanvas}</div> : null}
-        {draggingViewElementId ? (
-          <div className="pointer-events-none absolute left-0 right-0 top-8 bottom-0 z-20">
-            {(
-              [
-                ['left', { left: '4%', top: '28%', width: '18%', height: '44%' }],
-                ['right', { right: '4%', top: '28%', width: '18%', height: '44%' }],
-                ['top', { left: '28%', top: '5%', width: '44%', height: '18%' }],
-                ['bottom', { left: '28%', bottom: '5%', width: '44%', height: '18%' }],
-              ] as const
-            ).map(([direction, style]) => (
-              <button
-                key={direction}
-                type="button"
-                data-testid={`canvas-pane-${node.id}-split-dropzone-${direction}`}
-                className="pointer-events-auto absolute rounded border border-accent/80 bg-accent/20 text-[11px] font-medium text-foreground backdrop-blur-sm"
-                style={style}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'copy';
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const elementId =
-                    draggingViewElementId ||
-                    event.dataTransfer.getData('application/x-bim-element-id');
-                  placeViewElementInPane(elementId, node.id, direction);
-                }}
-              >
-                Drop {direction}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
   const runSelectedWall3dInsert = useCallback(
     (kind: 'door' | 'window' | 'opening') => {
       if (!selectedId) return;
@@ -2709,6 +1937,106 @@ export function Workspace(): JSX.Element {
       });
     },
     [effectiveMode, elementsById, onSemanticCommand, selectedId],
+  );
+
+  // REF-CQ-02: per-pane render is owned by WorkspacePaneNode.tsx. We
+  // build the shared context once per Workspace render and pass it in
+  // through the WorkspaceCanvasSlot.renderPaneNode prop. The context
+  // object is rebuilt on every render — this is intentional: the
+  // pane-node component is uncached, so any "stale ctx" problem would
+  // already manifest in the previous closure-based implementation.
+  const paneNodeCtx: WorkspacePaneNodeContext = {
+    effectiveMode,
+    setMode,
+    setViewerMode,
+    viewerProjection,
+    viewerWalkModeActive,
+    viewerSectionBoxActive,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    tabsState,
+    tabsById,
+    setTabsState,
+    paneLayout,
+    setPaneLayout,
+    focusedPaneLeafId,
+    panePlanToolsById,
+    setPanePlanTool,
+    paneSecondarySidebarOpenByKey,
+    setPaneSecondarySidebarOpenByKey,
+    paneElementSidebarOpenByKey,
+    setPaneElementSidebarOpenByKey,
+    compositionStateActiveId: compositionState.activeId,
+    handleTabActivate,
+    selectedId,
+    draggingViewElementId,
+    placeViewElementInPane,
+    elementsById,
+    activeLevelId,
+    setActiveLevelId,
+    activeLevel,
+    levels,
+    planTool,
+    setPlanTool,
+    loopMode,
+    draftGridVisible,
+    toggleDraftGridVisible,
+    cursorMm,
+    snapModes,
+    handleSnapToggle,
+    snapSettings,
+    toolRegistry,
+    lensMode,
+    temporaryVisibility,
+    clearTemporaryVisibility,
+    projectNorthAngleDeg,
+    trueNorthActive,
+    setTrueNorthActive,
+    sheetReviewMode,
+    setSheetReviewMode,
+    sheetMarkupShape,
+    setSheetMarkupShape,
+    setPaletteOpen,
+    setManageLinksOpen,
+    setAdvisorOpen,
+    setFamilyLibraryOpen,
+    setCheatsheetOpen,
+    setManagePhasesOpen,
+    setManageGlobalParamsOpen,
+    setDimStyleOpen,
+    setViewRangeOpen,
+    setVgOpen,
+    setSharePresentationOpen,
+    onSemanticCommand,
+    openElementById,
+    createSectionView,
+    saveCurrentViewpoint,
+    resetActiveSavedViewpoint,
+    updateActiveSavedViewpoint,
+    runSelectedWall3dInsert,
+    placeActiveSectionOnSheet,
+    openActiveSectionSourcePlan,
+    openActiveSection3dContext,
+    adjustActiveSectionCropDepth,
+    placeRecommendedViewsOnActiveSheet,
+    paletteSheetPlaceableViews,
+    placeViewOnActiveSheet,
+    openActiveSheetAnchor,
+    openSelectedScheduleRow,
+    placeActiveScheduleOnSheet,
+    duplicateActiveSchedule,
+    openScheduleControls,
+    firstDuplicateWallFix,
+    firstOrphanFix,
+    openMaterialBrowser,
+    openAppearanceAssetBrowser,
+    planCameraHandleRef,
+    modelId,
+    wsOn,
+    persistViewpointField,
+  };
+  const renderPaneNode = (node: PaneNode): JSX.Element => (
+    <WorkspacePaneNode node={node} ctx={paneNodeCtx} />
   );
 
   /* ── Compose AppShell slots ───────────────────────────────────────── */
@@ -2791,7 +2119,7 @@ export function Workspace(): JSX.Element {
         setMaterialBrowserOpen={setMaterialBrowserOpen}
         appearanceAssetBrowserOpen={appearanceAssetBrowserOpen}
         setAppearanceAssetBrowserOpen={setAppearanceAssetBrowserOpen}
-        clearActiveMaterialBrowserTarget={() => setActiveMaterialBrowserTarget(null)}
+        clearActiveMaterialBrowserTarget={clearActiveMaterialBrowserTarget}
         tourOpen={tourOpen}
         setTourOpen={setTourOpen}
         templatesOpen={templatesOpen}
