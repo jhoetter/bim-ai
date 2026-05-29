@@ -11,6 +11,12 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
+from bim_ai._geometry_2d import (
+    intersect_axis_aligned_crop_boxes,
+    point_in_crop_xy,
+    poly_bbox_overlaps_crop,
+    segment_intersects_crop_xy,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DimensionElem,
@@ -812,79 +818,6 @@ def _sheet_viewport_crop_box_xy_mm(
     return (x0, y0, x1, y1), False
 
 
-def _intersect_axis_aligned_crop_boxes(
-    a: tuple[float, float, float, float] | None,
-    b: tuple[float, float, float, float] | None,
-) -> tuple[float, float, float, float] | None:
-    """Intersect axis-aligned boxes (x0,y0,x1,y1). None behaves as universal set."""
-
-    if a is None:
-        return b
-    if b is None:
-        return a
-    ax0, ay0, ax1, ay1 = a
-    bx0, by0, bx1, by1 = b
-    ix0 = max(ax0, bx0)
-    iy0 = max(ay0, by0)
-    ix1 = min(ax1, bx1)
-    iy1 = min(ay1, by1)
-    return (ix0, iy0, ix1, iy1)
-
-
-def _point_in_crop_xy(x: float, y: float, box: tuple[float, float, float, float]) -> bool:
-    x0, y0, x1, y1 = box
-    return x0 <= x <= x1 and y0 <= y <= y1
-
-
-def _segment_intersects_crop_xy(
-    ax: float,
-    ay: float,
-    bx: float,
-    by: float,
-    box: tuple[float, float, float, float],
-) -> bool:
-    """Whether segment AB intersects the closed axis-aligned crop rectangle (inclusive edges)."""
-    if _point_in_crop_xy(ax, ay, box) or _point_in_crop_xy(bx, by, box):
-        return True
-    x0, y0, x1, y1 = box
-    dx = bx - ax
-    dy = by - ay
-    p = (-dx, dx, -dy, dy)
-    q = (ax - x0, x1 - ax, ay - y0, y1 - ay)
-    u1, u2 = 0.0, 1.0
-    eps = 1e-12
-    for i in range(4):
-        pi, qi = p[i], q[i]
-        if abs(pi) < eps:
-            if qi < 0:
-                return False
-            continue
-        r = qi / pi
-        if pi < 0:
-            if r > u2:
-                return False
-            u1 = max(u1, r)
-        else:
-            if r < u1:
-                return False
-            u2 = min(u2, r)
-    return u1 <= u2 + eps
-
-
-def _poly_bbox_overlaps_crop(
-    pts: list[tuple[float, float]], box: tuple[float, float, float, float]
-) -> bool:
-    """Conservative 2D filter: polygon AABB overlaps crop AABB."""
-    if not pts:
-        return False
-    xs = [p[0] for p in pts]
-    ys = [p[1] for p in pts]
-    px0, px1 = min(xs), max(xs)
-    py0, py1 = min(ys), max(ys)
-    x0, y0, x1, y1 = box
-    return not (px1 < x0 or px0 > x1 or py1 < y0 or py0 > y1)
-
-
 def _derived_room_boundary_evidence_for_wire(
     doc: Document,
     *,
@@ -919,7 +852,7 @@ def _derived_room_boundary_evidence_for_wire(
             continue
         outline_pts = footprint_outline_mm_rectangle(bbox)
         pts = [(float(d["xMm"]), float(d["yMm"])) for d in outline_pts]
-        if effective_crop_mm is not None and not _poly_bbox_overlaps_crop(pts, effective_crop_mm):
+        if effective_crop_mm is not None and not poly_bbox_overlaps_crop(pts, effective_crop_mm):
             continue
         fp_id = stable_footprint_id(c)
         outline_mm_xy = [
@@ -985,7 +918,7 @@ def _derived_room_boundary_diagnostics_for_wire(
             continue
         outline_pts = footprint_outline_mm_rectangle(bbox)
         pts = [(float(d["xMm"]), float(d["yMm"])) for d in outline_pts]
-        if effective_crop_mm is not None and not _poly_bbox_overlaps_crop(pts, effective_crop_mm):
+        if effective_crop_mm is not None and not poly_bbox_overlaps_crop(pts, effective_crop_mm):
             continue
         if c.get("derivationAuthority") == "authoritative":
             auth_n += 1
@@ -1088,7 +1021,7 @@ def _build_plan_primitive_lists(
         if isinstance(e, WallElem):
             if "wall" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
-            if crop_box is not None and not _segment_intersects_crop_xy(
+            if crop_box is not None and not segment_intersects_crop_xy(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
@@ -1111,7 +1044,7 @@ def _build_plan_primitive_lists(
             if "floor" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
             floor_pts = [(p.x_mm, p.y_mm) for p in e.boundary_mm]
-            if crop_box is not None and not _poly_bbox_overlaps_crop(floor_pts, crop_box):
+            if crop_box is not None and not poly_bbox_overlaps_crop(floor_pts, crop_box):
                 continue
             fz0, fz1 = _floor_vertical_span_mm(doc, e)
             if not span_in_vertical_range(fz0, fz1):
@@ -1133,7 +1066,7 @@ def _build_plan_primitive_lists(
             if "room" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
             room_pts = [(p.x_mm, p.y_mm) for p in e.outline_mm]
-            if crop_box is not None and not _poly_bbox_overlaps_crop(room_pts, crop_box):
+            if crop_box is not None and not poly_bbox_overlaps_crop(room_pts, crop_box):
                 continue
             rmz0, rmz1 = _room_vertical_span_mm(doc, e)
             if not span_in_vertical_range(rmz0, rmz1):
@@ -1167,9 +1100,9 @@ def _build_plan_primitive_lists(
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1202,9 +1135,9 @@ def _build_plan_primitive_lists(
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1233,7 +1166,7 @@ def _build_plan_primitive_lists(
         elif isinstance(e, StairElem):
             if "stair" in hidden_semantic or not lvl_ok(e.base_level_id):
                 continue
-            if crop_box is not None and not _segment_intersects_crop_xy(
+            if crop_box is not None and not segment_intersects_crop_xy(
                 e.run_start.x_mm,
                 e.run_start.y_mm,
                 e.run_end.x_mm,
@@ -1333,7 +1266,7 @@ def _build_plan_primitive_lists(
             if "roof" in hidden_semantic or not lvl_ok(ref):
                 continue
             fp_pts = [(p.x_mm, p.y_mm) for p in e.footprint_mm]
-            if crop_box is not None and not _poly_bbox_overlaps_crop(fp_pts, crop_box):
+            if crop_box is not None and not poly_bbox_overlaps_crop(fp_pts, crop_box):
                 continue
             rfz0, rfz1 = _roof_vertical_span_mm(doc, e)
             if not span_in_vertical_range(rfz0, rfz1):
@@ -1361,7 +1294,7 @@ def _build_plan_primitive_lists(
             elv = getattr(e, "level_id", None)
             if "grid_line" in hidden_semantic or (level and elv is not None and elv != level):
                 continue
-            if crop_box is not None and not _segment_intersects_crop_xy(
+            if crop_box is not None and not segment_intersects_crop_xy(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
@@ -1384,7 +1317,7 @@ def _build_plan_primitive_lists(
         elif isinstance(e, RoomSeparationElem):
             if "room_separation" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
-            if crop_box is not None and not _segment_intersects_crop_xy(
+            if crop_box is not None and not segment_intersects_crop_xy(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
@@ -1422,7 +1355,7 @@ def _build_plan_primitive_lists(
         elif isinstance(e, DimensionElem):
             if "dimension" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
-            if crop_box is not None and not _segment_intersects_crop_xy(
+            if crop_box is not None and not segment_intersects_crop_xy(
                 e.a_mm.x_mm, e.a_mm.y_mm, e.b_mm.x_mm, e.b_mm.y_mm, crop_box
             ):
                 continue
@@ -1594,7 +1527,7 @@ def _slab_opening_documentation_rows_for_plan_view(
         op_poly = [(float(p.x_mm), float(p.y_mm)) for p in sop.boundary_mm]
         if len(op_poly) < 3:
             continue
-        if crop_box_mm is not None and not _poly_bbox_overlaps_crop(op_poly, crop_box_mm):
+        if crop_box_mm is not None and not poly_bbox_overlaps_crop(op_poly, crop_box_mm):
             continue
         fz0, fz1 = _floor_vertical_span_mm(doc, host)
         if not span_in_vertical_range(fz0, fz1):
@@ -1644,9 +1577,9 @@ def _wall_corner_join_summary_for_plan_view(
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1662,9 +1595,9 @@ def _wall_corner_join_summary_for_plan_view(
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1688,7 +1621,7 @@ def _wall_corner_join_summary_for_plan_view(
             vy = float(vm["yMm"])
         except (KeyError, TypeError, ValueError):
             continue
-        if crop_box_mm is not None and not _point_in_crop_xy(vx, vy, crop_box_mm):
+        if crop_box_mm is not None and not point_in_crop_xy(vx, vy, crop_box_mm):
             continue
         oids = row.get("affectedOpeningIds")
         if not isinstance(oids, list):
@@ -1738,9 +1671,9 @@ def _wall_opening_cut_fidelity_rows_for_plan_view(
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1758,9 +1691,9 @@ def _wall_opening_cut_fidelity_rows_for_plan_view(
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(
+                opening_ok = point_in_crop_xy(
                     cx_mm, cy_mm, crop_box
-                ) or _segment_intersects_crop_xy(
+                ) or segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1863,7 +1796,7 @@ def _plan_grid_datum_evidence_v0(
         elv = getattr(e, "level_id", None)
         if "grid_line" in hidden_semantic or (level and elv is not None and elv != level):
             continue
-        if crop_box_mm is not None and not _segment_intersects_crop_xy(
+        if crop_box_mm is not None and not segment_intersects_crop_xy(
             e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box_mm
         ):
             continue
@@ -2137,7 +2070,7 @@ def _resolve_plan_projection_wire_uncached(
             sheet_crop_box = sbox
 
     plan_crop_box = _normalized_crop_box_xy_mm(pinned_pv_elem)
-    effective_crop = _intersect_axis_aligned_crop_boxes(plan_crop_box, sheet_crop_box)
+    effective_crop = intersect_axis_aligned_crop_boxes(plan_crop_box, sheet_crop_box)
 
     scheme_rows = _document_room_scheme_rows(doc)
 

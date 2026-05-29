@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
+from bim_ai._geometry_2d import point_in_crop_xy
 from bim_ai.document import Document
 from bim_ai.elements import (
     PlanCategoryGraphicRow,
@@ -163,13 +164,13 @@ def build_plan_section_mark_ref_evidence_v1(
             sy = float(e.line_start_mm.y_mm)
             ex = float(e.line_end_mm.x_mm)
             ey = float(e.line_end_mm.y_mm)
-            cx0 = float(crop_min.x_mm)
-            cy0 = float(crop_min.y_mm)
-            cx1 = float(crop_max.x_mm)
-            cy1 = float(crop_max.y_mm)
-            start_in = (cx0 <= sx <= cx1) and (cy0 <= sy <= cy1)
-            end_in = (cx0 <= ex <= cx1) and (cy0 <= ey <= cy1)
-            if not (start_in or end_in):
+            crop_box = (
+                float(crop_min.x_mm),
+                float(crop_min.y_mm),
+                float(crop_max.x_mm),
+                float(crop_max.y_mm),
+            )
+            if not (point_in_crop_xy(sx, sy, crop_box) or point_in_crop_xy(ex, ey, crop_box)):
                 continue
         rows.append(
             {
