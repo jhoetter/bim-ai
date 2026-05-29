@@ -24,7 +24,6 @@ import {
   initialRevisionCloudState,
   initialShaftState,
   reduceAlign,
-  reduceAreaBoundary,
   reduceArray,
   reduceBeam,
   reduceBeamSystem,
@@ -39,8 +38,6 @@ import {
   reduceGradedRegion,
   reduceLeaderText,
   reduceLinework,
-  reduceMeasureAngle,
-  reduceMeasureArc,
   reduceModelLine,
   reducePermanentDim,
   reducePlaceGroup,
@@ -102,7 +99,7 @@ import {
   type WallOpeningState,
 } from '../tools/toolGrammar';
 import { useBimStore, type PlanTool } from '../state/store';
-import type { DraftMutation, GripDescriptor } from './gripProtocol';
+import type { DraftMutation } from './gripProtocol';
 import type { PlanViewResolvedDisplay } from './planProjection';
 import type { Draft } from './planCanvasHelpers';
 import type { PickedWallLine } from './wallPickLines';
@@ -113,7 +110,7 @@ import type {
   PlanCanvasWallJoinContextMenuState,
 } from './PlanCanvasContextOverlays';
 import type { ToggleableSnapKind } from './snapSettings';
-import type { SnapHit, SnapKind } from './snapEngine';
+import type { SnapKind } from './snapEngine';
 import {
   handleDoorWindowToolClick,
   handleQueryToolClick,
@@ -129,7 +126,7 @@ import { findAreaPlacementBoundary, type AreaPlanPlacementContext } from './area
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { moveDeltaMm } from './moveTool';
 import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
-import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
+import { rotateDeltaAngleFromReference } from './rotateTool';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import {
   familyTypePlacesAsDetailComponent,
@@ -192,13 +189,6 @@ type TextAnnotOverlay = {
   screenX: number;
   screenY: number;
   draft: string;
-};
-type PickWallAtPointerHit = {
-  start: XY;
-  end: XY;
-  sourceLabel: string;
-  source: string;
-  associativeId?: string;
 };
 type AreaPlanContext = () => AreaPlanPlacementContext | null;
 type ActiveCropState = (PlanCanvasCropRenderState & { planViewId: string }) | null;
@@ -376,7 +366,6 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     displayLevelId,
     activeLevelResolvedId,
     activePlanViewId,
-    display,
     elementsById,
     modelWalls,
     wallsByLevel,
@@ -389,9 +378,6 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     selectedId,
     selectedIds,
     selectLinkedEnabled,
-    revealHiddenMode,
-    scalePhase,
-    arrayPhase,
     activeCropState,
     skipClickRef,
     draftRef,
@@ -445,17 +431,12 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     wallOpeningStateRef,
     bumpGeom,
     selectEl,
-    setActiveGripId,
-    setActiveLevelId,
     setAlignReferenceMm,
     setArrayPhase,
     setBoundaryValidationError,
-    setCanvasCtxMenu,
     setCopyAnchorSet,
-    setDraftMutation,
     setDxfQueryDialog,
     setDxfQueryHover,
-    setElementCtxMenu,
     setLeaderTextOverlay,
     setMeasureAngleReadout,
     setMeasureArcReadout,
@@ -469,23 +450,14 @@ export function createPlanCanvasClickHandler(args: PlanCanvasClickHandlerArgs) {
     setRotateAnchorSet,
     setRotateReferenceSet,
     setScalePhase,
-    setSnapGlyphState,
     setSnapOverrideDisplay,
     setTextAnnotOverlay,
     setTrimExtendFirstWallSet,
-    setUnhideContextMenu,
-    setWallContextMenu,
     setWallDraftNotice,
-    setWallJoinCtxMenu,
     setWallPickLineHint,
     onSemanticCommand,
-    activateElevationView,
-    activatePlanView,
-    worldToScreen,
-    clearSubdivisionDraft,
     snapped,
     clearPreview,
-    clearMarqueeLine,
     commitAreaBoundary,
     redrawAreaBoundaryPreviewMm,
     activeAreaPlanContext,
