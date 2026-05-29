@@ -33,8 +33,8 @@
   },
   "bundleBudgets": {
     "distDir": "packages/web/dist",
-    "maxTotalJsKb": 5500,
-    "maxLargestJsKb": 4500,
+    "maxTotalJsKb": 5100,
+    "maxLargestJsKb": 1600,
     "maxTotalCssKb": 900,
     "maxTotalAssetKb": 9000
   }

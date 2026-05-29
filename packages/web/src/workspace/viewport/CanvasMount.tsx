@@ -1,4 +1,13 @@
-import { useEffect, useRef, useState, type CSSProperties, type JSX, type RefObject } from 'react';
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type JSX,
+  type RefObject,
+} from 'react';
 
 import type { Element, LensMode } from '@bim-ai/core';
 
@@ -10,8 +19,22 @@ import type { PlanTool } from '../../state/store';
 import { useBimStore } from '../../state/store';
 import type { SnapSettings } from '../../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
-import { ScheduleModeShell, SectionModeShell, SheetModeShell } from '../ModeShells';
+import { SectionModeShell } from '../ModeShells';
 import type { WorkspaceMode } from '../shell';
+
+// FE-CQ-02: Schedule and Sheet mode shells transitively pull in the schedule
+// registry, presets, floor-area report, sheet review surface, comments panel,
+// and markup canvas — well over 100KB of app code that is not needed until the
+// user actually switches into those modes. Wrapping them in React.lazy here
+// (with `<Suspense fallback={null}>` at the call sites) lets Vite split each
+// shell into its own chunk, dropping the eager workspace bundle below the
+// 410 KB-gzip / ~1500 KB-raw ceiling asserted by ui-quality-budgets.
+const ScheduleModeShell = lazy(() =>
+  import('../ScheduleModeShell').then((m) => ({ default: m.ScheduleModeShell })),
+);
+const SheetModeShell = lazy(() =>
+  import('../SheetModeShell').then((m) => ({ default: m.SheetModeShell })),
+);
 
 export const canvasContainerStyle: CSSProperties = {
   position: 'relative',
@@ -247,28 +270,32 @@ export function CanvasMount({
   }
   if (mode === 'sheet')
     return (
-      <SheetModeShell
-        key={activeTabId}
-        elementsById={elementsById}
-        preferredSheetId={preferredSheetId}
-        modelId={modelId}
-        onUpsertSemantic={onSemanticCommand}
-        reviewMode={sheetReviewMode}
-        markupShape={sheetMarkupShape}
-        lensMode={lensMode}
-      />
+      <Suspense fallback={null}>
+        <SheetModeShell
+          key={activeTabId}
+          elementsById={elementsById}
+          preferredSheetId={preferredSheetId}
+          modelId={modelId}
+          onUpsertSemantic={onSemanticCommand}
+          reviewMode={sheetReviewMode}
+          markupShape={sheetMarkupShape}
+          lensMode={lensMode}
+        />
+      </Suspense>
     );
   if (mode === 'schedule')
     return (
       <ErrorBoundary label="SchedulePanel">
-        <ScheduleModeShell
-          elementsById={elementsById}
-          preferredScheduleId={preferredScheduleId}
-          modelId={modelId}
-          onUpsertSemantic={onSemanticCommand}
-          onNavigateToElement={onNavigateToElement}
-          lensMode={lensMode}
-        />
+        <Suspense fallback={null}>
+          <ScheduleModeShell
+            elementsById={elementsById}
+            preferredScheduleId={preferredScheduleId}
+            modelId={modelId}
+            onUpsertSemantic={onSemanticCommand}
+            onNavigateToElement={onNavigateToElement}
+            lensMode={lensMode}
+          />
+        </Suspense>
       </ErrorBoundary>
     );
   if (mode === 'elevation')
