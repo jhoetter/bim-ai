@@ -14,7 +14,7 @@ import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
-import { applyCommand, ApiHttpError, fetchActivity, undoModel, redoModel } from '../lib/api';
+import { applyCommand, ApiHttpError } from '../lib/api';
 import {
   setActiveComponentAssetId,
   setActiveComponentAssetPreviewEntry,
@@ -49,14 +49,13 @@ import { patternFor } from '../state/uiStates';
 import { AppShell, RibbonBar, ViewContextStatusPanel, type WorkspaceMode } from './shell';
 import { LensDropdown } from './shell/LensDropdown';
 import { OptionsBar, ToolModifierBar } from './authoring';
-import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
+import { getToolRegistry, type ToolId } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
   activateTab,
   closeInactiveTabs,
   closeTab,
-  openTab,
   snapshotViewport,
   TAB_KIND_LABEL,
   tabFromElement,
@@ -66,7 +65,7 @@ import {
   type ViewTab,
   type ViewportSnapshot,
 } from './tabsModel';
-import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
+import { persistTabs, readPersistedTabs } from './tabsPersistence';
 import {
   assignTabToPane,
   createPaneLayout,
@@ -113,7 +112,6 @@ import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import { parseViewerProjectionParam, parseViewerRenderStyleParam } from '../viewport/renderStyles';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
-  findLoadedCatalogFamilyType,
   planCatalogFamilyLoad,
   type FamilyReloadOverwriteOption,
 } from '../families/catalogFamilyReload';
