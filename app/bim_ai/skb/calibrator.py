@@ -12,8 +12,11 @@ the calibrator gives back consistent numbers.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+
+_logger = logging.getLogger("bim_ai.skb.calibrator")
 
 
 @dataclass(frozen=True)
@@ -56,11 +59,37 @@ def calibrate(anchors: Sequence[Anchor]) -> CalibrationResult:
     Raises ValueError on no anchors or zero-pixel anchors.
     """
     if not anchors:
+        _logger.warning(
+            "calibrate: missing anchor",
+            extra={
+                "event": "calibrate.reject",
+                "reason": "no_anchors",
+                "anchor_count": 0,
+            },
+        )
         raise ValueError("calibrate(): need at least one anchor")
     for a in anchors:
         if a.pixels <= 0:
+            _logger.warning(
+                "calibrate: zero-pixel anchor rejected",
+                extra={
+                    "event": "calibrate.reject",
+                    "reason": "zero_pixels",
+                    "anchor_label": a.label,
+                    "pixels": a.pixels,
+                },
+            )
             raise ValueError(f"anchor {a.label!r}: pixels must be > 0 (got {a.pixels})")
         if a.millimeters <= 0:
+            _logger.warning(
+                "calibrate: non-positive millimeters anchor rejected",
+                extra={
+                    "event": "calibrate.reject",
+                    "reason": "non_positive_mm",
+                    "anchor_label": a.label,
+                    "millimeters": a.millimeters,
+                },
+            )
             raise ValueError(f"anchor {a.label!r}: millimeters must be > 0 (got {a.millimeters})")
 
     scales = sorted(a.millimeters / a.pixels for a in anchors)
@@ -150,10 +179,13 @@ def calibrate_from_edges(edges_image: object) -> float:
     - A NumPy ndarray (uint8 greyscale or BGR) — used directly.
     - A file path (str / Path) — loaded with cv2 or PIL.
 
-    Falls back to 1.0 if no usable contour is found.
+    Falls back to 1.0 if no usable contour is found. Every fallback
+    decision emits a structured log record (TEST-CQ-02) so silent
+    degradation is observable in production.
     """
 
     arr = None
+    source = "unknown"
 
     # Resolve to numpy array.
     try:
@@ -161,6 +193,7 @@ def calibrate_from_edges(edges_image: object) -> float:
 
         if isinstance(edges_image, np.ndarray):
             arr = edges_image
+            source = "ndarray"
         else:
             # Treat as file path.
             path_str = str(edges_image)
@@ -168,18 +201,31 @@ def calibrate_from_edges(edges_image: object) -> float:
                 import cv2  # type: ignore[import-not-found]
 
                 arr = cv2.imread(path_str, cv2.IMREAD_GRAYSCALE)
+                source = "cv2-imread"
             except ImportError:
                 try:
                     import numpy as np
                     from PIL import Image as _Image  # type: ignore[import-not-found]
 
                     arr = np.asarray(_Image.open(path_str).convert("L"), dtype=np.uint8)
+                    source = "pil-fallback"
                 except Exception:
                     arr = None
+                    source = "load-failed"
     except ImportError:
         arr = None
+        source = "numpy-missing"
 
     if arr is None:
+        _logger.warning(
+            "calibrate_from_edges: no usable image; returning identity scale",
+            extra={
+                "event": "calibrate_from_edges.fallback",
+                "stage": "load",
+                "source": source,
+                "scale_mm_per_px": 1.0,
+            },
+        )
         return 1.0
 
     # Convert to greyscale if BGR.
@@ -202,7 +248,19 @@ def calibrate_from_edges(edges_image: object) -> float:
             largest = max(contours, key=cv2.contourArea)
             _x, _y, w, _h = cv2.boundingRect(largest)
             if w > 0:
-                return _ASSUMED_ROOM_WIDTH_MM / float(w)
+                scale = _ASSUMED_ROOM_WIDTH_MM / float(w)
+                _logger.info(
+                    "calibrate_from_edges: cv2 contour bounding-box scale",
+                    extra={
+                        "event": "calibrate_from_edges.cv2_contour",
+                        "stage": "contour",
+                        "source": source,
+                        "width_px": int(w),
+                        "assumed_width_mm": _ASSUMED_ROOM_WIDTH_MM,
+                        "scale_mm_per_px": scale,
+                    },
+                )
+                return scale
     except Exception:
         pass
 
@@ -215,8 +273,29 @@ def calibrate_from_edges(edges_image: object) -> float:
             col_indices = np.where(cols)[0]
             width_px = int(col_indices[-1] - col_indices[0] + 1)
             if width_px > 0:
-                return _ASSUMED_ROOM_WIDTH_MM / float(width_px)
+                scale = _ASSUMED_ROOM_WIDTH_MM / float(width_px)
+                _logger.info(
+                    "calibrate_from_edges: numpy bbox fallback scale",
+                    extra={
+                        "event": "calibrate_from_edges.numpy_bbox",
+                        "stage": "numpy_bbox",
+                        "source": source,
+                        "width_px": width_px,
+                        "assumed_width_mm": _ASSUMED_ROOM_WIDTH_MM,
+                        "scale_mm_per_px": scale,
+                    },
+                )
+                return scale
     except Exception:
         pass
 
+    _logger.warning(
+        "calibrate_from_edges: no non-zero pixels; returning identity scale",
+        extra={
+            "event": "calibrate_from_edges.fallback",
+            "stage": "empty",
+            "source": source,
+            "scale_mm_per_px": 1.0,
+        },
+    )
     return 1.0
