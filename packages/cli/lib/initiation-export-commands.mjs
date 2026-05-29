@@ -9,6 +9,8 @@ import {
   writeInitiationPacket,
 } from './sketch-initiation.mjs';
 import { base, fetchJson, fetchOkBytes, snapshot } from './api-client.mjs';
+import { applyQualityMode } from './sketch-phase-workflows.mjs';
+import { comparePngFiles } from './png-visual-gate.mjs';
 
 export async function cmdInitiationGolden(manifestPath, outDir) {
   const manifest = await readJsonFile(manifestPath);

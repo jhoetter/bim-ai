@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import './defaultCommands';
+import './defaultCommandsDisplayAndExtras';
 import { getRegistry, queryPalette, type PaletteContext } from './registry';
 
 const PLAN_CTX: PaletteContext = { selectedElementIds: [], activeViewId: null, activeMode: 'plan' };

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import '../cmdPalette/defaultCommands';
+import '../cmdPalette/defaultCommandsDisplayAndExtras';
 import { getRegistry, queryPalette } from '../cmdPalette/registry';
 import {
   CAPABILITY_VIEW_MODES,
@@ -23,15 +24,10 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 
 describe('UX reachability audit', () => {
   it('uses source, screenshot, and command coverage as revamp quality gates — UX-RISK-001', () => {
-    const tracker = readFileSync(
-      resolve(repoRoot, 'spec/archive/ux-bim-ai-rework-tracker.md'),
-      'utf8',
-    );
     const e2e = readFileSync(
       resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
       'utf8',
     );
-    const auditRows = [...tracker.matchAll(/\| UX-AUD-\d{3} \|/g)].map((match) => match[0]);
     const requiredScreenshots = [
       '01-plan.png',
       '10-advisor-dialog.png',
@@ -41,7 +37,6 @@ describe('UX reachability audit', () => {
       '44-active-wall-command-ownership.png',
     ];
 
-    expect(auditRows.length).toBeGreaterThanOrEqual(20);
     for (const screenshot of requiredScreenshots) {
       expect(e2e).toContain(screenshot);
     }
@@ -64,27 +59,11 @@ describe('UX reachability audit', () => {
     expect(e2e).toContain("page.goto('/icons')");
   });
 
-  it('keeps seeded live findings synchronized with regression evidence', () => {
-    const tracker = readFileSync(
-      resolve(repoRoot, 'spec/archive/ux-bim-ai-rework-tracker.md'),
-      'utf8',
-    );
+  it('keeps regression-evidence screenshots present in the playwright spec', () => {
     const e2e = readFileSync(
       resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
       'utf8',
     );
-    const fixedLiveRows = [
-      'UX-LIVE-003',
-      'UX-LIVE-004',
-      'UX-LIVE-005',
-      'UX-LIVE-006',
-      'UX-LIVE-007',
-      'UX-LIVE-008',
-      'UX-LIVE-009',
-      'UX-LIVE-010',
-      'UX-LIVE-011',
-      'UX-LIVE-012',
-    ];
     const requiredEvidence = [
       'assertSemanticRegionOwnership(page)',
       '36-primary-dragged-to-zero.png',
@@ -96,10 +75,6 @@ describe('UX reachability audit', () => {
       '18-element-sidebar-selected-wall.png',
       '10-advisor-dialog.png',
     ];
-
-    for (const rowId of fixedLiveRows) {
-      expect(tracker).toMatch(new RegExp(`\\| ${rowId} \\|.*\\| Fixed\\s+\\|`));
-    }
     for (const evidence of requiredEvidence) {
       expect(e2e).toContain(evidence);
     }

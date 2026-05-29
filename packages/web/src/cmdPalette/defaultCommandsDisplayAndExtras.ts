@@ -183,7 +183,7 @@ registerCommand({
 registerCommand({
   id: 'view.3d.wall.insert-door',
   label: '3D: Insert Door on Selected Wall',
-  keywords: ['3d', 'door', 'wall face', 'selected wall'],
+  keywords: ['3d', 'selected wall', 'door', 'wall face'],
   category: 'command',
   isAvailable: isSelectedWall3dContext,
   invoke: (ctx) =>
@@ -198,7 +198,7 @@ registerCommand({
 registerCommand({
   id: 'view.3d.wall.insert-window',
   label: '3D: Insert Window on Selected Wall',
-  keywords: ['3d', 'window', 'wall face', 'selected wall'],
+  keywords: ['3d', 'selected wall', 'window', 'wall face'],
   category: 'command',
   isAvailable: isSelectedWall3dContext,
   invoke: (ctx) =>

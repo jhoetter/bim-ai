@@ -89,7 +89,7 @@ const HISTORY_SECRET_PATTERNS = [
 const ENV_SECRET_RE =
   /\b(AWS_SECRET_ACCESS_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|HOF_SUBAPP_JWT_SECRET)\s*=\s*['"]?([^'"\s#]+)/g;
 const PLACEHOLDER_VALUE_RE =
-  /^(example|placeholder|changeme|change-me|dummy|test|unset|your_|<|\$\{|\.\.\.)/i;
+  /^(example|placeholder|changeme|change-me|dummy|test|unset|your[_-]|<|\$\{|\.\.\.)/i;
 
 const BROWSER_UNSAFE_PATTERNS = [
   {

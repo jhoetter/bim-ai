@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getCommandCapability } from '../workspace/commandCapabilities';
 import './defaultCommands';
+import './defaultCommandsDisplayAndExtras';
 import { getRegistry } from './registry';
 
 type TraceStep = {
