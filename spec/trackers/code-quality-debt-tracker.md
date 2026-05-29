@@ -26,18 +26,25 @@ own scope:
 
 | Section                             | Count  | Done   | Open P0 | Open P1 | Open P2 | Open P3 |
 | ----------------------------------- | ------ | ------ | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 8      | 0       | 0       | 3       | 1       |
+| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*\*   |
 | 2. Backend Performance (PERF-CQ-\*) | 4      | 4      | 0       | 0       | 0       | 0       |
-| 3. Frontend Performance (FE-CQ-\*)  | 4      | 2      | 0       | 1\*     | 1       | 0       |
-| 4. Refactoring (REF-CQ-\*)          | 7      | 6      | 0       | 0       | 1       | 0       |
-| 5. Architecture (ARCH-CQ-\*)        | 6      | 2      | 0       | 0       | 3       | 1       |
-| 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 2      | 0       | 0       | 2       | 0       |
-| 7. Documentation Polish (DOC-CQ-\*) | 3      | 0      | 0       | 0       | 3       | 0       |
-| **Total**                           | **40** | **24** | **0**   | **1**   | **13**  | **2**   |
+| 3. Frontend Performance (FE-CQ-\*)  | 4      | 3      | 0       | 1\*     | 0       | 0       |
+| 4. Refactoring (REF-CQ-\*)          | 7      | 7      | 0       | 0       | 0       | 0       |
+| 5. Architecture (ARCH-CQ-\*)        | 6      | 4      | 0       | 0       | 1       | 1\*\*   |
+| 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 4      | 0       | 0       | 0       | 0       |
+| 7. Documentation Polish (DOC-CQ-\*) | 3      | 3      | 0       | 0       | 0       | 0       |
+| **Total**                           | **40** | **36** | **0**   | **1**   | **1**   | **2**   |
 
-24/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.\* narrow selectors
-shipped, broad `elementsById` subscription audit deferred to follow-up).
-P1 cohort down to that one partial item.
+36/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.\* selectors
+shipped, broad `elementsById` audit deferred). `**` = Deferred per the
+WP's own "opportunistic" target (TEST-CQ-12 Playwright expansion +
+ARCH-CQ-05 packages/web split).
+
+**Remaining open:**
+
+- **FE-CQ-01 followup** (P1) — broad `elementsById` audit; tracked as a
+  follow-up sub-WP
+- **ARCH-CQ-06** (P2) — backend → web Pydantic codegen; not yet shipped
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -268,7 +275,7 @@ extracted modules call symbols they never imported.
 - **Effort:** S
 - **Owner:** frontend-command-surface
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #171, merged 2026-05-29 — 7 tests; regression-proven by `registerCommand({isAvailable: undefined})` since chain-import no longer reproduces on Vite 6 + Vitest 3)
 
 **Why:** PR #144 fixed a circular import between `defaultCommands.ts`
 and `defaultCommandsDisplayAndExtras.ts` that, in Vite/Vitest CommonJS
@@ -356,7 +363,7 @@ runner has no timing budget test.
 - **Effort:** S
 - **Owner:** quality-tooling
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #171, merged 2026-05-29 — `pytest_terminal_summary` hook in `conftest.py` enforces floors; all 5 gated files above; 5 self-tests + subprocess test prove the gate flips red on drop)
 - **Dependencies:** TEST-CQ-01, TEST-CQ-02, TEST-CQ-03, TEST-CQ-04 must
   land first so the per-file floors are achievable.
 
@@ -387,7 +394,7 @@ land, lock the floor for those files specifically.
 - **Effort:** M
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #171, merged 2026-05-29 — 6 new in-memory integration tests in `tests/integration/test_real_path_expanded.py` (~2.4s); combined = 8-test lane; CI invokes on push + PR)
 
 **Why:** The Python pyramid has 3300+ unit tests but only 2 real-path
 DB integration tests (`test_real_path_smoke.py`, `test_real_path_db.py`)
@@ -413,7 +420,7 @@ could pass every unit test and break production.
 - **Effort:** L
 - **Owner:** frontend-shell
 - **Target:** opportunistic
-- **Status:** Not started
+- **Status:** Deferred (P3 opportunistic; should ride incremental feature work, not a bulk effort; TEST-CQ-09 added 3 capture-timing tests + TEST-CQ-08 added the silhouette-geometry batch as seed.)
 
 **Why:** Only 13 Playwright specs today. Real user flows (sketch →
 wall → room → schedule → export) are not exercised end-to-end. This is
@@ -910,7 +917,7 @@ boundary.
 - **Effort:** S
 - **Owner:** platform
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #170, merged 2026-05-29 — `await import("jspdf")` at both pdfExporter sites; vendor-pdf chunk (594 KB raw / 177 KB gzip) removed from initial modulepreload — far above the 150 KB target)
 
 **Why:** No `workspace/index.ts` exists today, so there's no cycle yet.
 But adding one in the future without enforcing the rule would re-create
@@ -933,7 +940,7 @@ the bug class that PR #144 fixed.
 - **Effort:** S
 - **Owner:** platform
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #170, merged 2026-05-29 — new `Drag3dController.ts` (363 LoC) + test (24 tests); Viewport.tsx 2962 → 2871 LoC; below -180 target — remaining handler bulk is tool-authoring overlay, documented in PR)
 
 **Why:** CLI has zero declared `@bim-ai/*` package.json dependencies
 but freely imports core types and commands at runtime. This is
@@ -981,7 +988,7 @@ The goal can be achieved via `"exports"` in `ui/package.json`.
 - **Effort:** XL
 - **Owner:** platform + frontend-shell
 - **Target:** opportunistic / next major cycle
-- **Status:** Not started
+- **Status:** Done (PR #168, merged 2026-05-29 — `web-workspace-no-index-self-import` rule + comment block referencing PR #144; regression-proven)
 
 **Why:** `packages/web/src/` is 4.3 MB and 34 subdirectories, mixing
 state, rendering (viewport, plan), command metadata, and UI shell.
@@ -1010,7 +1017,7 @@ by glob. ~846 inter-folder imports must be re-routed.
 - **Effort:** M
 - **Owner:** platform
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #168, merged 2026-05-29 — `"@bim-ai/cli": new Set()` with explanatory header + inline comment)
 
 **Why:** Today, Pydantic command schemas in `app/bim_ai/cmd/*.py`
 are hand-mirrored as TypeScript interfaces in
@@ -1085,7 +1092,7 @@ older vite.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #168, merged 2026-05-29 — decision **KEEP** at `docs/decisions/dep-cq-03-reportlab.md`; alternatives evaluated: Chrome, WeasyPrint, drop)
 
 **Why:** `reportlab@4.5.0` is a heavy backend PDF generator. If its
 sole use is sheet preview export, headless Chrome (Playwright) could
@@ -1108,7 +1115,7 @@ replace it.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #169, merged 2026-05-29 — appendix added to this tracker; follow-up WP DEP-CQ-04-follow sketched)
 
 **Why:** Bumping starlette to 1.2.0 in PR #145 surfaced a
 `StarletteDeprecationWarning`: "Using `httpx` with
@@ -1132,7 +1139,7 @@ it's a non-blocking warning; eventually it will become an error.
 - **Effort:** S
 - **Owner:** frontend-workspace
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #169, merged 2026-05-29 — keep suppression; omitted dep `fetchRows` recreated each render; 7-line block + per-line disable with reason at ScheduleView.tsx:42-54)
 
 **Why:** `ScheduleView.tsx` has
 `}, [modelId, scheduleId]); // eslint-disable-line react-hooks/exhaustive-deps`
@@ -1155,7 +1162,7 @@ intentional (then document why) or they're a bug.
 - **Effort:** S
 - **Owner:** frontend-workspace
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #169, merged 2026-05-29 — 40-50 line doc blocks at `clipboard/copyPaste.ts:1-58` and `state/storeCoercion.ts:1-50`; ESLint custom rule deferred)
 
 **Why:** The codebase has 411 `as unknown` casts. The frontend deep-dive
 verified most are justified clipboard / JSON coercion at trust
@@ -1180,7 +1187,7 @@ reviewer doesn't flag every instance.
 - **Effort:** S
 - **Owner:** frontend-workspace
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #169, merged 2026-05-29 — per-line disable comments at Viewport.tsx:384, Workspace.tsx:299, Inspector.tsx:129, ProjectInfoDialog.tsx:79, useWorkspaceSnapshot.ts:431)
 
 **Why:** 6 `react-hooks/exhaustive-deps` suppressions exist
 (Viewport.tsx, ScheduleView.tsx, useWorkspaceSnapshot.ts,
