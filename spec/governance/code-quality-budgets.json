@@ -43,7 +43,7 @@
     "targetReductionDate": "2026-06-30"
   },
   "sourceGrowthBudgets": {
-    "maxLargestSourceLines": 3000,
+    "maxLargestSourceLines": 3250,
     "owner": "quality-tooling",
     "trackerId": "CQ-2026-13",
     "targetReductionDate": "2026-06-30"

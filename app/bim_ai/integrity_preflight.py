@@ -4,6 +4,8 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict
+
 from bim_ai._io.log import get_logger
 from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 from bim_ai.constraints_core import Violation
@@ -16,8 +18,8 @@ from bim_ai.model_integrity_hosting import (
     hosted_opening_integrity_violations,
     physical_support_context_violations,
 )
-from typing import Any
-from pydantic import BaseModel, ConfigDict
+from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
+from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
 
 class IntegrityPreflightResponse(BaseModel):
@@ -54,9 +56,6 @@ class IntegrityPreflightResponse(BaseModel):
             return False
         return key in self.model_dump(by_alias=True)
 
-
-from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
-from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
 _logger = get_logger("bim_ai.integrity_preflight")
 

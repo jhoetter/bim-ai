@@ -18,7 +18,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -148,7 +148,6 @@ from bim_ai.seed_library import is_seed_library_project_id
 # bim_ai.services.iterate_loop deleted in de-agent phase 3a — the iterate
 # workflow is now a methodology markdown in bim-agent that drives the loop
 # via MCP tool calls. See bim-agent/spec/methodology/iterate-loop.md.
-
 # bim_ai.services.semantic_authoring moved to bim-agent — see
 # spec/trackers/bim-ai-bim-agent-clean-separation-tracker.md phase 3
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
