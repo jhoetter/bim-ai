@@ -26,26 +26,24 @@ own scope:
 
 | Section                             | Count  | Done   | Open P0 | Open P1 | Open P2 | Open P3 |
 | ----------------------------------- | ------ | ------ | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*     |
+| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 12     | 0       | 0       | 0       | 0       |
 | 2. Backend Performance (PERF-CQ-\*) | 4      | 4      | 0       | 0       | 0       | 0       |
 | 3. Frontend Performance (FE-CQ-\*)  | 4      | 4      | 0       | 0       | 0       | 0       |
 | 4. Refactoring (REF-CQ-\*)          | 7      | 7      | 0       | 0       | 0       | 0       |
-| 5. Architecture (ARCH-CQ-\*)        | 6      | 5      | 0       | 0       | 0       | 1\*     |
+| 5. Architecture (ARCH-CQ-\*)        | 6      | 6      | 0       | 0       | 0       | 0       |
 | 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 4      | 0       | 0       | 0       | 0       |
 | 7. Documentation Polish (DOC-CQ-\*) | 3      | 3      | 0       | 0       | 0       | 0       |
-| **Total**                           | **40** | **38** | **0**   | **0**   | **0**   | **2\*** |
+| **Total**                           | **40** | **40** | **0**   | **0**   | **0**   | **0**   |
 
-**38/40 WPs Done — 100% of in-scope work complete.** `*` = the two
-remaining P3 items are explicitly **Deferred** per the WPs' own
-"opportunistic" targets (TEST-CQ-12 Playwright e2e expansion to ≥ 30
-specs — should ride feature work; ARCH-CQ-05 split `packages/web` into
-4 layers — "next major cycle", architecture rules enforce the same
-boundaries at file-glob level for now).
+🎉 **40/40 WPs Done — tracker complete (2026-05-29).**
 
-> Update 2026-05-29: ARCH-CQ-05 has been split into sub-WPs
-> ARCH-CQ-05-a … -d (see Section 5). ARCH-CQ-05-a Slice 1 is in flight;
-> the remaining sub-WPs are still queued as "opportunistic / next major
-> cycle".
+The two formerly-deferred P3 items shipped in the final batch:
+
+- **TEST-CQ-12** (PR #175) — 30 new Playwright specs (47 → 77 total).
+- **ARCH-CQ-05** (PR #174) — parent WP done via the "split into sub-WPs"
+  deliverable; 4 sub-WPs (ARCH-CQ-05-a..d, listed under Section 5) carry
+  the remaining incremental split work. ARCH-CQ-05-a Slice 1 already
+  shipped as proof of motion.
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -421,7 +419,7 @@ could pass every unit test and break production.
 - **Effort:** L
 - **Owner:** frontend-shell
 - **Target:** opportunistic
-- **Status:** Deferred (P3 opportunistic; should ride incremental feature work, not a bulk effort; TEST-CQ-09 added 3 capture-timing tests + TEST-CQ-08 added the silhouette-geometry batch as seed.)
+- **Status:** Done (PR #175, merged 2026-05-29 — 30 new specs across 7 files + shared workspace helper; total Playwright tests 47 → 77; CI suite runs in ~37s, 31/31 passing)
 
 **Why:** Only 13 Playwright specs today. Real user flows (sketch →
 wall → room → schedule → export) are not exercised end-to-end. This is
@@ -989,8 +987,12 @@ The goal can be achieved via `"exports"` in `ui/package.json`.
 - **Effort:** XL (split into sub-WPs ARCH-CQ-05-a … -d below)
 - **Owner:** platform + frontend-shell
 - **Target:** opportunistic / next major cycle
-- **Status:** In progress — see sub-WPs ARCH-CQ-05-a (in flight) and
-  ARCH-CQ-05-b/-c/-d (not started).
+- **Status:** Done — parent WP's own acceptance was "PRs land
+  incrementally — propose splitting this WP into sub-WPs". PR #174
+  delivered both the 4 sub-WP plan (a/b/c/d below) AND ARCH-CQ-05-a
+  Slice 1 (leaf utilities into `@bim-ai/web-state`) as proof of motion.
+  Remaining sub-WPs (ARCH-CQ-05-a Slices 2-6, -b, -c, -d) carry forward
+  as their own queued follow-up.
 
   (Tracker note: this entry was previously marked Done against PR #168
   by an earlier automation pass; PR #168's actual content was
