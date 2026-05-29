@@ -2074,5 +2074,7 @@ registerCommand({
   invoke: (ctx) => ctx.toggleElementSidebar?.(),
 });
 
-// Display settings and beyond extracted into defaultCommandsDisplayAndExtras.ts
-import './defaultCommandsDisplayAndExtras';
+// Display settings and beyond live in defaultCommandsDisplayAndExtras.ts.
+// Callers must import that file alongside this one (chain-import here would
+// create a circular dep — extras imports helpers from this file, and a
+// chain-import here would race the helpers' initialization).

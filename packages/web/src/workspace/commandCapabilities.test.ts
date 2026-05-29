@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import '../cmdPalette/defaultCommands';
+import '../cmdPalette/defaultCommandsDisplayAndExtras';
 import { getRegistry } from '../cmdPalette/registry';
 import {
   getAuthoringCommandContract,

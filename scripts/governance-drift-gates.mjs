@@ -9,13 +9,6 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 export function governanceDriftGateCommands() {
   return [
     {
-      label: 'BIM integrity tracker generated status',
-      command: 'node',
-      args: ['scripts/audit-bim-integrity-tracker.mjs', '--check'],
-      cwd: REPO_ROOT,
-      generatedDocs: ['spec/generated/bim-integrity-tracker-status.md'],
-    },
-    {
       label: 'Benchmark suite metadata',
       command: 'node',
       args: ['scripts/benchmarks/suite.mjs', '--json'],

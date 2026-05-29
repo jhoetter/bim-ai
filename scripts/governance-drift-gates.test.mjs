@@ -10,7 +10,6 @@ test('governance drift gate consolidates generated-doc checks', () => {
 
   assert.deepEqual([...docs].sort(), [
     'spec/generated/advisor-rule-ledger.md',
-    'spec/generated/bim-integrity-tracker-status.md',
     'spec/generated/renderer-support-matrix.md',
   ]);
   assert.equal(

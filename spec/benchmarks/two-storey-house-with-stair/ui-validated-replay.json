@@ -14,7 +14,7 @@
     "replayCommandCount": 48,
     "fixtureCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
     "replayCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
-    "bundleSha256": "142e8dde2b71732b7d11ab9aaae6425ebde571893eee752f62b573ea239043f7",
+    "bundleSha256": "ccc24dd7375f0aa789909f4740d03b1c90ffb34bdc907f2f9762cbf08e83b575",
     "payloadDigestMismatches": [],
     "sequenceMismatchCount": 0,
     "unmatchedFixtureCommandCount": 0,
