@@ -1,4 +1,15 @@
-import { jsPDF } from 'jspdf';
+// FE-CQ-03 — jsPDF is dynamically imported at call sites (see
+// `exportSheetToPdf` / `exportSheetsToPdf`). A top-level `import { jsPDF }
+// from 'jspdf'` would pull ~200 KB into the main bundle, but PDF export is
+// low-frequency (sheet/schedule export only), so we defer the load until
+// the user actually triggers an export.
+//
+// `JsPDFInstance` is the type-only handle used by the synchronous helper
+// `addPageToPdf`. It mirrors the public surface of `jsPDF` we touch
+// (`addPage`, `addImage`, `setFontSize`, `setTextColor`, `text`, `save`).
+// We re-derive it from `typeof import('jspdf')` so the type stays in lock-
+// step with the runtime module without forcing a static import.
+type JsPDFInstance = InstanceType<(typeof import('jspdf'))['jsPDF']>;
 
 export type PaperSize = 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'Letter' | 'Tabloid';
 export type DpiSetting = 72 | 150 | 300;
@@ -74,7 +85,7 @@ async function captureElementToPng(element: HTMLCanvasElement | HTMLElement): Pr
  * Scales the captured image to fit within the paper size while preserving aspect ratio.
  */
 async function addPageToPdf(
-  doc: jsPDF,
+  doc: JsPDFInstance,
   element: HTMLCanvasElement | HTMLElement,
   paperSize: PaperSize,
   orientation: 'portrait' | 'landscape',
@@ -150,6 +161,8 @@ export async function exportSheetToPdf(
   const pageMmW = orientation === 'landscape' ? heightMm : widthMm;
   const pageMmH = orientation === 'landscape' ? widthMm : heightMm;
 
+  // FE-CQ-03 — defer the ~200 KB jspdf bundle until export is triggered.
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation,
     unit: 'mm',
@@ -181,6 +194,8 @@ export async function exportSheetsToPdf(
   const pageMmW = orientation === 'landscape' ? heightMm : widthMm;
   const pageMmH = orientation === 'landscape' ? widthMm : heightMm;
 
+  // FE-CQ-03 — defer the ~200 KB jspdf bundle until export is triggered.
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation,
     unit: 'mm',

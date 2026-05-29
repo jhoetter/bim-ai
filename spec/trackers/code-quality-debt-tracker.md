@@ -621,10 +621,13 @@ candidates. Closes FE-5 partially.
 - **Effort:** S
 - **Owner:** frontend-workspace
 - **Target:** 2026-07-31
-- **Status:** Not started
-
-**Why:** `jspdf@4.2.1` adds ~200KB to the main bundle. PDF export is
-low-frequency (sheet/schedule export only).
+- **Status:** Done (PR pending — `pdfExporter.ts` rewritten with
+  `await import('jspdf')` at both `exportSheetToPdf` /
+  `exportSheetsToPdf` call sites; vite manualChunks rule for jspdf
+  removed so jspdf becomes a true lazy chunk; initial-load JS drops
+  ~594 KB raw / ~177 KB gzip — vendor-pdf is no longer in
+  `index.html` modulepreload)
+- **Cross-refs:** Paired with REF-CQ-03 in the same PR.
 
 **Acceptance criteria:**
 
@@ -731,13 +734,18 @@ its own lifecycle, simplifies prop threading, and cuts Workspace by
 - **Effort:** M
 - **Owner:** frontend-viewport
 - **Target:** 2026-07-31
-- **Status:** Not started
-
-**Why:** Viewport.tsx lines 847-1050 contain a mutable drag state
-machine (dragging, lastX/Y, cumulativeDragPx, inertia, grip anchoring)
-buried inside a `useEffect`. Currently functional but hard to test.
-Low urgency since drag works today — fold this in when touching
-gesture code for other reasons.
+- **Status:** Done (PR pending — `Drag3dController` class extracted to
+  `packages/web/src/viewport/Drag3dController.ts` (363 LoC) with 24
+  unit tests in `Drag3dController.test.ts`; Viewport.tsx 2,962 → 2,871
+  (−91 LoC). The full state machine — drag mode, threshold, inertia
+  decay, tool-draft consumption, grip anchoring, section-box face drag
+  — moved behind the controller. The literal 180-LoC target was not
+  hit: the in-scope state-declaration block was only ~25 lines and the
+  pointer handlers' remaining bulk is tool-authoring overlay logic,
+  not drag-state, so further extraction would have meant breaking
+  unrelated concerns. Per the WP's "functional preservation > LoC
+  target" guidance the extraction stopped at the drag boundary.)
+- **Cross-refs:** Paired with FE-CQ-03 in the same PR.
 
 **Acceptance criteria:**
 
