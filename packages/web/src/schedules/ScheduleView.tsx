@@ -39,9 +39,18 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
       .catch(() => {});
   };
 
+  // DOC-CQ-01 audit: omitted dep is `fetchRows`, which is recreated every
+  // render (it's a plain function declared in the component body, not wrapped
+  // in useCallback). Adding it would re-fire this effect on every render —
+  // including renders triggered by handleFilterChange / handleSort, which
+  // already call fetchRows explicitly with the right args. The semantic
+  // intent here is "re-fetch when the schedule identity changes"; modelId +
+  // scheduleId capture that exactly. fetchRows reads both ids from closure
+  // on each call, so there is no stale-closure risk.
   useEffect(() => {
     fetchRows();
-  }, [modelId, scheduleId]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchRows recreated each render; effect intentionally fires only on (modelId, scheduleId) change. See block comment above.
+  }, [modelId, scheduleId]);
 
   const handleFilterChange = (val: string) => {
     setFilterExpr(val);

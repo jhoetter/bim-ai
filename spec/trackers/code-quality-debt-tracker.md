@@ -1247,3 +1247,39 @@ research subagent reports. Each WP traces back to a specific finding;
 where the agent named a file and line range, those citations are
 preserved inline in the WP body so the next implementer doesn't have
 to re-derive context.
+
+## Appendix — DEP-CQ-04: `StarletteDeprecationWarning` (`httpx` → `httpx2`)
+
+Recorded 2026-05-29 (DEP-CQ-04 doc pass). Tracks an upstream deprecation
+surfaced when PR #145 bumped starlette to 1.2.0.
+
+**The warning.** Running `pytest -W error::DeprecationWarning` against
+the FastAPI test client emits:
+
+> `StarletteDeprecationWarning: Using `httpx` with
+> `starlette.testclient` is deprecated; install `httpx2` instead.`
+
+Today the warning is non-blocking; pytest's filter config in
+`app/pyproject.toml` does not promote it to an error, so CI stays
+green. The warning is emitted once per test session under the current
+configuration.
+
+**Upstream timeline.** As of starlette 1.2.x the warning is informational
+only — `httpx` still works for `TestClient`. The starlette CHANGELOG
+has not yet pinned a removal release. Action item: when bumping
+starlette next (DEP-CQ-01 cadence — quarterly minor bump review), check
+the CHANGELOG for a removal note and re-prioritise this item.
+
+**Follow-up WP (deferred).** Migrate the test client to `httpx2`:
+
+- Add `httpx2` to `app/pyproject.toml` `[project.optional-dependencies]`
+  `dev` group; remove the `httpx` constraint that exists only to
+  satisfy starlette's test client.
+- Update any `from httpx import ...` test-utility imports (likely just
+  `app/tests/conftest.py` and a couple of fixture modules) to use
+  `httpx2` equivalents.
+- Re-run the full pytest suite with `-W error::DeprecationWarning` to
+  prove the warning is silenced; tighten the filter config so a future
+  reintroduction errors.
+
+Track as `DEP-CQ-04-follow` when scheduling.

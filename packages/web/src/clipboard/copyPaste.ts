@@ -5,6 +5,52 @@
  * and the family-id collision resolver. Returns a result object the
  * caller wires into the receiving project's element graph + family
  * catalog. Pure data flow — no DOM dependency.
+ *
+ * ---------------------------------------------------------------
+ * DOC-CQ-02 — `as unknown` trust boundary
+ * ---------------------------------------------------------------
+ * This file is one of two sanctioned `as unknown` casting sites in the
+ * web package (the other is `state/storeCoercion.ts`). Every other
+ * `as unknown` cast in `packages/web/src/**` should be considered a
+ * code smell unless it is migrated under this boundary.
+ *
+ * WHERE UNTYPED JSON ENTERS THE SYSTEM
+ *   - Clipboard read: `readClipboard()` returns a `ClipboardPayload`
+ *     reconstructed from a JSON string (the browser clipboard / OS
+ *     paste buffer). That string carries the typed shape only by
+ *     convention — at the runtime boundary it is `unknown`.
+ *   - Cross-project paste: payloads authored in a different model may
+ *     ship `Element` objects whose nested fields (level references,
+ *     family-id collision-resolution metadata, authoring extras) are
+ *     legal `Element` shapes but were never validated against the
+ *     receiving project's stricter view types.
+ *
+ * WHY `as unknown as Record<string, unknown>` IS THE CONTRACT
+ *   - `Element` is a discriminated union with kind-specific fields.
+ *     The paste-time helpers below need to read `levelId`, `hostId`,
+ *     `originMm`, etc. without narrowing per kind — that would be a
+ *     wall of `switch(el.kind)` cases for fields that exist on dozens
+ *     of variants with identical semantics.
+ *   - `as unknown as Record<string, unknown>` is the explicit,
+ *     greppable "I am crossing a trust boundary" signal. The cast is
+ *     paired with a defensive read (`typeof v === 'string'`,
+ *     `Array.isArray(...)`, etc.) on the next line — never a raw
+ *     property assignment that assumes the field exists.
+ *
+ * THE RULE
+ *   - No `as unknown` outside this trust boundary. If a downstream
+ *     helper needs an `unknown` view, accept `unknown` as the
+ *     parameter type and narrow with type guards. Don't relaunder
+ *     casts through intermediate variables.
+ *   - If a NEW trust-boundary site is needed (e.g. a postMessage
+ *     handler, a server-sent JSON envelope), it must (a) live in
+ *     `lib/`, `clipboard/`, or `state/coercion/`, (b) carry an
+ *     equivalent doc block, and (c) be added to DOC-CQ-02's allowlist.
+ *
+ * FOLLOW-UP (DOC-CQ-02 optional scope, deferred): an ESLint custom
+ * rule that flags `as unknown` outside the allowlist. Not shipped in
+ * this PR — the rule body is < 30 LoC but the test infra is not, so
+ * we punt to a follow-up WP and rely on review + grep for now.
  */
 import type { Element } from '@bim-ai/core';
 import type { FamilyDefinition } from '../families/types';

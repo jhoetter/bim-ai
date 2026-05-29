@@ -76,12 +76,18 @@ export function ProjectInfoDialog({
 
   const ps = getProjectSettings(elementsById);
 
+  // DOC-CQ-03: open-transition reset. Omitted dep is `ps`, which is
+  // re-derived from `elementsById` on every parent render. Tracking it
+  // would re-seed the draft whenever upstream state changes — clobbering
+  // the user's in-progress edits in the dialog. Semantic intent is
+  // "snapshot project settings into a draft when the dialog opens"; the
+  // `if (open)` gate + `[open]` dep capture exactly that — false → true.
   useEffect(() => {
     if (open) {
       setDraft(draftFromSettings(ps));
       setMessage(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- DOC-CQ-03: snapshot ps on open; tracking ps would clobber in-progress draft edits.
   }, [open]);
 
   useEffect(() => {

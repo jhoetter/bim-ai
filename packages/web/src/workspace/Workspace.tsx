@@ -296,8 +296,8 @@ export function Workspace(): JSX.Element {
     [structuralViolations],
   );
 
-  // FE-CQ-04: DEV-only mount-once presence bootstrap. Omitted deps
-  // (`userId`, `userDisplayName`, `presenceParticipants.length`,
+  // FE-CQ-04 + DOC-CQ-03: DEV-only mount-once presence bootstrap. Omitted
+  // deps (`userId`, `userDisplayName`, `presenceParticipants.length`,
   // `presenceSetLocalUserId`, `presenceSetParticipants`) are intentionally
   // not tracked — this seeds a single dev-local participant on first mount
   // so the Collab strip is visible during local development. If the real
@@ -322,7 +322,7 @@ export function Workspace(): JSX.Element {
         },
       ]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- FE-CQ-04: mount-once DEV presence bootstrap; re-running on userId/displayName change would clobber the live websocket participant list with a stale single-user seed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- FE-CQ-04 + DOC-CQ-03: mount-once DEV presence bootstrap; re-running on userId/displayName change would clobber the live websocket participant list with a stale single-user seed.
   }, []);
 
   // AST-V3-01 — library overlay (Alt+2)

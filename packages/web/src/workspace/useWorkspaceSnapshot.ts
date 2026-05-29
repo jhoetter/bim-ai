@@ -457,8 +457,15 @@ export function useWorkspaceSnapshot(historicalCommitId?: string | null): {
       }
       wsRef.current = null;
     };
-    // Run-once bootstrap: re-running is the user's job via the empty-state CTA.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // DOC-CQ-03: run-once bootstrap. Omitted deps include `elementsById`,
+    // `historicalCommitId`, `loadHistoricalSnapshot`, `loadSeedModel`, and
+    // `insertSeedHouse` — all read inside the effect body. Tracking them
+    // would re-fire the bootstrap on every authoring delta (elementsById
+    // churns constantly) or on the first hydrated commit-id, either of
+    // which would re-trigger the seed-house / load-model flow and clobber
+    // the user's live workspace. Re-running this bootstrap is the user's
+    // job via the empty-state CTA — never an effect-deps consequence.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- DOC-CQ-03: run-once bootstrap; re-firing would clobber live workspace state.
   }, []);
 
   // Presence heartbeat — sends viewer/selection state to collaborators every ~2.3s
