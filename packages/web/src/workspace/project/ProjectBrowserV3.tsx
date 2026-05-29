@@ -1,41 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { JSX, DragEvent } from 'react';
-import type { DisciplineTag, Element } from '@bim-ai/core';
-import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
+import type { Element } from '@bim-ai/core';
 
-import { Btn } from '@bim-ai/ui';
 import { LinkedModelHifi, PhaseHifi, PlanViewHifi, ScheduleViewHifi } from '@bim-ai/icons';
 
-import { applyCommand } from '../../lib/api';
-import { useViewTemplateStore } from '../../collab/viewTemplateStore';
-import {
-  duplicateFamilyTypeCommand,
-  ProjectBrowserFamiliesGroup,
-  type ProjectBrowserFamilyTypeElement,
-} from './ProjectBrowserFamiliesGroup';
 import { PbCollapsibleSection, PbContextMenu, PbGroup } from './ProjectBrowserSections';
 
-import {
-  planViewBrowserHierarchyState,
-  planViewProjectBrowserEvidenceLine,
-  viewpointOrbit3dEvidenceLine,
-} from '../../plan/planProjection';
-import { NewSheetDialog } from '../../plan/NewSheetDialog';
-import {
-  planLevelEvidenceToken,
-  scheduleProjectBrowserEvidenceLine,
-  sectionCutBrowserTooltipTitle,
-  sectionCutProjectBrowserEvidenceLine,
-  sheetProjectBrowserEvidenceLine,
-  siteProjectBrowserEvidenceLine,
-} from '../evidence';
-import { useBimStore } from '../../state/store';
-import {
-  ProjectBrowserLinkedIfcGroup,
-  ProjectBrowserLinksGroup,
-  ProjectBrowserSheetsGroup,
-  type ProjectBrowserProps,
-} from './ProjectBrowser';
+import type { ProjectBrowserProps } from './ProjectBrowser';
 
 type CtxMenu = {
   viewId: string;
