@@ -1017,7 +1017,20 @@ by glob. ~846 inter-folder imports must be re-routed.
 - **Effort:** M
 - **Owner:** platform
 - **Target:** 2026-07-31
-- **Status:** Done (PR #168, merged 2026-05-29 — `"@bim-ai/cli": new Set()` with explanatory header + inline comment)
+- **Status:** Done — `app/scripts/export_schemas.py` walks Pydantic
+  models in `bim_ai.cmd`, emits `packages/core/src/generated/backend-types.ts`
+  (single source of TS types lives in `core`, not `web`, so the codegen
+  output sits next to its consumer `modelContracts.ts`; this avoids a
+  `core → web` cross-package import). CI gate
+  `scripts/check-backend-types-sync.mjs` chained into `pnpm verify:strict`
+  via `codegen:types:check`. Hand-mirrored `AgentTrace`, `AssumptionEntry`,
+  `CommandBundle`, `ToleranceEntry` in `packages/core/src/modelContracts.ts`
+  replaced with re-exports / `Omit`-overlay (CommandBundle keeps the local
+  `commands: Command[]` discriminator).
+
+  (Tracker note: PR #168 was previously marked Done against this WP by an
+  earlier automation pass; its actual content was ARCH-CQ-02 + ARCH-CQ-03 +
+  DEP-CQ-03, so this entry is corrected.)
 
 **Why:** Today, Pydantic command schemas in `app/bim_ai/cmd/*.py`
 are hand-mirrored as TypeScript interfaces in
