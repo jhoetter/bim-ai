@@ -95,6 +95,15 @@
       "disallow": ["app/bim_ai/api/**"],
       "allow": [],
       "reason": "Backend command/domain helpers should not depend on API descriptor registry modules."
+    },
+    {
+      "id": "web-workspace-no-index-self-import",
+      "owner": "ARCH-CQ-02",
+      "rationale": "Workspace files must not import workspace/index.ts — that pattern recreates the chain-import cycle bug fixed in PR #144.",
+      "source": ["packages/web/src/workspace/**"],
+      "disallow": ["packages/web/src/workspace/index.ts", "packages/web/src/workspace/index.tsx"],
+      "allow": [],
+      "reason": "Workspace files must not import workspace/index.ts (or .tsx). Side-effect chain-imports at the bottom of a file create circular-import cycles where named imports resolve to `undefined` under Vite/Vitest CommonJS-interop — the exact bug class fixed by PR #144. No workspace/index.ts exists today; this rule prevents reintroduction."
     }
   ]
 }
