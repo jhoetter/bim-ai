@@ -10,12 +10,44 @@ const REPO_ROOT = join(__dirname, '..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
 const BOUNDARIES_PATH = join(REPO_ROOT, 'spec', 'governance', 'architecture-boundaries.json');
 
+// ALLOWED maps each `@bim-ai/*` package to the set of sibling packages it may
+// declare as a `dependencies` / `peerDependencies` entry in `package.json`.
+//
+// `@bim-ai/cli` is intentionally `new Set()` — the CLI is a delivery artifact
+// (an executable binary, not a reusable library) and pulls in sibling code at
+// runtime via direct relative or workspace imports without declaring them in
+// its manifest. This is by design; documenting it here keeps `pnpm architecture`
+// from flagging the missing-dep entry as drift (ARCH-CQ-03).
+//
+// ---
+// Side-effect chain-imports at the bottom of a file are a FORBIDDEN pattern.
+//
+// Before PR #144, `cmdPalette/defaultCommands.ts` ended with a bare
+// `import './defaultCommandsDisplayAndExtras';` whose sole purpose was to
+// trigger registration side-effects. The extras file in turn imported helpers
+// FROM `defaultCommands` — a cycle. Under Vite/Vitest's CommonJS interop the
+// named imports resolved to `undefined` during the cycle, causing entries to
+// register with `isAvailable: undefined` and breaking the cmdPalette test
+// suite.
+//
+// The cure is structural: do NOT chain-import a sibling module just to
+// trigger its registration side-effects. Either (a) re-export it from the
+// importer's public surface so callers consume one symbol, or (b) make
+// callers do an explicit side-effect import at the entry point where the
+// registration is actually needed.
+//
+// The `web-workspace-no-index-self-import` rule in
+// `spec/governance/architecture-boundaries.json` mechanises this for the
+// workspace package: any file under `packages/web/src/workspace/**` is
+// forbidden from importing `workspace/index.ts`. No such index file exists
+// today, but adding one without this guard would re-enable the bug class.
 const ALLOWED = {
   '@bim-ai/design-tokens': new Set(),
   '@bim-ai/icons': new Set(),
   '@bim-ai/core': new Set(),
   '@bim-ai/ui': new Set(['@bim-ai/design-tokens', '@bim-ai/icons']),
   '@bim-ai/web': new Set(['@bim-ai/design-tokens', '@bim-ai/ui', '@bim-ai/core', '@bim-ai/icons']),
+  // CLI is a delivery artifact; it may import any sibling package.
   '@bim-ai/cli': new Set(),
 };
 
