@@ -26,18 +26,18 @@ own scope:
 
 | Section                              | Count | Done | Open P0 | Open P1 | Open P2 | Open P3 |
 | ------------------------------------ | ----- | ---- | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 6    | 0       | 1       | 4       | 1       |
+| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 7    | 0       | 0       | 4       | 1       |
 | 2. Backend Performance (PERF-CQ-*)   | 4     | 3    | 0       | 0       | 1       | 0       |
-| 3. Frontend Performance (FE-CQ-*)    | 4     | 0    | 0       | 2       | 2       | 0       |
-| 4. Refactoring (REF-CQ-*)            | 7     | 0    | 0       | 3       | 3       | 1       |
+| 3. Frontend Performance (FE-CQ-*)    | 4     | 1    | 0       | 1       | 2       | 0       |
+| 4. Refactoring (REF-CQ-*)            | 7     | 1    | 0       | 2       | 3       | 1       |
 | 5. Architecture (ARCH-CQ-*)          | 6     | 1    | 0       | 1       | 3       | 1       |
-| 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 0    | 0       | 2       | 2       | 0       |
+| 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 2    | 0       | 0       | 2       | 0       |
 | 7. Documentation Polish (DOC-CQ-*)   | 3     | 0    | 0       | 0       | 3       | 0       |
-| **Total**                            | **40**| **10**| **0**  | **9**   | **18**  | **3**   |
+| **Total**                            | **40**| **15**| **0**  | **4**   | **18**  | **3**   |
 
-10/40 WPs Done. All P0 cleared on 2026-05-29; P1 batch A cleared the
-3 coverage-gap WPs (skb/calibrator, skb/colour_sampler, tkn/diff) plus
-PERF-CQ-03 and ARCH-CQ-04.
+15/40 WPs Done. All P0 cleared on 2026-05-29; P1 cohort down to 4
+remaining (FE-CQ-01, REF-CQ-01, REF-CQ-02 — all touching Workspace.tsx
+— plus ARCH-CQ-01 which depends on REF-CQ-07).
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -330,7 +330,7 @@ rendered silhouettes — only count and snapshot-digest assertions.
 - **Effort:** M
 - **Owner:** frontend-viewport
 - **Target:** 2026-06-26
-- **Status:** Not started
+- **Status:** Done (PR #158, merged 2026-05-29 — 3 tests on timeout enforcement, resource accounting, URL params; runtime 2.87s)
 
 **Why:** bim-ai #124 (capture-runner timing) and the broader class of
 capture-related regressions (#132, #58, #61) have all involved timing
@@ -594,7 +594,7 @@ FE-2 partially.
 - **Effort:** M
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #159, merged 2026-05-29 — chunk 1720→1603 KB raw / 427→399 KB gzip; ui-quality-budgets maxLargestJsKb 4500→1600)
 
 **Why:** Main workspace chunk is 1.72 MB minified / 429 KB gzip.
 `SchedulePanel.tsx` and `SheetReview.tsx` pull in fuzzysort, html2canvas,
@@ -756,7 +756,7 @@ gesture code for other reasons.
 - **Effort:** L
 - **Owner:** backend-core
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #161, merged 2026-05-29 — `_manifest_builder.py` (477 LoC); `evidence_manifest.py` 2514 → 2264 (exactly -250); all 4 `deterministic_*_evidence_manifest` functions + 7 collateral simplifications migrated)
 
 **Why:** `app/bim_ai/evidence_manifest.py` is 2,514 LOC. The backend
 deep-dive identifies the file as a payload factory, not a behavioural
@@ -1028,7 +1028,7 @@ are hand-mirrored as TypeScript interfaces in
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #157, merged 2026-05-29 — fastapi `<0.137`, sqlalchemy `<2.1`, asyncpg `<0.32`, pydantic `<2.14`; ceilings reflect currently-installed minors per "don't downgrade" rule)
 
 **Why:** `app/pyproject.toml` declares `fastapi>=0.115,<1`,
 `sqlalchemy[asyncio]>=2.0,<3`, `asyncpg>=0.30,<1`, `pydantic>=2.9,<3`.
@@ -1053,7 +1053,7 @@ silently break CI.
 - **Effort:** S
 - **Owner:** quality-tooling
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #160, merged 2026-05-29 — vitest + @vitest/coverage-v8 → 3.2.4; esbuild@0.21.5 fully removed from lockfile; testTimeout: 15000 added to web vite.config to accommodate vitest 3's forks pool)
 
 **Why:** `pnpm audit` reports 1 moderate vulnerability: `esbuild@0.21.5`
 transitive via `vite@5.4.21 → @vitest/mocker`. The root
