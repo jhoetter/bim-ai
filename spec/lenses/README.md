@@ -33,7 +33,6 @@ The recommended lens set separates discipline work, regulatory/analysis work, an
 | 2        | `cost-quantity`       | Cost and Quantity        | Kosten und Mengen                    | Quantity takeoff, cost groups, DIN 276-style breakdowns, procurement exports, and scenario comparison.                                       |
 | 2        | `construction`        | Construction / Execution | Bauausfuehrung                       | Phasing, temporary works, installation sequence, site logistics, progress, QA checklists, and as-built capture.                              |
 | 2        | `sustainability`      | Sustainability / LCA     | Nachhaltigkeit / Oekobilanz          | Embodied carbon, material declarations, circularity, reuse, EPD references, and LCA exports.                                                 |
-| 2        | `facility-operations` | Facility Operations      | Betrieb / Facility Management        | Asset registers, maintainable equipment, service intervals, handover, operations metadata, and API access for owners.                        |
 
 ## Lens Design Rule
 
@@ -59,6 +58,5 @@ Every lens must define:
 - [Cost and Quantity Lens](cost-quantity-lens.md)
 - [Construction Lens](construction-lens.md)
 - [Sustainability Lens](sustainability-lens.md)
-- [Facility Operations Lens](facility-operations-lens.md)
 - [Discipline Lens UX Tracker](lens-ux-tracker.md)
 - [Lens Mechanism Hardening Tracker](lens-mechanism-hardening-tracker.md)
