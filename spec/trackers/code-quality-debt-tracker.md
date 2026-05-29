@@ -26,18 +26,18 @@ own scope:
 
 | Section                              | Count | Done | Open P0 | Open P1 | Open P2 | Open P3 |
 | ------------------------------------ | ----- | ---- | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 7    | 0       | 0       | 4       | 1       |
+| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 8    | 0       | 0       | 3       | 1       |
 | 2. Backend Performance (PERF-CQ-*)   | 4     | 3    | 0       | 0       | 1       | 0       |
-| 3. Frontend Performance (FE-CQ-*)    | 4     | 1    | 0       | 1       | 2       | 0       |
-| 4. Refactoring (REF-CQ-*)            | 7     | 1    | 0       | 2       | 3       | 1       |
-| 5. Architecture (ARCH-CQ-*)          | 6     | 1    | 0       | 1       | 3       | 1       |
+| 3. Frontend Performance (FE-CQ-*)    | 4     | 1    | 0       | 1*      | 2       | 0       |
+| 4. Refactoring (REF-CQ-*)            | 7     | 6    | 0       | 0       | 1       | 0       |
+| 5. Architecture (ARCH-CQ-*)          | 6     | 2    | 0       | 0       | 3       | 1       |
 | 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 2    | 0       | 0       | 2       | 0       |
 | 7. Documentation Polish (DOC-CQ-*)   | 3     | 0    | 0       | 0       | 3       | 0       |
-| **Total**                            | **40**| **15**| **0**  | **4**   | **18**  | **3**   |
+| **Total**                            | **40**| **22**| **0**  | **1**   | **15**  | **2**   |
 
-15/40 WPs Done. All P0 cleared on 2026-05-29; P1 cohort down to 4
-remaining (FE-CQ-01, REF-CQ-01, REF-CQ-02 — all touching Workspace.tsx
-— plus ARCH-CQ-01 which depends on REF-CQ-07).
+22/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.* narrow selectors
+shipped, broad `elementsById` subscription audit deferred to follow-up).
+P1 cohort down to that one partial item.
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -216,7 +216,7 @@ depends on these primitives.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #162, merged 2026-05-29 — coverage 70% → 100%, 10 tests on triangulation/ridge/hull-fallback)
 
 **Why:** 70% coverage. Lines 34-43 are terrain-elevation interpolation
 that affects every house with a non-flat site. Subtle geometry errors
@@ -565,7 +565,7 @@ STALE in the deep-dive — confirm and close.
 - **Effort:** L
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Partial (PR #165, merged 2026-05-29 — `modelIndices.{sheets,levels,walls,planViews,schedules,viewpoints,savedViews}` narrow selectors added at Workspace.tsx:194-200; broad `elementsById` subscription at line 182 + the ~40 inline `elementsById[id]` reads still need auditing — track as **FE-CQ-01-followup** in the next sprint)
 - **Dependencies:** None blocking; pairs naturally with REF-CQ-01/02.
 
 **Why:** `packages/web/src/workspace/Workspace.tsx:199` subscribes to
@@ -678,7 +678,7 @@ testability/render-cost.
 - **Effort:** M
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #165, merged 2026-05-29 — new `useMaterialBrowserState.ts` hook; part of 3-WP combined chain that cut Workspace.tsx 3150 → 2491 LoC)
 - **Cross-refs:** Pairs with FE-CQ-01; pre-req for FE-CQ-04.
 
 **Why:** Workspace.tsx lines 1245-1350 (and material-assignment helpers
@@ -706,7 +706,7 @@ reuse in `WorkspaceRightRail.tsx` inspector sections.
 - **Effort:** M
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #165, merged 2026-05-29 — new `WorkspacePaneNode.tsx`; combined chain cut Workspace.tsx to 2491 LoC, well under the < 2,800 target)
 
 **Why:** Workspace.tsx lines ~2400-2650 are a render-time
 `renderPaneNode` function. Moving it to a proper component lets it own
@@ -786,7 +786,7 @@ the per-fragment contract testable.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #163, merged 2026-05-29 — `_geometry_2d.py` with 4 public names; plan_projection_wire.py 2356 → 2289 (-67); adopted by `plan_category_graphics.py`)
 
 **Why:** `plan_projection_wire.py` lines 815-872 contain pure 2D
 computational geometry: Liang-Barsky segment clipping, AABB tests,
@@ -813,7 +813,7 @@ extraction.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-07-31
-- **Status:** Not started
+- **Status:** Done (PR #166, merged 2026-05-29 — `ROLE_VIOLATIONS` dict-comprehension table; `_role_findings` collapsed to 19 LoC; 2 new exhaustiveness/rule-id tests; model_integrity.py -43 LoC, below -70 target — see PR rationale)
 
 **Why:** `app/bim_ai/model_integrity.py` lines 1505-1595 (`_role_findings`)
 contain deeply nested if-elif chains over expected vs declared roles.
@@ -838,7 +838,7 @@ dispatch table cuts ~80 LoC and centralises the rule catalog.
 - **Effort:** M
 - **Owner:** frontend-command-surface
 - **Target:** opportunistic
-- **Status:** Not started
+- **Status:** Done (PR #164, merged 2026-05-29 — new `workspace/runtime/defaultCommandsRuntime.ts`; cmdPalette files no longer import `state/store`; 51/51 cmdPalette tests pass)
 - **Dependencies:** Pairs with ARCH-CQ-01.
 
 **Why:** `defaultCommands.ts:1` imports `useBimStore` from
@@ -867,9 +867,9 @@ attention.
 - **Effort:** S
 - **Owner:** platform
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #164, merged 2026-05-29 — rule added to `architecture-boundaries.json`; regression-proven by temporarily restoring `useBimStore` import; `pnpm architecture` green)
 - **Dependencies:** REF-CQ-07 must land first (otherwise the new rule
-  flags existing code).
+  flags existing code). Bundled into the same PR.
 
 **Why:** cmdPalette/* currently imports `useBimStore` directly. Once
 REF-CQ-07 moves runtime store access to a workspace wrapper, lock the
