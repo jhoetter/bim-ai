@@ -21,6 +21,7 @@ dependencies = [
     "idna>=3.15",
     "scikit-image>=0.22,<1",
     "mcp[cli]>=1.0",  # MCP transport for the bim-ai tool catalog (Phase A of mcp-native-bim-agent-tracker)
+    "starlette>=1.0.1",
 ]
 
 [project.optional-dependencies]
