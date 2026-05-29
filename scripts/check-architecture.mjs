@@ -114,9 +114,14 @@ function checkFeatureBoundaries() {
     return;
   }
   const rules = Array.isArray(config.rules) ? config.rules : [];
+  // Boundary rules apply to production source. JS/TS test files (`.test.*`, `.spec.*`)
+  // are excluded because they routinely seed stores, mock workspace shell internals,
+  // and exercise cross-layer behaviour by design — that's the test's job.
+  const isJsTestFile = (file) => /\.(test|spec)\.(ts|tsx|js|jsx|mjs)$/.test(file);
   const files = [
-    ...walkFiles(join(REPO_ROOT, 'packages', 'web', 'src'), (file) =>
-      /\.(ts|tsx|js|jsx|mjs)$/.test(file),
+    ...walkFiles(
+      join(REPO_ROOT, 'packages', 'web', 'src'),
+      (file) => /\.(ts|tsx|js|jsx|mjs)$/.test(file) && !isJsTestFile(file),
     ),
     ...walkFiles(join(REPO_ROOT, 'app', 'bim_ai'), (file) => /\.py$/.test(file)),
   ];

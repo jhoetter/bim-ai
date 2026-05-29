@@ -1,7 +1,5 @@
-import { useBimStore } from '../state/store';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { registerCommand, type PaletteContext } from './registry';
-import { autoTagElements } from '../plan/autoTags';
 import { buildShaftSideWalls } from '../plan/buildShaftSideWalls';
 import {
   is3dContext,
@@ -17,6 +15,28 @@ import {
   activePlanViewContext,
   startPlanTool,
 } from './defaultCommands';
+import {
+  runtimeBuildAutoTagsForActivePlan,
+  runtimeCollectPinnedElementIds,
+  runtimeFamilyLibrarySelectionAvailable,
+  runtimeFindFamilyLibrarySelection,
+  runtimeFindSelectedIdOfKind,
+  runtimeHasTwoSolidSelection,
+  runtimeRequestViewerCameraAction,
+  runtimeSelectAllInstancesOfKind,
+  runtimeSelectGroupDefinitionElements,
+  runtimeSelectedGroupDefinitionAvailable,
+  runtimeSelectedKindIs,
+  runtimeSelectionAnyKindIs,
+  runtimeSetRevealHiddenMode,
+  runtimeSetViewerProjection,
+  runtimeSetViewerRenderStyle,
+  runtimeToggleNeighborhoodMasses,
+  runtimeToggleSelectLinked,
+  runtimeToggleViewerSectionBox,
+  runtimeToggleViewerWalkMode,
+  runtimeUngroupSelectedInstance,
+} from '../workspace/runtime/defaultCommandsRuntime';
 
 // Display settings
 registerCommand({
@@ -25,7 +45,7 @@ registerCommand({
   keywords: ['render', 'shaded', 'display', '3d'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerRenderStyle('shaded'),
+  invoke: () => runtimeSetViewerRenderStyle('shaded'),
 });
 
 registerCommand({
@@ -34,7 +54,7 @@ registerCommand({
   keywords: ['wireframe', 'render', 'display', '3d'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerRenderStyle('wireframe'),
+  invoke: () => runtimeSetViewerRenderStyle('wireframe'),
 });
 
 registerCommand({
@@ -43,7 +63,7 @@ registerCommand({
   keywords: ['consistent colors', 'render', 'display'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerRenderStyle('consistent-colors'),
+  invoke: () => runtimeSetViewerRenderStyle('consistent-colors'),
 });
 
 registerCommand({
@@ -52,7 +72,7 @@ registerCommand({
   keywords: ['high fidelity', 'render', 'realistic', 'soft shadows', 'display', '3d'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerRenderStyle('high-fidelity'),
+  invoke: () => runtimeSetViewerRenderStyle('high-fidelity'),
 });
 
 registerCommand({
@@ -61,7 +81,7 @@ registerCommand({
   keywords: ['3d', 'fit', 'zoom extents', 'camera'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().requestViewerCameraAction('fit'),
+  invoke: () => runtimeRequestViewerCameraAction('fit'),
 });
 
 registerCommand({
@@ -70,7 +90,7 @@ registerCommand({
   keywords: ['3d', 'reset', 'home', 'camera'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().requestViewerCameraAction('reset'),
+  invoke: () => runtimeRequestViewerCameraAction('reset'),
 });
 
 registerCommand({
@@ -79,7 +99,7 @@ registerCommand({
   keywords: ['3d', 'perspective', 'projection', 'camera'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerProjection('perspective'),
+  invoke: () => runtimeSetViewerProjection('perspective'),
 });
 
 registerCommand({
@@ -88,7 +108,7 @@ registerCommand({
   keywords: ['3d', 'orthographic', 'ortho', 'projection'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerProjection('orthographic'),
+  invoke: () => runtimeSetViewerProjection('orthographic'),
 });
 
 registerCommand({
@@ -97,10 +117,7 @@ registerCommand({
   keywords: ['3d', 'walk', 'camera', 'navigate'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => {
-    const state = useBimStore.getState();
-    state.setViewerWalkModeActive(!state.viewerWalkModeActive);
-  },
+  invoke: () => runtimeToggleViewerWalkMode(),
 });
 
 registerCommand({
@@ -109,10 +126,7 @@ registerCommand({
   keywords: ['3d', 'section box', 'clip', 'cut'],
   category: 'command',
   isAvailable: is3dContext,
-  invoke: () => {
-    const state = useBimStore.getState();
-    state.setViewerSectionBoxActive(!state.viewerSectionBoxActive);
-  },
+  invoke: () => runtimeToggleViewerSectionBox(),
 });
 
 registerCommand({
@@ -280,7 +294,7 @@ registerCommand({
   label: 'Reveal Hidden Elements',
   keywords: ['reveal', 'hidden', 'invisible', 'show all'],
   category: 'command',
-  invoke: () => useBimStore.getState().setRevealHiddenMode(true),
+  invoke: () => runtimeSetRevealHiddenMode(true),
 });
 
 registerCommand({
@@ -297,19 +311,12 @@ registerCommand({
   label: 'Toggle Neighborhood Masses',
   keywords: ['neighborhood', 'osm', 'context', 'mass'],
   category: 'command',
-  invoke: () => useBimStore.getState().toggleNeighborhoodMasses(),
+  invoke: () => runtimeToggleNeighborhoodMasses(),
 });
 
 // B7 — Join / Unjoin solid geometry (helpers in plan/joinGeometry.ts)
-const SOLID_JOIN_KINDS = new Set(['wall', 'floor', 'roof', 'ceiling', 'column', 'beam']);
-
 function hasTwoSolidSelection(ctx: PaletteContext): boolean {
-  if (ctx.selectedElementIds.length !== 2) return false;
-  const elems = useBimStore.getState().elementsById;
-  return ctx.selectedElementIds.every((id) => {
-    const el = elems[id];
-    return el != null && SOLID_JOIN_KINDS.has(el.kind);
-  });
+  return runtimeHasTwoSolidSelection(ctx.selectedElementIds);
 }
 
 registerCommand({
@@ -356,8 +363,7 @@ registerCommand({
   label: 'Set Beam Section Profile',
   keywords: ['beam', 'section', 'profile', 'cross-section', 'parametric', 'steel profile'],
   category: 'command',
-  isAvailable: (ctx) =>
-    ctx.selectedElementIds.some((id) => useBimStore.getState().elementsById[id]?.kind === 'beam'),
+  isAvailable: (ctx) => runtimeSelectionAnyKindIs(ctx.selectedElementIds, 'beam'),
   invoke: () => {
     // Set via the beam inspector's Custom Section ID field.
   },
@@ -384,13 +390,7 @@ registerCommand({
   keywords: ['unpin', 'unlock', 'unfix', 'all'],
   category: 'command',
   invoke: (ctx) => {
-    const elems = useBimStore.getState().elementsById;
-    const pinnedIds = Object.values(elems)
-      .filter(
-        (el): el is NonNullable<typeof el> =>
-          el != null && (el as { pinned?: boolean }).pinned === true,
-      )
-      .map((el) => el.id);
+    const pinnedIds = runtimeCollectPinnedElementIds();
     if (pinnedIds.length === 0) return;
     ctx.dispatchCommand?.({ type: 'unpinElements', elementIds: pinnedIds });
   },
@@ -511,15 +511,7 @@ registerCommand({
   invoke: (ctx) => {
     const id = ctx.selectedElementIds[0];
     if (!id) return;
-    const elems = useBimStore.getState().elementsById;
-    const target = elems[id];
-    if (!target) return;
-    const sameKind = Object.values(elems)
-      .filter((el): el is NonNullable<typeof el> => el != null && el.kind === target.kind)
-      .map((el) => el.id);
-    if (sameKind.length === 0) return;
-    const [primary, ...rest] = sameKind;
-    useBimStore.setState({ selectedId: primary, selectedIds: rest });
+    runtimeSelectAllInstancesOfKind(id);
   },
 });
 
@@ -541,15 +533,7 @@ registerCommand({
   keywords: ['ungroup', 'dissolve group', 'UN'],
   category: 'command',
   isAvailable: (ctx) => ctx.selectedElementIds.length === 1,
-  invoke: (_ctx) => {
-    const st = useBimStore.getState();
-    const id = st.selectedId ?? st.selectedIds[0];
-    if (!id) return;
-    const { groupRegistry } = st;
-    if (!groupRegistry.instances[id]) return;
-    const { [id]: _removed, ...remainingInstances } = groupRegistry.instances;
-    st.setGroupRegistry({ ...groupRegistry, instances: remainingInstances });
-  },
+  invoke: (_ctx) => runtimeUngroupSelectedInstance(),
 });
 
 // §4.11 — Tag All by Category
@@ -563,26 +547,10 @@ registerCommand({
       ctx.tagAllByCategory();
       return;
     }
-    const state = useBimStore.getState();
-    const { activeLevelId, activePlanViewId, elementsById } = state;
-    if (!activeLevelId || !activePlanViewId) return;
-    const tags = autoTagElements(
-      Object.values(elementsById).filter((e): e is NonNullable<typeof e> => e != null),
-      activeLevelId,
-    );
-    for (const tag of tags) {
-      if (elementsById[tag.id]) continue;
-      ctx.dispatchCommand?.({
-        type: 'placeTag',
-        id: tag.id,
-        hostElementId: tag.targetElementId,
-        hostViewId: activePlanViewId,
-        positionMm: tag.positionMm,
-        categoryKind: tag.categoryKind,
-        leaderEndMm: tag.leaderEndMm,
-        fields: tag.fields,
-        autoGenerated: true,
-      });
+    const dispatch = runtimeBuildAutoTagsForActivePlan();
+    if (!dispatch) return;
+    for (const command of dispatch.commands) {
+      ctx.dispatchCommand?.(command);
     }
   },
 });
@@ -1012,15 +980,9 @@ registerCommand({
   label: 'Apply Shaft Cut',
   keywords: ['shaft', 'opening', 'void', 'floor', 'cut', 'stair'],
   category: 'command',
-  isAvailable: (ctx) => {
-    const id = ctx.selectedElementIds[0];
-    if (!id) return false;
-    return useBimStore.getState().elementsById[id]?.kind === 'shaft';
-  },
+  isAvailable: (ctx) => runtimeSelectedKindIs(ctx.selectedElementIds, 'shaft'),
   invoke: (ctx) => {
-    const id = ctx.selectedElementIds.find((sid) => {
-      return useBimStore.getState().elementsById[sid]?.kind === 'shaft';
-    });
+    const id = runtimeFindSelectedIdOfKind(ctx.selectedElementIds, 'shaft');
     if (id) ctx.dispatchCommand?.({ type: 'applyShaftCut', shaftId: id, cutFloorIds: [] });
   },
 });
@@ -1043,10 +1005,7 @@ registerCommand({
   label: 'Toggle Select Linked Elements',
   keywords: ['link', 'select linked', 'linked model', 'selection', 'toggle'],
   category: 'command',
-  invoke: () => {
-    const { selectLinkedEnabled, setSelectLinkedEnabled } = useBimStore.getState();
-    setSelectLinkedEnabled(!selectLinkedEnabled);
-  },
+  invoke: () => runtimeToggleSelectLinked(),
 });
 
 // §1.6.2: project template save/load via localStorage
@@ -1107,18 +1066,9 @@ registerCommand({
   label: 'Save to Family Library',
   keywords: ['save family', 'library', 'family library', 'reuse', 'element type'],
   category: 'command',
-  isAvailable: (ctx) =>
-    ctx.selectedElementIds.some((id) =>
-      ['wall_type', 'floor_type', 'roof_type', 'family_definition'].includes(
-        useBimStore.getState().elementsById[id]?.kind ?? '',
-      ),
-    ),
+  isAvailable: (ctx) => runtimeFamilyLibrarySelectionAvailable(ctx.selectedElementIds),
   invoke: (ctx) => {
-    const elementId = ctx.selectedElementIds.find((id) =>
-      ['wall_type', 'floor_type', 'roof_type', 'family_definition'].includes(
-        useBimStore.getState().elementsById[id]?.kind ?? '',
-      ),
-    );
+    const elementId = runtimeFindFamilyLibrarySelection(ctx.selectedElementIds);
     if (elementId) ctx.dispatchCommand?.({ type: 'saveFamilyToLibrary', elementId });
   },
 });
@@ -1213,15 +1163,11 @@ registerCommand({
   category: 'select',
   isAvailable: (ctx) =>
     ctx.selectedElementIds.length === 1 &&
-    useBimStore.getState().elementsById[ctx.selectedElementIds[0]]?.kind === 'group_definition',
+    runtimeSelectedGroupDefinitionAvailable(ctx.selectedElementIds),
   invoke: (ctx) => {
     const id = ctx.selectedElementIds[0];
     if (!id) return;
-    const { groupRegistry } = useBimStore.getState();
-    const def = groupRegistry.definitions[id];
-    if (!def || def.elementIds.length === 0) return;
-    const [primary, ...rest] = def.elementIds;
-    useBimStore.setState({ selectedId: primary, selectedIds: rest });
+    runtimeSelectGroupDefinitionElements(id);
   },
 });
 
