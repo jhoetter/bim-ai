@@ -42,7 +42,7 @@ export function StairInspectorSection({
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
   onDispatchCommand,
-  onSemanticCommand,
+  onSemanticCommand: _onSemanticCommand,
   onDisciplineChange,
 }: StairInspectorSectionProps): JSX.Element {
   const f = (key: string) => t(`inspector.fields.${key}`);

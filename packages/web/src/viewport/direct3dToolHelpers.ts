@@ -19,15 +19,11 @@ import type { MutableRefObject } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import {
-  classifyWallDraftProjection,
-  isDraftPlaneHitOccluded,
   buildLinePreviewPayload,
   buildPolygonPreviewPayload,
   linePreviewToSemanticCommand,
   polygonPreviewToSemanticCommand,
-  projectSceneRayToLevelPlaneMm,
   resolve3dDraftLevel,
-  snapDraftPointToGrid,
   type Authoring3dLinePreviewPayload,
   type Authoring3dSnapKind,
   type WallDraftProjectionClassification,
@@ -45,7 +41,6 @@ import {
 } from './directAuthoringGuards';
 import { projectAlongT } from './wallFaceRadialMenu';
 import {
-  DIRECT_3D_AUTHORING_TOOLS,
   LINE_3D_AUTHORING_TOOLS,
   POLYGON_3D_AUTHORING_TOOLS,
   type Authoring3dOverlayState,
@@ -64,11 +59,8 @@ import {
   activeComponentAssetId,
   activeComponentFamilyTypeId,
   pendingComponentRotationDeg,
-} from '../workspace/authoring/OptionsBar';
-import {
-  flipWallLocationLineSide,
-  snapWallPointToConnectivity,
-} from '../geometry/wallConnectivity';
+} from '../lib/componentPlacementState';
+import { flipWallLocationLineSide } from '../geometry/wallConnectivity';
 import { useBimStore } from '../state/store';
 
 export type WallDraftScreenBasis = {
