@@ -103,7 +103,11 @@ export default defineConfig(({ mode }) => {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('/three/')) return 'vendor-three';
             if (id.includes('/leaflet')) return 'vendor-leaflet';
-            if (id.includes('/jspdf') || id.includes('/html2canvas')) return 'vendor-pdf';
+            // FE-CQ-03 — jspdf is dynamically imported from pdfExporter; let
+            // Rollup carve a per-async-chunk so the bundle is not preloaded
+            // on initial workspace load. html2canvas is still rare enough to
+            // warrant its own slot only when it gets statically referenced.
+            if (id.includes('/html2canvas')) return 'vendor-html2canvas';
             if (id.includes('/i18next') || id.includes('/react-i18next')) return 'vendor-i18n';
             if (id.includes('/cmdk') || id.includes('/fuzzysort')) return 'vendor-command-palette';
             return undefined;

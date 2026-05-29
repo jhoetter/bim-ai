@@ -137,6 +137,7 @@ import {
   activeComponentFamilyTypeId,
 } from './workspace/authoring/OptionsBar';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
+import { Drag3dController } from './viewport/Drag3dController';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import { useSunStore } from './sunStore';
 import {
@@ -155,12 +156,7 @@ import {
   updateSectionBoxHandles,
   type ViewerGdoRuntimeState,
 } from './viewport/ViewportRuntimeHelpers';
-import {
-  buildAxisIndicator,
-  buildGripMeshes,
-  type AxisIndicatorHandle,
-  type GripMeshHandle,
-} from './viewport/grip3dRenderer';
+import { buildGripMeshes, type GripMeshHandle } from './viewport/grip3dRenderer';
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
 import { applyCsgWallFaceMaterialGroups, makeCsgWallMaterial } from './viewport/csgWallMaterial';
@@ -844,38 +840,19 @@ export function Viewport({
       maxRadius: 80,
     });
     cameraRigRef.current = rig;
-    let dragging: 'orbit' | 'pan' | 'grip' | 'tool-draft' | 'section-box' | null = null;
-    let dragMoved = false;
-    let cumulativeDragPx = 0;
-    let inertiaVx = 0;
-    let inertiaVy = 0;
-    const INERTIA_DECAY = 0.92; // smoother Rhino-like glide after release
-    const DRAG_THRESHOLD_PX = 5;
-    let lastX = 0;
-    let lastY = 0;
-    let toolDraftTool: Direct3dAuthoringTool | null = null;
-    let toolDraftStartedLineOnDown = false;
-    let toolDraftConsumedOnDown = false;
+    // REF-CQ-03 — drag/inertia/tool-draft/grip/section-box state lives on
+    // a dedicated controller (`Drag3dController`) so the state machine is
+    // independently unit-testable. Mutable public fields preserve the
+    // closure-driven assignment pattern used by the pointer handlers below.
+    const drag = new Drag3dController();
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
-    /** EDT-03 — active grip drag state, set on grip-pointer-down and cleared on up. */
-    let activeGrip: {
-      descriptor: Grip3dDescriptor;
-      anchorScene: THREE.Vector3;
-      indicator: AxisIndicatorHandle | null;
-      lastDeltaMm: number;
-    } | null = null;
-    let sectionBoxDrag: { face: string; dragPlane: THREE.Plane } | null = null;
     let viewportRenderFrameQueued = false;
     let viewportRenderDisposed = false;
     let lastFrameMs = performance.now();
 
     function shouldAnimateViewport(): boolean {
-      return (
-        walkController.snapshot().active ||
-        dragging !== null ||
-        Math.hypot(inertiaVx, inertiaVy) > 0.06
-      );
+      return walkController.snapshot().active || drag.hasMotion();
     }
 
     function scheduleViewportRender(): void {
@@ -1561,102 +1538,60 @@ export function Viewport({
         return;
       }
       const directToolAtPointer = activeDirect3dTool();
-      if (
+      const shouldTryLevelDatumPick =
         ev.button === 0 &&
         !shouldBypassLevelDatumPickForDirectAuthoring({
           button: ev.button,
           directTool: directToolAtPointer,
           altKey: ev.altKey,
           shiftKey: ev.shiftKey,
-        })
-      ) {
+        });
+      if (shouldTryLevelDatumPick) {
         const levelDatumId = pickLevelDatumId(ev.clientX, ev.clientY);
         if (levelDatumId) {
           const store = useBimStore.getState();
           store.select(levelDatumId);
           store.setActiveLevelId(levelDatumId);
-          dragMoved = false;
-          dragging = null;
+          drag.dragMoved = false;
+          drag.dragging = null;
           ev.preventDefault();
           return;
         }
       }
       if (directToolAtPointer && ev.button === 0 && !ev.altKey && !ev.shiftKey) {
-        const directTool = directToolAtPointer;
-        dragging = 'tool-draft';
-        toolDraftTool = directTool;
-        toolDraftStartedLineOnDown = false;
-        toolDraftConsumedOnDown = false;
-        dragMoved = false;
-        cumulativeDragPx = 0;
-        lastX = ev.clientX;
-        lastY = ev.clientY;
+        drag.beginToolDraft(directToolAtPointer, ev, {
+          lineTools: LINE_3D_AUTHORING_TOOLS,
+          hasLineDraftStart: draftState.lineDraftStart !== null,
+          currentLineDraftTool: () =>
+            (draftState.lineDraftStart as { tool: Direct3dAuthoringTool } | null)?.tool ?? null,
+          handleClick: handle3dDirectToolClick,
+        });
         (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
-        if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !draftState.lineDraftStart) {
-          toolDraftConsumedOnDown = handle3dDirectToolClick(ev.clientX, ev.clientY);
-          const currentDraft = draftState.lineDraftStart as { tool: Direct3dAuthoringTool } | null;
-          toolDraftStartedLineOnDown = currentDraft?.tool === directTool;
-        }
         return;
       }
       // EDT-03 — grip pre-pass. If the pointer is over a grip pickable,
       // start a grip drag instead of an orbit/pan.
-      if (ev.button === 0) {
-        const pre = gripPreRaycast(ev.clientX, ev.clientY);
-        if (pre.hit && pre.descriptor) {
-          const desc = pre.descriptor;
-          // Scene convention: semantic-Y → scene-Z; semantic-Z → scene-Y.
-          const anchorScene = new THREE.Vector3(
-            desc.position.xMm / 1000,
-            desc.position.zMm / 1000,
-            desc.position.yMm / 1000,
-          );
-          const indicator =
-            desc.axis === 'x' || desc.axis === 'y' || desc.axis === 'z'
-              ? buildAxisIndicator(scene, desc.position, desc.axis, 1500)
-              : null;
-          activeGrip = { descriptor: desc, anchorScene, indicator, lastDeltaMm: 0 };
-          dragging = 'grip';
-          dragMoved = false;
-          cumulativeDragPx = 0;
-          lastX = ev.clientX;
-          lastY = ev.clientY;
-          (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
-          return;
-        }
+      if (ev.button === 0 && drag.tryBeginGrip(ev, { scene, gripPreRaycast })) {
+        (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
+        return;
       }
       // §3.1 — section-box face-handle drag.
       if (ev.button === 0 && sectionBoxRef.current?.snapshot().active) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        ndc.set(
-          ((ev.clientX - rect.left) / rect.width) * 2 - 1,
-          -((ev.clientY - rect.top) / rect.height) * 2 + 1,
-        );
-        raycaster.setFromCamera(ndc, camera);
-        const handles = sectionBoxHandleGroupRef.current
-          ? [...sectionBoxHandleGroupRef.current.children]
-          : [];
-        const hits = raycaster.intersectObjects(handles, false);
-        if (hits.length > 0) {
-          const hit = hits[0];
-          const face = hit.object.userData.sectionBoxHandle as string;
-          const normal = sectionBoxFaceAxisNormal(face);
-          const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
-            normal,
-            hit.point.clone(),
-          );
-          sectionBoxDrag = { face, dragPlane };
-          dragging = 'section-box';
-          dragMoved = false;
-          cumulativeDragPx = 0;
-          lastX = ev.clientX;
-          lastY = ev.clientY;
+        const started = drag.tryBeginSectionBoxFace(ev, {
+          renderer,
+          raycaster,
+          ndc,
+          camera,
+          handles: sectionBoxHandleGroupRef.current?.children ?? [],
+          faceAxisNormal: sectionBoxFaceAxisNormal,
+        });
+        if (started) {
           (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
           return;
         }
       }
       if (savedViewLockedRef.current) {
-        dragging = null;
+        drag.dragging = null;
         return;
       }
       const intent = classifyPointer({
@@ -1664,37 +1599,25 @@ export function Viewport({
         altKey: ev.altKey,
         shiftKey: ev.shiftKey,
       });
-      if (intent === 'pan') dragging = 'pan';
-      else if (intent === 'orbit') dragging = 'orbit';
-      else if (ev.button === 0)
-        dragging = 'orbit'; // LMB drag = orbit (trackpad primary)
-      else dragging = null;
-      dragMoved = false;
-      cumulativeDragPx = 0;
-      inertiaVx = 0;
-      inertiaVy = 0;
-      lastX = ev.clientX;
-      lastY = ev.clientY;
+      drag.beginOrbitOrPan(intent, ev);
       (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
     }
 
     function onUp(ev: PointerEvent): void {
-      const wasDragging = dragging;
-      const draftTool = toolDraftTool;
-      const startedLineOnDown = toolDraftStartedLineOnDown;
-      const consumedOnDown = toolDraftConsumedOnDown;
-      dragging = null;
+      const wasDragging = drag.dragging;
+      const draftTool = drag.toolDraftTool;
+      const startedLineOnDown = drag.toolDraftStartedLineOnDown;
+      const consumedOnDown = drag.toolDraftConsumedOnDown;
+      drag.dragging = null;
       scheduleViewportRender();
-      toolDraftTool = null;
-      toolDraftStartedLineOnDown = false;
-      toolDraftConsumedOnDown = false;
+      drag.clearTool();
       try {
         (ev.target as HTMLElement).releasePointerCapture(ev.pointerId);
       } catch {
         /* noop */
       }
       // §14.6 — walkthrough keyframe capture: left click with no drag captures current camera pose.
-      if (!dragMoved && ev.button === 0 && planToolRef.current === 'walkthrough') {
+      if (!drag.dragMoved && ev.button === 0 && planToolRef.current === 'walkthrough') {
         const pose = useBimStore.getState().orbitCameraPoseMm;
         if (pose) {
           const keyframe = {
@@ -1711,23 +1634,16 @@ export function Viewport({
         }
         return;
       }
-      if (wasDragging === 'grip' && activeGrip) {
+      if (wasDragging === 'grip') {
         // EDT-03 — commit the grip drag through the engine bus.
-        const spec = activeGrip.descriptor.onCommit(activeGrip.lastDeltaMm);
-        if (spec) {
-          const dispatch = handleGripCommandRef.current;
-          if (dispatch) dispatch(spec);
-        }
-        activeGrip.indicator?.dispose();
-        activeGrip = null;
+        const spec = drag.commitGrip();
+        if (spec) handleGripCommandRef.current?.(spec);
         return;
       }
       if (wasDragging === 'section-box') {
-        sectionBoxDrag = null;
-        const sb = sectionBoxRef.current;
-        if (sb) {
-          useBimStore.getState().setViewerSectionBoxExtent(sb.getExtent());
-        }
+        drag.commitSectionBoxDrag(sectionBoxRef.current, (extent) =>
+          useBimStore.getState().setViewerSectionBoxExtent(extent),
+        );
         return;
       }
       if (shouldCommitHostedPlacementOnPointerUp({ wasDragging, draftTool })) {
@@ -1736,7 +1652,7 @@ export function Viewport({
       }
       if (
         wasDragging === 'tool-draft' &&
-        dragMoved &&
+        drag.dragMoved &&
         draftTool &&
         LINE_3D_AUTHORING_TOOLS.has(draftTool) &&
         draftState.lineDraftStart?.tool === draftTool
@@ -1744,14 +1660,23 @@ export function Viewport({
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
       }
-      if (!dragMoved && wasDragging === 'tool-draft' && !startedLineOnDown && !consumedOnDown) {
+      if (
+        !drag.dragMoved &&
+        wasDragging === 'tool-draft' &&
+        !startedLineOnDown &&
+        !consumedOnDown
+      ) {
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
       }
-      if (dragMoved && (wasDragging === 'orbit' || wasDragging === 'pan')) {
+      if (drag.dragMoved && (wasDragging === 'orbit' || wasDragging === 'pan')) {
         syncCameraOrientationState(rig.snapshot(), 'immediate');
       }
-      if (!dragMoved && ev.button === 0 && (wasDragging === 'orbit' || wasDragging === 'pan')) {
+      if (
+        !drag.dragMoved &&
+        ev.button === 0 &&
+        (wasDragging === 'orbit' || wasDragging === 'pan')
+      ) {
         pick(ev.clientX, ev.clientY, ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey);
       }
     }
@@ -1762,26 +1687,20 @@ export function Viewport({
       } catch {
         /* noop */
       }
-      if (dragging === 'grip' && activeGrip) {
-        activeGrip.indicator?.dispose();
-        activeGrip = null;
+      if (drag.dragging === 'grip') {
+        drag.clearGrip();
       }
-      if (dragging === 'section-box') {
-        sectionBoxDrag = null;
+      if (drag.dragging === 'section-box') {
+        drag.sectionBoxDrag = null;
       }
-      dragging = null;
-      toolDraftTool = null;
-      toolDraftStartedLineOnDown = false;
-      toolDraftConsumedOnDown = false;
-      dragMoved = false;
-      cumulativeDragPx = 0;
+      drag.clearTransient();
       clearWallDraftPreviewGroup();
       scheduleViewportRender();
     }
 
     function onMove(ev: PointerEvent): void {
       const directTool = activeDirect3dTool();
-      if (dragging || directTool) scheduleViewportRender();
+      if (drag.dragging || directTool) scheduleViewportRender();
       if (
         directTool &&
         (LINE_3D_AUTHORING_TOOLS.has(directTool) ||
@@ -2149,50 +2068,41 @@ export function Viewport({
           }
         }
       }
-      if (!dragging) return;
-      const dx = ev.clientX - lastX;
-      const dy = ev.clientY - lastY;
-      lastX = ev.clientX;
-      lastY = ev.clientY;
-      cumulativeDragPx += Math.hypot(dx, dy);
-      if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
-      if (!dragMoved) return;
-      if (dragging === 'tool-draft') return;
-      if (dragging === 'section-box' && sectionBoxDrag && sectionBoxRef.current) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        ndc.set(
-          ((ev.clientX - rect.left) / rect.width) * 2 - 1,
-          -((ev.clientY - rect.top) / rect.height) * 2 + 1,
-        );
-        raycaster.setFromCamera(ndc, camera);
-        const hitPt = new THREE.Vector3();
-        if (raycaster.ray.intersectPlane(sectionBoxDrag.dragPlane, hitPt)) {
-          const axisKey = sectionBoxFaceAxisKey(sectionBoxDrag.face);
-          sectionBoxRef.current.setExtent({ [sectionBoxDrag.face]: hitPt[axisKey] });
-          if (sectionBoxHandleGroupRef.current) {
-            updateSectionBoxHandles(sectionBoxHandleGroupRef.current, sectionBoxRef.current);
-          }
-        }
+      if (!drag.dragging) return;
+      const { dx, dy, moved } = drag.accumulateMove(ev.clientX, ev.clientY);
+      if (!moved) return;
+      if (drag.dragging === 'tool-draft') return;
+      if (drag.dragging === 'section-box' && sectionBoxRef.current) {
+        drag.updateSectionBoxDrag(ev, {
+          renderer,
+          raycaster,
+          ndc,
+          camera,
+          faceAxisKey: sectionBoxFaceAxisKey,
+          sectionBox: sectionBoxRef.current,
+          onHandlesChanged: () => {
+            if (sectionBoxHandleGroupRef.current && sectionBoxRef.current) {
+              updateSectionBoxHandles(sectionBoxHandleGroupRef.current, sectionBoxRef.current);
+            }
+          },
+        });
         return;
       }
-      if (dragging === 'grip' && activeGrip) {
-        const deltaMm = projectGripDelta(
-          activeGrip.descriptor,
-          ev.clientX,
-          ev.clientY,
-          activeGrip.anchorScene,
-        );
-        activeGrip.lastDeltaMm = deltaMm;
+      if (drag.dragging === 'grip' && drag.activeGrip) {
         // Emit live preview via onDrag so listeners (e.g. property HUD)
         // can show the in-progress value without writing to the store.
-        activeGrip.descriptor.onDrag(deltaMm);
-        activeGrip.indicator?.update(deltaMm);
+        const deltaMm = projectGripDelta(
+          drag.activeGrip.descriptor,
+          ev.clientX,
+          ev.clientY,
+          drag.activeGrip.anchorScene,
+        );
+        drag.applyGripDelta(deltaMm);
         return;
       }
-      if (dragging === 'orbit') {
+      if (drag.dragging === 'orbit') {
         rig.orbit(dx, dy);
-        inertiaVx = dx;
-        inertiaVy = dy;
+        drag.recordOrbitVelocity(dx, dy);
       } else {
         rig.pan(dx, dy);
       }
@@ -2636,10 +2546,9 @@ export function Viewport({
       }
 
       // Orbit inertia: continue rotating after mouse release, decaying to stop
-      if (!dragging && Math.hypot(inertiaVx, inertiaVy) > 0.06) {
-        rig.orbit(inertiaVx, inertiaVy);
-        inertiaVx *= INERTIA_DECAY;
-        inertiaVy *= INERTIA_DECAY;
+      if (!drag.dragging && drag.inertiaSpeed() > 0.06) {
+        rig.orbit(drag.inertiaVx, drag.inertiaVy);
+        drag.tickInertia();
         placeCamera();
       }
 
