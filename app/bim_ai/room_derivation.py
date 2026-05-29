@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import itertools
 import json
 import math
 from collections import OrderedDict, defaultdict
@@ -423,6 +422,178 @@ def room_separation_axis_summary_v0_payload(
         "onAuthoritativePerimeterCount": len(auth_perim & sep_ids),
         "interiorPierceCount": len(interior & sep_ids),
     }
+
+
+def _corner_candidates(
+    hsegs: list[AxisSeg],
+    vsegs: list[AxisSeg],
+) -> Iterator[tuple[tuple[AxisSeg, AxisSeg], tuple[AxisSeg, AxisSeg]]]:
+    """PERF-CQ-01: pre-index horizontal/vertical segments by canonical
+    coordinate and yield only ``(h_pair, v_pair)`` quads that close a
+    rectangle.
+
+    The legacy enumeration in :func:`_compute_room_boundary_derivation_uncached`
+    walked ``combinations(hsegs, 2) × combinations(vsegs, 2)`` and let
+    :func:`quad_closes_rectangle` reject the vast majority. On the
+    ``room_stress`` fixture that fired ~3M closure tests; this index
+    narrows the iteration to quads that actually pass closure.
+
+    Algorithm:
+
+      1. Bucket h-segs by canonical Y, v-segs by canonical X.
+      2. For each (y_lo < y_hi) × (x_lo < x_hi) candidate rectangle,
+         collect ``H_lo``, ``H_hi``, ``V_lo``, ``V_hi`` — the segs at
+         each edge whose extent spans the rectangle within
+         ``tol = _SNAP_MM * 1.4``.
+      3. Emit every ``(h_pair, v_pair)`` such that h-pair ∈
+         ``combinations(H_lo ∪ H_hi, 2)`` and v-pair ∈
+         ``combinations(V_lo ∪ V_hi, 2)``, **filtered** to combos that
+         close the rectangle.
+
+    Closure constraint (matches the existing
+    :func:`quad_closes_rectangle` semantics): the 8 endpoints reduce to
+    exactly 4 corner points iff EITHER the h-pair contains one seg from
+    each of ``H_lo`` and ``H_hi`` (so the h-pair spans both y-lines)
+    OR the v-pair contains one seg from each of ``V_lo`` and ``V_hi``
+    (so the v-pair spans both x-lines). When neither holds, the 4 segs
+    cover at most 3 of the 4 corners and the quad fails closure — so
+    we skip these combinations rather than discovering the failure
+    inside the closure test.
+
+    Candidate-rectangle xs/ys are sourced from the v-x and h-y buckets
+    respectively. h-seg endpoint xs are guaranteed to align with v-x
+    bucket keys whenever a closing quad exists — the closure check in
+    :func:`quad_closes_rectangle` requires each h-seg endpoint to
+    coincide with ``x_lo`` / ``x_hi`` within ``tol``, and every coord
+    upstream of the helper is already snapped via
+    :func:`axis_aligned_wall_segment` /
+    :func:`axis_aligned_room_separation_segment`.
+    """
+
+    if len(hsegs) < 2 or len(vsegs) < 2:
+        return
+
+    tol = _SNAP_MM * 1.4
+
+    h_by_y: defaultdict[float, list[AxisSeg]] = defaultdict(list)
+    for h in hsegs:
+        h_by_y[h[1]].append(h)
+    v_by_x: defaultdict[float, list[AxisSeg]] = defaultdict(list)
+    for v in vsegs:
+        v_by_x[v[1]].append(v)
+
+    ys = sorted(h_by_y.keys())
+    xs = sorted(v_by_x.keys())
+    if len(ys) < 2 or len(xs) < 2:
+        return
+
+    for i in range(len(ys)):
+        y_lo = ys[i]
+        h_lo_bucket = h_by_y[y_lo]
+        for j in range(i + 1, len(ys)):
+            y_hi = ys[j]
+            h_hi_bucket = h_by_y[y_hi]
+
+            for ki in range(len(xs)):
+                x_lo = xs[ki]
+                v_lo_bucket_full = v_by_x[x_lo]
+                v_lo_matches = [
+                    v
+                    for v in v_lo_bucket_full
+                    if abs(v[2] - y_lo) <= tol and abs(v[3] - y_hi) <= tol
+                ]
+
+                for kj in range(ki + 1, len(xs)):
+                    x_hi = xs[kj]
+
+                    h_lo_matches = [
+                        h
+                        for h in h_lo_bucket
+                        if abs(h[2] - x_lo) <= tol and abs(h[3] - x_hi) <= tol
+                    ]
+                    h_hi_matches = [
+                        h
+                        for h in h_hi_bucket
+                        if abs(h[2] - x_lo) <= tol and abs(h[3] - x_hi) <= tol
+                    ]
+                    v_hi_bucket_full = v_by_x[x_hi]
+                    v_hi_matches = [
+                        v
+                        for v in v_hi_bucket_full
+                        if abs(v[2] - y_lo) <= tol and abs(v[3] - y_hi) <= tol
+                    ]
+
+                    h_lo_n = len(h_lo_matches)
+                    h_hi_n = len(h_hi_matches)
+                    v_lo_n = len(v_lo_matches)
+                    v_hi_n = len(v_hi_matches)
+                    h_total = h_lo_n + h_hi_n
+                    v_total = v_lo_n + v_hi_n
+                    if h_total < 2 or v_total < 2:
+                        continue
+
+                    case_a = h_lo_n >= 1 and h_hi_n >= 1
+                    case_b = v_lo_n >= 1 and v_hi_n >= 1
+                    if not (case_a or case_b):
+                        continue
+
+                    # Decompose the emission by "h-pair spans both
+                    # y-lines" (cross) vs "h-pair is in only one y
+                    # bucket" (same-y), and the v-pair mirror. Closure
+                    # requires that AT LEAST ONE of the pairs is
+                    # "cross". This decomposition skips the degenerate
+                    # (same-y, same-x) quad that would otherwise be
+                    # emitted and rejected by `quad_closes_rectangle`
+                    # for collapsing to 3 unique corner points.
+
+                    # 1) h-pair cross × v-pair anything.
+                    if case_a:
+                        for h_lo in h_lo_matches:
+                            for h_hi in h_hi_matches:
+                                h_pair = (h_lo, h_hi)
+                                # v-pair cross (one V_lo + one V_hi)
+                                if case_b:
+                                    for v_lo in v_lo_matches:
+                                        for v_hi in v_hi_matches:
+                                            yield h_pair, (v_lo, v_hi)
+                                # v-pair both V_lo
+                                if v_lo_n >= 2:
+                                    for vi_a in range(v_lo_n):
+                                        for vi_b in range(vi_a + 1, v_lo_n):
+                                            yield h_pair, (
+                                                v_lo_matches[vi_a],
+                                                v_lo_matches[vi_b],
+                                            )
+                                # v-pair both V_hi
+                                if v_hi_n >= 2:
+                                    for vi_a in range(v_hi_n):
+                                        for vi_b in range(vi_a + 1, v_hi_n):
+                                            yield h_pair, (
+                                                v_hi_matches[vi_a],
+                                                v_hi_matches[vi_b],
+                                            )
+
+                    # 2) h-pair same-y × v-pair cross. (h-pair cross
+                    # was handled in branch 1 above; emit only the
+                    # cases where h-pair is single-line and the v-pair
+                    # supplies both x-lines.)
+                    if case_b:
+                        # h-pair both H_lo
+                        if h_lo_n >= 2:
+                            for hi_a in range(h_lo_n):
+                                for hi_b in range(hi_a + 1, h_lo_n):
+                                    h_pair = (h_lo_matches[hi_a], h_lo_matches[hi_b])
+                                    for v_lo in v_lo_matches:
+                                        for v_hi in v_hi_matches:
+                                            yield h_pair, (v_lo, v_hi)
+                        # h-pair both H_hi
+                        if h_hi_n >= 2:
+                            for hi_a in range(h_hi_n):
+                                for hi_b in range(hi_a + 1, h_hi_n):
+                                    h_pair = (h_hi_matches[hi_a], h_hi_matches[hi_b])
+                                    for v_lo in v_lo_matches:
+                                        for v_hi in v_hi_matches:
+                                            yield h_pair, (v_lo, v_hi)
 
 
 def quad_closes_rectangle(
@@ -902,46 +1073,51 @@ def _compute_room_boundary_derivation_uncached(doc: Document) -> dict[str, Any]:
         inset_mm = _inset_cache[lid]
         hsegs = [s for s in seglist if s[0] == "h"]
         vsegs = [s for s in seglist if s[0] == "v"]
-        for h_pair in itertools.combinations(hsegs, 2):
-            for v_pair in itertools.combinations(vsegs, 2):
-                qs = quad_closes_rectangle((h_pair[0], h_pair[1], v_pair[0], v_pair[1]))
-                if not qs:
-                    continue
-                original_bbox = dict(qs.get("bboxMm") or {})
-                qs["levelId"] = lid
-                qs["levelName"] = lvl_names.get(lid, lid)
-                if lid not in _volume_height_cache:
-                    _volume_height_cache[lid] = _room_volume_height_mm_for_level(doc, lid)
-                if lid not in _volume_inset_cache:
-                    _volume_inset_cache[lid] = (
-                        _avg_wall_half_thickness_mm_for_level(doc, lid)
-                        if _volume_basis == "core_faces"
-                        else 0.0
-                    )
-                volume_area_m2 = _bbox_area_m2_with_inset(original_bbox, _volume_inset_cache[lid])
-                qs["volumeComputedAt"] = _volume_basis
-                qs["volumeAreaInsetMm"] = round(_volume_inset_cache[lid], 4)
-                qs["approxVolumeM3"] = round(
-                    volume_area_m2 * (_volume_height_cache[lid] / 1000.0),
-                    4,
+        # PERF-CQ-01: pre-index horizontal/vertical segments by canonical
+        # coordinate via :func:`_corner_candidates` so we only consult
+        # quads whose segs span a shared rectangle. The legacy
+        # enumeration walked the full Cartesian product
+        # (`combinations(hsegs, 2) × combinations(vsegs, 2)`) and let
+        # :func:`quad_closes_rectangle` reject ~99% of pairs.
+        for h_pair, v_pair in _corner_candidates(hsegs, vsegs):
+            qs = quad_closes_rectangle((h_pair[0], h_pair[1], v_pair[0], v_pair[1]))
+            if not qs:
+                continue
+            original_bbox = dict(qs.get("bboxMm") or {})
+            qs["levelId"] = lid
+            qs["levelName"] = lvl_names.get(lid, lid)
+            if lid not in _volume_height_cache:
+                _volume_height_cache[lid] = _room_volume_height_mm_for_level(doc, lid)
+            if lid not in _volume_inset_cache:
+                _volume_inset_cache[lid] = (
+                    _avg_wall_half_thickness_mm_for_level(doc, lid)
+                    if _volume_basis == "core_faces"
+                    else 0.0
                 )
-                if inset_mm > 0.0:
-                    bbox = qs.get("bboxMm") or {}
-                    mn = bbox.get("min") or {}
-                    mx = bbox.get("max") or {}
-                    x_lo = float(mn.get("x") or 0) + inset_mm
-                    y_lo = float(mn.get("y") or 0) + inset_mm
-                    x_hi = float(mx.get("x") or 0) - inset_mm
-                    y_hi = float(mx.get("y") or 0) - inset_mm
-                    qs["bboxMm"] = {
-                        "min": {"x": x_lo, "y": y_lo},
-                        "max": {"x": x_hi, "y": y_hi},
-                    }
-                    area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
-                    qs["approxAreaM2"] = round(area_m2, 4)
-                    qs["roomAreaComputationBasis"] = _area_basis
-                    qs["roomAreaInsetMm"] = round(inset_mm, 4)
-                candidates.append(qs)
+            volume_area_m2 = _bbox_area_m2_with_inset(original_bbox, _volume_inset_cache[lid])
+            qs["volumeComputedAt"] = _volume_basis
+            qs["volumeAreaInsetMm"] = round(_volume_inset_cache[lid], 4)
+            qs["approxVolumeM3"] = round(
+                volume_area_m2 * (_volume_height_cache[lid] / 1000.0),
+                4,
+            )
+            if inset_mm > 0.0:
+                bbox = qs.get("bboxMm") or {}
+                mn = bbox.get("min") or {}
+                mx = bbox.get("max") or {}
+                x_lo = float(mn.get("x") or 0) + inset_mm
+                y_lo = float(mn.get("y") or 0) + inset_mm
+                x_hi = float(mx.get("x") or 0) - inset_mm
+                y_hi = float(mx.get("y") or 0) - inset_mm
+                qs["bboxMm"] = {
+                    "min": {"x": x_lo, "y": y_lo},
+                    "max": {"x": x_hi, "y": y_hi},
+                }
+                area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
+                qs["approxAreaM2"] = round(area_m2, 4)
+                qs["roomAreaComputationBasis"] = _area_basis
+                qs["roomAreaInsetMm"] = round(inset_mm, 4)
+            candidates.append(qs)
 
     def _sig(cand: dict[str, Any]) -> tuple:
         b = cand.get("bboxMm") or {}

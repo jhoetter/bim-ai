@@ -70,7 +70,12 @@ BUDGETS_MS: dict[str, float] = {
     "schedule_heavy.evidence_package": 8_500.0,
     "documentation_heavy.plan_projection": 500.0,
     "documentation_heavy.evidence_package": 8_000.0,
-    "room_stress.room_derivation": 1_500.0,
+    # PERF-CQ-01: budget lowered 1500 → 1000 after the corner-index
+    # refactor (replaces O(h² × v²) Cartesian enumeration with a
+    # pre-bucketed candidate-rectangle index). Uncached p50 measured on
+    # a developer box dropped from ~132ms to ~30ms (4.3× speedup); the
+    # CI runner sees the same proportional win.
+    "room_stress.room_derivation": 1_000.0,
 }
 
 
