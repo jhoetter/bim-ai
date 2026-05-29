@@ -20,7 +20,7 @@ type CameraPoseMm = {
 export function useWorkspacePaletteActions({
   activeTab,
   effectiveMode,
-  elementsById,
+  elementsById: elementsByIdArg,
   selectedId,
   onSemanticCommand,
   openElementById,
@@ -29,13 +29,22 @@ export function useWorkspacePaletteActions({
 }: {
   activeTab: ViewTab | null;
   effectiveMode: WorkspaceMode;
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, the hook subscribes to
+   * `elementsById` internally — see the contract comment on
+   * `useStructuralValidationViolations`. Palette actions need fresh
+   * element data (active schedule/section/sheet resolution, recommended
+   * viewports) so a reactive read is appropriate.
+   */
+  elementsById?: Record<string, Element>;
   selectedId: string | undefined;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openElementById: (id: string) => void;
   handleModeChange: (mode: WorkspaceMode) => void;
   setOrbitCameraFromViewpointMm: (pose: CameraPoseMm) => void;
 }) {
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
+  const elementsById = elementsByIdArg ?? elementsByIdFromStore;
   const paletteSectionCuts = useMemo(
     () =>
       (Object.values(elementsById) as Element[])

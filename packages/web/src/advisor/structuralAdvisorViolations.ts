@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 
 import type { Element, Violation } from '@bim-ai/core';
 
+import { useBimStore } from '../state/store';
 import { type ValidationIssue, runStructuralValidation } from '../plan/structuralValidation';
 
 const RULE_ID_PREFIX = 'structural_authoring';
@@ -51,12 +52,24 @@ export function validationIssuesToViolations(issues: ValidationIssue[]): Violati
  * changes and returns the resulting violations in the Advisor-compatible
  * format. Pass the result to `mergeAdvisorViolations` alongside server
  * violations.
+ *
+ * FE-CQ-01-followup: when called with no argument, the hook subscribes
+ * to `elementsById` internally via `useBimStore` so callers (notably
+ * `Workspace.tsx`) no longer need a broad subscription of their own.
+ * The subscription still triggers a re-render of the caller on every
+ * authoring delta — that's the legitimate broad-reactive case for
+ * structural validation (the advisor count must update as elements
+ * change). See `spec/methodology/render-ownership.md` for the contract.
  */
 export function useStructuralValidationViolations(
-  elementsById: Record<string, Element>,
+  elementsById?: Record<string, Element>,
 ): Violation[] {
+  // Falling back to the store keeps the broad subscription co-located
+  // with the consumer that actually needs reactivity.
+  const fromStore = useBimStore((s) => s.elementsById);
+  const source = elementsById ?? fromStore;
   return useMemo(() => {
-    const issues = runStructuralValidation(elementsById);
+    const issues = runStructuralValidation(source);
     return validationIssuesToViolations(issues);
-  }, [elementsById]);
+  }, [source]);
 }

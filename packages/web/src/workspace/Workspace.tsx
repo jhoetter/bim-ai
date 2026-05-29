@@ -36,6 +36,7 @@ import {
   type Theme,
 } from '../state/store';
 import { useRenderCount } from '../state/renderCountProbe';
+import { useElementsByIdRef } from '../state/elementsByIdRef';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import {
   loadSnapSettings,
@@ -176,18 +177,28 @@ export function Workspace(): JSX.Element {
   useRenderCount('Workspace');
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
-  const elementsById = useBimStore((s) => s.elementsById);
+  // FE-CQ-01-followup: the broad `elementsById` subscription that lived
+  // here is gone. Inline lookups now go through `elementsByIdRef.current`
+  // (vanilla store subscription — never triggers a Workspace re-render)
+  // or `useBimStore.getState().elementsById` (one-shot read inside event
+  // handlers / callbacks). The hooks that genuinely need broad
+  // reactivity (`useStructuralValidationViolations`,
+  // `useMaterialBrowserState`, `useWorkspaceDefaultTab`,
+  // `useWorkspaceCreateViews`, `useWorkspacePaletteActions`) and the
+  // downstream consumers (`WorkspaceOverlays`, `WorkspacePaneNode`)
+  // now subscribe internally — Workspace.tsx itself no longer holds a
+  // `useBimStore((s) => s.elementsById)` subscription. See
+  // `spec/methodology/render-ownership.md`.
+  const elementsByIdRef = useElementsByIdRef();
   // PERF-G03: the storeModelRuntimeSlice + installModelIndicesInvariant
   // subscriber (store.ts) keeps `modelIndices` in lockstep with every
   // elementsById write — including the filter / category-override
   // writers in storeViewportRuntimeSlice. So downstream useMemos keyed
   // on narrow modelIndices fields stay correct through filter writes
-  // and only recompute when the specific slice changes. The line-202
-  // broad subscription remains for inline `elementsById[id]` lookups
-  // (selectedId resolve, drop-target resolve, etc.) — those are still
-  // reactive on the broad ref. Narrow consumers below were the explicit
-  // G03 finishing items (commandPaletteEntities, palettePlanTemplates,
-  // showEmptyState, projectNorthAngleDeg, project_settings derivations).
+  // and only recompute when the specific slice changes. Narrow
+  // consumers below were the explicit G03 finishing items
+  // (commandPaletteEntities, palettePlanTemplates, showEmptyState,
+  // projectNorthAngleDeg, project_settings derivations).
   const modelSheets = useBimStore((s) => s.modelIndices.sheets);
   const modelLevels = useBimStore((s) => s.modelIndices.levels);
   const modelWalls = useBimStore((s) => s.modelIndices.walls);
@@ -248,7 +259,11 @@ export function Workspace(): JSX.Element {
   const presenceLocalUserId = usePresenceStore((s) => s.localUserId);
   const presenceSetParticipants = usePresenceStore((s) => s.setParticipants);
   const presenceSetLocalUserId = usePresenceStore((s) => s.setLocalUserId);
-  const structuralViolations = useStructuralValidationViolations(elementsById);
+  // FE-CQ-01-followup: hook subscribes internally to `elementsById` — see
+  // `structuralAdvisorViolations.ts`. This is the one legitimate broad
+  // reactive case in the Workspace render path (advisor counts must
+  // update as elements change).
+  const structuralViolations = useStructuralValidationViolations();
   const { violations: unifiedAdvisorViolationsBase } = useUnifiedAdvisorViolations(
     violations,
     modelId,
@@ -484,13 +499,16 @@ export function Workspace(): JSX.Element {
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
 
-  // §1.6.1: derive active plan view display name for document.title and breadcrumb
+  // §1.6.1: derive active plan view display name for document.title and breadcrumb.
+  // FE-CQ-01-followup: keyed on `activePlanViewId` only — `modelPlanViews`
+  // (narrow modelIndices selector above) is the reactive source that
+  // already churns when plan views change, and the ref read is a stable
+  // snapshot under the same selector.
   const activePlanViewName = useMemo(() => {
     if (!activePlanViewId) return undefined;
-    const pv = elementsById[activePlanViewId];
-    if (!pv || pv.kind !== 'plan_view') return undefined;
-    return (pv as Extract<Element, { kind: 'plan_view' }>).name;
-  }, [activePlanViewId, elementsById]);
+    const pv = modelPlanViews.find((p) => p.id === activePlanViewId);
+    return pv?.name;
+  }, [activePlanViewId, modelPlanViews]);
 
   // §1.6.1: update browser tab title to "ProjectName — ViewName"
   useEffect(() => {
@@ -678,7 +696,9 @@ export function Workspace(): JSX.Element {
         // returned; updating Zustand inside the updater trips React's
         // setState-during-render warning for subscribed children.
         if (incomingTab?.kind === 'plan' && incomingTab.targetId) {
-          const target = elementsById[incomingTab.targetId];
+          // FE-CQ-01-followup: one-shot getState read in a deferred
+          // callback — no subscription, no re-render dependency.
+          const target = useBimStore.getState().elementsById[incomingTab.targetId];
           if (target?.kind === 'plan_view') {
             activatePlanView(target.id);
           } else if (target?.kind === 'level') {
@@ -699,7 +719,6 @@ export function Workspace(): JSX.Element {
     [
       activatePlanView,
       compositionState.activeId,
-      elementsById,
       markCompositionLoading,
       runAfterLoadingPaint,
       setActiveLevelId,
@@ -795,7 +814,9 @@ export function Workspace(): JSX.Element {
       direction?: PaneSplitDirection,
     ): void => {
       if (!elementId) return;
-      const element = elementsById[elementId];
+      // FE-CQ-01-followup: one-shot getState read in a callback — no
+      // subscription, no dep churn.
+      const element = useBimStore.getState().elementsById[elementId];
       if (!element) return;
       const partial = tabFromElement(element);
       if (!partial) return;
@@ -825,7 +846,7 @@ export function Workspace(): JSX.Element {
       activateDroppedView(tab);
       setDraggingViewElementId(null);
     },
-    [activateDroppedView, elementsById, lensMode, paneLayout.root, tabsState],
+    [activateDroppedView, lensMode, paneLayout.root, tabsState],
   );
 
   const {
@@ -891,7 +912,6 @@ export function Workspace(): JSX.Element {
     checkHeadHeightClearances,
     computeShaftCutFloors,
     createSimilarPayload,
-    elementsById,
     equalizeWitnessSpacing,
     generateCurtainWallsFromMass,
     generateFloorsFromMass,
@@ -1057,8 +1077,9 @@ export function Workspace(): JSX.Element {
   );
 
   useWorkspaceDefaultTab({
+    // FE-CQ-01-followup: `elementsById` omitted — hook subscribes
+    // internally. See `useWorkspaceDefaultTab.ts`.
     modelId,
-    elementsById,
     activeLevelId,
     setTabsState,
     setMode,
@@ -1076,13 +1097,19 @@ export function Workspace(): JSX.Element {
       else if (next === '3d') setViewerMode('orbit_3d');
       // Activate or open a tab of the matching kind so the canvas
       // mounts the right view.
+      // FE-CQ-01-followup: one-shot getState read inside the setTabsState
+      // updater — no subscription, no dep churn.
       setTabsState((s) => {
-        const fallback = defaultTabFallbackForKind(next, elementsById, activeLevelId);
+        const fallback = defaultTabFallbackForKind(
+          next,
+          useBimStore.getState().elementsById,
+          activeLevelId,
+        );
         if (!fallback) return s;
         return activateOrOpenKind(s, next as TabKind, fallback);
       });
     },
-    [setViewerMode, elementsById, activeLevelId],
+    [setViewerMode, activeLevelId],
   );
 
   /**
@@ -1138,11 +1165,16 @@ export function Workspace(): JSX.Element {
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
 
   /* ── Debug: browser rendering budget (debounced, threshold warnings) ─ */
+  // FE-CQ-01-followup: the readout consumes `elementsById` but the effect
+  // only fires after a 2s debounce, so it reads the latest snapshot at
+  // fire time via `getState()`. Trigger when `planProjectionPrimitives`
+  // changes (the actual signal this readout cares about); the snapshot
+  // captured at timer-fire time is always fresh.
   useEffect(() => {
     if (budgetTimerRef.current) clearTimeout(budgetTimerRef.current);
     budgetTimerRef.current = setTimeout(() => {
       const readout = buildBrowserRenderingBudgetReadoutV1({
-        elementsById,
+        elementsById: useBimStore.getState().elementsById,
         planProjectionPrimitives,
         scheduleHydratedRowCount: null,
         scheduleHydratedTab: null,
@@ -1165,14 +1197,17 @@ export function Workspace(): JSX.Element {
     return () => {
       if (budgetTimerRef.current) clearTimeout(budgetTimerRef.current);
     };
-  }, [elementsById, planProjectionPrimitives]);
+  }, [planProjectionPrimitives]);
 
   /* ── Debug: selected element dump (dev only) ─────────────────────── */
+  // FE-CQ-01-followup: keyed only on `selectedId` — the element snapshot
+  // is read fresh from the ref-mirror at effect-fire time, no broad
+  // subscription dep needed.
   useEffect(() => {
     if (!import.meta.env.DEV || import.meta.env.MODE === 'test' || !selectedId) return;
-    const el = elementsById[selectedId];
+    const el = elementsByIdRef.current[selectedId];
     if (el) console.debug('[bim] selected element:', el);
-  }, [selectedId, elementsById]);
+  }, [selectedId, elementsByIdRef]);
 
   /* ── Status bar wiring ────────────────────────────────────────────── */
   const levels = useMemo(
@@ -1182,7 +1217,10 @@ export function Workspace(): JSX.Element {
   const activeLevel = levels.find((l) => l.id === activeLevelId) ??
     levels[0] ?? { id: '', label: '—' };
   const cursorMm = planHudMm ? { xMm: planHudMm.xMm, yMm: planHudMm.yMm } : null;
-  const driftCount = useMemo(() => selectDriftedElements(elementsById).length, [elementsById]);
+  // FE-CQ-01-followup: narrow selector returning a primitive — Zustand
+  // re-fires only when the count itself changes, not on every
+  // unrelated elementsById delta.
+  const driftCount = useBimStore((s) => selectDriftedElements(s.elementsById).length);
   const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
   const snapModes = useMemo(
     () =>
@@ -1239,8 +1277,9 @@ export function Workspace(): JSX.Element {
     assignMaterialToTarget,
     clearActiveMaterialBrowserTarget,
   } = useMaterialBrowserState({
+    // FE-CQ-01-followup: `elementsById` omitted — hook subscribes
+    // internally. See `useMaterialBrowserState.ts`.
     selectedId,
-    elementsById,
     onSemanticCommand,
   });
 
@@ -1327,8 +1366,11 @@ export function Workspace(): JSX.Element {
   );
   const openElementById = useCallback(
     (id: string) => {
-      const liveElements = useBimStore.getState().elementsById as Record<string, Element>;
-      const el = liveElements[id] ?? (elementsById as Record<string, Element>)[id];
+      // FE-CQ-01-followup: one-shot getState read in a callback — no
+      // subscription, no fallback needed. Previously the read fell back
+      // to the broad `elementsById` subscription; the store is always
+      // the canonical source.
+      const el = useBimStore.getState().elementsById[id] as Element | undefined;
       if (!el) return;
       openTabFromElement(el);
       if (el.kind === 'level') {
@@ -1429,7 +1471,7 @@ export function Workspace(): JSX.Element {
         setRightRailOverride('open');
       }
     },
-    [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
+    [activatePlanView, openTabFromElement, setActiveLevelId, setViewerMode],
   );
 
   // Iter-11 capture toolchain hook (see spec/trackers/testhouse-visual-fidelity-tracker.md
@@ -1449,11 +1491,15 @@ export function Workspace(): JSX.Element {
     const viewpointId = params.get('activeViewpoint');
     const targetId = elevationId ?? planId ?? viewpointId;
     if (!targetId) return;
-    if (!elementsById[targetId]) return;
+    // FE-CQ-01-followup: one-shot getState read — `modelId` / `revision`
+    // are the reactive triggers for "the snapshot just hydrated", so we
+    // re-fire the effect when those change and read elementsById once
+    // at fire time rather than subscribing broadly.
+    if (!useBimStore.getState().elementsById[targetId]) return;
     urlViewActivatedRef.current = true;
     openElementById(targetId);
     if (elevationId) useBimStore.getState().activateElevationView(elevationId);
-  }, [elementsById, openElementById]);
+  }, [modelId, revision, openElementById]);
 
   // MF-render-3 (#27): honor ``?renderStyle=<shaded|wireframe|hidden-line|…>``
   // on mount so the reverse-BIM capture runner can deep-link into a specific
@@ -1504,9 +1550,10 @@ export function Workspace(): JSX.Element {
     createSheetView,
     createScheduleView,
   } = useWorkspaceCreateViews({
+    // FE-CQ-01-followup: `elementsById` omitted — hook subscribes
+    // internally. See `useWorkspaceCreateViews.ts`.
     activePlanViewId,
     activeViewpointId,
-    elementsById,
     onSemanticCommand,
     openElementById,
     orbitCameraPoseMm,
@@ -1538,9 +1585,10 @@ export function Workspace(): JSX.Element {
     adjustActiveSectionCropDepth,
     openScheduleControls,
   } = useWorkspacePaletteActions({
+    // FE-CQ-01-followup: `elementsById` omitted — hook subscribes
+    // internally. See `useWorkspacePaletteActions.ts`.
     activeTab,
     effectiveMode,
-    elementsById,
     selectedId,
     onSemanticCommand,
     openElementById,
@@ -1589,7 +1637,9 @@ export function Workspace(): JSX.Element {
   }, [orbitCameraPoseMm]);
   const resetActiveSavedViewpoint = useCallback(() => {
     if (!activeViewpointId) return;
-    const viewpoint = elementsById[activeViewpointId];
+    // FE-CQ-01-followup: one-shot getState read in a callback — no
+    // subscription dep needed.
+    const viewpoint = useBimStore.getState().elementsById[activeViewpointId];
     if (viewpoint?.kind !== 'viewpoint' || viewpoint.mode !== 'orbit_3d' || !viewpoint.camera) {
       return;
     }
@@ -1603,10 +1653,12 @@ export function Workspace(): JSX.Element {
       floorElevMm: viewpoint.viewerClipFloorElevMm,
       hideSemanticKinds: viewpoint.hiddenSemanticKinds3d,
     });
-  }, [activeViewpointId, applyOrbitViewpointPreset, elementsById, setOrbitCameraFromViewpointMm]);
+  }, [activeViewpointId, applyOrbitViewpointPreset, setOrbitCameraFromViewpointMm]);
   const updateActiveSavedViewpoint = useCallback(() => {
     if (!activeViewpointId) return;
-    const viewpoint = elementsById[activeViewpointId];
+    // FE-CQ-01-followup: one-shot getState read in a callback — no
+    // subscription dep needed.
+    const viewpoint = useBimStore.getState().elementsById[activeViewpointId];
     if (viewpoint?.kind !== 'viewpoint' || viewpoint.mode !== 'orbit_3d') return;
     if (orbitCameraPoseMm) {
       void onSemanticCommand({
@@ -1638,7 +1690,6 @@ export function Workspace(): JSX.Element {
     });
   }, [
     activeViewpointId,
-    elementsById,
     onSemanticCommand,
     orbitCameraPoseMm,
     viewerCategoryHidden,
@@ -1701,7 +1752,10 @@ export function Workspace(): JSX.Element {
         return leafId;
       }
 
-      const fallback = defaultTabFallbackForKind('plan', elementsById, activeLevelId);
+      // FE-CQ-01-followup: one-shot getState read inside the callback —
+      // no subscription, no dep churn.
+      const liveElementsById = useBimStore.getState().elementsById;
+      const fallback = defaultTabFallbackForKind('plan', liveElementsById, activeLevelId);
       if (!fallback) return leafId;
       const tabId = tabIdFor('plan', fallback.targetId);
       const tab: ViewTab = {
@@ -1715,7 +1769,7 @@ export function Workspace(): JSX.Element {
       setPaneLayout((layout) => focusPane(assignTabToPane(layout, leafId, tabId), leafId));
       setMode('plan');
       setViewerMode('plan_canvas');
-      const target = fallback.targetId ? elementsById[fallback.targetId] : undefined;
+      const target = fallback.targetId ? liveElementsById[fallback.targetId] : undefined;
       if (target?.kind === 'plan_view') {
         activatePlanView(target.id);
       } else if (target?.kind === 'level') {
@@ -1727,7 +1781,6 @@ export function Workspace(): JSX.Element {
     [
       activatePlanView,
       activeLevelId,
-      elementsById,
       lensMode,
       paneLayout.focusedLeafId,
       paneLayout.root,
@@ -1778,9 +1831,12 @@ export function Workspace(): JSX.Element {
         return null;
       }
       if (!modelId) return null;
-      const loadPlan = planCatalogFamilyLoad(placement, elementsById, { overwriteOption });
+      // FE-CQ-01-followup: one-shot getState read in an async callback —
+      // no subscription, no dep churn.
+      const liveElementsById = useBimStore.getState().elementsById;
+      const loadPlan = planCatalogFamilyLoad(placement, liveElementsById, { overwriteOption });
       const assetEntry = shouldPlaceCatalogFamilyAsAsset(placement) ? placement.assetEntry : null;
-      const existingAsset = assetEntry ? elementsById[assetEntry.id] : undefined;
+      const existingAsset = assetEntry ? liveElementsById[assetEntry.id] : undefined;
       const canPlaceAsAsset = Boolean(
         assetEntry && (!existingAsset || existingAsset.kind === 'asset_library_entry'),
       );
@@ -1812,7 +1868,7 @@ export function Workspace(): JSX.Element {
         assetId: canPlaceAsAsset ? assetEntry?.id : undefined,
       };
     },
-    [elementsById, hydrateFromSnapshot, modelId, isHistorical],
+    [hydrateFromSnapshot, modelId, isHistorical],
   );
 
   const handleLoadCatalogFamily = useCallback(
@@ -1843,7 +1899,9 @@ export function Workspace(): JSX.Element {
       updateArrayFormula(
         {
           modelId,
-          elementsById,
+          // FE-CQ-01-followup: one-shot getState read inside the
+          // callback — no subscription, no dep churn.
+          elementsById: useBimStore.getState().elementsById,
           onSemanticCommand,
           hydrateFromSnapshot,
           setUndoDepth,
@@ -1852,7 +1910,7 @@ export function Workspace(): JSX.Element {
         },
         update,
       ),
-    [elementsById, hydrateFromSnapshot, modelId, onSemanticCommand, setSeedError],
+    [hydrateFromSnapshot, modelId, onSemanticCommand, setSeedError],
   );
 
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */
@@ -1913,7 +1971,9 @@ export function Workspace(): JSX.Element {
   const runSelectedWall3dInsert = useCallback(
     (kind: 'door' | 'window' | 'opening') => {
       if (!selectedId) return;
-      const selected = elementsById[selectedId];
+      // FE-CQ-01-followup: one-shot getState read inside the callback —
+      // no subscription, no dep churn.
+      const selected = useBimStore.getState().elementsById[selectedId];
       if (!selected || selected.kind !== 'wall') return;
       if (effectiveMode !== '3d') return;
       if (kind === 'door') {
@@ -1945,7 +2005,7 @@ export function Workspace(): JSX.Element {
         headHeightMm: 2400,
       });
     },
-    [effectiveMode, elementsById, onSemanticCommand, selectedId],
+    [effectiveMode, onSemanticCommand, selectedId],
   );
 
   // REF-CQ-02: per-pane render is owned by WorkspacePaneNode.tsx. We
@@ -1980,7 +2040,8 @@ export function Workspace(): JSX.Element {
     selectedId,
     draggingViewElementId,
     placeViewElementInPane,
-    elementsById,
+    // FE-CQ-01-followup: `elementsById` omitted — `WorkspacePaneNode`
+    // subscribes internally. See WorkspacePaneNode.tsx.
     activeLevelId,
     setActiveLevelId,
     activeLevel,
@@ -2083,7 +2144,8 @@ export function Workspace(): JSX.Element {
         </div>
       ) : null}
       <WorkspaceOverlays
-        elementsById={elementsById}
+        // FE-CQ-01-followup: `elementsById` omitted — overlays
+        // subscribes internally. See WorkspaceOverlays.tsx.
         modelId={modelId}
         revision={revision}
         userId={userId}
@@ -2102,7 +2164,10 @@ export function Workspace(): JSX.Element {
         comments={comments}
         commentOutsideScopeNote={disciplineScopeNote(
           activeWorkspaceId,
-          selectedId ? (elementsById[selectedId] as Element | undefined) : undefined,
+          // FE-CQ-01-followup: render-time lookup via the ref-mirror.
+          // The mirror is updated by a vanilla store subscription, so
+          // reads never trigger a Workspace re-render.
+          selectedId ? (elementsByIdRef.current[selectedId] as Element | undefined) : undefined,
         )}
         advisorCounts={advisorCounts}
         unifiedAdvisorViolations={unifiedAdvisorViolations}
@@ -2326,19 +2391,24 @@ export function Workspace(): JSX.Element {
           autoDimWalls: () => {
             const lvlId = activeLevelId ?? '';
             if (!lvlId) return;
-            const dims = autoDimensionWalls(lvlId, elementsById);
+            // FE-CQ-01-followup: one-shot getState read at click time.
+            const dims = autoDimensionWalls(lvlId, useBimStore.getState().elementsById);
             for (const d of dims) void onSemanticCommand({ type: 'createElement', element: d });
           },
           tagAllRooms: () => {
             const lvlId = activeLevelId ?? '';
             if (!lvlId) return;
-            const tags = tagAllRoomsFn(lvlId, elementsById);
+            // FE-CQ-01-followup: one-shot getState read at click time.
+            const tags = tagAllRoomsFn(lvlId, useBimStore.getState().elementsById);
             for (const t of tags) void onSemanticCommand({ type: 'createElement', element: t });
           },
           rotateToTrueNorth: () => {
             const ps = useBimStore.getState().modelIndices.projectSettings;
             const angleDeg = ps?.angleToTrueNorthDeg ?? 0;
-            const activeView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+            // FE-CQ-01-followup: one-shot getState read at click time.
+            const activeView = activePlanViewId
+              ? useBimStore.getState().elementsById[activePlanViewId]
+              : undefined;
             if (!activeView) return;
             void onSemanticCommand({
               type: 'updateElementProperty',
@@ -2376,9 +2446,13 @@ export function Workspace(): JSX.Element {
           checkClearances: () => {
             const lvlId = activeLevelId ?? '';
             if (!lvlId) return;
+            // FE-CQ-01-followup: one-shot getState read at click time.
             const violations = checkHeadHeightClearances(
               lvlId,
-              elementsById as Record<string, import('@bim-ai/core').Element | undefined>,
+              useBimStore.getState().elementsById as Record<
+                string,
+                import('@bim-ai/core').Element | undefined
+              >,
             );
             setClearanceViolations(violations);
             if (violations.length === 0) {

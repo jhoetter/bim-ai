@@ -47,7 +47,7 @@ import {
 } from './paneLayout';
 import { updateTabLens } from './compositions';
 import { canonicalPlanToolForMode, planToolToToolId } from './workspaceUtils';
-import type { PlanTool } from '../state/store';
+import { useBimStore, type PlanTool } from '../state/store';
 import type { PlanCameraHandle } from '../plan/PlanCanvas';
 import type { SnapSettings } from '../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
@@ -101,7 +101,15 @@ export interface WorkspacePaneNodeContext {
   ) => void;
 
   // Element + level data.
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, `WorkspacePaneNode`
+   * subscribes to `elementsById` internally via `useBimStore` so the
+   * caller (notably `Workspace.tsx`) no longer needs a broad
+   * subscription of its own. Reactivity is preserved — pane-node still
+   * re-renders when elements change (selected-element kind probe,
+   * phase-filter selector, fallback tab targeting all need fresh data).
+   */
+  elementsById?: Record<string, Element>;
   activeLevelId: string | undefined;
   setActiveLevelId: (id: string | undefined) => void;
   activeLevel: { id: string; label: string; elevationMm?: number };
@@ -197,6 +205,11 @@ export interface WorkspacePaneNodeProps {
  * full pane chrome.
  */
 export function WorkspacePaneNode({ node, ctx }: WorkspacePaneNodeProps): JSX.Element {
+  // FE-CQ-01-followup: fall back to the store when no prop is supplied so
+  // Workspace.tsx no longer needs its own broad `elementsById`
+  // subscription. The subscription is hoisted above the split-vs-leaf
+  // branch so it's unconditional (rules of hooks).
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
   if (node.kind === 'split') {
     return (
       <div
@@ -233,7 +246,7 @@ export function WorkspacePaneNode({ node, ctx }: WorkspacePaneNodeProps): JSX.El
     draggingViewElementId,
     duplicateActiveSchedule,
     effectiveMode,
-    elementsById,
+    elementsById: elementsByIdFromCtx,
     firstDuplicateWallFix,
     firstOrphanFix,
     focusedPaneLeafId,
@@ -313,6 +326,7 @@ export function WorkspacePaneNode({ node, ctx }: WorkspacePaneNodeProps): JSX.El
     createSectionView,
     adjustActiveSectionCropDepth,
   } = ctx;
+  const elementsById = elementsByIdFromCtx ?? elementsByIdFromStore;
 
   const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
   const paneLensMode = paneTab?.lensMode ?? lensMode;
