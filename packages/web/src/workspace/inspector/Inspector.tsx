@@ -136,7 +136,15 @@ export function Inspector({
       event.preventDefault();
       setActiveTab(next.id);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // DOC-CQ-03: omitted dep is the full `tabDefs` array literal (built fresh
+    // each render at lines 116-122). Tab order is fixed
+    // (properties → notes → graphics? → evidence?) so the only thing that can
+    // shift indices is whether the two optional tabs are present.
+    // `tabDefs.length` + `hasGraphics` is sufficient to detect every such
+    // transition without re-creating the callback on every parent re-render;
+    // `hasEvidence` is redundant once `tabDefs.length` and `hasGraphics` are
+    // pinned (length = 2 + hasGraphics + hasEvidence).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tabDefs is a fresh array each render; tabDefs.length + hasGraphics fully characterise the index space.
     [activeTab, tabDefs.length, hasGraphics],
   );
 

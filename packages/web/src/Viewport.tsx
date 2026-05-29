@@ -379,8 +379,15 @@ export function Viewport({
 
   const georeference = useMemo(() => {
     return projectSettings?.georeference ?? null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [georeferenceKey]); // stable: only recalculates when values actually change
+    // DOC-CQ-03: omitted dep is `projectSettings` (read inside the memo body).
+    // Its object identity churns on every elementsById delta even when no
+    // georeference field changed; depending on it would recompute on every
+    // authoring keystroke. `georeferenceKey` (above) is a stable serialised
+    // digest of the only fields the memo actually consumes (anchorLat/Lon,
+    // bbox, contextRadiusM), so keying on it gives correct invalidation
+    // without the per-delta churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- projectSettings identity churns per delta; georeferenceKey is a value-equivalent digest of the consumed fields.
+  }, [georeferenceKey]);
 
   const walkLevels = useMemo(
     () => levelsIndex.map((e) => e.elevationMm / 1000).sort((a, b) => a - b),

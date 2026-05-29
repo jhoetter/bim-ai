@@ -1,3 +1,52 @@
+/**
+ * Store-level coercion of untyped JSON / wire payloads into the typed
+ * `Element` / `Violation` / `EvidenceRef` shapes the Zustand store
+ * promises to its consumers. Pure data flow — no DOM dependency.
+ *
+ * ---------------------------------------------------------------
+ * DOC-CQ-02 — `as unknown` trust boundary
+ * ---------------------------------------------------------------
+ * This file is one of two sanctioned `as unknown` casting sites in the
+ * web package (the other is `clipboard/copyPaste.ts`). Every other
+ * `as unknown` cast in `packages/web/src/**` should be considered a
+ * code smell unless it is migrated under this boundary.
+ *
+ * WHERE UNTYPED JSON ENTERS THE SYSTEM
+ *   - WebSocket envelopes from `/api/v3/.../ws` carry server-side
+ *     dicts that the FastAPI route serialises with `model_dump()`.
+ *     They are `unknown` until validated client-side.
+ *   - REST hydration: `/state` and `/seed-models/*` return raw JSON
+ *     parsed via `await res.json()` — also `unknown`.
+ *   - Authoring undo/redo replay: persisted `Violation` and
+ *     `EvidenceRef` records may have shipped from older clients with
+ *     drifted field names (snake_case vs camelCase, `quick_fix_command`
+ *     vs `quickFixCommand` — both are normalised below).
+ *
+ * WHY `as unknown as Record<string, unknown>` IS THE CONTRACT
+ *   - The store API surface promises typed `Element`, `Violation`,
+ *     `EvidenceRef`. Each coerce* function takes one `unknown`, casts
+ *     once to `Record<string, unknown>`, then defensively reads each
+ *     field with a type guard (`typeof x === 'string'`, `Array.isArray`,
+ *     etc.). Missing / mistyped fields fall back to typed defaults.
+ *   - The `as unknown as Record<string, unknown>` cast is the explicit
+ *     "I am crossing a trust boundary" signal. The cast must always be
+ *     paired with downstream guards — never with a bare property
+ *     assignment that assumes the field exists or has the right type.
+ *
+ * THE RULE
+ *   - No `as unknown` outside this trust boundary. Downstream callers
+ *     consume typed values from this module — they should never need
+ *     to cast through `unknown` again. If they do, that is a signal
+ *     this file's API surface is missing a coercion helper.
+ *   - If a NEW trust-boundary site is needed (e.g. a new wire route
+ *     payload), it must (a) live under `state/coercion/`, `clipboard/`,
+ *     or `lib/`, (b) carry an equivalent doc block, and (c) be added
+ *     to DOC-CQ-02's allowlist.
+ *
+ * FOLLOW-UP (DOC-CQ-02 optional scope, deferred): an ESLint custom
+ * rule that flags `as unknown` outside the allowlist. See the matching
+ * note in `clipboard/copyPaste.ts`.
+ */
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
 import { coerceAssetElement } from './coercion/assetElements';
