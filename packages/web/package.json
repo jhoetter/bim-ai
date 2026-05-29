@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run src",
     "test:e2e": "playwright test",
-    "test:e2e:ci": "playwright test e2e/cockpit-smoke.spec.ts",
+    "test:e2e:ci": "playwright test e2e/cockpit-smoke.spec.ts e2e/sketch-wall-flows.spec.ts e2e/schedule-flows.spec.ts e2e/view-template-flows.spec.ts e2e/project-setup-flows.spec.ts e2e/workspace-tab-flows.spec.ts e2e/advisor-flows.spec.ts e2e/mode-switching-flows.spec.ts",
     "test:e2e:real-backend": "playwright test --config playwright.real-backend.config.ts",
     "test:e2e:install": "playwright install chromium",
     "performance:plan-pointermove": "node scripts/plan-pointermove-perf.mjs"
