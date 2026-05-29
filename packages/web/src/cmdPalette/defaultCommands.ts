@@ -1,11 +1,20 @@
-import { useBimStore, type PlanTool } from '../state/store';
 import type { Element } from '@bim-ai/core';
-import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
-import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
-import { buildBoundaryWallPlan, type BoundaryWallSource } from '../geometry/boundaryWallGeneration';
-import { roofParamsFromWallLoop } from '../plan/roofByFootprint';
 import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
+import {
+  runtimeAllSelectedAreWalls,
+  runtimeBuildBoundaryWallCommand,
+  runtimeBuildRoofFromWallsCommand,
+  runtimeActiveAutoDimensionLevelId,
+  runtimeModelHasWall,
+  runtimeSelectedBoundarySource,
+  runtimeSelectedWall,
+  runtimeSetAll3dCategoriesHidden,
+  runtimeSetLensMode,
+  runtimeSetPerspectiveId,
+  runtimeSetViewerMode,
+  runtimeStartPlanTool,
+} from '../workspace/runtime/defaultCommandsRuntime';
 
 export function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
@@ -16,14 +25,11 @@ export function startPlanTool(ctx: PaletteContext, toolId: string): void {
     ctx.startPlanTool(toolId);
     return;
   }
-  useBimStore.getState().setPlanTool(toolId as PlanTool);
+  runtimeStartPlanTool(toolId);
 }
 
 export function setAll3dCategoriesHidden(hidden: boolean): void {
-  const state = useBimStore.getState();
-  const viewerCategoryHidden = { ...state.viewerCategoryHidden };
-  for (const key of VIEWER_CATEGORY_KEYS) viewerCategoryHidden[key] = hidden;
-  useBimStore.setState({ viewerCategoryHidden });
+  runtimeSetAll3dCategoriesHidden(hidden);
 }
 
 function setLanguage(ctx: PaletteContext, language: 'en' | 'de'): void {
@@ -109,23 +115,15 @@ export function hasCutBy(
 }
 
 function modelHasWall(): boolean {
-  return Object.values(useBimStore.getState().elementsById).some(
-    (el) => el?.kind === 'wall' && isPhysicalHostedOpeningWall(el),
-  );
+  return runtimeModelHasWall();
 }
 
-function selectedWall(ctx: PaletteContext) {
-  const id = ctx.selectedElementIds[0];
-  if (!id) return null;
-  const el = useBimStore.getState().elementsById[id];
-  return el?.kind === 'wall' && isPhysicalHostedOpeningWall(el) ? el : null;
+function selectedWall(ctx: PaletteContext): Extract<Element, { kind: 'wall' }> | null {
+  return runtimeSelectedWall(ctx.selectedElementIds);
 }
 
-function selectedBoundarySource(ctx: PaletteContext): BoundaryWallSource | null {
-  const id = ctx.selectedElementIds[0];
-  if (!id) return null;
-  const el = useBimStore.getState().elementsById[id];
-  return el?.kind === 'floor' || el?.kind === 'room' ? el : null;
+function selectedBoundarySource(ctx: PaletteContext) {
+  return runtimeSelectedBoundarySource(ctx.selectedElementIds);
 }
 
 export function isSelectedWall3dContext(ctx: PaletteContext): boolean {
@@ -142,17 +140,9 @@ export function dispatchSelectedWallCommand(
 }
 
 function dispatchBoundaryWallGeneration(ctx: PaletteContext): void {
-  const source = selectedBoundarySource(ctx);
-  if (!source) return;
-  const state = useBimStore.getState();
-  const plan = buildBoundaryWallPlan(source, state.elementsById, {
-    wallTypeId: state.activeWallTypeId,
-    wallHeightMm: state.wallDrawHeightMm,
-    locationLine: state.wallLocationLine,
-    skipExistingOverlaps: true,
-  });
-  if (!plan.command) return;
-  ctx.dispatchCommand?.(plan.command);
+  const command = runtimeBuildBoundaryWallCommand(ctx.selectedElementIds);
+  if (!command) return;
+  ctx.dispatchCommand?.(command);
 }
 
 // Tool commands
@@ -333,35 +323,11 @@ registerCommand({
   label: 'Roof by Footprint from Selected Walls',
   keywords: ['roof', 'footprint', 'walls', 'wall loop', 'from walls', 'roof by footprint'],
   category: 'command',
-  isAvailable: (ctx) => {
-    if (ctx.selectedElementIds.length < 3) return false;
-    const elems = useBimStore.getState().elementsById;
-    return ctx.selectedElementIds.every((id) => elems[id]?.kind === 'wall');
-  },
+  isAvailable: (ctx) => runtimeAllSelectedAreWalls(ctx.selectedElementIds),
   invoke: (ctx) => {
-    const state = useBimStore.getState();
-    const walls = ctx.selectedElementIds
-      .map((id) => state.elementsById[id])
-      .filter((e): e is Extract<(typeof state.elementsById)[string] & object, { kind: 'wall' }> =>
-        Boolean(e && (e as { kind?: string }).kind === 'wall'),
-      );
-    const levelId =
-      (walls[0] as { levelId?: string } | undefined)?.levelId ?? state.activeLevelId ?? '';
-    if (!levelId || walls.length < 3) return;
-    const params = roofParamsFromWallLoop(
-      walls as Parameters<typeof roofParamsFromWallLoop>[0],
-      levelId,
-      500,
-      30,
-    );
-    if (!params) return;
-    ctx.dispatchCommand?.({
-      type: 'createRoof',
-      referenceLevelId: params.referenceLevelId,
-      footprintMm: params.footprintMm,
-      overhangMm: params.overhangMm,
-      slopeDeg: params.slopeDeg,
-    });
+    const command = runtimeBuildRoofFromWallsCommand(ctx.selectedElementIds);
+    if (!command) return;
+    ctx.dispatchCommand?.(command);
   },
 });
 
@@ -478,7 +444,7 @@ registerCommand({
   label: 'Set view phase: Demolition',
   keywords: ['phase', 'demolition', 'demo'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPerspectiveId('coordination'),
+  invoke: () => runtimeSetPerspectiveId('coordination'),
 });
 
 registerCommand({
@@ -486,7 +452,7 @@ registerCommand({
   label: 'Set view phase: Existing',
   keywords: ['phase', 'existing'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPerspectiveId('architecture'),
+  invoke: () => runtimeSetPerspectiveId('architecture'),
 });
 
 registerCommand({
@@ -494,7 +460,7 @@ registerCommand({
   label: 'Set view phase: New Construction',
   keywords: ['phase', 'new', 'construction'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPerspectiveId('construction'),
+  invoke: () => runtimeSetPerspectiveId('construction'),
 });
 
 registerCommand({
@@ -591,7 +557,7 @@ registerCommand({
       ctx.navigateMode('plan');
       return;
     }
-    useBimStore.getState().setViewerMode('plan_canvas');
+    runtimeSetViewerMode('plan_canvas');
   },
 });
 
@@ -605,7 +571,7 @@ registerCommand({
       ctx.navigateMode('3d');
       return;
     }
-    useBimStore.getState().setViewerMode('orbit_3d');
+    runtimeSetViewerMode('orbit_3d');
   },
 });
 
@@ -824,7 +790,7 @@ registerCommand({
       ctx.setLensMode('architecture');
       return;
     }
-    useBimStore.getState().setLensMode('architecture');
+    runtimeSetLensMode('architecture');
   },
 });
 
@@ -838,7 +804,7 @@ registerCommand({
       ctx.setLensMode('structure');
       return;
     }
-    useBimStore.getState().setLensMode('structure');
+    runtimeSetLensMode('structure');
   },
 });
 
@@ -852,7 +818,7 @@ registerCommand({
       ctx.setLensMode('mep');
       return;
     }
-    useBimStore.getState().setLensMode('mep');
+    runtimeSetLensMode('mep');
   },
 });
 
@@ -866,7 +832,7 @@ registerCommand({
       ctx.setLensMode('coordination');
       return;
     }
-    useBimStore.getState().setLensMode('coordination');
+    runtimeSetLensMode('coordination');
   },
 });
 
@@ -880,7 +846,7 @@ registerCommand({
       ctx.setLensMode('fire-safety');
       return;
     }
-    useBimStore.getState().setLensMode('fire-safety');
+    runtimeSetLensMode('fire-safety');
   },
 });
 
@@ -904,7 +870,7 @@ registerCommand({
       ctx.setLensMode('energy');
       return;
     }
-    useBimStore.getState().setLensMode('energy');
+    runtimeSetLensMode('energy');
   },
 });
 
@@ -918,7 +884,7 @@ registerCommand({
       ctx.setLensMode('construction');
       return;
     }
-    useBimStore.getState().setLensMode('construction');
+    runtimeSetLensMode('construction');
   },
 });
 
@@ -932,7 +898,7 @@ registerCommand({
       ctx.setLensMode('sustainability');
       return;
     }
-    useBimStore.getState().setLensMode('sustainability');
+    runtimeSetLensMode('sustainability');
   },
 });
 
@@ -946,7 +912,7 @@ registerCommand({
       ctx.setLensMode('cost-quantity');
       return;
     }
-    useBimStore.getState().setLensMode('cost-quantity');
+    runtimeSetLensMode('cost-quantity');
   },
 });
 
@@ -1780,8 +1746,7 @@ registerCommand({
   keywords: ['auto', 'dimension', 'walls', 'annotate', 'automatic'],
   category: 'command',
   invoke: (ctx) => {
-    const state = useBimStore.getState();
-    const levelId = state.activeLevelId ?? null;
+    const levelId = runtimeActiveAutoDimensionLevelId();
     ctx.dispatchCommand?.({ type: 'autoDimensionWalls', levelId });
   },
 });

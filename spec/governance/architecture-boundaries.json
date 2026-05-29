@@ -14,8 +14,19 @@
       "owner": "CQ-2026-15",
       "source": ["packages/web/src/cmdPalette/**"],
       "disallow": ["packages/web/src/workspace/**"],
-      "allow": ["packages/web/src/workspace/commandCapabilities.ts"],
-      "reason": "Command palette metadata should not reach into workspace shell internals."
+      "allow": [
+        "packages/web/src/workspace/commandCapabilities.ts",
+        "packages/web/src/workspace/runtime/**"
+      ],
+      "reason": "Command palette metadata should not reach into workspace shell internals. Runtime store-access wrappers live under workspace/runtime/ (REF-CQ-07)."
+    },
+    {
+      "id": "web-cmd-palette-no-state-import",
+      "owner": "CQ-2026-15",
+      "source": ["packages/web/src/cmdPalette/**"],
+      "disallow": ["packages/web/src/state/**"],
+      "allow": [],
+      "reason": "cmdPalette files are metadata; runtime store access belongs in workspace/runtime/ (ARCH-CQ-01, pairs with REF-CQ-07)."
     },
     {
       "id": "web-cmd-palette-no-rendering-entrypoints",
