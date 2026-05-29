@@ -24,28 +24,27 @@ own scope:
 
 ## Status Dashboard
 
-| Section                              | Count | P0 | P1 | P2 | P3 |
-| ------------------------------------ | ----- | -- | -- | -- | -- |
-| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 3  | 4  | 4  | 1  |
-| 2. Backend Performance (PERF-CQ-*)   | 4     | 2  | 1  | 1  | 0  |
-| 3. Frontend Performance (FE-CQ-*)    | 4     | 0  | 2  | 2  | 0  |
-| 4. Refactoring (REF-CQ-*)            | 7     | 0  | 3  | 3  | 1  |
-| 5. Architecture (ARCH-CQ-*)          | 6     | 0  | 2  | 3  | 1  |
-| 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 0  | 2  | 2  | 0  |
-| 7. Documentation Polish (DOC-CQ-*)   | 3     | 0  | 0  | 3  | 0  |
-| **Total**                            | **40**| **5** | **14** | **18** | **3** |
+| Section                              | Count | Done | Open P0 | Open P1 | Open P2 | Open P3 |
+| ------------------------------------ | ----- | ---- | ------- | ------- | ------- | ------- |
+| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 3    | 0       | 4       | 4       | 1       |
+| 2. Backend Performance (PERF-CQ-*)   | 4     | 2    | 0       | 1       | 1       | 0       |
+| 3. Frontend Performance (FE-CQ-*)    | 4     | 0    | 0       | 2       | 2       | 0       |
+| 4. Refactoring (REF-CQ-*)            | 7     | 0    | 0       | 3       | 3       | 1       |
+| 5. Architecture (ARCH-CQ-*)          | 6     | 0    | 0       | 2       | 3       | 1       |
+| 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 0    | 0       | 2       | 2       | 0       |
+| 7. Documentation Polish (DOC-CQ-*)   | 3     | 0    | 0       | 0       | 3       | 0       |
+| **Total**                            | **40**| **5**| **0**   | **14**  | **18**  | **3**   |
 
-All 40 WPs are status `Not started` at creation. As work lands, mark
-status, link the PR, and update the dashboard counts.
+5/40 WPs Done (all P0 cleared on 2026-05-29 — see "Completed in this
+session" below).
 
-### P0 (next 2 weeks — by 2026-06-12)
+### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
-1. TEST-CQ-01 — versioning.py commit-lifecycle tests (36% → 85% coverage)
-2. TEST-CQ-06 — CLI bundle-export contract test
-3. TEST-CQ-08 — silhouette geometry integrity test (PNG analysis)
-4. PERF-CQ-01 — pre-index room-derivation candidates (40-50% win)
-5. PERF-CQ-02 — wire `documentation_advisors=False` gate at single-element
-   command path (2x command-latency win)
+1. ✅ TEST-CQ-01 — versioning.py commit-lifecycle tests (36% → **97%**, PR #147)
+2. ✅ TEST-CQ-06 — CLI bundle-export contract test (PR #148, also caught 6 more dormant missing imports)
+3. ✅ TEST-CQ-08 — silhouette geometry integrity (PR #149, all 4 assertion families shipped)
+4. ✅ PERF-CQ-01 — corner-index room derivation (132ms → 30ms, 4.3×, PR #151)
+5. ✅ PERF-CQ-02 — advisor gate wired (100ms → 79ms local, PR #150)
 
 ### P1 (next month — by 2026-06-29)
 
@@ -103,7 +102,7 @@ import, ortho silhouette regressions) need targeted backstops.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-06-05
-- **Status:** Not started
+- **Status:** Done (PR #147, merged 2026-05-29 — coverage 36% → 97%)
 
 **Why:** `app/bim_ai/versioning.py` is the time-travel commit lifecycle.
 Coverage is 36%. Lines 132-446 (`_resolve_revision_bounds`, `open_commit`,
@@ -237,7 +236,7 @@ TEST-CQ-08).
 - **Effort:** S
 - **Owner:** cli-contracts
 - **Target:** 2026-06-05
-- **Status:** Not started
+- **Status:** Done (PR #148, merged 2026-05-29 — walker shipped and caught 6 more dormant missing imports)
 
 **Why:** This session caught `applyQualityMode is not defined` and
 `comparePngFiles is not defined` failures in CI (PR #144) only because
@@ -295,7 +294,7 @@ smoke test.
 - **Effort:** M
 - **Owner:** backend-core + frontend-viewport
 - **Target:** 2026-06-12
-- **Status:** Not started
+- **Status:** Done (PR #149, merged 2026-05-29 — all 4 assertion families × 3 fixture houses × 4 cardinal views)
 
 **Why:** Multiple recent bugs (#59 ortho silhouette regression, #76
 dormer body rendering, #103 duplicate stacked roofs, #110 pyramidal hip
@@ -442,7 +441,7 @@ catalog these close.
 - **Effort:** M
 - **Owner:** backend-core
 - **Target:** 2026-06-12
-- **Status:** Not started
+- **Status:** Done (PR #151, merged 2026-05-29 — `_corner_candidates` helper; uncached p50 132ms → 30ms, 4.3×; budget 1500 → 1000)
 
 **Why:** `app/bim_ai/room_derivation.py` lines 905-944
 (`quad_closes_rectangle`) enumerate `O(h² × v²)` candidate pairs of
@@ -474,7 +473,7 @@ re-snap, but enumeration itself remains quadratic. Closes BE-2 in
 - **Effort:** M
 - **Owner:** backend-core
 - **Target:** 2026-06-12
-- **Status:** Not started
+- **Status:** Done (PR #150, merged 2026-05-29 — single-element detection + 40-verb schema-altering denylist; p50 100ms → 79ms local; budget 1000 → 400)
 
 **Why:** `app/bim_ai/constraints_evaluation.py:356` has the
 `documentation_advisors=False` parameter, but `_commit_violations` in
