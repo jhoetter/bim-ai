@@ -81,6 +81,10 @@ from bim_ai.evidence_manifest import (
     plan_view_wire_index,
     sheetProductionEvidenceBaseline_v1,
 )
+from bim_ai.evidence_request_cache import (
+    cached_compute,
+    evidence_request_cache_scope,
+)
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.hub import Hub
 from bim_ai.jobs.evidence_package import (
@@ -1090,6 +1094,28 @@ def build_evidence_package_payload(
     source_document: dict[str, Any] | None = None,
     mode: str = "default",
 ) -> dict[str, Any]:
+    # PERF-CQ-03: open a request-scoped derivation cache so the ~30
+    # sub-payloads below share results for room-boundary, plan
+    # projection wire, schedule tables, and the document-level
+    # summaries (model summary, type-material registry, room derivation
+    # preview/candidates, plan-view wire index). Cached values are
+    # returned by reference — callers must treat them as read-only.
+    with evidence_request_cache_scope():
+        return _build_evidence_package_payload_inner(
+            model_id=model_id,
+            doc=doc,
+            source_document=source_document,
+            mode=mode,
+        )
+
+
+def _build_evidence_package_payload_inner(
+    *,
+    model_id: UUID,
+    doc: Document,
+    source_document: dict[str, Any] | None,
+    mode: str,
+) -> dict[str, Any]:
     source_document_wire = source_document or doc.model_dump(by_alias=True)
     viols = violations_wire(doc.elements)
     err_ct = sum(1 for x in viols if x.get("severity") == "error")
@@ -1101,7 +1127,12 @@ def build_evidence_package_payload(
 
     schedules = [{"id": sid, "name": doc.elements[sid].name} for sid in list_schedule_ids(doc)]
 
-    pv_index = plan_view_wire_index(doc)
+    pv_index = cached_compute(
+        doc=doc,
+        scope_id="document",
+        derivation_kind="plan_view_wire_index",
+        factory=lambda: plan_view_wire_index(doc),
+    )
 
     payload: dict[str, Any] = {
         "format": "evidencePackage_v1",
@@ -1110,7 +1141,12 @@ def build_evidence_package_payload(
         "revision": doc.revision,
         "elementCount": len(doc.elements),
         "countsByKind": kinds,
-        "summary": compute_model_summary(doc),
+        "summary": cached_compute(
+            doc=doc,
+            scope_id="document",
+            derivation_kind="model_summary",
+            factory=lambda: compute_model_summary(doc),
+        ),
         "validate": {
             "violations": viols,
             "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
@@ -1143,9 +1179,24 @@ def build_evidence_package_payload(
             },
         ],
         "scheduleIds": schedules,
-        "roomDerivationPreview": room_derivation_preview(doc),
-        "roomDerivationCandidates": room_derivation_candidates_review(doc),
-        "typeMaterialRegistry": merged_registry_payload(doc),
+        "roomDerivationPreview": cached_compute(
+            doc=doc,
+            scope_id="document",
+            derivation_kind="room_derivation_preview",
+            factory=lambda: room_derivation_preview(doc),
+        ),
+        "roomDerivationCandidates": cached_compute(
+            doc=doc,
+            scope_id="document",
+            derivation_kind="room_derivation_candidates_review",
+            factory=lambda: room_derivation_candidates_review(doc),
+        ),
+        "typeMaterialRegistry": cached_compute(
+            doc=doc,
+            scope_id="document",
+            derivation_kind="type_material_registry",
+            factory=lambda: merged_registry_payload(doc),
+        ),
         "constructabilitySummary_v1": build_constructability_summary_v1(
             doc.elements,
             revision=doc.revision,

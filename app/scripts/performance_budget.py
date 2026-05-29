@@ -67,9 +67,17 @@ BUDGETS_MS: dict[str, float] = {
     "schedule_heavy.room_schedule": 500.0,
     "schedule_heavy.door_schedule": 250.0,
     "schedule_heavy.window_schedule": 250.0,
-    # schedule_heavy.evidence_package p50 ≈ 7.1 s on CI; budget bumped
-    # from 6 s to 8.5 s for the same runner-variance reason.
-    "schedule_heavy.evidence_package": 8_500.0,
+    # PERF-CQ-03 (2026-05-29): build_evidence_package_payload now opens
+    # a request-scoped derivation cache (room boundary, plan projection
+    # wire, schedule table, room derivation preview/candidates, model
+    # summary, type-material registry, plan-view wire index) so the ~30
+    # sub-payloads share results across the assembly. Local p50 dropped
+    # ~17% (3580 ms → 2972 ms on schedule_heavy, 3881 ms → 2595 ms on
+    # documentation_heavy). CI p50 scales ~2× off the local box —
+    # schedule_heavy.evidence_package projected to ~5900 ms on CI. Budget
+    # lowered 8500 → 6500 to capture the win while leaving ~10 % runner
+    # variance headroom. Test pin: tests/test_evidence_request_cache.py.
+    "schedule_heavy.evidence_package": 6_500.0,
     "documentation_heavy.plan_projection": 500.0,
     "documentation_heavy.evidence_package": 8_000.0,
     # PERF-CQ-01: budget lowered 1500 → 1000 after the corner-index
