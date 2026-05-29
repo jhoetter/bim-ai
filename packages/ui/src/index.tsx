@@ -80,3 +80,13 @@ export function Btn({
     />
   );
 }
+
+/**
+ * HofOS embed host contract version.
+ *
+ * Previously lived in `@bim-ai/hofos-ui`, which was a thin re-export package
+ * over `@bim-ai/ui` + `@bim-ai/design-tokens`. Folded into `@bim-ai/ui` in
+ * ARCH-CQ-04 so external consumers can pull the embed contract and UI
+ * primitives from a single package via subpath exports.
+ */
+export const BIM_HOFOS_UI_EMBED_VERSION = '0.1.0';
