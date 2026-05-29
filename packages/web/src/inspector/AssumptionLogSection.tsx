@@ -7,6 +7,9 @@ interface Props {
 
 export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
   if (!agentTrace) return null;
+  // ARCH-CQ-06: assumptionKeys is optional on the wire (Pydantic
+  // default_factory=list), so guard against undefined before reading.
+  const assumptionKeys = agentTrace.assumptionKeys ?? [];
 
   return (
     <section
@@ -55,7 +58,7 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
         <dd>{new Date(agentTrace.appliedAt).toLocaleString()}</dd>
       </dl>
 
-      {agentTrace.assumptionKeys.length > 0 && (
+      {assumptionKeys.length > 0 && (
         <div style={{ marginTop: 'var(--space-2)' }}>
           <p
             style={{
@@ -64,7 +67,7 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
               marginBottom: 'var(--space-1)',
             }}
           >
-            Assumptions ({agentTrace.assumptionKeys.length})
+            Assumptions ({assumptionKeys.length})
           </p>
           <ul
             style={{
@@ -76,7 +79,7 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
               gap: 'var(--space-1)',
             }}
           >
-            {agentTrace.assumptionKeys.map((key) => {
+            {assumptionKeys.map((key) => {
               const entry = assumptions?.find((a) => a.key === key);
               return (
                 <li

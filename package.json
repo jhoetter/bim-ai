@@ -16,6 +16,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
     "architecture": "node scripts/check-architecture.mjs",
     "contract:parity": "node scripts/check-contract-parity.mjs",
+    "codegen:types": "node scripts/check-backend-types-sync.mjs --write",
+    "codegen:types:check": "node scripts/check-backend-types-sync.mjs",
     "quality:waivers": "node scripts/check-quality-waivers.mjs",
     "quality:report": "node scripts/code-quality-report.mjs",
     "maintainability:budgets": "node scripts/check-maintainability-budgets.mjs",
@@ -34,7 +36,7 @@
     "verify:m3-parity": "node scripts/verify-m3-parity.mjs",
     "verify:m4-parity": "node scripts/verify-m4-parity.mjs",
     "verify": "pnpm format:check && pnpm quality:waivers && pnpm architecture && pnpm test",
-    "verify:strict": "pnpm format:check && pnpm quality:waivers && pnpm maintainability:budgets && pnpm lint && pnpm security:hygiene && pnpm test-env:policy && pnpm architecture && pnpm contract:parity && pnpm typecheck && pnpm test && pnpm build && pnpm ui:quality-budgets",
+    "verify:strict": "pnpm format:check && pnpm quality:waivers && pnpm maintainability:budgets && pnpm lint && pnpm security:hygiene && pnpm test-env:policy && pnpm architecture && pnpm contract:parity && pnpm codegen:types:check && pnpm typecheck && pnpm test && pnpm build && pnpm ui:quality-budgets",
     "build:dist": "pnpm --filter @bim-ai/ui build",
     "prepare": "git config core.hooksPath .githooks"
   },

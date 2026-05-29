@@ -6,6 +6,10 @@ import type {
   ViewTemplateControlMatrix,
   XY,
 } from './index';
+import type {
+  CommandBundle as GeneratedCommandBundle,
+  ToleranceEntry as GeneratedToleranceEntry,
+} from './generated/backend-types';
 
 export type FloorElem = Extract<Element, { kind: 'floor' }>;
 export type RailingElem = Extract<Element, { kind: 'railing' }>;
@@ -69,13 +73,17 @@ export type DesignOptionSet = {
   options: DesignOption[];
 };
 
-export type CommandBundle = {
-  schemaVersion: 'cmd-v3.0';
+// ARCH-CQ-06: CommandBundle / ToleranceEntry are generated from
+// app/bim_ai/cmd/types.py. The generated `commands` field is typed
+// `Record<string, unknown>[]` (wire shape, mirroring `list[dict[str, Any]]`
+// on the backend), so the web side keeps a stricter discriminated-union
+// override here so consumers can pattern-match on `cmd.type` without losing
+// inference. Other fields (assumptions, parentRevision, targetOptionId,
+// tolerances) inherit the generated wire shape unchanged via `Omit`.
+export type ToleranceEntry = GeneratedToleranceEntry;
+
+export type CommandBundle = Omit<GeneratedCommandBundle, 'commands'> & {
   commands: Command[];
-  assumptions: AssumptionEntry[];
-  parentRevision: number;
-  targetOptionId?: string;
-  tolerances?: { advisoryClass: string; reason: string }[] | null;
 };
 
 export type Snapshot = {
@@ -404,25 +412,14 @@ export type TokenSequenceDelta = {
 };
 
 // ---------------------------------------------------------------------------
-// CMD-V3-02 — AgentTrace + AssumptionEntry
+// CMD-V3-02 — AgentTrace + AssumptionEntry (re-exported from generated codegen)
 // ---------------------------------------------------------------------------
-
-/** CMD-V3-02: provenance trace stamped on every element created/modified by a bundle. */
-export type AgentTrace = {
-  bundleId: string;
-  assumptionKeys: string[];
-  appliedAt: string;
-};
-
-/** CMD-V3-02: one assumption entry in a CommandBundle's assumptions array. */
-export type AssumptionEntry = {
-  key: string;
-  value: string | number | boolean;
-  confidence: number;
-  source: string;
-  contestable?: boolean;
-  evidence?: string | null;
-};
+//
+// ARCH-CQ-06: these types were previously hand-mirrored from
+// `app/bim_ai/cmd/types.py` and drifted silently. They now live in the
+// generated `./generated/backend-types.ts` file and are re-exported here so
+// the consumer-facing module path (`@bim-ai/core`) is unchanged.
+export type { AgentTrace, AssumptionEntry, BundleResult } from './generated/backend-types';
 
 /** CHR-V3-03 — workspace-level status-bar discipline filter (LNS-V3-01 UI). */
 export type LensMode =
