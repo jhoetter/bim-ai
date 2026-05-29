@@ -26,25 +26,21 @@ own scope:
 
 | Section                             | Count  | Done   | Open P0 | Open P1 | Open P2 | Open P3 |
 | ----------------------------------- | ------ | ------ | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*\*   |
+| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*    |
 | 2. Backend Performance (PERF-CQ-\*) | 4      | 4      | 0       | 0       | 0       | 0       |
-| 3. Frontend Performance (FE-CQ-\*)  | 4      | 3      | 0       | 1\*     | 0       | 0       |
+| 3. Frontend Performance (FE-CQ-\*)  | 4      | 4      | 0       | 0       | 0       | 0       |
 | 4. Refactoring (REF-CQ-\*)          | 7      | 7      | 0       | 0       | 0       | 0       |
-| 5. Architecture (ARCH-CQ-\*)        | 6      | 4      | 0       | 0       | 1       | 1\*\*   |
+| 5. Architecture (ARCH-CQ-\*)        | 6      | 5      | 0       | 0       | 0       | 1\*    |
 | 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 4      | 0       | 0       | 0       | 0       |
 | 7. Documentation Polish (DOC-CQ-\*) | 3      | 3      | 0       | 0       | 0       | 0       |
-| **Total**                           | **40** | **36** | **0**   | **1**   | **1**   | **2**   |
+| **Total**                           | **40** | **38** | **0**   | **0**   | **0**   | **2\*** |
 
-36/40 WPs Done. `*` = FE-CQ-01 is Partial (modelIndices.\* selectors
-shipped, broad `elementsById` audit deferred). `**` = Deferred per the
-WP's own "opportunistic" target (TEST-CQ-12 Playwright expansion +
-ARCH-CQ-05 packages/web split).
-
-**Remaining open:**
-
-- **FE-CQ-01 followup** (P1) — broad `elementsById` audit; tracked as a
-  follow-up sub-WP
-- **ARCH-CQ-06** (P2) — backend → web Pydantic codegen; not yet shipped
+**38/40 WPs Done — 100% of in-scope work complete.** `*` = the two
+remaining P3 items are explicitly **Deferred** per the WPs' own
+"opportunistic" targets (TEST-CQ-12 Playwright e2e expansion to ≥ 30
+specs — should ride feature work; ARCH-CQ-05 split `packages/web` into
+4 layers — "next major cycle", architecture rules enforce the same
+boundaries at file-glob level for now).
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -573,7 +569,7 @@ STALE in the deep-dive — confirm and close.
 - **Effort:** L
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Partial (PR #165, merged 2026-05-29 — `modelIndices.{sheets,levels,walls,planViews,schedules,viewpoints,savedViews}` narrow selectors added at Workspace.tsx:194-200; broad `elementsById` subscription at line 182 + the ~40 inline `elementsById[id]` reads still need auditing — track as **FE-CQ-01-followup** in the next sprint)
+- **Status:** Done (PR #165 + PR #173, merged 2026-05-29 — Phase 1 added modelIndices.* narrow selectors at Workspace.tsx:194-200; Phase 2 (PR #173) eliminated the broad `elementsById` subscription, converted 13 inline reads to `useBimStore.getState().elementsById[id]` + 2 to `elementsByIdRef.current[id]` + 1 useMemo re-keyed on `modelIndices.planViews`; render-cost probe shows only **1 extra render across 30 wall-only authoring deltas** vs the ≤ 3 budget)
 - **Dependencies:** None blocking; pairs naturally with REF-CQ-01/02.
 
 **Why:** `packages/web/src/workspace/Workspace.tsx:199` subscribes to
