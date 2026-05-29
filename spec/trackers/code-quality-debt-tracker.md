@@ -26,17 +26,18 @@ own scope:
 
 | Section                              | Count | Done | Open P0 | Open P1 | Open P2 | Open P3 |
 | ------------------------------------ | ----- | ---- | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 3    | 0       | 4       | 4       | 1       |
-| 2. Backend Performance (PERF-CQ-*)   | 4     | 2    | 0       | 1       | 1       | 0       |
+| 1. Test Coverage Gaps (TEST-CQ-*)    | 12    | 6    | 0       | 1       | 4       | 1       |
+| 2. Backend Performance (PERF-CQ-*)   | 4     | 3    | 0       | 0       | 1       | 0       |
 | 3. Frontend Performance (FE-CQ-*)    | 4     | 0    | 0       | 2       | 2       | 0       |
 | 4. Refactoring (REF-CQ-*)            | 7     | 0    | 0       | 3       | 3       | 1       |
-| 5. Architecture (ARCH-CQ-*)          | 6     | 0    | 0       | 2       | 3       | 1       |
+| 5. Architecture (ARCH-CQ-*)          | 6     | 1    | 0       | 1       | 3       | 1       |
 | 6. Dependency Hygiene (DEP-CQ-*)     | 4     | 0    | 0       | 2       | 2       | 0       |
 | 7. Documentation Polish (DOC-CQ-*)   | 3     | 0    | 0       | 0       | 3       | 0       |
-| **Total**                            | **40**| **5**| **0**   | **14**  | **18**  | **3**   |
+| **Total**                            | **40**| **10**| **0**  | **9**   | **18**  | **3**   |
 
-5/40 WPs Done (all P0 cleared on 2026-05-29 — see "Completed in this
-session" below).
+10/40 WPs Done. All P0 cleared on 2026-05-29; P1 batch A cleared the
+3 coverage-gap WPs (skb/calibrator, skb/colour_sampler, tkn/diff) plus
+PERF-CQ-03 and ARCH-CQ-04.
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -144,7 +145,7 @@ assumed correct without test coverage.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-06-19
-- **Status:** Not started
+- **Status:** Done (PR #153, merged 2026-05-29 — coverage 56% → 90%, 14 tests with structured-log assertions)
 
 **Why:** `app/bim_ai/skb/calibrator.py` is at 56% coverage. Lines 47-222
 contain the edge-detection fallback chain that silently degrades when
@@ -169,7 +170,7 @@ disappear into log noise.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-06-19
-- **Status:** Not started
+- **Status:** Done (PR #154, merged 2026-05-29 — coverage 56% → 89% standalone / 92% combined, 39 tests)
 
 **Why:** 56% coverage. Lines 41 and 202-271 contain the
 NumPy/PIL import-fallback paths and CIE Lab transformation helpers.
@@ -192,7 +193,7 @@ drift here would be silent.
 - **Effort:** S
 - **Owner:** backend-core
 - **Target:** 2026-06-19
-- **Status:** Not started
+- **Status:** Done (PR #152, merged 2026-05-29 — coverage 55% → 100%, 26 tests)
 
 **Why:** 55% coverage. Lines 30-96 are the core ULID-token envelope and
 entity comparison logic. The diff helpers are tested incidentally by
@@ -507,7 +508,7 @@ BE-1 partially and the bulk of single-command latency.
 - **Effort:** M
 - **Owner:** backend-core
 - **Target:** 2026-06-26
-- **Status:** Not started
+- **Status:** Done (PR #156, merged 2026-05-29 — `evidence_request_cache.py` + cache-hit test; schedule_heavy p50 3580ms → 2906ms (-19%), doc_heavy 3881ms → 2539ms (-35%); budget 8500 → 6500. 4500ms target not fully met because constructability + violations dominate remaining time — see PR description.)
 
 **Why:** `app/bim_ai/routes/api.py:1086-1200`
 (`build_evidence_package_payload`) calls room-boundary, projection, and
@@ -944,7 +945,7 @@ not documented.
 - **Effort:** S
 - **Owner:** platform
 - **Target:** 2026-06-29
-- **Status:** Not started
+- **Status:** Done (PR #155, merged 2026-05-29 — `hofos-ui/` deleted; `BIM_HOFOS_UI_EMBED_VERSION` preserved on `@bim-ai/ui`; `MIGRATION.md` shipped; workspace count 9 → 8; `verify:strict` green)
 
 **Why:** `packages/hofos-ui` is a 30-line `package.json` that re-exports
 `@bim-ai/ui` + `@bim-ai/design-tokens` for external NPM consumption.
