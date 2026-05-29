@@ -304,6 +304,37 @@ def test_valid_storey_spans_and_analytical_room_level_pass() -> None:
     assert check_model_integrity_invariants(subject) == []
 
 
+def test_role_violations_dispatch_table_is_exhaustive() -> None:
+    """REF-CQ-06 acceptance #4 — dispatch covers all illegal (expected, declared) pairs."""
+    from bim_ai.model_integrity import ROLE_VIOLATIONS, VALID_MODEL_ROLES
+
+    expected_keys = {
+        (exp, dec)
+        for exp in VALID_MODEL_ROLES
+        for dec in VALID_MODEL_ROLES
+        if exp != dec
+    }
+    assert set(ROLE_VIOLATIONS.keys()) == expected_keys
+
+
+def test_role_violations_dispatch_table_emits_expected_rule_ids() -> None:
+    """REF-CQ-06 acceptance #4 — every entry maps to one of the three legacy rule ids."""
+    from bim_ai.model_integrity import ROLE_VIOLATIONS
+
+    physical_leak_rule = "model_integrity_physical_element_marked_nonphysical"
+    nonphysical_marked_rule = "model_integrity_nonphysical_element_marked_physical"
+    generic_mismatch_rule = "model_integrity_role_kind_mismatch"
+
+    for (expected, declared), (rule_id, severity, _message) in ROLE_VIOLATIONS.items():
+        assert severity == "error", f"All role violations are errors; ({expected},{declared}) was {severity}"
+        if expected == "physical":
+            assert rule_id == physical_leak_rule, (expected, declared, rule_id)
+        elif declared == "physical":
+            assert rule_id == nonphysical_marked_rule, (expected, declared, rule_id)
+        else:
+            assert rule_id == generic_mismatch_rule, (expected, declared, rule_id)
+
+
 def test_physical_helper_role_mismatch_and_missing_explicit_role_are_reported() -> None:
     findings = check_model_integrity_invariants(
         {

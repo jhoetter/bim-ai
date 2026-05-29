@@ -264,6 +264,20 @@ VALID_MODEL_ROLES: frozenset[str] = frozenset(
     }
 )
 
+# REF-CQ-06: dispatch table + finding-templates replacing the if-elif chain
+# in _role_findings. Templates use {element_id}/{kind}/{expected}/{declared}.
+# Physical-involved pairs additionally cause _role_findings to emit the
+# generic mismatch, preserving legacy two-finding emission for physical leaks.
+_PHYSICAL_LEAK_ENTRY: tuple[str, IntegritySeverity, str] = ("model_integrity_physical_element_marked_nonphysical", "error", "Physical element '{element_id}' kind '{kind}' declares role '{declared}', so it would leak physical BIM semantics into a nonphysical role.")
+_NONPHYSICAL_MARKED_PHYSICAL_ENTRY: tuple[str, IntegritySeverity, str] = ("model_integrity_nonphysical_element_marked_physical", "error", "Nonphysical element '{element_id}' kind '{kind}' declares role 'physical'.")
+_GENERIC_MISMATCH_ENTRY: tuple[str, IntegritySeverity, str] = ("model_integrity_role_kind_mismatch", "error", "Element '{element_id}' kind '{kind}' declares role '{declared}', but the invariant contract classifies it as '{expected}'.")
+_MISSING_EXPLICIT_ROLE_ENTRY: tuple[str, IntegritySeverity, str] = ("model_integrity_missing_explicit_model_role", "warning", "Element '{element_id}' kind '{kind}' does not declare an explicit model role; contract classifies it as '{expected}'.")
+_INVALID_ROLE_ENTRY: tuple[str, IntegritySeverity, str] = ("model_integrity_invalid_model_role", "error", "Element '{element_id}' declares unknown model role '{declared}'.")
+ROLE_VIOLATIONS: dict[tuple[str, str], tuple[str, IntegritySeverity, str]] = {
+    (exp, dec): _PHYSICAL_LEAK_ENTRY if exp == "physical" else _NONPHYSICAL_MARKED_PHYSICAL_ENTRY if dec == "physical" else _GENERIC_MISMATCH_ENTRY
+    for exp in VALID_MODEL_ROLES for dec in VALID_MODEL_ROLES if exp != dec
+}
+
 VIEW_KINDS: frozenset[str] = frozenset(
     {
         "viewpoint",
@@ -1502,93 +1516,36 @@ def _role_counts(elements: Mapping[str, Any]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
-def _role_findings(
-    element: Any,
-    element_id: str,
-    kind: str,
-    require_explicit_roles: bool,
-) -> list[ModelIntegrityFinding]:
-    findings: list[ModelIntegrityFinding] = []
+def _emit_role(entry: tuple[str, IntegritySeverity, str], element_id: str, kind: str,
+               expected: str | None, declared: str | None, expected_field: str | None,
+               actual: str | None) -> ModelIntegrityFinding:
+    rid, sev, tpl = entry
+    return ModelIntegrityFinding(
+        rule_id=rid, severity=sev,
+        message=tpl.format(element_id=element_id, kind=kind, expected=expected, declared=declared),
+        element_ids=(element_id,), field="modelRole", expected=expected_field, actual=actual,
+    )
+
+
+def _role_findings(element: Any, element_id: str, kind: str,
+                   require_explicit_roles: bool) -> list[ModelIntegrityFinding]:
     expected = ROLE_BY_KIND.get(kind)
     declared = _declared_model_role(element)
     if declared is None:
         if require_explicit_roles and kind in ROLE_BY_KIND and expected != "project_datum":
-            findings.append(
-                ModelIntegrityFinding(
-                    rule_id="model_integrity_missing_explicit_model_role",
-                    severity="warning",
-                    message=(
-                        f"Element '{element_id}' kind '{kind}' does not declare an explicit "
-                        f"model role; contract classifies it as '{expected}'."
-                    ),
-                    element_ids=(element_id,),
-                    field="modelRole",
-                    expected=expected,
-                )
-            )
-        return findings
-
+            return [_emit_role(_MISSING_EXPLICIT_ROLE_ENTRY, element_id, kind, expected, None, expected, None)]
+        return []
     if declared not in VALID_MODEL_ROLES:
-        findings.append(
-            ModelIntegrityFinding(
-                rule_id="model_integrity_invalid_model_role",
-                severity="error",
-                message=f"Element '{element_id}' declares unknown model role '{declared}'.",
-                element_ids=(element_id,),
-                field="modelRole",
-                expected=" | ".join(sorted(VALID_MODEL_ROLES)),
-                actual=declared,
-            )
-        )
-        return findings
-
-    if expected is not None and declared != expected:
-        if expected == "physical" and declared != "physical":
-            findings.append(
-                ModelIntegrityFinding(
-                    rule_id="model_integrity_physical_element_marked_nonphysical",
-                    severity="error",
-                    message=(
-                        f"Physical element '{element_id}' kind '{kind}' declares role "
-                        f"'{declared}', so it would leak physical BIM semantics into a "
-                        "nonphysical role."
-                    ),
-                    element_ids=(element_id,),
-                    field="modelRole",
-                    expected="physical",
-                    actual=declared,
-                )
-            )
-        elif expected != "physical" and declared == "physical":
-            findings.append(
-                ModelIntegrityFinding(
-                    rule_id="model_integrity_nonphysical_element_marked_physical",
-                    severity="error",
-                    message=(
-                        f"Nonphysical element '{element_id}' kind '{kind}' declares role "
-                        "'physical'."
-                    ),
-                    element_ids=(element_id,),
-                    field="modelRole",
-                    expected=expected,
-                    actual=declared,
-                )
-            )
-        findings.append(
-            ModelIntegrityFinding(
-                rule_id="model_integrity_role_kind_mismatch",
-                severity="error",
-                message=(
-                    f"Element '{element_id}' kind '{kind}' declares role '{declared}', "
-                    f"but the invariant contract classifies it as '{expected}'."
-                ),
-                element_ids=(element_id,),
-                field="modelRole",
-                expected=expected,
-                actual=declared,
-            )
-        )
-    return findings
+        return [_emit_role(_INVALID_ROLE_ENTRY, element_id, kind, expected, declared,
+                           " | ".join(sorted(VALID_MODEL_ROLES)), declared)]
+    entry = ROLE_VIOLATIONS.get((expected, declared)) if expected is not None else None
+    if entry is None:
+        return []
+    ef = "physical" if entry[0].endswith("marked_nonphysical") else expected
+    out = [_emit_role(entry, element_id, kind, expected, declared, ef, declared)]
+    if entry[0] != _GENERIC_MISMATCH_ENTRY[0]:
+        out.append(_emit_role(_GENERIC_MISMATCH_ENTRY, element_id, kind, expected, declared, expected, declared))
+    return out
 
 
 def _stable_id_findings(element_id: str, map_id: str) -> list[ModelIntegrityFinding]:
