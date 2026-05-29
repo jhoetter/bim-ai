@@ -46,12 +46,14 @@ BUDGETS_MS: dict[str, float] = {
     "small.plan_projection": 250.0,
     "small.insert_window_commit": 150.0,
     "small.insert_door_commit": 150.0,  # PERF-B05
-    # create_wall_commit p50 is ~660 ms on GitHub-hosted runners (vs ~35 ms
-    # on dev boxes). Same code path as the door/window/move commits but
-    # paying an extra plan-projection + DB roundtrip on first wall in the
-    # model. Set the budget to 1 s so CI passes; real tightening tracked
-    # in performance-quality-tracker.
-    "small.create_wall_commit": 1_000.0,
+    # PERF-CQ-02 (2026-05-29): create_wall_commit was paying for nine
+    # info-only documentation advisor passes on every commit because the
+    # PERF-B07 fast-path gate was a narrow allowlist (door/window/opening
+    # + endpoint moves) that didn't cover createWall. Widening the gate
+    # to every single-element non-schema-altering verb dropped local p50
+    # from ~100 ms to ~79 ms, and the CI p50 from ~660 ms to ~240 ms
+    # (~3x runner penalty). Budget reset from 1000 ms back to 400 ms.
+    "small.create_wall_commit": 400.0,
     "small.move_wall_commit": 150.0,  # PERF-B05 (move existing endpoint)
     # PERF-H05: large-plan budgets. Numbers calibrated against
     # GitHub-hosted runners (~2.5x slower than dev boxes for synchronous

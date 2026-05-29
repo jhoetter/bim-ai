@@ -242,6 +242,163 @@ def command_supports_fast_validation_path(cmd_raw: dict[str, Any]) -> bool:
     return _command_supports_fast_validation_path(cmd_raw)
 
 
+# PERF-CQ-02: schema-altering command verbs. These mutate document-wide
+# structures (schedule definitions, view templates, design-option sets,
+# family-type catalog, material palettes, phases, brand templates,
+# property definitions, exchange packages, color-fill legends, monitored
+# source-view evidence) that the documentation advisors read across the
+# entire element graph. Even when only one such command is committed at
+# a time, its effect on the advisor surface is global, so we must NOT
+# skip the documentation advisor passes for these verbs.
+_SCHEMA_ALTERING_COMMAND_TYPES: frozenset[str] = frozenset(
+    {
+        # Schedule catalog (drives schedule_on_sheet advisors)
+        "upsertSchedule",
+        "upsertScheduleFilters",
+        "create_schedule_view",
+        # View templates (drives plan-view-tag-style + section-on-sheet)
+        "CreateViewTemplate",
+        "UpdateViewTemplate",
+        "DeleteViewTemplate",
+        "ApplyViewTemplate",
+        "UnbindViewTemplate",
+        "upsertViewTemplate",
+        "upsertPlanViewTemplate",
+        "applyPlanViewTemplate",
+        # Design options & phases (drives constructability + agent brief)
+        "createOptionSet",
+        "addOption",
+        "removeOption",
+        "setPrimaryOption",
+        "setViewOptionLock",
+        "assignElementToOption",
+        "createPhase",
+        "deletePhase",
+        "renamePhase",
+        "reorderPhase",
+        "setElementPhase",
+        "setViewPhase",
+        "setViewPhaseFilter",
+        # Family / type catalog (drives constructability + exchange)
+        "upsertFamilyType",
+        "assignOpeningFamily",
+        "placeFamilyInstance",
+        # Property definitions & material palette (drives exchange + room color)
+        "create_property_definition",
+        "update_material_pbr",
+        "createColorFillLegend",
+        # Brand templates (drives section-on-sheet)
+        "create_brand_template",
+        "update_brand_template",
+        "delete_brand_template",
+        # Exchange / monitored source drift (drives exchange + monitored drift)
+        "applyExchangePackage",
+        "bumpMonitoredRevisions",
+        "reconcileMonitoredElement",
+        "upsertSourceViewEvidence",
+        # Agent / coordination annotations the agent-brief advisor reads
+        "createAgentAssumption",
+        "createAgentDeviation",
+    }
+)
+
+
+def _command_is_schema_altering(cmd_raw: dict[str, Any]) -> bool:
+    """PERF-CQ-02: True if the command verb mutates a document-wide
+    schema/catalog that the documentation advisor passes scan globally.
+
+    Schema-altering commands MUST keep ``documentation_advisors=True``
+    even when committed singly, because the advisor surface they affect
+    is not bounded to the single element id named in the command.
+    """
+    raw_type = cmd_raw.get("type") if isinstance(cmd_raw, dict) else None
+    return isinstance(raw_type, str) and raw_type in _SCHEMA_ALTERING_COMMAND_TYPES
+
+
+def _command_is_single_element_safe(cmd_raw: dict[str, Any]) -> bool:
+    """PERF-CQ-02: True when a single command can commit without re-running
+    the documentation advisor passes.
+
+    A command qualifies when it is NOT in the schema-altering denylist —
+    everything else either touches a single element id or a single
+    host+child pair, both of which the advisor surface treats as local.
+    The existing fast-path allowlist (``_FAST_PATH_COMMAND_TYPES``) is a
+    strict subset of this gate.
+    """
+    if not isinstance(cmd_raw, dict):
+        return False
+    raw_type = cmd_raw.get("type")
+    if not isinstance(raw_type, str):
+        return False
+    return not _command_is_schema_altering(cmd_raw)
+
+
+def command_skips_documentation_advisors(cmd_raw: dict[str, Any]) -> bool:
+    """PERF-CQ-02 public alias: True when ``try_commit`` will skip the nine
+    documentation advisor passes for this command.
+
+    Route handlers use this to stamp the delta-wire ``validationScope``
+    flag so the FE preserves prior info-level violations rather than
+    dropping them on replace. Mirrors the gate ``try_commit`` consults
+    internally (``_command_is_single_element_safe``).
+    """
+    return _command_is_single_element_safe(cmd_raw)
+
+
+def _bundle_is_single_element_safe(cmds_raw: list[dict[str, Any]]) -> bool:
+    """PERF-CQ-02: True when an entire bundle can commit without re-running
+    the documentation advisor passes.
+
+    Qualifying bundles either:
+    - contain exactly one command that itself passes
+      ``_command_is_single_element_safe``, or
+    - contain multiple commands that all target the same element id and
+      none of which are schema-altering verbs.
+
+    Multi-element bundles always re-run advisors (the surface they touch
+    is broader than the gate can prove safe to skip).
+    """
+    if not cmds_raw:
+        return False
+    if any(_command_is_schema_altering(c) for c in cmds_raw):
+        return False
+    if len(cmds_raw) == 1:
+        return _command_is_single_element_safe(cmds_raw[0])
+    target_ids: set[str] = set()
+    for cmd in cmds_raw:
+        if not isinstance(cmd, dict):
+            return False
+        cmd_id = _command_primary_element_id(cmd)
+        if cmd_id is None:
+            return False
+        target_ids.add(cmd_id)
+        if len(target_ids) > 1:
+            return False
+    return len(target_ids) == 1
+
+
+# Field names that nominate the primary element id a command targets.
+# Used by ``_bundle_is_single_element_safe`` to detect multi-command
+# bundles that still touch a single element.
+_PRIMARY_ID_FIELDS: tuple[str, ...] = (
+    "id",
+    "elementId",
+    "wallId",
+    "hostWallId",
+    "hostFloorId",
+    "hostRoofId",
+    "targetId",
+)
+
+
+def _command_primary_element_id(cmd_raw: dict[str, Any]) -> str | None:
+    for key in _PRIMARY_ID_FIELDS:
+        value = cmd_raw.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
 _AGENT_STRICT_COMMAND_TYPES: dict[str, tuple[str, ...]] = {
     "createWall": ("levelId", "physicalRole"),
     "createFloor": ("levelId", "physicalRole"),
@@ -502,7 +659,12 @@ def try_commit_bundle(
         return False, None, cmds, [], str(exc)
 
     ensure_sun_settings(cand)
-    violations = _commit_violations(cand)
+    # PERF-CQ-02: bundle-level documentation_advisors gate. A bundle whose
+    # commands all target a single element id and none of which are
+    # schema-altering can skip the 9 info-only advisor passes; multi-
+    # element / schema-altering bundles keep the full evaluation.
+    documentation_advisors = not _bundle_is_single_element_safe(cmds_raw)
+    violations = _commit_violations(cand, documentation_advisors=documentation_advisors)
 
     # EDT-02 — reject bundles that break an error-severity locked constraint.
     # Runs after every command apply; the clone rollback is implicit because
@@ -511,7 +673,9 @@ def try_commit_bundle(
     violations = violations + edt_violations
 
     if _has_blocking_violations(violations):
-        before_violations = _commit_violations(doc)
+        before_violations = _commit_violations(
+            doc, documentation_advisors=documentation_advisors
+        )
         blocking = _new_blocking_violations(before_violations, violations)
         if blocking:
             return False, None, cmds, violations, "constraint_error"
@@ -554,11 +718,14 @@ def try_commit(
     apply_inplace(cand, cmds, source_provider=source_provider)
     ensure_sun_settings(cand)
 
-    # PERF-B07: skip info-level advisor passes when the command is in
-    # the fast-path allowlist (hosted-opening insert + wall endpoint
-    # moves). The compute_delta_wire caller stamps validationScope so
-    # the FE preserves prior info violations.
-    documentation_advisors = not _command_supports_fast_validation_path(cmd_raw)
+    # PERF-CQ-02 (widens PERF-B07): skip the 9 info-level advisor passes
+    # for any single-element command whose verb is not in the schema-
+    # altering denylist. Closes the createWall / createFloor / move-* tail
+    # that PERF-B07's narrow allowlist still ran advisors against; the
+    # delta wire caller continues to stamp validationScope='blocking_only'
+    # for the legacy fast-path subset so the FE preserves prior info
+    # violations.
+    documentation_advisors = not _command_is_single_element_safe(cmd_raw)
     violations = _commit_violations(cand, documentation_advisors=documentation_advisors)
 
     if _has_blocking_violations(violations):
