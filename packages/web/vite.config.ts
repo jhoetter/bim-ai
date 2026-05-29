@@ -129,6 +129,12 @@ export default defineConfig(({ mode }) => {
       ...ciWorkerLimits,
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
+      // DEP-CQ-02: vitest 3 uses `forks` pool by default (was `threads` in
+      // vitest 2). Render-heavy suites (e.g. VVDialog matrix with ~17 model
+      // category rows) take 1-3s in isolation and intermittently exceed the
+      // 5s default under parallel CPU contention. Bump to 15s — still fast
+      // enough to flag real hangs.
+      testTimeout: 15000,
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary'],
