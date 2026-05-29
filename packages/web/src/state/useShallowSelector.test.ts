@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { create } from 'zustand';
 
-import { useShallowSelector } from './useShallowSelector';
+import { useShallowSelector } from '@bim-ai/web-state';
 
 type Counter = { a: number; b: number; nudge: () => void };
 

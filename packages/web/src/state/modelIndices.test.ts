@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import { buildModelIndices } from './modelIndices';
+import { buildModelIndices } from '@bim-ai/web-state';
 
 describe('buildModelIndices', () => {
   it('groups common BIM elements by access pattern', () => {

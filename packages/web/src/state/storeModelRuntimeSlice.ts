@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 
 import type { Element, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
 
-import { buildModelIndices, EMPTY_MODEL_INDICES } from './modelIndices';
+import { buildModelIndices, EMPTY_MODEL_INDICES } from '@bim-ai/web-state';
 import type { StoreState } from './storeTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];

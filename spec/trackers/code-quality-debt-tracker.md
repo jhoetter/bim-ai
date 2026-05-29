@@ -26,11 +26,11 @@ own scope:
 
 | Section                             | Count  | Done   | Open P0 | Open P1 | Open P2 | Open P3 |
 | ----------------------------------- | ------ | ------ | ------- | ------- | ------- | ------- |
-| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*    |
+| 1. Test Coverage Gaps (TEST-CQ-\*)  | 12     | 11     | 0       | 0       | 0       | 1\*     |
 | 2. Backend Performance (PERF-CQ-\*) | 4      | 4      | 0       | 0       | 0       | 0       |
 | 3. Frontend Performance (FE-CQ-\*)  | 4      | 4      | 0       | 0       | 0       | 0       |
 | 4. Refactoring (REF-CQ-\*)          | 7      | 7      | 0       | 0       | 0       | 0       |
-| 5. Architecture (ARCH-CQ-\*)        | 6      | 5      | 0       | 0       | 0       | 1\*    |
+| 5. Architecture (ARCH-CQ-\*)        | 6      | 5      | 0       | 0       | 0       | 1\*     |
 | 6. Dependency Hygiene (DEP-CQ-\*)   | 4      | 4      | 0       | 0       | 0       | 0       |
 | 7. Documentation Polish (DOC-CQ-\*) | 3      | 3      | 0       | 0       | 0       | 0       |
 | **Total**                           | **40** | **38** | **0**   | **0**   | **0**   | **2\*** |
@@ -41,6 +41,11 @@ remaining P3 items are explicitly **Deferred** per the WPs' own
 specs — should ride feature work; ARCH-CQ-05 split `packages/web` into
 4 layers — "next major cycle", architecture rules enforce the same
 boundaries at file-glob level for now).
+
+> Update 2026-05-29: ARCH-CQ-05 has been split into sub-WPs
+> ARCH-CQ-05-a … -d (see Section 5). ARCH-CQ-05-a Slice 1 is in flight;
+> the remaining sub-WPs are still queued as "opportunistic / next major
+> cycle".
 
 ### P0 (next 2 weeks — by 2026-06-12) — ✅ all done
 
@@ -569,7 +574,7 @@ STALE in the deep-dive — confirm and close.
 - **Effort:** L
 - **Owner:** frontend-workspace
 - **Target:** 2026-06-29
-- **Status:** Done (PR #165 + PR #173, merged 2026-05-29 — Phase 1 added modelIndices.* narrow selectors at Workspace.tsx:194-200; Phase 2 (PR #173) eliminated the broad `elementsById` subscription, converted 13 inline reads to `useBimStore.getState().elementsById[id]` + 2 to `elementsByIdRef.current[id]` + 1 useMemo re-keyed on `modelIndices.planViews`; render-cost probe shows only **1 extra render across 30 wall-only authoring deltas** vs the ≤ 3 budget)
+- **Status:** Done (PR #165 + PR #173, merged 2026-05-29 — Phase 1 added modelIndices.\* narrow selectors at Workspace.tsx:194-200; Phase 2 (PR #173) eliminated the broad `elementsById` subscription, converted 13 inline reads to `useBimStore.getState().elementsById[id]` + 2 to `elementsByIdRef.current[id]` + 1 useMemo re-keyed on `modelIndices.planViews`; render-cost probe shows only **1 extra render across 30 wall-only authoring deltas** vs the ≤ 3 budget)
 - **Dependencies:** None blocking; pairs naturally with REF-CQ-01/02.
 
 **Why:** `packages/web/src/workspace/Workspace.tsx:199` subscribes to
@@ -981,10 +986,18 @@ The goal can be achieved via `"exports"` in `ui/package.json`.
 ### ARCH-CQ-05 — Split `packages/web` into 4 layers
 
 - **Priority:** P3
-- **Effort:** XL
+- **Effort:** XL (split into sub-WPs ARCH-CQ-05-a … -d below)
 - **Owner:** platform + frontend-shell
 - **Target:** opportunistic / next major cycle
-- **Status:** Done (PR #168, merged 2026-05-29 — `web-workspace-no-index-self-import` rule + comment block referencing PR #144; regression-proven)
+- **Status:** In progress — see sub-WPs ARCH-CQ-05-a (in flight) and
+  ARCH-CQ-05-b/-c/-d (not started).
+
+  (Tracker note: this entry was previously marked Done against PR #168
+  by an earlier automation pass; PR #168's actual content was
+  ARCH-CQ-02 + ARCH-CQ-03 + DEP-CQ-03 — the `web-workspace-no-index-self-import`
+  rule, the CLI ALLOWED comment block, and the reportlab decision record.
+  None of that touched the 4-way package split, so this status is
+  corrected and the WP re-opened as sub-WPs.)
 
 **Why:** `packages/web/src/` is 4.3 MB and 34 subdirectories, mixing
 state, rendering (viewport, plan), command metadata, and UI shell.
@@ -1004,6 +1017,270 @@ by glob. ~846 inter-folder imports must be re-routed.
 4. PRs land incrementally — propose splitting this WP into sub-WPs
    (`ARCH-CQ-05-a` etc.) once started; do not attempt the whole split
    in one PR.
+
+**Sub-WP plan (cross-refs below):**
+
+| Sub-WP       | Target package                                                                            | Status                              |
+| ------------ | ----------------------------------------------------------------------------------------- | ----------------------------------- |
+| ARCH-CQ-05-a | `@bim-ai/web-state` (lowest layer: leaf utilities, then store)                            | In progress — first slice in flight |
+| ARCH-CQ-05-b | `@bim-ai/web-viewport` (3D rendering: `Viewport.tsx`, `viewport/`)                        | Not started                         |
+| ARCH-CQ-05-c | `@bim-ai/web-plan` (2D plan/geometry: `plan/`, `geometry/`)                               | Not started                         |
+| ARCH-CQ-05-d | `@bim-ai/web-shell` (UI shell: `workspace/`, `cmdPalette/`, `families/`, `schedules/`, …) | Not started                         |
+
+---
+
+### ARCH-CQ-05-a — Extract `@bim-ai/web-state`
+
+- **Priority:** P3
+- **Effort:** L
+- **Owner:** platform
+- **Parent:** ARCH-CQ-05
+- **Target:** rolling — ship one slice at a time
+- **Status:** In progress — first slice (leaf utilities) shipped.
+  Residual slices below are not started.
+
+**Source dirs to move (target package layout):**
+
+```
+packages/web/src/state/    →    packages/web-state/src/
+```
+
+**Expected dependency graph:**
+
+```
+@bim-ai/web-state  →  @bim-ai/core
+                  →  react (peer), zustand (peer)
+                  ✗  no imports from packages/web/src/**
+```
+
+**Sliced delivery (because the full `state/` tree is contaminated by
+`storeTypes.ts`, which imports from sibling dirs `families`, `groups`,
+`plan`, `tools`, `viewport`, `workspace`):**
+
+1. **Slice 1 — leaf utilities (first PR, shipped):** Move
+   `theme.ts`, `useTheme.ts`, `useShallowSelector.ts`, `uiStates.ts`,
+   `renderCountProbe.ts`, `backupRetention.ts`, `modelIndices.ts`.
+   These have zero sibling-dir imports. Their `.test.ts(x)` files stay
+   under `packages/web/src/state/` (so `pnpm --filter @bim-ai/web test`
+   keeps picking them up) and are rewritten to import from
+   `@bim-ai/web-state`.
+2. **Slice 2 — `storeCoercion` + `coercion/` subtree:** these depend
+   only on `storeTypes` (for the `StoreState` type — which is
+   contaminated). Either move `storeTypes` first (requires Slice 4) or
+   restructure `storeCoercion` to take a `coerce(input, contract)`
+   shape so `coercion/` becomes self-contained on `@bim-ai/core` types.
+3. **Slice 3 — runtime slices and `store.ts` proper:** depends on
+   `storeTypes` and the contaminated `storeRuntimeSlices` /
+   `storeViewportRuntimeSlice`. Blocked on Slice 4.
+4. **Slice 4 — `storeTypes.ts` decoupling:** this is the blocker. Today
+   `storeTypes` imports from `../families/types`, `../groups/groupTypes`,
+   `../plan/{planProjectionWire, symbology}`, `../tools/toolGrammar`,
+   `../viewport/sectionBox`, `../workspace/readouts`. Options:
+   (a) move those individual type modules to `@bim-ai/core` (most
+   correct — they are domain contracts, not UI), then have
+   `storeTypes` import from `@bim-ai/core`; (b) split `storeTypes`
+   into a `storeTypes/core.ts` (no sibling deps) and
+   `storeTypes/integration.ts` (the contaminated half stays in
+   `packages/web`). Path (a) pairs naturally with ARCH-CQ-05-b/-c/-d
+   landing first.
+5. **Slice 5 — `modeController.ts`:** imports `../tools/toolRegistry`.
+   Move with ARCH-CQ-05-d or after `tools/` is extracted.
+6. **Slice 6 — `elementsByIdRef.ts`:** imports `./store` — moves
+   with Slice 3.
+
+**Acceptance criteria (overall sub-WP):**
+
+1. `packages/web-state/` exists with `package.json`, `tsconfig.json`,
+   `src/index.ts` re-exporting the public surface.
+2. `scripts/check-architecture.mjs` `ALLOWED` map lists
+   `@bim-ai/web-state` with deps `{@bim-ai/core}`.
+3. `architecture-boundaries.json` rule
+   `web-state-self-contained` forbids `packages/web-state/src/**`
+   from importing `packages/web/src/**`.
+4. `packages/web/src/state/` is empty (or contains only test files
+   pending Slice migration) by the end of the sub-WP.
+5. All `from '../state/...'` and `from '../../state/...'` imports in
+   `packages/web/src/**` are rewritten to `from '@bim-ai/web-state'`.
+6. `pnpm verify:strict` is green.
+
+---
+
+### ARCH-CQ-05-b — Extract `@bim-ai/web-viewport`
+
+- **Priority:** P3
+- **Effort:** L
+- **Owner:** platform + 3D rendering
+- **Parent:** ARCH-CQ-05
+- **Target:** after ARCH-CQ-05-a Slice 1; can interleave with -c/-d
+- **Status:** Not started
+
+**Source dirs to move:**
+
+```
+packages/web/src/viewport/     →  packages/web-viewport/src/viewport/
+packages/web/src/Viewport.tsx  →  packages/web-viewport/src/Viewport.tsx
+packages/web/src/sceneUtils*   →  packages/web-viewport/src/sceneUtils*
+```
+
+(Final file list to be confirmed during the WP — `sceneUtils*` is
+indicative; whatever `Viewport.tsx` pulls in that is purely 3D
+rendering moves with it.)
+
+**Expected dependency graph:**
+
+```
+@bim-ai/web-viewport  →  @bim-ai/core
+                      →  @bim-ai/web-state (read-only store access via
+                                            slices, not raw store)
+                      →  three (peer), react (peer)
+                      ✗  no imports from packages/web/src/workspace/**
+                      ✗  no imports from packages/web/src/plan/**
+                      ✗  no imports from packages/web/src/cmdPalette/**
+```
+
+**Acceptance criteria:**
+
+1. `packages/web-viewport/` exists with `package.json`, `tsconfig.json`,
+   `src/index.tsx` exporting `Viewport` + the public viewport helpers
+   currently consumed via `from '../viewport/...'`.
+2. `ALLOWED` map updated; web depends on `@bim-ai/web-viewport`.
+3. Architecture rule `web-viewport-self-contained` forbids
+   `packages/web-viewport/src/**` from importing
+   `packages/web/src/workspace/**`, `packages/web/src/plan/**`,
+   `packages/web/src/cmdPalette/**` — promoting the existing
+   `web-viewport-no-workspace-shell` glob rule to a package-boundary
+   rule.
+4. All `from '../viewport/...'` imports in `packages/web/src/**`
+   rewritten to `from '@bim-ai/web-viewport'`.
+5. `pnpm verify:strict` green.
+
+---
+
+### ARCH-CQ-05-c — Extract `@bim-ai/web-plan`
+
+- **Priority:** P3
+- **Effort:** L
+- **Owner:** platform + 2D plan rendering
+- **Parent:** ARCH-CQ-05
+- **Target:** after ARCH-CQ-05-a Slice 1
+- **Status:** Not started
+
+**Source dirs to move:**
+
+```
+packages/web/src/plan/        →  packages/web-plan/src/plan/
+packages/web/src/geometry/    →  packages/web-plan/src/geometry/
+```
+
+`geometry/` is included because it currently sits between `plan/` and
+`viewport/`; verification during the WP must confirm `viewport/` does
+not own any geometry helpers (if it does, they move with -b instead).
+
+**Expected dependency graph:**
+
+```
+@bim-ai/web-plan  →  @bim-ai/core
+                  →  @bim-ai/web-state (read-only)
+                  ✗  no imports from packages/web/src/viewport/**
+                  ✗  no imports from packages/web/src/workspace/**
+                  ✗  no imports from packages/web/src/cmdPalette/**
+```
+
+**Acceptance criteria:**
+
+1. `packages/web-plan/` exists with `package.json`, `tsconfig.json`,
+   `src/index.ts(x)` exporting `PlanCanvas` + the public plan helpers.
+2. `ALLOWED` map updated; web depends on `@bim-ai/web-plan`.
+3. Architecture rule `web-plan-self-contained` forbids
+   `packages/web-plan/src/**` from importing
+   `packages/web/src/viewport/**`, `packages/web/src/workspace/**`,
+   `packages/web/src/cmdPalette/**` — promoting the existing
+   `web-pure-plan-helpers-no-ui-shell` glob rule.
+4. All `from '../plan/...'` and `from '../geometry/...'` imports in
+   `packages/web/src/**` rewritten to `from '@bim-ai/web-plan'`.
+5. `pnpm verify:strict` green.
+
+**Overlap with -b:** `plan/` and `viewport/` share some geometry
+contracts (section box, projection wire). Decision during -c: either
+those shared types move into `@bim-ai/web-plan` (and `web-viewport`
+depends on `web-plan`), or they move into `@bim-ai/core`. The latter
+is preferred because `core` already owns the domain element types.
+
+---
+
+### ARCH-CQ-05-d — Extract `@bim-ai/web-shell`
+
+- **Priority:** P3
+- **Effort:** XL
+- **Owner:** platform + frontend-shell
+- **Parent:** ARCH-CQ-05
+- **Target:** last — after -a, -b, -c
+- **Status:** Not started
+
+**Source dirs to move:**
+
+```
+packages/web/src/workspace/      →  packages/web-shell/src/workspace/
+packages/web/src/cmdPalette/     →  packages/web-shell/src/cmdPalette/
+packages/web/src/families/       →  packages/web-shell/src/families/
+packages/web/src/familyEditor/   →  packages/web-shell/src/familyEditor/
+packages/web/src/schedules/      →  packages/web-shell/src/schedules/
+packages/web/src/inspector/      →  packages/web-shell/src/inspector/
+packages/web/src/levels/         →  packages/web-shell/src/levels/
+packages/web/src/phases/         →  packages/web-shell/src/phases/
+packages/web/src/import/         →  packages/web-shell/src/import/
+packages/web/src/export/         →  packages/web-shell/src/export/
+packages/web/src/onboarding/     →  packages/web-shell/src/onboarding/
+packages/web/src/advisor/        →  packages/web-shell/src/advisor/
+packages/web/src/clipboard/      →  packages/web-shell/src/clipboard/
+packages/web/src/collab/         →  packages/web-shell/src/collab/
+packages/web/src/collaboration/  →  packages/web-shell/src/collaboration/
+packages/web/src/coordination/   →  packages/web-shell/src/coordination/
+packages/web/src/energy/         →  packages/web-shell/src/energy/
+packages/web/src/groups/         →  packages/web-shell/src/groups/
+packages/web/src/jobs/           →  packages/web-shell/src/jobs/
+packages/web/src/offlineStore.ts →  packages/web-shell/src/offlineStore.ts
+packages/web/src/osm/            →  packages/web-shell/src/osm/
+packages/web/src/presenceStore.ts → packages/web-shell/src/presenceStore.ts
+packages/web/src/sunStore.ts     →  packages/web-shell/src/sunStore.ts
+packages/web/src/tools/          →  packages/web-shell/src/tools/
+packages/web/src/viewer/         →  packages/web-shell/src/viewer/
+```
+
+`@bim-ai/web` retains only `App.tsx`, `main.tsx`, `ErrorBoundary.tsx`,
+routing glue, top-level style entry, and the test infrastructure.
+
+**Expected dependency graph:**
+
+```
+@bim-ai/web-shell  →  @bim-ai/core
+                   →  @bim-ai/ui
+                   →  @bim-ai/icons
+                   →  @bim-ai/web-state
+                   →  @bim-ai/web-viewport (via lazy/dynamic where shell
+                                            mounts the viewport)
+                   →  @bim-ai/web-plan (likewise)
+                   ✗  the reverse: web-viewport / web-plan / web-state
+                      MUST NOT import from web-shell
+```
+
+**Acceptance criteria:**
+
+1. `packages/web-shell/` exists with `package.json`, `tsconfig.json`,
+   `src/index.ts(x)` exporting the public surface consumed by
+   `App.tsx` (workspace shell entry, command palette provider,
+   schedule mode shell, etc.).
+2. `ALLOWED` map updated; web depends on
+   `@bim-ai/web-shell` (and -shell on -state/-viewport/-plan).
+3. New architecture rules (replacing the existing
+   `packages/web/src/state/**`, `packages/web/src/cmdPalette/**`,
+   `packages/web/src/workspace/inspector/**` glob rules) become
+   package-boundary rules: `@bim-ai/web-shell` MUST NOT be a source
+   of imports for `@bim-ai/web-viewport`, `@bim-ai/web-plan`, or
+   `@bim-ai/web-state`.
+4. `packages/web/src/` shrinks to the integration shell only
+   (target: < 30 files).
+5. `pnpm verify:strict` green.
 
 ---
 
@@ -1272,8 +1549,7 @@ surfaced when PR #145 bumped starlette to 1.2.0.
 **The warning.** Running `pytest -W error::DeprecationWarning` against
 the FastAPI test client emits:
 
-> `StarletteDeprecationWarning: Using `httpx` with
-> `starlette.testclient` is deprecated; install `httpx2` instead.`
+> `StarletteDeprecationWarning: Using `httpx`with`starlette.testclient`is deprecated; install`httpx2` instead.`
 
 Today the warning is non-blocking; pytest's filter config in
 `app/pyproject.toml` does not promote it to an error, so CI stays

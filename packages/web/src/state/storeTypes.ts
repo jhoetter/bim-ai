@@ -14,7 +14,7 @@ import type { FamilyDefinition } from '../families/types';
 import type { WallLocationLine } from '../tools/toolGrammar';
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type { GroupRegistry } from '../groups/groupTypes';
-import type { ModelIndices } from './modelIndices';
+import type { ModelIndices } from '@bim-ai/web-state';
 import type {
   PlanProjectionPrimitivesV1Wire,
   PlanCategoryGraphicHintsV0Wire,

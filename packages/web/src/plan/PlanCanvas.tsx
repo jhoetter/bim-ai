@@ -117,9 +117,8 @@ import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore, type PlanTool } from '../state/store';
-import { useRenderCount } from '../state/renderCountProbe';
+import { useRenderCount, useTheme } from '@bim-ai/web-state';
 import type { CategoryOverride } from '../state/storeTypes';
-import { useTheme } from '../state/useTheme';
 import { snapPlanPoint, type SegmentLine, type SnapHit, type SnapKind } from './snapEngine';
 import { useCoalescedSetter } from './useCoalescedSetter';
 import { SnapEngine } from './planCanvasState';

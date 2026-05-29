@@ -48,7 +48,7 @@
  * note in `clipboard/copyPaste.ts`.
  */
 import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
-import { coerceCheckpointRetentionLimit } from './backupRetention';
+import { coerceCheckpointRetentionLimit } from '@bim-ai/web-state';
 import { coerceAssetElement } from './coercion/assetElements';
 import { coerceBuildingElement } from './coercion/buildingElements';
 import { coerceCoordinationElement } from './coercion/coordinationElements';

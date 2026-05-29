@@ -35,7 +35,12 @@ import {
   type PlanTool,
   type Theme,
 } from '../state/store';
-import { useRenderCount } from '../state/renderCountProbe';
+import {
+  useRenderCount,
+  patternFor,
+  coerceCheckpointRetentionLimit,
+  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
+} from '@bim-ai/web-state';
 import { useElementsByIdRef } from '../state/elementsByIdRef';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import {
@@ -45,7 +50,6 @@ import {
   type SnapSettings,
   type ToggleableSnapKind,
 } from '../plan/snapSettings';
-import { patternFor } from '../state/uiStates';
 import { AppShell, type WorkspaceMode } from './shell';
 import { getToolRegistry, type ToolId } from '../tools/toolRegistry';
 import {
@@ -85,10 +89,6 @@ import {
   type WorkspaceCompositionState,
 } from './compositions';
 import { type ProjectMenuItemRecent, readRecentProjects } from './project';
-import {
-  coerceCheckpointRetentionLimit,
-  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
-} from '../state/backupRetention';
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,

@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import * as React from 'react';
 
-import { readRenderCountProbe, resetRenderCountProbe, useRenderCount } from './renderCountProbe';
+import { readRenderCountProbe, resetRenderCountProbe, useRenderCount } from '@bim-ai/web-state';
 
 function Probe({ name, value }: { name: string; value: number }): React.ReactElement {
   useRenderCount(name);

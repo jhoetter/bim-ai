@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import type { StoreState } from './storeTypes';
 import { coerceElement, coerceViolation, defaultLevelId } from './storeCoercion';
-import { buildModelIndices } from './modelIndices';
+import { buildModelIndices, toggleTheme as _toggleTheme } from '@bim-ai/web-state';
 import {
   createCollaborationRuntimeSlice,
   createPlanAuthoringRuntimeSlice,
@@ -22,8 +22,9 @@ export type {
   CategoryOverrides,
 } from './storeTypes';
 
-/** Theme controls live in `./theme.ts`. These exports preserve the
- * existing call-site API while delegating to the canonical module. */
+/** Theme controls live in `@bim-ai/web-state` (moved out of `./theme.ts`
+ * by ARCH-CQ-05-a). These re-exports preserve the existing call-site API
+ * while delegating to the canonical module. */
 
 export {
   initTheme as initThemeFromStorage,
@@ -33,10 +34,7 @@ export {
   readPreferredTheme,
   prefersReducedMotion,
   type Theme,
-} from './theme';
-
-import { toggleTheme as _toggleTheme } from './theme';
-
+} from '@bim-ai/web-state';
 /** Back-compat: returns `true` when the new theme is dark. */
 export function toggleStoredTheme(): boolean {
   return _toggleTheme() === 'dark';

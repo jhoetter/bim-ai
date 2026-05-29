@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { DisciplineTag, Element } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../../families/familyCatalog';
-import { DEFAULT_CHECKPOINT_RETENTION_LIMIT } from '../../state/backupRetention';
+import { DEFAULT_CHECKPOINT_RETENTION_LIMIT } from '@bim-ai/web-state';
 import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
