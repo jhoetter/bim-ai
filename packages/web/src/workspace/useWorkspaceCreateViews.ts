@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Element } from '@bim-ai/core';
 
+import { useBimStore } from '../state/store';
 import type { ViewerMode, PlanTool } from '../state/store';
 import type { WorkspaceMode } from './shell';
 import { slugToken } from './workspacePresentation';
@@ -37,7 +38,7 @@ function planViewNames(elementsById: Record<string, Element>) {
 export function useWorkspaceCreateViews({
   activePlanViewId,
   activeViewpointId,
-  elementsById,
+  elementsById: elementsByIdArg,
   onSemanticCommand,
   openElementById,
   orbitCameraPoseMm,
@@ -52,7 +53,14 @@ export function useWorkspaceCreateViews({
 }: {
   activePlanViewId: string | null | undefined;
   activeViewpointId: string | null | undefined;
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, the hook subscribes to
+   * `elementsById` internally — see the contract comment on
+   * `useStructuralValidationViolations`. The create-view callbacks need
+   * fresh element data each invocation (existing level/plan-view names,
+   * active plan resolution) so a reactive read is appropriate.
+   */
+  elementsById?: Record<string, Element>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openElementById: (id: string) => void;
   orbitCameraPoseMm: OrbitCameraPoseMm | null | undefined;
@@ -65,6 +73,8 @@ export function useWorkspaceCreateViews({
   viewerClipFloorElevMm: number | null | undefined;
   viewerProjection: string;
 }) {
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
+  const elementsById = elementsByIdArg ?? elementsByIdFromStore;
   const createFloorPlanView = useCallback(async () => {
     const activePlan = activePlanViewId ? elementsById[activePlanViewId] : undefined;
     const activePlanLevelId = activePlan?.kind === 'plan_view' ? activePlan.levelId : undefined;

@@ -15,6 +15,7 @@
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { Element } from '@bim-ai/core';
 
+import { useBimStore } from '../state/store';
 import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
@@ -28,7 +29,16 @@ import {
 
 export interface UseMaterialBrowserStateArgs {
   selectedId: string | undefined;
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, the hook subscribes to
+   * `elementsById` internally so callers (notably `Workspace.tsx`) no
+   * longer need a broad subscription of their own. The subscription
+   * still triggers a re-render of the caller on every authoring delta
+   * — that's the legitimate broad-reactive case for the material-browser
+   * resolver (selected-element layers and material-slot labels must
+   * reflect live edits).
+   */
+  elementsById?: Record<string, Element>;
   onSemanticCommand: (cmd: Record<string, unknown>) => Promise<void> | void;
 }
 
@@ -56,9 +66,11 @@ export interface MaterialBrowserState {
 
 export function useMaterialBrowserState({
   selectedId,
-  elementsById,
+  elementsById: elementsByIdArg,
   onSemanticCommand,
 }: UseMaterialBrowserStateArgs): MaterialBrowserState {
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
+  const elementsById = elementsByIdArg ?? elementsByIdFromStore;
   const [materialBrowserOpen, setMaterialBrowserOpen] = useState(false);
   const [appearanceAssetBrowserOpen, setAppearanceAssetBrowserOpen] = useState(false);
   const [activeMaterialBrowserTarget, setActiveMaterialBrowserTarget] =

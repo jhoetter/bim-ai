@@ -11,7 +11,16 @@ type Setter<T> = (value: T | ((prev: T) => T)) => void;
 
 export interface WorkspaceDefaultTabOptions {
   modelId: string | undefined;
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, the hook subscribes to
+   * `elementsById` internally so callers (notably `Workspace.tsx`) no
+   * longer need a broad subscription of their own. The internal
+   * subscription still re-renders the caller per delta — but the
+   * default-tab effect only does meaningful work the first time the
+   * model hydrates (guarded by `defaultOpenedModelIdRef`), so the cost
+   * is bounded.
+   */
+  elementsById?: Record<string, Element>;
   activeLevelId: string | undefined;
   setTabsState: Setter<TabsState>;
   setMode: Setter<WorkspaceMode>;
@@ -53,7 +62,7 @@ export function readCaptureModeFromUrl(search?: string): boolean {
 export function useWorkspaceDefaultTab(options: WorkspaceDefaultTabOptions): void {
   const {
     modelId,
-    elementsById,
+    elementsById: elementsByIdArg,
     activeLevelId,
     setTabsState,
     setMode,
@@ -62,6 +71,8 @@ export function useWorkspaceDefaultTab(options: WorkspaceDefaultTabOptions): voi
     setActiveLevelId,
     setOrbitCameraFromViewpointMm,
   } = options;
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
+  const elementsById = elementsByIdArg ?? elementsByIdFromStore;
 
   const defaultOpenedModelIdRef = useRef<string | null>(null);
 

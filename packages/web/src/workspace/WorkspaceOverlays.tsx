@@ -81,7 +81,16 @@ type SheetPage = { id: string; name: string };
 type LibraryDiscipline = 'arch' | 'struct' | 'mep' | 'all';
 
 export interface WorkspaceOverlaysProps {
-  elementsById: Record<string, Element>;
+  /**
+   * FE-CQ-01-followup: optional. When omitted, `WorkspaceOverlays`
+   * subscribes to `elementsById` internally via `useBimStore` so the
+   * caller (notably `Workspace.tsx`) no longer needs a broad
+   * subscription of its own. The subscription still triggers a
+   * re-render of `WorkspaceOverlays` on every authoring delta — that's
+   * the legitimate broad-reactive case (inspector / project-settings
+   * dialog / reference-plane derivation all need fresh element data).
+   */
+  elementsById?: Record<string, Element>;
   modelId: string | null | undefined;
   revision: number | null | undefined;
   userId: string | null | undefined;
@@ -227,7 +236,7 @@ export interface WorkspaceOverlaysProps {
 }
 
 export function WorkspaceOverlays({
-  elementsById,
+  elementsById: elementsByIdArg,
   modelId,
   revision,
   userId,
@@ -360,6 +369,13 @@ export function WorkspaceOverlays({
   closeActivityDrawer,
   handleLibraryPlace,
 }: WorkspaceOverlaysProps): JSX.Element {
+  // FE-CQ-01-followup: fall back to the store when no prop is supplied so
+  // Workspace.tsx no longer needs its own broad `elementsById`
+  // subscription. The subscription co-locates with the consumer that
+  // actually drives the inspector / project-settings / reference-plane
+  // derivations below.
+  const elementsByIdFromStore = useBimStore((s) => s.elementsById);
+  const elementsById = elementsByIdArg ?? elementsByIdFromStore;
   const projectSettings = Object.values(elementsById).find((e) => e.kind === 'project_settings') as
     | (Extract<Element, { kind: 'project_settings' }> & {
         checkpointRetentionLimit?: unknown;
