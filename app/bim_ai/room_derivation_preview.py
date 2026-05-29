@@ -97,7 +97,16 @@ def _candidate_id_stable(c: dict[str, Any]) -> str:
 def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
     """Review payload: deterministic ids + explicit assumptions + suggested outline-only command."""
 
-    preview = room_derivation_preview(doc)
+    # PERF-CQ-03: reuse the request-scoped `room_derivation_preview`
+    # result if a cache is active (set by `build_evidence_package_payload`).
+    from bim_ai.evidence_request_cache import cached_compute
+
+    preview = cached_compute(
+        doc=doc,
+        scope_id="document",
+        derivation_kind="room_derivation_preview",
+        factory=lambda: room_derivation_preview(doc),
+    )
     out_candidates: list[dict[str, Any]] = []
 
     authored_by_level: defaultdict[str, list[RoomElem]] = defaultdict(list)

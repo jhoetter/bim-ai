@@ -40,6 +40,13 @@ def _saved_3d_view_clip_summary(doc: Document) -> dict[str, Any]:
 
 
 def compute_model_summary(doc: Document) -> dict[str, Any]:
+    # PERF-CQ-03: if a request-scoped evidence cache is active (set by
+    # `build_evidence_package_payload`), reuse the cached
+    # `room_derivation_preview` rather than re-running it. The cache is
+    # optional — outside an evidence-package call this still runs the
+    # underlying derivation directly.
+    from bim_ai.evidence_request_cache import cached_compute
+
     elems = list(doc.elements.values())
     kinds = Counter(getattr(e, "kind", "?") for e in elems)
 
@@ -104,7 +111,14 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
         "saved3dViewClipSummary": _saved_3d_view_clip_summary(doc),
-        "roomDerivationPreview": (rd_preview := room_derivation_preview(doc)),
+        "roomDerivationPreview": (
+            rd_preview := cached_compute(
+                doc=doc,
+                scope_id="document",
+                derivation_kind="room_derivation_preview",
+                factory=lambda: room_derivation_preview(doc),
+            )
+        ),
         "regenerationDiagnostics": {
             "documentRevision": doc.revision,
             "roomDerivationHeuristicVersion": rd_preview.get("heuristicVersion"),
