@@ -14,7 +14,7 @@ The Sustainability Lens supports embodied-carbon and lifecycle assessment workfl
 - English name: Sustainability / LCA
 - German name: Nachhaltigkeit / Oekobilanz
 - Primary users: sustainability consultants, architects, owners, ESG teams
-- Existing status: recommended new lens
+- Existing status: implemented in the UI lens cycle
 
 ## Design Principle
 

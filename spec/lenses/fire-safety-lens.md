@@ -14,7 +14,7 @@ The Fire Safety Lens supports code-review and fire-protection planning workflows
 - English name: Fire Safety
 - German name: Brandschutz
 - Primary users: fire-safety consultants, architects, approval planners, BIM coordinators
-- Existing status: recommended new lens
+- Existing status: implemented in the UI lens cycle
 
 ## Design Principle
 

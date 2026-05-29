@@ -14,7 +14,7 @@ The Coordination Lens is the cross-discipline review lens. In German product lan
 - English name: Coordination
 - German name: Koordination
 - Primary users: BIM coordinators, project leads, QA reviewers, discipline leads
-- Existing status: present in the core lens type vocabulary, not yet exposed in the UI lens cycle
+- Existing status: implemented in the UI lens cycle
 
 ## Design Principle
 

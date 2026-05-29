@@ -15,7 +15,7 @@ The Cost and Quantity Lens supports quantity takeoff, cost grouping, scenario pr
 - German name: Kosten und Mengen
 - Alternate German labels: Mengenermittlung, Kostenplanung
 - Primary users: cost planners, quantity surveyors, architects, project managers
-- Existing status: recommended new lens
+- Existing status: implemented in the UI lens cycle
 
 ## Design Principle
 
