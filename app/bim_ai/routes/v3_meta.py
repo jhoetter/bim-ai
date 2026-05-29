@@ -157,8 +157,9 @@ async def v3_delete_models(body: dict) -> dict[str, Any]:
 
     Returns `{removed: int, remaining: int, step_counts: {table: rows_affected}, target_count, dry_run}`.
     """
-    from bim_ai.db import SessionMaker
     from sqlalchemy import text
+
+    from bim_ai.db import SessionMaker
 
     slug_like = body.get("slug_like")
     if not isinstance(slug_like, str) or not slug_like.strip():

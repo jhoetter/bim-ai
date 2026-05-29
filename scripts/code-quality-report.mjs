@@ -624,7 +624,12 @@ function uiQualityBudgetSummary(scripts) {
 }
 
 function trackerRows() {
-  const tracker = readText('spec/archive/code-quality-tracker.md');
+  let tracker;
+  try {
+    tracker = readText('spec/archive/code-quality-tracker.md');
+  } catch {
+    return [];
+  }
   const rowRe =
     /^\| (CQ-\d{4}-\d{2}) \| (P\d)\s+\| (Open|Partial|Done|Blocked)\s+\| ([^|]+?)\s+\| ([^|]+?)\s+\|$/gm;
   const rows = [];
