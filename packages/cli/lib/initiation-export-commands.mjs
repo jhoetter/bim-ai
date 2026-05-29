@@ -8,9 +8,16 @@ import {
   readJsonFile,
   writeInitiationPacket,
 } from './sketch-initiation.mjs';
-import { base, fetchJson, fetchOkBytes, snapshot } from './api-client.mjs';
-import { applyQualityMode } from './sketch-phase-workflows.mjs';
+import { base, fetchJson, fetchOkBytes, fetchOkText, snapshot } from './api-client.mjs';
+import {
+  applyQualityMode,
+  safeArtifactName,
+  writeJsonArtifact,
+} from './sketch-phase-workflows.mjs';
+import { compileSeedDsl } from './seed-dsl.mjs';
 import { comparePngFiles } from './png-visual-gate.mjs';
+import { advisorSummary } from './advisor-summary.mjs';
+import { usage } from './agent-api-commands.mjs';
 
 export async function cmdInitiationGolden(manifestPath, outDir) {
   const manifest = await readJsonFile(manifestPath);
