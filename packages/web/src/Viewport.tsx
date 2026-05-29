@@ -186,7 +186,6 @@ import {
   resolve3dDraftLevel,
   snapDraftPointToGrid,
   validateWorkPlane3d,
-  type Authoring3dLinePreviewPayload,
   type Authoring3dSnapKind,
   type WallDraftProjectionClassification,
   type WallDraftProjectionMode,

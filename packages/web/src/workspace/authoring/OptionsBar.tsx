@@ -32,48 +32,30 @@ export let mirrorCopyEnabled = true;
 export let copyMultipleEnabled = true;
 
 /**
- * Module-level selected asset ID for the component placement tool.
- * Exported so PlanCanvas can read it on click without a Zustand store change.
+ * Component-placement module state moved to a neutral lib module so the 3D
+ * viewport tool dispatcher can read it without violating
+ * `web-viewport-no-workspace-shell`. The OptionsBar UI re-exports the symbols
+ * to preserve the existing public API for the many plan-canvas readers and
+ * tests that import from this module.
  */
-export let activeComponentAssetId: string | null = null;
-export function setActiveComponentAssetId(v: string | null): void {
-  activeComponentAssetId = v;
-  if (!v || activeComponentAssetPreviewEntry?.id !== v) {
-    activeComponentAssetPreviewEntry = null;
-  }
-}
+export {
+  activeComponentAssetId,
+  setActiveComponentAssetId,
+  activeComponentAssetPreviewEntry,
+  setActiveComponentAssetPreviewEntry,
+  activeComponentFamilyTypeId,
+  setActiveComponentFamilyTypeId,
+  pendingComponentRotationDeg,
+  setPendingComponentRotationDeg,
+} from '../../lib/componentPlacementState';
 
-export let activeComponentAssetPreviewEntry: Extract<
-  Element,
-  { kind: 'asset_library_entry' }
-> | null = null;
-export function setActiveComponentAssetPreviewEntry(
-  entry: Extract<Element, { kind: 'asset_library_entry' }> | null,
-): void {
-  activeComponentAssetPreviewEntry = entry;
-  if (entry) activeComponentAssetId = entry.id;
-}
-
-/**
- * Module-level selected family_type ID for loaded-family placement.
- * This shares the component placement tool with asset placement but emits
- * `placeFamilyInstance` instead of `PlaceAsset`.
- */
-export let activeComponentFamilyTypeId: string | null = null;
-export function setActiveComponentFamilyTypeId(v: string | null): void {
-  activeComponentFamilyTypeId = v;
-}
-
-/**
- * Module-level pending rotation for the component placement tool.
- * Spacebar in PlanCanvas increments this by 90° (mod 360).
- * Read at click-time by PlanCanvas and passed to PlaceAsset.
- * Reset to 0 when the tool changes away from 'component'.
- */
-export let pendingComponentRotationDeg = 0;
-export function setPendingComponentRotationDeg(v: number): void {
-  pendingComponentRotationDeg = v;
-}
+import {
+  activeComponentAssetId,
+  setActiveComponentAssetId,
+  activeComponentFamilyTypeId,
+  setActiveComponentFamilyTypeId,
+  setActiveComponentAssetPreviewEntry,
+} from '../../lib/componentPlacementState';
 
 export let dispatchColumnAtGridsSelectAll: ((gridIds: string[]) => void) | null = null;
 export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => void) | null): void {

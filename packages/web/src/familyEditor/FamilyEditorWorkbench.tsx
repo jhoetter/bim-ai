@@ -54,7 +54,6 @@ import { FamilyEditorParametersSection } from './FamilyEditorParametersSection';
 import {
   ArrayDraftPanel,
   FamilyTypesDialog,
-  MaterialDefaultEditor,
   SweepPathSketch,
   SweepProfileSketch,
 } from './FamilyEditorWorkbenchPanels';

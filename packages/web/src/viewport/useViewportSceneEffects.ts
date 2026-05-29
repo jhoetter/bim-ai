@@ -1437,6 +1437,7 @@ export function useViewportSceneEffects(args: ViewportSceneEffectsArgs): void {
     bimPickMapRef,
     buildConicalRoofMesh,
     buildDomeRoofMesh,
+    buildExcavationMesh,
     buildFamilyBlendMesh,
     buildFamilySweepMesh,
     buildGradedRegionMesh,
