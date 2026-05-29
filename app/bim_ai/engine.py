@@ -633,6 +633,7 @@ from bim_ai.services.engine_commit import (  # noqa: E402,F401
     _evaluate_edt_constraint_violations,
     blocking_violation_element_ids_at_prefix,
     blocking_violation_rule_ids_at_prefix,
+    command_skips_documentation_advisors,
     command_supports_fast_validation_path,
     compute_delta_wire,
     compute_view_template_propagation,
