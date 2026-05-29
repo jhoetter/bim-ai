@@ -33,7 +33,7 @@ Critical scope constraint: We do **not** build our own GEG calculation engine. W
 - German name: Energieberatung
 - Alternate German labels: Energielinse, Energieberater-Modus
 - Primary users: Energieberater, architects preparing energy handoff, building owners reviewing renovation scenarios
-- Existing status: present in the core lens type vocabulary, not yet exposed in the UI lens cycle
+- Existing status: implemented in the UI lens cycle
 
 ## Official Workflow Anchors
 

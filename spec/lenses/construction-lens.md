@@ -15,7 +15,7 @@ The Construction Lens supports execution planning, site coordination, progress, 
 - German name: Bauausfuehrung
 - Alternate German labels: Ausfuehrung, Baustelle
 - Primary users: contractors, site managers, construction coordinators, project managers
-- Existing status: recommended new lens
+- Existing status: implemented in the UI lens cycle
 
 ## Design Principle
 
