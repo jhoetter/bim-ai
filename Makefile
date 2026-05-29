@@ -136,7 +136,7 @@ test-py-focused:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest $(PYTEST_ARGS) -q --no-cov
 
 test-py-real-path:
-	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/integration/test_real_path_smoke.py tests/integration/test_real_path_db.py -q --no-cov -m integration
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/integration -q --no-cov -m integration
 
 test-web-real-path:
 	$(PNPM) --filter @bim-ai/web test:e2e:real-backend
